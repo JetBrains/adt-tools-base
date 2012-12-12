@@ -1,0 +1,2 @@
+Main-Class: com.android.tools.lint.Main
+Class-Path: common.jar layout_lib.jar lint_api.jar lint_checks.jar asm-4.0.jar asm-tree-4.0.jar asm-analysis-4.0.jar guava-13.0.1.jar lombok-ast-0.2.jar sdklib.jar

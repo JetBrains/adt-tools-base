@@ -1,0 +1,2 @@
+Main-Class: com.android.jobb.Main
+Class-Path: fat32lib.jar

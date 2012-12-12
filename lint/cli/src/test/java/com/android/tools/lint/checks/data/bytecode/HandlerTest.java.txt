@@ -1,0 +1,24 @@
+package test.pkg;
+
+import android.os.Handler;
+import android.os.Message;
+
+public class HandlerTest extends Handler { // OK
+    public static class StaticInner extends Handler { // OK
+        public void dispatchMessage(Message msg) {
+            super.dispatchMessage(msg);
+        };
+    }
+    public class Inner extends Handler { // ERROR
+        public void dispatchMessage(Message msg) {
+            super.dispatchMessage(msg);
+        };
+    }
+    void method() {
+        Handler anonymous = new Handler() { // ERROR
+            public void dispatchMessage(Message msg) {
+                super.dispatchMessage(msg);
+            };
+        };
+    }
+}
