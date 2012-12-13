@@ -2,8 +2,8 @@
 <template
     format="1"
     revision="1"
-    name="New Content Provider"
-    description="Creates a new content provider class">
+    name="Content Provider"
+    description="Creates a new content provider component and adds it to your Android manifest.">
 
     <parameter
         id="className"

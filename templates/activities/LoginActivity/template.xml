@@ -2,8 +2,8 @@
 <template
     format="3"
     revision="2"
-    name="New Login Activity"
-    description="Creates a new login activity, allowing users to enter an email address and password to login or register for your service."
+    name="Login Activity"
+    description="Creates a new login activity, allowing users to enter an email address and password to log in to or register with your application."
     minApi="3"
     minBuildApi="13">
     <dependency name="android-support-v4" revision="8" />

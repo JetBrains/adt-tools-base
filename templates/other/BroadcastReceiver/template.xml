@@ -2,8 +2,8 @@
 <template
     format="1"
     revision="1"
-    name="New Broadcast Receiver"
-    description="Creates a new broadcast receiver class">
+    name="Broadcast Receiver"
+    description="Creates a new broadcast receiver component and adds it to your Android manifest.">
 
     <parameter
         id="className"
