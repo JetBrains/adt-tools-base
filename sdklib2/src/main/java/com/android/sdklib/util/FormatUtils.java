@@ -31,7 +31,8 @@ public abstract class FormatUtils {
      * @return A new non-null string, with the size expressed in either Bytes
      *   or KiB or MiB or GiB.
      */
-    public static @NonNull String byteSizeToString(long size) {
+    @NonNull
+    public static String byteSizeToString(long size) {
         String sizeStr;
 
         if (size < 1024) {

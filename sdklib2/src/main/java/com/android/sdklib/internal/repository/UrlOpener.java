@@ -168,7 +168,8 @@ class UrlOpener {
      * @throws CanceledByUserException Exception thrown if the user cancels the
      *              authentication dialog.
      */
-    static @NonNull Pair<InputStream, HttpResponse> openUrl(
+    @NonNull
+    static Pair<InputStream, HttpResponse> openUrl(
             @NonNull String url,
             boolean needsMarkResetSupport,
             @NonNull ITaskMonitor monitor,
@@ -332,7 +333,8 @@ class UrlOpener {
         return Pair.of(is, outResponse);
     }
 
-    private static @NonNull Pair<InputStream, HttpResponse> openWithHttpClient(
+    @NonNull
+    private static Pair<InputStream, HttpResponse> openWithHttpClient(
             @NonNull String url,
             @NonNull ITaskMonitor monitor,
             Header[] inHeaders)

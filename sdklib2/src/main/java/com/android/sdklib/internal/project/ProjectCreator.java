@@ -54,32 +54,32 @@ import javax.xml.xpath.XPathFactory;
 public class ProjectCreator {
 
     /** Version of the build.xml. Stored in version-tag */
-    private final static int MIN_BUILD_VERSION_TAG = 1;
+    private static final int MIN_BUILD_VERSION_TAG = 1;
 
     /** Package path substitution string used in template files, i.e. "PACKAGE_PATH" */
-    private final static String PH_JAVA_FOLDER = "PACKAGE_PATH";
+    private static final String PH_JAVA_FOLDER = "PACKAGE_PATH";
     /** Package name substitution string used in template files, i.e. "PACKAGE" */
-    private final static String PH_PACKAGE = "PACKAGE";
+    private static final String PH_PACKAGE = "PACKAGE";
     /** Activity name substitution string used in template files, i.e. "ACTIVITY_NAME".
      * @deprecated This is only used for older templates. For new ones see
      * {@link #PH_ACTIVITY_ENTRY_NAME}, and {@link #PH_ACTIVITY_CLASS_NAME}. */
     @Deprecated
-    private final static String PH_ACTIVITY_NAME = "ACTIVITY_NAME";
+    private static final String PH_ACTIVITY_NAME = "ACTIVITY_NAME";
     /** Activity name substitution string used in manifest templates, i.e. "ACTIVITY_ENTRY_NAME".*/
-    private final static String PH_ACTIVITY_ENTRY_NAME = "ACTIVITY_ENTRY_NAME";
+    private static final String PH_ACTIVITY_ENTRY_NAME = "ACTIVITY_ENTRY_NAME";
     /** Activity name substitution string used in class templates, i.e. "ACTIVITY_CLASS_NAME".*/
-    private final static String PH_ACTIVITY_CLASS_NAME = "ACTIVITY_CLASS_NAME";
+    private static final String PH_ACTIVITY_CLASS_NAME = "ACTIVITY_CLASS_NAME";
     /** Activity FQ-name substitution string used in class templates, i.e. "ACTIVITY_FQ_NAME".*/
-    private final static String PH_ACTIVITY_FQ_NAME = "ACTIVITY_FQ_NAME";
+    private static final String PH_ACTIVITY_FQ_NAME = "ACTIVITY_FQ_NAME";
     /** Original Activity class name substitution string used in class templates, i.e.
      * "ACTIVITY_TESTED_CLASS_NAME".*/
-    private final static String PH_ACTIVITY_TESTED_CLASS_NAME = "ACTIVITY_TESTED_CLASS_NAME";
+    private static final String PH_ACTIVITY_TESTED_CLASS_NAME = "ACTIVITY_TESTED_CLASS_NAME";
     /** Project name substitution string used in template files, i.e. "PROJECT_NAME". */
-    public final static String PH_PROJECT_NAME = "PROJECT_NAME";
+    public static final String PH_PROJECT_NAME = "PROJECT_NAME";
     /** Application icon substitution string used in the manifest template */
-    private final static String PH_ICON = "ICON";
+    private static final String PH_ICON = "ICON";
     /** Version tag name substitution string used in template files, i.e. "VERSION_TAG". */
-    private final static String PH_VERSION_TAG = "VERSION_TAG";
+    private static final String PH_VERSION_TAG = "VERSION_TAG";
 
     /** The xpath to find a project name in an Ant build file. */
     private static final String XPATH_PROJECT_NAME = "/project/@name";
@@ -88,7 +88,7 @@ public class ProjectCreator {
      * directory name, we're being a bit conservative on purpose: dot and space cannot be used. */
     public static final Pattern RE_PROJECT_NAME = Pattern.compile("[a-zA-Z0-9_]+");
     /** List of valid characters for a project name. Used for display purposes. */
-    public final static String CHARS_PROJECT_NAME = "a-z A-Z 0-9 _";
+    public static final String CHARS_PROJECT_NAME = "a-z A-Z 0-9 _";
 
     /** Pattern for characters accepted in a package name. A package is list of Java identifier
      * separated by a dot. We need to have at least one dot (e.g. a two-level package name).
@@ -96,13 +96,13 @@ public class ProjectCreator {
     public static final Pattern RE_PACKAGE_NAME =
         Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)+");
     /** List of valid characters for a project name. Used for display purposes. */
-    public final static String CHARS_PACKAGE_NAME = "a-z A-Z 0-9 _";
+    public static final String CHARS_PACKAGE_NAME = "a-z A-Z 0-9 _";
 
     /** Pattern for characters accepted in an activity name, which is a Java identifier. */
     public static final Pattern RE_ACTIVITY_NAME =
         Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
     /** List of valid characters for a project name. Used for display purposes. */
-    public final static String CHARS_ACTIVITY_NAME = "a-z A-Z 0-9 _";
+    public static final String CHARS_ACTIVITY_NAME = "a-z A-Z 0-9 _";
 
 
     public enum OutputLevel {

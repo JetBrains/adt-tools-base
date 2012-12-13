@@ -33,5 +33,6 @@ public interface IAndroidVersionProvider {
      * Returns the android version, for platform, add-on and doc packages.
      * Can be 0 if this is a local package of unknown api-level.
      */
-    public abstract @NonNull AndroidVersion getAndroidVersion();
+    @NonNull
+    public abstract AndroidVersion getAndroidVersion();
 }

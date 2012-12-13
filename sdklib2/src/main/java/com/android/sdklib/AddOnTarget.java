@@ -34,9 +34,9 @@ final class AddOnTarget implements IAndroidTarget {
      * String to compute hash for add-on targets.
      * Format is vendor:name:apiVersion
      * */
-    private final static String ADD_ON_FORMAT = "%s:%s:%s"; //$NON-NLS-1$
+    private static final String ADD_ON_FORMAT = "%s:%s:%s"; //$NON-NLS-1$
 
-    private final static class OptionalLibrary implements IOptionalLibrary {
+    private static final class OptionalLibrary implements IOptionalLibrary {
         private final String mJarName;
         private final String mJarPath;
         private final String mName;

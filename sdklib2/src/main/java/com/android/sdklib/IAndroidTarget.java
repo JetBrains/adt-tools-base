@@ -32,75 +32,75 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     public static final String PLATFORM_HASH_PREFIX = "android-";
 
     /** OS Path to the "android.jar" file. */
-    public final static int ANDROID_JAR         = 1;
+    public static final int ANDROID_JAR         = 1;
     /** OS Path to the "framework.aidl" file. */
-    public final static int ANDROID_AIDL        = 2;
+    public static final int ANDROID_AIDL        = 2;
     /** OS Path to the "samples" folder which contains sample projects. */
-    public final static int SAMPLES             = 4;
+    public static final int SAMPLES             = 4;
     /** OS Path to the "skins" folder which contains the emulator skins. */
-    public final static int SKINS               = 5;
+    public static final int SKINS               = 5;
     /** OS Path to the "templates" folder which contains the templates for new projects. */
-    public final static int TEMPLATES           = 6;
+    public static final int TEMPLATES           = 6;
     /** OS Path to the "data" folder which contains data & libraries for the SDK tools. */
-    public final static int DATA                = 7;
+    public static final int DATA                = 7;
     /** OS Path to the "attrs.xml" file. */
-    public final static int ATTRIBUTES          = 8;
+    public static final int ATTRIBUTES          = 8;
     /** OS Path to the "attrs_manifest.xml" file. */
-    public final static int MANIFEST_ATTRIBUTES = 9;
+    public static final int MANIFEST_ATTRIBUTES = 9;
     /** OS Path to the "data/layoutlib.jar" library. */
-    public final static int LAYOUT_LIB          = 10;
+    public static final int LAYOUT_LIB          = 10;
     /** OS Path to the "data/res" folder. */
-    public final static int RESOURCES           = 11;
+    public static final int RESOURCES           = 11;
     /** OS Path to the "data/fonts" folder. */
-    public final static int FONTS               = 12;
+    public static final int FONTS               = 12;
     /** OS Path to the "data/widgets.txt" file. */
-    public final static int WIDGETS             = 13;
+    public static final int WIDGETS             = 13;
     /** OS Path to the "data/activity_actions.txt" file. */
-    public final static int ACTIONS_ACTIVITY    = 14;
+    public static final int ACTIONS_ACTIVITY    = 14;
     /** OS Path to the "data/broadcast_actions.txt" file. */
-    public final static int ACTIONS_BROADCAST   = 15;
+    public static final int ACTIONS_BROADCAST   = 15;
     /** OS Path to the "data/service_actions.txt" file. */
-    public final static int ACTIONS_SERVICE     = 16;
+    public static final int ACTIONS_SERVICE     = 16;
     /** OS Path to the "data/categories.txt" file. */
-    public final static int CATEGORIES          = 17;
+    public static final int CATEGORIES          = 17;
     /** OS Path to the "sources" folder. */
-    public final static int SOURCES             = 18;
+    public static final int SOURCES             = 18;
     /** OS Path to the target specific docs */
-    public final static int DOCS                = 19;
+    public static final int DOCS                = 19;
     /** OS Path to the target's version of the aapt tool.
       * This is deprecated as aapt is now in the platform tools and not in the platform. */
     @Deprecated
-    public final static int AAPT                = 20;
+    public static final int AAPT                = 20;
     /** OS Path to the target's version of the aidl tool.
       * This is deprecated as aidl is now in the platform tools and not in the platform. */
     @Deprecated
-    public final static int AIDL                = 21;
+    public static final int AIDL                = 21;
     /** OS Path to the target's version of the dx too.<br>
      * This is deprecated as dx is now in the platform tools and not in the platform. */
     @Deprecated
-    public final static int DX                  = 22;
+    public static final int DX                  = 22;
     /** OS Path to the target's version of the dx.jar file.<br>
      * This is deprecated as dx.jar is now in the platform tools and not in the platform. */
     @Deprecated
-    public final static int DX_JAR              = 23;
+    public static final int DX_JAR              = 23;
     /** OS Path to the "ant" folder which contains the ant build rules (ver 2 and above) */
-    public final static int ANT                 = 24;
+    public static final int ANT                 = 24;
     /** OS Path to the Renderscript include folder.
       * This is deprecated as this is now in the platform tools and not in the platform. */
     @Deprecated
-    public final static int ANDROID_RS          = 25;
+    public static final int ANDROID_RS          = 25;
     /** OS Path to the Renderscript(clang) include folder.
       * This is deprecated as this is now in the platform tools and not in the platform. */
     @Deprecated
-    public final static int ANDROID_RS_CLANG    = 26;
+    public static final int ANDROID_RS_CLANG    = 26;
     /** OS Path to the "uiautomator.jar" file. */
-    public final static int UI_AUTOMATOR_JAR    = 27;
+    public static final int UI_AUTOMATOR_JAR    = 27;
 
     /**
      * Return value for {@link #getUsbVendorId()} meaning no USB vendor IDs are defined by the
      * Android target.
      */
-    public final static int NO_USB_ID = 0;
+    public static final int NO_USB_ID = 0;
 
     /** An optional library provided by an Android Target */
     public interface IOptionalLibrary {

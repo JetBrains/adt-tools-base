@@ -67,26 +67,26 @@ public class HardwareProperties {
     public static final String HW_PROXIMITY_SENSOR = "hw.sensors.proximity";
 
 
-    private final static Pattern PATTERN_PROP = Pattern.compile(
+    private static final Pattern PATTERN_PROP = Pattern.compile(
     "^([a-zA-Z0-9._-]+)\\s*=\\s*(.*)\\s*$");
 
     /** Property name in the generated avd config file; String; e.g. "hw.screen" */
-    private final static String HW_PROP_NAME = "name";              //$NON-NLS-1$
+    private static final String HW_PROP_NAME = "name";              //$NON-NLS-1$
     /** Property type, one of {@link HardwarePropertyType} */
-    private final static String HW_PROP_TYPE = "type";              //$NON-NLS-1$
+    private static final String HW_PROP_TYPE = "type";              //$NON-NLS-1$
     /** Default value of the property. String matching the property type. */
-    private final static String HW_PROP_DEFAULT = "default";        //$NON-NLS-1$
+    private static final String HW_PROP_DEFAULT = "default";        //$NON-NLS-1$
     /** User-visible name of the property. String. */
-    private final static String HW_PROP_ABSTRACT = "abstract";      //$NON-NLS-1$
+    private static final String HW_PROP_ABSTRACT = "abstract";      //$NON-NLS-1$
     /** User-visible description of the property. String. */
-    private final static String HW_PROP_DESC = "description";       //$NON-NLS-1$
+    private static final String HW_PROP_DESC = "description";       //$NON-NLS-1$
     /** Comma-separate values for a property of type "enum" */
-    private final static String HW_PROP_ENUM = "enum";              //$NON-NLS-1$
+    private static final String HW_PROP_ENUM = "enum";              //$NON-NLS-1$
 
-    public final static String BOOLEAN_YES = "yes";
-    public final static String BOOLEAN_NO = "no";
-    public final static String[] BOOLEAN_VALUES = new String[] { BOOLEAN_YES, BOOLEAN_NO };
-    public final static Pattern DISKSIZE_PATTERN = Pattern.compile("\\d+[MK]B"); //$NON-NLS-1$
+    public static final String BOOLEAN_YES = "yes";
+    public static final String BOOLEAN_NO = "no";
+    public static final String[] BOOLEAN_VALUES = new String[] { BOOLEAN_YES, BOOLEAN_NO };
+    public static final Pattern DISKSIZE_PATTERN = Pattern.compile("\\d+[MK]B"); //$NON-NLS-1$
 
     /** Represents the type of a hardware property value. */
     public enum HardwarePropertyType {

@@ -75,7 +75,7 @@ public class AvdManager {
         }
     }
 
-    private final static Pattern INI_LINE_PATTERN =
+    private static final Pattern INI_LINE_PATTERN =
         Pattern.compile("^([a-zA-Z0-9._-]+)\\s*=\\s*(.*)\\s*$");        //$NON-NLS-1$
 
     public static final String AVD_FOLDER_EXTENSION = ".avd";           //$NON-NLS-1$

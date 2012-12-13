@@ -1477,7 +1477,8 @@ public class ManifestMerger {
      * @param node The node or document where the error occurs. Must not be null.
      * @return A new non-null {@link FileAndLine} combining the file name and line number.
      */
-    private @NonNull FileAndLine xmlFileAndLine(@NonNull Node node) {
+    @NonNull
+    private FileAndLine xmlFileAndLine(@NonNull Node node) {
         return MergerXmlUtils.xmlFileAndLine(node);
     }
 

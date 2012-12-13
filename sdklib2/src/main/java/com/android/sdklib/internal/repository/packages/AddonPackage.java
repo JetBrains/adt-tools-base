@@ -406,22 +406,26 @@ public class AddonPackage extends MajorRevisionPackage
     }
 
     /** Returns the vendor id, a string, for add-on packages. */
-    public @NonNull String getVendorId() {
+    @NonNull
+    public String getVendorId() {
         return mVendorId;
     }
 
     /** Returns the vendor, a string for display purposes. */
-    public @NonNull String getDisplayVendor() {
+    @NonNull
+    public String getDisplayVendor() {
         return mVendorDisplay;
     }
 
     /** Returns the name id, a string, for add-on packages or for libraries. */
-    public @NonNull String getNameId() {
+    @NonNull
+    public String getNameId() {
         return mNameId;
     }
 
     /** Returns the name, a string for display purposes. */
-    public @NonNull String getDisplayName() {
+    @NonNull
+    public String getDisplayName() {
         return mDisplayName;
     }
 
@@ -436,7 +440,8 @@ public class AddonPackage extends MajorRevisionPackage
     }
 
     /** Returns the libs defined in this add-on. Can be an empty array but not null. */
-    public @NonNull Lib[] getLibs() {
+    @NonNull
+    public Lib[] getLibs() {
         return mLibs;
     }
 
@@ -452,8 +457,9 @@ public class AddonPackage extends MajorRevisionPackage
      *
      * @since sdk-addon-2.xsd
      */
+    @NonNull
     @Override
-    public @NonNull Pair<Integer, Integer> getLayoutlibVersion() {
+    public Pair<Integer, Integer> getLayoutlibVersion() {
         return mLayoutlibVersion.getLayoutlibVersion();
     }
 
@@ -463,8 +469,9 @@ public class AddonPackage extends MajorRevisionPackage
      * <p/>
      * {@inheritDoc}
      */
+    @NonNull
     @Override
-    public @NonNull String installId() {
+    public String installId() {
         return encodeAddonName();
     }
 

@@ -44,7 +44,8 @@ public class MajorRevision extends FullRevision {
      * @return A new non-null {@link MajorRevision}.
      * @throws NumberFormatException if the parsing failed.
      */
-    public static @NonNull MajorRevision parseRevision(@NonNull String revision)
+    @NonNull
+    public static MajorRevision parseRevision(@NonNull String revision)
             throws NumberFormatException {
 
         if (revision == null) {

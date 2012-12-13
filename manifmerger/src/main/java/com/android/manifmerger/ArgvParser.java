@@ -37,7 +37,7 @@ class ArgvParser extends CommandLineParser {
      *   or optional) for the given action.
      */
 
-    public final static String VERB_MERGE       = "merge";                          //$NON-NLS-1$
+    public static final String VERB_MERGE       = "merge";                          //$NON-NLS-1$
     public static final String KEY_OUT          = "out";                            //$NON-NLS-1$
     public static final String KEY_MAIN         = "main";                           //$NON-NLS-1$
     public static final String KEY_LIBS         = "libs";                           //$NON-NLS-1$
@@ -57,7 +57,7 @@ class ArgvParser extends CommandLineParser {
      * <li> an alternate form for the object (e.g. plural).
      * </ul>
      */
-    private final static String[][] ACTIONS = {
+    private static final String[][] ACTIONS = {
 
             { VERB_MERGE, NO_VERB_OBJECT,
                 "Merge two or more manifests." },
