@@ -2,8 +2,8 @@
 <template
     format="3"
     revision="2"
-    name="New Settings Activity"
-    description="Creates a new application settings activity."
+    name="Settings Activity"
+    description="Creates a new application settings activity that presents alternative layouts on handset and tablet-size screens."
     minApi="4"
     minBuildApi="11">
     <dependency name="android-support-v4" revision="8" />

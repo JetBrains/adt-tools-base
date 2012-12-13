@@ -2,7 +2,7 @@
 <template
     format="1"
     revision="1"
-    name="New Android Application"
+    name="Android Application"
     description="Creates a new Android application.">
     <dependency name="android-support-v4" revision="8" />
 

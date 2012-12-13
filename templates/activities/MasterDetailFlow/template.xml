@@ -2,9 +2,9 @@
 <template
     format="3"
     revision="2"
-    name="New Master/Detail Flow"
+    name="Master/Detail Flow"
     minApi="11"
-    description="Creates a new master/detail flow, which is two columns on tablets, and one column on smaller screens. This creates a master fragment, detail fragment, and two activities.">
+    description="Creates a new master/detail flow, allowing users to view a collection of objects as well as details for each object. This flow is presented using two columns on tablet-size screens and one column on handsets and smaller screens. This template creates two activities, a master fragment, and a detail fragment.">
     <dependency name="android-support-v4" revision="8" />
 
     <thumbs>

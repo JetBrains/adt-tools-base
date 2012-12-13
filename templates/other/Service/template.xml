@@ -2,8 +2,8 @@
 <template
     format="1"
     revision="1"
-    name="New Service"
-    description="Creates a new service class">
+    name="Service"
+    description="Creates a new service component and adds it to your Android manifest.">
 
     <parameter
         id="className"
