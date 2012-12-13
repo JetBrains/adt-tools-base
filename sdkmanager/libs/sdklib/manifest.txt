@@ -1,0 +1,1 @@
+Class-Path: layoutlib_api.jar common.jar guava-tools.jar commons-compress-1.0.jar httpclient-4.1.1.jar httpcore-4.1.jar httpmime-4.1.1.jar commons-logging-1.1.1.jar commons-codec-1.4.jar dvlib.jar

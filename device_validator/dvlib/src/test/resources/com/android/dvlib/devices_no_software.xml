@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<d:devices
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:d="http://schemas.android.com/sdk/devices/1">
+
+    <d:device>
+        <d:name>
+            Galaxy Nexus
+        </d:name>
+        <d:manufacturer>
+            Samsung
+        </d:manufacturer>
+        <d:hardware>
+            <d:screen>
+                <d:screen-size>normal</d:screen-size>
+                <d:diagonal-length>4.65</d:diagonal-length> <!-- In inches -->
+                <d:pixel-density>xhdpi</d:pixel-density>
+                <d:screen-ratio>long</d:screen-ratio>
+                <d:dimensions>
+                    <d:x-dimension>720</d:x-dimension>
+                    <d:y-dimension>1280</d:y-dimension>
+                </d:dimensions>
+                <d:xdpi>316</d:xdpi>
+                <d:ydpi>316</d:ydpi>
+                <d:touch>
+                    <d:multitouch>jazz-hands</d:multitouch>
+                    <d:mechanism>finger</d:mechanism>
+                    <d:screen-type>capacitive</d:screen-type>
+                </d:touch>
+            </d:screen>
+            <d:networking>
+                Bluetooth
+                Wifi
+                NFC
+            </d:networking>
+            <d:sensors>
+                Accelerometer
+                Barometer
+                Gyroscope
+                Compass
+                GPS
+                ProximitySensor
+            </d:sensors>
+            <d:mic>true</d:mic>
+            <d:camera>
+                <d:location>front</d:location>
+                <d:autofocus>true</d:autofocus>
+                <d:flash>false</d:flash>
+            </d:camera>
+            <d:camera>
+                <d:location>back</d:location>
+                <d:autofocus>true</d:autofocus>
+                <d:flash>true</d:flash>
+            </d:camera>
+            <d:keyboard>nokeys</d:keyboard>
+            <d:nav>nonav</d:nav>
+            <d:ram unit="GiB">1</d:ram>
+            <d:buttons>soft</d:buttons>
+            <d:internal-storage unit="GiB">16</d:internal-storage>
+            <d:removable-storage unit="KiB"></d:removable-storage>
+            <d:cpu>OMAP 4460</d:cpu> <!-- cpu type (Tegra3) freeform -->
+            <d:gpu>PowerVR SGX540</d:gpu>
+            <d:abi>
+                armeabi
+                armeabi-v7a
+            </d:abi>
+            <!--dock (car, desk, tv, none)-->
+            <d:dock>
+            </d:dock>
+            <!-- plugged in (never, charge, always) -->
+            <d:power-type>battery</d:power-type>
+        </d:hardware>
+        <d:state name="Portrait" default="true">
+            <d:description>The phone in portrait view</d:description>
+            <d:screen-orientation>port</d:screen-orientation>
+            <d:keyboard-state>keyssoft</d:keyboard-state>
+            <d:nav-state>nonav</d:nav-state>
+        </d:state>
+    </d:device>
+</d:devices>

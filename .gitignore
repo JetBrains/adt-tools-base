@@ -1,0 +1,7 @@
+*~
+*.bak
+*.pyc
+Thumbs.db
+*.class
+*.DS_Store
+.gradle

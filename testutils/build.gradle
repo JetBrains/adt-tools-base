@@ -1,0 +1,9 @@
+dependencies {
+    compile project(':common')
+    compile 'junit:junit:3.8.1'
+}
+
+sourceSets {
+    main.resources.srcDir 'src/main/java'
+    test.resources.srcDir 'src/test/java'
+}

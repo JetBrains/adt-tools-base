@@ -1,0 +1,71 @@
+dependencies {
+    compile project(':lint_api')
+    compile project(':lint_checks')
+
+    testCompile 'org.easymock:easymock:3.1'
+    testCompile 'junit:junit:3.8.1'
+}
+
+def getVersion() {
+    if (project.has("release")) {
+        return project.ext.baseVersion
+    }
+
+    return project.ext.baseVersion + '-SNAPSHOT'
+}
+
+version = getVersion()
+group = 'com.android.tools.lint'
+archivesBaseName = 'lint'
+
+sourceSets {
+    main.resources.srcDir 'src/main/java'
+    test.resources.srcDir 'src/test/java'
+}
+
+jar {
+    manifest { attributes 'Main-Class': 'com.android.tools.lint.Main' }
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment ->
+                if (!project.has("release")) {
+                    throw new StopExecutionException("uploadArchives must be called with the release.gradle init script")
+                }
+
+                signing.signPom(deployment)
+            }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: sonatypeUsername, password: sonatypePassword)
+            }
+
+            pom.project {
+                name 'Android Lint Tool'
+                description 'Lint tools. Both a Command line tool and a library to add lint features to other tools'
+                url 'http://tools.android.com'
+                inceptionYear '2007'
+
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        distribution 'repo'
+                    }
+                }
+
+                scm {
+                    url "https://android.googlesource.com/platform/sdk"
+                    connection "git://android.googlesource.com/platform/sdk.git"
+                }
+                developers {
+                    developer {
+                        name 'The Android Open Source Project'
+                    }
+                }
+            }
+        }
+    }
+}

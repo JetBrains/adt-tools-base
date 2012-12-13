@@ -1,0 +1,2 @@
+Main-Class: com.android.manifestmerger.Main
+Class-Path: sdklib.jar
