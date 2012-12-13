@@ -29,7 +29,7 @@ import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 
 /**
- * This represents a single client, usually a DAlvik VM process.
+ * This represents a single client, usually a Dalvik VM process.
  * <p/>This class gives access to basic client information, as well as methods to perform actions
  * on the client.
  * <p/>More detailed information, usually updated in real time, can be access through the
@@ -394,7 +394,7 @@ public class Client {
 
     /**
      * Enables or disables the Allocation tracker for this client.
-     * <p/>If enabled, the VM will start tracking allocation informations. A call to
+     * <p/>If enabled, the VM will start tracking allocation information. A call to
      * {@link #requestAllocationDetails()} will make the VM sends the information about all the
      * allocations that happened between the enabling and the request.
      * @param enable

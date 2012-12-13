@@ -37,6 +37,7 @@ public class ExitAction extends AbstractAction {
         this.frame = frame;
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         frame.dispose();
         System.exit(0);

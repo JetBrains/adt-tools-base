@@ -63,7 +63,7 @@ public class ClientData {
         ATTACHED,
         /** Debugger connection status: The listening port for debugger connection failed to listen.
          * No debugger will be able to connect. */
-        ERROR;
+        ERROR
     }
 
     public static enum AllocationTrackingStatus {
@@ -78,7 +78,7 @@ public class ClientData {
         /** Allocation tracking status: the {@link Client} is not tracking allocations. */
         OFF,
         /** Allocation tracking status: the {@link Client} is tracking allocations. */
-        ON;
+        ON
     }
 
     public static enum MethodProfilingStatus {
@@ -93,7 +93,7 @@ public class ClientData {
         /** Method profiling status: the {@link Client} is not profiling method calls. */
         OFF,
         /** Method profiling status: the {@link Client} is profiling method calls. */
-        ON;
+        ON
     }
 
     /**

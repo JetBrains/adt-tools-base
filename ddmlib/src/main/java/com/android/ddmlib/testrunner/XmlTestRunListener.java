@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -164,7 +165,8 @@ public class XmlTestRunListener implements ITestRunListener {
      * Return the current timestamp as a {@link String}.
      */
     String getTimestamp() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",
+                Locale.getDefault());
         TimeZone gmt = TimeZone.getTimeZone("UTC");
         dateFormat.setTimeZone(gmt);
         dateFormat.setLenient(true);

@@ -648,7 +648,7 @@ public class Location {
          */
         private boolean mConstructor;
 
-        private SearchHints(SearchDirection direction) {
+        private SearchHints(@NonNull SearchDirection direction) {
             super();
             mDirection = direction;
         }
@@ -659,7 +659,8 @@ public class Location {
          * @param direction the direction to search in for the pattern
          * @return a new @link SearchHints} object
          */
-        public static SearchHints create(SearchDirection direction) {
+        @NonNull
+        public static SearchHints create(@NonNull SearchDirection direction) {
             return new SearchHints(direction);
         }
 
@@ -668,6 +669,7 @@ public class Location {
 
          * @return this, for constructor chaining
          */
+        @NonNull
         public SearchHints matchWholeWord() {
             mWholeWord = true;
 
@@ -684,6 +686,7 @@ public class Location {
          *
          * @return this, for constructor chaining
          */
+        @NonNull
         public SearchHints matchJavaSymbol() {
             mJavaSymbol = true;
             mWholeWord = true;
@@ -702,6 +705,7 @@ public class Location {
          *
          * @return this, for constructor chaining
          */
+        @NonNull
         public SearchHints matchConstructor() {
             mConstructor = true;
             mWholeWord = true;

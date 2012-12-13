@@ -82,6 +82,6 @@ public class ActionBarIconGenerator extends GraphicGenerator {
         HOLO_DARK,
 
         /** Theme.HoloLight - a light version of the Honeycomb theme */
-        HOLO_LIGHT;
+        HOLO_LIGHT
     }
 }

@@ -34,8 +34,8 @@ final class HandleThread extends ChunkHandler {
     private static final HandleThread mInst = new HandleThread();
 
     // only read/written by requestThreadUpdates()
-    private static volatile boolean mThreadStatusReqRunning = false;
-    private static volatile boolean mThreadStackTraceReqRunning = false;
+    private static volatile boolean sThreadStatusReqRunning = false;
+    private static volatile boolean sThreadStackTraceReqRunning = false;
 
     private HandleThread() {}
 
@@ -314,7 +314,7 @@ final class HandleThread extends ChunkHandler {
      */
     static void requestThreadUpdate(final Client client) {
         if (client.isDdmAware() && client.isThreadUpdateEnabled()) {
-            if (mThreadStatusReqRunning) {
+            if (sThreadStatusReqRunning) {
                 Log.w("ddms", "Waiting for previous thread update req to finish");
                 return;
             }
@@ -322,14 +322,14 @@ final class HandleThread extends ChunkHandler {
             new Thread("Thread Status Req") {
                 @Override
                 public void run() {
-                    mThreadStatusReqRunning = true;
+                    sThreadStatusReqRunning = true;
                     try {
                         sendTHST(client);
                     } catch (IOException ioe) {
                         Log.d("ddms", "Unable to request thread updates from "
                                 + client + ": " + ioe.getMessage());
                     } finally {
-                        mThreadStatusReqRunning = false;
+                        sThreadStatusReqRunning = false;
                     }
                 }
             }.start();
@@ -338,7 +338,7 @@ final class HandleThread extends ChunkHandler {
 
     static void requestThreadStackCallRefresh(final Client client, final int threadId) {
         if (client.isDdmAware() && client.isThreadUpdateEnabled()) {
-            if (mThreadStackTraceReqRunning ) {
+            if (sThreadStackTraceReqRunning) {
                 Log.w("ddms", "Waiting for previous thread stack call req to finish");
                 return;
             }
@@ -346,14 +346,14 @@ final class HandleThread extends ChunkHandler {
             new Thread("Thread Status Req") {
                 @Override
                 public void run() {
-                    mThreadStackTraceReqRunning = true;
+                    sThreadStackTraceReqRunning = true;
                     try {
                         sendSTKL(client, threadId);
                     } catch (IOException ioe) {
                         Log.d("ddms", "Unable to request thread stack call updates from "
                                 + client + ": " + ioe.getMessage());
                     } finally {
-                        mThreadStackTraceReqRunning = false;
+                        sThreadStackTraceReqRunning = false;
                     }
                 }
             }.start();

@@ -318,7 +318,7 @@ public class DeviceSchema {
                     return;
                 }
                 String fileName = f.getName();
-                int extensionStart = fileName.lastIndexOf(".");
+                int extensionStart = fileName.lastIndexOf('.');
                 if (extensionStart == -1 || !fileName.substring(extensionStart + 1).equals("png")) {
                     validationError(relativePath + " is not a valid file type.");
                 }

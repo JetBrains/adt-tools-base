@@ -199,14 +199,14 @@ final class DeviceMonitor {
             } catch (AsynchronousCloseException ace) {
                 // this happens because of a call to Quit. We do nothing, and the loop will break.
             } catch (TimeoutException ioe) {
-                handleExpectioninMonitorLoop(ioe);
+                handleExpectionInMonitorLoop(ioe);
             } catch (IOException ioe) {
-                handleExpectioninMonitorLoop(ioe);
+                handleExpectionInMonitorLoop(ioe);
             }
         } while (mQuit == false);
     }
 
-    private void handleExpectioninMonitorLoop(Exception e) {
+    private void handleExpectionInMonitorLoop(Exception e) {
         if (mQuit == false) {
             if (e instanceof TimeoutException) {
                 Log.e("DeviceMonitor", "Adb connection Error: timeout");

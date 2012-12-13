@@ -48,7 +48,7 @@ public class TextRenderUtil {
         }
 
         BufferedImage tempImage = Util.newArgbBufferedImage(1, 1);
-        if (text == null || text.equals("")) {
+        if (text == null || text.isEmpty()) {
             return tempImage;
         }
 

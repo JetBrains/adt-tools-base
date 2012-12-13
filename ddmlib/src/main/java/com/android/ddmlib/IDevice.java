@@ -97,7 +97,7 @@ public interface IDevice {
         String getType() {
             return mType;
         }
-    };
+    }
 
     /**
      * Returns the serial number of the device.

@@ -16,6 +16,8 @@
 
 package com.android.tools.lint.checks;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Severity;
 
@@ -189,8 +191,11 @@ public class ApiLookupTest extends AbstractCheckTest {
         }
 
         @Override
-        public void log(Severity severity, Throwable exception, String format,
-                Object... args) {
+        public void log(
+                @NonNull Severity severity,
+                @Nullable Throwable exception,
+                @Nullable String format,
+                @Nullable Object... args) {
             if (format != null) {
                 mLogBuffer.append(String.format(format, args));
                 mLogBuffer.append('\n');

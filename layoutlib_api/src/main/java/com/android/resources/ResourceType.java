@@ -27,7 +27,7 @@ public enum ResourceType {
     ATTR("attr", "Attr"), //$NON-NLS-1$
     BOOL("bool", "Boolean"), //$NON-NLS-1$
     COLOR("color", "Color"), //$NON-NLS-1$
-    DECLARE_STYLEABLE("declare-styleable", "Declare Stylable"), //$NON-NLS-1$
+    DECLARE_STYLEABLE("declare-styleable", "Declare Styleable"), //$NON-NLS-1$
     DIMEN("dimen", "Dimension"), //$NON-NLS-1$
     DRAWABLE("drawable", "Drawable"), //$NON-NLS-1$
     FRACTION("fraction", "Fraction"), //$NON-NLS-1$

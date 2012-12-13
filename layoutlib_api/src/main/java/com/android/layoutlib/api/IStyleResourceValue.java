@@ -36,5 +36,6 @@ public interface IStyleResourceValue extends IResourceValue {
      *
      * @deprecated use {@link StyleResourceValue#findValue(String)}
      */
+    @Deprecated
     IResourceValue findItem(String name);
 }

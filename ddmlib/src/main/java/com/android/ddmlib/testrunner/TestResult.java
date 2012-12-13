@@ -113,17 +113,11 @@ public class TestResult {
         mEndTime = currentTimeMillis;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return Arrays.hashCode(new Object[] {mMetrics, mStackTrace, mStatus});
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {

@@ -181,6 +181,7 @@ class ImageEditorPanel extends JPanel {
         zoomSlider.setSnapToTicks(true);
         zoomSlider.putClientProperty("JComponent.sizeVariant", "small");
         zoomSlider.addChangeListener(new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent evt) {
                 viewer.setZoom(((JSlider) evt.getSource()).getValue());
             }
@@ -217,6 +218,7 @@ class ImageEditorPanel extends JPanel {
         zoomSlider.setSnapToTicks(true);
         zoomSlider.putClientProperty("JComponent.sizeVariant", "small");
         zoomSlider.addChangeListener(new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent evt) {
                 stretchesViewer.setScale(((JSlider) evt.getSource()).getValue() / 100.0f);
             }
@@ -239,6 +241,7 @@ class ImageEditorPanel extends JPanel {
         showLock.setSelected(true);
         showLock.putClientProperty("JComponent.sizeVariant", "small");
         showLock.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 viewer.setLockVisible(((JCheckBox) event.getSource()).isSelected());
             }
@@ -252,6 +255,7 @@ class ImageEditorPanel extends JPanel {
         showPatches.setForeground(Color.WHITE);
         showPatches.putClientProperty("JComponent.sizeVariant", "small");
         showPatches.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 viewer.setPatchesVisible(((JCheckBox) event.getSource()).isSelected());
             }
@@ -265,6 +269,7 @@ class ImageEditorPanel extends JPanel {
         showPadding.setForeground(Color.WHITE);
         showPadding.putClientProperty("JComponent.sizeVariant", "small");
         showPadding.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 stretchesViewer.setPaddingVisible(((JCheckBox) event.getSource()).isSelected());
             }
@@ -753,12 +758,14 @@ class ImageEditorPanel extends JPanel {
                 }
             });
             Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
+                @Override
                 public void eventDispatched(AWTEvent event) {
                     enableEraseMode((KeyEvent) event);                    
                 }
             }, AWTEvent.KEY_EVENT_MASK);
 
             checkButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent event) {
                     if (!showBadPatches) {
                         findBadPatches();

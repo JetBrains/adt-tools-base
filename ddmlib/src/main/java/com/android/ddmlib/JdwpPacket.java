@@ -61,7 +61,7 @@ final class JdwpPacket {
     private int mLength, mId, mFlags, mCmdSet, mCmd, mErrCode;
     private boolean mIsNew;
 
-    private static int mSerialId = 0x40000000;
+    private static int sSerialId = 0x40000000;
 
 
     /**
@@ -115,7 +115,7 @@ final class JdwpPacket {
      * We can't synchronize on an int, so we use a sync method.
      */
     private static synchronized int getNextSerial() {
-        return mSerialId++;
+        return sSerialId++;
     }
 
     /**

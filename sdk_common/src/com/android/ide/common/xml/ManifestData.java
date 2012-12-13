@@ -347,7 +347,7 @@ public final class ManifestData {
          * Returns true if the two instances have strictly different screen size support.
          * This means that there is no screen size that they both support.
          * @param support the other instance to compare to.
-         * @return true if they are stricly different.
+         * @return true if they are strictly different.
          */
         public boolean hasStrictlyDifferentScreenSupportAs(SupportsScreens support) {
             // since all the fields are guaranteed to be either Boolean.TRUE or Boolean.FALSE

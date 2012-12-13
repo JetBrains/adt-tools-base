@@ -16,6 +16,8 @@
 
 package com.android.tools.lint;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
@@ -154,8 +156,13 @@ public class LintCliXmlParserTest extends TestCase {
 
     private static class TestClient extends Main {
         @Override
-        public void report(Context context, Issue issue, Severity severity, Location location,
-                String message, Object data) {
+        public void report(
+                @NonNull Context context,
+                @NonNull Issue issue,
+                @NonNull Severity severity,
+                @Nullable Location location,
+                @NonNull String message,
+                @Nullable Object data) {
             System.out.println(location + ":" + message);
         }
     }

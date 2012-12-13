@@ -37,6 +37,7 @@ public class OpenAction extends BackgroundAction {
                 Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         executeBackgroundTask(frame.open(null));
     }

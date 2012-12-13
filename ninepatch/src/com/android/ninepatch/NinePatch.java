@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Locale;
 
 /**
  * Represents a 9-Patch bitmap.
@@ -71,7 +72,7 @@ public class NinePatch {
             return null;
         }
 
-        boolean is9Patch = fileUrl.getPath().toLowerCase().endsWith(EXTENSION_9PATCH);
+        boolean is9Patch = fileUrl.getPath().toLowerCase(Locale.US).endsWith(EXTENSION_9PATCH);
 
         return load(image, is9Patch, convert);
     }

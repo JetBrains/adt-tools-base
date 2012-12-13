@@ -355,7 +355,7 @@ public class ResourceResolver extends RenderResources {
      */
     private ResourceValue findResValue(ResourceType resType, String resName,
             boolean frameworkOnly) {
-        // map of ResouceValue for the given type
+        // map of ResourceValue for the given type
         Map<String, ResourceValue> typeMap;
 
         // if allowed, search in the project resources first.

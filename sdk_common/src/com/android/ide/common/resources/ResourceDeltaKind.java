@@ -22,5 +22,5 @@ package com.android.ide.common.resources;
  * This is similar, and can be easily mapped to Eclipse's integer constants in IResourceDelta.
  */
 public enum ResourceDeltaKind {
-    CHANGED, ADDED, REMOVED;
+    CHANGED, ADDED, REMOVED
 }

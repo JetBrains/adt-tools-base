@@ -47,7 +47,7 @@ public final class LogReceiver {
         public int   nsec;
         /** The entry's raw data. */
         public byte[] data;
-    };
+    }
 
     /**
      * Classes which implement this interface provide a method that deals

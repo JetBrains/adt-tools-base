@@ -179,7 +179,7 @@ final class AdbHelper {
     }
 
     /**
-     * Create an ASCII string preceeded by four hex digits. The opening "####"
+     * Create an ASCII string preceded by four hex digits. The opening "####"
      * is the length of the rest of the string, encoded as ASCII hex (case
      * doesn't matter). "port" and "host" are what we want to forward to. If
      * we're on the host side connecting into the device, "addrStr" should be
@@ -510,7 +510,7 @@ final class AdbHelper {
     /**
      * Creates a port forwarding between a local and a remote port.
      * @param adbSockAddr the socket address to connect to adb
-     * @param device the device on which to do the port fowarding
+     * @param device the device on which to do the port forwarding
      * @param localPortSpec specification of the local port to forward, should be of format
      *                             tcp:<port number>
      * @param remotePortSpec specification of the remote port to forward to, one of:
@@ -554,7 +554,7 @@ final class AdbHelper {
     /**
      * Remove a port forwarding between a local and a remote port.
      * @param adbSockAddr the socket address to connect to adb
-     * @param device the device on which to remove the port fowarding
+     * @param device the device on which to remove the port forwarding
      * @param localPortSpec specification of the local port that was forwarded, should be of format
      *                             tcp:<port number>
      * @param remotePortSpec specification of the remote port forwarded to, one of:

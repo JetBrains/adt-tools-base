@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.checks;
 
+import com.android.annotations.NonNull;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
@@ -40,7 +41,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     protected TestConfiguration getConfiguration(LintClient client, Project project) {
         return new TestConfiguration(client, project, null) {
             @Override
-            public boolean isEnabled(Issue issue) {
+            public boolean isEnabled(@NonNull Issue issue) {
                 return super.isEnabled(issue) && mEnabled.contains(issue);
             }
         };

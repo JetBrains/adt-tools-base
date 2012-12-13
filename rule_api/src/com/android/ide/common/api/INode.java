@@ -55,7 +55,7 @@ public interface INode {
      * Returns the bounds of this node.
      * <p/>
      * The bounds are valid when this node maps a view that is already rendered.
-     * Typically, if the node is the target of a drag'n'drop operation then you can be
+     * Typically, if the node is the target of a drag &amp; drop operation then you can be
      * guaranteed that its bounds are known and thus are valid.
      * <p/>
      * However the bounds are invalid (e.g. not known yet) for new XML elements

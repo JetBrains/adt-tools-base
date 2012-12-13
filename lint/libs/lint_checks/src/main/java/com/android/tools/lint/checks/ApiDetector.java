@@ -749,7 +749,7 @@ public class ApiDetector extends ResourceXmlDetector implements Detector.ClassSc
     }
 
     /**
-     * Return the {@code @TargeTApi} level to use for the given {@code classNode};
+     * Return the {@code @TargetApi} level to use for the given {@code classNode};
      * this will be the {@code @TargetApi} annotation on the class, or any outer
      * methods (for anonymous inner classes) or outer classes (for inner classes)
      * of the given class.

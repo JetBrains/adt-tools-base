@@ -22,7 +22,7 @@ package com.android.resources;
  */
 public enum Keyboard implements ResourceEnum {
     NOKEY("nokeys", null, "No Keys", "No keyboard"), //$NON-NLS-1$
-    QWERTY("qwerty", null, "Qwerty", "Qwerty keybard"), //$NON-NLS-1$
+    QWERTY("qwerty", null, "Qwerty", "Qwerty keyboard"), //$NON-NLS-1$
     TWELVEKEY("12key", "twelvekey", "12 Key", "12 key keyboard"); //$NON-NLS-1$ //$NON-NLS-2$
 
     private final String mValue, mValue2;
