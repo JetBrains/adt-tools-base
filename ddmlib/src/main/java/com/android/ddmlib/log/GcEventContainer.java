@@ -28,7 +28,7 @@ import com.android.ddmlib.log.LogReceiver.LogEntry;
  */
 final class GcEventContainer extends EventContainer {
     
-    public final static int GC_EVENT_TAG = 20001;
+    public static final int GC_EVENT_TAG = 20001;
 
     private String processId;
     private long gcTime;

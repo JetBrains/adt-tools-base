@@ -26,12 +26,12 @@ import java.security.InvalidParameterException;
  */
 public final class LogReceiver {
 
-    private final static int ENTRY_HEADER_SIZE = 20; // 2*2 + 4*4; see LogEntry.
+    private static final int ENTRY_HEADER_SIZE = 20; // 2*2 + 4*4; see LogEntry.
 
     /**
      * Represents a log entry and its raw data.
      */
-    public final static class LogEntry {
+    public static final class LogEntry {
         /*
          * See //device/include/utils/logger.h
          */

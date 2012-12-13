@@ -78,7 +78,7 @@ import java.util.Map.Entry;
 @SuppressWarnings("deprecation")
 public class LayoutLibrary {
 
-    public final static String CLASS_BRIDGE = "com.android.layoutlib.bridge.Bridge"; //$NON-NLS-1$
+    public static final String CLASS_BRIDGE = "com.android.layoutlib.bridge.Bridge"; //$NON-NLS-1$
 
     /** Link to the layout bridge */
     private final Bridge mBridge;

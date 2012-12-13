@@ -51,12 +51,12 @@ public class RuleAction implements Comparable<RuleAction> {
      * Character used to split multiple checked choices.
      * The pipe character "|" is used, to natively match Android resource flag separators.
      */
-    public final static String CHOICE_SEP = "|"; //$NON-NLS-1$
+    public static final String CHOICE_SEP = "|"; //$NON-NLS-1$
 
     /**
      * Same as {@link #CHOICE_SEP} but safe for use in regular expressions.
      */
-    public final static String CHOICE_SEP_PATTERN = Pattern.quote(CHOICE_SEP);
+    public static final String CHOICE_SEP_PATTERN = Pattern.quote(CHOICE_SEP);
 
     /**
      * The unique id of the action.
@@ -90,7 +90,7 @@ public class RuleAction implements Comparable<RuleAction> {
     /**
      * Special value which will insert a separator in the choices' submenu.
      */
-    public final static String SEPARATOR = "----";
+    public static final String SEPARATOR = "----";
 
     // Factories
 
@@ -688,14 +688,16 @@ public class RuleAction implements Comparable<RuleAction> {
             return mIconUrls;
         }
 
+        @NonNull
         @Override
-        public @NonNull List<String> getIds() {
+        public List<String> getIds() {
             ensureInitialized();
             return mIds;
         }
 
+        @NonNull
         @Override
-        public @NonNull List<String> getTitles() {
+        public List<String> getTitles() {
             ensureInitialized();
             return mTitles;
         }

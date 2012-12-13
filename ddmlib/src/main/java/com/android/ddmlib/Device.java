@@ -37,12 +37,12 @@ final class Device implements IDevice {
     private static final String DEVICE_MODEL_PROPERTY = "ro.product.model"; //$NON-NLS-1$
     private static final String DEVICE_MANUFACTURER_PROPERTY = "ro.product.manufacturer"; //$NON-NLS-1$
 
-    private final static int INSTALL_TIMEOUT = 2*60*1000; //2min
+    private static final int INSTALL_TIMEOUT = 2*60*1000; //2min
     private static final int BATTERY_TIMEOUT = 2*1000; //2 seconds
     private static final int GETPROP_TIMEOUT = 2*1000; //2 seconds
 
     /** Emulator Serial Number regexp. */
-    final static String RE_EMULATOR_SN = "emulator-(\\d+)"; //$NON-NLS-1$
+    static final String RE_EMULATOR_SN = "emulator-(\\d+)"; //$NON-NLS-1$
 
     /** Serial number of the device */
     private String mSerialNumber = null;

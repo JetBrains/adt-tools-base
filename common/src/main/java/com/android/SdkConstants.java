@@ -881,7 +881,7 @@ public final class SdkConstants {
     /** Extension for pre-processable images. Right now pngs */
     public static final String EXT_PNG = "png"; //$NON-NLS-1$
 
-    private final static String DOT = "."; //$NON-NLS-1$
+    private static final String DOT = "."; //$NON-NLS-1$
 
     /** Dot-Extension of the Application package Files, i.e. ".apk". */
     public static final String DOT_ANDROID_PACKAGE = DOT + EXT_ANDROID_PACKAGE;

@@ -32,13 +32,13 @@ public interface ILayoutResult {
     /**
      * Success return code
      */
-    final static int SUCCESS = 0;
+    static final int SUCCESS = 0;
 
     /**
      * Error return code, in which case an error message is guaranteed to be defined.
      * @see #getErrorMessage()
      */
-    final static int ERROR = 1;
+    static final int ERROR = 1;
 
     /**
      * Returns the result code.

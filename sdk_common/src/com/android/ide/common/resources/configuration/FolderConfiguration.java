@@ -32,7 +32,7 @@ import java.util.List;
  */
 public final class FolderConfiguration implements Comparable<FolderConfiguration> {
 
-    private final static ResourceQualifier[] DEFAULT_QUALIFIERS;
+    private static final ResourceQualifier[] DEFAULT_QUALIFIERS;
 
     static {
         // get the default qualifiers.
@@ -44,28 +44,28 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
 
     private final ResourceQualifier[] mQualifiers = new ResourceQualifier[INDEX_COUNT];
 
-    private final static int INDEX_COUNTRY_CODE          = 0;
-    private final static int INDEX_NETWORK_CODE          = 1;
-    private final static int INDEX_LANGUAGE              = 2;
-    private final static int INDEX_REGION                = 3;
-    private final static int INDEX_LAYOUTDIR             = 4;
-    private final static int INDEX_SMALLEST_SCREEN_WIDTH = 5;
-    private final static int INDEX_SCREEN_WIDTH          = 6;
-    private final static int INDEX_SCREEN_HEIGHT         = 7;
-    private final static int INDEX_SCREEN_LAYOUT_SIZE    = 8;
-    private final static int INDEX_SCREEN_RATIO          = 9;
-    private final static int INDEX_SCREEN_ORIENTATION    = 10;
-    private final static int INDEX_UI_MODE               = 11;
-    private final static int INDEX_NIGHT_MODE            = 12;
-    private final static int INDEX_PIXEL_DENSITY         = 13;
-    private final static int INDEX_TOUCH_TYPE            = 14;
-    private final static int INDEX_KEYBOARD_STATE        = 15;
-    private final static int INDEX_TEXT_INPUT_METHOD     = 16;
-    private final static int INDEX_NAVIGATION_STATE      = 17;
-    private final static int INDEX_NAVIGATION_METHOD     = 18;
-    private final static int INDEX_SCREEN_DIMENSION      = 19;
-    private final static int INDEX_VERSION               = 20;
-    private final static int INDEX_COUNT                 = 21;
+    private static final int INDEX_COUNTRY_CODE          = 0;
+    private static final int INDEX_NETWORK_CODE          = 1;
+    private static final int INDEX_LANGUAGE              = 2;
+    private static final int INDEX_REGION                = 3;
+    private static final int INDEX_LAYOUTDIR             = 4;
+    private static final int INDEX_SMALLEST_SCREEN_WIDTH = 5;
+    private static final int INDEX_SCREEN_WIDTH          = 6;
+    private static final int INDEX_SCREEN_HEIGHT         = 7;
+    private static final int INDEX_SCREEN_LAYOUT_SIZE    = 8;
+    private static final int INDEX_SCREEN_RATIO          = 9;
+    private static final int INDEX_SCREEN_ORIENTATION    = 10;
+    private static final int INDEX_UI_MODE               = 11;
+    private static final int INDEX_NIGHT_MODE            = 12;
+    private static final int INDEX_PIXEL_DENSITY         = 13;
+    private static final int INDEX_TOUCH_TYPE            = 14;
+    private static final int INDEX_KEYBOARD_STATE        = 15;
+    private static final int INDEX_TEXT_INPUT_METHOD     = 16;
+    private static final int INDEX_NAVIGATION_STATE      = 17;
+    private static final int INDEX_NAVIGATION_METHOD     = 18;
+    private static final int INDEX_SCREEN_DIMENSION      = 19;
+    private static final int INDEX_VERSION               = 20;
+    private static final int INDEX_COUNT                 = 21;
 
     /**
      * Creates a {@link FolderConfiguration} matching the folder segments.

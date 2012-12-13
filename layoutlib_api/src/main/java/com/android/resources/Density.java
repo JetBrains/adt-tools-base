@@ -31,7 +31,7 @@ public enum Density implements ResourceEnum {
     LOW("ldpi", "Low Density", 120, 4), //$NON-NLS-1$
     NODPI("nodpi", "No Density", 0, 4); //$NON-NLS-1$
 
-    public final static int DEFAULT_DENSITY = 160;
+    public static final int DEFAULT_DENSITY = 160;
 
     private final String mValue;
     private final String mDisplayValue;

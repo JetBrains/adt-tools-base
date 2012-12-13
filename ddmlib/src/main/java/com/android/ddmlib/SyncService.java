@@ -37,26 +37,26 @@ import java.util.ArrayList;
  */
 public final class SyncService {
 
-    private final static byte[] ID_OKAY = { 'O', 'K', 'A', 'Y' };
-    private final static byte[] ID_FAIL = { 'F', 'A', 'I', 'L' };
-    private final static byte[] ID_STAT = { 'S', 'T', 'A', 'T' };
-    private final static byte[] ID_RECV = { 'R', 'E', 'C', 'V' };
-    private final static byte[] ID_DATA = { 'D', 'A', 'T', 'A' };
-    private final static byte[] ID_DONE = { 'D', 'O', 'N', 'E' };
-    private final static byte[] ID_SEND = { 'S', 'E', 'N', 'D' };
+    private static final byte[] ID_OKAY = { 'O', 'K', 'A', 'Y' };
+    private static final byte[] ID_FAIL = { 'F', 'A', 'I', 'L' };
+    private static final byte[] ID_STAT = { 'S', 'T', 'A', 'T' };
+    private static final byte[] ID_RECV = { 'R', 'E', 'C', 'V' };
+    private static final byte[] ID_DATA = { 'D', 'A', 'T', 'A' };
+    private static final byte[] ID_DONE = { 'D', 'O', 'N', 'E' };
+    private static final byte[] ID_SEND = { 'S', 'E', 'N', 'D' };
 //    private final static byte[] ID_LIST = { 'L', 'I', 'S', 'T' };
 //    private final static byte[] ID_DENT = { 'D', 'E', 'N', 'T' };
 
-    private final static NullSyncProgresMonitor sNullSyncProgressMonitor =
+    private static final NullSyncProgresMonitor sNullSyncProgressMonitor =
             new NullSyncProgresMonitor();
 
-    private final static int S_ISOCK = 0xC000; // type: symbolic link
-    private final static int S_IFLNK = 0xA000; // type: symbolic link
-    private final static int S_IFREG = 0x8000; // type: regular file
-    private final static int S_IFBLK = 0x6000; // type: block device
-    private final static int S_IFDIR = 0x4000; // type: directory
-    private final static int S_IFCHR = 0x2000; // type: character device
-    private final static int S_IFIFO = 0x1000; // type: fifo
+    private static final int S_ISOCK = 0xC000; // type: symbolic link
+    private static final int S_IFLNK = 0xA000; // type: symbolic link
+    private static final int S_IFREG = 0x8000; // type: regular file
+    private static final int S_IFBLK = 0x6000; // type: block device
+    private static final int S_IFDIR = 0x4000; // type: directory
+    private static final int S_IFCHR = 0x2000; // type: character device
+    private static final int S_IFIFO = 0x1000; // type: fifo
 /*
     private final static int S_ISUID = 0x0800; // set-uid bit
     private final static int S_ISGID = 0x0400; // set-gid bit
@@ -75,8 +75,8 @@ public final class SyncService {
     private final static int S_IXOTH = 0x0001; // other: execute
 */
 
-    private final static int SYNC_DATA_MAX = 64*1024;
-    private final static int REMOTE_PATH_MAX_LENGTH = 1024;
+    private static final int SYNC_DATA_MAX = 64*1024;
+    private static final int REMOTE_PATH_MAX_LENGTH = 1024;
 
     /**
      * Classes which implement this interface provide methods that deal

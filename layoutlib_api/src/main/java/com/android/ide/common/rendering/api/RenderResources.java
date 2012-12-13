@@ -26,7 +26,7 @@ import com.android.resources.ResourceType;
  */
 public class RenderResources {
 
-    public final static String REFERENCE_NULL = "@null";
+    public static final String REFERENCE_NULL = "@null";
 
     public static class FrameworkResourceIdProvider {
         public Integer getId(ResourceType resType, String resName) {

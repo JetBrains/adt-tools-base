@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
  * Resource Qualifier for Screen Pixel Density.
  */
 public final class DensityQualifier extends EnumBasedResourceQualifier {
-    private final static Pattern sDensityLegacyPattern = Pattern.compile("^(\\d+)dpi$");//$NON-NLS-1$
+    private static final Pattern sDensityLegacyPattern = Pattern.compile("^(\\d+)dpi$");//$NON-NLS-1$
 
     public static final String NAME = "Density";
 

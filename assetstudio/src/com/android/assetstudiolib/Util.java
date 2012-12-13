@@ -406,7 +406,7 @@ public class Util {
      * An effect to apply in
      * {@link Util#drawEffects(java.awt.Graphics2D, java.awt.image.BufferedImage, int, int, Util.Effect[])}
      */
-    public static abstract class Effect {
+    public abstract static class Effect {
     }
 
     /**

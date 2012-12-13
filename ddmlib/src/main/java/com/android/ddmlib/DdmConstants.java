@@ -18,28 +18,28 @@ package com.android.ddmlib;
 
 public final class DdmConstants {
 
-    public final static int PLATFORM_UNKNOWN = 0;
-    public final static int PLATFORM_LINUX = 1;
-    public final static int PLATFORM_WINDOWS = 2;
-    public final static int PLATFORM_DARWIN = 3;
+    public static final int PLATFORM_UNKNOWN = 0;
+    public static final int PLATFORM_LINUX = 1;
+    public static final int PLATFORM_WINDOWS = 2;
+    public static final int PLATFORM_DARWIN = 3;
 
     /**
      * Returns current platform, one of {@link #PLATFORM_WINDOWS}, {@link #PLATFORM_DARWIN},
      * {@link #PLATFORM_LINUX} or {@link #PLATFORM_UNKNOWN}.
      */
-    public final static int CURRENT_PLATFORM = currentPlatform();
+    public static final int CURRENT_PLATFORM = currentPlatform();
 
     /**
      * Extension for Traceview files.
      */
-    public final static String DOT_TRACE = ".trace";
+    public static final String DOT_TRACE = ".trace";
 
     /** hprof-conv executable (with extension for the current OS)  */
-    public final static String FN_HPROF_CONVERTER = (CURRENT_PLATFORM == PLATFORM_WINDOWS) ?
+    public static final String FN_HPROF_CONVERTER = (CURRENT_PLATFORM == PLATFORM_WINDOWS) ?
             "hprof-conv.exe" : "hprof-conv"; //$NON-NLS-1$ //$NON-NLS-2$
 
     /** traceview executable (with extension for the current OS)  */
-    public final static String FN_TRACEVIEW = (CURRENT_PLATFORM == PLATFORM_WINDOWS) ?
+    public static final String FN_TRACEVIEW = (CURRENT_PLATFORM == PLATFORM_WINDOWS) ?
             "traceview.bat" : "traceview"; //$NON-NLS-1$ //$NON-NLS-2$
 
     /**

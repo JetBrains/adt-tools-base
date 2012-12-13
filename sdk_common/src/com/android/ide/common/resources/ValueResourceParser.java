@@ -32,15 +32,15 @@ import org.xml.sax.helpers.DefaultHandler;
 public final class ValueResourceParser extends DefaultHandler {
 
     // TODO: reuse definitions from somewhere else.
-    private final static String NODE_RESOURCES = "resources";
-    private final static String NODE_ITEM = "item";
-    private final static String ATTR_NAME = "name";
-    private final static String ATTR_TYPE = "type";
-    private final static String ATTR_PARENT = "parent";
-    private final static String ATTR_VALUE = "value";
+    private static final String NODE_RESOURCES = "resources";
+    private static final String NODE_ITEM = "item";
+    private static final String ATTR_NAME = "name";
+    private static final String ATTR_TYPE = "type";
+    private static final String ATTR_PARENT = "parent";
+    private static final String ATTR_VALUE = "value";
 
-    private final static String DEFAULT_NS_PREFIX = "android:";
-    private final static int DEFAULT_NS_PREFIX_LEN = DEFAULT_NS_PREFIX.length();
+    private static final String DEFAULT_NS_PREFIX = "android:";
+    private static final int DEFAULT_NS_PREFIX_LEN = DEFAULT_NS_PREFIX.length();
 
     public interface IValueResourceRepository {
         void addResourceValue(ResourceValue value);

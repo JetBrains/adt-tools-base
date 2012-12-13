@@ -53,7 +53,8 @@ public final class AndroidLocation {
      * @return an OS specific path, terminated by a separator.
      * @throws AndroidLocationException
      */
-    @NonNull public final static String getFolder() throws AndroidLocationException {
+    @NonNull
+    public static final String getFolder() throws AndroidLocationException {
         if (sPrefsLocation == null) {
             String home = findValidPath("ANDROID_SDK_HOME", "user.home", "HOME");
 
@@ -96,7 +97,7 @@ public final class AndroidLocation {
     /**
      * Resets the folder used to store android related files. For testing.
      */
-    public final static void resetFolder() {
+    public static final void resetFolder() {
         sPrefsLocation = null;
     }
 

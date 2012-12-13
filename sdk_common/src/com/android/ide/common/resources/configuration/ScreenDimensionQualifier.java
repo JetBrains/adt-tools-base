@@ -24,9 +24,9 @@ import java.util.regex.Pattern;
  */
 public final class ScreenDimensionQualifier extends ResourceQualifier {
     /** Default screen size value. This means the property is not set */
-    final static int DEFAULT_SIZE = -1;
+    static final int DEFAULT_SIZE = -1;
 
-    private final static Pattern sDimensionPattern = Pattern.compile(
+    private static final Pattern sDimensionPattern = Pattern.compile(
             "^(\\d+)x(\\d+)$"); //$NON-NLS-1$
 
     public static final String NAME = "Screen Dimension";

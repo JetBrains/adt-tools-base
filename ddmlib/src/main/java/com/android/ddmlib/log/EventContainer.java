@@ -75,7 +75,7 @@ public class EventContainer {
         LIST(4),
         TREE(5);
 
-        private final static Pattern STORAGE_PATTERN = Pattern.compile("^(\\d+)@(.*)$"); //$NON-NLS-1$
+        private static final Pattern STORAGE_PATTERN = Pattern.compile("^(\\d+)@(.*)$"); //$NON-NLS-1$
 
         private int mValue;
 

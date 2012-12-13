@@ -26,14 +26,14 @@ import java.util.Map;
  */
 public interface IDevice {
 
-    public final static String PROP_BUILD_VERSION = "ro.build.version.release";
-    public final static String PROP_BUILD_API_LEVEL = "ro.build.version.sdk";
-    public final static String PROP_BUILD_CODENAME = "ro.build.version.codename";
+    public static final String PROP_BUILD_VERSION = "ro.build.version.release";
+    public static final String PROP_BUILD_API_LEVEL = "ro.build.version.sdk";
+    public static final String PROP_BUILD_CODENAME = "ro.build.version.codename";
 
-    public final static String PROP_DEBUGGABLE = "ro.debuggable";
+    public static final String PROP_DEBUGGABLE = "ro.debuggable";
 
     /** Serial number of the first connected emulator. */
-    public final static String FIRST_EMULATOR_SN = "emulator-5554"; //$NON-NLS-1$
+    public static final String FIRST_EMULATOR_SN = "emulator-5554"; //$NON-NLS-1$
     /** Device change bit mask: {@link DeviceState} change. */
     public static final int CHANGE_STATE = 0x0001;
     /** Device change bit mask: {@link Client} list change. */
@@ -43,11 +43,11 @@ public interface IDevice {
 
     /** @deprecated Use {@link #PROP_BUILD_API_LEVEL}. */
     @Deprecated
-    public final static String PROP_BUILD_VERSION_NUMBER = PROP_BUILD_API_LEVEL;
+    public static final String PROP_BUILD_VERSION_NUMBER = PROP_BUILD_API_LEVEL;
 
-    public final static String MNT_EXTERNAL_STORAGE = "EXTERNAL_STORAGE"; //$NON-NLS-1$
-    public final static String MNT_ROOT = "ANDROID_ROOT"; //$NON-NLS-1$
-    public final static String MNT_DATA = "ANDROID_DATA"; //$NON-NLS-1$
+    public static final String MNT_EXTERNAL_STORAGE = "EXTERNAL_STORAGE"; //$NON-NLS-1$
+    public static final String MNT_ROOT = "ANDROID_ROOT"; //$NON-NLS-1$
+    public static final String MNT_DATA = "ANDROID_DATA"; //$NON-NLS-1$
 
     /**
      * The state of a device.

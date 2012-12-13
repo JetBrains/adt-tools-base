@@ -36,7 +36,7 @@ import java.util.List;
  */
 public class ResourceItem implements Comparable<ResourceItem> {
 
-    private final static Comparator<ResourceFile> sComparator = new Comparator<ResourceFile>() {
+    private static final Comparator<ResourceFile> sComparator = new Comparator<ResourceFile>() {
         @Override
         public int compare(ResourceFile file1, ResourceFile file2) {
             // get both FolderConfiguration and compare them

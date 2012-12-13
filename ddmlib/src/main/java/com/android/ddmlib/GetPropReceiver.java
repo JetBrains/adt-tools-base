@@ -24,9 +24,9 @@ import java.util.regex.Pattern;
  * {@link #GETPROP_COMMAND} on a device.
  */
 final class GetPropReceiver extends MultiLineReceiver {
-    final static String GETPROP_COMMAND = "getprop"; //$NON-NLS-1$
+    static final String GETPROP_COMMAND = "getprop"; //$NON-NLS-1$
 
-    private final static Pattern GETPROP_PATTERN = Pattern.compile("^\\[([^]]+)\\]\\:\\s*\\[(.*)\\]$"); //$NON-NLS-1$
+    private static final Pattern GETPROP_PATTERN = Pattern.compile("^\\[([^]]+)\\]\\:\\s*\\[(.*)\\]$"); //$NON-NLS-1$
 
     /** indicates if we need to read the first */
     private Device mDevice = null;
