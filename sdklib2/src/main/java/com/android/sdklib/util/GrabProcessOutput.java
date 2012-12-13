@@ -71,7 +71,7 @@ public class GrabProcessOutput {
      * Get the stderr/stdout outputs of a process and return when the process is done.
      * Both <b>must</b> be read or the process will block on windows.
      *
-     * @param process The process to get the ouput from.
+     * @param process The process to get the output from.
      * @param output Optional object to capture stdout/stderr.
      *      Note that on Windows capturing the output is not optional. If output is null
      *      the stdout/stderr will be captured and discarded.

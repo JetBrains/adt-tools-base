@@ -1077,7 +1077,7 @@ public class SdkManager {
     /**
      * Converts a string representation of an hexadecimal ID into an int.
      * @param value the string to convert.
-     * @return the int value, or {@link IAndroidTarget#NO_USB_ID} if the convertion failed.
+     * @return the int value, or {@link IAndroidTarget#NO_USB_ID} if the conversion failed.
      */
     private static int convertId(String value) {
         if (value != null && value.length() > 0) {
@@ -1266,7 +1266,7 @@ public class SdkManager {
         @NonNull
         private final File mDir;
         private final long mDirModifiedTS;
-        private final long mPropsModifedTS;
+        private final long mPropsModifiedTS;
         private final long mPropsChecksum;
 
         /**
@@ -1279,22 +1279,22 @@ public class SdkManager {
             mDirModifiedTS = dir.lastModified();
 
             // Capture some info about the source.properties file if it exists.
-            // We use propsModifedTS == 0 to mean there is no props file.
+            // We use propsModifiedTS == 0 to mean there is no props file.
             long propsChecksum = 0;
-            long propsModifedTS = 0;
+            long propsModifiedTS = 0;
             File props = new File(dir, SdkConstants.FN_SOURCE_PROP);
             if (props.isFile()) {
-                propsModifedTS = props.lastModified();
+                propsModifiedTS = props.lastModified();
                 propsChecksum = getFileChecksum(props);
             }
-            mPropsModifedTS = propsModifedTS;
+            mPropsModifiedTS = propsModifiedTS;
             mPropsChecksum = propsChecksum;
         }
 
         /**
          * Checks whether the directory/source.properties attributes have changed.
          *
-         * @return True if the directory modified timestampd or
+         * @return True if the directory modified timestamp or
          *  its source.property files have changed.
          */
         public boolean hasChanged() {
@@ -1310,8 +1310,8 @@ public class SdkManager {
             File props = new File(mDir, SdkConstants.FN_SOURCE_PROP);
 
             // The directory did not have a props file if target was null or
-            // if mPropsModifedTS is 0.
-            boolean hadProps = mPropsModifedTS != 0;
+            // if mPropsModifiedTS is 0.
+            boolean hadProps = mPropsModifiedTS != 0;
 
             // Was there a props file and it vanished, or there wasn't and there's one now?
             if (hadProps != props.isFile()) {
@@ -1319,8 +1319,8 @@ public class SdkManager {
             }
 
             if (hadProps) {
-                // Has source.props file modified-timestampd changed?
-                if (mPropsModifedTS != props.lastModified()) {
+                // Has source.props file modified-timestamp changed?
+                if (mPropsModifiedTS != props.lastModified()) {
                     return true;
                 }
                 // Had the content of source.props changed?
@@ -1353,7 +1353,7 @@ public class SdkManager {
                     if (fis != null) {
                         fis.close();
                     }
-                } catch(Exception ignore) {};
+                } catch(Exception ignore) {}
             }
             return 0;
         }
@@ -1362,9 +1362,9 @@ public class SdkManager {
         @Override
         public String toString() {
             String s = String.format("<DirInfo %1$s TS=%2$d", mDir, mDirModifiedTS);  //$NON-NLS-1$
-            if (mPropsModifedTS != 0) {
+            if (mPropsModifiedTS != 0) {
                 s += String.format(" | Props TS=%1$d, Chksum=%2$s",                   //$NON-NLS-1$
-                        mPropsModifedTS, mPropsChecksum);
+                        mPropsModifiedTS, mPropsChecksum);
             }
             return s + ">";                                                           //$NON-NLS-1$
         }

@@ -239,7 +239,7 @@ public class PlatformToolPackage extends FullRevisionPackage {
                 return true;
             } else {
                 // however previews can only match previews by default, unless we ignore that check.
-                return ((PlatformToolPackage) pkg).getRevision().isPreview() ==
+                return pkg.getRevision().isPreview() ==
                     getRevision().isPreview();
             }
         }

@@ -93,7 +93,7 @@ public abstract class MergerLog {
                             String.format(message, msgParams));
                     break;
                 }
-            };
+            }
         };
     }
 
@@ -144,7 +144,7 @@ public abstract class MergerLog {
                 }
 
                 parentLog.conflict(severity, location1, location2, message, msgParams);
-            };
+            }
         };
     }
 

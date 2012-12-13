@@ -169,7 +169,7 @@ public class SdkSourceProperties {
             // Nothing was loaded. Initialize the storage with a version
             // identified. This isn't currently checked back, but we might
             // want it later if we decide to change the way this works.
-            // The version key is choosen on purpose to not match any valid URL.
+            // The version key is chosen on purpose to not match any valid URL.
             sSourcesProperties.setProperty(KEY_VERSION, "1"); //$NON-NLS-1$ //$NON-NLS-2$
         }
     }

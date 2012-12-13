@@ -86,7 +86,7 @@ public interface ITaskMonitor extends ILogger {
     public void setProgressMax(int max);
 
     /**
-     * Returns the max valie of the progress bar, as last set by {@link #setProgressMax(int)}.
+     * Returns the max value of the progress bar, as last set by {@link #setProgressMax(int)}.
      * Returns 0 if the max has never been set yet.
      */
     public int getProgressMax();

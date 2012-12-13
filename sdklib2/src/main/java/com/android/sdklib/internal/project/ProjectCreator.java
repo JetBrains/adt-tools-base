@@ -112,7 +112,7 @@ public class ProjectCreator {
          * error but not warnings. */
         NORMAL,
         /** Verbose mode. Project creation will display what's being done, errors and warnings. */
-        VERBOSE;
+        VERBOSE
     }
 
     /**

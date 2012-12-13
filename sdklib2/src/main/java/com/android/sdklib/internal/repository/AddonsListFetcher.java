@@ -511,7 +511,7 @@ public class AddonsListFetcher {
     }
 
     /**
-     * Parse all sites defined in the Addaons list XML and returns an array of sites.
+     * Parse all sites defined in the Addons list XML and returns an array of sites.
      *
      * @param doc The XML DOM to parse.
      * @param nsUri The addons-list schema URI of the document.

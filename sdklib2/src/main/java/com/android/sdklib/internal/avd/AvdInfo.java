@@ -51,7 +51,7 @@ public final class AvdInfo implements Comparable<AvdInfo> {
         /** The {@link Device} this AVD is based on has changed from its original configuration*/
         ERROR_DEVICE_CHANGED,
         /** The {@link Device} this AVD is based on is no longer available */
-        ERROR_DEVICE_MISSING;
+        ERROR_DEVICE_MISSING
     }
 
     private final String mName;

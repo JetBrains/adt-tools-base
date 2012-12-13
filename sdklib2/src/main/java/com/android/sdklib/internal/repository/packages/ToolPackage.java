@@ -254,8 +254,7 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
                 return true;
             } else {
                 // however previews can only match previews by default, unless we ignore that check.
-                return ((ToolPackage) pkg).getRevision().isPreview() ==
-                    getRevision().isPreview();
+                return pkg.getRevision().isPreview() == getRevision().isPreview();
             }
         }
         return false;

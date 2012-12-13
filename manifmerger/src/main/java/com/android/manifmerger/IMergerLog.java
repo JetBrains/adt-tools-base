@@ -78,7 +78,7 @@ public interface IMergerLog {
             Object...msgParams);
 
     /**
-     * Information about the file and line number where an error ocurred.
+     * Information about the file and line number where an error occurred.
      */
     public static class FileAndLine {
         private final String mFilePath;

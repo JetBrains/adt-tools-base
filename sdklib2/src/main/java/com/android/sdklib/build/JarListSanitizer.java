@@ -218,7 +218,7 @@ public class JarListSanitizer {
 
         Map<String, List<JarEntity>> nameMap = new HashMap<String, List<JarEntity>>();
 
-        // update the current jar list if needed, while building a 2ndary map based on
+        // update the current jar list if needed, while building a secondary map based on
         // filename only.
         for (File file : files) {
             String path = file.getAbsolutePath();
@@ -242,7 +242,7 @@ public class JarListSanitizer {
         }
 
         try {
-            // now look for dups. Each name list can have more than one file but they must
+            // now look for duplicates. Each name list can have more than one file but they must
             // have the same size/sha1
             for (Entry<String, List<JarEntity>> entry : nameMap.entrySet()) {
                 List<JarEntity> list = entry.getValue();
@@ -369,7 +369,7 @@ public class JarListSanitizer {
             writer = new OutputStreamWriter(
                     new FileOutputStream(cacheFile), "UTF-8");
 
-            writer.write("# cache for current jar dependecy. DO NOT EDIT.\n");
+            writer.write("# cache for current jar dependency. DO NOT EDIT.\n");
             writer.write("# format is <lastModified> <length> <SHA-1> <path>\n");
             writer.write("# Encoding is UTF-8\n");
 

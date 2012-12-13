@@ -90,7 +90,7 @@ public class DeviceManager {
         /**
          * There is no device with the given name and manufacturer
          */
-        MISSING;
+        MISSING
     }
 
     /**

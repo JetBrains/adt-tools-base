@@ -738,7 +738,7 @@ public class ManifestMerger {
     /**
      * Merge elements as identified by their key name attribute.
      * The element must have an option boolean "required" attribute which can be either "true" or
-     * "false". Default is true if the attribute is missisng. When merging, a "false" is superseded
+     * "false". Default is true if the attribute is missing. When merging, a "false" is superseded
      * by a "true" (explicit or implicit).
      * <p/>
      * When merging, this does NOT merge any other attributes than {@code keyAttr} and

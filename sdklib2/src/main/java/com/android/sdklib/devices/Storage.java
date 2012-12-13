@@ -109,7 +109,7 @@ public class Storage {
      * with no loss of accuracy.
      * @return The most appropriate {@link Unit}.
      */
-    public Unit getApproriateUnits() {
+    public Unit getAppropriateUnits() {
         Unit optimalUnit = Unit.B;
         for(Unit unit : Unit.values()) {
             if(mNoBytes % unit.getNumberOfBytes() == 0) {
