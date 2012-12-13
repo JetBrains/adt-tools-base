@@ -1,0 +1,26 @@
+<component name="libraryTable">
+  <library name="http-client">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/commons-codec-1.4.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/commons-logging-1.1.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/httpclient-4.1.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/httpcore-4.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/httpmime-4.1.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/src/commons-codec-1.4-src.zip!/commons-codec-1.4-src/src/java" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/src/commons-logging-1.1.1-src.zip!/commons-logging-1.1.1-src/src/java" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/src/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient/src/main/java" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/src/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient-cache/src/main/java" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/src/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpmime/src/main/java" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/src/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient-benchmark/src/main/java" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/src/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient-contrib/src/main/java" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/src/httpcomponents-core-4.1-src.zip!/httpcomponents-core-4.1/httpcore-contrib/src/main/java" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/src/httpcomponents-core-4.1-src.zip!/httpcomponents-core-4.1/httpcore-nio/src/main/java" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/src/httpcomponents-core-4.1-src.zip!/httpcomponents-core-4.1/httpcore-benchmark/src/main/java" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/src/httpcomponents-core-4.1-src.zip!/httpcomponents-core-4.1/httpcore/src/main/java" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/http-client/src/httpcomponents-core-4.1-src.zip!/httpcomponents-core-4.1/httpcore-ab/src/main/java" />
+    </SOURCES>
+  </library>
+</component>

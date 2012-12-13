@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="asm-tools">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/asm-tools/asm-4.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/asm-tools/asm-analysis-4.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/asm-tools/asm-tree-4.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/asm-tools/src-4.0.zip!/" />
+    </SOURCES>
+  </library>
+</component>

@@ -1,0 +1,4 @@
+eclipse.preferences.version=1
+org.moreunit.prefixes=
+org.moreunit.unitsourcefolder=sdk_common-tests\:src\:sdk_common\:src
+org.moreunit.useprojectsettings=true
