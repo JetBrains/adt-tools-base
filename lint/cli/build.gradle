@@ -4,6 +4,7 @@ dependencies {
 
     testCompile 'org.easymock:easymock:3.1'
     testCompile 'junit:junit:3.8.1'
+    testCompile project(':testutils')
 }
 
 def getVersion() {
@@ -39,7 +40,7 @@ uploadArchives {
             }
 
             repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: sonatypeUsername, password: sonatypePassword)
+                authentication(userName: project.ext.sonatypeUsername, password: project.ext.sonatypePassword)
             }
 
             pom.project {
@@ -57,8 +58,8 @@ uploadArchives {
                 }
 
                 scm {
-                    url "https://android.googlesource.com/platform/sdk"
-                    connection "git://android.googlesource.com/platform/sdk.git"
+                    url "https://android.googlesource.com/platform/tools/base"
+                    connection "git://android.googlesource.com/platform/tools/base.git"
                 }
                 developers {
                     developer {
