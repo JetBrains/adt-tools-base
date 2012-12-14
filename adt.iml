@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/.eclipse" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea" />
+      <excludeFolder url="file://$MODULE_DIR$/apps" />
+      <excludeFolder url="file://$MODULE_DIR$/assetstudio/.settings" />
+      <excludeFolder url="file://$MODULE_DIR$/common/.settings" />
+      <excludeFolder url="file://$MODULE_DIR$/ddmlib/.settings" />
+      <excludeFolder url="file://$MODULE_DIR$/files" />
+      <excludeFolder url="file://$MODULE_DIR$/jobb" />
+      <excludeFolder url="file://$MODULE_DIR$/layoutlib_api/.settings" />
+      <excludeFolder url="file://$MODULE_DIR$/manifmerger/.settings" />
+      <excludeFolder url="file://$MODULE_DIR$/misc" />
+      <excludeFolder url="file://$MODULE_DIR$/rule_api/.settings" />
+      <excludeFolder url="file://$MODULE_DIR$/rule_api/bin" />
+      <excludeFolder url="file://$MODULE_DIR$/sdk_common/.settings" />
+      <excludeFolder url="file://$MODULE_DIR$/sdklib2/.settings" />
+      <excludeFolder url="file://$MODULE_DIR$/sdkstats/.settings" />
+      <excludeFolder url="file://$MODULE_DIR$/templates" />
+      <excludeFolder url="file://$MODULE_DIR$/testutils/.settings" />
+    </content>
+    <orderEntry type="jdk" jdkName="1.6" jdkType="JavaSDK" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
+

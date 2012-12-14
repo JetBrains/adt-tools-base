@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry kind="src" path="src/test/java"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/common"/>
+	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/commons-compress/commons-compress-1.0.jar"/>
+	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/http-client/commons-codec-1.4.jar"/>
+	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/http-client/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/http-client/httpclient-4.1.1.jar" sourcepath="/ANDROID_SRC/prebuilts/tools/common/http-client/src/httpcomponents-client-4.1.1-src.zip"/>
+	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/http-client/httpcore-4.1.jar" sourcepath="/ANDROID_SRC/prebuilts/tools/common/http-client/src/httpcomponents-core-4.1-src.zip"/>
+	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/http-client/httpmime-4.1.1.jar" sourcepath="/ANDROID_SRC/prebuilts/tools/common/http-client/src/httpcomponents-client-4.1.1-src.zip"/>
+	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/guava-tools/guava-13.0.1.jar" sourcepath="/ANDROID_SRC/prebuilts/tools/common/guava-tools/src.zip"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/dvlib"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/layoutlib_api"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

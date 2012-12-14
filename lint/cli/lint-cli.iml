@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/.settings" />
+      <excludeFolder url="file://$MODULE_DIR$/src/test/.settings" />
+    </content>
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="module" module-name="common" />
+    <orderEntry type="module" module-name="lint-api" />
+    <orderEntry type="module" module-name="lint-checks" />
+    <orderEntry type="module" module-name="testutils" scope="TEST" />
+    <orderEntry type="module" module-name="layoutlib-api" scope="TEST" />
+    <orderEntry type="library" scope="TEST" name="junit3-tools" level="project" />
+  </component>
+</module>
+
