@@ -502,7 +502,7 @@ public class SdkStats {
     /**
      * Parses all valid platforms found in the XML.
      * Changes the stats array returned by {@link #getStats()}
-     * (also returns the value directly, useful for unti tests.)
+     * (also returns the value directly, useful for unit tests.)
      */
     @VisibleForTesting(visibility=Visibility.PRIVATE)
     protected SparseArray<PlatformStat> parseStatsDocument(

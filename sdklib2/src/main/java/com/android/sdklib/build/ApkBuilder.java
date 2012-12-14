@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
  * Class making the final apk packaging.
  * The inputs are:
  * - packaged resources (output of aapt)
- * - code file (ouput of dx)
+ * - code file (output of dx)
  * - Java resources coming from the project, its libraries, and its jar files
  * - Native libraries from the project or its library.
  *

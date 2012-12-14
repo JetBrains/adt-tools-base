@@ -193,7 +193,7 @@ public final class ApkBuilderMain {
         System.err.println("    -v      Verbose.");
         System.err.println("    -d      Debug Mode: Includes debug files in the APK file.");
         System.err.println("    -u      Creates an unsigned package.");
-        System.err.println("    -storetype Forces the KeyStore type. If ommited the default is used.");
+        System.err.println("    -storetype Forces the KeyStore type. If omitted the default is used.");
         System.err.println("");
         System.err.println("    -z      Followed by the path to a zip archive.");
         System.err.println("            Adds the content of the application package.");

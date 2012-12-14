@@ -61,7 +61,7 @@ public enum SdkSourceCategory implements IDescription {
     }
 
     /**
-     * Returns the UI-visible name of the cateogry. Displayed in the available package tree.
+     * Returns the UI-visible name of the category. Displayed in the available package tree.
      * Cannot be null nor empty.
      */
     public String getUiName() {

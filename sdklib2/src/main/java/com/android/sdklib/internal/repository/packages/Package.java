@@ -89,7 +89,7 @@ public abstract class Package implements IDescription, Comparable<Package> {
          *  TODO: this name is confusing. We need to dig deeper. */
         NOT_UPDATE,
         /** Means that the 2 packages are the same thing, and one is the upgrade of the other */
-        UPDATE;
+        UPDATE
     }
 
     /**
@@ -480,7 +480,7 @@ public abstract class Package implements IDescription, Comparable<Package> {
      * Should not be empty. Must never be null.
      * <p/>
      * Note that this is the "base" name for the package
-     * with no specific revision nor API mentionned.
+     * with no specific revision nor API mentioned.
      * In contrast, {@link #getShortDescription()} should be used if you want more details
      * such as the package revision number or the API, if applicable.
      */

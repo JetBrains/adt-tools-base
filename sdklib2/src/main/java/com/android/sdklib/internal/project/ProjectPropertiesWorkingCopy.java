@@ -37,7 +37,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 
 /**
- * A modifyable and saveable copy of a {@link ProjectProperties}.
+ * A modifiable and savable copy of a {@link ProjectProperties}.
  * <p/>This copy gives access to modification method such as {@link #setProperty(String, String)}
  * and {@link #removeProperty(String)}.
  *

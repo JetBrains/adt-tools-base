@@ -53,7 +53,7 @@ public class Archive implements IDescription, Comparable<Archive> {
         private final String mAlgorithmName;
 
         /**
-         * Constructs a {@link ChecksumType} with the algorigth name
+         * Constructs a {@link ChecksumType} with the algorithm name
          * suitable for {@link MessageDigest#getInstance(String)}.
          * <p/>
          * These names are officially documented at

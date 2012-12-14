@@ -28,7 +28,7 @@ import java.lang.reflect.Array;
  */
 /* package */ class ArrayUtils
 {
-    private static Object[] EMPTY = new Object[0];
+    private static final Object[] EMPTY = new Object[0];
     private static final int CACHE_SIZE = 73;
     private static Object[] sCache = new Object[CACHE_SIZE];
 

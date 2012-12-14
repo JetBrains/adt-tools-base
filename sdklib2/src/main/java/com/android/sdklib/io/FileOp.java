@@ -57,9 +57,9 @@ public class FileOp implements IFileOp {
                     boolean.class, boolean.class);
 
         } catch (SecurityException e) {
-            // do nothing we'll use chdmod instead
+            // do nothing we'll use chmod instead
         } catch (NoSuchMethodException e) {
-            // do nothing we'll use chdmod instead
+            // do nothing we'll use chmod instead
         }
     }
 
@@ -178,9 +178,6 @@ public class FileOp implements IFileOp {
             });
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setReadOnly(File file) {
         file.setReadOnly();

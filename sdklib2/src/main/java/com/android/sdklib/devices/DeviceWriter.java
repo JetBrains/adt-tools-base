@@ -177,7 +177,7 @@ public class DeviceWriter {
         addElement(doc, hardware, DeviceSchema.NODE_KEYBOARD, hw.getKeyboard().getResourceValue());
         addElement(doc, hardware, DeviceSchema.NODE_NAV, hw.getNav().getResourceValue());
 
-        Storage.Unit unit = hw.getRam().getApproriateUnits();
+        Storage.Unit unit = hw.getRam().getAppropriateUnits();
         Element ram = addElement(doc, hardware, DeviceSchema.NODE_RAM,
                 Long.toString(hw.getRam().getSizeAsUnit(unit)));
         ram.setAttribute(DeviceSchema.ATTR_UNIT, unit.toString());
@@ -193,7 +193,7 @@ public class DeviceWriter {
 
         StringBuilder sb = new StringBuilder();
         for (UiMode u : hw.getSupportedUiModes()) {
-            sb.append("\n" + u.getResourceValue());
+            sb.append('\n').append(u.getResourceValue());
         }
         addElement(doc, hardware, DeviceSchema.NODE_DOCK, sb.toString());
 
@@ -261,10 +261,10 @@ public class DeviceWriter {
     }
 
     private static Element addElement(Document doc, Element parent, String tag,
-            Collection<? extends Object> content) {
+            Collection<?> content) {
         StringBuilder sb = new StringBuilder();
         for (Object o : content) {
-            sb.append("\n" + o.toString());
+            sb.append('\n').append(o.toString());
         }
         return addElement(doc, parent,  tag, sb.toString());
     }
@@ -279,14 +279,14 @@ public class DeviceWriter {
         // Get the lowest common unit (so if one piece of storage is 128KiB and another is 1MiB,
         // use KiB for units)
         for(Storage storage : content) {
-            if(storage.getApproriateUnits().getNumberOfBytes() < unit.getNumberOfBytes()) {
-                unit = storage.getApproriateUnits();
+            if(storage.getAppropriateUnits().getNumberOfBytes() < unit.getNumberOfBytes()) {
+                unit = storage.getAppropriateUnits();
             }
         }
 
         StringBuilder sb = new StringBuilder();
         for(Storage storage : content) {
-            sb.append("\n" + storage.getSizeAsUnit(unit));
+            sb.append('\n').append(storage.getSizeAsUnit(unit));
         }
         Element storage = addElement(doc, parent, tag, sb.toString());
         storage.setAttribute(DeviceSchema.ATTR_UNIT, unit.toString());

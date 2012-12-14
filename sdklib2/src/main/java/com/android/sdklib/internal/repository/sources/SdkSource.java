@@ -483,7 +483,7 @@ public abstract class SdkSource implements IDescription, Comparable<SdkSource> {
 
                     // If we haven't already tried the alternate URL, let's do it now.
                     // We don't capture any fetch exception that happen during the second
-                    // fetch in order to avoid hidding any previous fetch errors.
+                    // fetch in order to avoid hiding any previous fetch errors.
                     if (!url.endsWith(firstDefaultName)) {
                         if (!url.endsWith("/")) {       //$NON-NLS-1$
                             url += "/";                 //$NON-NLS-1$
