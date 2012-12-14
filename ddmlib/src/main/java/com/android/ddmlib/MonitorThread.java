@@ -74,7 +74,7 @@ final class MonitorThread extends Thread {
     private Client mSelectedClient = null;
 
     // singleton
-    private static MonitorThread mInstance;
+    private static MonitorThread sInstance;
 
     /**
      * Generic constructor.
@@ -91,14 +91,14 @@ final class MonitorThread extends Thread {
      * Creates and return the singleton instance of the client monitor thread.
      */
     static MonitorThread createInstance() {
-        return mInstance = new MonitorThread();
+        return sInstance = new MonitorThread();
     }
 
     /**
      * Get singleton instance of the client monitor thread.
      */
     static MonitorThread getInstance() {
-        return mInstance;
+        return sInstance;
     }
 
 
@@ -106,7 +106,7 @@ final class MonitorThread extends Thread {
      * Sets or changes the port number for "debug selected".
      */
     synchronized void setDebugSelectedPort(int port) throws IllegalStateException {
-        if (mInstance == null) {
+        if (sInstance == null) {
             return;
         }
 
@@ -130,7 +130,7 @@ final class MonitorThread extends Thread {
      * @param selectedClient the client. Can be null.
      */
     synchronized void setSelectedClient(Client selectedClient) {
-        if (mInstance == null) {
+        if (sInstance == null) {
             return;
         }
 
@@ -170,7 +170,7 @@ final class MonitorThread extends Thread {
      */
     Client[] getClients() {
         synchronized (mClientList) {
-            return mClientList.toArray(new Client[0]);
+            return mClientList.toArray(new Client[mClientList.size()]);
         }
     }
 
@@ -178,7 +178,7 @@ final class MonitorThread extends Thread {
      * Register "handler" as the handler for type "type".
      */
     synchronized void registerChunkHandler(int type, ChunkHandler handler) {
-        if (mInstance == null) {
+        if (sInstance == null) {
             return;
         }
 
@@ -423,7 +423,7 @@ final class MonitorThread extends Thread {
      * @param notify
      */
     synchronized void dropClient(Client client, boolean notify) {
-        if (mInstance == null) {
+        if (sInstance == null) {
             return;
         }
 
@@ -612,7 +612,7 @@ final class MonitorThread extends Thread {
             e.printStackTrace();
         }
 
-        mInstance = null;
+        sInstance = null;
     }
 
     /**
@@ -622,7 +622,7 @@ final class MonitorThread extends Thread {
      * race between "alreadyOpen" and Client creation.
      */
     synchronized void addClient(Client client) {
-        if (mInstance == null) {
+        if (sInstance == null) {
             return;
         }
 

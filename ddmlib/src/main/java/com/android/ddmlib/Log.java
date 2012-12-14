@@ -20,6 +20,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * Log class that mirrors the API in main Android sources.
@@ -135,7 +136,7 @@ public final class Log {
         public void printAndPromptLog(LogLevel logLevel, String tag, String message);
     }
 
-    private static LogLevel mLevel = DdmPreferences.getLogLevel();
+    private static LogLevel sLevel = DdmPreferences.getLogLevel();
 
     private static ILogOutput sLogOutput;
 
@@ -154,7 +155,7 @@ public final class Log {
     static final class Config {
         static final boolean LOGV = true;
         static final boolean LOGD = true;
-    };
+    }
 
     private Log() {}
 
@@ -232,7 +233,7 @@ public final class Log {
     }
 
     static void setLevel(LogLevel logLevel) {
-        mLevel = logLevel;
+        sLevel = logLevel;
     }
 
     /**
@@ -323,7 +324,7 @@ public final class Log {
 
     /* currently prints to stdout; could write to a log window */
     private static void println(LogLevel logLevel, String tag, String message) {
-        if (logLevel.getPriority() >= mLevel.getPriority()) {
+        if (logLevel.getPriority() >= sLevel.getPriority()) {
             if (sLogOutput != null) {
                 sLogOutput.printLog(logLevel, tag, message);
             } else {
@@ -349,7 +350,7 @@ public final class Log {
      * @param message
      */
     public static String getLogFormatString(LogLevel logLevel, String tag, String message) {
-        SimpleDateFormat formatter = new SimpleDateFormat("hh:mm:ss");
+        SimpleDateFormat formatter = new SimpleDateFormat("hh:mm:ss", Locale.getDefault());
         return String.format("%s %c/%s: %s\n", formatter.format(new Date()),
                 logLevel.getPriorityLetter(), tag, message);
     }

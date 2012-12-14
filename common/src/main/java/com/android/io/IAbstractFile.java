@@ -24,7 +24,7 @@ import java.io.OutputStream;
  */
 public interface IAbstractFile extends IAbstractResource {
     public static enum PreferredWriteMode {
-        INPUTSTREAM, OUTPUTSTREAM;
+        INPUTSTREAM, OUTPUTSTREAM
     }
 
     /**

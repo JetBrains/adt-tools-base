@@ -30,7 +30,7 @@ public class AllocationInfo implements IStackTraceInfo {
     private final StackTraceElement[] mStackTrace;
 
     public static enum SortMode {
-        NUMBER, SIZE, CLASS, THREAD, IN_CLASS, IN_METHOD;
+        NUMBER, SIZE, CLASS, THREAD, IN_CLASS, IN_METHOD
     }
 
     public static final class AllocationSorter implements Comparator<AllocationInfo> {

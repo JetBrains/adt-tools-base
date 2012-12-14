@@ -43,6 +43,7 @@ public class Application {
     public static void main(final String... args) {
         initUserInterface();
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 String arg = args.length > 0 ? args[0] : null;
                 MainFrame frame = new MainFrame(arg);

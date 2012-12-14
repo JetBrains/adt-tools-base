@@ -41,4 +41,4 @@ public interface IShellOutputReceiver {
      * @return true to cancel the execution of the command.
      */
     public boolean isCancelled();
-};
+}

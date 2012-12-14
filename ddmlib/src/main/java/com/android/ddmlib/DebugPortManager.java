@@ -16,8 +16,6 @@
 
 package com.android.ddmlib;
 
-import com.android.ddmlib.Device;
-
 /**
  * Centralized point to provide a {@link IDebugPortProvider} to ddmlib.
  *

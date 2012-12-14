@@ -65,5 +65,5 @@ public enum Capability {
     /**
      * Ability to properly resize nine-patch assets.
      */
-    FIXED_SCALABLE_NINE_PATCH;
+    FIXED_SCALABLE_NINE_PATCH
 }

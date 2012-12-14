@@ -107,7 +107,7 @@ public class EventContainer {
          */
         public static String getStorageString(Object object) {
             if (object instanceof String) {
-                return STRING.mValue + "@" + (String)object; //$NON-NLS-1$
+                return STRING.mValue + "@" + object; //$NON-NLS-1$
             } else if (object instanceof Integer) {
                 return INT.mValue + "@" + object.toString(); //$NON-NLS-1$
             } else if (object instanceof Long) {
@@ -439,9 +439,9 @@ public class EventContainer {
 
         switch (type) {
             case INT:
-                return ((Integer)data).toString();
+                return data.toString();
             case LONG:
-                return ((Long)data).toString();
+                return data.toString();
             case STRING:
                 return (String)data;
             case LIST:

@@ -73,7 +73,7 @@ public class DropFeedback {
     public IFeedbackPainter painter;
 
     /**
-     * When set to a non-null valid rectangle, this informs the engine that a drag'n'drop
+     * When set to a non-null valid rectangle, this informs the engine that a drag &amp; drop
      * feedback wants to capture the mouse as long as it stays in the given area.
      * <p/>
      * When the mouse is captured, drop events will keep going to the rule that started the
@@ -85,7 +85,7 @@ public class DropFeedback {
     public Rect captureArea;
 
     /**
-     * Set to true by the drag'n'drop engine when the current drag operation is a copy.
+     * Set to true by the drag &amp; drop engine when the current drag operation is a copy.
      * When false the operation is a move and <em>after</em> a successful drop the source
      * elements will be deleted.
      * <p/>
@@ -111,7 +111,7 @@ public class DropFeedback {
     public int dragBaseline = -1;
 
     /**
-     * Set to true when the drag'n'drop starts and ends in the same canvas of the
+     * Set to true when the drag &amp; drop starts and ends in the same canvas of the
      * same Eclipse instance.
      * <p/>
      * Filled by the engine, read by view rule.

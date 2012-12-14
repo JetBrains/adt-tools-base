@@ -143,6 +143,7 @@ public class MainFrame extends JFrame {
             this.file = file;
         }
 
+        @Override
         protected Boolean doInBackground() throws Exception {
             try {
                 ImageIO.write(imageEditor.getImage(), "PNG", file);
@@ -160,6 +161,7 @@ public class MainFrame extends JFrame {
             this.file = file;
         }
 
+        @Override
         protected BufferedImage doInBackground() throws Exception {
             return GraphicsUtilities.loadCompatibleImage(file.toURI().toURL());
         }

@@ -37,7 +37,7 @@ public abstract class MultiLineReceiver implements IShellOutputReceiver {
 
     /**
      * Set the trim lines flag.
-     * @param trim hether the lines are trimmed, or not.
+     * @param trim whether the lines are trimmed, or not.
      */
     public void setTrimLine(boolean trim) {
         mTrimLines = trim;

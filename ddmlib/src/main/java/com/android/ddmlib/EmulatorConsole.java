@@ -83,7 +83,7 @@ public final class EmulatorConsole {
     /**
      * Array of download speeds: full speed, gsm, hscsd, gprs, edge/egprs, umts/3g, hsdpa.
      */
-    public final int[] DOWNLOAD_SPEEDS = new int[] {
+    public static final int[] DOWNLOAD_SPEEDS = new int[] {
         0,          // full speed
         14400,      // gsm
         43200,      // hscsd
@@ -354,7 +354,7 @@ public final class EmulatorConsole {
             String[] result = readLines();
 
             if (isValid(result)) {
-                // we only compare agains the min latency and the download speed
+                // we only compare against the min latency and the download speed
                 // let's not rely on the order of the output, and simply loop through
                 // the line testing the regexp.
                 NetworkStatus status = new NetworkStatus();

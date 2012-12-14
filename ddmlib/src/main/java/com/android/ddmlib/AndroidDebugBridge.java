@@ -1003,16 +1003,15 @@ public final class AndroidDebugBridge {
     /**
      * Get the stderr/stdout outputs of a process and return when the process is done.
      * Both <b>must</b> be read or the process will block on windows.
-     * @param process The process to get the ouput from
+     * @param process The process to get the output from
      * @param errorOutput The array to store the stderr output. cannot be null.
      * @param stdOutput The array to store the stdout output. cannot be null.
-     * @param displayStdOut If true this will display stdout as well
-     * @param waitforReaders if true, this will wait for the reader threads.
+     * @param waitForReaders if true, this will wait for the reader threads.
      * @return the process return code.
      * @throws InterruptedException
      */
     private int grabProcessOutput(final Process process, final ArrayList<String> errorOutput,
-            final ArrayList<String> stdOutput, boolean waitforReaders)
+            final ArrayList<String> stdOutput, boolean waitForReaders)
             throws InterruptedException {
         assert errorOutput != null;
         assert stdOutput != null;
@@ -1069,7 +1068,7 @@ public final class AndroidDebugBridge {
         // it looks like on windows process#waitFor() can return
         // before the thread have filled the arrays, so we wait for both threads and the
         // process itself.
-        if (waitforReaders) {
+        if (waitForReaders) {
             try {
                 t1.join();
             } catch (InterruptedException e) {

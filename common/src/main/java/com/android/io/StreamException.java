@@ -24,7 +24,7 @@ public class StreamException extends Exception {
     private static final long serialVersionUID = 1L;
 
     public static enum Error {
-        DEFAULT, OUTOFSYNC, FILENOTFOUND;
+        DEFAULT, OUTOFSYNC, FILENOTFOUND
     }
 
     private final  Error mError;

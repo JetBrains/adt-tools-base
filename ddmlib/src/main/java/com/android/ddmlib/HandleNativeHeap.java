@@ -178,7 +178,7 @@ final class HandleNativeHeap extends ChunkHandler {
                     continue;
                 }
 
-                info.addStackCallAddress(addr);;
+                info.addStackCallAddress(addr);
             }
 
             cd.addNativeAllocation(info);

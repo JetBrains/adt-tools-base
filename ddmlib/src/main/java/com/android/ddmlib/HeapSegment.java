@@ -37,28 +37,28 @@ public final class HeapSegment implements Comparable<HeapSegment> {
          */
 
         /** The element describes a free block. */
-        public static int SOLIDITY_FREE = 0;
+        public static final int SOLIDITY_FREE = 0;
 
         /** The element is strongly-reachable. */
-        public static int SOLIDITY_HARD = 1;
+        public static final int SOLIDITY_HARD = 1;
 
         /** The element is softly-reachable. */
-        public static int SOLIDITY_SOFT = 2;
+        public static final int SOLIDITY_SOFT = 2;
 
         /** The element is weakly-reachable. */
-        public static int SOLIDITY_WEAK = 3;
+        public static final int SOLIDITY_WEAK = 3;
 
         /** The element is phantom-reachable. */
-        public static int SOLIDITY_PHANTOM = 4;
+        public static final int SOLIDITY_PHANTOM = 4;
 
         /** The element is pending finalization. */
-        public static int SOLIDITY_FINALIZABLE = 5;
+        public static final int SOLIDITY_FINALIZABLE = 5;
 
         /** The element is not reachable, and is about to be swept/freed. */
-        public static int SOLIDITY_SWEEP = 6;
+        public static final int SOLIDITY_SWEEP = 6;
 
         /** The reachability of the object is unknown. */
-        public static int SOLIDITY_INVALID = -1;
+        public static final int SOLIDITY_INVALID = -1;
 
 
         /*
@@ -67,31 +67,31 @@ public final class HeapSegment implements Comparable<HeapSegment> {
          */
 
         /** The element describes a data object. */
-        public static int KIND_OBJECT = 0;
+        public static final int KIND_OBJECT = 0;
 
         /** The element describes a class object. */
-        public static int KIND_CLASS_OBJECT = 1;
+        public static final int KIND_CLASS_OBJECT = 1;
 
         /** The element describes an array of 1-byte elements. */
-        public static int KIND_ARRAY_1 = 2;
+        public static final int KIND_ARRAY_1 = 2;
 
         /** The element describes an array of 2-byte elements. */
-        public static int KIND_ARRAY_2 = 3;
+        public static final int KIND_ARRAY_2 = 3;
 
         /** The element describes an array of 4-byte elements. */
-        public static int KIND_ARRAY_4 = 4;
+        public static final int KIND_ARRAY_4 = 4;
 
         /** The element describes an array of 8-byte elements. */
-        public static int KIND_ARRAY_8 = 5;
+        public static final int KIND_ARRAY_8 = 5;
 
         /** The element describes an unknown type of object. */
-        public static int KIND_UNKNOWN = 6;
+        public static final int KIND_UNKNOWN = 6;
 
         /** The element describes a native object. */
-        public static int KIND_NATIVE = 7;
+        public static final int KIND_NATIVE = 7;
 
         /** The object kind is unknown or unspecified. */
-        public static int KIND_INVALID = -1;
+        public static final int KIND_INVALID = -1;
 
 
         /**
@@ -99,7 +99,7 @@ public final class HeapSegment implements Comparable<HeapSegment> {
          * be combined with the element that follows, typically because
          * an element is too large to be described by a single element.
          */
-        private static int PARTIAL_MASK = 1 << 7;
+        private static final int PARTIAL_MASK = 1 << 7;
 
 
         /**

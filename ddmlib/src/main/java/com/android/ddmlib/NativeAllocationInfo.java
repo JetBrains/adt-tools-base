@@ -41,19 +41,19 @@ public final class NativeAllocationInfo {
     private static final int FLAG_MASK          = (FLAG_ZYGOTE_CHILD);
 
     /** Libraries whose methods will be assumed to be not part of the user code. */
-    private static final List<String> FILTERED_LIBRARIES = Arrays.asList(new String[] {
+    private static final List<String> FILTERED_LIBRARIES = Arrays.asList(
             "libc.so",
-            "libc_malloc_debug_leak.so",
-    });
+            "libc_malloc_debug_leak.so"
+    );
 
     /** Method names that should be assumed to be not part of the user code. */
-    private static final List<Pattern> FILTERED_METHOD_NAME_PATTERNS = Arrays.asList(new Pattern[] {
+    private static final List<Pattern> FILTERED_METHOD_NAME_PATTERNS = Arrays.asList(
             Pattern.compile("malloc", Pattern.CASE_INSENSITIVE),
             Pattern.compile("calloc", Pattern.CASE_INSENSITIVE),
             Pattern.compile("realloc", Pattern.CASE_INSENSITIVE),
             Pattern.compile("operator new", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("memalign", Pattern.CASE_INSENSITIVE),
-    });
+            Pattern.compile("memalign", Pattern.CASE_INSENSITIVE)
+    );
 
     private final int mSize;
 
@@ -214,7 +214,7 @@ public final class NativeAllocationInfo {
      */
     @Override
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         buffer.append(ALLOCATIONS_KW);
         buffer.append(' ');
         buffer.append(mAllocations);
@@ -274,7 +274,7 @@ public final class NativeAllocationInfo {
                 }
             }
 
-            // couldnt find a relevant one, so we'll return the first one if it exists.
+            // couldn't find a relevant one, so we'll return the first one if it exists.
             if (mResolvedStackCall.size() > 0)
                 return mResolvedStackCall.get(0);
         }

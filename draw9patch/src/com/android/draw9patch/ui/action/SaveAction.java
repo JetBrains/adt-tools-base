@@ -37,6 +37,7 @@ public class SaveAction extends BackgroundAction {
                 Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         executeBackgroundTask(frame.save());
     }

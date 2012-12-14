@@ -174,7 +174,6 @@ final class Device implements IDevice {
         return mSerialNumber;
     }
 
-    /** {@inheritDoc} */
     @Override
     public String getAvdName() {
         return mAvdName;
@@ -295,17 +294,11 @@ final class Device implements IDevice {
         return mProperties.get(name);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean arePropertiesSet() {
         return mArePropertiesSet;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getPropertyCacheOrSync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
@@ -316,9 +309,6 @@ final class Device implements IDevice {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getPropertySync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
@@ -664,7 +654,7 @@ final class Device implements IDevice {
 
             sync = getSyncService();
             if (sync != null) {
-                String message = String.format("Downloding file from device '%1$s'",
+                String message = String.format("Downloading file from device '%1$s'",
                         getSerialNumber());
                 Log.d(LOG_TAG, message);
                 sync.pullFile(remote, local, SyncService.getNullProgressMonitor());

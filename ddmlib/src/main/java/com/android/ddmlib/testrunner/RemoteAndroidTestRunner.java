@@ -90,17 +90,11 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
         this(packageName, null, remoteDevice);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getPackageName() {
         return mPackageName;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getRunnerName() {
         if (mRunnerName == null) {
@@ -116,17 +110,11 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
         return getPackageName() + RUNNER_SEPARATOR + getRunnerName();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setClassName(String className) {
         addInstrumentationArg(CLASS_ARG_NAME, className);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setClassNames(String[] classNames) {
         StringBuilder classArgBuilder = new StringBuilder();
@@ -140,25 +128,16 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
         setClassName(classArgBuilder.toString());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setMethodName(String className, String testName) {
         setClassName(className + METHOD_SEPARATOR + testName);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setTestPackageName(String packageName) {
         addInstrumentationArg(PACKAGE_ARG_NAME, packageName);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addInstrumentationArg(String name, String value) {
         if (name == null || value == null) {
@@ -167,9 +146,6 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
         mArgMap.put(name, value);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void removeInstrumentationArg(String name) {
         if (name == null) {
@@ -178,65 +154,41 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
         mArgMap.remove(name);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addBooleanArg(String name, boolean value) {
         addInstrumentationArg(name, Boolean.toString(value));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setLogOnly(boolean logOnly) {
         addBooleanArg(LOG_ARG_NAME, logOnly);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setDebug(boolean debug) {
         addBooleanArg(DEBUG_ARG_NAME, debug);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setCoverage(boolean coverage) {
         addBooleanArg(COVERAGE_ARG_NAME, coverage);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setTestSize(TestSize size) {
         addInstrumentationArg(SIZE_ARG_NAME, size.getRunnerValue());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setMaxtimeToOutputResponse(int maxTimeToOutputResponse) {
         mMaxTimeToOutputResponse = maxTimeToOutputResponse;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void setRunName(String runName) {
         mRunName = runName;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void run(ITestRunListener... listeners)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
@@ -244,9 +196,6 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
         run(Arrays.asList(listeners));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void run(Collection<ITestRunListener> listeners)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
@@ -290,9 +239,6 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void cancel() {
         if (mParser != null) {

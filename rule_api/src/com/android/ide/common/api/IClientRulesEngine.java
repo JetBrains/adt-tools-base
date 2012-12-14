@@ -186,7 +186,7 @@ public interface IClientRulesEngine {
             @Nullable String bottom);
 
     /**
-     * Displays an input dialog tailored for inputing the source of an {@code <include>}
+     * Displays an input dialog tailored for inputting the source of an {@code <include>}
      * layout tag. This is similar to {@link #displayResourceInput} for resource type
      * "layout", but should also attempt to filter out layout resources that cannot be
      * included from the current context (because it would result in a cyclic dependency).
@@ -197,7 +197,7 @@ public interface IClientRulesEngine {
     String displayIncludeSourceInput();
 
     /**
-     * Displays an input dialog tailored for inputing the source of a {@code <fragment>}
+     * Displays an input dialog tailored for inputting the source of a {@code <fragment>}
      * layout tag.
      *
      * @return the fully qualified class name of the fragment activity, or null if canceled
@@ -206,7 +206,7 @@ public interface IClientRulesEngine {
     String displayFragmentSourceInput();
 
     /**
-     * Displays an input dialog tailored for inputing the source of a {@code <view>}
+     * Displays an input dialog tailored for inputting the source of a {@code <view>}
      * layout tag.
      *
      * @return the fully qualified class name of the custom view class, or null if canceled

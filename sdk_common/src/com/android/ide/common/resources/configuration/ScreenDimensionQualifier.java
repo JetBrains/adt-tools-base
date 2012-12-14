@@ -33,13 +33,13 @@ public final class ScreenDimensionQualifier extends ResourceQualifier {
 
     /** Screen size 1 value. This is not size X or Y because the folder name always
      * contains the biggest size first. So if the qualifier is 400x200, size 1 will always be
-     * 400 but that'll be X in landscape and Y in portrait.
+     * 400 but that will be X in landscape and Y in portrait.
      * Default value is <code>DEFAULT_SIZE</code> */
     private int mValue1 = DEFAULT_SIZE;
 
     /** Screen size 2 value. This is not size X or Y because the folder name always
      * contains the biggest size first. So if the qualifier is 400x200, size 2 will always be
-     * 200 but that'll be Y in landscape and X in portrait.
+     * 200 but that will be Y in landscape and X in portrait.
      * Default value is <code>DEFAULT_SIZE</code> */
     private int mValue2 = DEFAULT_SIZE;
 

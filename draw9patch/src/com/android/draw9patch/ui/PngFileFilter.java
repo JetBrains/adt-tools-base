@@ -18,11 +18,12 @@ package com.android.draw9patch.ui;
 
 import javax.swing.filechooser.FileFilter;
 import java.io.File;
+import java.util.Locale;
 
 class PngFileFilter extends FileFilter {
     @Override
     public boolean accept(File f) {
-        return f.isDirectory() || f.getName().toLowerCase().endsWith(".png");
+        return f.isDirectory() || f.getName().toLowerCase(Locale.US).endsWith(".png");
     }
 
     @Override

@@ -67,7 +67,7 @@ public abstract class ResourceQualifier implements Comparable<ResourceQualifier>
     public abstract boolean checkAndSet(String value, FolderConfiguration config);
 
     /**
-     * Returns a string formated to be used in a folder name.
+     * Returns a string formatted to be used in a folder name.
      * <p/>This is declared as abstract to force children classes to implement it.
      */
     public abstract String getFolderSegment();

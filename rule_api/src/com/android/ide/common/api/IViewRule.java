@@ -160,7 +160,7 @@ public interface IViewRule {
             @NonNull List<? extends INode> childNodes,
             @Nullable Object view);
 
-    // ==== Drag'n'drop support ====
+    // ==== Drag & drop support ====
 
     /**
      * Called when the d'n'd starts dragging over the target node. If

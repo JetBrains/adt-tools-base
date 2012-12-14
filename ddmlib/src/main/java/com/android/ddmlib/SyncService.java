@@ -47,8 +47,8 @@ public final class SyncService {
 //    private final static byte[] ID_LIST = { 'L', 'I', 'S', 'T' };
 //    private final static byte[] ID_DENT = { 'D', 'E', 'N', 'T' };
 
-    private static final NullSyncProgresMonitor sNullSyncProgressMonitor =
-            new NullSyncProgresMonitor();
+    private static final NullSyncProgressMonitor sNullSyncProgressMonitor =
+            new NullSyncProgressMonitor();
 
     private static final int S_ISOCK = 0xC000; // type: symbolic link
     private static final int S_IFLNK = 0xA000; // type: symbolic link
@@ -112,7 +112,7 @@ public final class SyncService {
     /**
      * A Sync progress monitor that does nothing
      */
-    private static class NullSyncProgresMonitor implements ISyncProgressMonitor {
+    private static class NullSyncProgressMonitor implements ISyncProgressMonitor {
         @Override
         public void advance(int work) {
         }

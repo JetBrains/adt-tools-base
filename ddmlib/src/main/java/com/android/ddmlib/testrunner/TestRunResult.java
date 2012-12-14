@@ -34,7 +34,7 @@ public class TestRunResult {
     private static final String LOG_TAG = TestRunResult.class.getSimpleName();
     private final String mTestRunName;
     // Uses a synchronized map to make thread safe.
-    // Uses a LinkedHashmap to have predictable iteration order
+    // Uses a LinkedHashMap to have predictable iteration order
     private Map<TestIdentifier, TestResult> mTestResults =
         Collections.synchronizedMap(new LinkedHashMap<TestIdentifier, TestResult>());
     private Map<String, String> mRunMetrics = new HashMap<String, String>();

@@ -53,5 +53,5 @@ public enum MarginType {
      * This margin type is used for nodes that do not have margins, so margin edges and
      * non-margin edges are the same
      */
-    NO_MARGIN;
+    NO_MARGIN
 }
