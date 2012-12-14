@@ -30,12 +30,12 @@ import java.util.Map;
  */
 final class PlatformTarget implements IAndroidTarget {
     /** String used to get a hash to the platform target */
-    private final static String PLATFORM_HASH = "android-%s";
+    private static final String PLATFORM_HASH = "android-%s";
 
-    private final static String PLATFORM_VENDOR = "Android Open Source Project";
+    private static final String PLATFORM_VENDOR = "Android Open Source Project";
 
-    private final static String PLATFORM_NAME = "Android %s";
-    private final static String PLATFORM_NAME_PREVIEW = "Android %s (Preview)";
+    private static final String PLATFORM_NAME = "Android %s";
+    private static final String PLATFORM_NAME_PREVIEW = "Android %s (Preview)";
 
     /** the OS path to the root folder of the platform component. */
     private final String mRootFolderOsPath;

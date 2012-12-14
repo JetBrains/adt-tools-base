@@ -79,11 +79,11 @@ public class DownloadCache {
     private static final String KEY_URL = "URL";                        //$NON-NLS-1$
 
     /** Prefix of binary files stored in the {@link SdkConstants#FD_CACHE} directory. */
-    private final static String BIN_FILE_PREFIX = "sdkbin";             //$NON-NLS-1$
+    private static final String BIN_FILE_PREFIX = "sdkbin";             //$NON-NLS-1$
     /** Prefix of meta info files stored in the {@link SdkConstants#FD_CACHE} directory. */
-    private final static String INFO_FILE_PREFIX = "sdkinf";            //$NON-NLS-1$
+    private static final String INFO_FILE_PREFIX = "sdkinf";            //$NON-NLS-1$
     /* Revision suffixed to the prefix. */
-    private final static String REV_FILE_PREFIX = "-1_";                //$NON-NLS-1$
+    private static final String REV_FILE_PREFIX = "-1_";                //$NON-NLS-1$
 
     /**
      * Minimum time before we consider a cached entry is potentially stale.
@@ -98,7 +98,7 @@ public class DownloadCache {
      * <p/>
      * TODO: change for a dynamic preference later.
      */
-    private final static long MIN_TIME_EXPIRED_MS =  10*60*1000;
+    private static final long MIN_TIME_EXPIRED_MS =  10*60*1000;
     /**
      * Maximum time before we consider a cache entry to be stale.
      * Expressed in milliseconds.
@@ -111,20 +111,20 @@ public class DownloadCache {
      * <p/>
      * TODO: change for a dynamic preference later.
      */
-    private final static long MAX_TIME_EXPIRED_MS = 4*60*60*1000;
+    private static final long MAX_TIME_EXPIRED_MS = 4*60*60*1000;
 
     /**
      * The maximum file size we'll cache for "small" files.
      * 640KB is more than enough and is already a stretch since these are read in memory.
      * (The actual typical size of the files handled here is in the 4-64KB range.)
      */
-    private final static int MAX_SMALL_FILE_SIZE = 640 * 1024;
+    private static final int MAX_SMALL_FILE_SIZE = 640 * 1024;
 
     /**
      * HTTP Headers that are saved in an info file.
      * For HTTP/1.1 header names, see http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
      */
-    private final static String[] INFO_HTTP_HEADERS = {
+    private static final String[] INFO_HTTP_HEADERS = {
         HttpHeaders.LAST_MODIFIED,
         HttpHeaders.ETAG,
         HttpHeaders.CONTENT_LENGTH,

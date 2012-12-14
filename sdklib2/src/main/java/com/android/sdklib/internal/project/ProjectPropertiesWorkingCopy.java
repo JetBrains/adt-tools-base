@@ -46,7 +46,7 @@ import java.util.regex.Matcher;
  */
 public class ProjectPropertiesWorkingCopy extends ProjectProperties {
 
-    private final static Map<String, String> COMMENT_MAP = new HashMap<String, String>();
+    private static final Map<String, String> COMMENT_MAP = new HashMap<String, String>();
     static {
 //               1-------10--------20--------30--------40--------50--------60--------70--------80
         COMMENT_MAP.put(PROPERTY_TARGET,

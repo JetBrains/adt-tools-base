@@ -69,7 +69,8 @@ public class NonClosingInputStream extends FilterInputStream {
      * Returns the current {@link CloseBehavior}.
      * @return the current {@link CloseBehavior}. Never null.
      */
-    public @NonNull CloseBehavior getCloseBehavior() {
+    @NonNull
+    public CloseBehavior getCloseBehavior() {
         return mCloseBehavior;
     }
 

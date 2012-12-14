@@ -49,7 +49,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
      * Thrown when an {@link AndroidVersion} object could not be created.
      * @see AndroidVersion#AndroidVersion(Properties)
      */
-    public final static class AndroidVersionException extends Exception {
+    public static final class AndroidVersionException extends Exception {
         private static final long serialVersionUID = 1L;
 
         AndroidVersionException(String message, Throwable cause) {
@@ -314,7 +314,8 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
      * @param codename A possible-null codename.
      * @return Null for a release version or a non-empty codename.
      */
-    private @Nullable String sanitizeCodename(@Nullable String codename) {
+    @Nullable
+    private String sanitizeCodename(@Nullable String codename) {
         if (codename != null) {
             codename = codename.trim();
             if (codename.length() == 0 || SdkConstants.CODENAME_RELEASE.equals(codename)) {

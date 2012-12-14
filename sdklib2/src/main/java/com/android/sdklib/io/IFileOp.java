@@ -122,7 +122,8 @@ public interface IFileOp {
      * @return A new {@link Properties} with the properties loaded from the file,
      *          or an empty property set in case of error.
      */
-    public @NonNull Properties loadProperties(@NonNull File file);
+    @NonNull
+    public Properties loadProperties(@NonNull File file);
 
     /**
      * Saves (write, store) the given {@link Properties} into the given {@link File}.

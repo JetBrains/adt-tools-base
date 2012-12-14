@@ -51,10 +51,10 @@ public class CommandLineParser {
      */
 
     /** Internal verb name for internally hidden flags. */
-    public final static String GLOBAL_FLAG_VERB = "@@internal@@";   //$NON-NLS-1$
+    public static final String GLOBAL_FLAG_VERB = "@@internal@@";   //$NON-NLS-1$
 
     /** String to use when the verb doesn't need any object. */
-    public final static String NO_VERB_OBJECT = "";                 //$NON-NLS-1$
+    public static final String NO_VERB_OBJECT = "";                 //$NON-NLS-1$
 
     /** The global help flag. */
     public static final String KEY_HELP = "help";

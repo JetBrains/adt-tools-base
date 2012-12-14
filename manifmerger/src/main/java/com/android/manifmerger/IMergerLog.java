@@ -111,7 +111,8 @@ public interface IMergerLog {
          * {@link IMergerLog#MAIN_MANIFEST}.
          * When that fails, null is used.
          */
-        public @Nullable String getFileName() {
+        @Nullable
+        public String getFileName() {
             return mFilePath;
         }
 

@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  */
 public final class ApkBuilderMain {
 
-    private final static Pattern PATTERN_JAR_EXT = Pattern.compile("^.+\\.jar$",
+    private static final Pattern PATTERN_JAR_EXT = Pattern.compile("^.+\\.jar$",
             Pattern.CASE_INSENSITIVE);
 
     /**

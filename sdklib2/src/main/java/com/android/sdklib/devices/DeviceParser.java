@@ -48,7 +48,7 @@ import javax.xml.parsers.SAXParserFactory;
 public class DeviceParser {
 
     private static class DeviceHandler extends DefaultHandler {
-        private final static String sSpaceRegex = "[\\s]+";
+        private static final String sSpaceRegex = "[\\s]+";
         private final List<Device> mDevices = new ArrayList<Device>();
         private final StringBuilder mStringAccumulator = new StringBuilder();
         private final File mParentFolder;
@@ -343,7 +343,7 @@ public class DeviceParser {
 
     }
 
-    private final static SAXParserFactory sParserFactory;
+    private static final SAXParserFactory sParserFactory;
 
     static {
         sParserFactory = SAXParserFactory.newInstance();

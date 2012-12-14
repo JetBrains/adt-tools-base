@@ -49,9 +49,9 @@ import java.util.regex.Pattern;
  */
 public final class ApkBuilder implements IArchiveBuilder {
 
-    private final static Pattern PATTERN_NATIVELIB_EXT = Pattern.compile("^.+\\.so$",
+    private static final Pattern PATTERN_NATIVELIB_EXT = Pattern.compile("^.+\\.so$",
             Pattern.CASE_INSENSITIVE);
-    private final static Pattern PATTERN_BITCODELIB_EXT = Pattern.compile("^.+\\.bc$",
+    private static final Pattern PATTERN_BITCODELIB_EXT = Pattern.compile("^.+\\.bc$",
             Pattern.CASE_INSENSITIVE);
 
     /**
@@ -188,7 +188,7 @@ public final class ApkBuilder implements IArchiveBuilder {
     }
 
     /** Internal implementation of {@link JarStatus}. */
-    private final static class JarStatusImpl implements JarStatus {
+    private static final class JarStatusImpl implements JarStatus {
         public final List<String> mLibs;
         public final boolean mNativeLibsConflict;
 
@@ -214,7 +214,7 @@ public final class ApkBuilder implements IArchiveBuilder {
      * Both the {@link PrivateKey} and the {@link X509Certificate} are guaranteed to be non-null.
      *
      */
-    public final static class SigningInfo {
+    public static final class SigningInfo {
         public final PrivateKey key;
         public final X509Certificate certificate;
 

@@ -115,7 +115,8 @@ public class LocalSdkParser {
      * @param monitor A monitor to track progress. Cannot be null.
      * @return The packages found. Can be retrieved later using {@link #getPackages()}.
      */
-    public @NonNull Package[] parseSdk(
+    @NonNull
+    public Package[] parseSdk(
             @NonNull String osSdkRoot,
             @NonNull SdkManager sdkManager,
             @NonNull ITaskMonitor monitor) {
@@ -135,7 +136,8 @@ public class LocalSdkParser {
      * @param monitor A monitor to track progress. Cannot be null.
      * @return The packages found. Can be retrieved later using {@link #getPackages()}.
      */
-    public @NonNull Package[] parseSdk(
+    @NonNull
+    public Package[] parseSdk(
             @NonNull String osSdkRoot,
             @NonNull SdkManager sdkManager,
             int parseFilter,

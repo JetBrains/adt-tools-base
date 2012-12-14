@@ -47,7 +47,7 @@ public class FileOp implements IFileOp {
     /**
      * Parameters to call File.setExecutable through reflection.
      */
-    private final static Object[] sFileSetExecutableParams = new Object[] {
+    private static final Object[] sFileSetExecutableParams = new Object[] {
         Boolean.TRUE, Boolean.FALSE };
 
     // static initialization of sFileSetExecutable.
@@ -347,9 +347,10 @@ public class FileOp implements IFileOp {
         return new FileOutputStream(file);
     }
 
-    @SuppressWarnings("resource") // Eclipse doesn't understand Closeables.closeQuietly
+    @NonNull
     @Override
-    public @NonNull Properties loadProperties(@NonNull File file) {
+    @SuppressWarnings("resource") // Eclipse doesn't understand Closeables.closeQuietly
+    public Properties loadProperties(@NonNull File file) {
         Properties props = new Properties();
         FileInputStream fis = null;
         try {

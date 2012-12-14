@@ -32,7 +32,7 @@ public abstract class MergerLog {
      * @param sdkLog A non-null {@link ILogger}.
      * @return A new IMergerLog.
      */
-    public static IMergerLog wrapSdkLog(final @NonNull ILogger sdkLog) {
+    public static IMergerLog wrapSdkLog(@NonNull final ILogger sdkLog) {
         return new IMergerLog() {
             @Override
             public void error(
@@ -110,9 +110,9 @@ public abstract class MergerLog {
      * @return A new IMergerLog.
      */
     public static IMergerLog mergerLogOverrideLocation(
-            final @NonNull IMergerLog parentLog,
-            final @Nullable String filePath1,
-            final @Nullable String... filePath2) {
+            @NonNull final IMergerLog parentLog,
+            @Nullable final String filePath1,
+            @Nullable final String... filePath2) {
         return new IMergerLog() {
             @Override
             public void error(

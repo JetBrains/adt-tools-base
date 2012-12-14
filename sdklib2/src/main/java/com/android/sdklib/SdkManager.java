@@ -65,39 +65,39 @@ public class SdkManager {
 
     private static final boolean DEBUG = System.getenv("SDKMAN_DEBUG") != null;        //$NON-NLS-1$
 
-    public final static String PROP_VERSION_SDK = "ro.build.version.sdk";              //$NON-NLS-1$
-    public final static String PROP_VERSION_CODENAME = "ro.build.version.codename";    //$NON-NLS-1$
-    public final static String PROP_VERSION_RELEASE = "ro.build.version.release";      //$NON-NLS-1$
+    public static final String PROP_VERSION_SDK = "ro.build.version.sdk";              //$NON-NLS-1$
+    public static final String PROP_VERSION_CODENAME = "ro.build.version.codename";    //$NON-NLS-1$
+    public static final String PROP_VERSION_RELEASE = "ro.build.version.release";      //$NON-NLS-1$
 
-    public final static String ADDON_NAME = "name";                                    //$NON-NLS-1$
-    public final static String ADDON_VENDOR = "vendor";                                //$NON-NLS-1$
-    public final static String ADDON_API = "api";                                      //$NON-NLS-1$
-    public final static String ADDON_DESCRIPTION = "description";                      //$NON-NLS-1$
-    public final static String ADDON_LIBRARIES = "libraries";                          //$NON-NLS-1$
-    public final static String ADDON_DEFAULT_SKIN = "skin";                            //$NON-NLS-1$
-    public final static String ADDON_USB_VENDOR = "usb-vendor";                        //$NON-NLS-1$
-    public final static String ADDON_REVISION = "revision";                            //$NON-NLS-1$
-    public final static String ADDON_REVISION_OLD = "version";                         //$NON-NLS-1$
+    public static final String ADDON_NAME = "name";                                    //$NON-NLS-1$
+    public static final String ADDON_VENDOR = "vendor";                                //$NON-NLS-1$
+    public static final String ADDON_API = "api";                                      //$NON-NLS-1$
+    public static final String ADDON_DESCRIPTION = "description";                      //$NON-NLS-1$
+    public static final String ADDON_LIBRARIES = "libraries";                          //$NON-NLS-1$
+    public static final String ADDON_DEFAULT_SKIN = "skin";                            //$NON-NLS-1$
+    public static final String ADDON_USB_VENDOR = "usb-vendor";                        //$NON-NLS-1$
+    public static final String ADDON_REVISION = "revision";                            //$NON-NLS-1$
+    public static final String ADDON_REVISION_OLD = "version";                         //$NON-NLS-1$
 
 
-    private final static Pattern PATTERN_LIB_DATA = Pattern.compile(
+    private static final Pattern PATTERN_LIB_DATA = Pattern.compile(
             "^([a-zA-Z0-9._-]+\\.jar);(.*)$", Pattern.CASE_INSENSITIVE);               //$NON-NLS-1$
 
      // usb ids are 16-bit hexadecimal values.
-    private final static Pattern PATTERN_USB_IDS = Pattern.compile(
+     private static final Pattern PATTERN_USB_IDS = Pattern.compile(
             "^0x[a-f0-9]{4}$", Pattern.CASE_INSENSITIVE);                              //$NON-NLS-1$
 
     /** List of items in the platform to check when parsing it. These paths are relative to the
      * platform root folder. */
-    private final static String[] sPlatformContentList = new String[] {
+    private static final String[] sPlatformContentList = new String[] {
         SdkConstants.FN_FRAMEWORK_LIBRARY,
         SdkConstants.FN_FRAMEWORK_AIDL,
     };
 
     /** Preference file containing the usb ids for adb */
-    private final static String ADB_INI_FILE = "adb_usb.ini";                          //$NON-NLS-1$
+    private static final String ADB_INI_FILE = "adb_usb.ini";                          //$NON-NLS-1$
        //0--------90--------90--------90--------90--------90--------90--------90--------9
-    private final static String ADB_INI_HEADER =
+       private static final String ADB_INI_HEADER =
         "# ANDROID 3RD PARTY USB VENDOR ID LIST -- DO NOT EDIT.\n" +                   //$NON-NLS-1$
         "# USE 'android update adb' TO GENERATE.\n" +                                  //$NON-NLS-1$
         "# 1 USB VENDOR ID PER LINE.\n";                                               //$NON-NLS-1$
@@ -363,7 +363,8 @@ public class SdkManager {
      * @return A non-null possibly empty map of extra samples directories and their associated
      *   extra package display name.
      */
-    public @NonNull Map<File, String> getExtraSamples() {
+    @NonNull
+    public Map<File, String> getExtraSamples() {
         LocalSdkParser parser = new LocalSdkParser();
         Package[] packages = parser.parseSdk(mOsSdkPath,
                                              this,
@@ -404,7 +405,8 @@ public class SdkManager {
      *
      * @return A non-null possibly empty map of { string "vendor/path" => integer major revision }
      */
-    public @NonNull Map<String, Integer> getExtrasVersions() {
+    @NonNull
+    public Map<String, Integer> getExtrasVersions() {
         LocalSdkParser parser = new LocalSdkParser();
         Package[] packages = parser.parseSdk(mOsSdkPath,
                                              this,
@@ -428,7 +430,8 @@ public class SdkManager {
     }
 
     /** Returns the platform tools version if installed, null otherwise. */
-    public @Nullable String getPlatformToolsVersion() {
+    @Nullable
+    public String getPlatformToolsVersion() {
         LocalSdkParser parser = new LocalSdkParser();
         Package[] packages = parser.parseSdk(mOsSdkPath, this, LocalSdkParser.PARSE_PLATFORM_TOOLS,
                 new NullTaskMonitor(NullLogger.getLogger()));
@@ -1260,7 +1263,8 @@ public class SdkManager {
     // -------------
 
     private static class DirInfo {
-        private final @NonNull File mDir;
+        @NonNull
+        private final File mDir;
         private final long mDirModifiedTS;
         private final long mPropsModifedTS;
         private final long mPropsChecksum;

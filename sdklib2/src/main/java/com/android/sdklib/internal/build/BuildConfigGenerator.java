@@ -33,10 +33,10 @@ import java.util.Map.Entry;
  */
 public class BuildConfigGenerator {
 
-    public final static String BUILD_CONFIG_NAME = "BuildConfig.java";
+    public static final String BUILD_CONFIG_NAME = "BuildConfig.java";
 
-    private final static String PH_PACKAGE = "#PACKAGE#";
-    private final static String PH_DEBUG = "#DEBUG#";
+    private static final String PH_PACKAGE = "#PACKAGE#";
+    private static final String PH_DEBUG = "#DEBUG#";
 
     private final String mGenFolder;
     private final String mAppPackage;
