@@ -41,9 +41,7 @@ import junit.framework.TestCase;
  * files, computing string diffs, etc.
  */
 @SuppressWarnings("javadoc")
-public class SdkTestCase extends TestCase {
-    public static final String TEST_PROJECT_PACKAGE = "com.android.eclipse.tests"; //$NON-NLS-1$
-
+public abstract class SdkTestCase extends TestCase {
     /** Update golden files if different from the actual results */
     private static final boolean UPDATE_DIFFERENT_FILES = false;
     /** Create golden files if missing */
@@ -52,8 +50,8 @@ public class SdkTestCase extends TestCase {
     protected static Set<File> sCleanDirs = Sets.newHashSet();
 
     protected String getTestDataRelPath() {
-        return "eclipse/plugins/com.android.ide.eclipse.tests/src/com/android/ide/eclipse/adt/"
-                + "internal/editors/layout/refactoring/testdata";
+        fail("Must be overridden");
+        return null;
     }
 
     public static int getCaretOffset(String fileContent, String caretLocation) {

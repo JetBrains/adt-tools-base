@@ -39,7 +39,10 @@ import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -203,6 +206,26 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         String path = "data" + File.separator + relativePath; //$NON-NLS-1$
         InputStream stream =
             AbstractCheckTest.class.getResourceAsStream(path);
+        if (stream == null) {
+            File root = getRootDir();
+            assertNotNull(root);
+            String pkg = AbstractCheckTest.class.getName();
+            pkg = pkg.substring(0, pkg.lastIndexOf('.'));
+            File f = new File(root,
+                    "tools/base/lint/cli/src/test/java/".replace('/', File.separatorChar)
+                        + pkg.replace('.', File.separatorChar)
+                        + File.separatorChar + path);
+            if (f.exists()) {
+                try {
+                    return new BufferedInputStream(new FileInputStream(f));
+                } catch (FileNotFoundException e) {
+                    stream = null;
+                    if (expectExists) {
+                        fail("Could not find file " + relativePath);
+                    }
+                }
+            }
+        }
         if (!expectExists && stream == null) {
             return null;
         }
@@ -379,7 +402,11 @@ public abstract class AbstractCheckTest extends SdkTestCase {
                 while (dir != null) {
                     File settingsGradle = new File(dir, "settings.gradle"); //$NON-NLS-1$
                     if (settingsGradle.exists()) {
-                        return dir.getParentFile();
+                        return dir.getParentFile().getParentFile();
+                    }
+                    File lint = new File(dir, "lint");  //$NON-NLS-1$
+                    if (lint.exists() && new File(lint, "cli").exists()) { //$NON-NLS-1$
+                        return dir.getParentFile().getParentFile();
                     }
                     dir = dir.getParentFile();
                 }
