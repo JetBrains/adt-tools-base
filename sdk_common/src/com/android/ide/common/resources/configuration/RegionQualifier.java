@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
  * Resource Qualifier for Region.
  */
 public final class RegionQualifier extends ResourceQualifier {
-    private final static Pattern sRegionPattern = Pattern.compile("^r([A-Z]{2})$"); //$NON-NLS-1$
+    private static final Pattern sRegionPattern = Pattern.compile("^r([A-Z]{2})$"); //$NON-NLS-1$
 
     public static final String FAKE_REGION_VALUE = "__"; //$NON-NLS-1$
     public static final String NAME = "Region";

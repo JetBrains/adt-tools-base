@@ -29,10 +29,10 @@ import java.util.Map;
  */
 public final class FolderTypeRelationship {
 
-    private final static Map<ResourceType, List<ResourceFolderType>> mTypeToFolderMap =
+    private static final Map<ResourceType, List<ResourceFolderType>> mTypeToFolderMap =
         new HashMap<ResourceType, List<ResourceFolderType>>();
 
-    private final static Map<ResourceFolderType, List<ResourceType>> mFolderToTypeMap =
+    private static final Map<ResourceFolderType, List<ResourceType>> mFolderToTypeMap =
         new HashMap<ResourceFolderType, List<ResourceType>>();
 
     static {

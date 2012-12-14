@@ -46,34 +46,34 @@ import java.util.regex.Pattern;
  */
 public final class EmulatorConsole {
 
-    private final static String DEFAULT_ENCODING = "ISO-8859-1"; //$NON-NLS-1$
+    private static final String DEFAULT_ENCODING = "ISO-8859-1"; //$NON-NLS-1$
 
-    private final static int WAIT_TIME = 5; // spin-wait sleep, in ms
+    private static final int WAIT_TIME = 5; // spin-wait sleep, in ms
 
-    private final static int STD_TIMEOUT = 5000; // standard delay, in ms
+    private static final int STD_TIMEOUT = 5000; // standard delay, in ms
 
-    private final static String HOST = "127.0.0.1";  //$NON-NLS-1$
+    private static final String HOST = "127.0.0.1";  //$NON-NLS-1$
 
-    private final static String COMMAND_PING = "help\r\n"; //$NON-NLS-1$
-    private final static String COMMAND_AVD_NAME = "avd name\r\n"; //$NON-NLS-1$
-    private final static String COMMAND_KILL = "kill\r\n"; //$NON-NLS-1$
-    private final static String COMMAND_GSM_STATUS = "gsm status\r\n"; //$NON-NLS-1$
-    private final static String COMMAND_GSM_CALL = "gsm call %1$s\r\n"; //$NON-NLS-1$
-    private final static String COMMAND_GSM_CANCEL_CALL = "gsm cancel %1$s\r\n"; //$NON-NLS-1$
-    private final static String COMMAND_GSM_DATA = "gsm data %1$s\r\n"; //$NON-NLS-1$
-    private final static String COMMAND_GSM_VOICE = "gsm voice %1$s\r\n"; //$NON-NLS-1$
-    private final static String COMMAND_SMS_SEND = "sms send %1$s %2$s\r\n"; //$NON-NLS-1$
-    private final static String COMMAND_NETWORK_STATUS = "network status\r\n"; //$NON-NLS-1$
-    private final static String COMMAND_NETWORK_SPEED = "network speed %1$s\r\n"; //$NON-NLS-1$
-    private final static String COMMAND_NETWORK_LATENCY = "network delay %1$s\r\n"; //$NON-NLS-1$
-    private final static String COMMAND_GPS = "geo fix %1$f %2$f %3$f\r\n"; //$NON-NLS-1$
+    private static final String COMMAND_PING = "help\r\n"; //$NON-NLS-1$
+    private static final String COMMAND_AVD_NAME = "avd name\r\n"; //$NON-NLS-1$
+    private static final String COMMAND_KILL = "kill\r\n"; //$NON-NLS-1$
+    private static final String COMMAND_GSM_STATUS = "gsm status\r\n"; //$NON-NLS-1$
+    private static final String COMMAND_GSM_CALL = "gsm call %1$s\r\n"; //$NON-NLS-1$
+    private static final String COMMAND_GSM_CANCEL_CALL = "gsm cancel %1$s\r\n"; //$NON-NLS-1$
+    private static final String COMMAND_GSM_DATA = "gsm data %1$s\r\n"; //$NON-NLS-1$
+    private static final String COMMAND_GSM_VOICE = "gsm voice %1$s\r\n"; //$NON-NLS-1$
+    private static final String COMMAND_SMS_SEND = "sms send %1$s %2$s\r\n"; //$NON-NLS-1$
+    private static final String COMMAND_NETWORK_STATUS = "network status\r\n"; //$NON-NLS-1$
+    private static final String COMMAND_NETWORK_SPEED = "network speed %1$s\r\n"; //$NON-NLS-1$
+    private static final String COMMAND_NETWORK_LATENCY = "network delay %1$s\r\n"; //$NON-NLS-1$
+    private static final String COMMAND_GPS = "geo fix %1$f %2$f %3$f\r\n"; //$NON-NLS-1$
 
-    private final static Pattern RE_KO = Pattern.compile("KO:\\s+(.*)"); //$NON-NLS-1$
+    private static final Pattern RE_KO = Pattern.compile("KO:\\s+(.*)"); //$NON-NLS-1$
 
     /**
      * Array of delay values: no delay, gprs, edge/egprs, umts/3d
      */
-    public final static int[] MIN_LATENCIES = new int[] {
+    public static final int[] MIN_LATENCIES = new int[] {
         0,      // No delay
         150,    // gprs
         80,     // edge/egprs
@@ -94,7 +94,7 @@ public final class EmulatorConsole {
     };
 
     /** Arrays of valid network speeds */
-    public final static String[] NETWORK_SPEEDS = new String[] {
+    public static final String[] NETWORK_SPEEDS = new String[] {
         "full", //$NON-NLS-1$
         "gsm", //$NON-NLS-1$
         "hscsd", //$NON-NLS-1$
@@ -105,7 +105,7 @@ public final class EmulatorConsole {
     };
 
     /** Arrays of valid network latencies */
-    public final static String[] NETWORK_LATENCIES = new String[] {
+    public static final String[] NETWORK_LATENCIES = new String[] {
         "none", //$NON-NLS-1$
         "gprs", //$NON-NLS-1$
         "edge", //$NON-NLS-1$
@@ -157,19 +157,19 @@ public final class EmulatorConsole {
         }
     }
 
-    public final static String RESULT_OK = null;
+    public static final String RESULT_OK = null;
 
-    private final static Pattern sEmulatorRegexp = Pattern.compile(Device.RE_EMULATOR_SN);
-    private final static Pattern sVoiceStatusRegexp = Pattern.compile(
+    private static final Pattern sEmulatorRegexp = Pattern.compile(Device.RE_EMULATOR_SN);
+    private static final Pattern sVoiceStatusRegexp = Pattern.compile(
             "gsm\\s+voice\\s+state:\\s*([a-z]+)", Pattern.CASE_INSENSITIVE); //$NON-NLS-1$
-    private final static Pattern sDataStatusRegexp = Pattern.compile(
+    private static final Pattern sDataStatusRegexp = Pattern.compile(
             "gsm\\s+data\\s+state:\\s*([a-z]+)", Pattern.CASE_INSENSITIVE); //$NON-NLS-1$
-    private final static Pattern sDownloadSpeedRegexp = Pattern.compile(
+    private static final Pattern sDownloadSpeedRegexp = Pattern.compile(
             "\\s+download\\s+speed:\\s+(\\d+)\\s+bits.*", Pattern.CASE_INSENSITIVE); //$NON-NLS-1$
-    private final static Pattern sMinLatencyRegexp = Pattern.compile(
+    private static final Pattern sMinLatencyRegexp = Pattern.compile(
             "\\s+minimum\\s+latency:\\s+(\\d+)\\s+ms", Pattern.CASE_INSENSITIVE); //$NON-NLS-1$
 
-    private final static HashMap<Integer, EmulatorConsole> sEmulators =
+    private static final HashMap<Integer, EmulatorConsole> sEmulators =
         new HashMap<Integer, EmulatorConsole>();
 
     /** Gsm Status class */

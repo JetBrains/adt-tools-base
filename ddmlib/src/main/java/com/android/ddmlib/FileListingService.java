@@ -31,28 +31,28 @@ import java.util.regex.Pattern;
 public final class FileListingService {
 
     /** Pattern to find filenames that match "*.apk" */
-    private final static Pattern sApkPattern =
+    private static final Pattern sApkPattern =
         Pattern.compile(".*\\.apk", Pattern.CASE_INSENSITIVE); //$NON-NLS-1$
 
-    private final static String PM_FULL_LISTING = "pm list packages -f"; //$NON-NLS-1$
+    private static final String PM_FULL_LISTING = "pm list packages -f"; //$NON-NLS-1$
 
     /** Pattern to parse the output of the 'pm -lf' command.<br>
      * The output format looks like:<br>
      * /data/app/myapp.apk=com.mypackage.myapp */
-    private final static Pattern sPmPattern = Pattern.compile("^package:(.+?)=(.+)$"); //$NON-NLS-1$
+    private static final Pattern sPmPattern = Pattern.compile("^package:(.+?)=(.+)$"); //$NON-NLS-1$
 
     /** Top level data folder. */
-    public final static String DIRECTORY_DATA = "data"; //$NON-NLS-1$
+    public static final String DIRECTORY_DATA = "data"; //$NON-NLS-1$
     /** Top level sdcard folder. */
-    public final static String DIRECTORY_SDCARD = "sdcard"; //$NON-NLS-1$
+    public static final String DIRECTORY_SDCARD = "sdcard"; //$NON-NLS-1$
     /** Top level mount folder. */
-    public final static String DIRECTORY_MNT = "mnt"; //$NON-NLS-1$
+    public static final String DIRECTORY_MNT = "mnt"; //$NON-NLS-1$
     /** Top level system folder. */
-    public final static String DIRECTORY_SYSTEM = "system"; //$NON-NLS-1$
+    public static final String DIRECTORY_SYSTEM = "system"; //$NON-NLS-1$
     /** Top level temp folder. */
-    public final static String DIRECTORY_TEMP = "tmp"; //$NON-NLS-1$
+    public static final String DIRECTORY_TEMP = "tmp"; //$NON-NLS-1$
     /** Application folder. */
-    public final static String DIRECTORY_APP = "app"; //$NON-NLS-1$
+    public static final String DIRECTORY_APP = "app"; //$NON-NLS-1$
 
     public static final long REFRESH_RATE = 5000L;
     /**
@@ -104,11 +104,11 @@ public final class FileListingService {
     /**
      * Represents an entry in a directory. This can be a file or a directory.
      */
-    public final static class FileEntry {
+    public static final class FileEntry {
         /** Pattern to escape filenames for shell command consumption.
          *  This pattern identifies any special characters that need to be escaped with a
          *  backslash. */
-        private final static Pattern sEscapePattern = Pattern.compile(
+        private static final Pattern sEscapePattern = Pattern.compile(
                 "([\\\\()*+?\"'&#/\\s])"); //$NON-NLS-1$
 
         /**

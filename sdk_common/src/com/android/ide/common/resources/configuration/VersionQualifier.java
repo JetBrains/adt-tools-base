@@ -24,9 +24,9 @@ import java.util.regex.Pattern;
  */
 public final class VersionQualifier extends ResourceQualifier {
     /** Default pixel density value. This means the property is not set. */
-    private final static int DEFAULT_VERSION = -1;
+    private static final int DEFAULT_VERSION = -1;
 
-    private final static Pattern sVersionPattern = Pattern.compile("^v(\\d+)$");//$NON-NLS-1$
+    private static final Pattern sVersionPattern = Pattern.compile("^v(\\d+)$");//$NON-NLS-1$
 
     private int mVersion = DEFAULT_VERSION;
 

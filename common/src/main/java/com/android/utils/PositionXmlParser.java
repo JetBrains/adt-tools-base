@@ -55,7 +55,7 @@ public class PositionXmlParser {
     private static final String UTF_16 = "UTF_16";               //$NON-NLS-1$
     private static final String UTF_16LE = "UTF_16LE";           //$NON-NLS-1$
     private static final String CONTENT_KEY = "contents";        //$NON-NLS-1$
-    private final static String POS_KEY = "offsets";             //$NON-NLS-1$
+    private static final String POS_KEY = "offsets";             //$NON-NLS-1$
     private static final String NAMESPACE_PREFIX_FEATURE =
             "http://xml.org/sax/features/namespace-prefixes";    //$NON-NLS-1$
     private static final String NAMESPACE_FEATURE =

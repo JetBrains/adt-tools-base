@@ -237,7 +237,7 @@ public final class HeapSegment implements Comparable<HeapSegment> {
     protected ByteBuffer mUsageData;
 
     //* mStartAddress is set to this value when the segment becomes invalid.
-    private final static long INVALID_START_ADDRESS = -1;
+    private static final long INVALID_START_ADDRESS = -1;
 
     /**
      * Create a new HeapSegment based on the raw contents

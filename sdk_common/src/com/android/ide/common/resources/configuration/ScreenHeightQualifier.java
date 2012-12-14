@@ -24,10 +24,10 @@ import java.util.regex.Pattern;
  */
 public final class ScreenHeightQualifier extends ResourceQualifier {
     /** Default screen size value. This means the property is not set */
-    final static int DEFAULT_SIZE = -1;
+    static final int DEFAULT_SIZE = -1;
 
-    private final static Pattern sParsePattern = Pattern.compile("^h(\\d+)dp$");//$NON-NLS-1$
-    private final static String sPrintPattern = "h%1$ddp";
+    private static final Pattern sParsePattern = Pattern.compile("^h(\\d+)dp$");//$NON-NLS-1$
+    private static final String sPrintPattern = "h%1$ddp";
 
     public static final String NAME = "Screen Height";
 

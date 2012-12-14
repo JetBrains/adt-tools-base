@@ -26,7 +26,7 @@ import com.android.resources.ScreenSize;
  */
 public abstract class RenderParams {
 
-    public final static long DEFAULT_TIMEOUT = 250; //ms
+    public static final long DEFAULT_TIMEOUT = 250; //ms
 
     private final Object mProjectKey;
     private final HardwareConfig mHardwareConfig;

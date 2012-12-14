@@ -33,7 +33,7 @@ public class AllocationInfo implements IStackTraceInfo {
         NUMBER, SIZE, CLASS, THREAD, IN_CLASS, IN_METHOD;
     }
 
-    public final static class AllocationSorter implements Comparator<AllocationInfo> {
+    public static final class AllocationSorter implements Comparator<AllocationInfo> {
 
         private SortMode mSortMode = SortMode.SIZE;
         private boolean mDescending = true;

@@ -43,7 +43,7 @@ import javax.xml.parsers.SAXParserFactory;
  */
 public final class MultiResourceFile extends ResourceFile implements IValueResourceRepository {
 
-    private final static SAXParserFactory sParserFactory = SAXParserFactory.newInstance();
+    private static final SAXParserFactory sParserFactory = SAXParserFactory.newInstance();
 
     private final Map<ResourceType, Map<String, ResourceValue>> mResourceItems =
         new EnumMap<ResourceType, Map<String, ResourceValue>>(ResourceType.class);

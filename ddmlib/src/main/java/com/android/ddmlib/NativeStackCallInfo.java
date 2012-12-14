@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
  * information as one object.
  */
 public final class NativeStackCallInfo {
-    private final static Pattern SOURCE_NAME_PATTERN = Pattern.compile("^(.+):(\\d+)$");
+    private static final Pattern SOURCE_NAME_PATTERN = Pattern.compile("^(.+):(\\d+)$");
 
     /** address of this stack frame */
     private long mAddress;

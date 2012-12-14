@@ -35,8 +35,10 @@ import com.android.sdklib.devices.Screen;
  */
 public class HardwareConfigHelper {
 
-    private final @NonNull Device mDevice;
-    private @NonNull ScreenOrientation mScreenOrientation = ScreenOrientation.PORTRAIT;
+    @NonNull
+    private final Device mDevice;
+    @NonNull
+    private ScreenOrientation mScreenOrientation = ScreenOrientation.PORTRAIT;
 
     // optional
     private int mMaxRenderWidth = -1;

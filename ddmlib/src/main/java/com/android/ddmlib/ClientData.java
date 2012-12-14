@@ -49,7 +49,7 @@ public class ClientData {
 
 
     /** Temporary name of VM to be ignored. */
-    private final static String PRE_INITIALIZED = "<pre-initialized>"; //$NON-NLS-1$
+    private static final String PRE_INITIALIZED = "<pre-initialized>"; //$NON-NLS-1$
 
     public static enum DebuggerStatus {
         /** Debugger connection status: not waiting on one, not connected to one, but accepting
@@ -100,46 +100,46 @@ public class ClientData {
      * Name of the value representing the max size of the heap, in the {@link Map} returned by
      * {@link #getVmHeapInfo(int)}
      */
-    public final static String HEAP_MAX_SIZE_BYTES = "maxSizeInBytes"; //$NON-NLS-1$
+    public static final String HEAP_MAX_SIZE_BYTES = "maxSizeInBytes"; //$NON-NLS-1$
     /**
      * Name of the value representing the size of the heap, in the {@link Map} returned by
      * {@link #getVmHeapInfo(int)}
      */
-    public final static String HEAP_SIZE_BYTES = "sizeInBytes"; //$NON-NLS-1$
+    public static final String HEAP_SIZE_BYTES = "sizeInBytes"; //$NON-NLS-1$
     /**
      * Name of the value representing the number of allocated bytes of the heap, in the
      * {@link Map} returned by {@link #getVmHeapInfo(int)}
      */
-    public final static String HEAP_BYTES_ALLOCATED = "bytesAllocated"; //$NON-NLS-1$
+    public static final String HEAP_BYTES_ALLOCATED = "bytesAllocated"; //$NON-NLS-1$
     /**
      * Name of the value representing the number of objects in the heap, in the {@link Map}
      * returned by {@link #getVmHeapInfo(int)}
      */
-    public final static String HEAP_OBJECTS_ALLOCATED = "objectsAllocated"; //$NON-NLS-1$
+    public static final String HEAP_OBJECTS_ALLOCATED = "objectsAllocated"; //$NON-NLS-1$
 
     /**
      * String for feature enabling starting/stopping method profiling
      * @see #hasFeature(String)
      */
-    public final static String FEATURE_PROFILING = "method-trace-profiling"; //$NON-NLS-1$
+    public static final String FEATURE_PROFILING = "method-trace-profiling"; //$NON-NLS-1$
 
     /**
      * String for feature enabling direct streaming of method profiling data
      * @see #hasFeature(String)
      */
-    public final static String FEATURE_PROFILING_STREAMING = "method-trace-profiling-streaming"; //$NON-NLS-1$
+    public static final String FEATURE_PROFILING_STREAMING = "method-trace-profiling-streaming"; //$NON-NLS-1$
 
     /**
      * String for feature allowing to dump hprof files
      * @see #hasFeature(String)
      */
-    public final static String FEATURE_HPROF = "hprof-heap-dump"; //$NON-NLS-1$
+    public static final String FEATURE_HPROF = "hprof-heap-dump"; //$NON-NLS-1$
 
     /**
      * String for feature allowing direct streaming of hprof dumps
      * @see #hasFeature(String)
      */
-    public final static String FEATURE_HPROF_STREAMING = "hprof-heap-dump-streaming"; //$NON-NLS-1$
+    public static final String FEATURE_HPROF_STREAMING = "hprof-heap-dump-streaming"; //$NON-NLS-1$
 
     private static IHprofDumpHandler sHprofDumpHandler;
     private static IMethodProfilingHandler sMethodProfilingHandler;

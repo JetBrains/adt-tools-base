@@ -39,7 +39,7 @@ import javax.xml.parsers.SAXParserFactory;
  */
 public class SingleResourceFile extends ResourceFile {
 
-    private final static SAXParserFactory sParserFactory = SAXParserFactory.newInstance();
+    private static final SAXParserFactory sParserFactory = SAXParserFactory.newInstance();
     static {
         sParserFactory.setNamespaceAware(true);
     }

@@ -45,25 +45,25 @@ import java.util.regex.Pattern;
 public final class EventLogParser {
 
     /** Location of the tag map file on the device */
-    private final static String EVENT_TAG_MAP_FILE = "/system/etc/event-log-tags"; //$NON-NLS-1$
+    private static final String EVENT_TAG_MAP_FILE = "/system/etc/event-log-tags"; //$NON-NLS-1$
 
     /**
      * Event log entry types.  These must match up with the declarations in
      * java/android/android/util/EventLog.java.
      */
-    private final static int EVENT_TYPE_INT      = 0;
-    private final static int EVENT_TYPE_LONG     = 1;
-    private final static int EVENT_TYPE_STRING   = 2;
-    private final static int EVENT_TYPE_LIST     = 3;
+    private static final int EVENT_TYPE_INT      = 0;
+    private static final int EVENT_TYPE_LONG     = 1;
+    private static final int EVENT_TYPE_STRING   = 2;
+    private static final int EVENT_TYPE_LIST     = 3;
 
-    private final static Pattern PATTERN_SIMPLE_TAG = Pattern.compile(
+    private static final Pattern PATTERN_SIMPLE_TAG = Pattern.compile(
     "^(\\d+)\\s+([A-Za-z0-9_]+)\\s*$"); //$NON-NLS-1$
-    private final static Pattern PATTERN_TAG_WITH_DESC = Pattern.compile(
+    private static final Pattern PATTERN_TAG_WITH_DESC = Pattern.compile(
             "^(\\d+)\\s+([A-Za-z0-9_]+)\\s*(.*)\\s*$"); //$NON-NLS-1$
-    private final static Pattern PATTERN_DESCRIPTION = Pattern.compile(
+    private static final Pattern PATTERN_DESCRIPTION = Pattern.compile(
             "\\(([A-Za-z0-9_\\s]+)\\|(\\d+)(\\|\\d+){0,1}\\)"); //$NON-NLS-1$
 
-    private final static Pattern TEXT_LOG_LINE = Pattern.compile(
+    private static final Pattern TEXT_LOG_LINE = Pattern.compile(
             "(\\d\\d)-(\\d\\d)\\s(\\d\\d):(\\d\\d):(\\d\\d).(\\d{3})\\s+I/([a-zA-Z0-9_]+)\\s*\\(\\s*(\\d+)\\):\\s+(.*)"); //$NON-NLS-1$
 
     private final TreeMap<Integer, String> mTagMap = new TreeMap<Integer, String>();

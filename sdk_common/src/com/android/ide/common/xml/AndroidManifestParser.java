@@ -50,14 +50,14 @@ import javax.xml.parsers.SAXParserFactory;
 
 public class AndroidManifestParser {
 
-    private final static int LEVEL_TOP = 0;
-    private final static int LEVEL_INSIDE_MANIFEST = 1;
-    private final static int LEVEL_INSIDE_APPLICATION = 2;
-    private final static int LEVEL_INSIDE_APP_COMPONENT = 3;
-    private final static int LEVEL_INSIDE_INTENT_FILTER = 4;
+    private static final int LEVEL_TOP = 0;
+    private static final int LEVEL_INSIDE_MANIFEST = 1;
+    private static final int LEVEL_INSIDE_APPLICATION = 2;
+    private static final int LEVEL_INSIDE_APP_COMPONENT = 3;
+    private static final int LEVEL_INSIDE_INTENT_FILTER = 4;
 
-    private final static String ACTION_MAIN = "android.intent.action.MAIN"; //$NON-NLS-1$
-    private final static String CATEGORY_LAUNCHER = "android.intent.category.LAUNCHER"; //$NON-NLS-1$
+    private static final String ACTION_MAIN = "android.intent.action.MAIN"; //$NON-NLS-1$
+    private static final String CATEGORY_LAUNCHER = "android.intent.category.LAUNCHER"; //$NON-NLS-1$
 
     public interface ManifestErrorHandler extends ErrorHandler {
         /**
@@ -569,7 +569,7 @@ public class AndroidManifestParser {
 
     }
 
-    private final static SAXParserFactory sParserFactory;
+    private static final SAXParserFactory sParserFactory;
 
     static {
         sParserFactory = SAXParserFactory.newInstance();

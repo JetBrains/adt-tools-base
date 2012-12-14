@@ -24,9 +24,9 @@ import java.util.regex.Pattern;
  */
 public final class CountryCodeQualifier extends ResourceQualifier {
     /** Default pixel density value. This means the property is not set. */
-    private final static int DEFAULT_CODE = -1;
+    private static final int DEFAULT_CODE = -1;
 
-    private final static Pattern sCountryCodePattern = Pattern.compile("^mcc(\\d{3})$");//$NON-NLS-1$
+    private static final Pattern sCountryCodePattern = Pattern.compile("^mcc(\\d{3})$");//$NON-NLS-1$
 
     private final int mCode;
 

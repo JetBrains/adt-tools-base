@@ -33,13 +33,13 @@ public final class ManifestData {
      * Value returned by {@link #getMinSdkVersion()} when the value of the minSdkVersion attribute
      * in the manifest is a codename and not an integer value.
      */
-    public final static int MIN_SDK_CODENAME = 0;
+    public static final int MIN_SDK_CODENAME = 0;
 
     /**
      * Value returned by {@link #getGlEsVersion()} when there are no <uses-feature> node with the
      * attribute glEsVersion set.
      */
-    public final static int GL_ES_VERSION_NOT_SET = -1;
+    public static final int GL_ES_VERSION_NOT_SET = -1;
 
     /** Application package */
     String mPackage;
@@ -74,7 +74,7 @@ public final class ManifestData {
     /**
      * Instrumentation info obtained from manifest
      */
-    public final static class Instrumentation {
+    public static final class Instrumentation {
         private final String mName;
         private final String mTargetPackage;
 
@@ -101,7 +101,7 @@ public final class ManifestData {
     /**
      * Activity info obtained from the manifest.
      */
-    public final static class Activity {
+    public static final class Activity {
         private final String mName;
         private final boolean mIsExported;
         private boolean mHasAction = false;
@@ -158,7 +158,7 @@ public final class ManifestData {
      *
      * To get an instance with all the actual values, use {@link #resolveSupportsScreensValues(int)}
      */
-    public final static class SupportsScreens {
+    public static final class SupportsScreens {
         private Boolean mResizeable;
         private Boolean mAnyDensity;
         private Boolean mSmallScreens;
@@ -466,7 +466,7 @@ public final class ManifestData {
     /**
      * Class representing a <code>uses-library</code> node in the manifest.
      */
-    public final static class UsesLibrary {
+    public static final class UsesLibrary {
         String mName;
         Boolean mRequired = Boolean.TRUE; // default is true even if missing
 
@@ -482,7 +482,7 @@ public final class ManifestData {
     /**
      * Class representing a <code>uses-feature</code> node in the manifest.
      */
-    public final static class UsesFeature {
+    public static final class UsesFeature {
         String mName;
         int mGlEsVersion = 0;
         Boolean mRequired = Boolean.TRUE;  // default is true even if missing
@@ -506,7 +506,7 @@ public final class ManifestData {
     /**
      * Class representing the <code>uses-configuration</code> node in the manifest.
      */
-    public final static class UsesConfiguration {
+    public static final class UsesConfiguration {
         Boolean mReqFiveWayNav;
         Boolean mReqHardKeyboard;
         Keyboard mReqKeyboardType;

@@ -45,19 +45,19 @@ public final class AndroidDebugBridge {
      * ADB_SERVER_VERSION found in //device/tools/adb/adb.h
      */
 
-    private final static int ADB_VERSION_MICRO_MIN = 20;
-    private final static int ADB_VERSION_MICRO_MAX = -1;
+    private static final int ADB_VERSION_MICRO_MIN = 20;
+    private static final int ADB_VERSION_MICRO_MAX = -1;
 
-    private final static Pattern sAdbVersion = Pattern.compile(
+    private static final Pattern sAdbVersion = Pattern.compile(
             "^.*(\\d+)\\.(\\d+)\\.(\\d+)$"); //$NON-NLS-1$
 
-    private final static String ADB = "adb"; //$NON-NLS-1$
-    private final static String DDMS = "ddms"; //$NON-NLS-1$
-    private final static String SERVER_PORT_ENV_VAR = "ANDROID_ADB_SERVER_PORT"; //$NON-NLS-1$
+    private static final String ADB = "adb"; //$NON-NLS-1$
+    private static final String DDMS = "ddms"; //$NON-NLS-1$
+    private static final String SERVER_PORT_ENV_VAR = "ANDROID_ADB_SERVER_PORT"; //$NON-NLS-1$
 
     // Where to find the ADB bridge.
-    final static String ADB_HOST = "127.0.0.1"; //$NON-NLS-1$
-    final static int ADB_PORT = 5037;
+    static final String ADB_HOST = "127.0.0.1"; //$NON-NLS-1$
+    static final int ADB_PORT = 5037;
 
     private static InetAddress sHostAddr;
     private static InetSocketAddress sSocketAddr;
@@ -75,11 +75,11 @@ public final class AndroidDebugBridge {
 
     private DeviceMonitor mDeviceMonitor;
 
-    private final static ArrayList<IDebugBridgeChangeListener> sBridgeListeners =
+    private static final ArrayList<IDebugBridgeChangeListener> sBridgeListeners =
         new ArrayList<IDebugBridgeChangeListener>();
-    private final static ArrayList<IDeviceChangeListener> sDeviceListeners =
+    private static final ArrayList<IDeviceChangeListener> sDeviceListeners =
         new ArrayList<IDeviceChangeListener>();
-    private final static ArrayList<IClientChangeListener> sClientListeners =
+    private static final ArrayList<IClientChangeListener> sClientListeners =
         new ArrayList<IClientChangeListener>();
 
     // lock object for synchronization

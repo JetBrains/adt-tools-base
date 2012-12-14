@@ -24,10 +24,10 @@ import java.util.regex.Pattern;
  */
 public final class ScreenWidthQualifier extends ResourceQualifier {
     /** Default screen size value. This means the property is not set */
-    final static int DEFAULT_SIZE = -1;
+    static final int DEFAULT_SIZE = -1;
 
-    private final static Pattern sParsePattern = Pattern.compile("^w(\\d+)dp$"); //$NON-NLS-1$
-    private final static String sPrintPattern = "w%1$ddp"; //$NON-NLS-1$
+    private static final Pattern sParsePattern = Pattern.compile("^w(\\d+)dp$"); //$NON-NLS-1$
+    private static final String sPrintPattern = "w%1$ddp"; //$NON-NLS-1$
 
     public static final String NAME = "Screen Width";
 

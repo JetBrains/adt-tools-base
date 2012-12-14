@@ -24,13 +24,13 @@ import java.util.regex.Pattern;
  */
 public final class NetworkCodeQualifier extends ResourceQualifier {
     /** Default pixel density value. This means the property is not set. */
-    private final static int DEFAULT_CODE = -1;
+    private static final int DEFAULT_CODE = -1;
 
-    private final static Pattern sNetworkCodePattern = Pattern.compile("^mnc(\\d{1,3})$"); //$NON-NLS-1$
+    private static final Pattern sNetworkCodePattern = Pattern.compile("^mnc(\\d{1,3})$"); //$NON-NLS-1$
 
     private final int mCode;
 
-    public final static String NAME = "Mobile Network Code";
+    public static final String NAME = "Mobile Network Code";
 
     /**
      * Creates and returns a qualifier from the given folder segment. If the segment is incorrect,
