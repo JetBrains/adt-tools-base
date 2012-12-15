@@ -22,6 +22,7 @@ import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
+import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
 import static com.android.SdkConstants.TAG_ACTIVITY;
 import static com.android.SdkConstants.TAG_APPLICATION;
 import static com.android.SdkConstants.TAG_PERMISSION;
@@ -203,7 +204,7 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
             Severity.WARNING,
             ManifestOrderDetector.class,
             Scope.MANIFEST_SCOPE).setMoreInfo(
-                    "http://developer.android.com/reference/android/R.attr.html#allowBackup");
+            "http://developer.android.com/reference/android/R.attr.html#allowBackup");
 
     /** Conflicting permission names */
     public static final Issue UNIQUE_PERMISSION = Issue.create(
@@ -225,6 +226,40 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
             ManifestOrderDetector.class,
             Scope.MANIFEST_SCOPE);
 
+    /** Using a resource for attributes that do not allow it */
+    public static final Issue SET_VERSION = Issue.create(
+            "MissingVersion", //$NON-NLS-1$
+            "Checks that the application name and version are set",
+
+            "You should define the version information for your application.\n" +
+            "`android:versionCode`: An integer value that represents the version of the " +
+            "application code, relative to other versions.\n" +
+            "\n" +
+            "`android:versionName`: A string value that represents the release version of " +
+            "the application code, as it should be shown to users.",
+
+            Category.CORRECTNESS,
+            2,
+            Severity.WARNING,
+            ManifestOrderDetector.class,
+            Scope.MANIFEST_SCOPE).setMoreInfo(
+            "http://developer.android.com/tools/publishing/versioning.html#appversioning");
+
+    /** Using a resource for attributes that do not allow it */
+    public static final Issue ILLEGAL_REFERENCE = Issue.create(
+            "IllegalResourceRef", //$NON-NLS-1$
+            "Checks for resource references where only literals are allowed",
+
+            "For the `versionCode` attribute, you have to specify an actual integer " +
+            "literal; you cannot use an indirection with a `@dimen/name` resource. " +
+            "Similarly, the `versionName` attribute should be an actual string, not " +
+            "a string resource url.",
+
+            Category.CORRECTNESS,
+            8,
+            Severity.WARNING,
+            ManifestOrderDetector.class,
+            Scope.MANIFEST_SCOPE);
 
     /** Constructs a new {@link ManifestOrderDetector} check */
     public ManifestOrderDetector() {
@@ -263,11 +298,40 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
 
     @Override
     public void afterCheckFile(@NonNull Context context) {
+        XmlContext xmlContext = (XmlContext) context;
+        Element element = xmlContext.document.getDocumentElement();
+        if (element != null) {
+            checkDocumentElement(xmlContext, element);
+        }
+
         if (mSeenUsesSdk == 0 && context.isEnabled(USES_SDK)) {
             context.report(USES_SDK, Location.create(context.file),
                     "Manifest should specify a minimum API level with " +
                     "<uses-sdk android:minSdkVersion=\"?\" />; if it really supports " +
                     "all versions of Android set it to 1.", null);
+        }
+    }
+
+    private void checkDocumentElement(XmlContext context, Element element) {
+        Attr codeNode = element.getAttributeNodeNS(ANDROID_URI, "versionCode");//$NON-NLS-1$
+        if (codeNode != null && codeNode.getValue().startsWith(PREFIX_RESOURCE_REF)
+                && context.isEnabled(ILLEGAL_REFERENCE)) {
+            context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
+                    "The android:versionCode cannot be a resource url, it must be "
+                            + "a literal integer", null);
+        } else if (codeNode == null && context.isEnabled(SET_VERSION)) {
+            context.report(SET_VERSION, element, context.getLocation(element),
+                    "Should set android:versionCode to specify the application version", null);
+        }
+        Attr nameNode = element.getAttributeNodeNS(ANDROID_URI, "versionName");//$NON-NLS-1$
+        if (nameNode != null && nameNode.getValue().startsWith(PREFIX_RESOURCE_REF)
+                && context.isEnabled(ILLEGAL_REFERENCE)) {
+            context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
+                    "The android:versionName cannot be a resource url, it must be "
+                            + "a literal string", null);
+        } else if (nameNode == null && context.isEnabled(SET_VERSION)) {
+            context.report(SET_VERSION, element, context.getLocation(element),
+                    "Should set android:versionName to specify the application version", null);
         }
     }
 
@@ -377,6 +441,14 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
                         "<uses-sdk> tag should specify a minimum API level with " +
                         "android:minSdkVersion=\"?\"", null);
                 }
+            } else {
+                Attr codeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION);
+                if (codeNode != null && codeNode.getValue().startsWith(PREFIX_RESOURCE_REF)
+                        && context.isEnabled(ILLEGAL_REFERENCE)) {
+                    context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
+                            "The android:minSdkVersion cannot be a resource url, it must be "
+                                    + "a literal integer (or string if a preview codename)", null);
+                }
             }
 
             if (!element.hasAttributeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION)) {
@@ -405,8 +477,15 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
                     // Ignore: AAPT will enforce this.
                 }
             }
-        }
 
+            Attr nameNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION);
+            if (nameNode != null && nameNode.getValue().startsWith(PREFIX_RESOURCE_REF)
+                    && context.isEnabled(ILLEGAL_REFERENCE)) {
+                context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
+                        "The android:targetSdkVersion cannot be a resource url, it must be "
+                                + "a literal integer (or string if a preview codename)", null);
+            }
+        }
         if (tag.equals(TAG_PERMISSION)) {
             Attr nameNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME);
             if (nameNode != null) {
@@ -470,7 +549,7 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
 
     private String getPackage(Element element) {
         if (mPackage == null) {
-            return element.getOwnerDocument().getDocumentElement().getAttribute(ATTR_PACKAGE);
+            mPackage = element.getOwnerDocument().getDocumentElement().getAttribute(ATTR_PACKAGE);
         }
 
         return mPackage;

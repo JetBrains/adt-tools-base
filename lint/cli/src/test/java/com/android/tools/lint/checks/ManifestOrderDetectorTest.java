@@ -288,4 +288,36 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
            checkLint(Arrays.asList(master, library)));
     }
 
+    public void testMissingVersion() throws Exception {
+        mEnabled = Collections.singleton(ManifestOrderDetector.SET_VERSION);
+        assertEquals(""
+            + "AndroidManifest.xml:2: Warning: Should set android:versionCode to specify the application version [MissingVersion]\n"
+            + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+            + "^\n"
+            + "AndroidManifest.xml:2: Warning: Should set android:versionName to specify the application version [MissingVersion]\n"
+            + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+            + "^\n"
+            + "0 errors, 2 warnings\n",
+            lintProject("no_version.xml=>AndroidManifest.xml"));
+    }
+
+    public void testIllegalReference() throws Exception {
+        mEnabled = Collections.singleton(ManifestOrderDetector.ILLEGAL_REFERENCE);
+        assertEquals(""
+            + "AndroidManifest.xml:2: Warning: The android:versionCode cannot be a resource url, it must be a literal integer [IllegalResourceRef]\n"
+            + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+            + "^\n"
+            + "AndroidManifest.xml:2: Warning: The android:versionName cannot be a resource url, it must be a literal string [IllegalResourceRef]\n"
+            + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+            + "^\n"
+            + "AndroidManifest.xml:7: Warning: The android:minSdkVersion cannot be a resource url, it must be a literal integer (or string if a preview codename) [IllegalResourceRef]\n"
+            + "    <uses-sdk android:minSdkVersion=\"@dimen/minSdkVersion\" android:targetSdkVersion=\"@dimen/targetSdkVersion\" />\n"
+            + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "AndroidManifest.xml:7: Warning: The android:targetSdkVersion cannot be a resource url, it must be a literal integer (or string if a preview codename) [IllegalResourceRef]\n"
+            + "    <uses-sdk android:minSdkVersion=\"@dimen/minSdkVersion\" android:targetSdkVersion=\"@dimen/targetSdkVersion\" />\n"
+            + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "0 errors, 4 warnings\n",
+
+            lintProject("illegal_version.xml=>AndroidManifest.xml"));
+    }
 }
