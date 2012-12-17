@@ -16,6 +16,11 @@ version = getVersion()
 group = 'com.android.tools'
 archivesBaseName = 'assetstudio'
 
+sourceSets {
+    main.resources.srcDir 'src/main/java'
+    test.resources.srcDir 'src/test/java'
+}
+
 uploadArchives {
     repositories {
         mavenDeployer {
