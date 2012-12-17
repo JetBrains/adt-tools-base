@@ -152,7 +152,7 @@ public class Main extends LintClient {
      *
      * @param args program arguments
      */
-    private void run(String[] args) {
+    public void run(String[] args) {
         if (args.length < 1) {
             printUsage(System.err);
             System.exit(ERRNO_USAGE);
