@@ -55,7 +55,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
     static {
-        final int initialCapacity = 136;
+        final int initialCapacity = 137;
         List<Issue> issues = new ArrayList<Issue>(initialCapacity);
 
         issues.add(AccessibilityDetector.ISSUE);
@@ -184,7 +184,8 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(JavaPerformanceDetector.USE_VALUEOF);
         issues.add(JavaPerformanceDetector.USE_SPARSEARRAY);
         issues.add(WakelockDetector.ISSUE);
-        issues.add(RecycleDetector.ISSUE);
+        issues.add(CleanupDetector.RECYCLE_RESOURCE);
+        issues.add(CleanupDetector.COMMIT_FRAGMENT);
         issues.add(SetJavaScriptEnabledDetector.ISSUE);
         issues.add(ToastDetector.ISSUE);
         issues.add(SharedPrefsDetector.ISSUE);
