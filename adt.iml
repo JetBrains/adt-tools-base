@@ -18,7 +18,7 @@
       <excludeFolder url="file://$MODULE_DIR$/rule_api/.settings" />
       <excludeFolder url="file://$MODULE_DIR$/rule_api/bin" />
       <excludeFolder url="file://$MODULE_DIR$/sdk_common/.settings" />
-      <excludeFolder url="file://$MODULE_DIR$/sdklib2/.settings" />
+      <excludeFolder url="file://$MODULE_DIR$/sdklib/.settings" />
       <excludeFolder url="file://$MODULE_DIR$/sdkstats/.settings" />
       <excludeFolder url="file://$MODULE_DIR$/templates" />
       <excludeFolder url="file://$MODULE_DIR$/testutils/.settings" />

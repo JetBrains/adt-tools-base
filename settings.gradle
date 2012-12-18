@@ -11,7 +11,7 @@ include 'lint'
 include 'testutils'
 
 project(':dvlib').projectDir = new File('device_validator/dvlib')
-project(':sdklib').projectDir = new File('sdklib2')
+project(':sdklib').projectDir = new File('sdklib')
 project(':lint_api').projectDir = new File('lint/libs/lint_api')
 project(':lint_checks').projectDir = new File('lint/libs/lint_checks')
 project(':lint').projectDir = new File('lint/cli')
