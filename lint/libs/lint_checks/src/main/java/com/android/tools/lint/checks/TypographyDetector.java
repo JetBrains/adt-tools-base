@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.TAG_STRING;
 import static com.android.SdkConstants.TAG_STRING_ARRAY;
 
@@ -267,7 +268,7 @@ public class TypographyDetector extends ResourceXmlDetector {
                         !Character.isWhitespace(matcher.group(2).charAt(0)) &&
                             Character.isWhitespace(matcher.group(1).charAt(
                                     matcher.group(1).length() - 1));
-                    if (!isNegativeNumber) {
+                    if (!isNegativeNumber && !isAnalyticsTrackingId((Element) element)) {
                         context.report(DASHES, element, context.getLocation(textNode),
                             EN_DASH_MESSAGE,
                             null);
@@ -371,6 +372,11 @@ public class TypographyDetector extends ResourceXmlDetector {
                 // are probably not very common within Android app strings.
             }
         }
+    }
+
+    private static boolean isAnalyticsTrackingId(Element element) {
+        String name = element.getAttribute(ATTR_NAME);
+        return "ga_trackingId".equals(name); //$NON-NLS-1$
     }
 
     /**
