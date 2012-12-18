@@ -16,7 +16,7 @@
       <module fileurl="file://$PROJECT_DIR$/ninepatch/ninepatch.iml" filepath="$PROJECT_DIR$/ninepatch/ninepatch.iml" />
       <module fileurl="file://$PROJECT_DIR$/rule_api/rule_api.iml" filepath="$PROJECT_DIR$/rule_api/rule_api.iml" />
       <module fileurl="file://$PROJECT_DIR$/sdk_common/sdk_common.iml" filepath="$PROJECT_DIR$/sdk_common/sdk_common.iml" />
-      <module fileurl="file://$PROJECT_DIR$/sdklib2/sdklib.iml" filepath="$PROJECT_DIR$/sdklib2/sdklib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sdklib/sdklib.iml" filepath="$PROJECT_DIR$/sdklib/sdklib.iml" />
       <module fileurl="file://$PROJECT_DIR$/testutils/testutils.iml" filepath="$PROJECT_DIR$/testutils/testutils.iml" />
     </modules>
   </component>
