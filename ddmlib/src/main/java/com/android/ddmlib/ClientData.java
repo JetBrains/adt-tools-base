@@ -130,6 +130,12 @@ public class ClientData {
     public static final String FEATURE_PROFILING_STREAMING = "method-trace-profiling-streaming"; //$NON-NLS-1$
 
     /**
+     * String for feature indicating support for tracing OpenGL calls.
+     * @see #hasFeature(String)
+     */
+    public final static String FEATURE_OPENGL_TRACING = "opengl-tracing"; //$NON-NLS-1$
+
+    /**
      * String for feature allowing to dump hprof files
      * @see #hasFeature(String)
      */

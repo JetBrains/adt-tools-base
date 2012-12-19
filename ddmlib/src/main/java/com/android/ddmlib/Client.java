@@ -271,6 +271,36 @@ public class Client {
         }
     }
 
+    public boolean startOpenGlTracing() {
+        boolean canTraceOpenGl = mClientData.hasFeature(ClientData.FEATURE_OPENGL_TRACING);
+        if (!canTraceOpenGl) {
+            return false;
+        }
+
+        try {
+            OpenGlTraceChunkHandler.sendStartGlTracing(this);
+            return true;
+        } catch (IOException e) {
+            Log.w("ddms", "Start OpenGL Tracing failed");
+            return false;
+        }
+    }
+
+    public boolean stopOpenGlTracing() {
+        boolean canTraceOpenGl = mClientData.hasFeature(ClientData.FEATURE_OPENGL_TRACING);
+        if (!canTraceOpenGl) {
+            return false;
+        }
+
+        try {
+            OpenGlTraceChunkHandler.sendStopGlTracing(this);
+            return true;
+        } catch (IOException e) {
+            Log.w("ddms", "Stop OpenGL Tracing failed");
+            return false;
+        }
+    }
+
     /**
      * Sends a request to the VM to send the enable status of the method profiling.
      * This is asynchronous.
