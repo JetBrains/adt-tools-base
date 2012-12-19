@@ -16,17 +16,22 @@
 
 package com.android.sdklib.devices;
 
-public enum CameraLocation {
-    FRONT("front"),
-    BACK("back");
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
+public enum CameraLocation {
+    FRONT("front"), //$NON-NLS-1$
+    BACK("back");   //$NON-NLS-1$
+
+    @NonNull
     private final String mValue;
 
-    private CameraLocation(String value) {
+    CameraLocation(@NonNull String value) {
         mValue = value;
     }
 
-    public static CameraLocation getEnum(String value) {
+    @Nullable
+    public static CameraLocation getEnum(@NonNull String value) {
         for (CameraLocation l : values()) {
             if (l.mValue.equals(value)) {
                 return l;

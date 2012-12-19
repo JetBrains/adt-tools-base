@@ -16,18 +16,23 @@
 
 package com.android.sdklib.devices;
 
-public enum ScreenType {
-    CAPACITIVE("capacitive"),
-    RESISTIVE("resistive"),
-    NOTOUCH("notouch");
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
+public enum ScreenType {
+    CAPACITIVE("capacitive"), //$NON-NLS-1$
+    RESISTIVE("resistive"),   //$NON-NLS-1$
+    NOTOUCH("notouch");       //$NON-NLS-1$
+
+    @NonNull
     private final String mValue;
 
-    private ScreenType(String value) {
+    ScreenType(@NonNull String value) {
         mValue = value;
     }
 
-    public static ScreenType getEnum(String value) {
+    @Nullable
+    public static ScreenType getEnum(@NonNull String value) {
         for (ScreenType s : values()) {
             if (s.mValue.equals(value)) {
                 return s;

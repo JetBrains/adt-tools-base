@@ -17,6 +17,7 @@
 package com.android.utils;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 import java.util.Formatter;
 
@@ -48,7 +49,7 @@ public interface ILogger {
      *          using a {@link Formatter} with the provided arguments.
      * @param args provides the arguments for errorFormat.
      */
-    void error(Throwable t, String msgFormat, Object... args);
+    void error(@Nullable Throwable t, @Nullable String msgFormat, Object... args);
 
     /**
      * Prints a warning message.

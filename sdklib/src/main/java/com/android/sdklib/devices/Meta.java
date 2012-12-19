@@ -16,7 +16,9 @@
 
 package com.android.sdklib.devices;
 
-import java.awt.Point;
+import com.android.annotations.Nullable;
+
+import java.awt.*;
 import java.io.File;
 
 public class Meta {
@@ -30,63 +32,55 @@ public class Meta {
         return mIconSixtyFour;
     }
 
-    public void setIconSixtyFour(File iconSixtyFour) {
+    public void setIconSixtyFour(@Nullable File iconSixtyFour) {
         mIconSixtyFour = iconSixtyFour;
     }
 
     public boolean hasIconSixtyFour() {
-        if (mIconSixtyFour != null && mIconSixtyFour.isFile()) {
-            return true;
-        } else {
-            return false;
-        }
+        return mIconSixtyFour != null && mIconSixtyFour.isFile();
     }
 
+    @Nullable
     public File getIconSixteen() {
         return mIconSixteen;
     }
 
-    public void setIconSixteen(File iconSixteen) {
+    public void setIconSixteen(@Nullable File iconSixteen) {
         mIconSixteen = iconSixteen;
     }
 
     public boolean hasIconSixteen() {
-        if (mIconSixteen != null && mIconSixteen.isFile()) {
-            return true;
-        } else {
-            return false;
-        }
+        return mIconSixteen != null && mIconSixteen.isFile();
     }
 
+    @Nullable
     public File getFrame() {
         return mFrame;
     }
 
-    public void setFrame(File frame) {
+    public void setFrame(@Nullable File frame) {
         mFrame = frame;
     }
 
     public boolean hasFrame() {
-        if (mFrame != null && mFrame.isFile()) {
-            return true;
-        } else {
-            return false;
-        }
+        return mFrame != null && mFrame.isFile();
     }
 
+    @Nullable
     public Point getFrameOffsetLandscape() {
         return mFrameOffsetLandscape;
     }
 
-    public void setFrameOffsetLandscape(Point offset) {
+    public void setFrameOffsetLandscape(@Nullable Point offset) {
         mFrameOffsetLandscape = offset;
     }
 
+    @Nullable
     public Point getFrameOffsetPortrait() {
         return mFrameOffsetPortrait;
     }
 
-    public void setFrameOffsetPortrait(Point offset) {
+    public void setFrameOffsetPortrait(@Nullable Point offset) {
         mFrameOffsetPortrait = offset;
     }
 
@@ -101,13 +95,13 @@ public class Meta {
         Meta m = (Meta) o;
 
         // Note that any of the fields of either object can be null
-        if (mIconSixtyFour != null && !mIconSixtyFour.equals(m.getIconSixtyFour())){
+        if (mIconSixtyFour != null && !mIconSixtyFour.equals(m.getIconSixtyFour())) {
             return false;
         } else if (m.getIconSixtyFour() != null && !m.getIconSixtyFour().equals(mIconSixtyFour)) {
             return false;
         }
 
-        if (mIconSixteen != null && !mIconSixteen.equals(m.getIconSixteen())){
+        if (mIconSixteen != null && !mIconSixteen.equals(m.getIconSixteen())) {
             return false;
         } else if (m.getIconSixteen() != null && !m.getIconSixteen().equals(mIconSixteen)) {
             return false;
@@ -120,19 +114,18 @@ public class Meta {
         }
 
         if (mFrameOffsetLandscape != null
-                && !mFrameOffsetLandscape.equals(m.getFrameOffsetLandscape())){
+                && !mFrameOffsetLandscape.equals(m.getFrameOffsetLandscape())) {
             return false;
         } else if (m.getFrameOffsetLandscape() != null
-                && !m.getFrameOffsetLandscape().equals(mFrameOffsetLandscape)){
+                && !m.getFrameOffsetLandscape().equals(mFrameOffsetLandscape)) {
             return false;
         }
 
-
         if (mFrameOffsetPortrait != null
-                && !mFrameOffsetPortrait.equals(m.getFrameOffsetPortrait())){
+                && !mFrameOffsetPortrait.equals(m.getFrameOffsetPortrait())) {
             return false;
         } else if (m.getFrameOffsetPortrait() != null
-                && !m.getFrameOffsetPortrait().equals(mFrameOffsetPortrait)){
+                && !m.getFrameOffsetPortrait().equals(mFrameOffsetPortrait)) {
             return false;
         }
 
@@ -142,23 +135,23 @@ public class Meta {
     @Override
     public int hashCode() {
         int hash = 17;
-        if(mIconSixteen != null){
+        if (mIconSixteen != null) {
             String path = mIconSixteen.getAbsolutePath();
             hash = 31 * hash + path.hashCode();
         }
-        if(mIconSixtyFour != null){
+        if (mIconSixtyFour != null) {
             String path = mIconSixtyFour.getAbsolutePath();
             hash = 31 * hash + path.hashCode();
         }
-        if(mFrame != null){
+        if (mFrame != null) {
             String path = mFrame.getAbsolutePath();
             hash = 31 * hash + path.hashCode();
         }
-        if(mFrameOffsetLandscape != null){
+        if (mFrameOffsetLandscape != null) {
             hash = 31 * hash + mFrameOffsetLandscape.x;
             hash = 31 * hash + mFrameOffsetLandscape.y;
         }
-        if(mFrameOffsetPortrait != null){
+        if (mFrameOffsetPortrait != null) {
             hash = 31 * hash + mFrameOffsetPortrait.x;
             hash = 31 * hash + mFrameOffsetPortrait.y;
         }

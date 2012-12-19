@@ -16,11 +16,16 @@
 
 package com.android.sdklib.devices;
 
-public enum ButtonType {
-    HARD("hard", "Hardware"),
-    SOFT("soft", "Software");
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
+public enum ButtonType {
+    HARD("hard", "Hardware"), //$NON-NLS-1$
+    SOFT("soft", "Software"); //$NON-NLS-1$
+
+    @NonNull
     private final String mId;
+    @NonNull
     private final String mDescription;
 
     /**
@@ -29,12 +34,13 @@ public enum ButtonType {
      * @param id identifier for this button type. Persisted on disk when a user creates a device.
      * @param desc User friendly description
      */
-    private ButtonType(String id, String desc) {
+    ButtonType(@NonNull String id, @NonNull String desc) {
         mId = id;
         mDescription = desc;
     }
 
-    public static ButtonType getEnum(String value) {
+    @Nullable
+    public static ButtonType getEnum(@NonNull String value) {
         for (ButtonType n : values()) {
             if (n.mId.equals(value)) {
                 return n;
@@ -48,8 +54,8 @@ public enum ButtonType {
         return mId;
     }
 
+    @NonNull
     public String getDescription() {
         return mDescription;
     }
-
 }

@@ -16,17 +16,22 @@
 
 package com.android.sdklib.devices;
 
-public enum PowerType {
-    PLUGGEDIN("plugged-in"),
-    BATTERY("battery");
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
+public enum PowerType {
+    PLUGGEDIN("plugged-in"), //$NON-NLS-1$
+    BATTERY("battery");      //$NON-NLS-1$
+
+    @NonNull
     private final String mValue;
 
-    private PowerType(String value) {
+    PowerType(@NonNull String value) {
         mValue = value;
     }
 
-    public static PowerType getEnum(String value) {
+    @Nullable
+    public static PowerType getEnum(@NonNull String value) {
         for (PowerType c : values()) {
             if (c.mValue.equals(value)) {
                 return c;

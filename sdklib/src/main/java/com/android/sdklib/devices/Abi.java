@@ -17,6 +17,8 @@
 package com.android.sdklib.devices;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 public enum Abi {
     ARMEABI(SdkConstants.ABI_ARMEABI),
@@ -24,13 +26,14 @@ public enum Abi {
     X86(SdkConstants.ABI_INTEL_ATOM),
     MIPS(SdkConstants.ABI_MIPS);
 
-    private final String mValue;
+    @NonNull private final String mValue;
 
-    private Abi(String value) {
+    Abi(@NonNull String value) {
         mValue = value;
     }
 
-    public static Abi getEnum(String value) {
+    @Nullable
+    public static Abi getEnum(@NonNull String value) {
         for (Abi a : values()) {
             if (a.mValue.equals(value)) {
                 return a;

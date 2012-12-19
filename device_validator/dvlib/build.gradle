@@ -1,4 +1,5 @@
 dependencies {
+    compile project(':common')
     testCompile 'junit:junit:3.8.1'
 }
 

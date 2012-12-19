@@ -16,19 +16,24 @@
 
 package com.android.sdklib.devices;
 
-public enum Multitouch {
-    NONE("none"),
-    BASIC("basic"),
-    DISTINCT("distinct"),
-    JAZZ_HANDS("jazz-hands");
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
+public enum Multitouch {
+    NONE("none"),              //$NON-NLS-1$
+    BASIC("basic"),            //$NON-NLS-1$
+    DISTINCT("distinct"),      //$NON-NLS-1$
+    JAZZ_HANDS("jazz-hands");  //$NON-NLS-1$
+
+    @NonNull
     private final String mValue;
 
-    private Multitouch(String value){
+    Multitouch(@NonNull String value) {
         mValue = value;
     }
 
-    public static Multitouch getEnum(String val){
+    @Nullable
+    public static Multitouch getEnum(@NonNull String val) {
         for (Multitouch m : values()) {
             if (m.mValue.equals(val)) {
                 return m;

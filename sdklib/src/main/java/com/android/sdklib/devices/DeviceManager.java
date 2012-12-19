@@ -59,14 +59,13 @@ public class DeviceManager {
 
     private static final String  DEVICE_PROFILES_PROP = "DeviceProfiles";
     private static final Pattern PATH_PROPERTY_PATTERN =
-        Pattern.compile("^" + PkgProps.EXTRA_PATH + "=" + DEVICE_PROFILES_PROP + "$");
+        Pattern.compile('^' + PkgProps.EXTRA_PATH + '=' + DEVICE_PROFILES_PROP + '$');
     private ILogger mLog;
     private List<Device> mVendorDevices;
     private List<Device> mUserDevices;
     private List<Device> mDefaultDevices;
     private final Object mLock = new Object();
-    private final List<DevicesChangedListener> sListeners =
-                                        new ArrayList<DevicesChangedListener>();
+    private final List<DevicesChangedListener> sListeners = new ArrayList<DevicesChangedListener>();
     private final String mOsSdkPath;
 
     /** getDevices() flag to list user devices. */
@@ -78,7 +77,7 @@ public class DeviceManager {
     /** getDevices() flag to list all devices. */
     public static final int ALL_DEVICES  = USER_DEVICES | DEFAULT_DEVICES | VENDOR_DEVICES;
 
-    public static enum DeviceStatus {
+    public enum DeviceStatus {
         /**
          * The device exists unchanged from the given configuration
          */
@@ -120,11 +119,11 @@ public class DeviceManager {
      * Interface implemented by objects which want to know when changes occur to the {@link Device}
      * lists.
      */
-    public static interface DevicesChangedListener {
+    public interface DevicesChangedListener {
         /**
          * Called after one of the {@link Device} lists has been updated.
          */
-        public void onDevicesChanged();
+        void onDevicesChanged();
     }
 
     /**
@@ -132,12 +131,10 @@ public class DeviceManager {
      *
      * @param listener The listener to add. Ignored if already registered.
      */
-    public void registerListener(DevicesChangedListener listener) {
-        if (listener != null) {
-            synchronized (sListeners) {
-                if (!sListeners.contains(listener)) {
-                    sListeners.add(listener);
-                }
+    public void registerListener(@NonNull DevicesChangedListener listener) {
+        synchronized (sListeners) {
+            if (!sListeners.contains(listener)) {
+                sListeners.add(listener);
             }
         }
     }
@@ -148,13 +145,15 @@ public class DeviceManager {
      *
      * @param listener The listener to remove.
      */
-    public boolean unregisterListener(DevicesChangedListener listener) {
+    public boolean unregisterListener(@NonNull DevicesChangedListener listener) {
         synchronized (sListeners) {
             return sListeners.remove(listener);
         }
     }
 
-    public DeviceStatus getDeviceStatus(String name, String manufacturer, int hashCode) {
+    @NonNull
+    public DeviceStatus getDeviceStatus(@NonNull String name, @NonNull String manufacturer,
+            int hashCode) {
         Device d = getDevice(name, manufacturer);
         if (d == null) {
             return DeviceStatus.MISSING;
@@ -163,7 +162,8 @@ public class DeviceManager {
         }
     }
 
-    public Device getDevice(String name, String manufacturer) {
+    @Nullable
+    public Device getDevice(@NonNull String name, @NonNull String manufacturer) {
         initDevicesLists();
         for (List<?> devices :
                 new List<?>[] { mUserDevices, mDefaultDevices, mVendorDevices } ) {
@@ -186,6 +186,7 @@ public class DeviceManager {
      *                     or the constant ALL_DEVICES.
      * @return A copy of the list of {@link Device}s. Can be empty but not null.
      */
+    @NonNull
     public List<Device> getDevices(int deviceFilter) {
         initDevicesLists();
         List<Device> devices = new ArrayList<Device>();
@@ -227,7 +228,7 @@ public class DeviceManager {
                     mLog.error(e, null);
                     mDefaultDevices = new ArrayList<Device>();
                 } catch (Exception e) {
-                    mLog.error(null, "Error reading default devices");
+                    mLog.error(e, "Error reading default devices");
                     mDefaultDevices = new ArrayList<Device>();
                 }
             }
@@ -300,16 +301,16 @@ public class DeviceManager {
                         while (renamedConfig.exists()) {
                             renamedConfig = new File(base + '.' + (i++));
                         }
-                        mLog.error(null, "Error parsing %1$s, backing up to %2$s",
+                        mLog.error(e, "Error parsing %1$s, backing up to %2$s",
                                 userDevicesFile.getAbsolutePath(),
                                 renamedConfig.getAbsolutePath());
                         userDevicesFile.renameTo(renamedConfig);
                     }
                 } catch (ParserConfigurationException e) {
-                    mLog.error(null, "Error parsing %1$s",
+                    mLog.error(e, "Error parsing %1$s",
                             userDevicesFile == null ? "(null)" : userDevicesFile.getAbsolutePath());
                 } catch (IOException e) {
-                    mLog.error(null, "Error parsing %1$s",
+                    mLog.error(e, "Error parsing %1$s",
                             userDevicesFile == null ? "(null)" : userDevicesFile.getAbsolutePath());
                 }
             }
@@ -317,7 +318,7 @@ public class DeviceManager {
         return false;
     }
 
-    public void addUserDevice(Device d) {
+    public void addUserDevice(@NonNull Device d) {
         boolean changed = false;
         synchronized (mLock) {
             if (mUserDevices == null) {
@@ -334,7 +335,7 @@ public class DeviceManager {
         }
     }
 
-    public void removeUserDevice(Device d) {
+    public void removeUserDevice(@NonNull Device d) {
         synchronized (mLock) {
             if (mUserDevices == null) {
                 initUserDevices();
@@ -356,7 +357,7 @@ public class DeviceManager {
         }
     }
 
-    public void replaceUserDevice(Device d) {
+    public void replaceUserDevice(@NonNull Device d) {
         synchronized (mLock) {
             if (mUserDevices == null) {
                 initUserDevices();
@@ -412,7 +413,8 @@ public class DeviceManager {
      * @param s The {@link State} from which to derive the hardware properties.
      * @return A {@link Map} of hardware properties.
      */
-    public static Map<String, String> getHardwareProperties(State s) {
+    @NonNull
+    public static Map<String, String> getHardwareProperties(@NonNull State s) {
         Hardware hw = s.getHardware();
         Map<String, String> props = new HashMap<String, String>();
         props.put(HardwareProperties.HW_MAINKEYS,
@@ -448,7 +450,8 @@ public class DeviceManager {
      * @param d The {@link Device} from which to derive the hardware properties.
      * @return A {@link Map} of hardware properties.
      */
-    public static Map<String, String> getHardwareProperties(Device d) {
+    @NonNull
+    public static Map<String, String> getHardwareProperties(@NonNull Device d) {
         Map<String, String> props = getHardwareProperties(d.getDefaultState());
         for (State s : d.getAllStates()) {
             if (s.getKeyState().equals(KeyboardState.HIDDEN)) {
@@ -477,15 +480,16 @@ public class DeviceManager {
         return HardwareProperties.BOOLEAN_VALUES[1];
     }
 
-    private Collection<Device> loadDevices(File deviceXml) {
+    @NonNull
+    private Collection<Device> loadDevices(@NonNull File deviceXml) {
         try {
             return DeviceParser.parse(deviceXml);
         } catch (SAXException e) {
-            mLog.error(null, "Error parsing %1$s", deviceXml.getAbsolutePath());
+            mLog.error(e, "Error parsing %1$s", deviceXml.getAbsolutePath());
         } catch (ParserConfigurationException e) {
-            mLog.error(null, "Error parsing %1$s", deviceXml.getAbsolutePath());
+            mLog.error(e, "Error parsing %1$s", deviceXml.getAbsolutePath());
         } catch (IOException e) {
-            mLog.error(null, "Error reading %1$s", deviceXml.getAbsolutePath());
+            mLog.error(e, "Error reading %1$s", deviceXml.getAbsolutePath());
         } catch (IllegalStateException e) {
             // The device builders can throw IllegalStateExceptions if
             // build gets called before everything is properly setup
@@ -503,7 +507,8 @@ public class DeviceManager {
     }
 
     /* Returns all of DeviceProfiles in the extras/ folder */
-    private List<File> getExtraDirs(File extrasFolder) {
+    @NonNull
+    private List<File> getExtraDirs(@NonNull File extrasFolder) {
         List<File> extraDirs = new ArrayList<File>();
         // All OEM provided device profiles are in
         // $SDK/extras/$VENDOR/$ITEM/devices.xml
@@ -526,7 +531,7 @@ public class DeviceManager {
      * Returns whether a specific folder for a specific vendor is a
      * DeviceProfiles folder
      */
-    private boolean isDevicesExtra(File item) {
+    private boolean isDevicesExtra(@NonNull File item) {
         File properties = new File(item, SdkConstants.FN_SOURCE_PROP);
         try {
             BufferedReader propertiesReader = new BufferedReader(new FileReader(properties));

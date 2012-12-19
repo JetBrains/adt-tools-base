@@ -16,6 +16,7 @@
 
 package com.android.sdklib.devices;
 
+import com.android.annotations.NonNull;
 import com.android.resources.KeyboardState;
 import com.android.resources.NavigationState;
 import com.android.resources.ScreenOrientation;
@@ -37,11 +38,12 @@ public class State {
         mDefaultState = defaultState;
     }
 
+    @NonNull
     public String getName() {
         return mName;
     }
 
-    public void setName(String name) {
+    public void setName(@NonNull String name) {
         mName = name;
     }
 
@@ -77,11 +79,12 @@ public class State {
         mNavState = navState;
     }
 
+    @NonNull
     public Hardware getHardware() {
         return mHardwareOverride;
     }
 
-    public void setHardware(Hardware hw) {
+    public void setHardware(@NonNull Hardware hw) {
         mHardwareOverride = hw;
     }
 

@@ -16,7 +16,10 @@
 
 package com.android.sdklib.devices;
 
+import com.android.annotations.NonNull;
+
 public class Camera {
+    @NonNull
     private CameraLocation mLocation;
     private boolean mAutofocus;
     private boolean mFlash;
@@ -38,18 +41,19 @@ public class Camera {
      * @param autofocus Whether the {@link Camera} can auto-focus.
      * @param flash Whether the {@link Camera} has flash.
      */
-    public Camera(CameraLocation location, boolean autofocus, boolean flash) {
+    public Camera(@NonNull CameraLocation location, boolean autofocus, boolean flash) {
         mLocation = location;
         mAutofocus = autofocus;
         mFlash = flash;
     }
 
+    @NonNull
     public CameraLocation getLocation() {
         return mLocation;
     }
 
-    public void setLocation(CameraLocation cl) {
-        mLocation = cl;
+    public void setLocation(@NonNull CameraLocation location) {
+        mLocation = location;
     }
 
     public boolean hasAutofocus() {
@@ -74,6 +78,7 @@ public class Camera {
      *
      * @return A copy of the object.
      */
+    @NonNull
     public Camera deepCopy() {
         Camera c = new Camera();
         c.mLocation = mLocation;

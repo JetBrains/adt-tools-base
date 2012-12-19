@@ -16,6 +16,9 @@
 
 package com.android.sdklib.devices;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 public enum Sensor {
     ACCELEROMETER("Accelerometer"),
     BAROMETER("Barometer"),
@@ -25,13 +28,15 @@ public enum Sensor {
     LIGHT_SENSOR("LightSensor"),
     PROXIMITY_SENSOR("ProximitySensor");
 
+    @NonNull
     private final String mValue;
 
-    private Sensor(String value) {
+    Sensor(@NonNull String value) {
         mValue = value;
     }
 
-    public static Sensor getEnum(String value) {
+    @Nullable
+    public static Sensor getEnum(@NonNull String value) {
         for (Sensor s : values()) {
             if (s.mValue.equals(value)) {
                 return s;
@@ -41,7 +46,7 @@ public enum Sensor {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return mValue;
     }
 }

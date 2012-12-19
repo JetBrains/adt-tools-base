@@ -16,18 +16,23 @@
 
 package com.android.sdklib.devices;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 public enum Network {
     BLUETOOTH("Bluetooth"),
     WIFI("Wifi"),
     NFC("NFC");
 
+    @NonNull
     private final String mValue;
 
-    private Network(String value) {
+    Network(@NonNull String value) {
         mValue = value;
     }
 
-    public static Network getEnum(String value) {
+    @Nullable
+    public static Network getEnum(@NonNull String value) {
         for (Network n : values()) {
             if (n.mValue.equals(value)) {
                 return n;
@@ -37,7 +42,7 @@ public enum Network {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return mValue;
     }
 }
