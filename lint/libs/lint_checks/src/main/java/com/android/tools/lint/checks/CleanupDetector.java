@@ -45,11 +45,12 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Checks for missing {@code recycle} calls on resources that encourage it
+ * Checks for missing {@code recycle} calls on resources that encourage it, and
+ * for missing {@code commit} calls on FragmentTransactions, etc.
  */
-public class RecycleDetector extends Detector implements ClassScanner {
+public class CleanupDetector extends Detector implements ClassScanner {
     /** Problems with missing recycle calls */
-    public static final Issue ISSUE = Issue.create(
+    public static final Issue RECYCLE_RESOURCE = Issue.create(
         "Recycle", //$NON-NLS-1$
         "Looks for missing recycle() calls on resources",
 
@@ -60,8 +61,21 @@ public class RecycleDetector extends Detector implements ClassScanner {
         Category.PERFORMANCE,
         7,
         Severity.WARNING,
-        RecycleDetector.class,
+        CleanupDetector.class,
         Scope.CLASS_FILE_SCOPE);
+
+    /** Problems with missing commit calls. */
+    public static final Issue COMMIT_FRAGMENT = Issue.create(
+            "CommitTransaction", //$NON-NLS-1$
+            "Looks for missing commit() calls on FragmentTransactions",
+
+            "After creating a `FragmentTransaction`, you typically need to commit it as well",
+
+            Category.CORRECTNESS,
+            7,
+            Severity.WARNING,
+            CleanupDetector.class,
+            Scope.CLASS_FILE_SCOPE);
 
     // Target method names
     private static final String RECYCLE = "recycle";                                  //$NON-NLS-1$
@@ -71,6 +85,9 @@ public class RecycleDetector extends Detector implements ClassScanner {
     private static final String OBTAIN_ATTRIBUTES = "obtainAttributes";               //$NON-NLS-1$
     private static final String OBTAIN_TYPED_ARRAY = "obtainTypedArray";              //$NON-NLS-1$
     private static final String OBTAIN_STYLED_ATTRIBUTES = "obtainStyledAttributes";  //$NON-NLS-1$
+    private static final String BEGIN_TRANSACTION = "beginTransaction";               //$NON-NLS-1$
+    private static final String COMMIT = "commit";                                    //$NON-NLS-1$
+    private static final String COMMIT_ALLOWING_LOSS = "commitAllowingStateLoss";     //$NON-NLS-1$
 
     // Target owners
     private static final String VELOCITY_TRACKER_CLS = "android/view/VelocityTracker";//$NON-NLS-1$
@@ -81,6 +98,10 @@ public class RecycleDetector extends Detector implements ClassScanner {
     private static final String HANDLER_CLS = "android/os/Handler";                   //$NON-NLS-1$
     private static final String RESOURCES_CLS = "android/content/res/Resources";      //$NON-NLS-1$
     private static final String PARCEL_CLS = "android/os/Parcel";                     //$NON-NLS-1$
+    private static final String FRAGMENT_MANAGER_CLS = "android/app/FragmentManager"; //$NON-NLS-1$
+    private static final String FRAGMENT_MANAGER_V4_CLS = "android/support/v4/app/FragmentManager";         //$NON-NLS-1$
+    private static final String FRAGMENT_TRANSACTION_CLS = "android/app/FragmentTransaction";               //$NON-NLS-1$
+    private static final String FRAGMENT_TRANSACTION_V4_CLS = "android/support/v4/app/FragmentTransaction"; //$NON-NLS-1$
 
     // Target description signatures
     private static final String TYPED_ARRAY_SIG = "Landroid/content/res/TypedArray;"; //$NON-NLS-1$
@@ -96,9 +117,11 @@ public class RecycleDetector extends Detector implements ClassScanner {
     private boolean mRecyclesMotionEvent;
     private boolean mObtainsParcel;
     private boolean mRecyclesParcel;
+    private boolean mObtainsTransaction;
+    private boolean mCommitsTransaction;
 
-    /** Constructs a new {@link RecycleDetector} */
-    public RecycleDetector() {
+    /** Constructs a new {@link CleanupDetector} */
+    public CleanupDetector() {
     }
 
     @Override
@@ -109,7 +132,8 @@ public class RecycleDetector extends Detector implements ClassScanner {
                     || mObtainsTracker && !mRecyclesTracker
                     || mObtainsMessage && !mRecyclesMessage
                     || mObtainsParcel && !mRecyclesParcel
-                    || mObtainsMotionEvent && !mRecyclesMotionEvent) {
+                    || mObtainsMotionEvent && !mRecyclesMotionEvent
+                    || mObtainsTransaction && !mCommitsTransaction) {
                 context.getDriver().requestRepeat(this, Scope.CLASS_FILE_SCOPE);
             }
         }
@@ -127,7 +151,10 @@ public class RecycleDetector extends Detector implements ClassScanner {
                 OBTAIN_ATTRIBUTES,
                 OBTAIN_TYPED_ARRAY,
                 OBTAIN_MESSAGE,
-                OBTAIN_NO_HISTORY
+                OBTAIN_NO_HISTORY,
+                BEGIN_TRANSACTION,
+                COMMIT,
+                COMMIT_ALLOWING_LOSS
         );
     }
 
@@ -153,11 +180,17 @@ public class RecycleDetector extends Detector implements ClassScanner {
             } else if (owner.equals(PARCEL_CLS)) {
                 mRecyclesParcel = true;
             }
+        } else if ((COMMIT.equals(name) || COMMIT_ALLOWING_LOSS.equals(name))
+                && desc.equals("()I")) { //$NON-NLS-1$
+            if (owner.equals(FRAGMENT_TRANSACTION_CLS)
+                    || owner.equals(FRAGMENT_TRANSACTION_V4_CLS)) {
+                mCommitsTransaction = true;
+            }
         } else if (owner.equals(MOTION_EVENT_CLS)) {
             if (OBTAIN.equals(name) || OBTAIN_NO_HISTORY.equals(name)) {
                 mObtainsMotionEvent = true;
                 if (phase == 2 && !mRecyclesMotionEvent) {
-                    context.report(ISSUE, method, call, context.getLocation(call),
+                    context.report(RECYCLE_RESOURCE, method, call, context.getLocation(call),
                             getErrorMessage(MOTION_EVENT_CLS),
                             null);
                 } else if (phase == 1
@@ -170,7 +203,7 @@ public class RecycleDetector extends Detector implements ClassScanner {
             if (owner.equals(HANDLER_CLS) && desc.endsWith(MESSAGE_SIG)) {
                 mObtainsMessage = true;
                 if (phase == 2 && !mRecyclesMessage) {
-                    context.report(ISSUE, method, call, context.getLocation(call),
+                    context.report(RECYCLE_RESOURCE, method, call, context.getLocation(call),
                             getErrorMessage(MESSAGE_CLS), null);
                 }
             }
@@ -178,7 +211,7 @@ public class RecycleDetector extends Detector implements ClassScanner {
             if (owner.equals(VELOCITY_TRACKER_CLS)) {
                 mObtainsTracker = true;
                 if (phase == 2 && !mRecyclesTracker) {
-                    context.report(ISSUE, method, call, context.getLocation(call),
+                    context.report(RECYCLE_RESOURCE, method, call, context.getLocation(call),
                             getErrorMessage(VELOCITY_TRACKER_CLS),
                             null);
                 }
@@ -186,14 +219,14 @@ public class RecycleDetector extends Detector implements ClassScanner {
                 // TODO: Handle Message constructor?
                 mObtainsMessage = true;
                 if (phase == 2 && !mRecyclesMessage) {
-                    context.report(ISSUE, method, call, context.getLocation(call),
+                    context.report(RECYCLE_RESOURCE, method, call, context.getLocation(call),
                             getErrorMessage(MESSAGE_CLS),
                             null);
                 }
             } else if (owner.equals(PARCEL_CLS)) {
                 mObtainsParcel = true;
                 if (phase == 2 && !mRecyclesParcel) {
-                    context.report(ISSUE, method, call, context.getLocation(call),
+                    context.report(RECYCLE_RESOURCE, method, call, context.getLocation(call),
                             getErrorMessage(PARCEL_CLS),
                             null);
                 } else if (phase == 1
@@ -209,7 +242,7 @@ public class RecycleDetector extends Detector implements ClassScanner {
                     && desc.endsWith(TYPED_ARRAY_SIG)) {
                 mObtainsTypedArray = true;
                 if (phase == 2 && !mRecyclesTypedArray) {
-                    context.report(ISSUE, method, call, context.getLocation(call),
+                    context.report(RECYCLE_RESOURCE, method, call, context.getLocation(call),
                             getErrorMessage(TYPED_ARRAY_CLS),
                             null);
                 } else if (phase == 1
@@ -218,11 +251,27 @@ public class RecycleDetector extends Detector implements ClassScanner {
                     mRecyclesTypedArray = true;
                 }
             }
+        } else if (BEGIN_TRANSACTION.equals(name)
+                && (owner.equals(FRAGMENT_MANAGER_CLS) || owner.equals(FRAGMENT_MANAGER_V4_CLS))) {
+            mObtainsTransaction = true;
+            if (phase == 2 && !mCommitsTransaction) {
+                context.report(COMMIT_FRAGMENT, method, call, context.getLocation(call),
+                    getErrorMessage(FRAGMENT_MANAGER_CLS), null);
+            } else if (phase == 1
+                    && checkMethodFlow(context, classNode, method, call,
+                    owner.equals(FRAGMENT_MANAGER_CLS)
+                            ? FRAGMENT_TRANSACTION_CLS : FRAGMENT_TRANSACTION_V4_CLS)) {
+                // Already reported error above; don't do global check
+                mCommitsTransaction = true;
+            }
         }
     }
 
     /** Computes an error message for a missing recycle of the given type */
     private static String getErrorMessage(String owner) {
+        if (FRAGMENT_MANAGER_CLS.equals(owner)) {
+            return "This transaction should be completed with a commit() call";
+        }
         String className = owner.substring(owner.lastIndexOf('/') + 1);
         return String.format("This %1$s should be recycled after use with #recycle()",
                 className);
@@ -239,15 +288,17 @@ public class RecycleDetector extends Detector implements ClassScanner {
      */
     private static boolean checkMethodFlow(ClassContext context, ClassNode classNode,
             MethodNode method, MethodInsnNode call, String recycleOwner) {
-        RecycleTracker interpreter = new RecycleTracker(context, method, call, recycleOwner);
+        CleanupTracker interpreter = new CleanupTracker(context, method, call, recycleOwner);
         ResourceAnalyzer analyzer = new ResourceAnalyzer(interpreter);
         interpreter.setAnalyzer(analyzer);
         try {
             analyzer.analyze(classNode.name, method);
-            if (!interpreter.isRecycled() && !interpreter.isEscaped()) {
+            if (!interpreter.isCleanedUp() && !interpreter.isEscaped()) {
                 Location location = context.getLocation(call);
                 String message = getErrorMessage(recycleOwner);
-                context.report(ISSUE, method, call, location, message, null);
+                Issue issue = call.owner.equals(FRAGMENT_MANAGER_CLS)
+                        ? COMMIT_FRAGMENT : RECYCLE_RESOURCE;
+                context.report(issue, method, call, location, message, null);
                 return true;
             }
         } catch (AnalyzerException e) {
@@ -263,20 +314,21 @@ public class RecycleDetector extends Detector implements ClassScanner {
      * value flows out of the method (to a field, or a method call), it will
      * also consider the resource recycled.
      */
-    private static class RecycleTracker extends Interpreter {
-        private static final Value INSTANCE = BasicValue.INT_VALUE; // Only identity matters, not value
+    private static class CleanupTracker extends Interpreter {
+        // Only identity matters, not value
+        private static final Value INSTANCE = BasicValue.INT_VALUE;
         private static final Value RECYCLED = BasicValue.FLOAT_VALUE;
         private static final Value UNKNOWN = BasicValue.UNINITIALIZED_VALUE;
 
         private final ClassContext mContext;
         private final MethodNode mMethod;
         private final MethodInsnNode mObtainNode;
-        private boolean mIsRecycled;
+        private boolean mIsCleanedUp;
         private boolean mEscapes;
         private final String mRecycleOwner;
         private ResourceAnalyzer mAnalyzer;
 
-        public RecycleTracker(
+        public CleanupTracker(
                 @NonNull ClassContext context,
                 @NonNull MethodNode method,
                 @NonNull MethodInsnNode obtainNode,
@@ -301,8 +353,8 @@ public class RecycleDetector extends Detector implements ClassScanner {
          *
          * @return true if the resource was recycled
          */
-        public boolean isRecycled() {
-            return mIsRecycled;
+        public boolean isCleanedUp() {
+            return mIsCleanedUp;
         }
 
         /**
@@ -358,7 +410,7 @@ public class RecycleDetector extends Detector implements ClassScanner {
                 if (node.getOpcode() == Opcodes.INVOKEVIRTUAL) {
                     if (call.name.equals(RECYCLE) && call.owner.equals(mRecycleOwner)) {
                         if (values != null && values.size() == 1 && values.get(0) == INSTANCE) {
-                            mIsRecycled = true;
+                            mIsCleanedUp = true;
                             Frame frame = mAnalyzer.getCurrentFrame();
                             if (frame != null) {
                                 int localSize = frame.getLocals();
@@ -375,6 +427,12 @@ public class RecycleDetector extends Detector implements ClassScanner {
                                 }
                             }
                             return RECYCLED;
+                        }
+                    } else if ((call.name.equals(COMMIT) || call.name.equals(COMMIT_ALLOWING_LOSS))
+                            && call.owner.equals(mRecycleOwner)) {
+                        if (values != null && values.size() == 1 && values.get(0) == INSTANCE) {
+                            mIsCleanedUp = true;
+                            return INSTANCE;
                         }
                     }
                 }
@@ -405,7 +463,7 @@ public class RecycleDetector extends Detector implements ClassScanner {
                         Location location = mContext.getLocation(call);
                         String message = String.format("This %1$s has already been recycled",
                                 mRecycleOwner.substring(mRecycleOwner.lastIndexOf('/') + 1));
-                        mContext.report(ISSUE, mMethod, call, location, message, null);
+                        mContext.report(RECYCLE_RESOURCE, mMethod, call, location, message, null);
                     }
                 }
             }

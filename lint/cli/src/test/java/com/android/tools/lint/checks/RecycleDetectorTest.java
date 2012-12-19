@@ -22,10 +22,10 @@ import com.android.tools.lint.detector.api.Detector;
 public class RecycleDetectorTest extends AbstractCheckTest {
     @Override
     protected Detector getDetector() {
-        return new RecycleDetector();
+        return new CleanupDetector();
     }
 
-    public void test() throws Exception {
+    public void testRecycle() throws Exception {
         assertEquals(
             "src/test/pkg/RecycleTest.java:56: Warning: This TypedArray should be recycled after use with #recycle() [Recycle]\n" +
             "  final TypedArray a = getContext().obtainStyledAttributes(attrs,\n" +
@@ -72,5 +72,42 @@ public class RecycleDetectorTest extends AbstractCheckTest {
                 "bytecode/RecycleTest.java.txt=>src/test/pkg/RecycleTest.java",
                 "bytecode/RecycleTest.class.data=>bin/classes/test/pkg/RecycleTest.class"
             ));
+    }
+
+    public void testCommit() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/CommitTest.java:24: Warning: This FragmentTransaction should be recycled after use with #recycle() [CommitTransaction]\n"
+                + "        getFragmentManager().beginTransaction(); // Missing commit\n"
+                + "                             ~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/CommitTest.java:29: Warning: This FragmentTransaction should be recycled after use with #recycle() [CommitTransaction]\n"
+                + "        FragmentTransaction transaction2 = getFragmentManager().beginTransaction(); // Missing commit\n"
+                + "                                                                ~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/CommitTest.java:38: Warning: This FragmentTransaction should be recycled after use with #recycle() [CommitTransaction]\n"
+                + "        getFragmentManager().beginTransaction(); // Missing commit\n"
+                + "                             ~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/CommitTest.java:64: Warning: This FragmentTransaction should be recycled after use with #recycle() [Recycle]\n"
+                + "        getSupportFragmentManager().beginTransaction();\n"
+                + "                                    ~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 4 warnings\n",
+
+            lintProject(
+                    "apicheck/classpath=>.classpath",
+                    "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                    "project.properties1=>project.properties",
+                    "bytecode/CommitTest.java.txt=>src/test/pkg/CommitTest.java",
+                    "bytecode/CommitTest.class.data=>bin/classes/test/pkg/CommitTest.class"
+            ));
+    }
+
+    public void testCommit2() throws Exception {
+        assertEquals(""
+                + "No warnings.",
+
+                lintProject(
+                        "apicheck/classpath=>.classpath",
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "project.properties1=>project.properties",
+                        "bytecode/DialogFragment.class.data=>bin/classes/test/pkg/DialogFragment.class"
+                ));
     }
 }
