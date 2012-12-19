@@ -218,7 +218,7 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
         TAG_ACTIVITY,
         TAG_SERVICE,
         TAG_RECEIVER,
-        TAG_PROVIDER
+        TAG_PROVIDER,
         // Keep synchronized with {@link #sClasses}
     };
 
@@ -227,7 +227,7 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
             ANDROID_APP_ACTIVITY,
             ANDROID_APP_SERVICE,
             ANDROID_CONTENT_BROADCAST_RECEIVER,
-            ANDROID_CONTENT_CONTENT_PROVIDER
+            ANDROID_CONTENT_CONTENT_PROVIDER,
             // Keep synchronized with {@link #sTags}
     };
 
@@ -242,7 +242,7 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
         return null;
     }
 
-    /** Looks up the manifest tag a given framework class should be registered with */
+    /** Looks up the tag a given framework class should be registered with */
     private static String classToTag(String className) {
         for (int i = 0, n = sClasses.length; i < n; i++) {
             if (sClasses[i].equals(className)) {

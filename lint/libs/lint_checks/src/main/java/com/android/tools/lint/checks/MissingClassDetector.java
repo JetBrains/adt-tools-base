@@ -18,6 +18,7 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_PKG_PREFIX;
 import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.ATTR_CLASS;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
@@ -26,8 +27,12 @@ import static com.android.SdkConstants.TAG_APPLICATION;
 import static com.android.SdkConstants.TAG_PROVIDER;
 import static com.android.SdkConstants.TAG_RECEIVER;
 import static com.android.SdkConstants.TAG_SERVICE;
+import static com.android.SdkConstants.TAG_STRING;
+import static com.android.SdkConstants.VIEW_FRAGMENT;
+import static com.android.SdkConstants.VIEW_TAG;
 
 import com.android.annotations.NonNull;
+import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
@@ -41,21 +46,25 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.android.utils.SdkUtils;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
+import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Checks to ensure that classes referenced in the manifest actually exist and are included
@@ -76,8 +85,8 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
         8,
         Severity.ERROR,
         MissingClassDetector.class,
-        EnumSet.of(Scope.MANIFEST, Scope.CLASS_FILE, Scope.JAVA_LIBRARIES)).setMoreInfo(
-        "http://developer.android.com/guide/topics/manifest/manifest-intro.html"); //$NON-NLS-1$
+        EnumSet.of(Scope.MANIFEST, Scope.CLASS_FILE, Scope.JAVA_LIBRARIES, Scope.RESOURCE_FILE))
+        .setMoreInfo("http://developer.android.com/guide/topics/manifest/manifest-intro.html"); //$NON-NLS-1$
 
     /** Are activity, service, receiver etc subclasses instantiatable? */
     public static final Issue INSTANTIATABLE = Issue.create(
@@ -114,6 +123,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
         Scope.MANIFEST_SCOPE);
 
     private Map<String, Location.Handle> mReferencedClasses;
+    private Set<String> mCustomViews;
     private boolean mHaveClasses;
 
     /** Constructs a new {@link MissingClassDetector} */
@@ -130,40 +140,93 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
 
     @Override
     public Collection<String> getApplicableElements() {
-        return Arrays.asList(
-                TAG_APPLICATION,
-                TAG_ACTIVITY,
-                TAG_SERVICE,
-                TAG_RECEIVER,
-                TAG_PROVIDER
-        );
+        return ALL;
+    }
+
+    @Override
+    public boolean appliesTo(@NonNull ResourceFolderType folderType) {
+        return folderType == ResourceFolderType.VALUES || folderType == ResourceFolderType.LAYOUT;
     }
 
     @Override
     public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
-
-        Element root = element.getOwnerDocument().getDocumentElement();
-        Attr classNameNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME);
-        if (classNameNode == null) {
-            return;
+        String pkg = null;
+        Node classNameNode;
+        String className;
+        String tag = element.getTagName();
+        ResourceFolderType folderType = context.getResourceFolderType();
+        if (folderType == ResourceFolderType.VALUES) {
+            if (!tag.equals(TAG_STRING)) {
+                return;
+            }
+            Attr attr = element.getAttributeNode(ATTR_NAME);
+            if (attr == null) {
+                return;
+            }
+            className = attr.getValue();
+            classNameNode = attr;
+        } else if (folderType == ResourceFolderType.LAYOUT) {
+            if (tag.indexOf('.') > 0) {
+                className = tag;
+                classNameNode = element;
+            } else if (tag.equals(VIEW_FRAGMENT) || tag.equals(VIEW_TAG)) {
+                Attr attr = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME);
+                if (attr == null) {
+                    attr = element.getAttributeNode(ATTR_CLASS);
+                }
+                if (attr == null) {
+                    return;
+                }
+                className = attr.getValue();
+                classNameNode = attr;
+            } else {
+                return;
+            }
+        } else {
+            // Manifest file
+            if (TAG_APPLICATION.equals(tag)
+                    || TAG_ACTIVITY.equals(tag)
+                    || TAG_SERVICE.equals(tag)
+                    || TAG_RECEIVER.equals(tag)
+                    || TAG_PROVIDER.equals(tag)) {
+                Element root = element.getOwnerDocument().getDocumentElement();
+                pkg = root.getAttribute(ATTR_PACKAGE);
+                Attr attr = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME);
+                if (attr == null) {
+                    return;
+                }
+                className = attr.getValue();
+                classNameNode = attr;
+            } else {
+                return;
+            }
         }
-        String className = classNameNode.getValue();
         if (className.isEmpty()) {
             return;
         }
 
-        String pkg = root.getAttribute(ATTR_PACKAGE);
         String fqcn;
-        if (className.startsWith(".")) { //$NON-NLS-1$
-            fqcn = pkg + className;
-        } else if (className.indexOf('.') == -1) {
-            // According to the <activity> manifest element documentation, this is not
-            // valid ( http://developer.android.com/guide/topics/manifest/activity-element.html )
-            // but it appears in manifest files and appears to be supported by the runtime
-            // so handle this in code as well:
-            fqcn = pkg + '.' + className;
+        int dotIndex = className.indexOf('.');
+        if (dotIndex <= 0) {
+            if (pkg == null) {
+                return; // value file
+            }
+            if (dotIndex == 0) {
+                fqcn = pkg + className;
+            } else {
+                // According to the <activity> manifest element documentation, this is not
+                // valid ( http://developer.android.com/guide/topics/manifest/activity-element.html )
+                // but it appears in manifest files and appears to be supported by the runtime
+                // so handle this in code as well:
+                fqcn = pkg + '.' + className;
+            }
         } else { // else: the class name is already a fully qualified class name
             fqcn = className;
+            // Only look for fully qualified tracker names in analytics files
+            if (folderType == ResourceFolderType.VALUES
+                    && !SdkUtils.endsWith(context.file.getPath(), "analytics.xml")) { //$NON-NLS-1$
+                return;
+            }
         }
 
         String signature = ClassContext.getInternalName(fqcn);
@@ -176,14 +239,21 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             return;
         }
 
-        if (mReferencedClasses == null) {
-            mReferencedClasses = Maps.newHashMapWithExpectedSize(16);
+        Handle handle = null;
+        if (!context.getDriver().isSuppressed(MISSING, element)) {
+            if (mReferencedClasses == null) {
+                mReferencedClasses = Maps.newHashMapWithExpectedSize(16);
+                mCustomViews = Sets.newHashSetWithExpectedSize(8);
+            }
+
+            handle = context.parser.createLocationHandle(context, element);
+            mReferencedClasses.put(signature, handle);
+            if (folderType == ResourceFolderType.LAYOUT && !tag.equals(VIEW_FRAGMENT)) {
+                mCustomViews.add(className);
+            }
         }
 
-        Handle handle = context.parser.createLocationHandle(context, element);
-        mReferencedClasses.put(signature, handle);
-
-        if (signature.indexOf('$') != -1) {
+        if (signature.indexOf('$') != -1 && pkg != null) {
             if (className.indexOf('$') == -1 && className.indexOf('.', 1) > 0) {
                 boolean haveUpperCase = false;
                 for (int i = 0, n = pkg.length(); i < n; i++) {
@@ -209,8 +279,10 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             // class named Baz, we register *both* into the reference map.
             // When generating errors we'll look for these an rip them back out if
             // it looks like one of the two variations have been seen.
-            signature = signature.replace('$', '/');
-            mReferencedClasses.put(signature, handle);
+            if (handle != null) {
+                signature = signature.replace('$', '/');
+                mReferencedClasses.put(signature, handle);
+            }
         }
     }
 
@@ -238,10 +310,30 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                 }
                 mReferencedClasses.remove(owner);
 
+                // Ignore usages of platform libraries
+                if (owner.startsWith("android/")) { //$NON-NLS-1$
+                    continue;
+                }
+
                 String message = String.format(
                         "Class referenced in the manifest, %1$s, was not found in the " +
-                        "project or the libraries", fqcn);
+                                "project or the libraries", fqcn);
                 Location location = handle.resolve();
+                File parentFile = location.getFile().getParentFile();
+                if (parentFile != null) {
+                    String parent = parentFile.getName();
+                    ResourceFolderType type = ResourceFolderType.getFolderType(parent);
+                    if (type == ResourceFolderType.LAYOUT) {
+                        message = String.format(
+                            "Class referenced in the layout file, %1$s, was not found in "
+                                + "the project or the libraries", fqcn);
+                    } else if (type == ResourceFolderType.VALUES) {
+                        message = String.format(
+                                "Class referenced in the analytics file, %1$s, was not "
+                                        + "found in the project or the libraries", fqcn);
+                    }
+                }
+
                 context.report(MISSING, location, message, null);
             }
         }
@@ -251,11 +343,13 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
 
     @Override
     public void checkClass(@NonNull ClassContext context, @NonNull ClassNode classNode) {
-        if (!context.isFromClassLibrary()) {
+        if (!mHaveClasses && !context.isFromClassLibrary()
+                && context.getProject() == context.getMainProject()) {
             mHaveClasses = true;
         }
         String curr = classNode.name;
         if (mReferencedClasses != null && mReferencedClasses.containsKey(curr)) {
+            boolean isCustomView = mCustomViews.contains(curr);
             mReferencedClasses.remove(curr);
 
             // Ensure that the class is public, non static and has a null constructor!
@@ -299,7 +393,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                 }
             }
 
-            if (!hasDefaultConstructor) {
+            if (!hasDefaultConstructor && !isCustomView) {
                 context.report(INSTANTIATABLE, context.getLocation(classNode), String.format(
                         "This class should provide a default constructor (a public " +
                         "constructor with no arguments) (%1$s)",

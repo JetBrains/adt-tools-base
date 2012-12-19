@@ -16,17 +16,29 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.checks.MissingClassDetector.INNERCLASS;
+import static com.android.tools.lint.checks.MissingClassDetector.INSTANTIATABLE;
+import static com.android.tools.lint.checks.MissingClassDetector.MISSING;
+
+import com.android.annotations.NonNull;
+import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
+import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @SuppressWarnings("javadoc")
 public class MissingClassDetectorTest extends AbstractCheckTest {
     private EnumSet<Scope> mScopes;
+    private Set<Issue> mEnabled = new HashSet<Issue>();
 
     @Override
     protected Detector getDetector() {
@@ -38,8 +50,19 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
         return mScopes;
     }
 
+    @Override
+    protected TestConfiguration getConfiguration(LintClient client, Project project) {
+        return new TestConfiguration(client, project, null) {
+            @Override
+            public boolean isEnabled(@NonNull Issue issue) {
+                return super.isEnabled(issue) && mEnabled.contains(issue);
+            }
+        };
+    }
+
     public void test() throws Exception {
         mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING);
         assertEquals(
             "AndroidManifest.xml:13: Error: Class referenced in the manifest, test.pkg.TestProvider, was not found in the project or the libraries [MissingRegistered]\n" +
             "        <activity android:name=\".TestProvider\" />\n" +
@@ -67,6 +90,7 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
 
     public void testIncrementalInManifest() throws Exception {
         mScopes = Scope.MANIFEST_SCOPE;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         assertEquals(
                 "No warnings.",
 
@@ -78,6 +102,7 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
 
     public void testNoWarningBeforeBuild() throws Exception {
         mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         assertEquals(
             "No warnings.",
 
@@ -89,11 +114,12 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
 
     public void testOkClasses() throws Exception {
         mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         assertEquals(
             "No warnings.",
 
             lintProject(
-                "bytecode/AndroidManifestWrongRegs.xml=>AndroidManifest.xml",
+                "bytecode/AndroidManifestRegs.xml=>AndroidManifest.xml",
                 "bytecode/.classpath=>.classpath",
                 "bytecode/OnClickActivity.java.txt=>src/test/pkg/OnClickActivity.java",
                 "bytecode/OnClickActivity.class.data=>bin/classes/test/pkg/OnClickActivity.class",
@@ -110,11 +136,12 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
 
     public void testOkLibraries() throws Exception {
         mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         assertEquals(
             "No warnings.",
 
             lintProject(
-                "bytecode/AndroidManifestWrongRegs.xml=>AndroidManifest.xml",
+                "bytecode/AndroidManifestRegs.xml=>AndroidManifest.xml",
                 "bytecode/.classpath=>.classpath",
                 "bytecode/classes.jar=>libs/classes.jar"
             ));
@@ -122,10 +149,13 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
 
     public void testLibraryProjects() throws Exception {
         mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         File master = getProjectDir("MasterProject",
                 // Master project
-                "bytecode/AndroidManifestWrongRegs.xml=>AndroidManifest.xml",
+                "bytecode/AndroidManifestRegs.xml=>AndroidManifest.xml",
                 "multiproject/main.properties=>project.properties",
+                "bytecode/TestService.java.txt=>src/test/pkg/TestService.java",
+                "bytecode/TestService.class.data=>bin/classes/test/pkg/TestService.class",
                 "bytecode/.classpath=>.classpath"
         );
         File library = getProjectDir("LibraryProject",
@@ -134,25 +164,24 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
                 "multiproject/library.properties=>project.properties",
                 "bytecode/OnClickActivity.java.txt=>src/test/pkg/OnClickActivity.java",
                 "bytecode/OnClickActivity.class.data=>bin/classes/test/pkg/OnClickActivity.class",
-                "bytecode/TestService.java.txt=>src/test/pkg/TestService.java",
-                "bytecode/TestService.class.data=>bin/classes/test/pkg/TestService.class",
                 "bytecode/TestProvider.java.txt=>src/test/pkg/TestProvider.java",
                 "bytecode/TestProvider.class.data=>bin/classes/test/pkg/TestProvider.class",
                 "bytecode/TestProvider2.java.txt=>src/test/pkg/TestProvider2.java",
                 "bytecode/TestProvider2.class.data=>bin/classes/test/pkg/TestProvider2.class"
                 // Missing TestReceiver: Test should complain about just that class
         );
-        assertEquals(
-           "MasterProject/AndroidManifest.xml:17: Error: Class referenced in the manifest, test.pkg.TestReceiver, was not found in the project or the libraries [MissingRegistered]\n" +
-           "        <service android:name=\"TestReceiver\" />\n" +
-           "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-           "1 errors, 0 warnings\n",
+        assertEquals(""
+                + "MasterProject/AndroidManifest.xml:32: Error: Class referenced in the manifest, test.pkg.TestReceiver, was not found in the project or the libraries [MissingRegistered]\n"
+                + "        <receiver android:name=\"TestReceiver\" />\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
 
            checkLint(Arrays.asList(master, library)));
     }
 
     public void testInnerClassStatic() throws Exception {
         mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         assertEquals(
             "src/test/pkg/Foo.java:8: Warning: This inner class should be static (test.pkg.Foo.Baz) [Instantiatable]\n" +
             "    public class Baz extends Activity {\n" +
@@ -171,6 +200,7 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
 
     public void testInnerClassPublic() throws Exception {
         mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         assertEquals(
             "src/test/pkg/Foo/Bar.java:6: Warning: The default constructor must be public [Instantiatable]\n" +
             "    private Bar() {\n" +
@@ -187,6 +217,7 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
 
     public void testInnerClass() throws Exception {
         mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         assertEquals(
             "AndroidManifest.xml:14: Error: Class referenced in the manifest, test.pkg.Foo.Bar, was not found in the project or the libraries [MissingRegistered]\n" +
             "        <activity\n" +
@@ -206,6 +237,7 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
 
     public void testInnerClass2() throws Exception {
         mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         assertEquals(
             "AndroidManifest.xml:14: Error: Class referenced in the manifest, test.pkg.Foo.Bar, was not found in the project or the libraries [MissingRegistered]\n" +
             "        <activity\n" +
@@ -222,6 +254,7 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
 
     public void testWrongSeparator1() throws Exception {
         mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         assertEquals(
             "AndroidManifest.xml:14: Error: Class referenced in the manifest, test.pkg.Foo.Bar, was not found in the project or the libraries [MissingRegistered]\n" +
             "        <activity\n" +
@@ -238,6 +271,7 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
 
     public void testWrongSeparator2() throws Exception {
         mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         assertEquals(
             "AndroidManifest.xml:14: Error: Class referenced in the manifest, test.pkg.Foo.Bar, was not found in the project or the libraries [MissingRegistered]\n" +
             "        <activity\n" +
@@ -257,6 +291,7 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
 
     public void testNoClassesWithLibraries() throws Exception {
         mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         assertEquals(
             "No warnings.",
 
@@ -267,4 +302,75 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
             ));
     }
 
+    public void testFragment() throws Exception {
+        mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
+        assertEquals(""
+            + "res/layout/fragment2.xml:7: Error: Class referenced in the layout file, my.app.Fragment, was not found in the project or the libraries [MissingRegistered]\n"
+            + "    <fragment\n"
+            + "    ^\n"
+            + "res/layout/fragment2.xml:12: Error: Class referenced in the layout file, my.app.MyView, was not found in the project or the libraries [MissingRegistered]\n"
+            + "    <view\n"
+            + "    ^\n"
+            + "res/layout/fragment2.xml:17: Error: Class referenced in the layout file, my.app.Fragment2, was not found in the project or the libraries [MissingRegistered]\n"
+            + "    <fragment\n"
+            + "    ^\n"
+            + "3 errors, 0 warnings\n",
+
+        lintProject(
+            "bytecode/AndroidManifestRegs.xml=>AndroidManifest.xml",
+            "bytecode/.classpath=>.classpath",
+            "bytecode/OnClickActivity.java.txt=>src/test/pkg/OnClickActivity.java",
+            "bytecode/OnClickActivity.class.data=>bin/classes/test/pkg/OnClickActivity.class",
+            "bytecode/TestService.java.txt=>src/test/pkg/TestService.java",
+            "bytecode/TestService.class.data=>bin/classes/test/pkg/TestService.class",
+            "bytecode/TestProvider.java.txt=>src/test/pkg/TestProvider.java",
+            "bytecode/TestProvider.class.data=>bin/classes/test/pkg/TestProvider.class",
+            "bytecode/TestProvider2.java.txt=>src/test/pkg/TestProvider2.java",
+            "bytecode/TestProvider2.class.data=>bin/classes/test/pkg/TestProvider2.class",
+            "bytecode/TestReceiver.java.txt=>src/test/pkg/TestReceiver.java",
+            "bytecode/TestReceiver.class.data=>bin/classes/test/pkg/TestReceiver.class",
+            "registration/Foo.java.txt=>src/test/pkg/Foo.java",
+            "registration/Foo.class.data=>bin/classes/test/pkg/Foo.class",
+            "registration/Bar.java.txt=>src/test/pkg/Foo/Bar.java",
+            "registration/Bar.class.data=>bin/classes/test/pkg/Foo/Bar.class",
+
+            "res/layout/fragment2.xml"
+        ));
+    }
+
+    public void testAnalytics() throws Exception {
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
+        assertEquals(""
+                + "res/values/analytics.xml:13: Error: Class referenced in the analytics file, com.example.app.BaseActivity, was not found in the project or the libraries [MissingRegistered]\n"
+                + "  <string name=\"com.example.app.BaseActivity\">Home</string>\n"
+                + "  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/values/analytics.xml:14: Error: Class referenced in the analytics file, com.example.app.PrefsActivity, was not found in the project or the libraries [MissingRegistered]\n"
+                + "  <string name=\"com.example.app.PrefsActivity\">Preferences</string>\n"
+                + "  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "2 errors, 0 warnings\n",
+
+            lintProject(
+                "bytecode/.classpath=>.classpath",
+                "res/values/analytics.xml",
+                "bytecode/OnClickActivity.java.txt=>src/test/pkg/OnClickActivity.java",
+                "bytecode/OnClickActivity.class.data=>bin/classes/test/pkg/OnClickActivity.class"
+            ));
+    }
+
+    public void testCustomView() throws Exception {
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
+        assertEquals(""
+                + "res/layout/customview.xml:21: Error: Class referenced in the layout file, foo.bar.Baz, was not found in the project or the libraries [MissingRegistered]\n"
+                + "    <foo.bar.Baz\n"
+                + "    ^\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "bytecode/.classpath=>.classpath",
+                        "res/layout/customview.xml",
+                        "bytecode/OnClickActivity.java.txt=>src/test/pkg/OnClickActivity.java",
+                        "bytecode/OnClickActivity.class.data=>bin/classes/test/pkg/OnClickActivity.class"
+                ));
+    }
 }

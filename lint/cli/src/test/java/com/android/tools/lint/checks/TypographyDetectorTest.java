@@ -86,6 +86,13 @@ public class TypographyDetectorTest extends AbstractCheckTest {
             lintProject("res/values/typography.xml"));
     }
 
+    public void testAnalytics() throws Exception {
+        assertEquals(""
+                + "No warnings.",
+
+                lintProject("res/values/analytics.xml"));
+    }
+
     public void testSingleQuotesRange() {
         assertTrue(SINGLE_QUOTE.matcher("Foo: 'bar'").matches());
         assertTrue(SINGLE_QUOTE.matcher("'Foo': bar").matches());
