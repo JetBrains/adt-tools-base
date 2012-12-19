@@ -55,7 +55,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
     static {
-        final int initialCapacity = 134;
+        final int initialCapacity = 136;
         List<Issue> issues = new ArrayList<Issue>(initialCapacity);
 
         issues.add(AccessibilityDetector.ISSUE);
@@ -132,6 +132,8 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ManifestOrderDetector.TARGET_NEWER);
         issues.add(ManifestOrderDetector.ALLOW_BACKUP);
         issues.add(ManifestOrderDetector.UNIQUE_PERMISSION);
+        issues.add(ManifestOrderDetector.SET_VERSION);
+        issues.add(ManifestOrderDetector.ILLEGAL_REFERENCE);
         issues.add(SecurityDetector.EXPORTED_PROVIDER);
         issues.add(SecurityDetector.EXPORTED_SERVICE);
         issues.add(SecurityDetector.EXPORTED_ACTIVITY);
