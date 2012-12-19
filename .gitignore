@@ -5,6 +5,7 @@ Thumbs.db
 *.class
 *.DS_Store
 .gradle
+/build
 /out
 .idea/workspace.xml
 .idea/dictionaries/tnorbye.xml
