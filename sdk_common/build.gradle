@@ -2,6 +2,7 @@ dependencies {
     compile project(':sdklib')
 
     testCompile 'junit:junit:3.8.1'
+    testCompile project(':sdklib').sourceSets.test.output
 }
 
 def getVersion() {
