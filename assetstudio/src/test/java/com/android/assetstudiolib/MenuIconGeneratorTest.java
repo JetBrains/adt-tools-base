@@ -22,7 +22,7 @@ import java.io.IOException;
 public class MenuIconGeneratorTest extends GeneratorTest {
     private void checkGraphic(String baseName) throws IOException {
         MenuIconGenerator generator = new MenuIconGenerator();
-        checkGraphic(4, "menus", baseName, generator, new GraphicGenerator.Options());
+        checkGraphic(3, "menus", baseName, generator, new GraphicGenerator.Options());
     }
 
     public void testMenu() throws Exception {

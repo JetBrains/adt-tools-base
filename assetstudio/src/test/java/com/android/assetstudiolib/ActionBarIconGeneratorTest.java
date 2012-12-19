@@ -28,7 +28,7 @@ public class ActionBarIconGeneratorTest extends GeneratorTest {
         options.theme = theme;
 
         ActionBarIconGenerator generator = new ActionBarIconGenerator();
-        checkGraphic(4, "actions", baseName, generator, options);
+        checkGraphic(3, "actions", baseName, generator, options);
     }
 
     public void testDark() throws Exception {

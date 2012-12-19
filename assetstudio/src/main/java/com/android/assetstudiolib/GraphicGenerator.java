@@ -160,7 +160,8 @@ public abstract class GraphicGenerator {
             if (!density.isValidValueForDevice()) {
                 continue;
             }
-            if (density == Density.TV || density == Density.XXHIGH) {
+            if (density == Density.LOW || density == Density.TV ||
+                    (density == Density.XXHIGH && !(this instanceof LauncherIconGenerator))) {
                 // TODO don't manually check and instead gracefully handle missing stencils.
                 // Not yet supported -- missing stencil image
                 continue;

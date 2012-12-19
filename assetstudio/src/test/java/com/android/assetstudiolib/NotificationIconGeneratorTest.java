@@ -22,35 +22,28 @@ import java.io.IOException;
 
 @SuppressWarnings("javadoc")
 public class NotificationIconGeneratorTest extends GeneratorTest {
-    private void checkGraphic(String baseName,
-            GraphicGenerator.Shape shape, int minSdk, String folderName,
+    private void checkGraphic(String baseName, int minSdk, String folderName,
             int expectedCount) throws IOException {
         NotificationOptions options = new NotificationOptions();
-        options.shape = shape;
         options.minSdk = minSdk;
 
         NotificationIconGenerator generator = new NotificationIconGenerator();
         checkGraphic(expectedCount, folderName, baseName, generator, options);
     }
 
-    private void checkGraphic(String baseName, GraphicGenerator.Shape shape) throws IOException {
-        checkGraphic(baseName, shape, 1, "notification", 12);
+    private void checkGraphic(String baseName) throws IOException {
+        checkGraphic(baseName, 1, "notification", 9);
     }
 
     public void testNotification1() throws Exception {
-        checkGraphic("ic_stat_circle", GraphicGenerator.Shape.CIRCLE);
+        checkGraphic("ic_stat_1");
     }
 
     public void testNotification2() throws Exception {
-        checkGraphic("ic_stat_square", GraphicGenerator.Shape.SQUARE);
+        checkGraphic("ic_stat_1", 9 /* minSdk */, "notification-v9+", 6 /* fileCount */);
     }
 
     public void testNotification3() throws Exception {
-        checkGraphic("ic_stat_circle", GraphicGenerator.Shape.CIRCLE, 9 /* minSdk*/,
-                "notification-v9+", 8 /*fileCount*/);
-    }
-
-    public void testNotification4() throws Exception {
-        checkGraphic("ic_stat_circle", GraphicGenerator.Shape.CIRCLE, 11, "notification-v11+", 4);
+        checkGraphic("ic_stat_1", 11, "notification-v11+", 3);
     }
 }

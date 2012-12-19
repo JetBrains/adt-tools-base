@@ -63,12 +63,11 @@ public class NotificationIconGenerator extends GraphicGenerator {
         Graphics2D g2 = (Graphics2D) tempImage.getGraphics();
 
         if (notificationOptions.version == Version.OLDER) {
-            BufferedImage mBackImage = context.loadImageResource(
+            BufferedImage backImage = context.loadImageResource(
                     "/images/notification_stencil/"
-                            + notificationOptions.shape.id + '/' +
-                            notificationOptions.density.getResourceValue()
+                            + notificationOptions.density.getResourceValue()
                             + ".png");
-            g.drawImage(mBackImage, 0, 0, null);
+            g.drawImage(backImage, 0, 0, null);
             BufferedImage top = options.sourceImage;
             BufferedImage filled = Util.filledImage(top, Color.WHITE);
             Util.drawCenterInside(g, filled, targetRect);
@@ -137,11 +136,6 @@ public class NotificationIconGenerator extends GraphicGenerator {
      * Options specific to generating notification icons
      */
     public static class NotificationOptions extends GraphicGenerator.Options {
-        /**
-         * The shape to use for graphics behind the icon (for {@link Version#OLDER} only)
-         */
-        public Shape shape = Shape.SQUARE;
-
         /**
          * The version of the icon to generate - different styles are used for different
          * versions of Android

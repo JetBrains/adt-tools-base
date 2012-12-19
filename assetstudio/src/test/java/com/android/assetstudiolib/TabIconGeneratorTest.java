@@ -29,10 +29,10 @@ public class TabIconGeneratorTest extends GeneratorTest {
     }
 
     public void testTabs1() throws Exception {
-        checkGraphic("tabs", "ic_tab_1", 1 /* minSdk */, 16 /* expectedFileCount */);
+        checkGraphic("tabs", "ic_tab_1", 1 /* minSdk */, 12 /* expectedFileCount */);
     }
 
     public void testTabs2() throws Exception {
-        checkGraphic("tabs-v5+", "ic_tab_1", 5, 8);
+        checkGraphic("tabs-v5+", "ic_tab_1", 5, 6);
     }
 }
