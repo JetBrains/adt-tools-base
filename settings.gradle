@@ -9,6 +9,7 @@ include 'lint_api'
 include 'lint_checks'
 include 'lint'
 include 'testutils'
+include 'sdk_common'
 
 project(':dvlib').projectDir = new File('device_validator/dvlib')
 project(':sdklib').projectDir = new File('sdklib')
