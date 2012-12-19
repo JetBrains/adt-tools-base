@@ -4,7 +4,6 @@ dependencies {
 
     testCompile 'org.easymock:easymock:3.1'
     testCompile 'junit:junit:3.8.1'
-    testCompile project(':lint')
     testCompile project(':testutils')
 }
 
