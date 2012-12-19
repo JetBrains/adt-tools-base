@@ -15,21 +15,24 @@
  */
 package com.android.utils;
 
-import static com.android.SdkConstants.XMLNS;
-
 import com.android.SdkConstants;
 import com.android.annotations.Nullable;
+
+import junit.framework.TestCase;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
+
+import java.io.StringReader;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import junit.framework.TestCase;
+import static com.android.SdkConstants.XMLNS;
 
 @SuppressWarnings("javadoc")
 public class XmlUtilsTest extends TestCase {
@@ -116,8 +119,27 @@ public class XmlUtilsTest extends TestCase {
         assertEquals("&lt;\"'>&amp;", sb.toString());
     }
 
-    public void testNew() throws Exception {
+    public void testHasChildren() throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        factory.setValidating(false);
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document document = builder.newDocument();
+        assertFalse(XmlUtils.hasElementChildren(document));
+        document.appendChild(document.createElement("A"));
+        Element a = document.getDocumentElement();
+        assertFalse(XmlUtils.hasElementChildren(a));
+        a.appendChild(document.createTextNode("foo"));
+        assertFalse(XmlUtils.hasElementChildren(a));
+        Element b = document.createElement("B");
+        a.appendChild(b);
+        assertTrue(XmlUtils.hasElementChildren(a));
+        assertFalse(XmlUtils.hasElementChildren(b));
+    }
+
+    public void testToXml() throws Exception {
         Document doc = createEmptyPlainDocument();
+        assertNotNull(doc);
         Element root = doc.createElement("myroot");
         doc.appendChild(root);
         root.setAttribute("foo", "bar");
@@ -133,28 +155,93 @@ public class XmlUtilsTest extends TestCase {
         Node text = doc.createTextNode("  This is my text  ");
         child3.appendChild(text);
 
-        String xml = XmlUtils.toXml(doc, false);
+        String xml = XmlUtils.toXml(doc, true);
         assertEquals(
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                "<myroot baz=\"baz\" foo=\"bar\">\n" +
-                "    <mychild/>\n" +
-                "    <hasComment>\n" +
-                "        <!--\n" +
-                "            This is my comment\n" +
-                "        -->\n" +
-                "    </hasComment>\n" +
-                "    <hasText>\n" +
-                "            This is my text\n" +
-                "    </hasText>\n" +
-                "</myroot>\n",
+                        "<myroot baz=\"baz\" foo=\"bar\"><mychild/><hasComment><!--This is my comment--></hasComment><hasText>  This is my text  </hasText></myroot>",
                 xml);
+    }
+
+    public void testToXml2() throws Exception {
+        String xml = ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources>\n"
+                + "    <string \n"
+                + "        name=\"description_search\">Search</string>\n"
+                + "    <string \n"
+                + "        name=\"description_map\">Map</string>\n"
+                + "    <string\n"
+                + "         name=\"description_refresh\">Refresh</string>\n"
+                + "    <string \n"
+                + "        name=\"description_share\">Share</string>\n"
+                + "</resources>";
+
+        Document doc = parse(xml);
+
+        String formatted = XmlUtils.toXml(doc, true);
+        assertEquals(""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources>\n"
+                + "    <string name=\"description_search\">Search</string>\n"
+                + "    <string name=\"description_map\">Map</string>\n"
+                + "    <string name=\"description_refresh\">Refresh</string>\n"
+                + "    <string name=\"description_share\">Share</string>\n"
+                + "</resources>",
+                formatted);
+    }
+
+    public void testToXml3() throws Exception {
+        String xml = ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<root>\n"
+                + "    <!-- ============== -->\n"
+                + "    <!-- Generic styles -->\n"
+                + "    <!-- ============== -->\n"
+                + "</root>";
+        Document doc = parse(xml);
+
+        String formatted = XmlUtils.toXml(doc, true);
+        assertEquals(xml, formatted);
+    }
+
+    public void testToXml3b() throws Exception {
+        String xml = ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources>\n"
+                + "  <!-- ============== -->\n"
+                + "  <!-- Generic styles -->\n"
+                + "         <!-- ============== -->\n"
+                + " <string     name=\"test\">test</string>\n"
+                + "</resources>";
+        Document doc = parse(xml);
+
+        String formatted = XmlUtils.toXml(doc, true);
+        assertEquals(""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources>\n"
+                + "  <!-- ============== -->\n"
+                + "  <!-- Generic styles -->\n"
+                + "         <!-- ============== -->\n"
+                + " <string name=\"test\">test</string>\n"
+                + "</resources>",
+                formatted);
+    }
+
+
+    public void testToXml4() throws Exception {
+        String xml = ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<!-- ============== -->\n"
+                + "<!-- Generic styles -->\n"
+                + "<!-- ============== -->\n"
+                + "<root/>";
+        Document doc = parse(xml);
 
         xml = XmlUtils.toXml(doc, true);
-        assertEquals(
-                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                "<myroot baz=\"baz\" foo=\"bar\"><mychild/><hasComment><!--This is my comment--></hasComment><hasText>  This is my text  </hasText></myroot>",
-               xml);
-
+        assertEquals(""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<!-- ============== --><!-- Generic styles --><!-- ============== --><root/>",
+                xml);
     }
 
     @Nullable
@@ -166,5 +253,22 @@ public class XmlUtilsTest extends TestCase {
         DocumentBuilder builder;
         builder = factory.newDocumentBuilder();
         return builder.newDocument();
+    }
+
+    @Nullable
+    private static Document parse(String xml) throws Exception {
+        if (true) {
+            return XmlUtils.parseDocumentSilently(xml, true);
+        }
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        factory.setValidating(false);
+        factory.setExpandEntityReferences(false);
+        factory.setXIncludeAware(false);
+        factory.setIgnoringComments(false);
+        factory.setCoalescing(false);
+        DocumentBuilder builder;
+        builder = factory.newDocumentBuilder();
+        return builder.parse(new InputSource(new StringReader(xml)));
     }
 }

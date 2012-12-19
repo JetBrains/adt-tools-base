@@ -15,6 +15,24 @@
  */
 package com.android.utils;
 
+import com.android.SdkConstants;
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+
+import java.io.StringReader;
+import java.util.HashSet;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
 import static com.android.SdkConstants.AMP_ENTITY;
 import static com.android.SdkConstants.ANDROID_NS_NAME;
 import static com.android.SdkConstants.ANDROID_URI;
@@ -26,22 +44,13 @@ import static com.android.SdkConstants.XMLNS;
 import static com.android.SdkConstants.XMLNS_PREFIX;
 import static com.android.SdkConstants.XMLNS_URI;
 
-import com.android.SdkConstants;
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.google.common.base.Splitter;
-
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import java.util.HashSet;
-
 /** XML Utilities */
 public class XmlUtils {
+    public static final String XML_COMMENT_BEGIN = "<!--"; //$NON-NLS-1$
+    public static final String XML_COMMENT_END = "-->";    //$NON-NLS-1$
+    public static final String XML_PROLOG =
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";  //$NON-NLS-1$
+
     /**
      * Returns the namespace prefix matching the requested namespace URI.
      * If no such declaration is found, returns the default "android" prefix for
@@ -280,86 +289,87 @@ public class XmlUtils {
     }
 
     /**
-     * Dump an XML tree to string. This isn't going to do a beautiful job pretty
-     * printing the XML; it's intended mostly for non-user editable files and
-     * for debugging. If true, preserve whitespace exactly as in the DOM
-     * document (typically used for a DOM which is already formatted), otherwise
-     * this method will insert some newlines here and there (for example, one
-     * per element and one per attribute.)
+     * Returns true if the given node has one or more element children
      *
-     * @param node the node (which can be a document, an element, a text node,
-     *            etc.
-     * @param preserveWhitespace whether to preserve the whitespace (text nodes)
-     *            in the DOM
-     * @return a string version of the file
+     * @param node the node to test for element children
+     * @return true if the node has one or more element children
+     */
+    public static boolean hasElementChildren(@NonNull Node node) {
+        NodeList children = node.getChildNodes();
+        for (int i = 0, n = children.getLength(); i < n; i++) {
+            if (children.item(i).getNodeType() == Node.ELEMENT_NODE) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Parses the given XML string as a DOM document, using the JDK parser. The parser does not
+     * validate, and is namespace aware.
+     *
+     * @param xml            the XML content to be parsed (must be well formed)
+     * @param namespaceAware whether the parser is namespace aware
+     * @return the DOM document, or null
+     */
+    @Nullable
+    public static Document parseDocumentSilently(@NonNull String xml, boolean namespaceAware) {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        InputSource is = new InputSource(new StringReader(xml));
+        factory.setNamespaceAware(namespaceAware);
+        factory.setValidating(false);
+        try {
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            return builder.parse(is);
+        } catch (Exception e) {
+            // pass
+            // This method is deliberately silent; will return null
+        }
+
+        return null;
+    }
+
+    /**
+     * Dump an XML tree to string. This does not perform any pretty printing.
+     * To perform pretty printing, use {@code XmlPrettyPrinter.prettyPrint(node)} in
+     * {@code sdk_common}.
      */
     public static String toXml(Node node, boolean preserveWhitespace) {
         StringBuilder sb = new StringBuilder(1000);
-
-        append(sb, node, 0, preserveWhitespace);
-
+        append(sb, node, 0);
         return sb.toString();
     }
 
-    private static void indent(StringBuilder sb, int indent) {
-        for (int i = 0; i < indent; i++) {
-            sb.append("    ");
-        }
-    }
-
+    /** Dump node to string without indentation adjustments */
     private static void append(
             @NonNull StringBuilder sb,
             @NonNull Node node,
-            int indent,
-            boolean preserveWhitespace) {
+            int indent) {
         short nodeType = node.getNodeType();
         switch (nodeType) {
             case Node.DOCUMENT_NODE:
             case Node.DOCUMENT_FRAGMENT_NODE: {
-                sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"); //$NON-NLS-1$
+                sb.append(XML_PROLOG);
                 NodeList children = node.getChildNodes();
                 for (int i = 0, n = children.getLength(); i < n; i++) {
-                    append(sb, children.item(i), indent, preserveWhitespace);
+                    append(sb, children.item(i), indent);
                 }
                 break;
             }
             case Node.COMMENT_NODE:
             case Node.TEXT_NODE: {
                 if (nodeType == Node.COMMENT_NODE) {
-                    if (!preserveWhitespace) {
-                        indent(sb, indent);
-                    }
-                    sb.append("<!--"); //$NON-NLS-1$
-                    if (!preserveWhitespace) {
-                        sb.append('\n');
-                    }
+                    sb.append(XML_COMMENT_BEGIN);
                 }
                 String text = node.getNodeValue();
-                if (!preserveWhitespace) {
-                    text = text.trim();
-                    for (String line : Splitter.on('\n').split(text)) {
-                        indent(sb, indent + 1);
-                        sb.append(toXmlTextValue(line));
-                        sb.append('\n');
-                    }
-                } else {
-                    sb.append(toXmlTextValue(text));
-                }
+                sb.append(toXmlTextValue(text));
                 if (nodeType == Node.COMMENT_NODE) {
-                    if (!preserveWhitespace) {
-                        indent(sb, indent);
-                    }
-                    sb.append("-->"); //$NON-NLS-1$
-                    if (!preserveWhitespace) {
-                        sb.append('\n');
-                    }
+                    sb.append(XML_COMMENT_END);
                 }
                 break;
             }
             case Node.ELEMENT_NODE: {
-                if (!preserveWhitespace) {
-                    indent(sb, indent);
-                }
                 sb.append('<');
                 Element element = (Element) node;
                 sb.append(element.getTagName());
@@ -384,26 +394,14 @@ public class XmlUtils {
                     sb.append('/');
                 }
                 sb.append('>');
-                if (!preserveWhitespace) {
-                    sb.append('\n');
-                }
                 if (childCount > 0) {
                     for (int i = 0; i < childCount; i++) {
                         Node child = children.item(i);
-                        append(sb, child, indent + 1, preserveWhitespace);
-                    }
-                    if (!preserveWhitespace) {
-                        if (sb.charAt(sb.length() - 1) != '\n') {
-                            sb.append('\n');
-                        }
-                        indent(sb, indent);
+                        append(sb, child, indent + 1);
                     }
                     sb.append('<').append('/');
                     sb.append(element.getTagName());
                     sb.append('>');
-                    if (!preserveWhitespace) {
-                        sb.append('\n');
-                    }
                 }
                 break;
             }
