@@ -65,6 +65,11 @@ import javax.xml.xpath.XPathExpressionException;
  *      D- uses-library
  *          => Merge. OK if already exists same {@code @name}.
  *          => Merge {@code @required}: true>false.
+ *      C- meta-data
+ *          => Merge as-is. Error if exists in the destination (same {@code @name})
+ *             unless the definitions are exactly the same.
+ *             New elements are always merged at the end of the application element.
+ *          => Indicate if there's a dup.
  * A- instrumentation:
  *      => Do not merge. ignore the ones from libs.
  * C- permission / permission-group / permission-tree:
@@ -397,6 +402,11 @@ public class ManifestMerger {
                         "required",                                                 //$NON-NLS-1$
                         libDoc,
                         null /*alternateKeyAttr*/);
+            err |= !mergeNewOrEqual(
+                        "/manifest/application/meta-data",                          //$NON-NLS-1$
+                        "name",                                                     //$NON-NLS-1$
+                        libDoc,
+                        true);
         }
         err |= !mergeAdjustRequired(
                     "/manifest/uses-feature",                                       //$NON-NLS-1$
