@@ -14,7 +14,7 @@
         id="activityClass"
         name="Activity Name"
         type="string"
-        constraints="class|nonempty"
+        constraints="class|unique|nonempty"
         default="LoginActivity"
         help="The name of the activity class to create" />
 
