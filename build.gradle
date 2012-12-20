@@ -1,12 +1,20 @@
-project.buildDir = 'gradle_build'
-
 subprojects {
     apply plugin: 'java'
     apply plugin: 'maven'
     apply plugin: 'signing'
+    apply from:'https://raw.github.com/breskeby/gradleplugins/master/emmaPlugin/emma.gradle'
 
     repositories {
         mavenCentral()
+    }
+
+    dependencies{
+        emma "emma:emma:2.0.5312"
+        emma "emma:emma_ant:2.0.5312"
+    }
+
+    emma{
+        reportPath = "build/reports/emma"
     }
 
     project.ext.baseVersion = '21.0'
@@ -46,6 +54,9 @@ subprojects {
         }
     }
 }
+
+// delay evaluation of this project before all subprojects have been evaluated.
+subprojects.each { subproject -> evaluationDependsOn(subproject.name) }
 
 def testTasks = subprojects.collect { it.tasks.withType(Test) }.flatten()
 
