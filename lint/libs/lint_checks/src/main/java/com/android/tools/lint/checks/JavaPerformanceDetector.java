@@ -120,6 +120,9 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
             JavaPerformanceDetector.class,
             Scope.JAVA_FILE_SCOPE);
 
+    static final String ON_MEASURE = "onMeasure";                           //$NON-NLS-1$
+    static final String ON_DRAW = "onDraw";                                 //$NON-NLS-1$
+    static final String ON_LAYOUT = "onLayout";                             //$NON-NLS-1$
     private static final String INT = "int";                                //$NON-NLS-1$
     private static final String INTEGER = "Integer";                        //$NON-NLS-1$
     private static final String BOOL = "boolean";                           //$NON-NLS-1$
@@ -131,9 +134,6 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
     private static final String HASH_MAP = "HashMap";                       //$NON-NLS-1$
     private static final String SPARSE_ARRAY = "SparseArray";               //$NON-NLS-1$
     private static final String CANVAS = "Canvas";                          //$NON-NLS-1$
-    private static final String ON_DRAW = "onDraw";                         //$NON-NLS-1$
-    private static final String ON_LAYOUT = "onLayout";                     //$NON-NLS-1$
-    private static final String ON_MEASURE = "onMeasure";                   //$NON-NLS-1$
     private static final String LAYOUT = "layout";                          //$NON-NLS-1$
 
     /** Constructs a new {@link JavaPerformanceDetector} check */
