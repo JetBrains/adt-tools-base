@@ -283,7 +283,16 @@ public class LintDriver {
         mCanceled = false;
         mScope = scope;
 
-        Collection<Project> projects = computeProjects(files);
+        Collection<Project> projects;
+        try {
+            projects = computeProjects(files);
+        } catch (CircularDependencyException e) {
+            Context context = new Context(this, e.getProject(), null, e.getLocation().getFile());
+            mCurrentProject = e.getProject();
+            context.report(IssueRegistry.LINT_ERROR, e.getLocation(), e.getMessage(), null);
+            mCurrentProject = null;
+            return;
+        }
         if (projects.isEmpty()) {
             mClient.log(null, "No projects found for %1$s", files.toString());
             return;
