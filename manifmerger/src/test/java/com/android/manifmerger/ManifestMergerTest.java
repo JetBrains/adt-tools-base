@@ -182,7 +182,7 @@ public class ManifestMergerTest extends ManifestMergerTestCase {
         processTestFiles();
     }
 
-    public void test71_prefixes_enable_extractprefix() throws Exception {
+    public void test71_extract_package_prefix() throws Exception {
         processTestFiles();
     }
 }
