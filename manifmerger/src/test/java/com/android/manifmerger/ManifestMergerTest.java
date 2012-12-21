@@ -185,4 +185,16 @@ public class ManifestMergerTest extends ManifestMergerTestCase {
     public void test71_extract_package_prefix() throws Exception {
         processTestFiles();
     }
+
+    public void test75_app_metadata_merge() throws Exception {
+        processTestFiles();
+    }
+
+    public void test76_app_metadata_ignore() throws Exception {
+        processTestFiles();
+    }
+
+    public void test77_app_metadata_conflict() throws Exception {
+        processTestFiles();
+    }
 }
