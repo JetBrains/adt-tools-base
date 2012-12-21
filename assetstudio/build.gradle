@@ -14,7 +14,7 @@ def getVersion() {
 
 version = getVersion()
 group = 'com.android.tools'
-archivesBaseName = 'assetstudio'
+archivesBaseName = 'asset-studio'
 
 sourceSets {
     main.resources.srcDir 'src/main/java'

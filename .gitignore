@@ -7,5 +7,6 @@ Thumbs.db
 .gradle
 /build
 /out
+/repo
 .idea/workspace.xml
 .idea/dictionaries/tnorbye.xml
