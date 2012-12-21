@@ -1,7 +1,8 @@
 #
 # Test how elements are removed by tools:merge="remove".
-# The removal happens is done at the end and block merges.
-# That means items which are just checked (not merged) still produce warnings.
+# The removal prevents the actual merge operation.
+# However items are still checked out for consistency (just not merged anymore)
+# and thus still produce warnings.
 #
 
 @main

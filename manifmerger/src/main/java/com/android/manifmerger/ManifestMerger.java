@@ -128,7 +128,7 @@ public class ManifestMerger {
     private final ICallback mCallback;
     private XPath mXPath;
     private Document mMainDoc;
-    /** Option to extract our package prefixes in the merged manifest */
+    /** Option to extract the package prefixes from the merged manifest. */
     private boolean mExtractPackagePrefix;
 
     /** Namespace for Android attributes in an AndroidManifest.xml */
@@ -174,9 +174,13 @@ public class ManifestMerger {
     }
 
     /**
-     * Sets whether the manifest merger should extract package prefixes
+     * Sets whether the manifest merger should extract package prefixes.
+     * <p/>
+     * When true, the merged document is revisited and class names attributes
+     * are shortened when possible, e.g. the package prefix is removed from the
+     * class name if it matches.
      *
-     * @param extract if true, extract package prefixes
+     * @param extract If true, extract package prefixes.
      * @return this, for constructor chaining
      */
     public ManifestMerger setExtractPackagePrefix(boolean extract) {
