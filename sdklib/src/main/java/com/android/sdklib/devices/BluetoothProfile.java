@@ -16,6 +16,9 @@
 
 package com.android.sdklib.devices;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 public enum BluetoothProfile {
     A2DP("A2DP"),
     ATT("ATT"),
@@ -55,13 +58,14 @@ public enum BluetoothProfile {
     WAPB("WAPB");
 
 
-    private final String mValue;
+    @NonNull private final String mValue;
 
-    private BluetoothProfile(String value) {
+    BluetoothProfile(@NonNull String value) {
         mValue = value;
     }
 
-    public static BluetoothProfile getEnum(String value) {
+    @Nullable
+    public static BluetoothProfile getEnum(@NonNull String value) {
         for (BluetoothProfile bp : values()) {
             if (bp.mValue.equals(value)) {
                 return bp;

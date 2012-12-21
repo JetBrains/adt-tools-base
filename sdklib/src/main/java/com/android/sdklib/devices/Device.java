@@ -16,6 +16,8 @@
 
 package com.android.sdklib.devices;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.dvlib.DeviceSchema;
 
 import java.util.ArrayList;
@@ -31,16 +33,27 @@ import java.util.List;
  */
 public final class Device {
     /** Name of the device */
+    @NonNull
     private final String mName;
+
     /** Manufacturer of the device */
+    @NonNull
     private final String mManufacturer;
+
     /** A list of software capabilities, one for each API level range */
+    @NonNull
     private final List<Software> mSoftware;
+
     /** A list of phone states (landscape, portrait with keyboard out, etc.) */
+    @NonNull
     private final List<State> mState;
+
     /** Meta information such as icon files and device frames */
+    @NonNull
     private final Meta mMeta;
+
     /** Default state of the device */
+    @NonNull
     private final State mDefaultState;
 
     /**
@@ -48,6 +61,7 @@ public final class Device {
      *
      * @return The name of the {@link Device}.
      */
+    @NonNull
     public String getName() {
         return mName;
     }
@@ -57,6 +71,7 @@ public final class Device {
      *
      * @return The name of the manufacturer of the {@link Device}.
      */
+    @NonNull
     public String getManufacturer() {
         return mManufacturer;
     }
@@ -66,6 +81,7 @@ public final class Device {
      *
      * @return A list of all the {@link Software} configurations.
      */
+    @NonNull
     public List<Software> getAllSoftware() {
         return mSoftware;
     }
@@ -75,6 +91,7 @@ public final class Device {
      *
      * @return A list of all the {@link State}s.
      */
+    @NonNull
     public List<State> getAllStates() {
         return mState;
     }
@@ -86,6 +103,7 @@ public final class Device {
      *
      * @return The default {@link Hardware} for the device.
      */
+    @NonNull
     public Hardware getDefaultHardware() {
         return mDefaultState.getHardware();
     }
@@ -96,6 +114,7 @@ public final class Device {
      *
      * @return The {@link Meta} object for the {@link Device}.
      */
+    @NonNull
     public Meta getMeta() {
         return mMeta;
     }
@@ -105,6 +124,7 @@ public final class Device {
      *
      * @return The default {@link State} of the {@link Device}.
      */
+    @NonNull
     public State getDefaultState() {
         return mDefaultState;
     }
@@ -117,6 +137,7 @@ public final class Device {
      * @return The Software instance for the requested API version or null if
      *         the API version is unsupported for this device.
      */
+    @Nullable
     public Software getSoftware(int apiVersion) {
         for (Software s : mSoftware) {
             if (apiVersion >= s.getMinSdkLevel() && apiVersion <= s.getMaxSdkLevel()) {
@@ -134,6 +155,7 @@ public final class Device {
      * @return The State object requested or null if there's no state with the
      *         given name.
      */
+    @Nullable
     public State getState(String name) {
         for (State s : getAllStates()) {
             if (s.getName().equals(name)) {
@@ -168,19 +190,19 @@ public final class Device {
             mDefaultState = d.getDefaultState();
         }
 
-        public void setName(String name) {
+        public void setName(@NonNull String name) {
             mName = name;
         }
 
-        public void setManufacturer(String manufacturer) {
+        public void setManufacturer(@NonNull String manufacturer) {
             mManufacturer = manufacturer;
         }
 
-        public void addSoftware(Software sw) {
+        public void addSoftware(@NonNull Software sw) {
             mSoftware.add(sw);
         }
 
-        public void addAllSoftware(Collection<? extends Software> sw) {
+        public void addAllSoftware(@NonNull Collection<? extends Software> sw) {
             mSoftware.addAll(sw);
         }
 
@@ -188,7 +210,7 @@ public final class Device {
             mState.add(state);
         }
 
-        public void addAllState(Collection<? extends State> states) {
+        public void addAllState(@NonNull Collection<? extends State> states) {
             mState.addAll(states);
         }
 
@@ -197,7 +219,7 @@ public final class Device {
          * @param stateName The name of the {@link State} to remove.
          * @return Whether a {@link State} was removed or not.
          */
-        public boolean removeState(String stateName) {
+        public boolean removeState(@NonNull String stateName) {
             for (int i = 0; i < mState.size(); i++) {
                 if (stateName != null && stateName.equals(mState.get(i).getName())) {
                     mState.remove(i);
@@ -207,12 +229,16 @@ public final class Device {
             return false;
         }
 
-        public void setMeta(Meta meta) {
+        public void setMeta(@NonNull Meta meta) {
             mMeta = meta;
         }
 
         public Device build() {
-            if (mSoftware.size() <= 0) {
+            if (mName == null) {
+                throw generateBuildException("Device missing name");
+            } else if (mManufacturer == null) {
+                throw generateBuildException("Device missing manufacturer");
+            } else if (mSoftware.size() <= 0) {
                 throw generateBuildException("Device software not configured");
             } else if (mState.size() <= 0) {
                 throw generateBuildException("Device states not configured");
@@ -227,13 +253,16 @@ public final class Device {
                     break;
                 }
             }
+            if (mDefaultState == null) {
+                throw generateBuildException("Device missing default state");
+            }
             return new Device(this);
         }
 
         private IllegalStateException generateBuildException(String err) {
             String device = "";
             if (mManufacturer != null) {
-                device = mManufacturer + " ";
+                device = mManufacturer + ' ';
             }
             if (mName != null) {
                 device += mName;
@@ -245,7 +274,7 @@ public final class Device {
         }
     }
 
-    protected Device(Builder b) {
+    private Device(Builder b) {
         mName = b.mName;
         mManufacturer = b.mManufacturer;
         mSoftware = Collections.unmodifiableList(b.mSoftware);
@@ -275,12 +304,8 @@ public final class Device {
     /** A hash that's stable across JVM instances */
     public int hashCode() {
         int hash = 17;
-        if (mName != null) {
-            hash = 31 * hash + mName.hashCode();
-        }
-        if (mManufacturer != null) {
-            hash = 31 * hash + mManufacturer.hashCode();
-        }
+        hash = 31 * hash + mName.hashCode();
+        hash = 31 * hash + mManufacturer.hashCode();
         hash = 31 * hash + mSoftware.hashCode();
         hash = 31 * hash + mState.hashCode();
         hash = 31 * hash + mMeta.hashCode();

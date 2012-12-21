@@ -16,22 +16,24 @@
 
 package com.android.sdklib.devices;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.resources.Keyboard;
 import com.android.resources.Navigation;
 import com.android.resources.UiMode;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
 public class Hardware {
     private Screen mScreen;
-    private Set<Network> mNetworking = new HashSet<Network>();
-    private Set<Sensor> mSensors = new HashSet<Sensor>();
+    private EnumSet<Network> mNetworking = EnumSet.noneOf(Network.class);
+    private EnumSet<Sensor> mSensors = EnumSet.noneOf(Sensor.class);
     private boolean mMic;
-    private List<Camera> mCameras = new ArrayList<Camera>();
+    private List<Camera> mCameras = new ArrayList<Camera>(2);
     private Keyboard mKeyboard;
     private Navigation mNav;
     private Storage mRam;
@@ -40,31 +42,33 @@ public class Hardware {
     private List<Storage> mRemovableStorage = new ArrayList<Storage>();
     private String mCpu;
     private String mGpu;
-    private Set<Abi> mAbis = new HashSet<Abi>();
-    private Set<UiMode> mUiModes = new HashSet<UiMode>();
+    private EnumSet<Abi> mAbis = EnumSet.noneOf(Abi.class);
+    private EnumSet<UiMode> mUiModes = EnumSet.noneOf(UiMode.class);
     private PowerType mPluggedIn;
 
+    @NonNull
     public Set<Network> getNetworking() {
         return mNetworking;
     }
 
-    public void addNetwork(Network n) {
+    public void addNetwork(@NonNull Network n) {
         mNetworking.add(n);
     }
 
-    public void addAllNetworks(Collection<Network> ns) {
+    public void addAllNetworks(@NonNull Collection<Network> ns) {
         mNetworking.addAll(ns);
     }
 
+    @NonNull
     public Set<Sensor> getSensors() {
         return mSensors;
     }
 
-    public void addSensor(Sensor sensor) {
+    public void addSensor(@NonNull Sensor sensor) {
         mSensors.add(sensor);
     }
 
-    public void addAllSensors(Collection<Sensor> sensors) {
+    public void addAllSensors(@NonNull Collection<Sensor> sensors) {
         mSensors.addAll(sensors);
     }
 
@@ -76,25 +80,28 @@ public class Hardware {
         mMic = hasMic;
     }
 
+    @NonNull
     public List<Camera> getCameras() {
         return mCameras;
     }
 
-    public void addCamera(Camera c) {
+    public void addCamera(@NonNull Camera c) {
         mCameras.add(c);
     }
 
-    public void addAllCameras(Collection<Camera> cs) {
+    public void addAllCameras(@NonNull Collection<Camera> cs) {
         mCameras.addAll(cs);
     }
 
+    @NonNull
     public Camera getCamera(int i) {
         return mCameras.get(i);
     }
 
-    public Camera getCamera(CameraLocation location) {
+    @Nullable
+    public Camera getCamera(@NonNull CameraLocation location) {
         for (Camera c : mCameras) {
-            if (location.equals(c.getLocation())) {
+            if (location == c.getLocation()) {
                 return c;
             }
         }
@@ -105,15 +112,15 @@ public class Hardware {
         return mKeyboard;
     }
 
-    public void setKeyboard(Keyboard k) {
-        mKeyboard = k;
+    public void setKeyboard(@NonNull Keyboard keyboard) {
+        mKeyboard = keyboard;
     }
 
     public Navigation getNav() {
         return mNav;
     }
 
-    public void setNav(Navigation n) {
+    public void setNav(@NonNull Navigation n) {
         mNav = n;
     }
 
@@ -121,7 +128,7 @@ public class Hardware {
         return mRam;
     }
 
-    public void setRam(Storage ram) {
+    public void setRam(@NonNull Storage ram) {
         mRam = ram;
     }
 
@@ -129,31 +136,33 @@ public class Hardware {
         return mButtons;
     }
 
-    public void setButtonType(ButtonType bt) {
+    public void setButtonType(@NonNull ButtonType bt) {
         mButtons = bt;
     }
 
+    @NonNull
     public List<Storage> getInternalStorage() {
         return mInternalStorage;
     }
 
-    public void addInternalStorage(Storage is) {
+    public void addInternalStorage(@NonNull Storage is) {
         mInternalStorage.add(is);
     }
 
-    public void addAllInternalStorage(Collection<Storage> is) {
+    public void addAllInternalStorage(@NonNull Collection<Storage> is) {
         mInternalStorage.addAll(is);
     }
 
+    @NonNull
     public List<Storage> getRemovableStorage() {
         return mRemovableStorage;
     }
 
-    public void addRemovableStorage(Storage rs) {
+    public void addRemovableStorage(@NonNull Storage rs) {
         mRemovableStorage.add(rs);
     }
 
-    public void addAllRemovableStorage(Collection<Storage> rs) {
+    public void addAllRemovableStorage(@NonNull Collection<Storage> rs) {
         mRemovableStorage.addAll(rs);
     }
 
@@ -161,7 +170,7 @@ public class Hardware {
         return mCpu;
     }
 
-    public void setCpu(String cpuName) {
+    public void setCpu(@NonNull String cpuName) {
         mCpu = cpuName;
     }
 
@@ -169,31 +178,33 @@ public class Hardware {
         return mGpu;
     }
 
-    public void setGpu(String gpuName) {
+    public void setGpu(@NonNull String gpuName) {
         mGpu = gpuName;
     }
 
+    @NonNull
     public Set<Abi> getSupportedAbis() {
         return mAbis;
     }
 
-    public void addSupportedAbi(Abi abi) {
+    public void addSupportedAbi(@NonNull Abi abi) {
         mAbis.add(abi);
     }
 
-    public void addAllSupportedAbis(Collection<Abi> abis) {
+    public void addAllSupportedAbis(@NonNull Collection<Abi> abis) {
         mAbis.addAll(abis);
     }
 
+    @NonNull
     public Set<UiMode> getSupportedUiModes() {
         return mUiModes;
     }
 
-    public void addSupportedUiMode(UiMode uiMode) {
+    public void addSupportedUiMode(@NonNull UiMode uiMode) {
         mUiModes.add(uiMode);
     }
 
-    public void addAllSupportedUiModes(Collection<UiMode> uiModes) {
+    public void addAllSupportedUiModes(@NonNull Collection<UiMode> uiModes) {
         mUiModes.addAll(uiModes);
     }
 
@@ -201,7 +212,7 @@ public class Hardware {
         return mPluggedIn;
     }
 
-    public void setChargeType(PowerType chargeType) {
+    public void setChargeType(@NonNull PowerType chargeType) {
         mPluggedIn = chargeType;
     }
 
@@ -209,7 +220,7 @@ public class Hardware {
         return mScreen;
     }
 
-    public void setScreen(Screen s) {
+    public void setScreen(@NonNull Screen s) {
         mScreen = s;
     }
 
@@ -222,8 +233,8 @@ public class Hardware {
     public Hardware deepCopy() {
         Hardware hw = new Hardware();
         hw.mScreen = mScreen.deepCopy();
-        hw.mNetworking = new HashSet<Network>(mNetworking);
-        hw.mSensors = new HashSet<Sensor>(mSensors);
+        hw.mNetworking =  mNetworking.clone();
+        hw.mSensors = mSensors.clone();
         // Get the constant boolean value
         hw.mMic = mMic;
         hw.mCameras = new ArrayList<Camera>();
@@ -244,8 +255,8 @@ public class Hardware {
         }
         hw.mCpu = mCpu;
         hw.mGpu = mGpu;
-        hw.mAbis = new HashSet<Abi>(mAbis);
-        hw.mUiModes = new HashSet<UiMode>(mUiModes);
+        hw.mAbis = mAbis.clone();
+        hw.mUiModes = mUiModes.clone();
         hw.mPluggedIn = mPluggedIn;
         return hw;
     }

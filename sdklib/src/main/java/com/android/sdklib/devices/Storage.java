@@ -16,14 +16,17 @@
 
 package com.android.sdklib.devices;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 public class Storage {
     private long mNoBytes;
 
-    public Storage(long amount, Unit unit){
+    public Storage(long amount, Unit unit) {
         mNoBytes = amount * unit.getNumberOfBytes();
     }
 
-    public Storage(long amount){
+    public Storage(long amount) {
         this(amount, Unit.B);
     }
 
@@ -32,6 +35,7 @@ public class Storage {
         return getSizeAsUnit(Unit.B);
     }
 
+    @NonNull
     public Storage deepCopy() {
         return new Storage(mNoBytes);
     }
@@ -41,13 +45,13 @@ public class Storage {
      * @param unit The unit of the result.
      * @return The size of the storage in the given unit.
      */
-    public long getSizeAsUnit(Unit unit) {
+    public long getSizeAsUnit(@NonNull Unit unit) {
         return mNoBytes / unit.getNumberOfBytes();
     }
 
     @Override
     public boolean equals(Object o) {
-        if (o == this){
+        if (o == this) {
             return true;
         }
 
@@ -76,18 +80,21 @@ public class Storage {
         GiB("GiB", 1024 * 1024 * 1024),
         TiB("TiB", 1024l * 1024l * 1024l * 1024l);
 
+        @NonNull
         private String mValue;
+
         /** The number of bytes needed to have one of the given unit */
         private long mNoBytes;
 
-        private Unit(String val, long noBytes) {
+        Unit(@NonNull String val, long noBytes) {
             mValue = val;
             mNoBytes = noBytes;
         }
 
-        public static Unit getEnum(String val) {
-            for(Unit v : values()){
-                if(v.mValue.equals(val)) {
+        @Nullable
+        public static Unit getEnum(@NonNull String val) {
+            for (Unit v : values()) {
+                if (v.mValue.equals(val)) {
                     return v;
                 }
             }
@@ -109,10 +116,11 @@ public class Storage {
      * with no loss of accuracy.
      * @return The most appropriate {@link Unit}.
      */
+    @NonNull
     public Unit getAppropriateUnits() {
         Unit optimalUnit = Unit.B;
-        for(Unit unit : Unit.values()) {
-            if(mNoBytes % unit.getNumberOfBytes() == 0) {
+        for (Unit unit : Unit.values()) {
+            if (mNoBytes % unit.getNumberOfBytes() == 0) {
                 optimalUnit = unit;
             } else {
                 break;

@@ -46,6 +46,9 @@ public class DeviceWriter {
     public static final String LOCAL_NS = "d";
     public static final String PREFIX = LOCAL_NS + ":";
 
+    private DeviceWriter() {
+    }
+
     /**
      * Writes the XML definition of the given {@link Collection} of {@link Device}s according to
      * {@link SdkConstants#NS_DEVICES_XSD} to the {@link OutputStream}.
@@ -165,7 +168,7 @@ public class DeviceWriter {
         addElement(doc, hardware, DeviceSchema.NODE_SENSORS, hw.getSensors());
         addElement(doc, hardware, DeviceSchema.NODE_MIC, Boolean.toString(hw.hasMic()));
 
-        for(Camera c : hw.getCameras()) {
+        for (Camera c : hw.getCameras()) {
             Element camera  = doc.createElement(PREFIX + DeviceSchema.NODE_CAMERA);
             hardware.appendChild(camera);
             addElement(doc, camera, DeviceSchema.NODE_LOCATION, c.getLocation().toString());
@@ -241,7 +244,7 @@ public class DeviceWriter {
         addElement(doc, state, DeviceSchema.NODE_NAV_STATE, s.getNavState().getResourceValue());
 
         // Only if the hardware is different do we want to append hardware values
-        if (!s.getHardware().equals(defaultHardware)){
+        if (!s.getHardware().equals(defaultHardware)) {
             // TODO: Only append nodes which are different from the default hardware
             Element hardware = generateHardwareNode(s.getHardware(), doc);
             NodeList children = hardware.getChildNodes();
@@ -273,19 +276,19 @@ public class DeviceWriter {
      * that it picks the proper unit for the unit attribute and sets it on the node.
      */
     private static Element addStorageElement(Document doc, Element parent, String tag,
-            Collection<Storage> content){
+            Collection<Storage> content) {
         Storage.Unit unit = Storage.Unit.TiB;
 
         // Get the lowest common unit (so if one piece of storage is 128KiB and another is 1MiB,
         // use KiB for units)
-        for(Storage storage : content) {
-            if(storage.getAppropriateUnits().getNumberOfBytes() < unit.getNumberOfBytes()) {
+        for (Storage storage : content) {
+            if (storage.getAppropriateUnits().getNumberOfBytes() < unit.getNumberOfBytes()) {
                 unit = storage.getAppropriateUnits();
             }
         }
 
         StringBuilder sb = new StringBuilder();
-        for(Storage storage : content) {
+        for (Storage storage : content) {
             sb.append('\n').append(storage.getSizeAsUnit(unit));
         }
         Element storage = addElement(doc, parent, tag, sb.toString());

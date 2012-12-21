@@ -16,6 +16,7 @@
 
 package com.android.sdklib.devices;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.dvlib.DeviceSchema;
 import com.android.resources.Density;
@@ -44,6 +45,7 @@ import java.util.List;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.validation.Schema;
 
 public class DeviceParser {
 
@@ -324,23 +326,49 @@ public class DeviceParser {
             return filteredStrings;
         }
 
-        private Boolean getBool(StringBuilder stringAccumulator) {
-            String b = getString(stringAccumulator);
-            return b.equalsIgnoreCase("true") || b.equalsIgnoreCase("1");
+        private static Boolean getBool(StringBuilder s) {
+            return equals(s, "true") || equals(s, "1");
         }
 
-        private double getDouble(StringBuilder stringAccumulator) {
+        private static double getDouble(StringBuilder stringAccumulator) {
             return Double.parseDouble(getString(stringAccumulator));
         }
 
-        private String getString(StringBuilder stringAccumulator) {
-            return stringAccumulator.toString().trim();
+        private static String getString(StringBuilder s) {
+            return s.toString().trim();
         }
 
-        private int getInteger(StringBuilder stringAccumulator) {
+        private static boolean equals(StringBuilder s, String t) {
+            int start = 0;
+            int length = s.length();
+            while (start < length && Character.isWhitespace(s.charAt(start))) {
+                start++;
+            }
+            if (start == length) {
+                return t.isEmpty();
+            }
+
+            int end = length;
+            while (end > start && Character.isWhitespace(s.charAt(end - 1))) {
+                end--;
+            }
+
+            if (t.length() != (end - start)) {
+                return false;
+            }
+
+            for (int i = 0, n = t.length(), j = start; i < n; i++, j++) {
+                if (Character.toLowerCase(s.charAt(j)) != Character.toLowerCase(t.charAt(i))) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static int getInteger(StringBuilder stringAccumulator) {
             return Integer.parseInt(getString(stringAccumulator));
         }
-
     }
 
     private static final SAXParserFactory sParserFactory;
@@ -366,8 +394,12 @@ public class DeviceParser {
         return dHandler.getDevices();
     }
 
+    @NonNull
     private static SAXParser getParser() throws ParserConfigurationException, SAXException {
-        sParserFactory.setSchema(DeviceSchema.getSchema());
+        Schema schema = DeviceSchema.getSchema();
+        if (schema != null) {
+            sParserFactory.setSchema(schema);
+        }
         return sParserFactory.newSAXParser();
     }
 }

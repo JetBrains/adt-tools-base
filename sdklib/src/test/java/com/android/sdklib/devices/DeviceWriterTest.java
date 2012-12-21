@@ -43,7 +43,7 @@ public class DeviceWriterTest extends TestCase {
                 new ByteArrayInputStream(baos.toString().getBytes()));
         assertEquals("Writing and reparsing returns a different number of devices",
                 devices.size(), writtenDevices.size());
-        for (int i = 0; i < devices.size(); i++){
+        for (int i = 0; i < devices.size(); i++) {
             assertEquals(devices.get(i), writtenDevices.get(i));
         }
     }
@@ -78,7 +78,7 @@ public class DeviceWriterTest extends TestCase {
                 new ByteArrayInputStream(baos.toString().getBytes()));
         assertEquals("Writing and reparsing returns a different number of devices",
                 devices.size(), writtenDevices.size());
-        for (int i = 0; i < devices.size(); i++){
+        for (int i = 0; i < devices.size(); i++) {
             assertEquals(devices.get(i), writtenDevices.get(i));
         }
     }
@@ -94,7 +94,7 @@ public class DeviceWriterTest extends TestCase {
                 new ByteArrayInputStream(baos.toString().getBytes()));
         assertEquals("Writing and reparsing returns a different number of devices",
                 devices.size(), writtenDevices.size());
-        for (int i = 0; i < devices.size(); i++){
+        for (int i = 0; i < devices.size(); i++) {
             assertEquals(devices.get(i), writtenDevices.get(i));
         }
     }
@@ -110,7 +110,7 @@ public class DeviceWriterTest extends TestCase {
                 new ByteArrayInputStream(baos.toString().getBytes()));
         assertEquals("Writing and reparsing returns a different number of devices",
                 devices.size(), writtenDevices.size());
-        for (int i = 0; i < devices.size(); i++){
+        for (int i = 0; i < devices.size(); i++) {
             assertEquals(devices.get(i), writtenDevices.get(i));
         }
     }
@@ -126,7 +126,7 @@ public class DeviceWriterTest extends TestCase {
                 new ByteArrayInputStream(baos.toString().getBytes()));
         assertEquals("Writing and reparsing returns a different number of devices",
                 devices.size(), writtenDevices.size());
-        for (int i = 0; i < devices.size(); i++){
+        for (int i = 0; i < devices.size(); i++) {
             assertEquals(devices.get(i), writtenDevices.get(i));
         }
     }
@@ -141,7 +141,7 @@ public class DeviceWriterTest extends TestCase {
                 new ByteArrayInputStream(baos.toString().getBytes()));
         assertEquals("Writing and reparsing returns a different number of devices",
                 devices.size(), writtenDevices.size());
-        for (int i = 0; i < devices.size(); i++){
+        for (int i = 0; i < devices.size(); i++) {
             assertEquals(devices.get(i), writtenDevices.get(i));
         }
     }

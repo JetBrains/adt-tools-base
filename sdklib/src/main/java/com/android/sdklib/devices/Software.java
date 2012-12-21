@@ -16,7 +16,10 @@
 
 package com.android.sdklib.devices;
 
+import com.android.annotations.NonNull;
+
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -24,7 +27,7 @@ public class Software {
     private int mMinSdkLevel = 0;
     private int mMaxSdkLevel = Integer.MAX_VALUE;
     private boolean mLiveWallpaperSupport;
-    private Set<BluetoothProfile> mBluetoothProfiles = new LinkedHashSet<BluetoothProfile>();
+    private Set<BluetoothProfile> mBluetoothProfiles = EnumSet.noneOf(BluetoothProfile.class);
     private String mGlVersion;
     private Set<String> mGlExtensions = new LinkedHashSet<String>();
     private boolean mStatusBar;
@@ -53,6 +56,7 @@ public class Software {
         mLiveWallpaperSupport = liveWallpaperSupport;
     }
 
+    @NonNull
     public Set<BluetoothProfile> getBluetoothProfiles() {
         return mBluetoothProfiles;
     }
@@ -73,6 +77,7 @@ public class Software {
         mGlVersion = version;
     }
 
+    @NonNull
     public Set<String> getGlExtensions() {
         return mGlExtensions;
     }

@@ -8,6 +8,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/apps" />
       <excludeFolder url="file://$MODULE_DIR$/assetstudio/.settings" />
+      <excludeFolder url="file://$MODULE_DIR$/build" />
       <excludeFolder url="file://$MODULE_DIR$/common/.settings" />
       <excludeFolder url="file://$MODULE_DIR$/ddmlib/.settings" />
       <excludeFolder url="file://$MODULE_DIR$/files" />
