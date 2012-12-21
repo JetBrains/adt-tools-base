@@ -15,7 +15,7 @@ def getVersion() {
 
 version = getVersion()
 group = 'com.android.tools'
-archivesBaseName = 'sdk_common'
+archivesBaseName = 'sdk-common'
 
 sourceSets {
     main.resources.srcDir 'src/main/java'

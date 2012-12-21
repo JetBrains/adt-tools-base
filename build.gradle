@@ -17,7 +17,8 @@ subprojects {
         reportPath = "build/reports/emma"
     }
 
-    project.ext.baseVersion = '21.0'
+    project.ext.baseVersion = '22.0'
+
     project.ext.sonatypeUsername = project.hasProperty('sonatypeUsername') ? sonatypeUsername : ""
     project.ext.sonatypePassword = project.hasProperty('sonatypePassword') ? sonatypePassword : ""
 
@@ -49,7 +50,7 @@ subprojects {
         configuration = configurations.archives
         repositories {
             mavenDeployer {
-                repository(url: uri("$rootDir/../out/host/repo"))
+                repository(url: uri("$rootDir/repo"))
             }
         }
     }
