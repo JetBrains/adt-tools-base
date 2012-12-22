@@ -378,13 +378,22 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         @Override
         public File findResource(String relativePath) {
             if (relativePath.equals("platform-tools/api/api-versions.xml")) {
+                // Look in the current Git repository and try to find it there
                 File rootDir = getRootDir();
                 if (rootDir != null) {
                     File file = new File(rootDir, "development" + File.separator + "sdk"
                             + File.separator + "api-versions.xml");
-                    return file;
+                    if (file.exists()) {
+                       return file;
+                    }
+                }
+                // Look in an SDK install, if found
+                File home = getSdkHome();
+                if (home != null) {
+                    return new File(home, relativePath);
                 }
             } else if (relativePath.startsWith("tools/support/")) {
+                // Look in the current Git repository and try to find it there
                 String base = relativePath.substring("tools/support/".length());
                 File rootDir = getRootDir();
                 if (rootDir != null) {
@@ -393,7 +402,14 @@ public abstract class AbstractCheckTest extends SdkTestCase {
                             + File.separator + "files"
                             + File.separator + "typos"
                             + File.separator + base);
-                    return file;
+                    if (file.exists()) {
+                        return file;
+                    }
+                }
+                // Look in an SDK install, if found
+                File home = getSdkHome();
+                if (home != null) {
+                    return new File(home, relativePath);
                 }
             } else {
                 fail("Unit tests don't support arbitrary resource lookup yet.");
