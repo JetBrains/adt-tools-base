@@ -304,7 +304,10 @@ public abstract class LintClient {
             path = System.getenv(PROP_BIN_DIR);
         }
         if (path != null && !path.isEmpty()) {
-            return new File(path);
+            File file = new File(path);
+            if (file.exists()) {
+                return file;
+            }
         }
         return null;
     }
