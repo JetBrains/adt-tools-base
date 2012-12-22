@@ -32,6 +32,7 @@ import static com.android.SdkConstants.VALUE_TRUE;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.CircularDependencyException;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.SdkInfo;
@@ -104,7 +105,7 @@ public class Project {
     @NonNull
     public static Project create(
             @NonNull LintClient client,
-            @NonNull  File dir,
+            @NonNull File dir,
             @NonNull File referenceDir) {
         return new Project(client, dir, referenceDir);
     }
@@ -182,12 +183,18 @@ public class Project {
                             }
                         }
 
-                        Project libraryPrj = client.getProject(libraryDir, libraryReferenceDir);
-                        mDirectLibraries.add(libraryPrj);
-                        // By default, we don't report issues in inferred library projects.
-                        // The driver will set report = true for those library explicitly
-                        // requested.
-                        libraryPrj.setReportIssues(false);
+                        try {
+                            Project libraryPrj = client.getProject(libraryDir, libraryReferenceDir);
+                            mDirectLibraries.add(libraryPrj);
+                            // By default, we don't report issues in inferred library projects.
+                            // The driver will set report = true for those library explicitly
+                            // requested.
+                            libraryPrj.setReportIssues(false);
+                        } catch (CircularDependencyException e) {
+                            e.setProject(this);
+                            e.setLocation(Location.create(propFile));
+                            throw e;
+                        }
                     }
                 } finally {
                     Closeables.closeQuietly(is);

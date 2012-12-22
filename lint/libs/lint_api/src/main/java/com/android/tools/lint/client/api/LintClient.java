@@ -39,6 +39,7 @@ import com.android.utils.StdLogger;
 import com.android.utils.StdLogger.Level;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import org.w3c.dom.Document;
@@ -54,6 +55,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -573,6 +575,8 @@ public abstract class LintClient {
         return project;
     }
 
+    private Set<File> mProjectDirs = Sets.newHashSet();
+
     /**
      * Create a project for the given directory
      * @param dir the root directory of the project
@@ -581,6 +585,11 @@ public abstract class LintClient {
      */
     @NonNull
     protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+        if (mProjectDirs.contains(dir)) {
+            throw new CircularDependencyException(
+                "Circular library dependencies; check your project.properties files carefully");
+        }
+        mProjectDirs.add(dir);
         return Project.create(this, dir, referenceDir);
     }
 
