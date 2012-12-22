@@ -388,7 +388,9 @@ public abstract class AbstractCheckTest extends SdkTestCase {
                 String base = relativePath.substring("tools/support/".length());
                 File rootDir = getRootDir();
                 if (rootDir != null) {
-                    File file = new File(rootDir, "sdk" + File.separator + "files"
+                    File file = new File(rootDir, "tools"
+                            + File.separator + "base"
+                            + File.separator + "files"
                             + File.separator + "typos"
                             + File.separator + base);
                     return file;
