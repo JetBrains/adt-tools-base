@@ -284,6 +284,9 @@ public class JavaVisitor {
     private class DispatchVisitor extends AstVisitor {
         @Override
         public void endVisit(Node node) {
+            for (VisitingDetector v : mAllDetectors) {
+                v.getVisitor().endVisit(node);
+            }
         }
 
         @Override

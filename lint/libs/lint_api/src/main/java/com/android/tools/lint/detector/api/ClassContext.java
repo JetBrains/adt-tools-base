@@ -29,6 +29,7 @@ import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.detector.api.Location.SearchDirection;
 import com.android.tools.lint.detector.api.Location.SearchHints;
 import com.google.common.annotations.Beta;
+import com.google.common.base.Splitter;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -658,10 +659,13 @@ public class ClassContext extends Context {
      */
     @NonNull
     public static String getInternalName(@NonNull String fqcn) {
-        String[] parts = fqcn.split("\\."); //$NON-NLS-1$
+        if (fqcn.indexOf('.') == -1) {
+            return fqcn;
+        }
+
         StringBuilder sb = new StringBuilder(fqcn.length());
         String prev = null;
-        for (String part : parts) {
+        for (String part : Splitter.on('.').split(fqcn)) {
             if (prev != null) {
                 if (Character.isUpperCase(prev.charAt(0))) {
                     sb.append('$');

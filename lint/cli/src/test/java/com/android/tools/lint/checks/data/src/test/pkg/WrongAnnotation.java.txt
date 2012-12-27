@@ -28,4 +28,9 @@ public class WrongAnnotation {
         @SuppressLint("NewApi")
         int localvar = 5;
     }
+
+    private static void test() {
+        @SuppressLint("NewApi") // Invalid
+        int a = View.MEASURED_STATE_MASK;
+    }
 }

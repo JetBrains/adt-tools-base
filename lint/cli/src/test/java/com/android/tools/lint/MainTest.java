@@ -142,6 +142,14 @@ public class MainTest extends AbstractCheckTest {
         "Similarly, you can use tools:targetApi=\"11\" in an XML file to indicate that\n" +
         "the element will only be inflated in an adequate context.\n" +
         "\n" +
+        "Lint will also flag certain constants, such as static final integers, which\n" +
+        "were introduced in later versions. These will actually be copied into the\n" +
+        "class files rather than being referenced, which means that the value is\n" +
+        "available even when running on older devices. In some cases that's fine, and\n" +
+        "in other cases it can result in a runtime crash or incorrect behavior. It\n" +
+        "depends on the context, so consider the code carefully and device whether it's\n" +
+        "safe and can be suppressed or whether the code needs to be guarded.\n" +
+        "\n" +
         "\n",
 
         // Expected error
