@@ -65,7 +65,7 @@ public class FragmentDetector extends Detector implements ClassScanner {
 
         Category.CORRECTNESS,
         6,
-        Severity.WARNING,
+        Severity.ERROR,
         FragmentDetector.class,
         Scope.CLASS_FILE_SCOPE).setMoreInfo(
         "http://developer.android.com/reference/android/app/Fragment.html#Fragment()"); //$NON-NLS-1$
@@ -145,6 +145,7 @@ public class FragmentDetector extends Detector implements ClassScanner {
                     }
                 } else if (!method.desc.contains("()")) { //$NON-NLS-1$
                     context.report(ISSUE, context.getLocation(method, classNode),
+                            // TODO: Use separate issue for this which isn't an error
                         "Avoid non-default constructors in fragments: use a default constructor " +
                         "plus Fragment#setArguments(Bundle) instead",
                         null);

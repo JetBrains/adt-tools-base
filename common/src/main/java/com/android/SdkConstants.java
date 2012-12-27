@@ -914,8 +914,14 @@ public final class SdkConstants {
     public static final String FN_COMPILED_RESOURCE_CLASS = FN_RESOURCE_BASE + DOT_CLASS;
     /** Resource text filename, i.e. "R.txt" */
     public static final String FN_RESOURCE_TEXT = FN_RESOURCE_BASE + DOT_TXT;
+    /** Generated manifest class name */
+    public static final String FN_MANIFEST_BASE = "Manifest";          //$NON-NLS-1$
+    /** Generated BuildConfig class name */
+    public static final String FN_BUILD_CONFIG_BASE = "BuildConfig";   //$NON-NLS-1$
     /** Manifest java class filename, i.e. "Manifest.java" */
-    public static final String FN_MANIFEST_CLASS = "Manifest.java"; //$NON-NLS-1$
+    public static final String FN_MANIFEST_CLASS = FN_MANIFEST_BASE + DOT_JAVA;
+    /** BuildConfig java class filename, i.e. "BuildConfig.java" */
+    public static final String FN_BUILD_CONFIG = FN_BUILD_CONFIG_BASE + DOT_JAVA;
 
     public static final String DRAWABLE_FOLDER = "drawable";           //$NON-NLS-1$
     public static final String DRAWABLE_XHDPI = "drawable-xhdpi";      //$NON-NLS-1$

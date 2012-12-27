@@ -287,10 +287,13 @@ public class LintDriver {
         try {
             projects = computeProjects(files);
         } catch (CircularDependencyException e) {
-            Context context = new Context(this, e.getProject(), null, e.getLocation().getFile());
             mCurrentProject = e.getProject();
-            context.report(IssueRegistry.LINT_ERROR, e.getLocation(), e.getMessage(), null);
-            mCurrentProject = null;
+            if (mCurrentProject != null) {
+                File file = e.getLocation().getFile();
+                Context context = new Context(this, mCurrentProject, null, file);
+                context.report(IssueRegistry.LINT_ERROR, e.getLocation(), e.getMessage(), null);
+                mCurrentProject = null;
+            }
             return;
         }
         if (projects.isEmpty()) {

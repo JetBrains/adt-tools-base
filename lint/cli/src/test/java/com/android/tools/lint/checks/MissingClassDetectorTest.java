@@ -373,4 +373,21 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
                         "bytecode/OnClickActivity.class.data=>bin/classes/test/pkg/OnClickActivity.class"
                 ));
     }
+
+    public void testFragments() throws Exception {
+        // Ensure that we don't do instantiation checks here since they are handled by
+        // the FragmentDetector
+        assertEquals(
+                "No warnings.",
+
+                lintProject(
+                        "bytecode/FragmentTest$Fragment1.class.data=>bin/classes/test/pkg/FragmentTest$Fragment1.class",
+                        "bytecode/FragmentTest$Fragment2.class.data=>bin/classes/test/pkg/FragmentTest$Fragment2.class",
+                        "bytecode/FragmentTest$Fragment3.class.data=>bin/classes/test/pkg/FragmentTest$Fragment3.class",
+                        "bytecode/FragmentTest$Fragment4.class.data=>bin/classes/test/pkg/FragmentTest$Fragment4.class",
+                        "bytecode/FragmentTest$Fragment5.class.data=>bin/classes/test/pkg/FragmentTest$Fragment5.class",
+                        "bytecode/FragmentTest$Fragment6.class.data=>bin/classes/test/pkg/FragmentTest$Fragment6.class",
+                        "bytecode/FragmentTest$NotAFragment.class.data=>bin/classes/test/pkg/FragmentTest$NotAFragment.class",
+                        "bytecode/FragmentTest.java.txt=>src/test/pkg/FragmentTest.java"));
+    }
 }
