@@ -143,58 +143,6 @@ public class SecurityDetectorTest extends AbstractCheckTest {
                 "src/test/pkg/WorldWriteableFile.java.txt=>src/test/pkg/WorldWriteableFile.java"));
     }
 
-    public void testActivity0() throws Exception {
-        // Activities that do not have intent-filters do not need warnings
-        assertEquals(
-            "No warnings.",
-            lintProject(
-                "exportactivity0.xml=>AndroidManifest.xml",
-                "res/values/strings.xml"));
-    }
-
-    public void testActivity1() throws Exception {
-        assertEquals(
-            "AndroidManifest.xml:12: Warning: Exported activity does not require permission [ExportedActivity]\n" +
-            "        <activity\n" +
-            "        ^\n" +
-            "0 errors, 1 warnings\n" +
-            "",
-            lintProject(
-                "exportactivity1.xml=>AndroidManifest.xml",
-                "res/values/strings.xml"));
-    }
-
-    public void testActivity2() throws Exception {
-        // Defines a permission on the <activity> element
-        assertEquals(
-            "No warnings.",
-            lintProject(
-                "exportactivity2.xml=>AndroidManifest.xml",
-                "res/values/strings.xml"));
-    }
-
-    public void testActivity3() throws Exception {
-        // Defines a permission on the parent <application> element
-        assertEquals(
-            "No warnings.",
-            lintProject(
-                "exportactivity3.xml=>AndroidManifest.xml",
-                "res/values/strings.xml"));
-    }
-
-    public void testActivity4() throws Exception {
-        // Not defining exported, but have intent-filters
-        assertEquals(
-            "AndroidManifest.xml:12: Warning: Exported activity does not require permission [ExportedActivity]\n" +
-            "        <activity\n" +
-            "        ^\n" +
-            "0 errors, 1 warnings\n" +
-            "",
-            lintProject(
-                "exportactivity4.xml=>AndroidManifest.xml",
-                "res/values/strings.xml"));
-    }
-
     public void testReceiver0() throws Exception {
         // Activities that do not have intent-filters do not need warnings
         assertEquals(

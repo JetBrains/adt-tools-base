@@ -102,20 +102,6 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
             SecurityDetector.class,
             Scope.MANIFEST_SCOPE);
 
-    /** Exported activities */
-    public static final Issue EXPORTED_ACTIVITY = Issue.create(
-            "ExportedActivity", //$NON-NLS-1$
-            "Checks for exported activities that do not require permissions",
-            "Exported activities (activities which either set `exported=true` or contain " +
-            "an intent-filter and do not specify `exported=false`) should define a " +
-            "permission that an entity must have in order to launch the activity " +
-            "or bind to it. Without this, any application can use this activity.",
-            Category.SECURITY,
-            2,
-            Severity.WARNING,
-            SecurityDetector.class,
-            Scope.MANIFEST_SCOPE);
-
     /** Exported receivers */
     public static final Issue EXPORTED_RECEIVER = Issue.create(
             "ExportedReceiver", //$NON-NLS-1$
@@ -211,8 +197,6 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
             checkGrantPermission(context, element);
         } else if (tag.equals(TAG_PROVIDER)) {
             checkProvider(context, element);
-        } else if (tag.equals(TAG_ACTIVITY)) {
-            checkActivity(context, element);
         } else if (tag.equals(TAG_RECEIVER)) {
             checkReceiver(context, element);
         }
@@ -265,16 +249,6 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
         }
 
         return false;
-    }
-
-    private static void checkActivity(XmlContext context, Element element) {
-        // Do not flag launch activities. Even if not explicitly exported, it's
-        // safe to assume that those activities should be exported.
-        if (getExported(element) && isUnprotectedByPermission(element) && !isLauncher(element)) {
-            // No declared permission for this exported activity: complain
-            context.report(EXPORTED_ACTIVITY, element, context.getLocation(element),
-                           "Exported activity does not require permission", null);
-        }
     }
 
     private static boolean isStandardReceiver(Element element) {
