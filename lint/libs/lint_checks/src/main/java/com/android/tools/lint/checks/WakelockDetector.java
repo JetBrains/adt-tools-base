@@ -15,6 +15,7 @@
  */
 
 package com.android.tools.lint.checks;
+
 import static com.android.SdkConstants.ANDROID_APP_ACTIVITY;
 
 import com.android.annotations.NonNull;
@@ -35,6 +36,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
@@ -75,6 +77,8 @@ public class WakelockDetector extends Detector implements ClassScanner {
     private static final String RELEASE_METHOD = "release"; //$NON-NLS-1$
     private static final String ACQUIRE_METHOD = "acquire"; //$NON-NLS-1$
     private static final String IS_HELD_METHOD = "isHeld"; //$NON-NLS-1$
+    private static final String POWER_MANAGER = "android/os/PowerManager"; //$NON-NLS-1$
+    private static final String NEW_WAKE_LOCK_METHOD = "newWakeLock"; //$NON-NLS-1$
 
     /** Print diagnostics during analysis (display flow control graph etc).
      * Make sure you add the asm-debug or asm-util jars to the runtime classpath
@@ -105,18 +109,18 @@ public class WakelockDetector extends Detector implements ClassScanner {
     @Override
     @Nullable
     public List<String> getApplicableCallNames() {
-        return Arrays.asList(ACQUIRE_METHOD, RELEASE_METHOD);
+        return Arrays.asList(ACQUIRE_METHOD, RELEASE_METHOD, NEW_WAKE_LOCK_METHOD);
     }
 
     @Override
     public void checkCall(@NonNull ClassContext context, @NonNull ClassNode classNode,
             @NonNull MethodNode method, @NonNull MethodInsnNode call) {
-        if (call.owner.equals(WAKELOCK_OWNER)) {
-            if (!context.getProject().getReportIssues()) {
-                // If this is a library project not being analyzed, ignore it
-                return;
-            }
+        if (!context.getProject().getReportIssues()) {
+            // If this is a library project not being analyzed, ignore it
+            return;
+        }
 
+        if (call.owner.equals(WAKELOCK_OWNER)) {
             String name = call.name;
             if (name.equals(ACQUIRE_METHOD)) {
                 mHasAcquire = true;
@@ -146,6 +150,35 @@ public class WakelockDetector extends Detector implements ClassScanner {
                         "Wakelocks should be released in onPause, not onDestroy",
                         null);
                 }
+            }
+        } else if (call.owner.equals(POWER_MANAGER)) {
+            if (call.name.equals(NEW_WAKE_LOCK_METHOD)) {
+                AbstractInsnNode prev = LintUtils.getPrevInstruction(call);
+                if (prev == null) {
+                    return;
+                }
+                prev = LintUtils.getPrevInstruction(prev);
+                if (prev == null || prev.getOpcode() != Opcodes.LDC) {
+                    return;
+                }
+                LdcInsnNode ldc = (LdcInsnNode) prev;
+                Object constant = ldc.cst;
+                if (constant instanceof Integer) {
+                    int flag = ((Integer) constant).intValue();
+                    // Constant values are copied into the bytecode so we have to compare
+                    // values; however, that means the values are part of the API
+                    final int PARTIAL_WAKE_LOCK = 0x00000001;
+                    final int ACQUIRE_CAUSES_WAKEUP = 0x10000000;
+                    final int both = PARTIAL_WAKE_LOCK | ACQUIRE_CAUSES_WAKEUP;
+                    if ((flag & both) == both) {
+                        context.report(ISSUE, method, call, context.getLocation(call),
+                                "Should not set both PARTIAL_WAKE_LOCK and ACQUIRE_CAUSES_WAKEUP. "
+                                        + "If you do not want the screen to turn on, get rid of "
+                                        + "ACQUIRE_CAUSES_WAKEUP",
+                                null);
+                    }
+                }
+
             }
         }
     }
