@@ -21,9 +21,12 @@ import static com.android.SdkConstants.ANDROID_THEME_PREFIX;
 import static com.android.SdkConstants.ATTR_CLASS;
 import static com.android.SdkConstants.ATTR_TARGET_API;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
+import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.TARGET_API;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.VIEW_TAG;
+import static com.android.tools.lint.detector.api.ClassContext.getFqcn;
+import static com.android.tools.lint.detector.api.ClassContext.getInternalName;
 import static com.android.tools.lint.detector.api.LintUtils.getNextInstruction;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.BACKWARD;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.FORWARD;
@@ -31,21 +34,28 @@ import static com.android.tools.lint.detector.api.Location.SearchDirection.NEARE
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.DefaultPosition;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Location.SearchHints;
+import com.android.tools.lint.detector.api.Position;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -65,15 +75,47 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import lombok.ast.Annotation;
+import lombok.ast.AnnotationElement;
+import lombok.ast.AnnotationValue;
+import lombok.ast.AstVisitor;
+import lombok.ast.BinaryExpression;
+import lombok.ast.Case;
+import lombok.ast.ClassDeclaration;
+import lombok.ast.ConstructorDeclaration;
+import lombok.ast.ConstructorInvocation;
+import lombok.ast.Expression;
+import lombok.ast.ForwardingAstVisitor;
+import lombok.ast.If;
+import lombok.ast.ImportDeclaration;
+import lombok.ast.IntegralLiteral;
+import lombok.ast.MethodDeclaration;
+import lombok.ast.MethodInvocation;
+import lombok.ast.Modifiers;
+import lombok.ast.Select;
+import lombok.ast.StrictListAccessor;
+import lombok.ast.StringLiteral;
+import lombok.ast.SuperConstructorInvocation;
+import lombok.ast.Switch;
+import lombok.ast.TypeReference;
+import lombok.ast.VariableDefinition;
+import lombok.ast.VariableDefinitionEntry;
+import lombok.ast.VariableReference;
 
 /**
  * Looks for usages of APIs that are not supported in all the versions targeted
  * by this application (according to its minimum API requirement in the manifest).
  */
-public class ApiDetector extends ResourceXmlDetector implements Detector.ClassScanner {
+public class ApiDetector extends ResourceXmlDetector
+        implements Detector.ClassScanner, Detector.JavaScanner {
     /**
      * Whether we flag variable, field, parameter and return type declarations of a type
      * not yet available. It appears Dalvik is very forgiving and doesn't try to preload
@@ -105,14 +147,24 @@ public class ApiDetector extends ResourceXmlDetector implements Detector.ClassSc
             "file's minimum SDK as the required API level.\n" +
             "\n" +
             "Similarly, you can use tools:targetApi=\"11\" in an XML file to indicate that " +
-            "the element will only be inflated in an adequate context.",
+            "the element will only be inflated in an adequate context.\n" +
+            "\n" +
+            "Lint will also flag certain constants, such as static final integers, " +
+            "which were introduced in later versions. These will actually be copied " +
+            "into the class files rather than being referenced, which means that " +
+            "the value is available even when running on older devices. In some " +
+            "cases that's fine, and in other cases it can result in a runtime " +
+            "crash or incorrect behavior. It depends on the context, so consider " +
+            "the code carefully and device whether it's safe and can be suppressed "  +
+            "or whether the code needs to be guarded.",
             Category.CORRECTNESS,
             6,
             Severity.ERROR,
             ApiDetector.class,
-            EnumSet.of(Scope.CLASS_FILE, Scope.RESOURCE_FILE, Scope.MANIFEST))
+            EnumSet.of(Scope.CLASS_FILE, Scope.RESOURCE_FILE, Scope.MANIFEST, Scope.JAVA_FILE))
             .addAnalysisScope(Scope.RESOURCE_FILE_SCOPE)
-            .addAnalysisScope(Scope.CLASS_FILE_SCOPE);
+            .addAnalysisScope(Scope.CLASS_FILE_SCOPE)
+            .addAnalysisScope(Scope.JAVA_FILE_SCOPE);
 
     /** Accessing an unsupported API */
     public static final Issue OVERRIDE = Issue.create("Override", //$NON-NLS-1$
@@ -146,6 +198,7 @@ public class ApiDetector extends ResourceXmlDetector implements Detector.ClassSc
 
     private ApiLookup mApiDatabase;
     private int mMinApi = -1;
+    private Set<String> mWarnedFields;
 
     /** Constructs a new API check */
     public ApiDetector() {
@@ -547,11 +600,13 @@ public class ApiDetector extends ResourceXmlDetector implements Detector.ClassSc
                             continue;
                         }
                         String fqcn = ClassContext.getFqcn(owner) + '#' + name;
-                        String message = String.format(
-                                "Field requires API level %1$d (current min is %2$d): %3$s",
-                                api, minSdk, fqcn);
-                        report(context, message, node, method, name, null,
-                                SearchHints.create(FORWARD).matchJavaSymbol());
+                        if (mWarnedFields == null || !mWarnedFields.contains(fqcn)) {
+                            String message = String.format(
+                                    "Field requires API level %1$d (current min is %2$d): %3$s",
+                                    api, minSdk, fqcn);
+                            report(context, message, node, method, name, null,
+                                    SearchHints.create(FORWARD).matchJavaSymbol());
+                        }
                     }
                 } else if (type == AbstractInsnNode.LDC_INSN) {
                     LdcInsnNode node = (LdcInsnNode) instruction;
@@ -845,7 +900,7 @@ public class ApiDetector extends ResourceXmlDetector implements Detector.ClassSc
                     }
                 }
 
-                for (int api = 1; api < SdkConstants.HIGHEST_KNOWN_API; api++) {
+                for (int api = 1; api <= SdkConstants.HIGHEST_KNOWN_API; api++) {
                     String code = LintUtils.getBuildCode(api);
                     if (code != null && code.equalsIgnoreCase(targetApi)) {
                         return api;
@@ -892,5 +947,491 @@ public class ApiDetector extends ResourceXmlDetector implements Detector.ClassSc
         Location location = context.getLocationForLine(lineNumber, patternStart, patternEnd,
                 hints);
         context.report(UNSUPPORTED, method, node, location, message, null);
+    }
+
+    // ---- Implements JavaScanner ----
+
+    @Nullable
+    @Override
+    public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
+        return new ApiVisitor(context);
+    }
+
+    @Nullable
+    @Override
+    public List<Class<? extends lombok.ast.Node>> getApplicableNodeTypes() {
+        List<Class<? extends lombok.ast.Node>> types =
+                new ArrayList<Class<? extends lombok.ast.Node>>(2);
+        types.add(ImportDeclaration.class);
+        types.add(Select.class);
+        types.add(MethodDeclaration.class);
+        types.add(ConstructorDeclaration.class);
+        types.add(VariableDefinitionEntry.class);
+        types.add(VariableReference.class);
+        return types;
+    }
+
+    private final class ApiVisitor extends ForwardingAstVisitor {
+        private JavaContext mContext;
+        private Map<String, String> mClassToImport = Maps.newHashMap();
+        private List<String> mStarImports;
+        private Set<String> mLocalVars;
+        private lombok.ast.Node mCurrentMethod;
+        private Set<String> mFields;
+        private List<String> mStaticStarImports;
+
+        private ApiVisitor(JavaContext context) {
+            mContext = context;
+        }
+
+        @Override
+        public boolean visitImportDeclaration(ImportDeclaration node) {
+            if (node.astStarImport()) {
+                // Similarly, if you're inheriting from a constants class, figure out
+                // how that works... :=(
+                String fqcn = node.asFullyQualifiedName();
+                int strip = fqcn.lastIndexOf('*');
+                if (strip != -1) {
+                    strip = fqcn.lastIndexOf('.', strip);
+                    if (strip != -1) {
+                        String pkgName = getInternalName(fqcn.substring(0, strip));
+                        if (ApiLookup.isRelevantOwner(pkgName)) {
+                            if (node.astStaticImport()) {
+                                if (mStaticStarImports == null) {
+                                    mStaticStarImports = Lists.newArrayList();
+                                }
+                                mStaticStarImports.add(pkgName);
+                            } else {
+                                if (mStarImports == null) {
+                                    mStarImports = Lists.newArrayList();
+                                }
+                                mStarImports.add(pkgName);
+                            }
+                        }
+                    }
+                }
+            } else if (node.astStaticImport()) {
+                String fqcn = node.asFullyQualifiedName();
+                String fieldName = getInternalName(fqcn);
+                int index = fieldName.lastIndexOf('$');
+                if (index != -1) {
+                    String owner = fieldName.substring(0, index);
+                    String name = fieldName.substring(index + 1);
+                    checkField(node, name, owner);
+                }
+            } else {
+                // Store in map -- if it's "one of ours"
+                // Use override detector's map for that purpose
+                String fqcn = node.asFullyQualifiedName();
+
+                int last = fqcn.lastIndexOf('.');
+                if (last != -1) {
+                    String className = fqcn.substring(last + 1);
+                    mClassToImport.put(className, fqcn);
+                }
+            }
+
+            return super.visitImportDeclaration(node);
+        }
+
+        @Override
+        public boolean visitSelect(Select node) {
+            boolean result = super.visitSelect(node);
+
+            if (node.getParent() instanceof Select) {
+                // We only want to look at the leaf expressions; e.g. if you have
+                // "foo.bar.baz" we only care about the select foo.bar.baz, not foo.bar
+                return result;
+            }
+
+            // See if this corresponds to a field reference. We assume it's a field if
+            // it's a select (x.y) and either the identifier y is capitalized (e.g.
+            // foo.VIEW_MASK) or if it's a member of an R class (R.id.foo).
+            String name = node.astIdentifier().astValue();
+            boolean isField = Character.isUpperCase(name.charAt(0));
+            if (!isField) {
+                // See if there's an R class
+                Select current = node;
+                while (current != null) {
+                    Expression operand = current.astOperand();
+                    if (operand instanceof Select) {
+                        current = (Select) operand;
+                        if (R_CLASS.equals(current.astIdentifier().astValue())) {
+                            isField = true;
+                            break;
+                        }
+                    } else if (operand instanceof VariableReference) {
+                        VariableReference reference = (VariableReference) operand;
+                        if (R_CLASS.equals(reference.astIdentifier().astValue())) {
+                            isField = true;
+                        }
+                        break;
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            if (isField) {
+                Expression operand = node.astOperand();
+                if (operand.getClass() == Select.class) {
+                    // Possibly a fully qualified name in place
+                    String cls = operand.toString();
+
+                    // See if it's an imported class with an inner class
+                    // (e.g. Manifest.permission.FIELD)
+                    if (Character.isUpperCase(cls.charAt(0))) {
+                        int firstDot = cls.indexOf('.');
+                        if (firstDot != -1) {
+                            String base = cls.substring(0, firstDot);
+                            String fqcn = mClassToImport.get(base);
+                            if (fqcn != null) {
+                                // Yes imported
+                                String owner = getInternalName(fqcn + cls.substring(firstDot));
+                                checkField(node, name, owner);
+                                return result;
+                            }
+
+                            // Might be a star import: have to iterate and check here
+                            if (mStarImports != null) {
+                                for (String packagePrefix : mStarImports) {
+                                    String owner = getInternalName(packagePrefix + '/' + cls);
+                                    if (checkField(node, name, owner)) {
+                                        mClassToImport.put(name, owner);
+                                        return result;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // See if it's a fully qualified reference in place
+                    String owner = getInternalName(cls);
+                    checkField(node, name, owner);
+                    return result;
+                } else if (operand.getClass() == VariableReference.class) {
+                    String className = ((VariableReference) operand).astIdentifier().astValue();
+                    // Not a FQCN that we care about: look in imports
+                    String fqcn = mClassToImport.get(className);
+                    if (fqcn != null) {
+                        // Yes imported
+                        String owner = getInternalName(fqcn);
+                        checkField(node, name, owner);
+                        return result;
+                    }
+
+                    if (Character.isUpperCase(className.charAt(0))) {
+                        // Might be a star import: have to iterate and check here
+                        if (mStarImports != null) {
+                            for (String packagePrefix : mStarImports) {
+                                String owner = getInternalName(packagePrefix) + '/' + className;
+                                if (checkField(node, name, owner)) {
+                                    mClassToImport.put(name, owner);
+                                    return result;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public boolean visitVariableReference(VariableReference node) {
+            boolean result = super.visitVariableReference(node);
+
+            if (node.getParent() != null) {
+                lombok.ast.Node parent = node.getParent();
+                Class<? extends lombok.ast.Node> parentClass = parent.getClass();
+                if (parentClass == Select.class
+                        || parentClass == Switch.class // look up on the switch expression type
+                        || parentClass == Case.class
+                        || parentClass == ConstructorInvocation.class
+                        || parentClass == SuperConstructorInvocation.class
+                        || parentClass == AnnotationElement.class) {
+                    return result;
+                }
+
+                if (parent instanceof MethodInvocation &&
+                        ((MethodInvocation) parent).astOperand() == node) {
+                    return result;
+                } else if (parent instanceof BinaryExpression) {
+                    BinaryExpression expression = (BinaryExpression) parent;
+                    if (expression.astLeft() == node) {
+                        return result;
+                    }
+                }
+            }
+
+            String name = node.astIdentifier().astValue();
+            if (Character.isUpperCase(name.charAt(0))
+                    && (mLocalVars == null || !mLocalVars.contains(name))
+                    && (mFields == null || !mFields.contains(name))) {
+                // Potential field reference: check it
+                if (mStaticStarImports != null) {
+                    for (String owner : mStaticStarImports) {
+                        if (checkField(node, name, owner)) {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        @Override
+        public boolean visitVariableDefinitionEntry(VariableDefinitionEntry node) {
+            if (mCurrentMethod != null) {
+                if (mLocalVars == null) {
+                    mLocalVars = Sets.newHashSet();
+                }
+                mLocalVars.add(node.astName().astValue());
+            } else {
+                if (mFields == null) {
+                    mFields = Sets.newHashSet();
+                }
+                mFields.add(node.astName().astValue());
+            }
+            return super.visitVariableDefinitionEntry(node);
+        }
+
+        @Override
+        public boolean visitMethodDeclaration(MethodDeclaration node) {
+            mLocalVars = null;
+            mCurrentMethod = node;
+            return super.visitMethodDeclaration(node);
+        }
+
+        @Override
+        public boolean visitConstructorDeclaration(ConstructorDeclaration node) {
+            mLocalVars = null;
+            mCurrentMethod = node;
+            return super.visitConstructorDeclaration(node);
+        }
+
+        @Override
+        public void endVisit(lombok.ast.Node node) {
+            if (node == mCurrentMethod) {
+                mCurrentMethod = null;
+            }
+            super.endVisit(node);
+        }
+
+        /**
+         * Checks a Java source field reference. Returns true if the field is known
+         * regardless of whether it's an invalid field or not
+         */
+        private boolean checkField(
+                @NonNull lombok.ast.Node node,
+                @NonNull String name,
+                @NonNull String owner) {
+            int api = mApiDatabase.getFieldVersion(owner, name);
+            if (api != -1) {
+                int minSdk = getMinSdk(mContext);
+                if (api > minSdk
+                        && api > getLocalMinSdk(node)) {
+                    if (isBenignConstantUsage(node, name, owner)) {
+                        return true;
+                    }
+
+                    Location location = mContext.getLocation(node);
+                    String fqcn = getFqcn(owner) + '#' + name;
+
+                    if (node instanceof ImportDeclaration) {
+                        // Replace import statement location range with just
+                        // the identifier part
+                        ImportDeclaration d = (ImportDeclaration) node;
+                        int startOffset = d.astParts().first().getPosition().getStart();
+                        Position start = location.getStart();
+                        int startColumn = start.getColumn();
+                        int startLine = start.getLine();
+                        start = new DefaultPosition(startLine,
+                                startColumn + startOffset - start.getOffset(), startOffset);
+                        int fqcnLength = fqcn.length();
+                        Position end = new DefaultPosition(startLine,
+                                start.getColumn() + fqcnLength,
+                                start.getOffset() + fqcnLength);
+                        location = Location.create(location.getFile(), start, end);
+                    }
+
+                    String message = String.format(
+                            "Field requires API level %1$d (current min is %2$d): %3$s",
+                            api, minSdk, fqcn);
+                    mContext.report(UNSUPPORTED, node, location, message, null);
+
+                    // Record this field as already reported such that when we scan the
+                    // class files later, we don't report the same error again.
+                    // (This happens when a field isn't a final primitive value which
+                    // gets copied into the .class file)
+                    if (mWarnedFields == null) {
+                        mWarnedFields = Sets.newHashSet();
+                    }
+                    mWarnedFields.add(fqcn);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        /**
+         * Checks whether the given instruction is a benign usage of a constant defined
+         * in a later version of Android than the application's {@code minSdkVersion}.
+         *
+         * @param node the instruction to check
+         * @return true if the given usage is safe on older versions than the introduction
+         * level of the constant
+         */
+        public boolean isBenignConstantUsage(
+                @NonNull lombok.ast.Node node,
+                @NonNull String name,
+                @NonNull String owner) {
+            if (owner.equals("android/os/Build$VERSION_CODES")) {     //$NON-NLS-1$
+                // These constants are required for compilation, not execution
+                // and valid code checks it even on older platforms
+                return true;
+            }
+            if (owner.equals("android/view/ViewGroup$LayoutParams")   //$NON-NLS-1$
+                    && name.equals("MATCH_PARENT")) {                 //$NON-NLS-1$
+                return true;
+            }
+
+            // It's okay to reference the constant as a case constant (since that
+            // code path won't be taken) or in a condition of an if statement
+            lombok.ast.Node curr = node.getParent();
+            boolean usedInExpression = false;
+            while (curr != null) {
+                Class<? extends lombok.ast.Node> nodeType = curr.getClass();
+                if (nodeType == Case.class) {
+                    return true;
+                } else if (nodeType == BinaryExpression.class) {
+                    usedInExpression = true;
+                } else if (nodeType == If.class) {
+                    return usedInExpression;
+                }
+                curr = curr.getParent();
+            }
+
+            return false;
+        }
+
+        /**
+         * Returns the minimum SDK to use according to the given AST node, or null
+         * if no {@code TargetApi} annotations were found
+         *
+         * @return the API level to use for this node, or -1
+         */
+        public int getLocalMinSdk(@Nullable lombok.ast.Node scope) {
+            while (scope != null) {
+                Class<? extends lombok.ast.Node> type = scope.getClass();
+                // The Lombok AST uses a flat hierarchy of node type implementation classes
+                // so no need to do instanceof stuff here.
+                if (type == VariableDefinition.class) {
+                    // Variable
+                    VariableDefinition declaration = (VariableDefinition) scope;
+                    int targetApi = getLocalMinSdk(declaration.astModifiers());
+                    if (targetApi != -1) {
+                        return targetApi;
+                    }
+                } else if (type == MethodDeclaration.class) {
+                    // Method
+                    // Look for annotations on the method
+                    MethodDeclaration declaration = (MethodDeclaration) scope;
+                    int targetApi = getLocalMinSdk(declaration.astModifiers());
+                    if (targetApi != -1) {
+                        return targetApi;
+                    }
+                } else if (type == ConstructorDeclaration.class) {
+                    // Constructor
+                    // Look for annotations on the method
+                    ConstructorDeclaration declaration = (ConstructorDeclaration) scope;
+                    int targetApi = getLocalMinSdk(declaration.astModifiers());
+                    if (targetApi != -1) {
+                        return targetApi;
+                    }
+                } else if (type == ClassDeclaration.class) {
+                    // Class
+                    ClassDeclaration declaration = (ClassDeclaration) scope;
+                    int targetApi = getLocalMinSdk(declaration.astModifiers());
+                    if (targetApi != -1) {
+                        return targetApi;
+                    }
+                }
+
+                scope = scope.getParent();
+            }
+
+            return -1;
+        }
+
+        /**
+         * Returns true if the given AST modifier has a suppress annotation for the
+         * given issue (which can be null to check for the "all" annotation)
+         *
+         * @param modifiers the modifier to check
+         * @return true if the issue or all issues should be suppressed for this
+         *         modifier
+         */
+        private int getLocalMinSdk(@Nullable Modifiers modifiers) {
+            if (modifiers == null) {
+                return -1;
+            }
+            StrictListAccessor<Annotation, Modifiers> annotations = modifiers.astAnnotations();
+            if (annotations == null) {
+                return -1;
+            }
+
+            Iterator<Annotation> iterator = annotations.iterator();
+            while (iterator.hasNext()) {
+                Annotation annotation = iterator.next();
+                TypeReference t = annotation.astAnnotationTypeReference();
+                String typeName = t.getTypeName();
+                if (typeName.endsWith(TARGET_API)) {
+                    StrictListAccessor<AnnotationElement, Annotation> values =
+                            annotation.astElements();
+                    if (values != null) {
+                        Iterator<AnnotationElement> valueIterator = values.iterator();
+                        while (valueIterator.hasNext()) {
+                            AnnotationElement element = valueIterator.next();
+                            AnnotationValue valueNode = element.astValue();
+                            if (valueNode == null) {
+                                continue;
+                            }
+                            if (valueNode instanceof IntegralLiteral) {
+                                IntegralLiteral literal = (IntegralLiteral) valueNode;
+                                return literal.astIntValue();
+                            } else if (valueNode instanceof StringLiteral) {
+                                String value = ((StringLiteral) valueNode).astValue();
+                                return codeNameToApi(value);
+                            } else if (valueNode instanceof Select) {
+                                Select select = (Select) valueNode;
+                                String codename = select.astIdentifier().astValue();
+                                return codeNameToApi(codename);
+                            } else if (valueNode instanceof VariableReference) {
+                                VariableReference reference = (VariableReference) valueNode;
+                                String codename = reference.astIdentifier().astValue();
+                                return codeNameToApi(codename);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return -1;
+        }
+    }
+
+    private static int codeNameToApi(String codename) {
+        for (int api = 1; api <= SdkConstants.HIGHEST_KNOWN_API; api++) {
+            String code = LintUtils.getBuildCode(api);
+            if (code != null && code.equalsIgnoreCase(codename)) {
+                return api;
+            }
+        }
+
+        return -1;
     }
 }

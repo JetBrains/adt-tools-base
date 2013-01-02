@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ANDROID_PKG;
 import static com.android.SdkConstants.DOT_XML;
 
 import com.android.annotations.NonNull;
@@ -341,7 +342,7 @@ public class ApiLookup {
             System.out.println("\nRead API database in " + (end - start)
                     + " milliseconds.");
             System.out.println("Size of data table: " + mData.length + " bytes ("
-                    + Integer.toString(mData.length/1024) + "k)\n");
+                    + Integer.toString(mData.length / 1024) + "k)\n");
         }
     }
 
@@ -370,6 +371,11 @@ public class ApiLookup {
                     || className.startsWith("javax/")) {    //$NON-NLS-1$
                 String pkg = apiClass.getPackage();
                 javaPackageSet.add(pkg);
+            }
+
+            if (!isRelevantOwner(className)) {
+                System.out.println("Warning: The isRelevantOwner method does not pass "
+                        + className);
             }
 
             Set<String> allMethods = apiClass.getAllMethods(info);
@@ -753,6 +759,44 @@ public class ApiLookup {
 
         return -1;
     }
+
+    /**
+     * Returns true if the given owner (in VM format) is relevant to the database.
+     * This allows quick filtering out of owners that won't return any data
+     * for the various {@code #getFieldVersion} etc methods.
+     *
+     * @param owner the owner to look up
+     * @return true if the owner might be relevant to the API database
+     */
+    public static boolean isRelevantOwner(@NonNull String owner) {
+        if (owner.startsWith("java")) {                   //$NON-NLS-1$ // includes javax/
+            return true;
+        }
+        if (owner.startsWith(ANDROID_PKG)) {
+            if (owner.startsWith("/support/", 7)) {       //$NON-NLS-1$
+                return false;
+            }
+            return true;
+        } else if (owner.startsWith("org/")) {            //$NON-NLS-1$
+            if (owner.startsWith("xml", 4)                //$NON-NLS-1$
+                    || owner.startsWith("w3c/", 4)        //$NON-NLS-1$
+                    || owner.startsWith("json/", 4)       //$NON-NLS-1$
+                    || owner.startsWith("apache/", 4)) {  //$NON-NLS-1$
+                return true;
+            }
+        } else if (owner.startsWith("com/")) {            //$NON-NLS-1$
+            if (owner.startsWith("google/", 4)            //$NON-NLS-1$
+                    || owner.startsWith("android/", 4)) { //$NON-NLS-1$
+                return true;
+            }
+        } else if (owner.startsWith("junit")              //$NON-NLS-1$
+                    || owner.startsWith("dalvik")) {      //$NON-NLS-1$
+            return true;
+        }
+
+        return false;
+    }
+
 
     /**
      * Returns true if the given owner (in VM format) is a valid Java package supported

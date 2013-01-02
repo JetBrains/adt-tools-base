@@ -47,10 +47,12 @@ import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.MethodDeclaration;
 import lombok.ast.Modifiers;
 import lombok.ast.Node;
+import lombok.ast.Select;
 import lombok.ast.StrictListAccessor;
 import lombok.ast.StringLiteral;
 import lombok.ast.TypeBody;
 import lombok.ast.VariableDefinition;
+import lombok.ast.VariableDefinitionEntry;
 
 /**
  * Checks annotations to make sure they are valid
@@ -157,7 +159,11 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
         private boolean checkId(Annotation node, String id) {
             IssueRegistry registry = mContext.getDriver().getRegistry();
             Issue issue = registry.getIssue(id);
-            if (issue != null && !issue.getScope().contains(Scope.JAVA_FILE)) {
+            // Special-case the ApiDetector issue, since it does both source file analysis
+            // only on field references, and class file analysis on the rest, so we allow
+            // annotations outside of methods only on fields
+            if (issue != null && !issue.getScope().contains(Scope.JAVA_FILE)
+                    || issue == ApiDetector.UNSUPPORTED) {
                 // Ensure that this isn't a field
                 Node parent = node.getParent();
                 while (parent != null) {
@@ -167,6 +173,15 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
                         break;
                     } else if (parent instanceof TypeBody) { // It's a field
                         return true;
+                    } else if (issue == ApiDetector.UNSUPPORTED
+                            && parent instanceof VariableDefinition) {
+                        VariableDefinition definition = (VariableDefinition) parent;
+                        for (VariableDefinitionEntry entry : definition.astVariables()) {
+                            Expression initializer = entry.astInitializer();
+                            if (initializer instanceof Select) {
+                                return true;
+                            }
+                        }
                     }
                     parent = parent.getParent();
                     if (parent == null) {
