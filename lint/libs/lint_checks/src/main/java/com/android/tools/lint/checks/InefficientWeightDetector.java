@@ -24,6 +24,8 @@ import static com.android.SdkConstants.ATTR_LAYOUT_WIDTH;
 import static com.android.SdkConstants.ATTR_ORIENTATION;
 import static com.android.SdkConstants.LINEAR_LAYOUT;
 import static com.android.SdkConstants.RADIO_GROUP;
+import static com.android.SdkConstants.VALUE_FILL_PARENT;
+import static com.android.SdkConstants.VALUE_MATCH_PARENT;
 import static com.android.SdkConstants.VALUE_VERTICAL;
 import static com.android.SdkConstants.VIEW;
 import static com.android.SdkConstants.VIEW_FRAGMENT;
@@ -48,6 +50,7 @@ import org.w3c.dom.Node;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -115,6 +118,24 @@ public class InefficientWeightDetector extends LayoutDetector {
             InefficientWeightDetector.class,
             Scope.RESOURCE_FILE_SCOPE);
 
+    /** Missing explicit orientation */
+    public static final Issue ORIENTATION = Issue.create(
+            "Orientation", //$NON-NLS-1$
+            "Checks that LinearLayouts with multiple children set the orientation",
+
+            "The default orientation of a LinearLayout is horizontal. It's pretty easy to "
+            + "believe that the layout is vertical, add multiple children to it, and wonder "
+            + "why only the first child is visible (when the subsequent children are "
+            + "off screen to the right). This lint rule helps pinpoint this issue by "
+            + "warning whenever a LinearLayout is used with an implicit orientation "
+            + "and multiple children.",
+
+            Category.CORRECTNESS,
+            2,
+            Severity.ERROR,
+            InefficientWeightDetector.class,
+            Scope.RESOURCE_FILE_SCOPE);
+
     /**
      * Map from element to whether that element has a non-zero linear layout
      * weight or has an ancestor which does
@@ -170,8 +191,40 @@ public class InefficientWeightDetector extends LayoutDetector {
             }
         }
 
+        String orientation = element.getAttributeNS(ANDROID_URI, ATTR_ORIENTATION);
+        if (children.size() >= 2 && (orientation == null || orientation.isEmpty())
+                && context.isEnabled(ORIENTATION)) {
+            // See if at least one of the children, except the last one, sets layout_width
+            // to match_parent (or fill_parent), in an implicitly horizontal layout, since
+            // that might mean the last child won't be visible. This is a source of confusion
+            // for new Android developers.
+            boolean maxWidthSet = false;
+            Iterator<Element> iterator = children.iterator();
+            while (iterator.hasNext()) {
+                Element child = iterator.next();
+                if (!iterator.hasNext()) { // Don't check the last one
+                    break;
+                }
+                String width = child.getAttributeNS(ANDROID_URI, ATTR_LAYOUT_WIDTH);
+                if (VALUE_MATCH_PARENT.equals(width) || VALUE_FILL_PARENT.equals(width)) {
+                    // Also check that weights are not set here; this affects the computation
+                    // a bit and the child may not fill up the whole linear layout
+                    if (!child.hasAttributeNS(ANDROID_URI, ATTR_LAYOUT_WEIGHT)) {
+                        maxWidthSet = true;
+                        break;
+                    }
+                }
+            }
+            if (maxWidthSet) {
+                String message = "Wrong orientation? No orientation specified, and the default "
+                        + "is horizontal, yet this layout has multiple children where at "
+                        + "least one has layout_width=\"match_parent\"";
+                context.report(ORIENTATION, element, context.getLocation(element), message, null);
+            }
+        }
+
         if (context.isEnabled(BASELINE_WEIGHTS) && weightChild != null
-                && !VALUE_VERTICAL.equals(element.getAttributeNS(ANDROID_URI, ATTR_ORIENTATION))
+                && !VALUE_VERTICAL.equals(orientation)
                 && !element.hasAttributeNS(ANDROID_URI, ATTR_BASELINE_ALIGNED)) {
             // See if all the children are layouts
             boolean allChildrenAreLayouts = !children.isEmpty();
@@ -200,7 +253,7 @@ public class InefficientWeightDetector extends LayoutDetector {
         if (context.isEnabled(INEFFICIENT_WEIGHT)
                 && weightChild != null && !multipleWeights) {
             String dimension;
-            if (VALUE_VERTICAL.equals(element.getAttributeNS(ANDROID_URI, ATTR_ORIENTATION))) {
+            if (VALUE_VERTICAL.equals(orientation)) {
                 dimension = ATTR_LAYOUT_HEIGHT;
             } else {
                 dimension = ATTR_LAYOUT_WIDTH;
