@@ -152,6 +152,22 @@ public final class AndroidDebugBridge {
     }
 
     /**
+     * Initialized the library only if needed.
+     *
+     * @param clientSupport Indicates whether the library should enable the monitoring and
+     *                      interaction with applications running on the devices.
+     *
+     * @see #init(boolean)
+     */
+    public static synchronized void initIfNeeded(boolean clientSupport) {
+        if (sInitialized) {
+            return;
+        }
+
+        init(clientSupport);
+    }
+
+    /**
      * Initializes the <code>ddm</code> library.
      * <p/>This must be called once <b>before</b> any call to
      * {@link #createBridge(String, boolean)}.
@@ -172,7 +188,7 @@ public final class AndroidDebugBridge {
      * values were changed from the default values.
      * <p/>When the application quits, {@link #terminate()} should be called.
      * @param clientSupport Indicates whether the library should enable the monitoring and
-     * interaction with applications running on the devices.
+     *                      interaction with applications running on the devices.
      * @see AndroidDebugBridge#createBridge(String, boolean)
      * @see DdmPreferences
      */

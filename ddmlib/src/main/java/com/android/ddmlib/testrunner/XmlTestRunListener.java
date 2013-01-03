@@ -69,6 +69,8 @@ public class XmlTestRunListener implements ITestRunListener {
     /** the XML namespace */
     private static final String ns = null;
 
+    private String mHostName = "localhost";
+
     private File mReportDir = new File(System.getProperty("java.io.tmpdir"));
 
     private String mReportPath = "";
@@ -80,6 +82,18 @@ public class XmlTestRunListener implements ITestRunListener {
      */
     public void setReportDir(File file) {
         mReportDir = file;
+    }
+
+    public void setHostName(String hostName) {
+        mHostName = hostName;
+    }
+
+    /**
+     * Returns the {@link TestRunResult}
+     * @return the test run results.
+     */
+    public TestRunResult getRunResult() {
+        return mRunResult;
     }
 
     @Override
@@ -175,27 +189,46 @@ public class XmlTestRunListener implements ITestRunListener {
     }
 
     /**
-     * Creates the output stream to use for test results. Exposed for mocking.
+     * Creates a {@link File} where the report will be created.
+     * @param reportDir the root directory of the report.
+     * @return a file
+     * @throws IOException
      */
-    OutputStream createOutputResultStream(File reportDir) throws IOException {
+    protected File getResultFile(File reportDir) throws IOException {
         File reportFile = File.createTempFile(TEST_RESULT_FILE_PREFIX, TEST_RESULT_FILE_SUFFIX,
                 reportDir);
         Log.i(LOG_TAG, String.format("Created xml report file at %s",
                 reportFile.getAbsolutePath()));
+
+        return reportFile;
+    }
+
+    /**
+     * Creates the output stream to use for test results. Exposed for mocking.
+     */
+    OutputStream createOutputResultStream(File reportDir) throws IOException {
+        File reportFile = getResultFile(reportDir);
         mReportPath = reportFile.getAbsolutePath();
         return new BufferedOutputStream(new FileOutputStream(reportFile));
+    }
+
+    protected String getTestSuiteName() {
+        return mRunResult.getName();
     }
 
     void printTestResults(KXmlSerializer serializer, String timestamp, long elapsedTime)
             throws IOException {
         serializer.startTag(ns, TESTSUITE);
-        serializer.attribute(ns, ATTR_NAME, mRunResult.getName());
+        String name = getTestSuiteName();
+        if (name != null) {
+            serializer.attribute(ns, ATTR_NAME, name);
+        }
         serializer.attribute(ns, ATTR_TESTS, Integer.toString(mRunResult.getNumTests()));
         serializer.attribute(ns, ATTR_FAILURES, Integer.toString(mRunResult.getNumFailedTests()));
         serializer.attribute(ns, ATTR_ERRORS, Integer.toString(mRunResult.getNumErrorTests()));
         serializer.attribute(ns, ATTR_TIME, Long.toString(elapsedTime));
         serializer.attribute(ns, TIMESTAMP, timestamp);
-        serializer.attribute(ns, HOSTNAME, "localhost");
+        serializer.attribute(ns, HOSTNAME, mHostName);
         serializer.startTag(ns, PROPERTIES);
         serializer.endTag(ns, PROPERTIES);
 
@@ -207,11 +240,15 @@ public class XmlTestRunListener implements ITestRunListener {
         serializer.endTag(ns, TESTSUITE);
     }
 
+    protected String getTestName(TestIdentifier testId) {
+        return testId.getTestName();
+    }
+
     void print(KXmlSerializer serializer, TestIdentifier testId, TestResult testResult)
             throws IOException {
 
         serializer.startTag(ns, TESTCASE);
-        serializer.attribute(ns, ATTR_NAME, testId.getTestName());
+        serializer.attribute(ns, ATTR_NAME, getTestName(testId));
         serializer.attribute(ns, ATTR_CLASSNAME, testId.getClassName());
         serializer.attribute(ns, ATTR_TIME, "0");
 
