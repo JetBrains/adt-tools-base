@@ -249,7 +249,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             handle = context.parser.createLocationHandle(context, element);
             mReferencedClasses.put(signature, handle);
             if (folderType == ResourceFolderType.LAYOUT && !tag.equals(VIEW_FRAGMENT)) {
-                mCustomViews.add(className);
+                mCustomViews.add(ClassContext.getInternalName(className));
             }
         }
 
@@ -393,7 +393,8 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                 }
             }
 
-            if (!hasDefaultConstructor && !isCustomView) {
+            if (!hasDefaultConstructor && !isCustomView && !context.isFromClassLibrary()
+                    && context.getProject().getReportIssues()) {
                 context.report(INSTANTIATABLE, context.getLocation(classNode), String.format(
                         "This class should provide a default constructor (a public " +
                         "constructor with no arguments) (%1$s)",
