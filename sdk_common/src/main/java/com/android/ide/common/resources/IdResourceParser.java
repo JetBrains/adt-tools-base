@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.ValueResourceParser.IValueResourceRepository;
 import com.android.resources.ResourceType;
+import com.google.common.io.Closeables;
 
 import org.kxml2.io.KXmlParser;
 import org.xmlpull.v1.XmlPullParser;
@@ -64,7 +65,7 @@ public class IdResourceParser {
      *
      * @param type the type of resource being scanned
      * @param path the full OS path to the file being parsed
-     * @param input the input stream of the XML to be parsed
+     * @param input the input stream of the XML to be parsed (will be closed by this method)
      * @return true if parsing succeeds and false if it fails
      * @throws IOException if reading the contents fails
      */
@@ -104,6 +105,8 @@ public class IdResourceParser {
                     path, parser.getLineNumber(), message);
             mContext.addError(error);
             return false;
+        } finally {
+            Closeables.closeQuietly(input);
         }
     }
 

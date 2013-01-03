@@ -24,6 +24,7 @@ import com.android.io.IAbstractFile;
 import com.android.io.IAbstractFolder;
 import com.android.resources.ResourceType;
 import com.android.utils.ILogger;
+import com.google.common.base.Charsets;
 
 import org.kxml2.io.KXmlParser;
 import org.xmlpull.v1.XmlPullParser;
@@ -113,7 +114,7 @@ public class FrameworkResources extends ResourceRepository {
             Reader reader = null;
             try {
                 reader = new BufferedReader(new InputStreamReader(publicXmlFile.getContents(),
-                        "UTF-8")); //$NON-NLS-1$
+                        Charsets.UTF_8));
                 KXmlParser parser = new KXmlParser();
                 parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
                 parser.setInput(reader);

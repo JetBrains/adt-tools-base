@@ -17,6 +17,7 @@
 package com.android.ide.common.resources;
 
 import com.android.annotations.NonNull;
+import com.google.common.io.Closeables;
 
 import org.kxml2.io.KXmlParser;
 import org.xmlpull.v1.XmlPullParser;
@@ -55,7 +56,7 @@ public class ValidatingResourceParser {
      * the context is already tagged as needing a full aapt run.
      *
      * @param path the full OS path to the file being parsed
-     * @param input the input stream of the XML to be parsed
+     * @param input the input stream of the XML to be parsed (will be closed by this method)
      * @return true if parsing succeeds and false if it fails
      * @throws IOException if reading the contents fails
      */
@@ -63,9 +64,11 @@ public class ValidatingResourceParser {
             throws IOException {
         // No need to validate framework files
         if (mIsFramework) {
+            Closeables.closeQuietly(input);
             return true;
         }
         if (mContext.needsFullAapt()) {
+            Closeables.closeQuietly(input);
             return false;
         }
 
@@ -103,6 +106,8 @@ public class ValidatingResourceParser {
                     path, parser.getLineNumber(), message);
             mContext.addError(error);
             return false;
+        } finally {
+            Closeables.closeQuietly(input);
         }
     }
 
