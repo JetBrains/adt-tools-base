@@ -54,6 +54,7 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.google.common.collect.Lists;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
@@ -260,16 +261,19 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                     if (type != null && LintUtils.isFileBasedResourceType(type)) {
                         String name = resource.substring(secondDot + 1);
 
-                        File[] folders = null;
-                        File res = context.getProject().getResourceFolder();
-                        if (res != null) {
-                            folders = res.listFiles();
+                        List<File> folders = Lists.newArrayList();
+                        List<File> resourceFolders = context.getProject().getResourceFolders();
+                        for (File res : resourceFolders) {
+                            File[] f = res.listFiles();
+                            if (f != null) {
+                                folders.addAll(Arrays.asList(f));
+                            }
                         }
                         if (folders != null) {
                             // Process folders in alphabetical order such that we process
                             // based folders first: we want the locations in base folder
                             // order
-                            Arrays.sort(folders, new Comparator<File>() {
+                            Collections.sort(folders, new Comparator<File>() {
                                 @Override
                                 public int compare(File file1, File file2) {
                                     return file1.getName().compareTo(file2.getName());

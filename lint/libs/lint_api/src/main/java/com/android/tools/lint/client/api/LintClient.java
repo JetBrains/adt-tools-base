@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -236,20 +237,19 @@ public abstract class LintClient {
     }
 
     /**
-     * Returns the resource folder.
+     * Returns the resource folders.
      *
      * @param project the project to look up the resource folder for
-     * @return a file pointing to the resource folder, or null if the project
-     *         does not contain any resources
+     * @return a list of files pointing to the resource folders, possibly empty
      */
-    @Nullable
-    public File getResourceFolder(@NonNull Project project) {
+    @NonNull
+    public List<File> getResourceFolders(@NonNull Project project) {
         File res = new File(project.getDir(), RES_FOLDER);
         if (res.exists()) {
-            return res;
+            return Collections.singletonList(res);
         }
 
-        return null;
+        return Collections.emptyList();
     }
 
     /**

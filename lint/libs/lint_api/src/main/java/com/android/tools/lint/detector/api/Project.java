@@ -353,20 +353,20 @@ public class Project {
      * @return a file pointing to the resource folder, or null if the project
      *         does not contain any resources
      */
-    @Nullable
-    public File getResourceFolder() {
-        File folder = mClient.getResourceFolder(this);
+    @NonNull
+    public List<File> getResourceFolders() {
+        List<File> folders = mClient.getResourceFolders(this);
 
-        if (folder != null && isAospFrameworksProject(mDir)) {
+        if (folders.size() == 1 && isAospFrameworksProject(mDir)) {
             // No manifest file for this project: just init the manifest values here
             mMinSdk = mTargetSdk = SdkConstants.HIGHEST_KNOWN_API;
-            folder = new File(folder, RES_FOLDER);
+            File folder = new File(folders.get(0), RES_FOLDER);
             if (!folder.exists()) {
-                folder = null;
+                folders = Collections.emptyList();
             }
         }
 
-        return folder;
+        return folders;
     }
 
     /**

@@ -105,7 +105,9 @@ public class PrivateKeyDetector extends Detector {
         Project project = context.getProject();
         File projectFolder = project.getDir();
 
-        checkFolder(context, new File(projectFolder, "res"));
+        for (File res : project.getResourceFolders()) {
+            checkFolder(context, res);
+        }
         checkFolder(context, new File(projectFolder, "assets"));
 
         for (File srcFolder : project.getJavaSourceFolders()) {

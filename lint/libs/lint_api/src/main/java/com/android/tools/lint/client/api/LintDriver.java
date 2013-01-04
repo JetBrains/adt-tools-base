@@ -841,9 +841,11 @@ public class LintDriver {
                     if (files != null) {
                         checkIndividualResources(project, main, xmlDetectors, files);
                     } else {
-                        File res = project.getResourceFolder();
-                        if (res != null && !xmlDetectors.isEmpty()) {
-                            checkResFolder(project, main, res, xmlDetectors);
+                        List<File> resourceFolders = project.getResourceFolders();
+                        if (!resourceFolders.isEmpty() && !xmlDetectors.isEmpty()) {
+                            for (File res : resourceFolders) {
+                                checkResFolder(project, main, res, xmlDetectors);
+                            }
                         }
                     }
                 }
@@ -1686,9 +1688,9 @@ public class LintDriver {
         }
 
         @Override
-        @Nullable
-        public File getResourceFolder(@NonNull Project project) {
-            return mDelegate.getResourceFolder(project);
+        @NonNull
+        public List<File> getResourceFolders(@NonNull Project project) {
+            return mDelegate.getResourceFolders(project);
         }
 
         @Override
