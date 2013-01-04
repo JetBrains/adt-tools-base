@@ -386,8 +386,8 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     }
 
     private void checkResourceFolder(Context context, @NonNull Project project) {
-        File res = project.getResourceFolder();
-        if (res != null) {
+        List<File> resourceFolders = project.getResourceFolders();
+        for (File res : resourceFolders) {
             File[] folders = res.listFiles();
             if (folders != null) {
                 boolean checkFolders = context.isEnabled(ICON_DENSITIES)

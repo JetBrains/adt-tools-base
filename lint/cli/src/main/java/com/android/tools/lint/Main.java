@@ -91,6 +91,7 @@ public class Main extends LintClient {
     private static final String ARG_EXITCODE   = "--exitcode";     //$NON-NLS-1$
     private static final String ARG_CLASSES    = "--classpath";    //$NON-NLS-1$
     private static final String ARG_SOURCES    = "--sources";      //$NON-NLS-1$
+    private static final String ARG_RESOURCES  = "--resources";    //$NON-NLS-1$
     private static final String ARG_LIBRARIES  = "--libraries";    //$NON-NLS-1$
 
     private static final String ARG_NOWARN2    = "--nowarn";       //$NON-NLS-1$
@@ -128,6 +129,7 @@ public class Main extends LintClient {
     protected List<File> mSources;
     protected List<File> mClasses;
     protected List<File> mLibraries;
+    protected List<File> mResources;
 
     protected Configuration mDefaultConfiguration;
     protected IssueRegistry mRegistry;
@@ -500,6 +502,23 @@ public class Main extends LintClient {
                     }
                     mSources.add(input);
                 }
+            } else if (arg.equals(ARG_RESOURCES)) {
+                if (index == args.length - 1) {
+                    System.err.println("Missing resource folder name");
+                    System.exit(ERRNO_INVALIDARGS);
+                }
+                String paths = args[++index];
+                for (String path : LintUtils.splitPath(paths)) {
+                    File input = getInArgumentPath(path);
+                    if (!input.exists()) {
+                        System.err.println("Resource folder " + input + " does not exist.");
+                        System.exit(ERRNO_INVALIDARGS);
+                    }
+                    if (mResources == null) {
+                        mResources = new ArrayList<File>();
+                    }
+                    mResources.add(input);
+                }
             } else if (arg.equals(ARG_LIBRARIES)) {
                 if (index == args.length - 1) {
                     System.err.println("Missing library folder name");
@@ -537,9 +556,11 @@ public class Main extends LintClient {
             System.err.println("No files to analyze.");
             System.exit(ERRNO_INVALIDARGS);
         } else if (files.size() > 1
-                && (mClasses != null || mSources != null || mLibraries != null)) {
-            System.err.println("The " + ARG_SOURCES + ", " + ARG_CLASSES + " and "
-                    + ARG_LIBRARIES + " arguments can only be used with a single project");
+                && (mClasses != null || mSources != null || mLibraries != null
+                    || mResources != null)) {
+            System.err.println(String.format(
+                  "The %1$s, %2$s, %3$s and %4$s arguments can only be used with a single project",
+                  ARG_SOURCES, ARG_CLASSES, ARG_LIBRARIES, ARG_RESOURCES));
             System.exit(ERRNO_INVALIDARGS);
         }
 
@@ -932,6 +953,8 @@ public class Main extends LintClient {
             ARG_XML + " <filename>", "Create an XML report instead.",
 
             "", "\nProject Options:",
+            ARG_RESOURCES + " <dir>", "Add the given folder (or path) as a resource directory " +
+                "for the project. Only valid when running lint on a single project.",
             ARG_SOURCES + " <dir>", "Add the given folder (or path) as a source directory for " +
                 "the project. Only valid when running lint on a single project.",
             ARG_CLASSES + " <dir>", "Add the given folder (or jar file, or path) as a class " +
@@ -1208,6 +1231,16 @@ public class Main extends LintClient {
         }
 
         return info;
+    }
+
+    @NonNull
+    @Override
+    public List<File> getResourceFolders(@NonNull Project project) {
+        if (mResources == null) {
+            return super.getResourceFolders(project);
+        }
+
+        return mResources;
     }
 
     /**
