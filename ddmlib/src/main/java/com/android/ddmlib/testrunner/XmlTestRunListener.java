@@ -229,7 +229,9 @@ public class XmlTestRunListener implements ITestRunListener {
         serializer.attribute(ns, ATTR_TIME, Long.toString(elapsedTime));
         serializer.attribute(ns, TIMESTAMP, timestamp);
         serializer.attribute(ns, HOSTNAME, mHostName);
+
         serializer.startTag(ns, PROPERTIES);
+        setPropertiesAttributes(serializer, ns);
         serializer.endTag(ns, PROPERTIES);
 
         Map<TestIdentifier, TestResult> testResults = mRunResult.getTestResults();
@@ -238,6 +240,16 @@ public class XmlTestRunListener implements ITestRunListener {
         }
 
         serializer.endTag(ns, TESTSUITE);
+    }
+
+    /**
+     * Sets the attributes on properties.
+     * @param serializer the serializer
+     * @param namespace the namespace
+     * @throws IOException
+     */
+    protected void setPropertiesAttributes(KXmlSerializer serializer, String namespace)
+            throws IOException {
     }
 
     protected String getTestName(TestIdentifier testId) {
