@@ -5,7 +5,6 @@ dependencies {
     compile 'org.apache.commons:commons-compress:1.0'
     compile 'org.apache.httpcomponents:httpclient:4.1.1'
     compile 'org.apache.httpcomponents:httpmime:4.1'
-    compile 'org.apache.commons:commons-compress:1.0'
 
     testCompile project(':dvlib').sourceSets.test.output
     testCompile 'junit:junit:3.8.1'

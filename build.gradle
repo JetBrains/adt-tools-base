@@ -1,4 +1,16 @@
+// ext.androidHostOut is shared by all tools/{base,build,swt} gradle projects/
+ext.androidHostOut = java.lang.System.getenv("ANDROID_HOST_OUT")
+ext.androidHostOut = file(ext.androidHostOut != null ?
+                              ext.androidHostOut :
+                              "$rootDir/../../out/host/common")
+ext.androidRootDir = file(new File(ext.androidHostOut, "../../../"))
+// rootProject.buildDir is specific to this gradle build.
+buildDir = new File(file(ext.androidHostOut), "tools/base/build")
+
 subprojects {
+    // Change buildDir first so that all plugins pick up the new value.
+    project.buildDir = project.file("$project.parent.buildDir/../$project.name")
+
     apply plugin: 'java'
     apply plugin: 'maven'
     apply plugin: 'signing'
@@ -8,13 +20,13 @@ subprojects {
         mavenCentral()
     }
 
-    dependencies{
+    dependencies {
         emma "emma:emma:2.0.5312"
         emma "emma:emma_ant:2.0.5312"
     }
 
-    emma{
-        reportPath = "build/reports/emma"
+    emma {
+        reportPath = "$project.buildDir/reports/emma"
     }
 
     project.ext.baseVersion = '22.0'
@@ -50,7 +62,7 @@ subprojects {
         configuration = configurations.archives
         repositories {
             mavenDeployer {
-                repository(url: uri("$rootDir/repo"))
+                repository(url: uri("$rootProject.ext.androidHostOut/repo"))
             }
         }
     }
@@ -63,25 +75,20 @@ def testTasks = subprojects.collect { it.tasks.withType(Test) }.flatten()
 
 task aggregateResults(type: Copy) {
     from { testTasks*.testResultsDir }
-    into { file("build/results") }
+    into { file("$buildDir/results") }
 }
 aggregateResults.dependsOn testTasks
 
 task makeAggregateReport(dependsOn: aggregateResults) {
-    def report = new org.gradle.api.internal.tasks.testing.junit.report.DefaultTestReport(testReportDir: file("build/reports/tests"), testResultsDir: file("build/results"))
+    def report = new org.gradle.api.internal.tasks.testing.junit.report.DefaultTestReport(
+                        testReportDir:  file("$buildDir/reports/tests"),
+                        testResultsDir: file("$buildDir/results"))
     report.generateReport()
 }
 
 task check {
     //nothing
 }
-check.dependsOn makeAggregateReport
 
-allprojects.each { project ->
-  def host_out = java.lang.System.getenv("ANDROID_HOST_OUT")
-  project.buildDir = new File(project.file(host_out != null ?
-                                           host_out :
-                                           "$project.rootDir/../../out/host/common"),
-                              "tools/base/$project.name")
-}
+check.dependsOn makeAggregateReport
 
