@@ -78,6 +78,10 @@ task check {
 check.dependsOn makeAggregateReport
 
 allprojects.each { project ->
-  project.buildDir = project.file("$project.rootDir/../../out/host/common/tools/base/$project.name")
+  def host_out = java.lang.System.getenv("ANDROID_HOST_OUT")
+  project.buildDir = new File(project.file(host_out != null ?
+                                           host_out :
+                                           "$project.rootDir/../../out/host/common"),
+                              "tools/base/$project.name")
 }
 
