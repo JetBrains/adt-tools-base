@@ -51,6 +51,7 @@ public enum ResourceFolderType {
      * @return the enum or null if not found.
      */
     public static ResourceFolderType getTypeByName(String name) {
+        assert name.indexOf('-') == -1 : name; // use #getFolderType instead
         for (ResourceFolderType rType : values()) {
             if (rType.mName.equals(name)) {
                 return rType;
@@ -67,10 +68,10 @@ public enum ResourceFolderType {
      * <code>null</code> if no matching type was found.
      */
     public static ResourceFolderType getFolderType(String folderName) {
-        // split the name of the folder in segments.
-        String[] folderSegments = folderName.split(ResourceConstants.RES_QUALIFIER_SEP);
-
-        // get the enum for the resource type.
-        return getTypeByName(folderSegments[0]);
+        int index = folderName.indexOf(ResourceConstants.RES_QUALIFIER_SEP);
+        if (index != -1) {
+            folderName = folderName.substring(0, index);
+        }
+        return getTypeByName(folderName);
     }
 }
