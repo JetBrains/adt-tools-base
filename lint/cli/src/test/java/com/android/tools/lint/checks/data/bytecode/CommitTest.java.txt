@@ -1,6 +1,7 @@
 package test.pkg;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 
@@ -62,5 +63,29 @@ public class CommitTest extends Activity {
 
     public void error4() {
         getSupportFragmentManager().beginTransaction();
+    }
+
+    android.support.v4.app.Fragment mFragment1 = null;
+    Fragment mFragment2 = null;
+
+    public void ok7() {
+        getSupportFragmentManager().beginTransaction().add(android.R.id.content, mFragment1).commit();
+    }
+
+    public void ok8() {
+        getFragmentManager().beginTransaction().add(android.R.id.content, mFragment2).commit();
+    }
+
+    public void ok10() {
+        // Test chaining
+        FragmentManager fragmentManager = getFragmentManager();
+        fragmentManager.beginTransaction().addToBackStack("test").attach(mFragment2).detach(mFragment2)
+        .disallowAddToBackStack().hide(mFragment2).setBreadCrumbShortTitle("test")
+        .show(mFragment2).setCustomAnimations(0, 0).commit();
+    }
+
+    public void ok9() {
+        FragmentManager fragmentManager = getFragmentManager();
+        fragmentManager.beginTransaction().commit();
     }
 }

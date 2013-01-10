@@ -18,6 +18,7 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
@@ -81,7 +82,6 @@ public class CleanupDetector extends Detector implements ClassScanner {
     private static final String RECYCLE = "recycle";                                  //$NON-NLS-1$
     private static final String OBTAIN = "obtain";                                    //$NON-NLS-1$
     private static final String OBTAIN_NO_HISTORY = "obtainNoHistory";                //$NON-NLS-1$
-    private static final String OBTAIN_MESSAGE = "obtainMessage";                     //$NON-NLS-1$
     private static final String OBTAIN_ATTRIBUTES = "obtainAttributes";               //$NON-NLS-1$
     private static final String OBTAIN_TYPED_ARRAY = "obtainTypedArray";              //$NON-NLS-1$
     private static final String OBTAIN_STYLED_ATTRIBUTES = "obtainStyledAttributes";  //$NON-NLS-1$
@@ -94,7 +94,6 @@ public class CleanupDetector extends Detector implements ClassScanner {
     private static final String TYPED_ARRAY_CLS = "android/content/res/TypedArray";   //$NON-NLS-1$
     private static final String CONTEXT_CLS = "android/content/Context";              //$NON-NLS-1$
     private static final String MOTION_EVENT_CLS = "android/view/MotionEvent";        //$NON-NLS-1$
-    private static final String MESSAGE_CLS = "android/os/Message";                   //$NON-NLS-1$
     private static final String HANDLER_CLS = "android/os/Handler";                   //$NON-NLS-1$
     private static final String RESOURCES_CLS = "android/content/res/Resources";      //$NON-NLS-1$
     private static final String PARCEL_CLS = "android/os/Parcel";                     //$NON-NLS-1$
@@ -105,14 +104,11 @@ public class CleanupDetector extends Detector implements ClassScanner {
 
     // Target description signatures
     private static final String TYPED_ARRAY_SIG = "Landroid/content/res/TypedArray;"; //$NON-NLS-1$
-    private static final String MESSAGE_SIG = "Landroid/os/Message;";                 //$NON-NLS-1$
 
     private boolean mObtainsTypedArray;
     private boolean mRecyclesTypedArray;
     private boolean mObtainsTracker;
     private boolean mRecyclesTracker;
-    private boolean mObtainsMessage;
-    private boolean mRecyclesMessage;
     private boolean mObtainsMotionEvent;
     private boolean mRecyclesMotionEvent;
     private boolean mObtainsParcel;
@@ -130,7 +126,6 @@ public class CleanupDetector extends Detector implements ClassScanner {
         if (phase == 1) {
             if (mObtainsTypedArray && !mRecyclesTypedArray
                     || mObtainsTracker && !mRecyclesTracker
-                    || mObtainsMessage && !mRecyclesMessage
                     || mObtainsParcel && !mRecyclesParcel
                     || mObtainsMotionEvent && !mRecyclesMotionEvent
                     || mObtainsTransaction && !mCommitsTransaction) {
@@ -150,7 +145,6 @@ public class CleanupDetector extends Detector implements ClassScanner {
                 OBTAIN,
                 OBTAIN_ATTRIBUTES,
                 OBTAIN_TYPED_ARRAY,
-                OBTAIN_MESSAGE,
                 OBTAIN_NO_HISTORY,
                 BEGIN_TRANSACTION,
                 COMMIT,
@@ -173,8 +167,6 @@ public class CleanupDetector extends Detector implements ClassScanner {
                 mRecyclesTypedArray = true;
             } else if (owner.equals(VELOCITY_TRACKER_CLS)) {
                 mRecyclesTracker = true;
-            } else if (owner.equals(MESSAGE_CLS)) {
-                mRecyclesMessage = true;
             } else if (owner.equals(MOTION_EVENT_CLS)) {
                 mRecyclesMotionEvent = true;
             } else if (owner.equals(PARCEL_CLS)) {
@@ -199,28 +191,12 @@ public class CleanupDetector extends Detector implements ClassScanner {
                     mRecyclesMotionEvent = true;
                 }
             }
-        } else if (OBTAIN_MESSAGE.equals(name)) {
-            if (owner.equals(HANDLER_CLS) && desc.endsWith(MESSAGE_SIG)) {
-                mObtainsMessage = true;
-                if (phase == 2 && !mRecyclesMessage) {
-                    context.report(RECYCLE_RESOURCE, method, call, context.getLocation(call),
-                            getErrorMessage(MESSAGE_CLS), null);
-                }
-            }
         } else if (OBTAIN.equals(name)) {
             if (owner.equals(VELOCITY_TRACKER_CLS)) {
                 mObtainsTracker = true;
                 if (phase == 2 && !mRecyclesTracker) {
                     context.report(RECYCLE_RESOURCE, method, call, context.getLocation(call),
                             getErrorMessage(VELOCITY_TRACKER_CLS),
-                            null);
-                }
-            } else if (owner.equals(MESSAGE_CLS) && desc.endsWith(MESSAGE_SIG)) {
-                // TODO: Handle Message constructor?
-                mObtainsMessage = true;
-                if (phase == 2 && !mRecyclesMessage) {
-                    context.report(RECYCLE_RESOURCE, method, call, context.getLocation(call),
-                            getErrorMessage(MESSAGE_CLS),
                             null);
                 }
             } else if (owner.equals(PARCEL_CLS)) {
@@ -269,7 +245,7 @@ public class CleanupDetector extends Detector implements ClassScanner {
 
     /** Computes an error message for a missing recycle of the given type */
     private static String getErrorMessage(String owner) {
-        if (FRAGMENT_MANAGER_CLS.equals(owner)) {
+        if (FRAGMENT_TRANSACTION_CLS.equals(owner) || FRAGMENT_TRANSACTION_V4_CLS.equals(owner)) {
             return "This transaction should be completed with a commit() call";
         }
         String className = owner.substring(owner.lastIndexOf('/') + 1);
@@ -306,6 +282,23 @@ public class CleanupDetector extends Detector implements ClassScanner {
         }
 
         return false;
+    }
+
+    @VisibleForTesting
+    static boolean hasReturnType(String owner, String desc) {
+        int descLen = desc.length();
+        int ownerLen = owner.length();
+        if (descLen < ownerLen + 3) {
+            return false;
+        }
+        if (desc.charAt(descLen - 1) != ';') {
+            return false;
+        }
+        int typeBegin = descLen - 2 - ownerLen;
+        if (desc.charAt(typeBegin - 1) != ')' || desc.charAt(typeBegin) != 'L') {
+            return false;
+        }
+        return desc.regionMatches(typeBegin + 1, owner, 0, ownerLen);
     }
 
     /**
@@ -434,6 +427,13 @@ public class CleanupDetector extends Detector implements ClassScanner {
                             mIsCleanedUp = true;
                             return INSTANCE;
                         }
+                    } else if (call.owner.equals(mRecycleOwner)
+                            && hasReturnType(mRecycleOwner, call.desc)) {
+                        // Called method which returns self. This helps handle cases where you call
+                        //   createTransaction().method1().method2().method3().commit() -- if
+                        // method1, 2 and 3 all return "this" then the commit call is really
+                        // called on the createTransaction instance
+                        return INSTANCE;
                     }
                 }
             }
