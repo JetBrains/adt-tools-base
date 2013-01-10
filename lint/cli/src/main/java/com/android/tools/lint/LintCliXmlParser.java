@@ -42,9 +42,10 @@ import java.io.UnsupportedEncodingException;
 public class LintCliXmlParser extends PositionXmlParser implements IDomParser {
     @Override
     public Document parseXml(@NonNull XmlContext context) {
+        String xml = null;
         try {
             // Do we need to provide an input stream for encoding?
-            String xml = context.getContents();
+            xml = context.getContents();
             if (xml != null) {
                 return super.parse(xml);
             }
@@ -57,12 +58,23 @@ public class LintCliXmlParser extends PositionXmlParser implements IDomParser {
                         e.getLocalizedMessage(),
                     null);
         } catch (SAXException e) {
+            Location location = Location.create(context.file);
+            String message = e.getCause() != null ? e.getCause().getLocalizedMessage() :
+                    e.getLocalizedMessage();
+            if (message.startsWith("The processing instruction target matching "
+                    + "\"[xX][mM][lL]\" is not allowed.")) {
+                int prologue = xml.indexOf("<?xml ");
+                int comment = xml.indexOf("<!--");
+                if (prologue != -1 && comment != -1 && comment < prologue) {
+                    message = "The XML prologue should appear before, not after, the first XML "
+                            + "header/copyright comment. " + message;
+                }
+            }
             context.report(
                     // Must provide an issue since API guarantees that the issue parameter
                     // is valid
-                    IssueRegistry.PARSER_ERROR, Location.create(context.file),
-                    e.getCause() != null ? e.getCause().getLocalizedMessage() :
-                        e.getLocalizedMessage(),
+                    IssueRegistry.PARSER_ERROR, location,
+                    message,
                     null);
         } catch (Throwable t) {
             context.log(t, null);
