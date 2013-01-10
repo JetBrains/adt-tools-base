@@ -18,9 +18,11 @@ package com.android.tools.lint.detector.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.client.api.LintDriver;
 import com.google.common.annotations.Beta;
-
+import lombok.ast.AstVisitor;
+import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
@@ -33,10 +35,8 @@ import org.w3c.dom.Element;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
-
-import lombok.ast.AstVisitor;
-import lombok.ast.MethodInvocation;
 
 /**
  * A detector is able to find a particular problem. It might also be thought of as enforcing
@@ -372,6 +372,25 @@ public abstract class Detector {
         // We want to distinguish this from just an *empty* list returned by the caller!
     }
 
+    /** Specialized interface for detectors that scan other files */
+    public interface OtherFileScanner {
+        /**
+         * Returns the set of files this scanner wants to consider.  If this includes
+         * {@link Scope#OTHER} then all source files will be checked. Note that the
+         * set of files will not just include files of the indicated type, but all files
+         * within the relevant source folder. For example, returning {@link Scope#JAVA_FILE}
+         * will not just return {@code .java} files, but also other resource files such as
+         * {@code .html} and other files found within the Java source folders.
+         * <p>
+         * Lint will call the {@link #run(Context)}} method when the file should be checked.
+         *
+         * @return set of scopes that define the types of source files the
+         *    detector wants to consider
+         */
+        @NonNull
+        EnumSet<Scope> getApplicableFiles();
+    }
+
     /**
      * Runs the detector. This method will not be called for certain specialized
      * detectors, such as {@link XmlScanner} and {@link JavaScanner}, where
@@ -579,4 +598,14 @@ public abstract class Detector {
             @NonNull MethodNode method, @NonNull AbstractInsnNode instruction) {
     }
 
+    // ---- Dummy implementations to make implementing an OtherFileScanner easier: ----
+
+    public boolean appliesToFolder(@NonNull Scope scope, @Nullable ResourceFolderType folderType) {
+        return false;
+    }
+
+    @NonNull
+    public EnumSet<Scope> getApplicableFiles() {
+        return Scope.OTHER_SCOPE;
+    }
 }

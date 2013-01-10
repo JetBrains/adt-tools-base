@@ -134,6 +134,7 @@ public class LintDriver {
     private Project mCurrentProject;
     private boolean mAbbreviating = true;
     private boolean mParserErrors;
+    private Map<Object,Object> mProperties;
 
     /**
      * Creates a new {@link LintDriver}
@@ -169,6 +170,38 @@ public class LintDriver {
     @NonNull
     public LintClient getClient() {
         return mClient;
+    }
+
+    /**
+     * Records a property for later retrieval by {@link #getProperty(Object)}
+     *
+     * @param key the key to associate the value with
+     * @param value the value, or null to remove a previous binding
+     */
+    public void putProperty(@NonNull Object key, @Nullable Object value) {
+        if (mProperties == null) {
+            mProperties = Maps.newHashMap();
+        }
+        if (value == null) {
+            mProperties.remove(key);
+        } else {
+            mProperties.put(key, value);
+        }
+    }
+
+    /**
+     * Returns the property previously stored with the given key, or null
+     *
+     * @param key the key
+     * @return the value or null if not found
+     */
+    @Nullable
+    public Object getProperty(@NonNull Object key) {
+        if (mProperties != null) {
+            return mProperties.get(key);
+        }
+
+        return null;
     }
 
     /**
@@ -545,6 +578,13 @@ public class LintDriver {
                     assert detector instanceof Detector.ClassScanner : detector;
                 }
             }
+
+            List<Detector> otherDetectors = mScopeDetectors.get(Scope.OTHER_SCOPE);
+            if (otherDetectors != null) {
+                for (Detector detector : otherDetectors) {
+                    assert detector instanceof Detector.OtherFileScanner : detector;
+                }
+            }
         }
     }
 
@@ -880,6 +920,14 @@ public class LintDriver {
             checkClasses(project, main);
         }
 
+        if (mScope.contains(Scope.OTHER)) {
+            List<Detector> checks = mScopeDetectors.get(Scope.OTHER);
+            if (checks != null) {
+                OtherFileVisitor visitor = new OtherFileVisitor(checks);
+                visitor.scan(this, project, main);
+            }
+        }
+
         if (mCanceled) {
             return;
         }
@@ -888,6 +936,7 @@ public class LintDriver {
             checkProGuard(project, main);
         }
     }
+
     private void checkProGuard(Project project, Project main) {
         List<Detector> detectors = mScopeDetectors.get(Scope.PROGUARD_FILE);
         if (detectors != null) {
@@ -932,6 +981,11 @@ public class LintDriver {
                 }
             }
         }
+    }
+
+    /** True if execution has been canceled */
+    boolean isCanceled() {
+        return mCanceled;
     }
 
     /**

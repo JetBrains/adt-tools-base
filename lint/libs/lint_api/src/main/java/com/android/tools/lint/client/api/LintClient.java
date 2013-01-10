@@ -350,13 +350,12 @@ public abstract class LintClient {
      */
     @Nullable
     public File findResource(@NonNull String relativePath) {
-        File dir = getLintBinDir();
-        if (dir == null) {
+        File top = getSdkHome();
+        if (top == null) {
             throw new IllegalArgumentException("Lint must be invoked with the System property "
-                    + PROP_BIN_DIR + " pointing to the ANDROID_SDK tools directory");
+                   + PROP_BIN_DIR + " pointing to the ANDROID_SDK tools directory");
         }
 
-        File top = dir.getParentFile();
         File file = new File(top, relativePath);
         if (file.exists()) {
             return file;
