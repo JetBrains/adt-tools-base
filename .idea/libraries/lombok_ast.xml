@@ -1,11 +1,11 @@
 <component name="libraryTable">
   <library name="lombok-ast">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/lombok-ast-0.2.jar!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/lombok-ast/lombok-ast-0.2.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/src.zip!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/lombok-ast/src.zip!/" />
     </SOURCES>
   </library>
 </component>
