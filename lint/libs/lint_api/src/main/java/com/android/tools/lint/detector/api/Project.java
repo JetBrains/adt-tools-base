@@ -622,6 +622,7 @@ public class Project {
      *
      * @return the path to the manifest file, or null if it does not exist
      */
+    @Nullable
     public File getManifestFile() {
         File manifestFile = new File(mDir, ANDROID_MANIFEST_XML);
         if (manifestFile.exists()) {

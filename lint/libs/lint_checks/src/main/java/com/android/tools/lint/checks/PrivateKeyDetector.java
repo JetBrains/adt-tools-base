@@ -23,7 +23,6 @@ import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
-import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
@@ -32,11 +31,12 @@ import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.EnumSet;
 
 /**
  * Looks for packaged private key files.
  */
-public class PrivateKeyDetector extends Detector {
+public class PrivateKeyDetector extends Detector implements Detector.OtherFileScanner {
     /** Packaged private key files */
     public static final Issue ISSUE = Issue.create(
             "PackagedPrivateKey", //$NON-NLS-1$
@@ -48,7 +48,7 @@ public class PrivateKeyDetector extends Detector {
             8,
             Severity.WARNING,
             PrivateKeyDetector.class,
-            Scope.ALL_RESOURCES_SCOPE);
+            Scope.OTHER_SCOPE);
 
     /** Constructs a new {@link PrivateKeyDetector} check */
     public PrivateKeyDetector() {
@@ -73,51 +73,30 @@ public class PrivateKeyDetector extends Detector {
         return false;
     }
 
-    private static void checkFolder(Context context, File dir) {
-        if (dir.isDirectory()) {
-            File[] files = dir.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    if (file.isDirectory()) {
-                        checkFolder(context, file);
-                    } else {
-                        if (isPrivateKeyFile(file)) {
-                            String fileName = file.getParentFile().getName() + File.separator
-                                + file.getName();
-                            String message = String.format(
-                                "The %1$s file seems to be a private key file. " +
-                                "Please make sure not to embed this in your APK file.", fileName);
-                            context.report(ISSUE, Location.create(file), message, null);
-                        }
-                    }
-                }
-            }
-        }
+    // ---- Implements OtherFileScanner ----
+
+    @NonNull
+    @Override
+    public EnumSet<Scope> getApplicableFiles() {
+        return Scope.OTHER_SCOPE;
     }
 
     @Override
-    public void afterCheckProject(@NonNull Context context) {
+    public void run(@NonNull Context context) {
         if (!context.getProject().getReportIssues()) {
             // If this is a library project not being analyzed, ignore it
             return;
         }
 
-        Project project = context.getProject();
-        File projectFolder = project.getDir();
-
-        for (File res : project.getResourceFolders()) {
-            checkFolder(context, res);
+        File file = context.file;
+        if (isPrivateKeyFile(file)) {
+            String fileName = file.getParentFile().getName() + File.separator
+                + file.getName();
+            String message = String.format(
+                "The %1$s file seems to be a private key file. " +
+                "Please make sure not to embed this in your APK file.", fileName);
+            context.report(ISSUE, Location.create(file), message, null);
         }
-        checkFolder(context, new File(projectFolder, "assets"));
-
-        for (File srcFolder : project.getJavaSourceFolders()) {
-            checkFolder(context, srcFolder);
-        }
-    }
-
-    @Override
-    public boolean appliesTo(@NonNull Context context, @NonNull File file) {
-        return true;
     }
 
     @NonNull

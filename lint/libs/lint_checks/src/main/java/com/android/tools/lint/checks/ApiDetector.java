@@ -196,7 +196,7 @@ public class ApiDetector extends ResourceXmlDetector
     private static final String SWITCH_TABLE_PREFIX = "$SWITCH_TABLE$";  //$NON-NLS-1$
     private static final String ORDINAL_METHOD = "ordinal"; //$NON-NLS-1$
 
-    private ApiLookup mApiDatabase;
+    protected ApiLookup mApiDatabase;
     private int mMinApi = -1;
     private Set<String> mWarnedFields;
 
@@ -359,7 +359,7 @@ public class ApiDetector extends ResourceXmlDetector
         }
     }
 
-    private int getMinSdk(Context context) {
+    protected int getMinSdk(Context context) {
         if (mMinApi == -1) {
             mMinApi = context.getMainProject().getMinSdk();
         }

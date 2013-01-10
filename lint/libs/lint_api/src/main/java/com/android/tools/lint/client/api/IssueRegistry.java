@@ -48,6 +48,12 @@ public abstract class IssueRegistry {
     private static Map<EnumSet<Scope>, List<Issue>> sScopeIssues = Maps.newHashMap();
 
     /**
+     * Creates a new {@linkplain IssueRegistry}
+     */
+    protected IssueRegistry() {
+    }
+
+    /**
      * Issue reported by lint (not a specific detector) when it cannot even
      * parse an XML file prior to analysis
      */

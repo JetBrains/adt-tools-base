@@ -87,7 +87,13 @@ public enum Scope {
      * The analysis considers classes in the libraries for this project. These
      * will be analyzed before the classes themselves.
      */
-    JAVA_LIBRARIES;
+    JAVA_LIBRARIES,
+
+    /**
+     * Scope for other files. Issues that specify a custom scope will be called unconditionally.
+     * This will call {@link Detector#run(Context)}} on the detectors unconditionally.
+     */
+    OTHER;
 
     /**
      * Returns true if the given scope set corresponds to scanning a single file
@@ -141,4 +147,6 @@ public enum Scope {
     public static final EnumSet<Scope> CLASS_FILE_SCOPE = EnumSet.of(CLASS_FILE);
     /** Scope-set used for detectors which are affected by the manifest only */
     public static final EnumSet<Scope> MANIFEST_SCOPE = EnumSet.of(MANIFEST);
+    /** Scope-set used for detectors which correspond to some other context */
+    public static final EnumSet<Scope> OTHER_SCOPE = EnumSet.of(OTHER);
 }
