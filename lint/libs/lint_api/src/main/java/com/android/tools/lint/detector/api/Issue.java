@@ -121,7 +121,7 @@ public final class Issue implements Comparable<Issue> {
     /**
      * Briefly (one line) describes the kinds of checks performed by this rule
      *
-     * @return a quick summary of the issue, never null
+     * @return a quick summary of the issue, never null, never empty
      */
     @NonNull
     public String getDescription() {
@@ -140,7 +140,7 @@ public final class Issue implements Comparable<Issue> {
      * and you can obtain the text as annotated HTML by calling
      * {@link #getExplanationAsHtml()}.
      *
-     * @return an explanation of the issue, never null.
+     * @return an explanation of the issue, never null, never empty
      */
     @NonNull
     public String getExplanation() {
@@ -160,9 +160,8 @@ public final class Issue implements Comparable<Issue> {
     }
 
     /**
-     * Like {@link #getExplanation()}, but returns the text as properly escaped
-     * and marked up HTML, where http URLs are linked, where words with asterisks
-     * such as *this* are shown in bold, etc.
+     * Like {@link #getExplanation()}, but returns the text as simple text without
+     * markup tokens such as `this` for code fragments etc.
      *
      * @return the explanation of the issue, never null
      */
