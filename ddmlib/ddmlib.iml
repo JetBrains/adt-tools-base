@@ -12,7 +12,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="library" name="kxml2" level="project" />
     <orderEntry type="library" scope="TEST" name="easymock-tools" level="project" />
-    <orderEntry type="library" scope="TEST" name="junit3-tools" level="project" />
+    <orderEntry type="library" scope="TEST" name="JUnit3" level="project" />
   </component>
 </module>
 
