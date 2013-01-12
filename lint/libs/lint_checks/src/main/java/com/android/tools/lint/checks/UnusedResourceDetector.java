@@ -396,12 +396,17 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                         if (mUnused.containsKey(resource)) {
                             if (context.getDriver().isSuppressed(getIssue(resource), item)) {
                                 mUnused.remove(resource);
-                                return;
+                                continue;
                             }
                             if (!context.getProject().getReportIssues()) {
                                 mUnused.remove(resource);
-                                return;
+                                continue;
                             }
+                            if (isAnalyticsFile(context)) {
+                                mUnused.remove(resource);
+                                continue;
+                            }
+
                             recordLocation(resource, context.getLocation(nameAttribute));
                         }
                     }
@@ -416,6 +421,18 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                 checkChildRefs(item);
             }
         }
+    }
+
+    private static final String ANALYTICS_FILE = "analytics.xml"; //$NON-NLS-1$
+
+    /**
+     * Returns true if this XML file corresponds to an Analytics configuration file;
+     * these contain some attributes read by the library which won't be flagged as
+     * used by the application
+     */
+    private static boolean isAnalyticsFile(XmlContext context) {
+        File file = context.file;
+        return file.getPath().endsWith(ANALYTICS_FILE) && file.getName().equals(ANALYTICS_FILE);
     }
 
     private void checkChildRefs(Element item) {
