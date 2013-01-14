@@ -278,7 +278,7 @@ public class Client {
         }
 
         try {
-            OpenGlTraceChunkHandler.sendStartGlTracing(this);
+            HandleViewDebug.sendStartGlTracing(this);
             return true;
         } catch (IOException e) {
             Log.w("ddms", "Start OpenGL Tracing failed");
@@ -293,7 +293,7 @@ public class Client {
         }
 
         try {
-            OpenGlTraceChunkHandler.sendStopGlTracing(this);
+            HandleViewDebug.sendStopGlTracing(this);
             return true;
         } catch (IOException e) {
             Log.w("ddms", "Stop OpenGL Tracing failed");

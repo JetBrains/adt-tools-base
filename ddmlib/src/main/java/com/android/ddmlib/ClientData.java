@@ -136,6 +136,12 @@ public class ClientData {
     public final static String FEATURE_OPENGL_TRACING = "opengl-tracing"; //$NON-NLS-1$
 
     /**
+     * String for feature indicating support for providing view hierarchy.
+     * @see #hasFeature(String)
+     */
+    public static final String FEATURE_VIEW_HIERARCHY = "view-hierarchy"; //$NON-NLS-1$
+
+    /**
      * String for feature allowing to dump hprof files
      * @see #hasFeature(String)
      */
