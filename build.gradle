@@ -77,18 +77,3 @@ task aggregateResults(type: Copy) {
     from { testTasks*.testResultsDir }
     into { file("$buildDir/results") }
 }
-aggregateResults.dependsOn testTasks
-
-task makeAggregateReport(dependsOn: aggregateResults) {
-    def report = new org.gradle.api.internal.tasks.testing.junit.report.DefaultTestReport(
-                        testReportDir:  file("$buildDir/reports/tests"),
-                        testResultsDir: file("$buildDir/results"))
-    report.generateReport()
-}
-
-task check {
-    //nothing
-}
-
-check.dependsOn makeAggregateReport
-
