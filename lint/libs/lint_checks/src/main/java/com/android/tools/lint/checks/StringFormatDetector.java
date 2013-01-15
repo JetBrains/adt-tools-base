@@ -931,13 +931,23 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             return;
         }
 
+        // TODO: Need type information in the AST
+        Iterator<Expression> argIterator = args.iterator();
+        Expression first = argIterator.next();
+        Expression second = argIterator.hasNext() ? argIterator.next() : null;
+        String firstName = first.toString();
+        boolean specifiesLocale = firstName.startsWith("Locale.")             //$NON-NLS-1$
+                || firstName.contains("locale")                               //$NON-NLS-1$
+                || firstName.equals("null")                                   //$NON-NLS-1$
+                || second != null && second.toString().contains("getString"); //$NON-NLS-1$
+
         List<Pair<Handle, String>> list = mFormatStrings.get(name);
         if (list != null) {
             for (Pair<Handle, String> pair : list) {
                 String s = pair.getSecond();
                 int count = getFormatArgumentCount(s, null);
                 Handle handle = pair.getFirst();
-                if (count != args.size() - 1) {
+                if (count != args.size() - 1 - (specifiesLocale ? 1 : 0)) {
                     Location location = context.parser.getLocation(context, call);
                     Location secondary = handle.resolve();
                     secondary.setMessage(String.format("This definition requires %1$d arguments",
@@ -950,7 +960,8 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                     context.report(ARG_TYPES, method, location, message, null);
                 } else {
                     for (int i = 1; i <= count; i++) {
-                        Class<?> type = tracker.getArgumentType(i);
+                        int argumentIndex = i + (specifiesLocale ? 1 : 0);
+                        Class<?> type = tracker.getArgumentType(argumentIndex);
                         if (type != null) {
                             boolean valid = true;
                             String formatType = getFormatArgumentType(s, i);
@@ -1006,7 +1017,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
 
                             if (!valid) {
                                 IJavaParser parser = context.parser;
-                                Expression argument = tracker.getArgument(i);
+                                Expression argument = tracker.getArgument(argumentIndex);
                                 Location location = parser.getLocation(context, argument);
                                 Location secondary = handle.resolve();
                                 secondary.setMessage("Conflicting argument declaration here");

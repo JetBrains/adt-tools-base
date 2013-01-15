@@ -1,0 +1,20 @@
+package test.pkg;
+
+import android.app.Activity;
+
+public class StringFormat3 extends Activity {
+    public final void test(Context context) {
+        String s1 = String.format(Locale.FRANCE,
+              context.getString(R.string.gridview_views_count), article.playsCount);
+        String s2 = String.format(Locale.FRANCE,
+              context.getString(R.string.gridview_views_count), 5);
+        String s3 = String.format(Locale.FRANCE,
+              context.getString(R.string.gridview_views_count), "wrong");
+        String s4 = String.format(context.getString(R.string.gridview_views_count), "wrong");
+        String s5 = String.format(context.getString(R.string.gridview_views_count), 5); // OK
+        String s6 = String.format(Locale.getDefault(),
+              context.getString(R.string.gridview_views_count), 5);
+        String s7 = String.format(null,
+              context.getString(R.string.gridview_views_count), 5);
+    }
+}
