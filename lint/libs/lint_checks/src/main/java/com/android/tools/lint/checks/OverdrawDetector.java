@@ -75,6 +75,7 @@ import lombok.ast.CompilationUnit;
 import lombok.ast.Expression;
 import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.MethodInvocation;
+import lombok.ast.PackageDeclaration;
 import lombok.ast.Select;
 import lombok.ast.StrictListAccessor;
 import lombok.ast.VariableReference;
@@ -497,7 +498,12 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
                 String packageName = "";
                 if (node.getParent() instanceof CompilationUnit) {
                     CompilationUnit compilationUnit = (CompilationUnit) node.getParent();
-                    packageName = compilationUnit.astPackageDeclaration().getPackageName();
+                    PackageDeclaration packageDeclaration = compilationUnit.astPackageDeclaration();
+                    if (packageDeclaration == null) {
+                        // No package declaration: ignore this one
+                        return true;
+                    }
+                    packageName = packageDeclaration.getPackageName();
                 }
                 mClassFqn = (!packageName.isEmpty() ? (packageName + '.') : "") + name;
 

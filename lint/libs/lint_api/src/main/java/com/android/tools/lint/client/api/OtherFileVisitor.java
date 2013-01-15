@@ -15,19 +15,29 @@
  */
 package com.android.tools.lint.client.api;
 
+import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static com.android.SdkConstants.DOT_CLASS;
+import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.DOT_XML;
+import static com.android.SdkConstants.FD_ASSETS;
+import static com.android.tools.lint.detector.api.Detector.OtherFileScanner;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
+import com.android.utils.SdkUtils;
 import com.google.common.collect.Lists;
 
 import java.io.File;
-import java.util.*;
-
-import static com.android.SdkConstants.FD_ASSETS;
-import static com.android.tools.lint.detector.api.Detector.OtherFileScanner;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Visitor for "other" files: files that aren't java sources,
@@ -64,40 +74,95 @@ class OtherFileVisitor {
             scopes.addAll(applicable);
         }
 
+        List<File> subset = project.getSubset();
+
         if (scopes.contains(Scope.RESOURCE_FILE)) {
-            List<File> files = Lists.newArrayListWithExpectedSize(100);
-            for (File res : project.getResourceFolders()) {
-                collectFiles(files, res);
-            }
-            File assets = new File(projectFolder, FD_ASSETS);
-            if (assets.exists()) {
-                collectFiles(files, assets);
-            }
-            if (!files.isEmpty()) {
-                mFiles.put(Scope.RESOURCE_FILE, files);
+            if (subset != null && !subset.isEmpty()) {
+                List<File> files = new ArrayList<File>(subset.size());
+                for (File file : subset) {
+                    if (SdkUtils.endsWith(file.getPath(), DOT_XML) &&
+                            !file.getName().equals(ANDROID_MANIFEST_XML)) {
+                        files.add(file);
+                    }
+                }
+                if (!files.isEmpty()) {
+                    mFiles.put(Scope.RESOURCE_FILE, files);
+                }
+            } else {
+                List<File> files = Lists.newArrayListWithExpectedSize(100);
+                for (File res : project.getResourceFolders()) {
+                    collectFiles(files, res);
+                }
+                File assets = new File(projectFolder, FD_ASSETS);
+                if (assets.exists()) {
+                    collectFiles(files, assets);
+                }
+                if (!files.isEmpty()) {
+                    mFiles.put(Scope.RESOURCE_FILE, files);
+                }
             }
         }
 
         if (scopes.contains(Scope.JAVA_FILE)) {
-            List<File> files = Lists.newArrayListWithExpectedSize(100);
-            for (File srcFolder : project.getJavaSourceFolders()) {
-                collectFiles(files, srcFolder);
+            if (subset != null && !subset.isEmpty()) {
+                List<File> files = new ArrayList<File>(subset.size());
+                for (File file : subset) {
+                    if (file.getPath().endsWith(DOT_JAVA)) {
+                        files.add(file);
+                    }
+                }
+                if (!files.isEmpty()) {
+                    mFiles.put(Scope.JAVA_FILE, files);
+                }
+            } else {
+                List<File> files = Lists.newArrayListWithExpectedSize(100);
+                for (File srcFolder : project.getJavaSourceFolders()) {
+                    collectFiles(files, srcFolder);
+                }
+                if (!files.isEmpty()) {
+                    mFiles.put(Scope.JAVA_FILE, files);
+                }
             }
-            mFiles.put(Scope.JAVA_FILE, files);
         }
 
         if (scopes.contains(Scope.CLASS_FILE)) {
-            List<File> files = Lists.newArrayListWithExpectedSize(100);
-            for (File classFolder : project.getJavaClassFolders()) {
-                collectFiles(files, classFolder);
+            if (subset != null && !subset.isEmpty()) {
+                List<File> files = new ArrayList<File>(subset.size());
+                for (File file : subset) {
+                    if (file.getPath().endsWith(DOT_CLASS)) {
+                        files.add(file);
+                    }
+                }
+                if (!files.isEmpty()) {
+                    mFiles.put(Scope.CLASS_FILE, files);
+                }
+            } else {
+                List<File> files = Lists.newArrayListWithExpectedSize(100);
+                for (File classFolder : project.getJavaClassFolders()) {
+                    collectFiles(files, classFolder);
+                }
+                if (!files.isEmpty()) {
+                    mFiles.put(Scope.CLASS_FILE, files);
+                }
             }
-            mFiles.put(Scope.JAVA_FILE, files);
         }
 
         if (scopes.contains(Scope.MANIFEST)) {
-            File manifestFile = project.getManifestFile();
-            if (manifestFile != null) {
-                mFiles.put(Scope.MANIFEST, Collections.<File>singletonList(manifestFile));
+            if (subset != null && !subset.isEmpty()) {
+                List<File> files = new ArrayList<File>(subset.size());
+                for (File file : subset) {
+                    if (file.getName().equals(ANDROID_MANIFEST_XML)) {
+                        files.add(file);
+                    }
+                }
+                if (!files.isEmpty()) {
+                    mFiles.put(Scope.MANIFEST, files);
+                }
+            } else {
+                File manifestFile = project.getManifestFile();
+                if (manifestFile != null) {
+                    mFiles.put(Scope.MANIFEST, Collections.<File>singletonList(manifestFile));
+                }
             }
         }
 
@@ -115,7 +180,7 @@ class OtherFileVisitor {
             if (!applicable.isEmpty()) {
                 for (File file : files) {
                     Context context = new Context(driver, project, main, file);
-                    for (Detector detector : mDetectors) {
+                    for (Detector detector : applicable) {
                         detector.beforeCheckFile(context);
                         detector.run(context);
                         detector.afterCheckFile(context);
