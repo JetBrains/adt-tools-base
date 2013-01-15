@@ -32,11 +32,11 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import junit.framework.TestCase;
 
@@ -366,6 +366,8 @@ abstract class ManifestMergerTestCase extends TestCase {
 
             assert mainFile != null;
             assert actualResultFile != null;
+
+            Collections.sort(libFiles);
 
             return new TestFiles(
                     shouldFail,
