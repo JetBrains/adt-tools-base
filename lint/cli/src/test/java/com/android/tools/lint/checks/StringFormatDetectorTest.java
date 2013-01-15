@@ -163,6 +163,25 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                 "src/test/pkg/StringFormatActivity2.java.txt=>src/test/pkg/StringFormatActivity2.java"));
     }
 
+    public void testIssue42798() throws Exception {
+        // http://code.google.com/p/android/issues/detail?id=42798
+        // String playsCount = String.format(Locale.FRANCE, this.context.getString(R.string.gridview_views_count), article.playsCount);
+        assertEquals(""
+                + "src/test/pkg/StringFormat3.java:12: Error: Wrong argument type for formatting argument '#1' in gridview_views_count: conversion is 'd', received String [StringFormatMatches]\n"
+                + "              context.getString(R.string.gridview_views_count), \"wrong\");\n"
+                + "                                                                ~~~~~~~\n"
+                + "    res/values/formatstrings5.xml:3: Conflicting argument declaration here\n"
+                + "src/test/pkg/StringFormat3.java:13: Error: Wrong argument type for formatting argument '#1' in gridview_views_count: conversion is 'd', received String [StringFormatMatches]\n"
+                + "        String s4 = String.format(context.getString(R.string.gridview_views_count), \"wrong\");\n"
+                + "                                                                                    ~~~~~~~\n"
+                + "    res/values/formatstrings5.xml:3: Conflicting argument declaration here\n"
+                + "2 errors, 0 warnings\n",
+
+                lintProject(
+                        "res/values/formatstrings5.xml",
+                        "src/test/pkg/StringFormat3.java.txt=>src/test/pkg/StringFormat3.java"));
+    }
+
     public void testIsLocaleSpecific() throws Exception {
         assertFalse(isLocaleSpecific(""));
         assertFalse(isLocaleSpecific("Hello World!"));
