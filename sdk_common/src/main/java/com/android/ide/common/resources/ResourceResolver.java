@@ -189,7 +189,8 @@ public class ResourceResolver extends RenderResources {
         if (reference == null) {
             return null;
         }
-        if (reference.startsWith(PREFIX_THEME_REF)) {
+        if (reference.startsWith(PREFIX_THEME_REF)
+                && reference.length() > PREFIX_THEME_REF.length()) {
             // no theme? no need to go further!
             if (mTheme == null) {
                 return null;
@@ -198,6 +199,7 @@ public class ResourceResolver extends RenderResources {
             boolean frameworkOnly = false;
 
             // eliminate the prefix from the string
+            String originalReference = reference;
             if (reference.startsWith(ANDROID_THEME_PREFIX)) {
                 frameworkOnly = true;
                 reference = reference.substring(ANDROID_THEME_PREFIX.length());
@@ -207,7 +209,7 @@ public class ResourceResolver extends RenderResources {
 
             // at this point, value can contain type/name (drawable/foo for instance).
             // split it to make sure.
-            String[] segments = reference.split("\\/");
+            String[] segments = reference.split("/");
 
             // we look for the referenced item name.
             String referenceName = null;
@@ -224,6 +226,18 @@ public class ResourceResolver extends RenderResources {
             } else {
                 // it's just an item name.
                 referenceName = segments[0];
+
+                // Make sure it looks like a resource name; if not, it could just be a string
+                // which starts with a ?
+                if (!Character.isJavaIdentifierStart(referenceName.charAt(0))) {
+                    return null;
+                }
+                for (int i = 1, n = referenceName.length(); i < n; i++) {
+                    char c = referenceName.charAt(i);
+                    if (!Character.isJavaIdentifierPart(c) && c != '.') {
+                        return null;
+                    }
+                }
             }
 
             // now we look for android: in the referenceName in order to support format
@@ -241,7 +255,7 @@ public class ResourceResolver extends RenderResources {
                 mLogger.warning(LayoutLog.TAG_RESOURCES_RESOLVE_THEME_ATTR,
                         String.format("Couldn't find theme resource %1$s for the current theme",
                                 reference),
-                        new ResourceValue(ResourceType.ATTR, referenceName, frameworkOnly));
+                        new ResourceValue(ResourceType.ATTR, originalReference, frameworkOnly));
             }
 
             return item;
@@ -262,16 +276,17 @@ public class ResourceResolver extends RenderResources {
             }
 
             // at this point, value contains type/[android:]name (drawable/foo for instance)
-            String[] segments = reference.split("\\/");
-            if (segments.length <= 1) {
+            String[] segments = reference.split("/");
+            if (segments.length != 2) {
                 return null;
             }
 
             // now we look for android: in the resource name in order to support format
             // such as: @drawable/android:name
-            if (segments[1].startsWith(PREFIX_ANDROID)) {
+            String referenceName = segments[1];
+            if (referenceName.startsWith(PREFIX_ANDROID)) {
                 frameworkOnly = true;
-                segments[1] = segments[1].substring(PREFIX_ANDROID.length());
+                referenceName = referenceName.substring(PREFIX_ANDROID.length());
             }
 
             ResourceType type = ResourceType.getEnum(segments[0]);
@@ -281,7 +296,19 @@ public class ResourceResolver extends RenderResources {
                 return null;
             }
 
-            return findResValue(type, segments[1],
+            // Make sure it looks like a resource name; if not, it could just be a string
+            // which starts with a ?
+            if (!Character.isJavaIdentifierStart(referenceName.charAt(0))) {
+                return null;
+            }
+            for (int i = 1, n = referenceName.length(); i < n; i++) {
+                char c = referenceName.charAt(i);
+                if (!Character.isJavaIdentifierPart(c) && c != '.') {
+                    return null;
+                }
+            }
+
+            return findResValue(type, referenceName,
                     forceFrameworkOnly ? true :frameworkOnly);
         }
 
