@@ -326,4 +326,99 @@ public class ApiClass {
             }
         }
     }
+
+    /* This code can be used to scan through all the fields and look for fields
+       that have moved to a higher class:
+            Field android/view/MotionEvent#CREATOR has api=1 but parent android/view/InputEvent provides it as 9
+            Field android/provider/ContactsContract$CommonDataKinds$Organization#PHONETIC_NAME has api=5 but parent android/provider/ContactsContract$ContactNameColumns provides it as 11
+            Field android/widget/ListView#CHOICE_MODE_MULTIPLE has api=1 but parent android/widget/AbsListView provides it as 11
+            Field android/widget/ListView#CHOICE_MODE_NONE has api=1 but parent android/widget/AbsListView provides it as 11
+            Field android/widget/ListView#CHOICE_MODE_SINGLE has api=1 but parent android/widget/AbsListView provides it as 11
+            Field android/view/KeyEvent#CREATOR has api=1 but parent android/view/InputEvent provides it as 9
+       This is used for example in the ApiDetector to filter out warnings which result
+       when people follow Eclipse's advice to replace
+            ListView.CHOICE_MODE_MULTIPLE
+       references with
+            AbsListView.CHOICE_MODE_MULTIPLE
+       since the latter has API=11 and the former has API=1; since the constant is unchanged
+       between the two, and the literal is copied into the class, using the AbsListView
+       reference works.
+    public void checkFields(Api info) {
+        fieldLoop:
+        for (String field : mFields.keySet()) {
+            Integer since = getField(field, info);
+            if (since == null || since == Integer.MAX_VALUE) {
+                continue;
+            }
+
+            for (Pair<String, Integer> superClass : mSuperClasses) {
+                ApiClass clz = info.getClass(superClass.getFirst());
+                assert clz != null : superClass.getSecond();
+                if (clz != null) {
+                    Integer superSince = clz.getField(field, info);
+                    if (superSince == Integer.MAX_VALUE) {
+                        continue;
+                    }
+
+                    if (superSince != null && superSince > since) {
+                        String declaredIn = clz.findFieldDeclaration(info, field);
+                        System.out.println("Field " + getName() + "#" + field + " has api="
+                                + since + " but parent " + declaredIn + " provides it as "
+                                + superSince);
+                        continue fieldLoop;
+                    }
+                }
+            }
+
+            // Get methods from implemented interfaces as well;
+            for (Pair<String, Integer> superClass : mInterfaces) {
+                ApiClass clz = info.getClass(superClass.getFirst());
+                assert clz != null : superClass.getSecond();
+                if (clz != null) {
+                    Integer superSince = clz.getField(field, info);
+                    if (superSince == Integer.MAX_VALUE) {
+                        continue;
+                    }
+                    if (superSince != null && superSince > since) {
+                        String declaredIn = clz.findFieldDeclaration(info, field);
+                        System.out.println("Field " + getName() + "#" + field + " has api="
+                                + since + " but parent " + declaredIn + " provides it as "
+                                + superSince);
+                        continue fieldLoop;
+                    }
+                }
+            }
+        }
+    }
+
+    private String findFieldDeclaration(Api info, String name) {
+        if (mFields.containsKey(name)) {
+            return getName();
+        }
+        for (Pair<String, Integer> superClass : mSuperClasses) {
+            ApiClass clz = info.getClass(superClass.getFirst());
+            assert clz != null : superClass.getSecond();
+            if (clz != null) {
+                String declaredIn = clz.findFieldDeclaration(info, name);
+                if (declaredIn != null) {
+                    return declaredIn;
+                }
+            }
+        }
+
+        // Get methods from implemented interfaces as well;
+        for (Pair<String, Integer> superClass : mInterfaces) {
+            ApiClass clz = info.getClass(superClass.getFirst());
+            assert clz != null : superClass.getSecond();
+            if (clz != null) {
+                String declaredIn = clz.findFieldDeclaration(info, name);
+                if (declaredIn != null) {
+                    return declaredIn;
+                }
+            }
+        }
+
+        return null;
+    }
+    */
 }

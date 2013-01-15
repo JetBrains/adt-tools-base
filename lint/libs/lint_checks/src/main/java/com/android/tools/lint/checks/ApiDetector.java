@@ -57,6 +57,7 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.android.utils.Pair;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -138,16 +139,20 @@ public class ApiDetector extends ResourceXmlDetector
 
             "This check scans through all the Android API calls in the application and " +
             "warns about any calls that are not available on *all* versions targeted " +
-            "by this application (according to its minimum SDK attribute in the manifest).\n" +
+            "by this application (according to its minimum SDK attribute in the manifest).\n"
+            +
             "\n" +
-            "If you really want to use this API and don't need to support older devices just " +
+            "If you really want to use this API and don't need to support older devices just "
+            +
             "set the `minSdkVersion` in your `AndroidManifest.xml` file." +
             "\n" +
             "If your code is *deliberately* accessing newer APIs, and you have ensured " +
-            "(e.g. with conditional execution) that this code will only ever be called on a " +
+            "(e.g. with conditional execution) that this code will only ever be called on a "
+            +
             "supported platform, then you can annotate your class or method with the " +
             "`@TargetApi` annotation specifying the local minimum SDK to apply, such as " +
-            "`@TargetApi(11)`, such that this check considers 11 rather than your manifest " +
+            "`@TargetApi(11)`, such that this check considers 11 rather than your manifest "
+            +
             "file's minimum SDK as the required API level.\n" +
             "\n" +
             "If you are deliberately setting `android:` attributes in style definitions, " +
@@ -155,24 +160,48 @@ public class ApiDetector extends ResourceXmlDetector
             "into runtime conflicts on certain devices where manufacturers have added " +
             "custom attributes whose ids conflict with the new ones on later platforms.\n" +
             "\n" +
-            "Similarly, you can use tools:targetApi=\"11\" in an XML file to indicate that " +
-            "the element will only be inflated in an adequate context.\n" +
-            "\n" +
-            "Lint will also flag certain constants, such as static final integers, " +
+            "Similarly, you can use tools:targetApi=\"11\" in an XML file to indicate that "
+            +
+            "the element will only be inflated in an adequate context.",
+            Category.CORRECTNESS,
+            6,
+            Severity.ERROR,
+            ApiDetector.class,
+            EnumSet.of(Scope.CLASS_FILE, Scope.RESOURCE_FILE, Scope.MANIFEST))
+            .addAnalysisScope(Scope.RESOURCE_FILE_SCOPE)
+            .addAnalysisScope(Scope.CLASS_FILE_SCOPE);
+
+    /** Accessing an inlined API on older platforms */
+    public static final Issue INLINED = Issue.create("InlinedApi", //$NON-NLS-1$
+            "Finds inlined fields that may or may not work on older platforms",
+
+            "This check scans through all the Android API field references in the application " +
+            "and flags certain constants, such as static final integers and Strings, " +
             "which were introduced in later versions. These will actually be copied " +
             "into the class files rather than being referenced, which means that " +
             "the value is available even when running on older devices. In some " +
             "cases that's fine, and in other cases it can result in a runtime " +
             "crash or incorrect behavior. It depends on the context, so consider " +
-            "the code carefully and device whether it's safe and can be suppressed "  +
-            "or whether the code needs to be guarded.",
+            "the code carefully and device whether it's safe and can be suppressed " +
+            "or whether the code needs tbe guarded.\n" +
+            "\n" +
+            "If you really want to use this API and don't need to support older devices just "
+            +
+            "set the `minSdkVersion` in your `AndroidManifest.xml` file." +
+            "\n" +
+            "If your code is *deliberately* accessing newer APIs, and you have ensured " +
+            "(e.g. with conditional execution) that this code will only ever be called on a "
+            +
+            "supported platform, then you can annotate your class or method with the " +
+            "`@TargetApi` annotation specifying the local minimum SDK to apply, such as " +
+            "`@TargetApi(11)`, such that this check considers 11 rather than your manifest "
+            +
+            "file's minimum SDK as the required API level.\n",
             Category.CORRECTNESS,
             6,
-            Severity.ERROR,
+            Severity.WARNING,
             ApiDetector.class,
-            EnumSet.of(Scope.CLASS_FILE, Scope.RESOURCE_FILE, Scope.MANIFEST, Scope.JAVA_FILE))
-            .addAnalysisScope(Scope.RESOURCE_FILE_SCOPE)
-            .addAnalysisScope(Scope.CLASS_FILE_SCOPE)
+            EnumSet.of(Scope.JAVA_FILE))
             .addAnalysisScope(Scope.JAVA_FILE_SCOPE);
 
     /** Accessing an unsupported API */
@@ -207,7 +236,7 @@ public class ApiDetector extends ResourceXmlDetector
 
     protected ApiLookup mApiDatabase;
     private int mMinApi = -1;
-    private Set<String> mWarnedFields;
+    private Map<String, List<Pair<String, Location>>> mPendingFields;
 
     /** Constructs a new API check */
     public ApiDetector() {
@@ -623,13 +652,14 @@ public class ApiDetector extends ResourceXmlDetector
                             continue;
                         }
                         String fqcn = ClassContext.getFqcn(owner) + '#' + name;
-                        if (mWarnedFields == null || !mWarnedFields.contains(fqcn)) {
-                            String message = String.format(
-                                    "Field requires API level %1$d (current min is %2$d): %3$s",
-                                    api, minSdk, fqcn);
-                            report(context, message, node, method, name, null,
-                                    SearchHints.create(FORWARD).matchJavaSymbol());
+                        if (mPendingFields != null) {
+                            mPendingFields.remove(fqcn);
                         }
+                        String message = String.format(
+                                "Field requires API level %1$d (current min is %2$d): %3$s",
+                                api, minSdk, fqcn);
+                        report(context, message, node, method, name, null,
+                                SearchHints.create(FORWARD).matchJavaSymbol());
                     }
                 } else if (type == AbstractInsnNode.LDC_INSN) {
                     LdcInsnNode node = (LdcInsnNode) instruction;
@@ -972,7 +1002,22 @@ public class ApiDetector extends ResourceXmlDetector
         context.report(UNSUPPORTED, method, node, location, message, null);
     }
 
-    // ---- Implements JavaScanner ----
+    @Override
+    public void afterCheckProject(@NonNull Context context) {
+        if (mPendingFields != null) {
+            for (List<Pair<String, Location>> list : mPendingFields.values()) {
+                for (Pair<String, Location> pair : list) {
+                    String message = pair.getFirst();
+                    Location location = pair.getSecond();
+                    context.report(INLINED, location, message, null);
+                }
+            }
+        }
+
+        super.afterCheckProject(context);
+    }
+
+// ---- Implements JavaScanner ----
 
     @Nullable
     @Override
@@ -1282,16 +1327,32 @@ public class ApiDetector extends ResourceXmlDetector
                     String message = String.format(
                             "Field requires API level %1$d (current min is %2$d): %3$s",
                             api, minSdk, fqcn);
-                    mContext.report(UNSUPPORTED, node, location, message, null);
 
-                    // Record this field as already reported such that when we scan the
-                    // class files later, we don't report the same error again.
-                    // (This happens when a field isn't a final primitive value which
-                    // gets copied into the .class file)
-                    if (mWarnedFields == null) {
-                        mWarnedFields = Sets.newHashSet();
+                    LintDriver driver = mContext.getDriver();
+                    if (driver.isSuppressed(INLINED, node)) {
+                        return true;
                     }
-                    mWarnedFields.add(fqcn);
+
+                    // Also allow to suppress these issues with NewApi, since some
+                    // fields used to get identified that way
+                    if (driver.isSuppressed(UNSUPPORTED, node)) {
+                        return true;
+                    }
+
+                    // We can't report the issue right away; we don't yet know if
+                    // this is an actual inlined (static primitive or String) yet.
+                    // So just make a note of it, and report these after the project
+                    // checking has finished; any fields that aren't inlined will be
+                    // cleared when they're noticed by the class check.
+                    if (mPendingFields == null) {
+                        mPendingFields = Maps.newHashMapWithExpectedSize(20);
+                    }
+                    List<Pair<String, Location>> list = mPendingFields.get(fqcn);
+                    if (list == null) {
+                        list = new ArrayList<Pair<String, Location>>();
+                        mPendingFields.put(fqcn, list);
+                    }
+                    list.add(Pair.of(message, location));
                 }
 
                 return true;
@@ -1305,6 +1366,8 @@ public class ApiDetector extends ResourceXmlDetector
          * in a later version of Android than the application's {@code minSdkVersion}.
          *
          * @param node the instruction to check
+         * @param name the name of the constant
+         * @param owner the field owner
          * @return true if the given usage is safe on older versions than the introduction
          * level of the constant
          */
@@ -1319,6 +1382,17 @@ public class ApiDetector extends ResourceXmlDetector
             }
             if (owner.equals("android/view/ViewGroup$LayoutParams")   //$NON-NLS-1$
                     && name.equals("MATCH_PARENT")) {                 //$NON-NLS-1$
+                return true;
+            }
+            if (owner.equals("android/widget/AbsListView")            //$NON-NLS-1$
+                && ((name.equals("CHOICE_MODE_NONE")                  //$NON-NLS-1$
+                    || name.equals("CHOICE_MODE_MULTIPLE")            //$NON-NLS-1$
+                    || name.equals("CHOICE_MODE_SINGLE")))) {         //$NON-NLS-1$
+                // android.widget.ListView#CHOICE_MODE_MULTIPLE and friends have API=1,
+                // but in API 11 it was moved up to the parent class AbsListView.
+                // Referencing AbsListView#CHOICE_MODE_MULTIPLE technically requires API 11,
+                // but the constant is the same as the older version, so accept this without
+                // warning.
                 return true;
             }
 
