@@ -16,6 +16,11 @@
 
 package com.android.ide.common.resources;
 
+import static com.android.SdkConstants.AMP_ENTITY;
+import static com.android.SdkConstants.LT_ENTITY;
+
+import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.rendering.api.AttrResourceValue;
 import com.android.ide.common.rendering.api.DeclareStyleableResourceValue;
 import com.android.ide.common.rendering.api.ResourceValue;
@@ -64,7 +69,7 @@ public final class ValueResourceParser extends DefaultHandler {
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
         if (mCurrentValue != null) {
-            mCurrentValue.setValue(trimXmlWhitespaces(mCurrentValue.getValue()));
+            mCurrentValue.setValue(unescapeResourceString(mCurrentValue.getValue(), false, true));
         }
 
         if (inResources && qName.equals(NODE_RESOURCES)) {
@@ -213,96 +218,261 @@ public final class ValueResourceParser extends DefaultHandler {
         }
     }
 
-    public static String trimXmlWhitespaces(String value) {
-        if (value == null) {
+    /**
+     * Replaces escapes in an XML resource string with the actual characters,
+     * performing unicode substitutions (replacing any {@code \\uNNNN} references in the
+     * given string with the corresponding unicode characters), etc.
+     *
+     * @param s the string to unescape
+     * @param escapeEntities XML entities
+     * @param trim whether surrounding space and quotes should be trimmed
+     * @return the string with the escape characters removed and expanded
+     */
+    @Nullable
+    public static String unescapeResourceString(
+            @Nullable String s,
+            boolean escapeEntities, boolean trim) {
+        if (s == null) {
             return null;
         }
 
-        // look for carriage return and replace all whitespace around it by just 1 space.
-        int index;
-
-        while ((index = value.indexOf('\n')) != -1) {
-            // look for whitespace on each side
-            int left = index - 1;
-            while (left >= 0) {
-                if (Character.isWhitespace(value.charAt(left))) {
-                    left--;
-                } else {
+        // Trim space surrounding optional quotes
+        int i = 0;
+        int n = s.length();
+        if (trim) {
+            while (i < n) {
+                char c = s.charAt(i);
+                if (!Character.isWhitespace(c)) {
                     break;
                 }
+                i++;
             }
-
-            int right = index + 1;
-            int count = value.length();
-            while (right < count) {
-                if (Character.isWhitespace(value.charAt(right))) {
-                    right++;
-                } else {
+            while (n > i) {
+                char c = s.charAt(n - 1);
+                if (!Character.isWhitespace(c)) {
+                    //See if this was a \, and if so, see whether it was escaped
+                    if (n < s.length() && isEscaped(s, n)) {
+                        n++;
+                    }
                     break;
                 }
+                n--;
             }
 
-            // remove all between left and right (non inclusive) and replace by a single space.
-            String leftString = null;
-            if (left >= 0) {
-                leftString = value.substring(0, left + 1);
+            // Trim surrounding quotes. Note that there can be *any* number of these, and
+            // the left side and right side do not have to match; e.g. you can have
+            //    """"f"" => f
+            int quoteStart = i;
+            int quoteEnd = n;
+            while (i < n) {
+                char c = s.charAt(i);
+                if (c != '"') {
+                    break;
+                }
+                i++;
             }
-            String rightString = null;
-            if (right < count) {
-                rightString = value.substring(right);
+            // Searching backwards is slightly more complicated; make sure we don't trim
+            // quotes that have been escaped.
+            while (n > i) {
+                char c = s.charAt(n - 1);
+                if (c != '"') {
+                    if (n < s.length() && isEscaped(s, n)) {
+                        n++;
+                    }
+                    break;
+                }
+                n--;
+            }
+            if (n == i) {
+                return ""; //$NON-NLS-1$
             }
 
-            if (leftString != null) {
-                value = leftString;
-                if (rightString != null) {
-                    value += " " + rightString;
+            // Only trim leading spaces if we didn't already process a leading quote:
+            if (i == quoteStart) {
+                while (i < n) {
+                    char c = s.charAt(i);
+                    if (!Character.isWhitespace(c)) {
+                        break;
+                    }
+                    i++;
+                }
+            }
+            // Only trim trailing spaces if we didn't already process a trailing quote:
+            if (n == quoteEnd) {
+                while (n > i) {
+                    char c = s.charAt(n - 1);
+                    if (!Character.isWhitespace(c)) {
+                        //See if this was a \, and if so, see whether it was escaped
+                        if (n < s.length() && isEscaped(s, n)) {
+                            n++;
+                        }
+                        break;
+                    }
+                    n--;
+                }
+            }
+            if (n == i) {
+                return ""; //$NON-NLS-1$
+            }
+        }
+
+        // If no surrounding whitespace and no escape characters, no need to do any
+        // more work
+        if (i == 0 && n == s.length() && s.indexOf('\\') == -1
+                && (!escapeEntities || s.indexOf('&') == -1)) {
+            return s;
+        }
+
+        StringBuilder sb = new StringBuilder(n - i);
+        for (; i < n; i++) {
+            char c = s.charAt(i);
+            if (c == '\\' && i < n - 1) {
+                char next = s.charAt(i + 1);
+                // Unicode escapes
+                if (next == 'u' && i < n - 5) { // case sensitive
+                    String hex = s.substring(i + 2, i + 6);
+                    try {
+                        int unicodeValue = Integer.parseInt(hex, 16);
+                        sb.append((char) unicodeValue);
+                        i += 5;
+                        continue;
+                    } catch (NumberFormatException e) {
+                        // Invalid escape: Just proceed to literally transcribe it
+                        sb.append(c);
+                    }
+                } else if (next == 'n') {
+                    sb.append('\n');
+                    i++;
+                } else if (next == 't') {
+                    sb.append('\t');
+                    i++;
+                } else {
+                    sb.append(next);
+                    i++;
+                    continue;
                 }
             } else {
-                value = rightString != null ? rightString : "";
-            }
-        }
-
-        // now we un-escape the string
-        int length = value.length();
-        char[] buffer = value.toCharArray();
-
-        for (int i = 0 ; i < length ; i++) {
-            if (buffer[i] == '\\' && i + 1 < length) {
-                if (buffer[i+1] == 'u') {
-                    if (i + 5 < length) {
-                        // this is unicode char \u1234
-                        int unicodeChar = Integer.parseInt(new String(buffer, i+2, 4), 16);
-
-                        // put the unicode char at the location of the \
-                        buffer[i] = (char)unicodeChar;
-
-                        // offset the rest of the buffer since we go from 6 to 1 char
-                        if (i + 6 < buffer.length) {
-                            System.arraycopy(buffer, i+6, buffer, i+1, length - i - 6);
-                        }
-                        length -= 5;
+                if (c == '&' && escapeEntities) {
+                    if (s.regionMatches(true, i, LT_ENTITY, 0, LT_ENTITY.length())) {
+                        sb.append('<');
+                        i += LT_ENTITY.length() - 1;
+                        continue;
+                    } else if (s.regionMatches(true, i, AMP_ENTITY, 0, AMP_ENTITY.length())) {
+                        sb.append('&');
+                        i += AMP_ENTITY.length() - 1;
+                        continue;
                     }
-                } else {
-                    if (buffer[i+1] == 'n') {
-                        // replace the 'n' char with \n
-                        buffer[i+1] = '\n';
-                    }
-
-                    // offset the buffer to erase the \
-                    System.arraycopy(buffer, i+1, buffer, i, length - i - 1);
-                    length--;
                 }
-            } else if (buffer[i] == '"') {
-                // if the " was escaped it would have been processed above.
-                // offset the buffer to erase the "
-                System.arraycopy(buffer, i+1, buffer, i, length - i - 1);
-                length--;
+                sb.append(c);
+            }
+        }
+        s = sb.toString();
 
-                // unlike when unescaping, we want to process the next char too
-                i--;
+        return s;
+    }
+
+    /**
+     * Returns true if the character at the given offset in the string is escaped
+     * (the previous character is a \, and that character isn't itself an escaped \)
+     *
+     * @param s the string
+     * @param index the index of the character in the string to check
+     * @return true if the character is escaped
+     */
+    @VisibleForTesting
+    static boolean isEscaped(String s, int index) {
+        if (index == 0 || index == s.length()) {
+            return false;
+        }
+        int prevPos = index - 1;
+        char prev = s.charAt(prevPos);
+        if (prev != '\\') {
+            return false;
+        }
+        // The character *may* be escaped; not sure if the \ we ran into is
+        // an escape character, or an escaped backslash; we have to search backwards
+        // to be certain.
+        int j = prevPos - 1;
+        while (j >= 0) {
+            if (s.charAt(j) != '\\') {
+                break;
+            }
+            j--;
+        }
+        // If we passed an odd number of \'s, the space is escaped
+        return (prevPos - j) % 2 == 1;
+    }
+
+    /**
+     * Escape a string value to be placed in a string resource file such that it complies with
+     * the escaping rules described here:
+     *   http://developer.android.com/guide/topics/resources/string-resource.html
+     * More examples of the escaping rules can be found here:
+     *   http://androidcookbook.com/Recipe.seam?recipeId=2219&recipeFrom=ViewTOC
+     * This method assumes that the String is not escaped already.
+     *
+     * Rules:
+     * <ul>
+     * <li>Double quotes are needed if string starts or ends with at least one space.
+     * <li>{@code @, ?} at beginning of string have to be escaped with a backslash.
+     * <li>{@code ', ", \} have to be escaped with a backslash.
+     * <li>{@code <, >, &} have to be replaced by their predefined xml entity.
+     * <li>{@code \n, \t} have to be replaced by a backslash and the appropriate character.
+     * </ul>
+     * @param s the string to be escaped
+     * @return the escaped string as it would appear in the XML text in a values file
+     */
+    public static String escapeResourceString(String s) {
+        int n = s.length();
+        if (n == 0) {
+            return "";
+        }
+
+        StringBuilder sb = new StringBuilder(s.length() * 2);
+        boolean hasSpace = s.charAt(0) == ' ' || s.charAt(n - 1) == ' ';
+
+        if (hasSpace) {
+            sb.append('"');
+        } else if (s.charAt(0) == '@' || s.charAt(0) == '?') {
+            sb.append('\\');
+        }
+
+        for (int i = 0; i < n; ++i) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '\'':
+                    if (!hasSpace) {
+                        sb.append('\\');
+                    }
+                    sb.append(c);
+                    break;
+                case '"':
+                case '\\':
+                    sb.append('\\');
+                    sb.append(c);
+                    break;
+                case '<':
+                    sb.append(LT_ENTITY);
+                    break;
+                case '&':
+                    sb.append(AMP_ENTITY);
+                    break;
+                case '\n':
+                    sb.append("\\n"); //$NON-NLS-1$
+                    break;
+                case '\t':
+                    sb.append("\\t"); //$NON-NLS-1$
+                    break;
+                default:
+                    sb.append(c);
+                    break;
             }
         }
 
-        return new String(buffer, 0, length);
+        if (hasSpace) {
+            sb.append('"');
+        }
+
+        return sb.toString();
     }
 }
