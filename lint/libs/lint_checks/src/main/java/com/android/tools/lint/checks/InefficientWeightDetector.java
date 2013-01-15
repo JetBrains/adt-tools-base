@@ -22,6 +22,7 @@ import static com.android.SdkConstants.ATTR_LAYOUT_HEIGHT;
 import static com.android.SdkConstants.ATTR_LAYOUT_WEIGHT;
 import static com.android.SdkConstants.ATTR_LAYOUT_WIDTH;
 import static com.android.SdkConstants.ATTR_ORIENTATION;
+import static com.android.SdkConstants.ATTR_STYLE;
 import static com.android.SdkConstants.LINEAR_LAYOUT;
 import static com.android.SdkConstants.RADIO_GROUP;
 import static com.android.SdkConstants.VALUE_FILL_PARENT;
@@ -215,7 +216,7 @@ public class InefficientWeightDetector extends LayoutDetector {
                     }
                 }
             }
-            if (maxWidthSet) {
+            if (maxWidthSet && !element.hasAttribute(ATTR_STYLE)) {
                 String message = "Wrong orientation? No orientation specified, and the default "
                         + "is horizontal, yet this layout has multiple children where at "
                         + "least one has layout_width=\"match_parent\"";
