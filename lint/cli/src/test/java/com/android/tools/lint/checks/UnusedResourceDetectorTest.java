@@ -263,4 +263,15 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                  "src/test/pkg/Foo.java.txt=>src/test/pkg/Foo.java",
                  "AndroidManifest.xml"));
     }
+
+    public void testAnalytics() throws Exception {
+        // See http://code.google.com/p/android/issues/detail?id=42565
+        mEnableIds = false;
+        assertEquals(
+                "No warnings.",
+
+                lintProject(
+                        "res/values/analytics.xml"
+        ));
+    }
 }
