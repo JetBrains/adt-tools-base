@@ -1564,6 +1564,9 @@ public class LintDriver {
         if (xmlFiles != null && xmlFiles.length > 0) {
             XmlVisitor visitor = getVisitor(type, checks);
             if (visitor != null) { // if not, there are no applicable rules in this folder
+                // Process files in alphabetical order, to ensure stable output
+                // (for example for the duplicate resource detector)
+                Arrays.sort(xmlFiles);
                 for (File file : xmlFiles) {
                     if (LintUtils.isXmlFile(file)) {
                         XmlContext context = new XmlContext(this, project, main, file, type);

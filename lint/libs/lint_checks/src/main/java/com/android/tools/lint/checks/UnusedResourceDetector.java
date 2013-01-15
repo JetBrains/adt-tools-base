@@ -283,6 +283,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                                 if (folder.getName().startsWith(typeName)) {
                                     File[] files = folder.listFiles();
                                     if (files != null) {
+                                        Arrays.sort(files);
                                         for (File file : files) {
                                             String fileName = file.getName();
                                             if (fileName.startsWith(name)
