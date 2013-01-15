@@ -786,4 +786,58 @@ public class ApiDetectorTest extends AbstractCheckTest {
                         "apicheck/ApiSourceCheck.class.data=>bin/classes/test/pkg/ApiSourceCheck.class"
                 ));
     }
+
+    public void testStyleDeclaration() throws Exception {
+        assertEquals(""
+                + "res/values/styles2.xml:5: Error: android:actionBarStyle requires API level 11 (current min is 10) [NewApi]\n"
+                + "        <item name=\"android:actionBarStyle\">...</item>\n"
+                + "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "apicheck/classpath=>.classpath",
+                        "apicheck/minsdk10.xml=>AndroidManifest.xml",
+                        "project.properties1=>project.properties",
+                        "res/values/styles2.xml"
+                ));
+    }
+
+    public void testStyleDeclarationInV9() throws Exception {
+        assertEquals(""
+                + "res/values-v9/styles2.xml:5: Error: android:actionBarStyle requires API level 11 (current min is 10) [NewApi]\n"
+                + "        <item name=\"android:actionBarStyle\">...</item>\n"
+                + "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "apicheck/classpath=>.classpath",
+                        "apicheck/minsdk10.xml=>AndroidManifest.xml",
+                        "project.properties1=>project.properties",
+                        "res/values/styles2.xml=>res/values-v9/styles2.xml"
+                ));
+    }
+
+    public void testStyleDeclarationInV11() throws Exception {
+        assertEquals(
+                "No warnings.",
+
+                lintProject(
+                        "apicheck/classpath=>.classpath",
+                        "apicheck/minsdk10.xml=>AndroidManifest.xml",
+                        "project.properties1=>project.properties",
+                        "res/values/styles2.xml=>res/values-v11/styles2.xml"
+                ));
+    }
+
+    public void testStyleDeclarationInV14() throws Exception {
+        assertEquals(
+                "No warnings.",
+
+                lintProject(
+                        "apicheck/classpath=>.classpath",
+                        "apicheck/minsdk10.xml=>AndroidManifest.xml",
+                        "project.properties1=>project.properties",
+                        "res/values/styles2.xml=>res/values-v14/styles2.xml"
+                ));
+    }
 }

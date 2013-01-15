@@ -19,9 +19,13 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ANDROID_PREFIX;
 import static com.android.SdkConstants.ANDROID_THEME_PREFIX;
 import static com.android.SdkConstants.ATTR_CLASS;
+import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_TARGET_API;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
+import static com.android.SdkConstants.PREFIX_ANDROID;
 import static com.android.SdkConstants.R_CLASS;
+import static com.android.SdkConstants.TAG_ITEM;
+import static com.android.SdkConstants.TAG_STYLE;
 import static com.android.SdkConstants.TARGET_API;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.VIEW_TAG;
@@ -146,6 +150,11 @@ public class ApiDetector extends ResourceXmlDetector
             "`@TargetApi(11)`, such that this check considers 11 rather than your manifest " +
             "file's minimum SDK as the required API level.\n" +
             "\n" +
+            "If you are deliberately setting `android:` attributes in style definitions, " +
+            "make sure you place this in a `values-v11` folder in order to avoid running " +
+            "into runtime conflicts on certain devices where manufacturers have added " +
+            "custom attributes whose ids conflict with the new ones on later platforms.\n" +
+            "\n" +
             "Similarly, you can use tools:targetApi=\"11\" in an XML file to indicate that " +
             "the element will only be inflated in an adequate context.\n" +
             "\n" +
@@ -244,41 +253,55 @@ public class ApiDetector extends ResourceXmlDetector
 
         String value = attribute.getValue();
 
+        String owner = null;
+        String name = null;
+
         String prefix;
         if (value.startsWith(ANDROID_PREFIX)) {
             prefix = ANDROID_PREFIX;
         } else if (value.startsWith(ANDROID_THEME_PREFIX)) {
             prefix = ANDROID_THEME_PREFIX;
+        } else if (value.startsWith(PREFIX_ANDROID) && ATTR_NAME.equals(attribute.getName())
+            && TAG_ITEM.equals(attribute.getOwnerElement().getTagName())
+            && attribute.getOwnerElement().getParentNode() != null
+            && TAG_STYLE.equals(attribute.getOwnerElement().getParentNode().getNodeName())) {
+            owner = "android/R$attr"; //$NON-NLS-1$
+            name = value.substring(PREFIX_ANDROID.length());
+            prefix = PREFIX_ANDROID;
         } else {
             return;
         }
 
-        // Convert @android:type/foo into android/R$type and "foo"
-        int index = value.indexOf('/', prefix.length());
-        if (index != -1) {
-            String owner = "android/R$"    //$NON-NLS-1$
-                    + value.substring(prefix.length(), index);
-            String name = value.substring(index + 1);
-            if (name.indexOf('.') != -1) {
-                name = name.replace('.', '_');
-            }
-            int api = mApiDatabase.getFieldVersion(owner, name);
-            int minSdk = getMinSdk(context);
-            if (api > minSdk && api > context.getFolderVersion()
-                    && api > getLocalMinSdk(attribute.getOwnerElement())) {
-                // Don't complain about resource references in the tools namespace,
-                // such as for example "tools:layout="@android:layout/list_content",
-                // used only for designtime previews
-                if (TOOLS_URI.equals(attribute.getNamespaceURI())) {
-                    return;
+        if (owner == null) {
+            // Convert @android:type/foo into android/R$type and "foo"
+            int index = value.indexOf('/', prefix.length());
+            if (index != -1) {
+                owner = "android/R$"    //$NON-NLS-1$
+                        + value.substring(prefix.length(), index);
+                name = value.substring(index + 1);
+                if (name.indexOf('.') != -1) {
+                    name = name.replace('.', '_');
                 }
-
-                Location location = context.getLocation(attribute);
-                String message = String.format(
-                        "%1$s requires API level %2$d (current min is %3$d)",
-                        value, api, minSdk);
-                context.report(UNSUPPORTED, attribute, location, message, null);
+            } else {
+                return;
             }
+        }
+        int api = mApiDatabase.getFieldVersion(owner, name);
+        int minSdk = getMinSdk(context);
+        if (api > minSdk && api > context.getFolderVersion()
+                && api > getLocalMinSdk(attribute.getOwnerElement())) {
+            // Don't complain about resource references in the tools namespace,
+            // such as for example "tools:layout="@android:layout/list_content",
+            // used only for designtime previews
+            if (TOOLS_URI.equals(attribute.getNamespaceURI())) {
+                return;
+            }
+
+            Location location = context.getLocation(attribute);
+            String message = String.format(
+                    "%1$s requires API level %2$d (current min is %3$d)",
+                    value, api, minSdk);
+            context.report(UNSUPPORTED, attribute, location, message, null);
         }
     }
 

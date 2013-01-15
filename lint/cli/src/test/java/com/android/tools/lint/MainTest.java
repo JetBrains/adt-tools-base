@@ -139,6 +139,11 @@ public class MainTest extends AbstractCheckTest {
         "@TargetApi(11), such that this check considers 11 rather than your manifest\n" +
         "file's minimum SDK as the required API level.\n" +
         "\n" +
+        "If you are deliberately setting android: attributes in style definitions, make\n" +
+        "sure you place this in a values-v11 folder in order to avoid running into\n" +
+        "runtime conflicts on certain devices where manufacturers have added custom\n" +
+        "attributes whose ids conflict with the new ones on later platforms.\n" +
+        "\n" +
         "Similarly, you can use tools:targetApi=\"11\" in an XML file to indicate that\n" +
         "the element will only be inflated in an adequate context.\n" +
         "\n" +
