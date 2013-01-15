@@ -39,6 +39,12 @@ subprojects {
         options.encoding = 'UTF-8'
     }
 
+    task disableTestFailures << {
+        tasks.withType(Test) {
+            ignoreFailures = true
+        }
+    }
+
     // custom tasks for creating source/javadoc jars
     task sourcesJar(type: Jar, dependsOn:classes) {
         classifier = 'sources'
