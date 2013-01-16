@@ -29,7 +29,6 @@ import java.io.File;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,15 +73,6 @@ public class Context {
 
     /** The contents of the file */
     private String mContents;
-
-    /**
-     * Whether the lint job has been canceled.
-     * <p>
-     * Slow-running detectors should check this flag via
-     * {@link AtomicBoolean#get()} and abort if canceled
-     */
-    @NonNull
-    public final AtomicBoolean canceled = new AtomicBoolean();
 
     /** Map of properties to share results between detectors */
     private Map<String, Object> mProperties;

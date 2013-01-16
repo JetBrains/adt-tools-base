@@ -31,6 +31,7 @@ import com.android.tools.lint.client.api.IJavaParser;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
+import com.android.tools.lint.client.api.LintRequest;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
@@ -281,7 +282,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         public String analyze(List<File> files) throws Exception {
             mDriver = new LintDriver(new CustomIssueRegistry(), this);
             configureDriver(mDriver);
-            mDriver.analyze(files, getLintScope(files));
+            mDriver.analyze(new LintRequest(this, files).setScope(getLintScope(files)));
 
             Collections.sort(mWarnings);
 

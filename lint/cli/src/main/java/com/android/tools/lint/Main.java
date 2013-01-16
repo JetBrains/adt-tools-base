@@ -33,6 +33,7 @@ import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.LintListener;
+import com.android.tools.lint.client.api.LintRequest;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Issue;
@@ -613,7 +614,7 @@ public class Main extends LintClient {
             mDriver.addLintListener(new ProgressPrinter());
         }
 
-        mDriver.analyze(files, null /* scope */);
+        mDriver.analyze(new LintRequest(this, files));
 
         Collections.sort(mWarnings);
 
@@ -679,7 +680,6 @@ public class Main extends LintClient {
         }
         return file;
     }
-
 
     /**
      * Returns the File corresponding to the system property or the environment variable
