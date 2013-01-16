@@ -26,6 +26,7 @@ import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.detector.api.Issue;
 import com.google.common.annotations.Beta;
+import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.io.IOException;
@@ -339,7 +340,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
 
     private static Set<Issue> getIssuesWithFixes() {
         if (sAdtFixes == null) {
-            sAdtFixes = new HashSet<Issue>(25);
+            sAdtFixes = Sets.newHashSetWithExpectedSize(25);
             sAdtFixes.add(InefficientWeightDetector.INEFFICIENT_WEIGHT);
             sAdtFixes.add(AccessibilityDetector.ISSUE);
             sAdtFixes.add(InefficientWeightDetector.BASELINE_WEIGHTS);
@@ -359,6 +360,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
             sAdtFixes.add(TypographyDetector.QUOTES);
             sAdtFixes.add(UseCompoundDrawableDetector.ISSUE);
             sAdtFixes.add(ApiDetector.UNSUPPORTED);
+            sAdtFixes.add(ApiDetector.INLINED);
             sAdtFixes.add(TypoDetector.ISSUE);
             sAdtFixes.add(ManifestOrderDetector.ALLOW_BACKUP);
             sAdtFixes.add(MissingIdDetector.ISSUE);

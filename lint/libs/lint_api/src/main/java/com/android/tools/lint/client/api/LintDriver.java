@@ -121,6 +121,7 @@ public class LintDriver {
     private static final String SUPPRESS_LINT_VMSIG = '/' + SUPPRESS_LINT + ';';
 
     private final LintClient mClient;
+    private LintRequest mRequest;
     private final IssueRegistry mRegistry;
     private volatile boolean mCanceled;
     private EnumSet<Scope> mScope;
@@ -163,13 +164,31 @@ public class LintDriver {
     }
 
     /**
-     * Returns the lint client requesting the lint check
+     * Returns the lint client requesting the lint check. This may not be the same
+     * instance as the one passed in to this driver; lint uses a wrapper which performs
+     * additional validation to ensure that for example badly behaved detectors which report
+     * issues that have been disabled will get muted without the real lint client getting
+     * notified. Thus, this {@link LintClient} is suitable for use by detectors to look
+     * up a client to for example get location handles from, but tool handling code should
+     * never try to cast this client back to their original lint client. For the original
+     * lint client, use {@link LintRequest} instead.
      *
      * @return the client, never null
      */
     @NonNull
     public LintClient getClient() {
         return mClient;
+    }
+
+    /**
+     * Returns the current request, which points to the original files to be checked,
+     * the original scope, the original {@link LintClient}, as well as the release mode.
+     *
+     * @return the request
+     */
+    @NonNull
+    public LintRequest getRequest() {
+        return mRequest;
     }
 
     /**
@@ -311,14 +330,40 @@ public class LintDriver {
      * @param files the files and directories to be analyzed
      * @param scope the scope of the analysis; detectors with a wider scope will
      *            not be run. If null, the scope will be inferred from the files.
+     * @deprecated use {@link #analyze(LintRequest) instead}
      */
+    @Deprecated
     public void analyze(@NonNull List<File> files, @Nullable EnumSet<Scope> scope) {
-        mCanceled = false;
-        mScope = scope;
+        analyze(new LintRequest(mClient, files).setScope(scope));
+    }
 
+    /**
+     * Analyze the given files (which can point to Android projects or directories
+     * containing Android projects). Issues found are reported to the associated
+     * {@link LintClient}.
+     * <p>
+     * Note that the {@link LintDriver} is not multi thread safe or re-entrant;
+     * if you want to run potentially overlapping lint jobs, create a separate driver
+     * for each job.
+     *
+     * @param request the files and directories to be analyzed
+     */
+    public void analyze(@NonNull LintRequest request) {
+        try {
+            mRequest = request;
+            analyze();
+        } finally {
+            mRequest = null;
+        }
+    }
+
+    /** Runs the driver to analyze the requested files */
+    private void analyze() {
+        mCanceled = false;
+        mScope = mRequest.getScope();
         Collection<Project> projects;
         try {
-            projects = computeProjects(files);
+            projects = computeProjects(mRequest.getFiles());
         } catch (CircularDependencyException e) {
             mCurrentProject = e.getProject();
             if (mCurrentProject != null) {
@@ -330,7 +375,7 @@ public class LintDriver {
             return;
         }
         if (projects.isEmpty()) {
-            mClient.log(null, "No projects found for %1$s", files.toString());
+            mClient.log(null, "No projects found for %1$s", mRequest.getFiles().toString());
             return;
         }
         if (mCanceled) {
