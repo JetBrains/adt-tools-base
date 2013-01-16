@@ -1180,7 +1180,7 @@ public class JavaVisitor {
         @Override
         public boolean visitMethodInvocation(MethodInvocation node) {
             if (mVisitMethods) {
-                String methodName = node.astName().getDescription();
+                String methodName = node.astName().astValue();
                 List<VisitingDetector> list = mMethodDetectors.get(methodName);
                 if (list != null) {
                     for (VisitingDetector v : list) {

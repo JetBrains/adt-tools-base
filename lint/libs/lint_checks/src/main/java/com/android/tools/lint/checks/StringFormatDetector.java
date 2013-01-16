@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.DOT_JAVA;
 import static com.android.SdkConstants.FORMAT_METHOD;
 import static com.android.SdkConstants.GET_STRING_METHOD;
+import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.TAG_STRING;
 
 import com.android.annotations.NonNull;
@@ -75,6 +76,7 @@ import lombok.ast.NullLiteral;
 import lombok.ast.Select;
 import lombok.ast.StrictListAccessor;
 import lombok.ast.StringLiteral;
+import lombok.ast.TypeReference;
 import lombok.ast.VariableDefinitionEntry;
 import lombok.ast.VariableReference;
 
@@ -851,7 +853,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             return;
         }
 
-        String methodName = node.astName().getDescription();
+        String methodName = node.astName().astValue();
         if (methodName.equals(FORMAT_METHOD)) {
             // String.format(getResources().getString(R.string.foo), arg1, arg2, ...)
             // Check that the arguments in R.string.foo match arg1, arg2, ...
@@ -898,7 +900,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             return;
         }
 
-        StringTracker tracker = new StringTracker(method, call, 0);
+        StringTracker tracker = new StringTracker(context, method, call, 0);
         method.accept(tracker);
         String name = tracker.getFormatStringName();
         if (name == null) {
@@ -926,15 +928,29 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             return;
         }
 
-        // TODO: Need type information in the AST
         Iterator<Expression> argIterator = args.iterator();
         Expression first = argIterator.next();
         Expression second = argIterator.hasNext() ? argIterator.next() : null;
-        String firstName = first.toString();
-        boolean specifiesLocale = firstName.startsWith("Locale.")             //$NON-NLS-1$
-                || firstName.contains("locale")                               //$NON-NLS-1$
-                || firstName.equals("null")                                   //$NON-NLS-1$
-                || second != null && second.toString().contains("getString"); //$NON-NLS-1$
+
+        boolean specifiesLocale;
+        TypeReference parameterType;
+        lombok.ast.Node resolved = context.parser.resolve(context, first);
+        if (resolved != null) {
+            parameterType = context.parser.getType(context, resolved);
+        } else {
+            parameterType = context.parser.getType(context, first);
+        }
+        if (parameterType != null) {
+            specifiesLocale = parameterType.getTypeName().equals("java.util.Locale"); //$NON-NLS-1$
+        } else {
+            // No type information with this AST; use string patterns instead to make
+            // an educated guess
+            String firstName = first.toString();
+            specifiesLocale = firstName.startsWith("Locale.")                     //$NON-NLS-1$
+                    || firstName.contains("locale")                               //$NON-NLS-1$
+                    || firstName.equals("null")                                   //$NON-NLS-1$
+                    || second != null && second.toString().contains("getString"); //$NON-NLS-1$
+        }
 
         List<Pair<Handle, String>> list = mFormatStrings.get(name);
         if (list != null) {
@@ -1047,7 +1063,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     /** Returns the resource name corresponding to the first argument in the given call */
     static String getResourceForFirstArg(lombok.ast.Node method, lombok.ast.Node call) {
         assert call instanceof MethodInvocation || call instanceof ConstructorInvocation;
-        StringTracker tracker = new StringTracker(method, call, 0);
+        StringTracker tracker = new StringTracker(null, method, call, 0);
         method.accept(tracker);
         String name = tracker.getFormatStringName();
 
@@ -1057,7 +1073,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     /** Returns the resource name corresponding to the given argument in the given call */
     static String getResourceArg(lombok.ast.Node method, lombok.ast.Node call, int argIndex) {
         assert call instanceof MethodInvocation || call instanceof ConstructorInvocation;
-        StringTracker tracker = new StringTracker(method, call, argIndex);
+        StringTracker tracker = new StringTracker(null, method, call, argIndex);
         method.accept(tracker);
         String name = tracker.getFormatStringName();
 
@@ -1097,13 +1113,17 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
         /** The AST node for the String.format we're interested in */
         private final lombok.ast.Node mTargetNode;
         private boolean mDone;
+        @Nullable
+        private JavaContext mContext;
+
         /**
          * Result: the name of the string resource being passed to the
          * String.format, if any
          */
         private String mName;
 
-        public StringTracker(lombok.ast.Node top, lombok.ast.Node targetNode, int argIndex) {
+        public StringTracker(@Nullable JavaContext context, lombok.ast.Node top, lombok.ast.Node targetNode, int argIndex) {
+            mContext = context;
             mTop = top;
             mArgIndex = argIndex;
             mTargetNode = targetNode;
@@ -1124,9 +1144,37 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
         public Class<?> getArgumentType(int argument) {
             Expression arg = getArgument(argument);
             if (arg != null) {
+                // Look up type based on the source code literals
                 Class<?> type = getType(arg);
                 if (type != null) {
                     return type;
+                }
+
+                // If the AST supports type resolution, use that for other types
+                // of expressions
+                if (mContext != null) {
+                    TypeReference parameterType;
+                    lombok.ast.Node resolved = mContext.parser.resolve(mContext, arg);
+                    if (resolved != null) {
+                        parameterType = mContext.parser.getType(mContext, resolved);
+                    } else {
+                        parameterType = mContext.parser.getType(mContext, arg);
+                    }
+                    if (parameterType != null) {
+                        String fqcn = parameterType.getTypeName();
+                        if (fqcn.equals("java.lang.String")   //$NON-NLS-1$
+                                || fqcn.equals("String")) {   //$NON-NLS-1$
+                            return String.class;
+                        } else if (fqcn.equals("int")) {      //$NON-NLS-1$
+                            return Integer.TYPE;
+                        } else if (fqcn.equals("null")) {     //$NON-NLS-1$
+                            return Object.class;
+                        } else if (fqcn.equals("float")) {    //$NON-NLS-1$
+                            return Float.TYPE;
+                        } else if (fqcn.equals("char")) {     //$NON-NLS-1$
+                            return Character.TYPE;
+                        }
+                    }
                 }
             }
 
@@ -1166,7 +1214,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
 
         @Override
         public boolean visitVariableReference(VariableReference node) {
-            if (node.astIdentifier().getDescription().equals("R") &&   //$NON-NLS-1$
+            if (node.astIdentifier().astValue().equals(R_CLASS) &&   //$NON-NLS-1$
                     node.getParent() instanceof Select &&
                     node.getParent().getParent() instanceof Select) {
 
@@ -1271,6 +1319,9 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
         }
 
         private Class<?> getType(Expression expression) {
+            if (expression == null) {
+              return null;
+            }
             if (expression instanceof VariableReference) {
                 VariableReference reference = (VariableReference) expression;
                 String variable = reference.astIdentifier().astValue();

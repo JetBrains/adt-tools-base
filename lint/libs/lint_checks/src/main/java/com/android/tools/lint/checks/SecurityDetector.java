@@ -170,6 +170,7 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
     public Speed getSpeed() {
         return Speed.FAST;
     }
+
     @Override
     public boolean appliesTo(@NonNull Context context, @NonNull File file) {
         return file.getName().equals(ANDROID_MANIFEST_XML);
@@ -382,13 +383,13 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
 
         @Override
         public boolean visitIdentifier(Identifier node) {
-            if ("MODE_WORLD_WRITEABLE".equals(node.getDescription())) { //$NON-NLS-1$
+            if ("MODE_WORLD_WRITEABLE".equals(node.astValue())) { //$NON-NLS-1$
                 Location location = mContext.getLocation(node);
                 mContext.report(WORLD_WRITEABLE, node, location,
                         "Using MODE_WORLD_WRITEABLE when creating files can be " +
                                 "risky, review carefully",
                         null);
-            } else if ("MODE_WORLD_READABLE".equals(node.getDescription())) { //$NON-NLS-1$
+            } else if ("MODE_WORLD_READABLE".equals(node.astValue())) { //$NON-NLS-1$
                 Location location = mContext.getLocation(node);
                 mContext.report(WORLD_READABLE, node, location,
                         "Using MODE_WORLD_READABLE when creating files can be " +
