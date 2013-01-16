@@ -94,7 +94,7 @@ abstract class ChunkHandler {
      * This is here because multiple chunk handlers can make use of it,
      * and there's nowhere better to put it.
      */
-    static String getString(ByteBuffer buf, int len) {
+    public static String getString(ByteBuffer buf, int len) {
         char[] data = new char[len];
         for (int i = 0; i < len; i++)
             data[i] = buf.getChar();

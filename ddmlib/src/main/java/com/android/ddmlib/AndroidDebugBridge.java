@@ -213,6 +213,7 @@ public final class AndroidDebugBridge {
         HandleWait.register(monitorThread);
         HandleProfiling.register(monitorThread);
         HandleNativeHeap.register(monitorThread);
+        HandleViewDebug.register(monitorThread);
     }
 
     /**
