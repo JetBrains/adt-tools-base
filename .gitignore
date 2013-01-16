@@ -5,6 +5,7 @@ Thumbs.db
 *.class
 *.DS_Store
 .gradle
+cygdrive
 /build
 /out
 /repo
