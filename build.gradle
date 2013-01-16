@@ -14,19 +14,12 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'maven'
     apply plugin: 'signing'
-    apply from:'https://raw.github.com/breskeby/gradleplugins/master/emmaPlugin/emma.gradle'
 
     repositories {
         mavenCentral()
     }
 
     dependencies {
-        emma "emma:emma:2.0.5312"
-        emma "emma:emma_ant:2.0.5312"
-    }
-
-    emma {
-        reportPath = "$project.buildDir/reports/emma"
     }
 
     project.ext.baseVersion = '22.0'
