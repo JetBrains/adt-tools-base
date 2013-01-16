@@ -335,6 +335,7 @@ public final class Issue implements Comparable<Issue> {
      * @param required the collection of scopes
      * @return this, for constructor chaining
      */
+    @NonNull
     public Issue setAnalysisScopes(@Nullable List<EnumSet<Scope>> required) {
         mAnalysisScopes = required;
 
