@@ -390,15 +390,11 @@ class MergerXmlUtils {
                 case Node.ELEMENT_NODE:
                     String attr = "";
                     if (keyAttr != null) {
-                        NamedNodeMap attrs = node.getAttributes();
-                        if (attrs != null) {
-                            for (int i = 0; i < attrs.getLength(); i++) {
-                                Node a = attrs.item(i);
-                                if (a != null && keyAttr.equals(a.getLocalName())) {
-                                    attr = String.format(" %1$s=%2$s",
-                                            a.getNodeName(), a.getNodeValue());
-                                    break;
-                                }
+                        for (Node a : sortedAttributeList(node.getAttributes())) {
+                            if (a != null && keyAttr.equals(a.getLocalName())) {
+                                attr = String.format(" %1$s=%2$s",
+                                        a.getNodeName(), a.getNodeValue());
+                                break;
                             }
                         }
                     }
@@ -442,8 +438,7 @@ class MergerXmlUtils {
                 }
 
                 if (deep) {
-                    List<Attr> attrs = sortedAttributeList(node.getAttributes());
-                    for (Attr attr : attrs) {
+                    for (Attr attr : sortedAttributeList(node.getAttributes())) {
                         sb.append(String.format("%1$s    @%2$s = %3$s\n",
                                 offset, attr.getNodeName(), attr.getNodeValue()));
                     }
@@ -501,16 +496,19 @@ class MergerXmlUtils {
         return new Comparator<Attr>() {
             @Override
             public int compare(Attr a1, Attr a2) {
-                String s1 = a1 == null ? "" : a1.getNodeName();           //$NON-NLS-1$
-                String s2 = a2 == null ? "" : a2.getNodeValue();          //$NON-NLS-1$
+                String s1 = a1 == null ? "" : a1.getNodeName();         //$NON-NLS-1$
+                String s2 = a2 == null ? "" : a2.getNodeName();         //$NON-NLS-1$
 
-                int prio1 = s1.equals("name") ? 0 : 1;                    //$NON-NLS-1$
-                int prio2 = s2.equals("name") ? 0 : 1;                    //$NON-NLS-1$
-                if (prio1 == 0 || prio2 == 0) {
-                    return prio1 - prio2;
+                boolean name1 = s1.equals("name");                      //$NON-NLS-1$
+                boolean name2 = s2.equals("name");                      //$NON-NLS-1$
+
+                if (name1 && name2) {
+                    return 0;
+                } else if (name1 || name2) {
+                    return -1;  // name is always first
+                } else {
+                    return s1.compareTo(s2);
                 }
-
-                return s1.compareTo(s2);
             }
         };
     }
@@ -719,7 +717,7 @@ class MergerXmlUtils {
     }
 
     /**
-     * Flatten several attributes to a string using their alphabethical order.
+     * Flatten several attributes to a string using their alphabetical order.
      * This is an implementation detail for {@link #printElement(Node, Map, String)}.
      */
     @NonNull
@@ -768,7 +766,7 @@ class MergerXmlUtils {
      * This is a <em>not</em> designed to be a full contextual diff.
      * It just stops at the first difference found, printing up to 3 lines of diff
      * and backtracking to add prior contextual information to understand the
-     * structure of the element where the first diff line occured (by printing
+     * structure of the element where the first diff line occurred (by printing
      * each parent found till the root one as well as printing the attribute
      * named by {@code keyAttr}).
      *
