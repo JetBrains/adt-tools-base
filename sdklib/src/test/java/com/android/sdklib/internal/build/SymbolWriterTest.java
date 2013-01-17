@@ -108,8 +108,8 @@ public class SymbolWriterTest extends TestCase {
             "        public static final int lib1 = 0x7f030001;\n" +
             "    }\n" +
             "    public static final class drawable {\n" +
-            "        public static final int ic_launcher = 0x7f020001;\n" +
             "        public static final int foobar = 0x7f020000;\n" +
+            "        public static final int ic_launcher = 0x7f020001;\n" +
             "    }\n" +
             "}\n"
         );
@@ -139,12 +139,12 @@ public class SymbolWriterTest extends TestCase {
             "\n" +
             "public final class R {\n" +
             "    public static final class styleable {\n" +
-            "        public static final int TiledView_tilingProperty = 0;\n" +
-            "        public static final int TiledView_tilingMode = 3;\n" +
-            "        public static final int TiledView_tilingResource = 1;\n" +
+            "        public static final int[] TiledView = { 0x7f010000, 0x7f010001, 0x7f010002, 0x7f010003, 0x7f010004 };\n" +
             "        public static final int TiledView_tileName = 2;\n" +
             "        public static final int TiledView_tilingEnum = 4;\n" +
-            "        public static final int[] TiledView = { 0x7f010000, 0x7f010001, 0x7f010002, 0x7f010003, 0x7f010004 };\n" +
+            "        public static final int TiledView_tilingMode = 3;\n" +
+            "        public static final int TiledView_tilingProperty = 0;\n" +
+            "        public static final int TiledView_tilingResource = 1;\n" +
             "    }\n" +
             "}\n"
         );
@@ -172,9 +172,9 @@ public class SymbolWriterTest extends TestCase {
             "\n" +
             "public final class R {\n" +
             "    public static final class styleable {\n" +
+            "        public static final int[] LimitedSizeLinearLayout = { 0x7f010000, 0x7f010001 };\n" +
             "        public static final int LimitedSizeLinearLayout_max_height = 1;\n" +
             "        public static final int LimitedSizeLinearLayout_max_width = 0;\n" +
-            "        public static final int[] LimitedSizeLinearLayout = { 0x7f010000, 0x7f010001 };\n" +
             "    }\n" +
             "    public static final class xml {\n" +
             "        public static final int authenticator = 0x7f040000;\n" +
