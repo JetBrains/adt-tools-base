@@ -242,7 +242,7 @@ public class ButtonDetectorTest extends AbstractCheckTest {
     }
 
     public void testBack() throws Exception {
-        sTestIssue = ButtonDetector.BACKBUTTON;
+        sTestIssue = ButtonDetector.BACK_BUTTON;
         assertEquals(
             "res/layout/buttonbar.xml:183: Warning: Back buttons are not standard on Android; see design guide's navigation section [BackButton]\n" +
             "    <Button\n" +

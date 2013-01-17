@@ -32,6 +32,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Scope;
@@ -52,10 +53,15 @@ import java.util.Collections;
  * Also look for non-"sp" text sizes.
  */
 public class PxUsageDetector extends LayoutDetector {
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            PxUsageDetector.class,
+            Scope.RESOURCE_FILE_SCOPE);
+
     /** Using px instead of dp */
     public static final Issue PX_ISSUE = Issue.create(
             "PxUsage", //$NON-NLS-1$
-            "Looks for use of the \"px\" dimension",
+            "Using 'px' dimension",
+            "Looks for use of the `px` dimension",
             // This description is from the below screen support document
             "For performance reasons and to keep the code simpler, the Android system uses pixels " +
             "as the standard unit for expressing dimension or coordinate values. That means that " +
@@ -69,14 +75,15 @@ public class PxUsageDetector extends LayoutDetector {
             Category.CORRECTNESS,
             2,
             Severity.WARNING,
-            PxUsageDetector.class,
-            Scope.RESOURCE_FILE_SCOPE).setMoreInfo(
+            IMPLEMENTATION)
+            .addMoreInfo(
             "http://developer.android.com/guide/practices/screens_support.html#screen-independence"); //$NON-NLS-1$
 
     /** Using mm/in instead of dp */
     public static final Issue IN_MM_ISSUE = Issue.create(
             "InOrMmUsage", //$NON-NLS-1$
-            "Looks for use of the \"mm\" or \"in\" dimensions",
+            "Using `mm` or `in` dimensions",
+            "Looks for use of the `mm` or `in` dimensions",
 
             "Avoid using `mm` (millimeters) or `in` (inches) as the unit for dimensions.\n" +
             "\n" +
@@ -87,13 +94,13 @@ public class PxUsageDetector extends LayoutDetector {
             Category.CORRECTNESS,
             4,
             Severity.WARNING,
-            PxUsageDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Using sp instead of dp */
     public static final Issue DP_ISSUE = Issue.create(
             "SpUsage", //$NON-NLS-1$
-            "Looks for uses of \"dp\" instead of \"sp\" dimensions for text sizes",
+            "Using `dp` instead of `sp` for text sizes",
+            "Looks for uses of `dp` instead of `sp` dimensions for text sizes",
 
             "When setting text sizes, you should normally use `sp`, or \"scale-independent " +
             "pixels\". This is like the `dp` unit, but it is also scaled " +
@@ -109,13 +116,14 @@ public class PxUsageDetector extends LayoutDetector {
             Category.CORRECTNESS,
             3,
             Severity.WARNING,
-            PxUsageDetector.class,
-            Scope.RESOURCE_FILE_SCOPE).setMoreInfo(
+            IMPLEMENTATION)
+            .addMoreInfo(
             "http://developer.android.com/training/multiscreen/screendensities.html"); //$NON-NLS-1$
 
     /** Using text sizes that are too small */
     public static final Issue SMALL_SP_ISSUE = Issue.create(
             "SmallSp", //$NON-NLS-1$
+            "Text size is too small",
             "Looks for text sizes that are too small",
 
             "Avoid using sizes smaller than 12sp.",
@@ -123,8 +131,7 @@ public class PxUsageDetector extends LayoutDetector {
             Category.USABILITY,
             4,
             Severity.WARNING,
-            PxUsageDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
 
     /** Constructs a new {@link PxUsageDetector} */

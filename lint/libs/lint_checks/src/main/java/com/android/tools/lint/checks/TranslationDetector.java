@@ -31,6 +31,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
@@ -70,9 +71,14 @@ public class TranslationDetector extends ResourceXmlDetector {
     private static final Pattern LANGUAGE_PATTERN = Pattern.compile("^[a-z]{2}$"); //$NON-NLS-1$
     private static final Pattern REGION_PATTERN = Pattern.compile("^r([A-Z]{2})$"); //$NON-NLS-1$
 
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            TranslationDetector.class,
+            Scope.ALL_RESOURCES_SCOPE);
+
     /** Are all translations complete? */
     public static final Issue MISSING = Issue.create(
             "MissingTranslation", //$NON-NLS-1$
+            "Incomplete translation",
             "Checks for incomplete translations where not all strings are translated",
             "If an application has more than one locale, then all the strings declared in " +
             "one language should also be translated in all other languages.\n" +
@@ -95,12 +101,12 @@ public class TranslationDetector extends ResourceXmlDetector {
             Category.MESSAGES,
             8,
             Severity.FATAL,
-            TranslationDetector.class,
-            Scope.ALL_RESOURCES_SCOPE);
+            IMPLEMENTATION);
 
     /** Are there extra translations that are "unused" (appear only in specific languages) ? */
     public static final Issue EXTRA = Issue.create(
             "ExtraTranslation", //$NON-NLS-1$
+            "Extra translation",
             "Checks for translations that appear to be unused (no default language string)",
             "If a string appears in a specific language translation file, but there is " +
             "no corresponding string in the default locale, then this string is probably " +
@@ -112,8 +118,7 @@ public class TranslationDetector extends ResourceXmlDetector {
             Category.MESSAGES,
             6,
             Severity.FATAL,
-            TranslationDetector.class,
-            Scope.ALL_RESOURCES_SCOPE);
+            IMPLEMENTATION);
 
     private Set<String> mNames;
     private Set<String> mTranslatedArrays;

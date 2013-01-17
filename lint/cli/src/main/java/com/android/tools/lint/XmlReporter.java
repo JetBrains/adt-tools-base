@@ -16,12 +16,15 @@
 
 package com.android.tools.lint;
 
+import static com.android.tools.lint.detector.api.Issue.OutputFormat.RAW;
+
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Position;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 
 import java.io.BufferedWriter;
@@ -55,7 +58,8 @@ public class XmlReporter extends Reporter {
     @Override
     public void write(int errorCount, int warningCount, List<Warning> issues) throws IOException {
         mWriter.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");      //$NON-NLS-1$
-        mWriter.write("<issues format=\"3\"");                              //$NON-NLS-1$
+        // Format 4: added urls= attribute with all more info links, comma separated
+        mWriter.write("<issues format=\"4\"");                              //$NON-NLS-1$
         String revision = mClient.getRevision();
         if (revision != null) {
             mWriter.write(String.format(" by=\"lint %1$s\"", revision));    //$NON-NLS-1$
@@ -77,10 +81,17 @@ public class XmlReporter extends Reporter {
                         issue.getCategory().getFullName());
                 writeAttribute(mWriter, 2, "priority",                                //$NON-NLS-1$
                         Integer.toString(issue.getPriority()));
-                writeAttribute(mWriter, 2, "summary", issue.getDescription());        //$NON-NLS-1$
-                writeAttribute(mWriter, 2, "explanation", issue.getExplanation());    //$NON-NLS-1$
-                if (issue.getMoreInfo() != null) {
-                    writeAttribute(mWriter, 2, "url", issue.getMoreInfo());           //$NON-NLS-1$
+                writeAttribute(mWriter, 2, "summary", issue.getDescription(RAW));     //$NON-NLS-1$
+                writeAttribute(mWriter, 2, "explanation", issue.getExplanation(RAW)); //$NON-NLS-1$
+                List<String> moreInfo = issue.getMoreInfo();
+                if (!moreInfo.isEmpty()) {
+                    // Compatibility with old format: list first URL
+                    writeAttribute(mWriter, 2, "url", moreInfo.get(0));           //$NON-NLS-1$
+                    if (issue.getMoreInfo() != null) {
+                        writeAttribute(mWriter, 2, "urls",                            //$NON-NLS-1$
+                                Joiner.on(',').join(issue.getMoreInfo()));
+
+                    }
                 }
                 if (warning.errorLine != null && !warning.errorLine.isEmpty()) {
                     String line = warning.errorLine;

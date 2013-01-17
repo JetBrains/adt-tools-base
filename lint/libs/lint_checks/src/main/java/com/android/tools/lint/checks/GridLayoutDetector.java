@@ -24,6 +24,7 @@ import static com.android.SdkConstants.ATTR_ROW_COUNT;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -46,6 +47,7 @@ public class GridLayoutDetector extends LayoutDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "GridLayout", //$NON-NLS-1$
+            "GridLayout validation",
             "Checks for potential GridLayout errors like declaring rows and columns outside " +
             "the declared grid dimensions",
             "Declaring a layout_row or layout_column that falls outside the declared size " +
@@ -53,8 +55,9 @@ public class GridLayoutDetector extends LayoutDetector {
             Category.CORRECTNESS,
             4,
             Severity.FATAL,
-            GridLayoutDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    GridLayoutDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     /** Constructs a new {@link GridLayoutDetector} check */
     public GridLayoutDetector() {

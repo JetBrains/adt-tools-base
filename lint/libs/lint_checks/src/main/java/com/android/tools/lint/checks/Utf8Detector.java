@@ -18,6 +18,7 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Location;
@@ -38,6 +39,7 @@ public class Utf8Detector extends LayoutDetector {
     /** Detects non-utf8 encodings */
     public static final Issue ISSUE = Issue.create(
             "EnforceUTF8", //$NON-NLS-1$
+            "Encoding used in resource files is not UTF-8",
             "Checks that all XML resource files are using UTF-8 as the file encoding",
             "XML supports encoding in a wide variety of character sets. However, not all " +
             "tools handle the XML encoding attribute correctly, and nearly all Android " +
@@ -46,8 +48,9 @@ public class Utf8Detector extends LayoutDetector {
             Category.I18N,
             2,
             Severity.WARNING,
-            Utf8Detector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    Utf8Detector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     /** See http://www.w3.org/TR/REC-xml/#NT-EncodingDecl */
     private static final Pattern ENCODING_PATTERN =

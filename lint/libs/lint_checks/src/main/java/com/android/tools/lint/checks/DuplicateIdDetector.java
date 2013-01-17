@@ -28,6 +28,7 @@ import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -72,21 +73,26 @@ public class DuplicateIdDetector extends LayoutDetector {
     private Multimap<File, Multimap<String, Occurrence>> mLocations;
     private List<Occurrence> mErrors;
 
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            DuplicateIdDetector.class,
+            Scope.RESOURCE_FILE_SCOPE);
+
     /** The main issue discovered by this detector */
     public static final Issue WITHIN_LAYOUT = Issue.create(
             "DuplicateIds", //$NON-NLS-1$
+            "Duplicate ids within a single layout",
             "Checks for duplicate ids within a single layout",
             "Within a layout, id's should be unique since otherwise `findViewById()` can " +
             "return an unexpected view.",
             Category.CORRECTNESS,
             7,
             Severity.WARNING,
-            DuplicateIdDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** The main issue discovered by this detector */
     public static final Issue CROSS_LAYOUT = Issue.create(
             "DuplicateIncludedIds", //$NON-NLS-1$
+            "Duplicate ids across layouts combined with include tags",
             "Checks for duplicate ids across layouts that are combined with include tags",
             "It's okay for two independent layouts to use the same ids. However, if " +
             "layouts are combined with include tags, then the id's need to be unique " +
@@ -95,8 +101,7 @@ public class DuplicateIdDetector extends LayoutDetector {
             Category.CORRECTNESS,
             6,
             Severity.WARNING,
-            DuplicateIdDetector.class,
-            Scope.ALL_RESOURCES_SCOPE);
+            IMPLEMENTATION);
 
     /** Constructs a duplicate id check */
     public DuplicateIdDetector() {

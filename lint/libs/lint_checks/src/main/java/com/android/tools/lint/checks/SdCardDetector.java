@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
@@ -43,7 +44,8 @@ public class SdCardDetector extends Detector implements Detector.JavaScanner {
     /** Hardcoded /sdcard/ references */
     public static final Issue ISSUE = Issue.create(
             "SdCardPath", //$NON-NLS-1$
-            "Looks for hardcoded references to /sdcard",
+            "Hardcoded reference to `/sdcard`",
+            "Looks for hardcoded references to `/sdcard`",
 
             "Your code should not reference the `/sdcard` path directly; instead use " +
             "`Environment.getExternalStorageDirectory().getPath()`.\n" +
@@ -55,8 +57,10 @@ public class SdCardDetector extends Detector implements Detector.JavaScanner {
             Category.CORRECTNESS,
             6,
             Severity.WARNING,
-            SdCardDetector.class,
-            Scope.JAVA_FILE_SCOPE).setMoreInfo(
+            new Implementation(
+                    SdCardDetector.class,
+                    Scope.JAVA_FILE_SCOPE))
+            .addMoreInfo(
             "http://developer.android.com/guide/topics/data/data-storage.html#filesExternal"); //$NON-NLS-1$
 
     /** Constructs a new {@link SdCardDetector} check */

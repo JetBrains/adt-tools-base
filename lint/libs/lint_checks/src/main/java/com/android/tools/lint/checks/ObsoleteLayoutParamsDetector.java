@@ -68,6 +68,7 @@ import com.android.tools.lint.client.api.IDomParser;
 import com.android.tools.lint.client.api.SdkInfo;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Location;
@@ -101,7 +102,9 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
     /** Usage of deprecated views or attributes */
     public static final Issue ISSUE = Issue.create(
             "ObsoleteLayoutParam", //$NON-NLS-1$
+            "Obsolete layout params",
             "Looks for layout params that are not valid for the given parent layout",
+
             "The given layout_param is not defined for the given layout, meaning it has no " +
             "effect. This usually happens when you change the parent layout or move view " +
             "code around without updating the layout params. This will cause useless " +
@@ -110,8 +113,9 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
             Category.PERFORMANCE,
             6,
             Severity.WARNING,
-            ObsoleteLayoutParamsDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    ObsoleteLayoutParamsDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     /**
      * Set of layout parameter names that are considered valid no matter what so

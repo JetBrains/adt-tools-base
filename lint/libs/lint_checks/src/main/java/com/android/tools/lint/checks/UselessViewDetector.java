@@ -35,6 +35,7 @@ import static com.android.SdkConstants.TABLE_ROW;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -55,9 +56,15 @@ import java.util.List;
  * Checks whether the current node can be removed without affecting the layout.
  */
 public class UselessViewDetector extends LayoutDetector {
+
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            UselessViewDetector.class,
+            Scope.RESOURCE_FILE_SCOPE);
+
     /** Issue of including a parent that has no value on its own */
     public static final Issue USELESS_PARENT = Issue.create(
             "UselessParent", //$NON-NLS-1$
+            "Useless parent layout",
             "Checks whether a parent layout can be removed.",
             "A layout with children that has no siblings, is not a scrollview or " +
             "a root layout, and does not have a background, can be removed and have " +
@@ -66,20 +73,19 @@ public class UselessViewDetector extends LayoutDetector {
             Category.PERFORMANCE,
             2,
             Severity.WARNING,
-            UselessViewDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Issue of including a leaf that isn't shown */
     public static final Issue USELESS_LEAF = Issue.create(
             "UselessLeaf", //$NON-NLS-1$
+            "Useless leaf layout",
             "Checks whether a leaf layout can be removed.",
             "A layout that has no children or no background can often be removed (since it " +
             "is invisible) for a flatter and more efficient layout hierarchy.",
             Category.PERFORMANCE,
             2,
             Severity.WARNING,
-            UselessViewDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Constructs a new {@link UselessViewDetector} */
     public UselessViewDetector() {

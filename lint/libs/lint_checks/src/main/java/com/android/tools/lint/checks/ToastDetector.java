@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
@@ -44,7 +45,8 @@ public class ToastDetector extends Detector implements Detector.JavaScanner {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "ShowToast", //$NON-NLS-1$
-            "Looks for code creating a Toast but forgetting to call show() on it",
+            "Toast created but not shown",
+            "Looks for code creating a `Toast` but forgetting to call `show()` on it",
 
             "`Toast.makeText()` creates a `Toast` but does *not* show it. You must call " +
             "`show()` on the resulting object to actually make the `Toast` appear.",
@@ -52,8 +54,9 @@ public class ToastDetector extends Detector implements Detector.JavaScanner {
             Category.CORRECTNESS,
             6,
             Severity.WARNING,
-            ToastDetector.class,
-            Scope.JAVA_FILE_SCOPE);
+            new Implementation(
+                    ToastDetector.class,
+                    Scope.JAVA_FILE_SCOPE));
 
 
     /** Constructs a new {@link ToastDetector} check */

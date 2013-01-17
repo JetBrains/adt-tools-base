@@ -23,6 +23,7 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
@@ -56,7 +57,8 @@ public class CutPasteDetector extends Detector implements Detector.JavaScanner {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "CutPasteId", //$NON-NLS-1$
-            "Looks for code cut & paste mistakes in findViewById() calls",
+            "Likely cut & paste mistakes",
+            "Looks for code cut & paste mistakes in `findViewById()` calls",
 
             "This lint check looks for cases where you have cut & pasted calls to " +
             "`findViewById` but have forgotten to update the R.id field. It's possible " +
@@ -68,8 +70,9 @@ public class CutPasteDetector extends Detector implements Detector.JavaScanner {
             Category.CORRECTNESS,
             6,
             Severity.WARNING,
-            CutPasteDetector.class,
-            Scope.JAVA_FILE_SCOPE);
+            new Implementation(
+                    CutPasteDetector.class,
+                    Scope.JAVA_FILE_SCOPE));
 
     private Node mLastMethod;
     private Map<String, MethodInvocation> mIds;

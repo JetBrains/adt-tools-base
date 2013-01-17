@@ -25,6 +25,7 @@ import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -45,7 +46,6 @@ import org.w3c.dom.Node;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +59,8 @@ public class OnClickDetector extends LayoutDetector implements ClassScanner {
     /** Missing onClick handlers */
     public static final Issue ISSUE = Issue.create(
             "OnClick", //$NON-NLS-1$
-            "Ensures that onClick attribute values refer to real methods",
+            "`onClick` method does not exist",
+            "Ensures that `onClick` attribute values refer to real methods",
 
             "The `onClick` attribute value should be the name of a method in this View's context " +
             "to invoke when the view is clicked. This name must correspond to a public method " +
@@ -70,8 +71,9 @@ public class OnClickDetector extends LayoutDetector implements ClassScanner {
             Category.CORRECTNESS,
             10,
             Severity.ERROR,
-            OnClickDetector.class,
-            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.CLASS_FILE));
+            new Implementation(
+                    OnClickDetector.class,
+                    Scope.CLASS_AND_ALL_RESOURCE_FILES));
 
     private Map<String, Location.Handle> mNames;
     private Map<String, List<String>> mSimilar;

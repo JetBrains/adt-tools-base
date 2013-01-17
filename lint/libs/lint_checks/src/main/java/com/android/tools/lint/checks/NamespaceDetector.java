@@ -23,6 +23,7 @@ import static com.android.SdkConstants.XMLNS_PREFIX;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -45,9 +46,15 @@ import java.util.Map;
  * Checks for various issues related to XML namespaces
  */
 public class NamespaceDetector extends LayoutDetector {
+
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            NamespaceDetector.class,
+            Scope.RESOURCE_FILE_SCOPE);
+
     /** Typos in the namespace */
     public static final Issue TYPO = Issue.create(
             "NamespaceTypo", //$NON-NLS-1$
+            "Misspelled namespace declaration",
             "Looks for misspellings in namespace declarations",
 
             "Accidental misspellings in namespace declarations can lead to some very " +
@@ -56,12 +63,12 @@ public class NamespaceDetector extends LayoutDetector {
             Category.CORRECTNESS,
             8,
             Severity.WARNING,
-            NamespaceDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Unused namespace declarations */
     public static final Issue UNUSED = Issue.create(
             "UnusedNamespace", //$NON-NLS-1$
+            "Unused namespace",
             "Finds unused namespaces in XML documents",
 
             "Unused namespace declarations take up space and require processing that is not " +
@@ -70,12 +77,12 @@ public class NamespaceDetector extends LayoutDetector {
             Category.PERFORMANCE,
             1,
             Severity.WARNING,
-            NamespaceDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Using custom namespace attributes in a library project */
-    public static final Issue CUSTOMVIEW = Issue.create(
+    public static final Issue CUSTOM_VIEW = Issue.create(
             "LibraryCustomView", //$NON-NLS-1$
+            "Custom views in libraries should use res-auto-namespace",
             "Flags custom attributes in libraries, which must use the res-auto-namespace instead",
 
             "When using a custom view with custom attributes in a library project, the layout " +
@@ -86,8 +93,7 @@ public class NamespaceDetector extends LayoutDetector {
             Category.CORRECTNESS,
             6,
             Severity.ERROR,
-            NamespaceDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Prefix relevant for custom namespaces */
     private static final String XMLNS_ANDROID = "xmlns:android";                    //$NON-NLS-1$
@@ -96,7 +102,7 @@ public class NamespaceDetector extends LayoutDetector {
     private Map<String, Attr> mUnusedNamespaces;
     private boolean mCheckUnused;
 
-  /** Constructs a new {@link NamespaceDetector} */
+    /** Constructs a new {@link NamespaceDetector} */
     public NamespaceDetector() {
     }
 
@@ -184,7 +190,8 @@ public class NamespaceDetector extends LayoutDetector {
         }
 
         if (haveCustomNamespace) {
-          boolean checkCustomAttrs = context.isEnabled(CUSTOMVIEW) && context.getProject().isLibrary();
+          boolean checkCustomAttrs = context.isEnabled(CUSTOM_VIEW)
+                  && context.getProject().isLibrary();
             mCheckUnused = context.isEnabled(UNUSED);
 
             if (checkCustomAttrs) {
@@ -211,7 +218,7 @@ public class NamespaceDetector extends LayoutDetector {
                 String uri = attribute.getValue();
                 if (uri != null && !uri.isEmpty() && uri.startsWith(URI_PREFIX)
                         && !uri.equals(ANDROID_URI)) {
-                    context.report(CUSTOMVIEW, attribute, context.getLocation(attribute),
+                    context.report(CUSTOM_VIEW, attribute, context.getLocation(attribute),
                         "When using a custom namespace attribute in a library project, " +
                         "use the namespace \"" + AUTO_URI + "\" instead.", null);
                 }

@@ -18,6 +18,7 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
@@ -36,7 +37,9 @@ public class PrivateResourceDetector extends ResourceXmlDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "PrivateResource", //$NON-NLS-1$
+            "Using private resources",
             "Looks for references to private resources",
+
             "Private resources should not be referenced; the may not be present everywhere, and " +
             "even where they are they may disappear without notice.\n" +
             "\n" +
@@ -45,8 +48,9 @@ public class PrivateResourceDetector extends ResourceXmlDetector {
             Category.CORRECTNESS,
             3,
             Severity.FATAL,
-            PrivateResourceDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    PrivateResourceDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     /** Constructs a new detector */
     public PrivateResourceDetector() {

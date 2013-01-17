@@ -84,7 +84,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         // issues are properly registered
         List<Issue> candidates = new BuiltinIssueRegistry().getIssues();
         for (Issue issue : candidates) {
-            if (issue.getDetectorClass() == detectorClass) {
+            if (issue.getImplementation().getDetectorClass() == detectorClass) {
                 issues.add(issue);
             }
         }
@@ -235,7 +235,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
 
     protected boolean isEnabled(Issue issue) {
         Class<? extends Detector> detectorClass = getDetectorInstance().getClass();
-        if (issue.getDetectorClass() == detectorClass) {
+        if (issue.getImplementation().getDetectorClass() == detectorClass) {
             return true;
         }
 

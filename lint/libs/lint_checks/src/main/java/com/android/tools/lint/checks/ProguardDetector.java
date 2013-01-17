@@ -23,6 +23,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
@@ -30,16 +31,19 @@ import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 
 import java.io.File;
-import java.util.EnumSet;
 
 /**
  * Check which looks for errors in Proguard files.
  */
 public class ProguardDetector extends Detector {
 
+    private static final Implementation IMPLEMENTATION = new Implementation(ProguardDetector.class,
+            Scope.PROGUARD_SCOPE);
+
     /** The main issue discovered by this detector */
-    public static final Issue WRONGKEEP = Issue.create(
+    public static final Issue WRONG_KEEP = Issue.create(
             "Proguard", //$NON-NLS-1$
+            "Using obsolete ProGuard configuration",
             "Looks for problems in proguard config files",
             "Using `-keepclasseswithmembernames` in a proguard config file is not " +
             "correct; it can cause some symbols to be renamed which should not be.\n" +
@@ -51,14 +55,15 @@ public class ProguardDetector extends Detector {
             Category.CORRECTNESS,
             8,
             Severity.FATAL,
-            ProguardDetector.class,
-            EnumSet.of(Scope.PROGUARD_FILE)).setMoreInfo(
-            "http://http://code.google.com/p/android/issues/detail?id=16384"); //$NON-NLS-1$
+            IMPLEMENTATION)
+            .addMoreInfo(
+                    "http://http://code.google.com/p/android/issues/detail?id=16384"); //$NON-NLS-1$
 
     /** Finds ProGuard files that contain non-project specific configuration
      * locally and suggests replacing it with an include path */
-    public static final Issue SPLITCONFIG = Issue.create(
+    public static final Issue SPLIT_CONFIG = Issue.create(
             "ProguardSplit", //$NON-NLS-1$
+            "Proguard.cfg file contains generic Android rules",
             "Checks for old proguard.cfg files that contain generic Android rules",
 
             "Earlier versions of the Android tools bundled a single `proguard.cfg` file " +
@@ -88,26 +93,25 @@ public class ProguardDetector extends Detector {
             Category.CORRECTNESS,
             3,
             Severity.WARNING,
-            ProguardDetector.class,
-            EnumSet.of(Scope.PROGUARD_FILE));
+            IMPLEMENTATION);
 
     @Override
     public void run(@NonNull Context context) {
         String contents = context.getContents();
         if (contents != null) {
-            if (context.isEnabled(WRONGKEEP)) {
+            if (context.isEnabled(WRONG_KEEP)) {
                 int index = contents.indexOf(
                         // Old pattern:
                         "-keepclasseswithmembernames class * {\n" + //$NON-NLS-1$
                         "    public <init>(android.");              //$NON-NLS-1$
                 if (index != -1) {
-                    context.report(WRONGKEEP,
+                    context.report(WRONG_KEEP,
                             Location.create(context.file, contents, index, index),
                             "Obsolete ProGuard file; use -keepclasseswithmembers instead of " +
                             "-keepclasseswithmembernames", null);
                 }
             }
-            if (context.isEnabled(SPLITCONFIG)) {
+            if (context.isEnabled(SPLIT_CONFIG)) {
                 int index = contents.indexOf("-keep public class * extends android.app.Activity");
                 if (index != -1) {
                     // Only complain if project.properties actually references this file;
@@ -136,7 +140,7 @@ public class ProguardDetector extends Detector {
                         }
                     }
                     if (properties.contains(PROGUARD_CONFIG)) {
-                        context.report(SPLITCONFIG,
+                        context.report(SPLIT_CONFIG,
                             Location.create(context.file, contents, index, index),
                             String.format(
                             "Local ProGuard configuration contains general Android " +

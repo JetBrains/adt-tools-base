@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
@@ -37,6 +38,7 @@ import lombok.ast.MethodInvocation;
 public class SetJavaScriptEnabledDetector extends Detector implements Detector.JavaScanner {
     /** Invocations of setJavaScriptEnabled */
     public static final Issue ISSUE = Issue.create("SetJavaScriptEnabled", //$NON-NLS-1$
+            "Using `setJavaScriptEnabled`",
             "Looks for invocations of android.webkit.WebSettings.setJavaScriptEnabled",
 
             "Your code should not invoke `setJavaScriptEnabled` if you are not sure that " +
@@ -45,8 +47,10 @@ public class SetJavaScriptEnabledDetector extends Detector implements Detector.J
             Category.SECURITY,
             6,
             Severity.WARNING,
-            SetJavaScriptEnabledDetector.class,
-            Scope.JAVA_FILE_SCOPE).setMoreInfo(
+            new Implementation(
+                    SetJavaScriptEnabledDetector.class,
+                    Scope.JAVA_FILE_SCOPE))
+            .addMoreInfo(
             "http://developer.android.com/guide/practices/security.html"); //$NON-NLS-1$
 
     /** Constructs a new {@link SetJavaScriptEnabledDetector} check */

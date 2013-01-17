@@ -159,6 +159,37 @@ public class MainTest extends AbstractCheckTest {
         });
     }
 
+    public void testShowDescriptionWithUrl() throws Exception {
+        checkDriver(""
+                // Expected output
+                + "SdCardPath\n"
+                + "----------\n"
+                + "Summary: Looks for hardcoded references to /sdcard\n"
+                + "\n"
+                + "Priority: 6 / 10\n"
+                + "Severity: Warning\n"
+                + "Category: Correctness\n"
+                + "\n"
+                + "Your code should not reference the /sdcard path directly; instead use\n"
+                + "Environment.getExternalStorageDirectory().getPath().\n"
+                + "\n"
+                + "Similarly, do not reference the /data/data/ path directly; it can vary in\n"
+                + "multi-user scenarios. Instead, use Context.getFilesDir().getPath().\n"
+                + "\n"
+                + "More information: \n"
+                + "http://developer.android.com/guide/topics/data/data-storage.html#filesExternal\n"
+                + "\n",
+
+                // Expected error
+                "",
+
+                // Args
+                new String[] {
+                        "--show",
+                        "SdCardPath"
+                });
+    }
+
     public void testNonexistentLibrary() throws Exception {
         checkDriver(
         "",

@@ -31,6 +31,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Location;
@@ -57,7 +58,9 @@ public class LabelForDetector extends LayoutDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "LabelFor", //$NON-NLS-1$
-            "Ensures that text fields are marked with a labelFor attribute",
+            "Missing `labelFor` attribute",
+            "Ensures that text fields are marked with a `labelFor` attribute",
+
             "Text fields should be labelled with a `labelFor` attribute, " +
             "provided your `minSdkVersion` is at least 17.\n" +
             "\n" +
@@ -66,8 +69,9 @@ public class LabelForDetector extends LayoutDetector {
             Category.A11Y,
             2,
             Severity.WARNING,
-            LabelForDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    LabelForDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     private Set<String> mLabels;
     private List<Element> mTextFields;

@@ -21,6 +21,7 @@ import static com.android.SdkConstants.ANDROID_URI;
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
@@ -48,15 +49,17 @@ public class StateListDetector extends ResourceXmlDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "StateListReachable", //$NON-NLS-1$
-            "Looks for unreachable states in a <selector>",
+            "Unreachable state in a `<selector>`",
+            "Looks for unreachable states in a `<selector>`",
             "In a selector, only the last child in the state list should omit a " +
             "state qualifier. If not, all subsequent items in the list will be ignored " +
             "since the given item will match all.",
             Category.CORRECTNESS,
             5,
             Severity.WARNING,
-            StateListDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    StateListDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     private static final String STATE_PREFIX = "state_"; //$NON-NLS-1$
 

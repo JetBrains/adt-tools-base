@@ -27,6 +27,7 @@ import static com.android.SdkConstants.ATTR_TITLE;
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Scope;
@@ -47,7 +48,9 @@ public class HardcodedValuesDetector extends LayoutDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "HardcodedText", //$NON-NLS-1$
+            "Hardcoded text",
             "Looks for hardcoded text attributes which should be converted to resource lookup",
+
             "Hardcoding text attributes directly in layout files is bad for several reasons:\n" +
             "\n" +
             "* When creating configuration variations (for example for landscape or portrait)" +
@@ -62,8 +65,9 @@ public class HardcodedValuesDetector extends LayoutDetector {
             Category.I18N,
             5,
             Severity.WARNING,
-            HardcodedValuesDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    HardcodedValuesDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     // TODO: Add additional issues here, such as hardcoded colors, hardcoded sizes, etc
 

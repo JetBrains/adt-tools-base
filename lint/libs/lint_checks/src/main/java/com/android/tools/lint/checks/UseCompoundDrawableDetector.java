@@ -26,6 +26,7 @@ import static com.android.SdkConstants.TEXT_VIEW;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -48,7 +49,10 @@ public class UseCompoundDrawableDetector extends LayoutDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "UseCompoundDrawables", //$NON-NLS-1$
-            "Checks whether the current node can be replaced by a TextView using compound drawables.",
+            "Node can be replaced by a `TextView` with compound drawables",
+            "Checks whether the current node can be replaced by a `TextView` using "
+                    + "compound drawables.",
+
             "A `LinearLayout` which contains an `ImageView` and a `TextView` can be more " +
             "efficiently handled as a compound drawable (a single TextView, using the " +
             "`drawableTop`, `drawableLeft`, `drawableRight` and/or `drawableBottom` attributes " +
@@ -61,8 +65,9 @@ public class UseCompoundDrawableDetector extends LayoutDetector {
             Category.PERFORMANCE,
             6,
             Severity.WARNING,
-            UseCompoundDrawableDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    UseCompoundDrawableDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     /** Constructs a new {@link UseCompoundDrawableDetector} */
     public UseCompoundDrawableDetector() {

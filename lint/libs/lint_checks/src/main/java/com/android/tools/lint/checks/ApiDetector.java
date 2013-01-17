@@ -46,6 +46,7 @@ import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.DefaultPosition;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -135,25 +136,23 @@ public class ApiDetector extends ResourceXmlDetector
     private static final boolean AOSP_BUILD = System.getenv("ANDROID_BUILD_TOP") != null; //$NON-NLS-1$
 
     /** Accessing an unsupported API */
-    public static final Issue UNSUPPORTED = Issue.create("NewApi", //$NON-NLS-1$
+    public static final Issue UNSUPPORTED = Issue.create(
+            "NewApi", //$NON-NLS-1$
+            "Calling new methods on older versions",
             "Finds API accesses to APIs that are not supported in all targeted API versions",
 
             "This check scans through all the Android API calls in the application and " +
             "warns about any calls that are not available on *all* versions targeted " +
-            "by this application (according to its minimum SDK attribute in the manifest).\n"
-            +
+            "by this application (according to its minimum SDK attribute in the manifest).\n" +
             "\n" +
-            "If you really want to use this API and don't need to support older devices just "
-            +
+            "If you really want to use this API and don't need to support older devices just " +
             "set the `minSdkVersion` in your `AndroidManifest.xml` file." +
             "\n" +
             "If your code is *deliberately* accessing newer APIs, and you have ensured " +
-            "(e.g. with conditional execution) that this code will only ever be called on a "
-            +
+            "(e.g. with conditional execution) that this code will only ever be called on a " +
             "supported platform, then you can annotate your class or method with the " +
             "`@TargetApi` annotation specifying the local minimum SDK to apply, such as " +
-            "`@TargetApi(11)`, such that this check considers 11 rather than your manifest "
-            +
+            "`@TargetApi(11)`, such that this check considers 11 rather than your manifest " +
             "file's minimum SDK as the required API level.\n" +
             "\n" +
             "If you are deliberately setting `android:` attributes in style definitions, " +
@@ -161,19 +160,21 @@ public class ApiDetector extends ResourceXmlDetector
             "into runtime conflicts on certain devices where manufacturers have added " +
             "custom attributes whose ids conflict with the new ones on later platforms.\n" +
             "\n" +
-            "Similarly, you can use tools:targetApi=\"11\" in an XML file to indicate that "
-            +
+            "Similarly, you can use tools:targetApi=\"11\" in an XML file to indicate that " +
             "the element will only be inflated in an adequate context.",
             Category.CORRECTNESS,
             6,
             Severity.ERROR,
-            ApiDetector.class,
-            EnumSet.of(Scope.CLASS_FILE, Scope.RESOURCE_FILE, Scope.MANIFEST))
-            .addAnalysisScope(Scope.RESOURCE_FILE_SCOPE)
-            .addAnalysisScope(Scope.CLASS_FILE_SCOPE);
+            new Implementation(
+                    ApiDetector.class,
+                    EnumSet.of(Scope.CLASS_FILE, Scope.RESOURCE_FILE, Scope.MANIFEST),
+                    Scope.RESOURCE_FILE_SCOPE,
+                    Scope.CLASS_FILE_SCOPE));
 
     /** Accessing an inlined API on older platforms */
-    public static final Issue INLINED = Issue.create("InlinedApi", //$NON-NLS-1$
+    public static final Issue INLINED = Issue.create(
+            "InlinedApi", //$NON-NLS-1$
+            "Using inlined constants on older versions",
             "Finds inlined fields that may or may not work on older platforms",
 
             "This check scans through all the Android API field references in the application " +
@@ -186,27 +187,26 @@ public class ApiDetector extends ResourceXmlDetector
             "the code carefully and device whether it's safe and can be suppressed " +
             "or whether the code needs tbe guarded.\n" +
             "\n" +
-            "If you really want to use this API and don't need to support older devices just "
-            +
+            "If you really want to use this API and don't need to support older devices just " +
             "set the `minSdkVersion` in your `AndroidManifest.xml` file." +
             "\n" +
             "If your code is *deliberately* accessing newer APIs, and you have ensured " +
-            "(e.g. with conditional execution) that this code will only ever be called on a "
-            +
+            "(e.g. with conditional execution) that this code will only ever be called on a " +
             "supported platform, then you can annotate your class or method with the " +
             "`@TargetApi` annotation specifying the local minimum SDK to apply, such as " +
-            "`@TargetApi(11)`, such that this check considers 11 rather than your manifest "
-            +
+            "`@TargetApi(11)`, such that this check considers 11 rather than your manifest " +
             "file's minimum SDK as the required API level.\n",
             Category.CORRECTNESS,
             6,
             Severity.WARNING,
-            ApiDetector.class,
-            EnumSet.of(Scope.JAVA_FILE))
-            .addAnalysisScope(Scope.JAVA_FILE_SCOPE);
+            new Implementation(
+                    ApiDetector.class,
+                    Scope.JAVA_FILE_SCOPE));
 
     /** Accessing an unsupported API */
-    public static final Issue OVERRIDE = Issue.create("Override", //$NON-NLS-1$
+    public static final Issue OVERRIDE = Issue.create(
+            "Override", //$NON-NLS-1$
+            "Method conflicts with new inherited method",
             "Finds method declarations that will accidentally override methods in later versions",
 
             "Suppose you are building against Android API 8, and you've subclassed Activity. " +
@@ -228,8 +228,9 @@ public class ApiDetector extends ResourceXmlDetector
             Category.CORRECTNESS,
             6,
             Severity.ERROR,
-            ApiDetector.class,
-            Scope.CLASS_FILE_SCOPE);
+            new Implementation(
+                    ApiDetector.class,
+                    Scope.CLASS_FILE_SCOPE));
 
     private static final String TARGET_API_VMSIG = '/' + TARGET_API + ';';
     private static final String SWITCH_TABLE_PREFIX = "$SWITCH_TABLE$";  //$NON-NLS-1$

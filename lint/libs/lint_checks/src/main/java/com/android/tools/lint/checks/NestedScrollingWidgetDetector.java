@@ -25,6 +25,7 @@ import static com.android.SdkConstants.SCROLL_VIEW;
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Scope;
@@ -48,6 +49,7 @@ public class NestedScrollingWidgetDetector extends LayoutDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "NestedScrolling", //$NON-NLS-1$
+            "Nested scrolling widgets",
             "Checks whether a scrolling widget has any nested scrolling widgets within",
             // TODO: Better description!
             "A scrolling widget such as a `ScrollView` should not contain any nested " +
@@ -55,8 +57,9 @@ public class NestedScrollingWidgetDetector extends LayoutDetector {
             Category.CORRECTNESS,
             7,
             Severity.WARNING,
-            NestedScrollingWidgetDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    NestedScrollingWidgetDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     /** Constructs a new {@link NestedScrollingWidgetDetector} */
     public NestedScrollingWidgetDetector() {

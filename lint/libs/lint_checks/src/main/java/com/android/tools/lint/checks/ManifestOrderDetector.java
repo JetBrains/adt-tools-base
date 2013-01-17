@@ -38,6 +38,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
@@ -63,11 +64,16 @@ import java.util.Set;
  * wrong order.
  */
 public class ManifestOrderDetector extends Detector implements Detector.XmlScanner {
+    private static Implementation IMPLEMENTATION = new Implementation(
+            ManifestOrderDetector.class,
+            Scope.MANIFEST_SCOPE
+    );
 
     /** Wrong order of elements in the manifest */
     public static final Issue ORDER = Issue.create(
             "ManifestOrder", //$NON-NLS-1$
-            "Checks for manifest problems like <uses-sdk> after the <application> tag",
+            "Incorrect order of elements in manifest",
+            "Checks for manifest problems like `<uses-sdk>` after the `<application>` tag",
             "The <application> tag should appear after the elements which declare " +
             "which version you need, which features you need, which libraries you " +
             "need, and so on. In the past there have been subtle bugs (such as " +
@@ -77,12 +83,12 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
             Category.CORRECTNESS,
             5,
             Severity.WARNING,
-            ManifestOrderDetector.class,
-            Scope.MANIFEST_SCOPE);
+            IMPLEMENTATION);
 
     /** Missing a {@code <uses-sdk>} element */
     public static final Issue USES_SDK = Issue.create(
             "UsesMinSdkAttributes", //$NON-NLS-1$
+            "Minimum SDK and target SDK attributes not defined",
             "Checks that the minimum SDK and target SDK attributes are defined",
 
             "The manifest should contain a `<uses-sdk>` element which defines the " +
@@ -93,13 +99,13 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
             Category.CORRECTNESS,
             9,
             Severity.WARNING,
-            ManifestOrderDetector.class,
-            Scope.MANIFEST_SCOPE).setMoreInfo(
+            IMPLEMENTATION).addMoreInfo(
             "http://developer.android.com/guide/topics/manifest/uses-sdk-element.html"); //$NON-NLS-1$
 
     /** Using a targetSdkVersion that isn't recent */
     public static final Issue TARGET_NEWER = Issue.create(
             "OldTargetApi", //$NON-NLS-1$
+            "Target SDK attribute is not targeting latest version",
             "Checks that the manifest specifies a targetSdkVersion that is recent",
 
             "When your application runs on a version of Android that is more recent than your " +
@@ -117,14 +123,14 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
             Category.CORRECTNESS,
             6,
             Severity.WARNING,
-            ManifestOrderDetector.class,
-            Scope.MANIFEST_SCOPE).setMoreInfo(
+            IMPLEMENTATION).addMoreInfo(
             "http://developer.android.com/reference/android/os/Build.VERSION_CODES.html"); //$NON-NLS-1$
 
     /** Using multiple {@code <uses-sdk>} elements */
     public static final Issue MULTIPLE_USES_SDK = Issue.create(
             "MultipleUsesSdk", //$NON-NLS-1$
-            "Checks that the <uses-sdk> element appears at most once",
+            "Multiple `<uses-sdk>` elements in the manifest",
+            "Checks that the `<uses-sdk>` element appears at most once",
 
             "The `<uses-sdk>` element should appear just once; the tools will *not* merge the " +
             "contents of all the elements so if you split up the attributes across multiple " +
@@ -134,13 +140,13 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
             Category.CORRECTNESS,
             6,
             Severity.FATAL,
-            ManifestOrderDetector.class,
-            Scope.MANIFEST_SCOPE).setMoreInfo(
+            IMPLEMENTATION).addMoreInfo(
             "http://developer.android.com/guide/topics/manifest/uses-sdk-element.html"); //$NON-NLS-1$
 
     /** Missing a {@code <uses-sdk>} element */
     public static final Issue WRONG_PARENT = Issue.create(
             "WrongManifestParent", //$NON-NLS-1$
+            "Wrong manifest parent",
             "Checks that various manifest elements are declared in the right place",
 
             "The `<uses-library>` element should be defined as a direct child of the " +
@@ -152,13 +158,13 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
             Category.CORRECTNESS,
             6,
             Severity.FATAL,
-            ManifestOrderDetector.class,
-            Scope.MANIFEST_SCOPE).setMoreInfo(
+            IMPLEMENTATION).addMoreInfo(
             "http://developer.android.com/guide/topics/manifest/manifest-intro.html"); //$NON-NLS-1$
 
     /** Missing a {@code <uses-sdk>} element */
     public static final Issue DUPLICATE_ACTIVITY = Issue.create(
             "DuplicateActivity", //$NON-NLS-1$
+            "Activity registered more than once",
             "Checks that an activity is registered only once in the manifest",
 
             "An activity should only be registered once in the manifest. If it is " +
@@ -169,12 +175,12 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
             Category.CORRECTNESS,
             5,
             Severity.ERROR,
-            ManifestOrderDetector.class,
-            Scope.MANIFEST_SCOPE);
+            IMPLEMENTATION);
 
     /** Not explicitly defining allowBackup */
     public static final Issue ALLOW_BACKUP = Issue.create(
             "AllowBackup", //$NON-NLS-1$
+            "Missing `allowBackup` attribute",
             "Ensure that allowBackup is explicitly set in the application's manifest",
 
             "The allowBackup attribute determines if an application's data can be backed up " +
@@ -202,13 +208,13 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
             Category.SECURITY,
             3,
             Severity.WARNING,
-            ManifestOrderDetector.class,
-            Scope.MANIFEST_SCOPE).setMoreInfo(
+            IMPLEMENTATION).addMoreInfo(
             "http://developer.android.com/reference/android/R.attr.html#allowBackup");
 
     /** Conflicting permission names */
     public static final Issue UNIQUE_PERMISSION = Issue.create(
             "UniquePermission", //$NON-NLS-1$
+            "Permission names are not unique",
             "Checks that permission names are unique",
 
             "The unqualified names or your permissions must be unique. The reason for this " +
@@ -223,12 +229,12 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
             Category.CORRECTNESS,
             6,
             Severity.ERROR,
-            ManifestOrderDetector.class,
-            Scope.MANIFEST_SCOPE);
+            IMPLEMENTATION);
 
     /** Using a resource for attributes that do not allow it */
     public static final Issue SET_VERSION = Issue.create(
             "MissingVersion", //$NON-NLS-1$
+            "Missing application name/version",
             "Checks that the application name and version are set",
 
             "You should define the version information for your application.\n" +
@@ -241,13 +247,13 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
             Category.CORRECTNESS,
             2,
             Severity.WARNING,
-            ManifestOrderDetector.class,
-            Scope.MANIFEST_SCOPE).setMoreInfo(
+            IMPLEMENTATION).addMoreInfo(
             "http://developer.android.com/tools/publishing/versioning.html#appversioning");
 
     /** Using a resource for attributes that do not allow it */
     public static final Issue ILLEGAL_REFERENCE = Issue.create(
             "IllegalResourceRef", //$NON-NLS-1$
+            "Name and version must be integer or string, not resource",
             "Checks for resource references where only literals are allowed",
 
             "For the `versionCode` attribute, you have to specify an actual integer " +
@@ -258,8 +264,7 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
             Category.CORRECTNESS,
             8,
             Severity.WARNING,
-            ManifestOrderDetector.class,
-            Scope.MANIFEST_SCOPE);
+            IMPLEMENTATION);
 
     /** Constructs a new {@link ManifestOrderDetector} check */
     public ManifestOrderDetector() {

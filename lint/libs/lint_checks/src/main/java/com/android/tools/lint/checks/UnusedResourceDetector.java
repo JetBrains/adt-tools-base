@@ -44,6 +44,7 @@ import com.android.resources.ResourceType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -91,18 +92,25 @@ import lombok.ast.VariableDefinition;
  */
 public class UnusedResourceDetector extends ResourceXmlDetector implements Detector.JavaScanner {
 
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            UnusedResourceDetector.class,
+            EnumSet.of(Scope.MANIFEST, Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES));
+
     /** Unused resources (other than ids). */
-    public static final Issue ISSUE = Issue.create("UnusedResources", //$NON-NLS-1$
+    public static final Issue ISSUE = Issue.create(
+            "UnusedResources", //$NON-NLS-1$
+            "Unused resources",
             "Looks for unused resources",
             "Unused resources make applications larger and slow down builds.",
             Category.PERFORMANCE,
             3,
             Severity.WARNING,
-            UnusedResourceDetector.class,
-            EnumSet.of(Scope.MANIFEST, Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES));
+            IMPLEMENTATION);
 
     /** Unused id's */
-    public static final Issue ISSUE_IDS = Issue.create("UnusedIds", //$NON-NLS-1$
+    public static final Issue ISSUE_IDS = Issue.create(
+            "UnusedIds", //$NON-NLS-1$
+            "Unused id",
             "Looks for unused id's",
             "This resource id definition appears not to be needed since it is not referenced " +
             "from anywhere. Having id definitions, even if unused, is not necessarily a bad " +
@@ -111,8 +119,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
             Category.PERFORMANCE,
             1,
             Severity.WARNING,
-            UnusedResourceDetector.class,
-            EnumSet.of(Scope.MANIFEST, Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES))
+            IMPLEMENTATION)
             .setEnabledByDefault(false);
 
     private Set<String> mDeclarations;

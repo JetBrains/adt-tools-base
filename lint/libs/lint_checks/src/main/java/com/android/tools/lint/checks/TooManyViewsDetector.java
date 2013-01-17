@@ -19,6 +19,7 @@ package com.android.tools.lint.checks;
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Scope;
@@ -34,9 +35,15 @@ import java.util.Collection;
  * Checks whether a root FrameLayout can be replaced with a {@code <merge>} tag.
  */
 public class TooManyViewsDetector extends LayoutDetector {
+
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            TooManyViewsDetector.class,
+            Scope.RESOURCE_FILE_SCOPE);
+
     /** Issue of having too many views in a single layout */
     public static final Issue TOO_MANY = Issue.create(
             "TooManyViews", //$NON-NLS-1$
+            "Layout has too many views",
             "Checks whether a layout has too many views",
             "Using too many views in a single layout is bad for " +
             "performance. Consider using compound drawables or other tricks for " +
@@ -46,12 +53,12 @@ public class TooManyViewsDetector extends LayoutDetector {
             Category.PERFORMANCE,
             1,
             Severity.WARNING,
-            TooManyViewsDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Issue of having too deep hierarchies in layouts */
     public static final Issue TOO_DEEP = Issue.create(
             "TooDeepLayout", //$NON-NLS-1$
+            "Layout hierarchy is too deep",
             "Checks whether a layout hierarchy is too deep",
             "Layouts with too much nesting is bad for performance. " +
             "Consider using a flatter layout (such as `RelativeLayout` or `GridLayout`)." +
@@ -60,8 +67,7 @@ public class TooManyViewsDetector extends LayoutDetector {
             Category.PERFORMANCE,
             1,
             Severity.WARNING,
-            TooManyViewsDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     private static final int MAX_VIEW_COUNT;
     private static final int MAX_DEPTH;

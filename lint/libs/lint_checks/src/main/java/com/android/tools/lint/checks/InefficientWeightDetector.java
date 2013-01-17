@@ -36,6 +36,7 @@ import static com.android.SdkConstants.VIEW_TAG;
 import com.android.annotations.NonNull;
 import com.android.tools.lint.client.api.SdkInfo;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -60,9 +61,14 @@ import java.util.Map;
  */
 public class InefficientWeightDetector extends LayoutDetector {
 
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            InefficientWeightDetector.class,
+            Scope.RESOURCE_FILE_SCOPE);
+
     /** Can a weight be replaced with 0dp instead for better performance? */
     public static final Issue INEFFICIENT_WEIGHT = Issue.create(
             "InefficientWeight", //$NON-NLS-1$
+            "Inefficient layout weight",
             "Looks for inefficient weight declarations in LinearLayouts",
             "When only a single widget in a LinearLayout defines a weight, it is more " +
             "efficient to assign a width/height of `0dp` to it since it will absorb all " +
@@ -71,12 +77,12 @@ public class InefficientWeightDetector extends LayoutDetector {
             Category.PERFORMANCE,
             3,
             Severity.WARNING,
-            InefficientWeightDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Are weights nested? */
     public static final Issue NESTED_WEIGHTS = Issue.create(
             "NestedWeights", //$NON-NLS-1$
+            "Nested layout weights",
             "Looks for nested layout weights, which are costly",
             "Layout weights require a widget to be measured twice. When a LinearLayout with " +
             "non-zero weights is nested inside another LinearLayout with non-zero weights, " +
@@ -84,12 +90,12 @@ public class InefficientWeightDetector extends LayoutDetector {
             Category.PERFORMANCE,
             3,
             Severity.WARNING,
-            InefficientWeightDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Should a LinearLayout set android:baselineAligned? */
     public static final Issue BASELINE_WEIGHTS = Issue.create(
             "DisableBaselineAlignment", //$NON-NLS-1$
+            "Missing `baselineAligned` attribute",
             "Looks for LinearLayouts which should set android:baselineAligned=false",
             "When a LinearLayout is used to distribute the space proportionally between " +
             "nested layouts, the baseline alignment property should be turned off to " +
@@ -97,12 +103,12 @@ public class InefficientWeightDetector extends LayoutDetector {
             Category.PERFORMANCE,
             3,
             Severity.WARNING,
-            InefficientWeightDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Using 0dp on the wrong dimension */
     public static final Issue WRONG_0DP = Issue.create(
             "Suspicious0dp", //$NON-NLS-1$
+            "Suspicious 0dp dimension",
             "Looks for 0dp as the width in a vertical LinearLayout or as the height in a " +
             "horizontal",
 
@@ -116,12 +122,12 @@ public class InefficientWeightDetector extends LayoutDetector {
             Category.CORRECTNESS,
             6,
             Severity.ERROR,
-            InefficientWeightDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Missing explicit orientation */
     public static final Issue ORIENTATION = Issue.create(
             "Orientation", //$NON-NLS-1$
+            "Missing explicit orientation",
             "Checks that LinearLayouts with multiple children set the orientation",
 
             "The default orientation of a LinearLayout is horizontal. It's pretty easy to "
@@ -134,8 +140,7 @@ public class InefficientWeightDetector extends LayoutDetector {
             Category.CORRECTNESS,
             2,
             Severity.ERROR,
-            InefficientWeightDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /**
      * Map from element to whether that element has a non-zero linear layout

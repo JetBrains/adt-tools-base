@@ -48,6 +48,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
@@ -71,6 +72,7 @@ public class ManifestTypoDetector extends Detector implements Detector.XmlScanne
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "ManifestTypo", //$NON-NLS-1$
+            "Typos in manifest tags",
             "Checks for manifest typos",
 
             "This check looks through the manifest, and if it finds any tags " +
@@ -78,8 +80,9 @@ public class ManifestTypoDetector extends Detector implements Detector.XmlScanne
             Category.CORRECTNESS,
             5,
             Severity.WARNING,
-            ManifestTypoDetector.class,
-            Scope.MANIFEST_SCOPE);
+            new Implementation(
+                    ManifestTypoDetector.class,
+                    Scope.MANIFEST_SCOPE));
 
     private static final Set<String> sValidTags;
     static {

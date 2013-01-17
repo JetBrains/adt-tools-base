@@ -23,6 +23,7 @@ import static com.android.SdkConstants.VIEW_FRAGMENT;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Scope;
@@ -42,7 +43,8 @@ public class MissingIdDetector extends LayoutDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "MissingId", //$NON-NLS-1$
-            "Ensures that XML tags like <fragment> specify an id or tag attribute",
+            "Fragments should specify an `id` or `tag`",
+            "Ensures that XML tags like `<fragment>` specify an `id` or `tag` attribute",
 
             "If you do not specify an android:id or an android:tag attribute on a " +
             "<fragment> element, then if the activity is restarted (for example for " +
@@ -60,9 +62,10 @@ public class MissingIdDetector extends LayoutDetector {
             Category.CORRECTNESS,
             5,
             Severity.WARNING,
-            MissingIdDetector.class,
-            Scope.RESOURCE_FILE_SCOPE)
-            .setMoreInfo("http://developer.android.com/guide/components/fragments.html"); //$NON-NLS-1$
+            new Implementation(
+                    MissingIdDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE))
+            .addMoreInfo("http://developer.android.com/guide/components/fragments.html"); //$NON-NLS-1$
 
     /** Constructs a new {@link MissingIdDetector} */
     public MissingIdDetector() {

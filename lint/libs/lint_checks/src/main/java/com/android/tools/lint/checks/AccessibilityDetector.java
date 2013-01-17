@@ -27,6 +27,7 @@ import static com.android.SdkConstants.VALUE_NO;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Scope;
@@ -52,6 +53,7 @@ public class AccessibilityDetector extends LayoutDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "ContentDescription", //$NON-NLS-1$
+            "Image without `contentDescription`",
             "Ensures that image widgets provide a contentDescription",
             "Non-textual widgets like ImageViews and ImageButtons should use the " +
             "`contentDescription` attribute to specify a textual description of " +
@@ -71,8 +73,9 @@ public class AccessibilityDetector extends LayoutDetector {
             Category.A11Y,
             3,
             Severity.WARNING,
-            AccessibilityDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    AccessibilityDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     /** Constructs a new {@link AccessibilityDetector} */
     public AccessibilityDetector() {

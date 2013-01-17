@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -41,21 +42,24 @@ public class MathDetector extends Detector implements Detector.ClassScanner {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "FloatMath", //$NON-NLS-1$
-            "Suggests replacing android.util.FloatMath calls with java.lang.Math",
+            "Using `FloatMath` instead of `Math`",
+            "Suggests replacing `android.util.FloatMath` calls with `java.lang.Math`",
 
-            "In older versions of Android, using android.util.FloatMath was recommended " +
+            "In older versions of Android, using `android.util.FloatMath` was recommended " +
             "for performance reasons when operating on floats. However, on modern hardware " +
             "doubles are just as fast as float (though they take more memory), and in " +
-            "recent versions of Android, FloatMath is actually slower than using java.lang.Math " +
-            "due to the way the JIT optimizes java.lang.Math. Therefore, you should use " +
-            "Math instead of FloatMath if you are only targeting Froyo and above.",
+            "recent versions of Android, `FloatMath` is actually slower than using `java.lang.Math` " +
+            "due to the way the JIT optimizes `java.lang.Math`. Therefore, you should use " +
+            "`Math` instead of `FloatMath` if you are only targeting Froyo and above.",
 
             Category.PERFORMANCE,
             3,
             Severity.WARNING,
-            MathDetector.class,
-            Scope.CLASS_FILE_SCOPE).setMoreInfo(
-               "http://developer.android.com/guide/practices/design/performance.html#avoidfloat"); //$NON-NLS-1$
+            new Implementation(
+                    MathDetector.class,
+                    Scope.CLASS_FILE_SCOPE))
+            .addMoreInfo(
+            "http://developer.android.com/guide/practices/design/performance.html#avoidfloat"); //$NON-NLS-1$
 
     /** Constructs a new {@link MathDetector} check */
     public MathDetector() {

@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
@@ -42,9 +43,14 @@ import lombok.ast.Node;
 public class CommentDetector extends Detector implements Detector.JavaScanner {
     private static final String STOPSHIP_COMMENT = "STOPSHIP"; //$NON-NLS-1$
 
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            CommentDetector.class,
+            Scope.JAVA_FILE_SCOPE);
+
     /** Looks for hidden code */
-    public static final Issue EASTEREGG = Issue.create(
+    public static final Issue EASTER_EGG = Issue.create(
             "EasterEgg", //$NON-NLS-1$
+            "Code contains easter egg",
             "Looks for hidden easter eggs",
             "An \"easter egg\" is code deliberately hidden in the code, both from potential " +
             "users and even from other developers. This lint check looks for code which " +
@@ -52,13 +58,14 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
             Category.SECURITY,
             6,
             Severity.WARNING,
-            CommentDetector.class,
-            Scope.JAVA_FILE_SCOPE).setEnabledByDefault(false);
+            IMPLEMENTATION)
+            .setEnabledByDefault(false);
 
     /** Looks for special comment markers intended to stop shipping the code */
-    public static final Issue STOPSHIP = Issue.create(
+    public static final Issue STOP_SHIP = Issue.create(
             "StopShip", //$NON-NLS-1$
-            "Looks for comment markers of the form \"STOPSHIP\" which indicates that code " +
+            "Code contains `STOPSHIP` marker",
+            "Looks for comment markers of the form `//STOPSHIP` which indicates that code " +
             "should not be released yet",
 
             "Using the comment `// STOPSHIP` can be used to flag code that is incomplete but " +
@@ -67,8 +74,8 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
             Category.CORRECTNESS,
             10,
             Severity.WARNING,
-            CommentDetector.class,
-            Scope.JAVA_FILE_SCOPE).setEnabledByDefault(false);
+            IMPLEMENTATION)
+            .setEnabledByDefault(false);
 
     private static final String ESCAPE_STRING = "\\u002a\\u002f"; //$NON-NLS-1$
 
@@ -174,7 +181,7 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
                             0, ESCAPE_STRING.length())) {
                         Location location = Location.create(context.file, source,
                                 offset + i - 1, offset + i - 1 + ESCAPE_STRING.length());
-                        context.report(EASTEREGG, location,
+                        context.report(EASTER_EGG, location,
                                 "Code might be hidden here; found unicode escape sequence " +
                                 "which is interpreted as comment end, compiled code follows",
                                 null);
@@ -187,7 +194,7 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
                 // TODO: Only flag this issue in release mode??
                 Location location = Location.create(context.file, source,
                         offset + i - 1, offset + i - 1 + STOPSHIP_COMMENT.length());
-                context.report(STOPSHIP, location,
+                context.report(STOP_SHIP, location,
                         "STOPSHIP comment found; points to code which must be fixed prior " +
                         "to release",
                         null);

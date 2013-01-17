@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.DefaultPosition;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Position;
@@ -44,7 +45,9 @@ public class ExtraTextDetector extends ResourceXmlDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "ExtraText", //$NON-NLS-1$
-            "Looks for extraneous text in layout files",
+            "Extraneous text in resource files",
+            "Looks for extraneous text in resource files",
+
             "Layout resource files should only contain elements and attributes. Any XML " +
             "text content found in the file is likely accidental (and potentially " +
             "dangerous if the text resembles XML and the developer believes the text " +
@@ -52,8 +55,10 @@ public class ExtraTextDetector extends ResourceXmlDetector {
             Category.CORRECTNESS,
             3,
             Severity.WARNING,
-            ExtraTextDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    ExtraTextDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE)
+            );
 
     /** Constructs a new detector */
     public ExtraTextDetector() {

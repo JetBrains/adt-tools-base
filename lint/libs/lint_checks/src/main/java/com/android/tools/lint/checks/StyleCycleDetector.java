@@ -24,6 +24,7 @@ import static com.android.SdkConstants.TAG_STYLE;
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
@@ -44,14 +45,17 @@ public class StyleCycleDetector extends ResourceXmlDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "StyleCycle", //$NON-NLS-1$
+            "Cycle in style definitions",
             "Looks for cycles in style definitions",
             "There should be no cycles in style definitions as this can lead to runtime " +
             "exceptions.",
             Category.CORRECTNESS,
             8,
             Severity.FATAL,
-            StyleCycleDetector.class,
-            Scope.RESOURCE_FILE_SCOPE).setMoreInfo(
+            new Implementation(
+                    StyleCycleDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE))
+            .addMoreInfo(
             "http://developer.android.com/guide/topics/ui/themes.html#Inheritance"); //$NON-NLS-1$
 
     /** Constructs a new {@link StyleCycleDetector} */

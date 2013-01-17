@@ -24,6 +24,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -44,7 +45,8 @@ public class HardcodedDebugModeDetector extends Detector implements Detector.Xml
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "HardcodedDebugMode", //$NON-NLS-1$
-            "Checks for hardcoded values of android:debuggable in the manifest",
+            "Hardcoded value of `android:debuggable` in the manifest",
+            "Checks for hardcoded values of `android:debuggable` in the manifest",
 
             "It's best to leave out the `android:debuggable` attribute from the manifest. " +
             "If you do, then the tools will automatically insert `android:debuggable=true` when " +
@@ -58,8 +60,9 @@ public class HardcodedDebugModeDetector extends Detector implements Detector.Xml
             Category.SECURITY,
             5,
             Severity.WARNING,
-            HardcodedDebugModeDetector.class,
-            Scope.MANIFEST_SCOPE);
+            new Implementation(
+                    HardcodedDebugModeDetector.class,
+                    Scope.MANIFEST_SCOPE));
 
     /** Constructs a new {@link HardcodedDebugModeDetector} check */
     public HardcodedDebugModeDetector() {

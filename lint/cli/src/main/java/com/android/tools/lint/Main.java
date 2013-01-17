@@ -19,6 +19,7 @@ package com.android.tools.lint;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.tools.lint.client.api.IssueRegistry.LINT_ERROR;
 import static com.android.tools.lint.client.api.IssueRegistry.PARSER_ERROR;
+import static com.android.tools.lint.detector.api.Issue.OutputFormat.TEXT;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
 import com.android.annotations.NonNull;
@@ -820,7 +821,7 @@ public class Main extends LintClient {
     }
 
     private static void listIssue(PrintStream out, Issue issue) {
-        out.print(wrapArg("\"" + issue.getId() + "\": " + issue.getDescription()));
+        out.print(wrapArg("\"" + issue.getId() + "\": " + issue.getDescription(TEXT)));
     }
 
     private static void showIssues(IssueRegistry registry) {
@@ -867,7 +868,7 @@ public class Main extends LintClient {
             System.out.print('-');
         }
         System.out.println();
-        System.out.println(wrap("Summary: " + issue.getDescription()));
+        System.out.println(wrap("Summary: " + issue.getDescription(TEXT)));
         System.out.println("Priority: " + issue.getPriority() + " / 10");
         System.out.println("Severity: " + issue.getDefaultSeverity().getDescription());
         System.out.println("Category: " + issue.getCategory().getFullName());
@@ -878,12 +879,14 @@ public class Main extends LintClient {
                     issue.getId()));
         }
 
-        if (issue.getExplanation() != null) {
-            System.out.println();
-            System.out.println(wrap(issue.getExplanationAsSimpleText()));
-        }
-        if (issue.getMoreInfo() != null) {
-            System.out.println("More information: " + issue.getMoreInfo());
+        System.out.println();
+        System.out.println(wrap(issue.getExplanation(TEXT)));
+        List<String> moreInfo = issue.getMoreInfo();
+        if (!moreInfo.isEmpty()) {
+            System.out.println("More information: ");
+            for (String uri : moreInfo) {
+                System.out.println(uri);
+            }
         }
     }
 

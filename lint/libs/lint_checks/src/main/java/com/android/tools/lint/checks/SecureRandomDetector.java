@@ -22,6 +22,7 @@ import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
@@ -49,18 +50,20 @@ import java.util.List;
 public class SecureRandomDetector extends Detector implements ClassScanner {
     /** Unregistered activities and services */
     public static final Issue ISSUE = Issue.create(
-        "SecureRandom", //$NON-NLS-1$
-        "Looks for suspicious usage of the SecureRandom class",
+            "SecureRandom", //$NON-NLS-1$
+            "Using a fixed seed with `SecureRandom`",
+            "Looks for suspicious usage of the SecureRandom class",
 
-        "Specifying a fixed seed will cause the instance to return a predictable sequence " +
-        "of numbers. This may be useful for testing but it is not appropriate for secure use.",
+            "Specifying a fixed seed will cause the instance to return a predictable sequence " +
+            "of numbers. This may be useful for testing but it is not appropriate for secure use.",
 
-        Category.PERFORMANCE,
-        9,
-        Severity.WARNING,
-        SecureRandomDetector.class,
-        Scope.CLASS_FILE_SCOPE).
-        setMoreInfo("http://developer.android.com/reference/java/security/SecureRandom.html");
+            Category.PERFORMANCE,
+            9,
+            Severity.WARNING,
+            new Implementation(
+                    SecureRandomDetector.class,
+                    Scope.CLASS_FILE_SCOPE))
+            .addMoreInfo("http://developer.android.com/reference/java/security/SecureRandom.html");
 
     private static final String SET_SEED = "setSeed"; //$NON-NLS-1$
     private static final String OWNER_SECURE_RANDOM = "java/security/SecureRandom"; //$NON-NLS-1$

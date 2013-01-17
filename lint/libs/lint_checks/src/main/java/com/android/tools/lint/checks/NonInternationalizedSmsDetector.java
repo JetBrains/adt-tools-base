@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
@@ -41,6 +42,7 @@ public class NonInternationalizedSmsDetector extends Detector implements Detecto
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "UnlocalizedSms", //$NON-NLS-1$
+            "SMS phone number missing country code",
             "Looks for code sending text messages to unlocalized phone numbers",
 
             "SMS destination numbers must start with a country code or the application code " +
@@ -50,8 +52,9 @@ public class NonInternationalizedSmsDetector extends Detector implements Detecto
             Category.CORRECTNESS,
             5,
             Severity.WARNING,
-            NonInternationalizedSmsDetector.class,
-            Scope.JAVA_FILE_SCOPE);
+            new Implementation(
+                    NonInternationalizedSmsDetector.class,
+                    Scope.JAVA_FILE_SCOPE));
 
 
     /** Constructs a new {@link NonInternationalizedSmsDetector} check */

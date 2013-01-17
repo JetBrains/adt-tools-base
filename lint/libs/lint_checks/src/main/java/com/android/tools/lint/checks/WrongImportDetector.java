@@ -19,6 +19,7 @@ package com.android.tools.lint.checks;
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
@@ -48,7 +49,9 @@ import lombok.ast.Node;
  */
 public class WrongImportDetector extends Detector implements Detector.JavaScanner {
     /** Is android.R being imported? */
-    public static final Issue ISSUE = Issue.create("SuspiciousImport", //$NON-NLS-1$
+    public static final Issue ISSUE = Issue.create(
+            "SuspiciousImport", //$NON-NLS-1$
+            "'`import android.R`' statement",
             "Checks for 'import android.R' statements, which are usually accidental",
             "Importing `android.R` is usually not intentional; it sometimes happens when " +
             "you use an IDE and ask it to automatically add imports at a time when your " +
@@ -60,8 +63,9 @@ public class WrongImportDetector extends Detector implements Detector.JavaScanne
             Category.CORRECTNESS,
             9,
             Severity.WARNING,
-            WrongImportDetector.class,
-            Scope.JAVA_FILE_SCOPE);
+            new Implementation(
+                    WrongImportDetector.class,
+                    Scope.JAVA_FILE_SCOPE));
 
     /** Constructs a new {@link WrongImportDetector} check */
     public WrongImportDetector() {

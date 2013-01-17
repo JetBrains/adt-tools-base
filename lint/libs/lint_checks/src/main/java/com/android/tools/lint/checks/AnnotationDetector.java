@@ -24,6 +24,7 @@ import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
@@ -61,6 +62,7 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
     /** Placing SuppressLint on a local variable doesn't work for class-file based checks */
     public static final Issue ISSUE = Issue.create(
             "LocalSuppress", //$NON-NLS-1$
+            "@SuppressLint on invalid element",
             "Looks for @SuppressLint annotations in locations where it doesn't work for class based checks",
 
             "The `@SuppressAnnotation` is used to suppress Lint warnings in Java files. However, " +
@@ -74,8 +76,9 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
             Category.CORRECTNESS,
             3,
             Severity.ERROR,
-            AnnotationDetector.class,
-            Scope.JAVA_FILE_SCOPE);
+            new Implementation(
+                    AnnotationDetector.class,
+                    Scope.JAVA_FILE_SCOPE));
 
     /** Constructs a new {@link AnnotationDetector} check */
     public AnnotationDetector() {
@@ -162,7 +165,7 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
             // Special-case the ApiDetector issue, since it does both source file analysis
             // only on field references, and class file analysis on the rest, so we allow
             // annotations outside of methods only on fields
-            if (issue != null && !issue.getScope().contains(Scope.JAVA_FILE)
+            if (issue != null && !issue.getImplementation().getScope().contains(Scope.JAVA_FILE)
                     || issue == ApiDetector.UNSUPPORTED) {
                 // Ensure that this isn't a field
                 Node parent = node.getParent();

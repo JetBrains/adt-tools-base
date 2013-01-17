@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -53,6 +54,8 @@ public abstract class IssueRegistry {
     protected IssueRegistry() {
     }
 
+    private static final Implementation DUMMY_IMPLEMENTATION = new Implementation(Detector.class,
+            EnumSet.noneOf(Scope.class));
     /**
      * Issue reported by lint (not a specific detector) when it cannot even
      * parse an XML file prior to analysis
@@ -60,14 +63,14 @@ public abstract class IssueRegistry {
     @NonNull
     public static final Issue PARSER_ERROR = Issue.create(
             "ParserError", //$NON-NLS-1$
+            "Parser Errors",
             "Finds files that contain fatal parser errors",
             "Lint will ignore any files that contain fatal parsing errors. These may contain " +
             "other errors, or contain code which affects issues in other files.",
             Category.CORRECTNESS,
             10,
             Severity.ERROR,
-            Detector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            DUMMY_IMPLEMENTATION);
 
     /**
      * Issue reported by lint for various other issues which prevents lint from
@@ -76,6 +79,7 @@ public abstract class IssueRegistry {
     @NonNull
     public static final Issue LINT_ERROR = Issue.create(
             "LintError", //$NON-NLS-1$
+            "Lint Failure",
             "Issues related to running lint itself, such as failure to read files, etc",
             "This issue type represents a problem running lint itself. Examples include " +
             "failure to find bytecode for source files (which means certain detectors " +
@@ -87,8 +91,22 @@ public abstract class IssueRegistry {
             Category.LINT,
             10,
             Severity.ERROR,
-            Detector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            DUMMY_IMPLEMENTATION);
+
+    /**
+     * Issue reported when lint is canceled
+     */
+    @NonNull
+    public static final Issue CANCELLED = Issue.create(
+            "LintCanceled", //$NON-NLS-1$
+            "Lint Canceled",
+            "Lint canceled by user",
+            "Lint canceled by user; the issue report may not be complete.",
+
+            Category.LINT,
+            0,
+            Severity.INFORMATIONAL,
+            DUMMY_IMPLEMENTATION);
 
     /**
      * Returns the list of issues that can be found by all known detectors.
@@ -127,7 +145,7 @@ public abstract class IssueRegistry {
                 list = new ArrayList<Issue>(initialSize);
                 for (Issue issue : issues) {
                     // Determine if the scope matches
-                    if (issue.isAdequate(scope)) {
+                    if (issue.getImplementation().isAdequate(scope)) {
                         list.add(issue);
                     }
                 }
@@ -169,15 +187,16 @@ public abstract class IssueRegistry {
                 new HashMap<Class<? extends Detector>, EnumSet<Scope>>();
 
         for (Issue issue : issues) {
-            Class<? extends Detector> detectorClass = issue.getDetectorClass();
-            EnumSet<Scope> issueScope = issue.getScope();
+            Implementation implementation = issue.getImplementation();
+            Class<? extends Detector> detectorClass = implementation.getDetectorClass();
+            EnumSet<Scope> issueScope = implementation.getScope();
             if (!detectorClasses.contains(detectorClass)) {
                 // Determine if the issue is enabled
                 if (!configuration.isEnabled(issue)) {
                     continue;
                 }
 
-                assert issue.isAdequate(scope); // Ensured by getIssuesForScope above
+                assert implementation.isAdequate(scope); // Ensured by getIssuesForScope above
 
                 detectorClass = client.replaceDetector(detectorClass);
 

@@ -37,6 +37,7 @@ import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -73,54 +74,61 @@ import java.util.Set;
 public class MissingClassDetector extends LayoutDetector implements ClassScanner {
     /** Manifest-referenced classes missing from the project or libraries */
     public static final Issue MISSING = Issue.create(
-        "MissingRegistered", //$NON-NLS-1$
-        "Ensures that classes referenced in the manifest are present in the project or libraries",
+            "MissingRegistered", //$NON-NLS-1$
+            "Missing registered class",
+            "Ensures that classes referenced in the manifest are present in the project or libraries",
 
-        "If a class is referenced in the manifest, it must also exist in the project (or in one " +
-        "of the libraries included by the project. This check helps uncover typos in " +
-        "registration names, or attempts to rename or move classes without updating the " +
-        "manifest file properly.",
+            "If a class is referenced in the manifest, it must also exist in the project (or in one " +
+            "of the libraries included by the project. This check helps uncover typos in " +
+            "registration names, or attempts to rename or move classes without updating the " +
+            "manifest file properly.",
 
-        Category.CORRECTNESS,
-        8,
-        Severity.ERROR,
-        MissingClassDetector.class,
-        EnumSet.of(Scope.MANIFEST, Scope.CLASS_FILE, Scope.JAVA_LIBRARIES, Scope.RESOURCE_FILE))
-        .setMoreInfo("http://developer.android.com/guide/topics/manifest/manifest-intro.html"); //$NON-NLS-1$
+            Category.CORRECTNESS,
+            8,
+            Severity.ERROR,
+            new Implementation(
+                    MissingClassDetector.class,
+                    EnumSet.of(Scope.MANIFEST, Scope.CLASS_FILE,
+                            Scope.JAVA_LIBRARIES, Scope.RESOURCE_FILE)))
+            .addMoreInfo("http://developer.android.com/guide/topics/manifest/manifest-intro.html"); //$NON-NLS-1$
 
     /** Are activity, service, receiver etc subclasses instantiatable? */
     public static final Issue INSTANTIATABLE = Issue.create(
-        "Instantiatable", //$NON-NLS-1$
-        "Ensures that classes registered in the manifest file are instantiatable",
+            "Instantiatable", //$NON-NLS-1$
+            "Registered class is not instantiatable",
+            "Ensures that classes registered in the manifest file are instantiatable",
 
-        "Activities, services, broadcast receivers etc. registered in the manifest file " +
-        "must be \"instantiatable\" by the system, which means that the class must be " +
-        "public, it must have an empty public constructor, and if it's an inner class, " +
-        "it must be a static inner class.",
+            "Activities, services, broadcast receivers etc. registered in the manifest file " +
+            "must be \"instantiatable\" by the system, which means that the class must be " +
+            "public, it must have an empty public constructor, and if it's an inner class, " +
+            "it must be a static inner class.",
 
-        Category.CORRECTNESS,
-        6,
-        Severity.WARNING,
-        MissingClassDetector.class,
-        Scope.CLASS_FILE_SCOPE);
+            Category.CORRECTNESS,
+            6,
+            Severity.WARNING,
+            new Implementation(
+                    MissingClassDetector.class,
+                    Scope.CLASS_FILE_SCOPE));
 
     /** Is the right character used for inner class separators? */
     public static final Issue INNERCLASS = Issue.create(
-        "InnerclassSeparator", //$NON-NLS-1$
-        "Ensures that inner classes are referenced using '$' instead of '.' in class names",
+            "InnerclassSeparator", //$NON-NLS-1$
+            "Inner classes should use `$` rather than `.`",
+            "Ensures that inner classes are referenced using '$' instead of '.' in class names",
 
-        "When you reference an inner class in a manifest file, you must use '$' instead of '.' " +
-        "as the separator character, i.e. Outer$Inner instead of Outer.Inner.\n" +
-        "\n" +
-        "(If you get this warning for a class which is not actually an inner class, it's " +
-        "because you are using uppercase characters in your package name, which is not " +
-        "conventional.)",
+            "When you reference an inner class in a manifest file, you must use '$' instead of '.' " +
+            "as the separator character, i.e. Outer$Inner instead of Outer.Inner.\n" +
+            "\n" +
+            "(If you get this warning for a class which is not actually an inner class, it's " +
+            "because you are using uppercase characters in your package name, which is not " +
+            "conventional.)",
 
-        Category.CORRECTNESS,
-        3,
-        Severity.WARNING,
-        MissingClassDetector.class,
-        Scope.MANIFEST_SCOPE);
+            Category.CORRECTNESS,
+            3,
+            Severity.WARNING,
+            new Implementation(
+                    MissingClassDetector.class,
+                    Scope.MANIFEST_SCOPE));
 
     private Map<String, Location.Handle> mReferencedClasses;
     private Set<String> mCustomViews;

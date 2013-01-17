@@ -40,6 +40,7 @@ import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LayoutDetector;
@@ -91,7 +92,9 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "Overdraw", //$NON-NLS-1$
+            "Overdraw: Painting regions more than once",
             "Looks for overdraw issues (where a view is painted only to be fully painted over)",
+
             "If you set a background drawable on a root view, then you should use a " +
             "custom theme where the theme background is null. Otherwise, the theme background " +
             "will be painted first, only to have your custom background completely cover it; " +
@@ -115,8 +118,9 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
             Category.PERFORMANCE,
             3,
             Severity.WARNING,
-            OverdrawDetector.class,
-            EnumSet.of(Scope.MANIFEST, Scope.JAVA_FILE, Scope.ALL_RESOURCE_FILES));
+            new Implementation(
+                    OverdrawDetector.class,
+                    EnumSet.of(Scope.MANIFEST, Scope.JAVA_FILE, Scope.ALL_RESOURCE_FILES)));
 
     /** Mapping from FQN activity names to theme names registered in the manifest */
     private Map<String, String> mActivityToTheme;

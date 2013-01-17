@@ -21,6 +21,7 @@ import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
@@ -38,20 +39,22 @@ public class HandlerDetector extends Detector implements ClassScanner {
 
     /** Potentially leaking handlers */
     public static final Issue ISSUE = Issue.create(
-        "HandlerLeak", //$NON-NLS-1$
-        "Ensures that Handler classes do not hold on to a reference to an outer class",
+            "HandlerLeak", //$NON-NLS-1$
+            "Handler reference leaks",
+            "Ensures that Handler classes do not hold on to a reference to an outer class",
 
-        "In Android, Handler classes should be static or leaks might occur. " +
-        "Messages enqueued on the application thread's MessageQueue also retain their " +
-        "target Handler. If the Handler is an inner class, its outer class will be " +
-        "retained as well. To avoid leaking the outer class, declare the Handler as a " +
-        "static nested class with a WeakReference to its outer class.",
+            "In Android, Handler classes should be static or leaks might occur. " +
+            "Messages enqueued on the application thread's MessageQueue also retain their " +
+            "target Handler. If the Handler is an inner class, its outer class will be " +
+            "retained as well. To avoid leaking the outer class, declare the Handler as a " +
+            "static nested class with a WeakReference to its outer class.",
 
-        Category.PERFORMANCE,
-        4,
-        Severity.WARNING,
-        HandlerDetector.class,
-        Scope.CLASS_FILE_SCOPE);
+            Category.PERFORMANCE,
+            4,
+            Severity.WARNING,
+            new Implementation(
+                    HandlerDetector.class,
+                    Scope.CLASS_FILE_SCOPE));
 
     /** Constructs a new {@link HandlerDetector} */
     public HandlerDetector() {

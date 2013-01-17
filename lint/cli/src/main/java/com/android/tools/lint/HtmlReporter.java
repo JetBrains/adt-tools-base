@@ -18,6 +18,7 @@ package com.android.tools.lint;
 
 import static com.android.SdkConstants.DOT_JPG;
 import static com.android.SdkConstants.DOT_PNG;
+import static com.android.tools.lint.detector.api.Issue.OutputFormat.*;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
@@ -169,6 +170,8 @@ public class HtmlReporter extends Reporter {
                 // Explain this issue
                 mWriter.write("<div class=\"id\"><a href=\"#\" title=\"Return to top\">");                     //$NON-NLS-1$
                 mWriter.write(issue.getId());
+                mWriter.write(": ");                                     //$NON-NLS-1$
+                mWriter.write(issue.getBriefDescription(HTML));
                 mWriter.write("</a><div class=\"issueSeparator\"></div>\n"); //$NON-NLS-1$
                 mWriter.write("</div>\n");                               //$NON-NLS-1$
 
@@ -360,7 +363,7 @@ public class HtmlReporter extends Reporter {
 
         mWriter.write("<div class=\"summary\">\n");              //$NON-NLS-1$
         mWriter.write("Explanation: ");
-        String description = issue.getDescription();
+        String description = issue.getDescription(HTML);
         mWriter.write(description);
         if (!description.isEmpty()
                 && Character.isLetter(description.charAt(description.length() - 1))) {
@@ -368,18 +371,31 @@ public class HtmlReporter extends Reporter {
         }
         mWriter.write("</div>\n");                               //$NON-NLS-1$
         mWriter.write("<div class=\"explanation\">\n");          //$NON-NLS-1$
-        String explanationHtml = issue.getExplanationAsHtml();
+        String explanationHtml = issue.getExplanation(HTML);
         mWriter.write(explanationHtml);
         mWriter.write("\n</div>\n");                             //$NON-NLS-1$;
-        if (issue.getMoreInfo() != null) {
-            mWriter.write("<br/>");                                  //$NON-NLS-1$
+        List<String> moreInfo = issue.getMoreInfo();
+        if (moreInfo != null) {
+            mWriter.write("<br/>");                              //$NON-NLS-1$
             mWriter.write("<div class=\"moreinfo\">");           //$NON-NLS-1$
             mWriter.write("More info: ");
-            mWriter.write("<a href=\"");                         //$NON-NLS-1$
-            mWriter.write(issue.getMoreInfo());
-            mWriter.write("\">");                                //$NON-NLS-1$
-            mWriter.write(issue.getMoreInfo());
-            mWriter.write("</a></div>\n");                       //$NON-NLS-1$
+            int count = moreInfo.size();
+            if (count > 1) {
+                mWriter.write("<ul>");                           //$NON-NLS-1$
+            }
+            for (String uri : moreInfo) {
+                if (count > 1) {
+                    mWriter.write("<li>");                       //$NON-NLS-1$
+                }
+                mWriter.write("<a href=\"");                     //$NON-NLS-1$
+                mWriter.write(uri);
+                mWriter.write("\">");                            //$NON-NLS-1$
+                mWriter.write(uri);
+                mWriter.write("</a></div>\n");                   //$NON-NLS-1$
+            }
+            if (count > 1) {
+                mWriter.write("</ul>");                          //$NON-NLS-1$
+            }
         }
 
         mWriter.write("<br/>");                                  //$NON-NLS-1$
@@ -560,6 +576,8 @@ public class HtmlReporter extends Reporter {
             mWriter.write(issue.getId());
             mWriter.write("\">");                                    //$NON-NLS-1$
             mWriter.write(issue.getId());
+            mWriter.write(": ");                                     //$NON-NLS-1$
+            mWriter.write(issue.getBriefDescription(HTML));
             mWriter.write("</a>\n");                                 //$NON-NLS-1$
 
             mWriter.write("</td></tr>\n");

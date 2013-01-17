@@ -48,6 +48,7 @@ import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LayoutDetector;
@@ -85,9 +86,10 @@ public class RequiredAttributeDetector extends LayoutDetector implements Detecto
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "RequiredSize", //$NON-NLS-1$
-            "Ensures that the layout_width and layout_height are specified for all views",
+            "Missing `layout_width` or `layout_height` attributes",
+            "Ensures that the `layout_width` and `layout_height` are specified for all views",
 
-            "All views must specify an explicit layout_width and layout_height attribute. " +
+            "All views must specify an explicit `layout_width` and `layout_height` attribute. " +
             "There is a runtime check for this, so if you fail to specify a size, an exception " +
             "is thrown at runtime.\n" +
             "\n" +
@@ -96,8 +98,9 @@ public class RequiredAttributeDetector extends LayoutDetector implements Detecto
             Category.CORRECTNESS,
             4,
             Severity.ERROR,
-            RequiredAttributeDetector.class,
-            EnumSet.of(Scope.JAVA_FILE, Scope.ALL_RESOURCE_FILES));
+            new Implementation(
+                    RequiredAttributeDetector.class,
+                    EnumSet.of(Scope.JAVA_FILE, Scope.ALL_RESOURCE_FILES)));
 
     /** Map from each style name to parent style */
     @Nullable private Map<String, String> mStyleParents;

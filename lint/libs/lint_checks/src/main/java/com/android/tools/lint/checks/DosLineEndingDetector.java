@@ -18,6 +18,7 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Location;
@@ -35,6 +36,7 @@ public class DosLineEndingDetector extends LayoutDetector {
     /** Detects mangled DOS line ending documents */
     public static final Issue ISSUE = Issue.create(
             "MangledCRLF", //$NON-NLS-1$
+            "Mangled file line endings",
             "Checks that files with DOS line endings are consistent",
 
             "On Windows, line endings are typically recorded as carriage return plus " +
@@ -48,9 +50,10 @@ public class DosLineEndingDetector extends LayoutDetector {
             Category.CORRECTNESS,
             2,
             Severity.ERROR,
-            DosLineEndingDetector.class,
-            Scope.RESOURCE_FILE_SCOPE)
-            .setMoreInfo("https://bugs.eclipse.org/bugs/show_bug.cgi?id=375421"); //$NON-NLS-1$
+            new Implementation(
+                    DosLineEndingDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE))
+            .addMoreInfo("https://bugs.eclipse.org/bugs/show_bug.cgi?id=375421"); //$NON-NLS-1$
 
      /** Constructs a new {@link DosLineEndingDetector} */
     public DosLineEndingDetector() {

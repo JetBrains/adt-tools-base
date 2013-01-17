@@ -25,6 +25,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -48,6 +49,7 @@ public class SystemPermissionsDetector extends Detector implements Detector.XmlS
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "ProtectedPermissions", //$NON-NLS-1$
+            "Using system app permission",
             "Looks for permissions that are only granted to system apps",
 
             "Permissions with the protection level signature or signatureOrSystem are only " +
@@ -57,8 +59,9 @@ public class SystemPermissionsDetector extends Detector implements Detector.XmlS
             Category.CORRECTNESS,
             5,
             Severity.ERROR,
-            SystemPermissionsDetector.class,
-            EnumSet.of(Scope.MANIFEST));
+            new Implementation(
+                    SystemPermissionsDetector.class,
+                    EnumSet.of(Scope.MANIFEST)));
 
     // List of permissions have the protection levels signature or systemOrSignature.
     // This list must be sorted alphabetically.

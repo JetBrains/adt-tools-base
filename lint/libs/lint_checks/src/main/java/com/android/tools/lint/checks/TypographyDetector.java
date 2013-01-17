@@ -25,6 +25,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
@@ -47,9 +48,15 @@ import java.util.regex.Pattern;
  * Checks for various typographical issues in string definitions.
  */
 public class TypographyDetector extends ResourceXmlDetector {
+
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            TypographyDetector.class,
+            Scope.RESOURCE_FILE_SCOPE);
+
     /** Replace hyphens with dashes? */
     public static final Issue DASHES = Issue.create(
             "TypographyDashes", //$NON-NLS-1$
+            "Hyphen can be replaced with dash",
             "Looks for usages of hyphens which can be replaced by n dash and m dash characters",
             "The \"n dash\" (\u2013, &#8211;) and the \"m dash\" (\u2014, &#8212;) " +
             "characters are used for ranges (n dash) and breaks (m dash). Using these " +
@@ -58,13 +65,13 @@ public class TypographyDetector extends ResourceXmlDetector {
             Category.TYPOGRAPHY,
             5,
             Severity.WARNING,
-            TypographyDetector.class,
-            Scope.RESOURCE_FILE_SCOPE).
-            setMoreInfo("http://en.wikipedia.org/wiki/Dash"); //$NON-NLS-1$
+            IMPLEMENTATION).
+            addMoreInfo("http://en.wikipedia.org/wiki/Dash"); //$NON-NLS-1$
 
     /** Replace dumb quotes with smart quotes? */
     public static final Issue QUOTES = Issue.create(
             "TypographyQuotes", //$NON-NLS-1$
+            "Straight quotes can be replaced with curvy quotes",
             "Looks for straight quotes which can be replaced by curvy quotes",
             "Straight single quotes and double quotes, when used as a pair, can be replaced " +
             "by \"curvy quotes\" (or directional quotes). This can make the text more " +
@@ -77,9 +84,8 @@ public class TypographyDetector extends ResourceXmlDetector {
             Category.TYPOGRAPHY,
             5,
             Severity.WARNING,
-            TypographyDetector.class,
-            Scope.RESOURCE_FILE_SCOPE).
-            setMoreInfo("http://en.wikipedia.org/wiki/Quotation_mark"). //$NON-NLS-1$
+            IMPLEMENTATION).
+            addMoreInfo("http://en.wikipedia.org/wiki/Quotation_mark"). //$NON-NLS-1$
             // This feature is apparently controversial: recent apps have started using
             // straight quotes to avoid inconsistencies. Disabled by default for now.
             setEnabledByDefault(false);
@@ -87,6 +93,7 @@ public class TypographyDetector extends ResourceXmlDetector {
     /** Replace fraction strings with fraction characters? */
     public static final Issue FRACTIONS = Issue.create(
             "TypographyFractions", //$NON-NLS-1$
+            "Fraction string can be replaced with fraction character",
             "Looks for fraction strings which can be replaced with a fraction character",
             "You can replace certain strings, such as 1/2, and 1/4, with dedicated " +
             "characters for these, such as \u00BD (&#189;) and \00BC (&#188;). " +
@@ -94,26 +101,26 @@ public class TypographyDetector extends ResourceXmlDetector {
             Category.TYPOGRAPHY,
             5,
             Severity.WARNING,
-            TypographyDetector.class,
-            Scope.RESOURCE_FILE_SCOPE).
-            setMoreInfo("http://en.wikipedia.org/wiki/Number_Forms"); //$NON-NLS-1$
+            IMPLEMENTATION).
+            addMoreInfo("http://en.wikipedia.org/wiki/Number_Forms"); //$NON-NLS-1$
 
     /** Replace ... with the ellipsis character? */
     public static final Issue ELLIPSIS = Issue.create(
             "TypographyEllipsis", //$NON-NLS-1$
+            "Ellipsis string can be replaced with ellipsis character",
             "Looks for ellipsis strings (...) which can be replaced with an ellipsis character",
             "You can replace the string \"...\" with a dedicated ellipsis character, " +
             "ellipsis character (\u2026, &#8230;). This can help make the text more readable.",
             Category.TYPOGRAPHY,
             5,
             Severity.WARNING,
-            TypographyDetector.class,
-            Scope.RESOURCE_FILE_SCOPE).
-            setMoreInfo("http://en.wikipedia.org/wiki/Ellipsis"); //$NON-NLS-1$
+            IMPLEMENTATION).
+            addMoreInfo("http://en.wikipedia.org/wiki/Ellipsis"); //$NON-NLS-1$
 
     /** The main issue discovered by this detector */
     public static final Issue OTHER = Issue.create(
             "TypographyOther", //$NON-NLS-1$
+            "Other typographical problems",
             "Looks for miscellaneous typographical problems like replacing (c) with \u00A9",
             "This check looks for miscellaneous typographical problems and offers replacement " +
             "sequences that will make the text easier to read and your application more " +
@@ -121,8 +128,7 @@ public class TypographyDetector extends ResourceXmlDetector {
             Category.TYPOGRAPHY,
             3,
             Severity.WARNING,
-            TypographyDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     private static final String GRAVE_QUOTE_MESSAGE =
         "Avoid quoting with grave accents; use apostrophes or better yet directional quotes instead";
