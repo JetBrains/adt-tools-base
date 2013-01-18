@@ -504,8 +504,10 @@ class MergerXmlUtils {
 
                 if (name1 && name2) {
                     return 0;
-                } else if (name1 || name2) {
+                } else if (name1) {
                     return -1;  // name is always first
+                } else if (name2) {
+                    return  1;  // name is always first
                 } else {
                     return s1.compareTo(s2);
                 }
