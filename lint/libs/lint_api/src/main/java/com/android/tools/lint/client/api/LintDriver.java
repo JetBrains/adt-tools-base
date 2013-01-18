@@ -848,16 +848,22 @@ public class LintDriver {
             if (parser != null) {
                 context.document = parser.parseXml(context);
                 if (context.document != null) {
-                    project.readManifest(context.document);
+                    try {
+                        project.readManifest(context.document);
 
-                    if ((!project.isLibrary() || (main != null && main.isMergingManifests()))
-                            && mScope.contains(Scope.MANIFEST)) {
-                        List<Detector> detectors = mScopeDetectors.get(Scope.MANIFEST);
-                        if (detectors != null) {
-                            XmlVisitor v = new XmlVisitor(parser, detectors);
-                            fireEvent(EventType.SCANNING_FILE, context);
-                            v.visitFile(context, manifestFile);
+                        if ((!project.isLibrary() || (main != null && main.isMergingManifests()))
+                                && mScope.contains(Scope.MANIFEST)) {
+                            List<Detector> detectors = mScopeDetectors.get(Scope.MANIFEST);
+                            if (detectors != null) {
+                                XmlVisitor v = new XmlVisitor(parser, detectors);
+                                fireEvent(EventType.SCANNING_FILE, context);
+                                v.visitFile(context, manifestFile);
+                            }
                         }
+                    } finally {
+                      if (context.document != null) { // else: freed by XmlVisitor above
+                          parser.dispose(context, context.document);
+                      }
                     }
                 }
             }

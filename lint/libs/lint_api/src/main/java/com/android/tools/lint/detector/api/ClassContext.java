@@ -666,7 +666,7 @@ public class ClassContext extends Context {
         StringBuilder sb = new StringBuilder(fqcn.length());
         String prev = null;
         for (String part : Splitter.on('.').split(fqcn)) {
-            if (prev != null) {
+            if (prev != null && prev.length() > 0) {
                 if (Character.isUpperCase(prev.charAt(0))) {
                     sb.append('$');
                 } else {

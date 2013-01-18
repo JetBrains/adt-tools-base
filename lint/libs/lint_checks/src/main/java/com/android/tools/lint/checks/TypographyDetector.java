@@ -431,8 +431,31 @@ public class TypographyDetector extends ResourceXmlDetector {
      *         offsets in the edit objects are relative to the text node.
      */
     public static List<ReplaceEdit> getEdits(String issueId, String message, Node textNode) {
+      return getEdits(issueId, message, textNode.getNodeValue());
+    }
+
+  /**
+   * Returns a list of edits to be applied to fix the suggestion made by the
+   * given warning. The specific issue id and message should be the message
+   * provided by this detector in an earlier run.
+   * <p>
+   * This is intended to help tools implement automatic fixes of these
+   * warnings. The reason only the message and issue id can be provided
+   * instead of actual state passed in the data field to a reporter is that
+   * fix operation can be run much later than the lint is processed (for
+   * example, in a subsequent run of the IDE when only the warnings have been
+   * persisted),
+   *
+   * @param issueId the issue id, which should be the id for one of the
+   *            typography issues
+   * @param message the actual error message, which should be a message
+   *            provided by this detector
+   * @param text the text of the XML node where the warning appeared
+   * @return a list of edits, which is never null but could be empty. The
+   *         offsets in the edit objects are relative to the text node.
+   */
+    public static List<ReplaceEdit> getEdits(String issueId, String message, String text) {
         List<ReplaceEdit> edits = new ArrayList<ReplaceEdit>();
-        String text = textNode.getNodeValue();
         if (message.equals(ELLIPSIS_MESSAGE)) {
             int offset = text.indexOf("...");                            //$NON-NLS-1$
             if (offset != -1) {
