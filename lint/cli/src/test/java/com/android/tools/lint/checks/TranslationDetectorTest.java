@@ -209,4 +209,15 @@ public class TranslationDetectorTest extends AbstractCheckTest {
                  "res/values-es/strings_locale.xml=>res/values/strings.xml",
                  "res/values-es-rUS/strings.xml"));
     }
+
+    public void testAnalytics() throws Exception {
+        // See http://code.google.com/p/android/issues/detail?id=43070
+        assertEquals(
+                "No warnings.",
+
+                lintProject(
+                        "res/values/analytics.xml",
+                        "res/values-es/donottranslate.xml" // to make app multilingual
+                ));
+    }
 }

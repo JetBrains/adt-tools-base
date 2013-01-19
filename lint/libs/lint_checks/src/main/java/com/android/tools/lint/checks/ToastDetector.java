@@ -94,7 +94,7 @@ public class ToastDetector extends Detector implements Detector.JavaScanner {
         if (args.size() == 3) {
             Expression duration = args.last();
             if (duration instanceof IntegralLiteral) {
-                context.report(ISSUE, context.getLocation(duration),
+                context.report(ISSUE, duration, context.getLocation(duration),
                         "Expected duration Toast.LENGTH_SHORT or Toast.LENGTH_LONG, a custom " +
                         "duration value is not supported",
                         null);

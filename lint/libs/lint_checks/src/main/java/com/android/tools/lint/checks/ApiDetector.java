@@ -101,6 +101,7 @@ import lombok.ast.Expression;
 import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.If;
 import lombok.ast.ImportDeclaration;
+import lombok.ast.InlineIfExpression;
 import lombok.ast.IntegralLiteral;
 import lombok.ast.MethodDeclaration;
 import lombok.ast.MethodInvocation;
@@ -311,6 +312,9 @@ public class ApiDetector extends ResourceXmlDetector
                 if (name.indexOf('.') != -1) {
                     name = name.replace('.', '_');
                 }
+            } else if (value.startsWith(ANDROID_THEME_PREFIX)) {
+                owner = "android/R$attr";  //$NON-NLS-1$
+                name = value.substring(ANDROID_THEME_PREFIX.length());
             } else {
                 return;
             }
@@ -445,7 +449,8 @@ public class ApiDetector extends ResourceXmlDetector
             return;
         }
 
-        boolean checkCalls = context.isEnabled(UNSUPPORTED);
+        boolean checkCalls = context.isEnabled(UNSUPPORTED)
+                             || context.isEnabled(INLINED);
         boolean checkMethods = context.isEnabled(OVERRIDE)
                 && context.getMainProject().getBuildSdk() >= 1;
         String frameworkParent = null;
@@ -1039,6 +1044,82 @@ public class ApiDetector extends ResourceXmlDetector
         return types;
     }
 
+    /**
+     * Checks whether the given instruction is a benign usage of a constant defined in
+     * a later version of Android than the application's {@code minSdkVersion}.
+     *
+     * @param node  the instruction to check
+     * @param name  the name of the constant
+     * @param owner the field owner
+     * @return true if the given usage is safe on older versions than the introduction
+     *              level of the constant
+     */
+    public boolean isBenignConstantUsage(
+            @Nullable lombok.ast.Node node,
+            @NonNull String name,
+            @NonNull String owner) {
+        if (owner.equals("android/os/Build$VERSION_CODES")) {     //$NON-NLS-1$
+            // These constants are required for compilation, not execution
+            // and valid code checks it even on older platforms
+            return true;
+        }
+        if (owner.equals("android/view/ViewGroup$LayoutParams")   //$NON-NLS-1$
+                && name.equals("MATCH_PARENT")) {                 //$NON-NLS-1$
+            return true;
+        }
+        if (owner.equals("android/widget/AbsListView")            //$NON-NLS-1$
+                && ((name.equals("CHOICE_MODE_NONE")              //$NON-NLS-1$
+                || name.equals("CHOICE_MODE_MULTIPLE")            //$NON-NLS-1$
+                || name.equals("CHOICE_MODE_SINGLE")))) {         //$NON-NLS-1$
+            // android.widget.ListView#CHOICE_MODE_MULTIPLE and friends have API=1,
+            // but in API 11 it was moved up to the parent class AbsListView.
+            // Referencing AbsListView#CHOICE_MODE_MULTIPLE technically requires API 11,
+            // but the constant is the same as the older version, so accept this without
+            // warning.
+            return true;
+        }
+
+        if (node == null) {
+            return false;
+        }
+
+        // It's okay to reference the constant as a case constant (since that
+        // code path won't be taken) or in a condition of an if statement
+        lombok.ast.Node curr = node.getParent();
+        while (curr != null) {
+            Class<? extends lombok.ast.Node> nodeType = curr.getClass();
+            if (nodeType == Case.class) {
+                Case caseStatement = (Case) curr;
+                Expression condition = caseStatement.astCondition();
+                return condition != null && isAncestor(condition, node);
+            } else if (nodeType == If.class) {
+                If ifStatement = (If) curr;
+                Expression condition = ifStatement.astCondition();
+                return condition != null && isAncestor(condition, node);
+            } else if (nodeType == InlineIfExpression.class) {
+                InlineIfExpression ifStatement = (InlineIfExpression) curr;
+                Expression condition = ifStatement.astCondition();
+                return condition != null && isAncestor(condition, node);
+            }
+            curr = curr.getParent();
+        }
+
+        return false;
+    }
+
+    private static boolean isAncestor(
+            @NonNull lombok.ast.Node ancestor,
+            @Nullable lombok.ast.Node node) {
+        while (node != null) {
+            if (node == ancestor) {
+                return true;
+            }
+            node = node.getParent();
+        }
+
+        return false;
+    }
+
     private final class ApiVisitor extends ForwardingAstVisitor {
         private JavaContext mContext;
         private Map<String, String> mClassToImport = Maps.newHashMap();
@@ -1356,60 +1437,6 @@ public class ApiDetector extends ResourceXmlDetector
                 }
 
                 return true;
-            }
-
-            return false;
-        }
-
-        /**
-         * Checks whether the given instruction is a benign usage of a constant defined
-         * in a later version of Android than the application's {@code minSdkVersion}.
-         *
-         * @param node the instruction to check
-         * @param name the name of the constant
-         * @param owner the field owner
-         * @return true if the given usage is safe on older versions than the introduction
-         * level of the constant
-         */
-        public boolean isBenignConstantUsage(
-                @NonNull lombok.ast.Node node,
-                @NonNull String name,
-                @NonNull String owner) {
-            if (owner.equals("android/os/Build$VERSION_CODES")) {     //$NON-NLS-1$
-                // These constants are required for compilation, not execution
-                // and valid code checks it even on older platforms
-                return true;
-            }
-            if (owner.equals("android/view/ViewGroup$LayoutParams")   //$NON-NLS-1$
-                    && name.equals("MATCH_PARENT")) {                 //$NON-NLS-1$
-                return true;
-            }
-            if (owner.equals("android/widget/AbsListView")            //$NON-NLS-1$
-                && ((name.equals("CHOICE_MODE_NONE")                  //$NON-NLS-1$
-                    || name.equals("CHOICE_MODE_MULTIPLE")            //$NON-NLS-1$
-                    || name.equals("CHOICE_MODE_SINGLE")))) {         //$NON-NLS-1$
-                // android.widget.ListView#CHOICE_MODE_MULTIPLE and friends have API=1,
-                // but in API 11 it was moved up to the parent class AbsListView.
-                // Referencing AbsListView#CHOICE_MODE_MULTIPLE technically requires API 11,
-                // but the constant is the same as the older version, so accept this without
-                // warning.
-                return true;
-            }
-
-            // It's okay to reference the constant as a case constant (since that
-            // code path won't be taken) or in a condition of an if statement
-            lombok.ast.Node curr = node.getParent();
-            boolean usedInExpression = false;
-            while (curr != null) {
-                Class<? extends lombok.ast.Node> nodeType = curr.getClass();
-                if (nodeType == Case.class) {
-                    return true;
-                } else if (nodeType == BinaryExpression.class) {
-                    usedInExpression = true;
-                } else if (nodeType == If.class) {
-                    return usedInExpression;
-                }
-                curr = curr.getParent();
             }
 
             return false;

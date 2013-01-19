@@ -191,7 +191,7 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
 
                 // This issue doesn't have AST access: annotations are not
                 // available for local variables or parameters
-                mContext.report(ISSUE,mContext.getLocation(node), String.format(
+                mContext.report(ISSUE, node, mContext.getLocation(node), String.format(
                     "The @SuppressLint annotation cannot be used on a local " +
                     "variable with the lint check '%1$s': move out to the " +
                     "surrounding method", id),

@@ -162,7 +162,8 @@ public class TranslationDetector extends ResourceXmlDetector {
         }
 
         // Convention seen in various projects
-        mIgnoreFile = context.file.getName().startsWith("donottranslate"); //$NON-NLS-1$
+        mIgnoreFile = context.file.getName().startsWith("donottranslate") //$NON-NLS-1$
+                        || UnusedResourceDetector.isAnalyticsFile(context);
 
         if (!context.getProject().getReportIssues()) {
             mIgnoreFile = true;

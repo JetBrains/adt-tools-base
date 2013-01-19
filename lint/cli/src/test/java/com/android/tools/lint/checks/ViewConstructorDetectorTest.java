@@ -61,4 +61,16 @@ public class ViewConstructorDetectorTest extends AbstractCheckTest {
                         "bin/classes/test/pkg/Intermediate$IntermediateCustomV.class"
                 ));
     }
+
+    public void testAbstract() throws Exception {
+        assertEquals(
+                "No warnings.",
+
+                lintProject(
+                        "bytecode/.classpath=>.classpath",
+                        "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
+                        "bytecode/AbstractCustomView.java.txt=>src/test/bytecode/AbstractCustomView.java",
+                        "bytecode/AbstractCustomView.class.data=>bin/classes/test/bytecode/AbstractCustomView.class"
+                ));
+    }
 }

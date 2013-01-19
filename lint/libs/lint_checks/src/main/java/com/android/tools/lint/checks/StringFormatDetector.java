@@ -52,7 +52,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -322,8 +321,6 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     @Override
     public void afterCheckProject(@NonNull Context context) {
         if (mFormatStrings != null) {
-            Formatter formatter = new Formatter();
-
             boolean checkCount = context.isEnabled(ARG_COUNT);
             boolean checkValid = context.isEnabled(INVALID);
             boolean checkTypes = context.isEnabled(ARG_TYPES);
@@ -342,15 +339,13 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
 
                 // Check argument types (and also make sure that the formatting strings are valid)
                 if (checkValid || checkTypes) {
-                    checkTypes(context, formatter, checkValid, checkTypes, name, list);
+                    checkTypes(context, checkValid, checkTypes, name, list);
                 }
             }
-
-            formatter.close();
         }
     }
 
-    private static void checkTypes(Context context, Formatter formatter, boolean checkValid,
+    private static void checkTypes(Context context, boolean checkValid,
             boolean checkTypes, String name, List<Pair<Handle, String>> list) {
         Map<Integer, String> types = new HashMap<Integer, String>();
         Map<Integer, Handle> typeDefinition = new HashMap<Integer, Handle>();
@@ -927,7 +922,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                     "Format string '%1$s' is not a valid format string so it should not be " +
                     "passed to String.format",
                     name);
-            context.report(INVALID, location, message, null);
+            context.report(INVALID, call, location, message, null);
             return;
         }
 

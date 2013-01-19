@@ -89,6 +89,11 @@ public class ViewConstructorDetector extends Detector implements Detector.ClassS
             return;
         }
 
+        // Ignore abstract classes
+        if ((classNode.access & Opcodes.ACC_ABSTRACT) != 0) {
+            return;
+        }
+
         if (isViewClass(context, classNode)) {
             checkConstructors(context, classNode);
         }
