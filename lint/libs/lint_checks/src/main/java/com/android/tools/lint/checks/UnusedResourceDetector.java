@@ -430,8 +430,11 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
      * Returns true if this XML file corresponds to an Analytics configuration file;
      * these contain some attributes read by the library which won't be flagged as
      * used by the application
+     *
+     * @param context the context used for scanning
+     * @return true if the file represents an analytics file
      */
-    private static boolean isAnalyticsFile(XmlContext context) {
+    public static boolean isAnalyticsFile(Context context) {
         File file = context.file;
         return file.getPath().endsWith(ANALYTICS_FILE) && file.getName().equals(ANALYTICS_FILE);
     }

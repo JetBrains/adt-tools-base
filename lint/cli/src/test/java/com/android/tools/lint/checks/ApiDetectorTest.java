@@ -60,6 +60,19 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testAttrWithoutSlash() throws Exception {
+        assertEquals(""
+                + "res/layout/divider.xml:7: Error: ?android:dividerHorizontal requires API level 11 (current min is 1) [NewApi]\n"
+                + "    android:divider=\"?android:dividerHorizontal\"\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "apicheck/divider.xml=>res/layout/divider.xml"
+                ));
+    }
+
     public void testXmlApi14() throws Exception {
         assertEquals(
                 "No warnings.",

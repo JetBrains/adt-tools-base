@@ -94,7 +94,7 @@ public class ColorUsageDetector extends Detector implements Detector.JavaScanner
                 if (methodName.endsWith("Color")              //$NON-NLS-1$
                         && methodName.startsWith("set")) {    //$NON-NLS-1$
                     context.report(
-                            ISSUE, context.getLocation(select), String.format(
+                            ISSUE, select, context.getLocation(select), String.format(
                                 "Should pass resolved color instead of resource id here: " +
                                 "getResources().getColor(%1$s)", select.toString()),
                             null);
