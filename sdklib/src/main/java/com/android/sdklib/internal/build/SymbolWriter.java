@@ -28,6 +28,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  */
@@ -80,7 +81,10 @@ public class SymbolWriter {
                 writer.write(row);
                 writer.write(" {\n");
 
-                for (Map.Entry<String, SymbolEntry> symbol : symbols.row(row).entrySet()) {
+                // Wrap the row in a TreeMap so that the field order be stable for unit tests.
+                Map<String, SymbolEntry> rowMap = symbols.row(row);
+                rowMap = new TreeMap<String, SymbolEntry>(rowMap);
+                for (Map.Entry<String, SymbolEntry> symbol : rowMap.entrySet()) {
                     // get the matching SymbolEntry from the values Table.
                     SymbolEntry value = values.get(row, symbol.getKey());
                     if (value != null) {
