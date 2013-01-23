@@ -19,6 +19,9 @@ package com.android.utils;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
+import java.text.NumberFormat;
+import java.text.ParseException;
+
 /** Miscellaneous utilities used by the Android SDK tools */
 public class SdkUtils {
     /**
@@ -213,4 +216,77 @@ public class SdkUtils {
         return sb.toString();
     }
 
+    /**
+     * Returns the given localized string as an int. For example, in the
+     * US locale, "1,000", will return 1000. In the French locale, "1.000" will return
+     * 1000. It will return 0 for empty strings.
+     * <p>
+     * To parse a string without catching parser exceptions, call
+     * {@link #parseLocalizedInt(String, int)} instead, passing the
+     * default value to be returned if the format is invalid.
+     *
+     * @param string the string to be parsed
+     * @return the integer value
+     * @throws ParseException if the format is not correct
+     */
+    public static int parseLocalizedInt(@NonNull String string) throws ParseException {
+        if (string.isEmpty()) {
+            return 0;
+        }
+        return NumberFormat.getIntegerInstance().parse(string).intValue();
+    }
+
+    /**
+     * Returns the given localized string as an int. For example, in the
+     * US locale, "1,000", will return 1000. In the French locale, "1.000" will return
+     * 1000.  If the format is invalid, returns the supplied default value instead.
+     *
+     * @param string the string to be parsed
+     * @param defaultValue the value to be returned if there is a parsing error
+     * @return the integer value
+     */
+    public static int parseLocalizedInt(@NonNull String string, int defaultValue) {
+        try {
+            return parseLocalizedInt(string);
+        } catch (ParseException e) {
+            return defaultValue;
+        }
+    }
+
+    /**
+     * Returns the given localized string as a double. For example, in the
+     * US locale, "3.14", will return 3.14. In the French locale, "3,14" will return
+     * 3.14. It will return 0 for empty strings.
+     * <p>
+     * To parse a string without catching parser exceptions, call
+     * {@link #parseLocalizedDouble(String, double)} instead, passing the
+     * default value to be returned if the format is invalid.
+     *
+     * @param string the string to be parsed
+     * @return the double value
+     * @throws ParseException if the format is not correct
+     */
+    public static double parseLocalizedDouble(@NonNull String string) throws ParseException {
+        if (string.isEmpty()) {
+            return 0.0;
+        }
+        return NumberFormat.getNumberInstance().parse(string).doubleValue();
+    }
+
+    /**
+     * Returns the given localized string as a double. For example, in the
+     * US locale, "3.14", will return 3.14. In the French locale, "3,14" will return
+     * 3.14. If the format is invalid, returns the supplied default value instead.
+     *
+     * @param string the string to be parsed
+     * @param defaultValue the value to be returned if there is a parsing error
+     * @return the double value
+     */
+    public static double parseLocalizedDouble(@NonNull String string, double defaultValue) {
+        try {
+            return parseLocalizedDouble(string);
+        } catch (ParseException e) {
+            return defaultValue;
+        }
+    }
 }

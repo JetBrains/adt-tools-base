@@ -193,7 +193,10 @@ public class DeviceParser {
                 mHardware.addCamera(mCamera);
                 mCamera = null;
             } else if (DeviceSchema.NODE_LOCATION.equals(localName)) {
-                mCamera.setLocation(CameraLocation.getEnum(getString(mStringAccumulator)));
+                CameraLocation location = CameraLocation.getEnum(getString(mStringAccumulator));
+                if (location != null) {
+                    mCamera.setLocation(location);
+                }
             } else if (DeviceSchema.NODE_AUTOFOCUS.equals(localName)) {
                 mCamera.setFlash(getBool(mStringAccumulator));
             } else if (DeviceSchema.NODE_FLASH.equals(localName)) {
@@ -206,7 +209,10 @@ public class DeviceParser {
                 int val = getInteger(mStringAccumulator);
                 mHardware.setRam(new Storage(val, mUnit));
             } else if (DeviceSchema.NODE_BUTTONS.equals(localName)) {
-                mHardware.setButtonType(ButtonType.getEnum(getString(mStringAccumulator)));
+                ButtonType buttonType = ButtonType.getEnum(getString(mStringAccumulator));
+                if (buttonType != null) {
+                    mHardware.setButtonType(buttonType);
+                }
             } else if (DeviceSchema.NODE_INTERNAL_STORAGE.equals(localName)) {
                 for (String s : getStringList(mStringAccumulator)) {
                     int val = Integer.parseInt(s);
@@ -238,7 +244,10 @@ public class DeviceParser {
                     }
                 }
             } else if (DeviceSchema.NODE_POWER_TYPE.equals(localName)) {
-                mHardware.setChargeType(PowerType.getEnum(getString(mStringAccumulator)));
+                PowerType type = PowerType.getEnum(getString(mStringAccumulator));
+                if (type != null) {
+                    mHardware.setChargeType(type);
+                }
             } else if (DeviceSchema.NODE_API_LEVEL.equals(localName)) {
                 String val = getString(mStringAccumulator);
                 // Can be one of 5 forms:
