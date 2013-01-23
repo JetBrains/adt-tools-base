@@ -594,6 +594,7 @@ public final class SdkConstants {
     // Tags: Manifest
     public static final String TAG_SERVICE = "service";                //$NON-NLS-1$
     public static final String TAG_PERMISSION = "permission";          //$NON-NLS-1$
+    public static final String TAG_USES_FEATURE = "uses-feature";      //$NON-NLS-1$
     public static final String TAG_USES_PERMISSION = "uses-permission";//$NON-NLS-1$
     public static final String TAG_USES_LIBRARY = "uses-library";      //$NON-NLS-1$
     public static final String TAG_APPLICATION = "application";        //$NON-NLS-1$
