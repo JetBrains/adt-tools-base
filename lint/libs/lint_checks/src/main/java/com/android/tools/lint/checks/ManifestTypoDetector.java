@@ -17,61 +17,57 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
-import static com.android.SdkConstants.TAG_USES_FEATURE;
-import static com.android.SdkConstants.TAG_USES_LIBRARY;
-import static com.android.SdkConstants.TAG_USES_PERMISSION;
-import static com.android.SdkConstants.TAG_USES_SDK;
+import static com.android.xml.AndroidManifest.NODE_ACTION;
+import static com.android.xml.AndroidManifest.NODE_ACTIVITY;
+import static com.android.xml.AndroidManifest.NODE_ACTIVITY_ALIAS;
+import static com.android.xml.AndroidManifest.NODE_APPLICATION;
+import static com.android.xml.AndroidManifest.NODE_CATEGORY;
+import static com.android.xml.AndroidManifest.NODE_COMPATIBLE_SCREENS;
+import static com.android.xml.AndroidManifest.NODE_DATA;
+import static com.android.xml.AndroidManifest.NODE_GRANT_URI_PERMISSION;
+import static com.android.xml.AndroidManifest.NODE_INSTRUMENTATION;
+import static com.android.xml.AndroidManifest.NODE_INTENT;
+import static com.android.xml.AndroidManifest.NODE_MANIFEST;
+import static com.android.xml.AndroidManifest.NODE_METADATA;
+import static com.android.xml.AndroidManifest.NODE_PATH_PERMISSION;
+import static com.android.xml.AndroidManifest.NODE_PERMISSION;
+import static com.android.xml.AndroidManifest.NODE_PERMISSION_GROUP;
+import static com.android.xml.AndroidManifest.NODE_PERMISSION_TREE;
+import static com.android.xml.AndroidManifest.NODE_PROVIDER;
+import static com.android.xml.AndroidManifest.NODE_RECEIVER;
+import static com.android.xml.AndroidManifest.NODE_SERVICE;
+import static com.android.xml.AndroidManifest.NODE_SUPPORTS_GL_TEXTURE;
+import static com.android.xml.AndroidManifest.NODE_SUPPORTS_SCREENS;
+import static com.android.xml.AndroidManifest.NODE_USES_CONFIGURATION;
+import static com.android.xml.AndroidManifest.NODE_USES_FEATURE;
+import static com.android.xml.AndroidManifest.NODE_USES_LIBRARY;
+import static com.android.xml.AndroidManifest.NODE_USES_PERMISSION;
+import static com.android.xml.AndroidManifest.NODE_USES_SDK;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
-import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
-import com.google.common.collect.Maps;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
-import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
- * Checks for typos in AndroidManifest files.
+ * Checks for typos in manifest files
  */
 public class ManifestTypoDetector extends Detector implements Detector.XmlScanner {
-
-    private static final String REPORT_FORMAT
-            = "<%1$s> looks like a typo; did you mean <%2$s> ?";
-
-    /* The match pattern for <uses-sdk> */
-    private static final Pattern PATTERN_USES_SDK
-            = Pattern.compile("^use.*sdk"); //$NON-NLS-1$
-
-    /* The match pattern for <uses-permission> */
-    private static final Pattern PATTERN_USES_PERMISSION
-            = Pattern.compile("^use.*permission"); //$NON-NLS-1$
-
-    /* The match pattern for <uses-feature> */
-    private static final Pattern PATTERN_USES_FEATURE
-            = Pattern.compile("^use.*feature"); //$NON-NLS-1$
-
-    /* The match pattern for <uses-library> */
-    private static final Pattern PATTERN_USES_LIBRARY
-            = Pattern.compile("^use.*library"); //$NON-NLS-1$
-
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "ManifestTypo", //$NON-NLS-1$
@@ -84,6 +80,46 @@ public class ManifestTypoDetector extends Detector implements Detector.XmlScanne
             Severity.WARNING,
             ManifestTypoDetector.class,
             Scope.MANIFEST_SCOPE);
+
+    private static final Set<String> sValidTags;
+    static {
+        int expectedSize = 30;
+        sValidTags = Sets.newHashSetWithExpectedSize(expectedSize);
+        sValidTags.add(NODE_MANIFEST);
+        sValidTags.add(NODE_APPLICATION);
+        sValidTags.add(NODE_ACTIVITY);
+        sValidTags.add(NODE_SERVICE);
+        sValidTags.add(NODE_PROVIDER);
+        sValidTags.add(NODE_RECEIVER);
+        sValidTags.add(NODE_USES_FEATURE);
+        sValidTags.add(NODE_USES_LIBRARY);
+        sValidTags.add(NODE_USES_SDK);
+        sValidTags.add(NODE_INSTRUMENTATION);
+        sValidTags.add(NODE_USES_PERMISSION);
+        sValidTags.add(NODE_PERMISSION);
+        sValidTags.add(NODE_PERMISSION_TREE);
+        sValidTags.add(NODE_PERMISSION_GROUP);
+        sValidTags.add(NODE_USES_CONFIGURATION);
+        sValidTags.add(NODE_ACTIVITY_ALIAS);
+        sValidTags.add(NODE_INTENT);
+        sValidTags.add(NODE_METADATA);
+        sValidTags.add(NODE_ACTION);
+        sValidTags.add(NODE_CATEGORY);
+        sValidTags.add(NODE_DATA);
+        sValidTags.add(NODE_GRANT_URI_PERMISSION);
+        sValidTags.add(NODE_PATH_PERMISSION);
+        sValidTags.add(NODE_SUPPORTS_SCREENS);
+        sValidTags.add(NODE_COMPATIBLE_SCREENS);
+        sValidTags.add(NODE_SUPPORTS_GL_TEXTURE);
+
+        // Private tags
+        sValidTags.add("eat-comment");          //$NON-NLS-1$
+        sValidTags.add("original-package");     //$NON-NLS-1$
+        sValidTags.add("protected-broadcast");  //$NON-NLS-1$
+        sValidTags.add("adopt-permissions");    //$NON-NLS-1$
+
+        assert sValidTags.size() <= expectedSize : sValidTags.size();
+    }
 
     /** Constructs a new {@link ManifestTypoDetector} check */
     public ManifestTypoDetector() {
@@ -105,32 +141,42 @@ public class ManifestTypoDetector extends Detector implements Detector.XmlScanne
         return XmlScanner.ALL;
     }
 
+    private static final int MAX_EDIT_DISTANCE = 3;
+
     @Override
     public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
         String tag = element.getTagName();
-
-        if (!tag.startsWith("use")) { //$NON-NLS-1$
-            return;
-        }
-
-        if (PATTERN_USES_SDK.matcher(tag).find() && !TAG_USES_SDK.equals(tag)) {
-            context.report(ISSUE, context.getLocation(element),
-                    String.format(REPORT_FORMAT, tag, TAG_USES_SDK), null);
-        }
-
-        if (PATTERN_USES_PERMISSION.matcher(tag).find() && !TAG_USES_PERMISSION.equals(tag)) {
-            context.report(ISSUE, context.getLocation(element),
-                    String.format(REPORT_FORMAT, tag, TAG_USES_PERMISSION), null);
-        }
-
-        if (PATTERN_USES_FEATURE.matcher(tag).find() && !TAG_USES_FEATURE.equals(tag)) {
-            context.report(ISSUE, context.getLocation(element),
-                    String.format(REPORT_FORMAT, tag, TAG_USES_FEATURE), null);
-        }
-
-        if (PATTERN_USES_LIBRARY.matcher(tag).find() && !TAG_USES_LIBRARY.equals(tag)) {
-            context.report(ISSUE, context.getLocation(element),
-                    String.format(REPORT_FORMAT, tag, TAG_USES_LIBRARY), null);
+        if (!sValidTags.contains(tag)) {
+            int tagLength = tag.length();
+            // Try to find the corresponding match
+            List<String> suggestions = null;
+            for (String suggestion : sValidTags) {
+                if (Math.abs(suggestion.length() - tagLength) > MAX_EDIT_DISTANCE) {
+                    continue;
+                }
+                if (LintUtils.editDistance(suggestion, tag) <= MAX_EDIT_DISTANCE) {
+                    if (suggestions == null) {
+                        suggestions = Lists.newArrayList();
+                    }
+                    suggestions.add('<' + suggestion + '>');
+                }
+            }
+            if (suggestions != null) {
+                assert !suggestions.isEmpty();
+                String suggestionString;
+                if (suggestions.size() == 1) {
+                    suggestionString = suggestions.get(0);
+                } else if (suggestions.size() == 2) {
+                    suggestionString = String.format("%1$s or %2$s",
+                            suggestions.get(0), suggestions.get(1));
+                } else {
+                    suggestionString = LintUtils.formatList(suggestions, -1);
+                }
+                String message = String.format("Misspelled tag <%1$s>: Did you mean %2$s ?",
+                        tag, suggestionString);
+                context.report(ISSUE, element, context.getLocation(element),
+                        message, null);
+            }
         }
     }
 }
