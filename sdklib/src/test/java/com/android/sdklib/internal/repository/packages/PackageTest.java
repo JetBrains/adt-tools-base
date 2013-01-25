@@ -156,7 +156,7 @@ public class PackageTest extends TestCase {
     protected void testCreatedPackage(Package p) {
         // Package properties
         assertEquals("42", p.getRevision().toShortString());
-        assertEquals("The License", p.getLicense());
+        assertEquals("<License ref:null, text:The License>", p.getLicense().toString());
         assertEquals("Some description.", p.getDescription());
         assertEquals("http://description/url", p.getDescUrl());
         assertEquals("Release Note", p.getReleaseNote());

@@ -31,6 +31,7 @@ public class PkgProps {
     // Base Package
     public static final String PKG_REVISION             = "Pkg.Revision";           //$NON-NLS-1$
     public static final String PKG_LICENSE              = "Pkg.License";            //$NON-NLS-1$
+    public static final String PKG_LICENSE_REF          = "Pkg.LicenseRef";         //$NON-NLS-1$
     public static final String PKG_DESC                 = "Pkg.Desc";               //$NON-NLS-1$
     public static final String PKG_DESC_URL             = "Pkg.DescUrl";            //$NON-NLS-1$
     public static final String PKG_RELEASE_NOTE         = "Pkg.RelNote";            //$NON-NLS-1$
