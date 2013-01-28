@@ -145,7 +145,7 @@ public class ViewTypeDetector extends ResourceXmlDetector implements Detector.Ja
     @Override
     public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
             @NonNull MethodInvocation node) {
-        assert node.astName().getDescription().equals("findViewById");
+        assert node.astName().astValue().equals("findViewById");
         if (node.getParent() instanceof Cast) {
             Cast cast = (Cast) node.getParent();
             String castType = cast.astTypeReference().getTypeName();

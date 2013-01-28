@@ -490,11 +490,10 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
 
         @Override
         public boolean visitClassDeclaration(ClassDeclaration node) {
-            String name = node.getDescription();
-
+            String name = node.astName().astValue();
             if (mActivities != null && mActivities.contains(mClassFqn) || name.endsWith(ACTIVITY)
                     || node.astExtending() != null &&
-                        node.astExtending().getDescription().endsWith(ACTIVITY)) {
+                        node.astExtending().getTypeName().endsWith(ACTIVITY)) {
                 String packageName = "";
                 if (node.getParent() instanceof CompilationUnit) {
                     CompilationUnit compilationUnit = (CompilationUnit) node.getParent();

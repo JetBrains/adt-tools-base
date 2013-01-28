@@ -547,7 +547,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
         public boolean visitClassDeclaration(ClassDeclaration node) {
             // Look for declarations of R class fields and store them in
             // mDeclarations
-            String description = node.getDescription();
+            String description = node.astName().astValue();
             if (description.equals(R_CLASS)) {
                 // This is an R class. We can process this class very deliberately.
                 // The R class has a very specific AST format:
@@ -561,7 +561,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                     if (body instanceof NormalTypeBody) {
                         for (lombok.ast.Node subclass : body.getChildren()) {
                             if (subclass instanceof ClassDeclaration) {
-                                String className = ((ClassDeclaration) subclass).getDescription();
+                                String className = ((ClassDeclaration) subclass).astName().astValue();
                                 for (lombok.ast.Node innerBody : subclass.getChildren()) {
                                     if (innerBody instanceof NormalTypeBody) {
                                         for (lombok.ast.Node field : innerBody.getChildren()) {

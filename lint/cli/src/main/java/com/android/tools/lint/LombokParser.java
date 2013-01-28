@@ -29,6 +29,7 @@ import java.util.List;
 import lombok.ast.CompilationUnit;
 import lombok.ast.Node;
 import lombok.ast.Position;
+import lombok.ast.TypeReference;
 import lombok.ast.grammar.ParseProblem;
 import lombok.ast.grammar.Source;
 
@@ -115,6 +116,18 @@ public class LombokParser implements IJavaParser {
 
     @Override
     public void dispose(@NonNull JavaContext context, @NonNull Node compilationUnit) {
+    }
+
+    @Nullable
+    @Override
+    public Node resolve(@NonNull JavaContext context, @NonNull Node node) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public TypeReference getType(@NonNull JavaContext context, @NonNull Node node) {
+        return null;
     }
 
     /* Handle for creating positions cheaply and returning full fledged locations later */

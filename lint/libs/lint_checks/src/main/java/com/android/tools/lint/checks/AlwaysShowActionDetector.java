@@ -215,7 +215,7 @@ public class AlwaysShowActionDetector extends ResourceXmlDetector implements Jav
 
         @Override
         public boolean visitSelect(Select node) {
-            String description = node.astIdentifier().getDescription();
+            String description = node.astIdentifier().astValue();
             boolean isIfRoom = description.equals("SHOW_AS_ACTION_IF_ROOM"); //$NON-NLS-1$
             boolean isAlways = description.equals("SHOW_AS_ACTION_ALWAYS");  //$NON-NLS-1$
             if ((isIfRoom || isAlways)

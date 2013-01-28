@@ -23,6 +23,7 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 
 import lombok.ast.Node;
+import lombok.ast.TypeReference;
 
 /**
  * A wrapper for a Java parser. This allows tools integrating lint to map directly
@@ -73,4 +74,24 @@ public interface IJavaParser {
      * @param compilationUnit the compilation unit being disposed
      */
     void dispose(@NonNull JavaContext context, @NonNull Node compilationUnit);
+
+    /**
+     * Resolves the given expression node
+     *
+     * @param context information about the file being parsed
+     * @param node the node to resolve
+     * @return a node representing the resolved fully type, class, field or method
+     */
+    @Nullable
+    Node resolve(@NonNull JavaContext context, @NonNull Node node);
+
+    /**
+     * Gets the type of the given node
+     *
+     * @param context information about the file being parsed
+     * @param node the node to look up the type for
+     * @return the type of the node, if known
+     */
+    @Nullable
+    TypeReference getType(@NonNull JavaContext context, @NonNull Node node);
 }
