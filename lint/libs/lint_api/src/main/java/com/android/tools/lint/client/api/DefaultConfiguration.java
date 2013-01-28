@@ -76,6 +76,8 @@ public class DefaultConfiguration extends Configuration {
     private static final String ATTR_PATH = "path"; //$NON-NLS-1$
     @NonNull
     private static final String TAG_IGNORE = "ignore"; //$NON-NLS-1$
+    @NonNull
+    private static final String VALUE_ALL = "all"; //$NON-NLS-1$
 
     private final Configuration mParent;
     private final Project mProject;
@@ -149,6 +151,9 @@ public class DefaultConfiguration extends Configuration {
 
         String id = issue.getId();
         List<String> paths = mSuppressed.get(id);
+        if (paths == null) {
+            paths = mSuppressed.get(VALUE_ALL);
+        }
         if (paths != null && location != null) {
             File file = location.getFile();
             String relativePath = context.getProject().getRelativePath(file);
@@ -181,6 +186,10 @@ public class DefaultConfiguration extends Configuration {
         ensureInitialized();
 
         Severity severity = mSeverity.get(issue.getId());
+        if (severity == null) {
+            severity = mSeverity.get(VALUE_ALL);
+        }
+
         if (severity != null) {
             return severity;
         }
