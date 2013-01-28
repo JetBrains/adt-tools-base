@@ -74,7 +74,7 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
         EnumSet.of(Scope.MANIFEST, Scope.CLASS_FILE)).setMoreInfo(
         "http://developer.android.com/guide/topics/manifest/manifest-intro.html"); //$NON-NLS-1$
 
-    private Multimap<String, String> mManifestRegistrations;
+    protected Multimap<String, String> mManifestRegistrations;
 
     /** Constructs a new {@link RegistrationDetector} */
     public RegistrationDetector() {
@@ -243,7 +243,7 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
     }
 
     /** Looks up the tag a given framework class should be registered with */
-    private static String classToTag(String className) {
+    protected static String classToTag(String className) {
         for (int i = 0, n = sClasses.length; i < n; i++) {
             if (sClasses[i].equals(className)) {
                 return sTags[i];

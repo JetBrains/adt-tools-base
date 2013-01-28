@@ -293,6 +293,20 @@ public final class SdkConstants {
     public static final String NS_DEVICES_XSD =
         "http://schemas.android.com/sdk/devices/1";                     //$NON-NLS-1$
 
+    /**
+     * Namespace pattern for the custom resource XML, i.e. "http://schemas.android.com/apk/res/%s"
+     * <p/>
+     * This string contains a %s. It must be combined with the desired Java package, e.g.:
+     * <pre>
+     *    String.format(SdkConstants.NS_CUSTOM_RESOURCES_S, "android");
+     *    String.format(SdkConstants.NS_CUSTOM_RESOURCES_S, "com.test.mycustomapp");
+     * </pre>
+     *
+     * Note: if you need an URI specifically for the "android" namespace, consider using
+     * {@link SdkConstants#NS_RESOURCES} instead.
+     */
+    public final static String NS_CUSTOM_RESOURCES_S = "http://schemas.android.com/apk/res/%1$s"; //$NON-NLS-1$
+
 
     /** The name of the uses-library that provides "android.test.runner" */
     public static final String ANDROID_TEST_RUNNER_LIB =
