@@ -16,15 +16,7 @@
 
 package com.android.tools.lint.checks;
 
-import com.android.annotations.NonNull;
-import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Issue;
-import com.android.tools.lint.detector.api.Project;
-
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
 @SuppressWarnings("javadoc")
 public class ManifestTypoDetectorTest extends AbstractCheckTest {
@@ -33,20 +25,7 @@ public class ManifestTypoDetectorTest extends AbstractCheckTest {
         return new ManifestTypoDetector();
     }
 
-    private Set<Issue> mEnabled = new HashSet<Issue>();
-
-    @Override
-    protected TestConfiguration getConfiguration(LintClient client, Project project) {
-        return new TestConfiguration(client, project, null) {
-            @Override
-            public boolean isEnabled(@NonNull Issue issue) {
-                return super.isEnabled(issue) && mEnabled.contains(issue);
-            }
-        };
-    }
-
     public void testOk() throws Exception {
-        mEnabled = Collections.singleton(ManifestTypoDetector.ISSUE);
         assertEquals(
                 "No warnings.",
                 lintProject(
@@ -55,14 +34,11 @@ public class ManifestTypoDetectorTest extends AbstractCheckTest {
     }
 
     public void testTypoUsesSdk() throws Exception {
-        mEnabled = Collections.singleton(ManifestTypoDetector.ISSUE);
-        assertEquals(
-            "AndroidManifest.xml:7: " +
-            "Warning: <use-sdk> looks like a typo; did you mean <uses-sdk> ? [ManifestTypo]\n" +
-            "    <use-sdk android:minSdkVersion=\"14\" />\n" +
-            "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 1 warnings\n" +
-            "",
+        assertEquals(""
+                + "AndroidManifest.xml:7: Warning: Misspelled tag <use-sdk>: Did you mean <uses-sdk> ? [ManifestTypo]\n"
+                + "    <use-sdk android:minSdkVersion=\"14\" />\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
 
             lintProject(
                     "typo_uses_sdk.xml=>AndroidManifest.xml",
@@ -70,14 +46,11 @@ public class ManifestTypoDetectorTest extends AbstractCheckTest {
     }
 
     public void testTypoUsesSdk2() throws Exception {
-        mEnabled = Collections.singleton(ManifestTypoDetector.ISSUE);
-        assertEquals(
-            "AndroidManifest.xml:7: " +
-            "Warning: <user-sdk> looks like a typo; did you mean <uses-sdk> ? [ManifestTypo]\n" +
-            "    <user-sdk android:minSdkVersion=\"14\" />\n" +
-            "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 1 warnings\n" +
-            "",
+        assertEquals(""
+                + "AndroidManifest.xml:7: Warning: Misspelled tag <user-sdk>: Did you mean <uses-sdk> ? [ManifestTypo]\n"
+                + "    <user-sdk android:minSdkVersion=\"14\" />\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
 
             lintProject(
                     "typo_uses_sdk2.xml=>AndroidManifest.xml",
@@ -85,15 +58,11 @@ public class ManifestTypoDetectorTest extends AbstractCheckTest {
     }
 
     public void testTypoUsesPermission() throws Exception {
-        mEnabled = Collections.singleton(ManifestTypoDetector.ISSUE);
-        assertEquals(
-            "AndroidManifest.xml:9: " +
-            "Warning: <use-permission> looks like a typo; " +
-            "did you mean <uses-permission> ? [ManifestTypo]\n" +
-            "    <use-permission android:name=\"com.example.helloworld.permission\" />\n" +
-            "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 1 warnings\n" +
-            "",
+        assertEquals(""
+                + "AndroidManifest.xml:9: Warning: Misspelled tag <use-permission>: Did you mean <uses-permission> ? [ManifestTypo]\n"
+                + "    <use-permission android:name=\"com.example.helloworld.permission\" />\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
 
             lintProject(
                     "typo_uses_permission.xml=>AndroidManifest.xml",
@@ -101,15 +70,11 @@ public class ManifestTypoDetectorTest extends AbstractCheckTest {
     }
 
     public void testTypoUsesPermission2() throws Exception {
-        mEnabled = Collections.singleton(ManifestTypoDetector.ISSUE);
-        assertEquals(
-            "AndroidManifest.xml:9: " +
-            "Warning: <user-permission> looks like a typo; " +
-            "did you mean <uses-permission> ? [ManifestTypo]\n" +
-            "    <user-permission android:name=\"com.example.helloworld.permission\" />\n" +
-            "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 1 warnings\n" +
-            "",
+        assertEquals(""
+                + "AndroidManifest.xml:9: Warning: Misspelled tag <user-permission>: Did you mean <uses-permission> ? [ManifestTypo]\n"
+                + "    <user-permission android:name=\"com.example.helloworld.permission\" />\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
 
             lintProject(
                     "typo_uses_permission2.xml=>AndroidManifest.xml",
@@ -117,15 +82,11 @@ public class ManifestTypoDetectorTest extends AbstractCheckTest {
     }
 
     public void testTypoUsesFeature() throws Exception {
-        mEnabled = Collections.singleton(ManifestTypoDetector.ISSUE);
-        assertEquals(
-            "AndroidManifest.xml:11: " +
-            "Warning: <use-feature> looks like a typo; " +
-            "did you mean <uses-feature> ? [ManifestTypo]\n" +
-            "    <use-feature android:name=\"android.hardware.wifi\" />\n" +
-            "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 1 warnings\n" +
-            "",
+        assertEquals(""
+                + "AndroidManifest.xml:11: Warning: Misspelled tag <use-feature>: Did you mean <uses-feature> ? [ManifestTypo]\n"
+                + "    <use-feature android:name=\"android.hardware.wifi\" />\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
 
             lintProject(
                     "typo_uses_feature.xml=>AndroidManifest.xml",
@@ -133,15 +94,11 @@ public class ManifestTypoDetectorTest extends AbstractCheckTest {
     }
 
     public void testTypoUsesFeature2() throws Exception {
-        mEnabled = Collections.singleton(ManifestTypoDetector.ISSUE);
-        assertEquals(
-            "AndroidManifest.xml:11: " +
-            "Warning: <user-feature> looks like a typo; " +
-            "did you mean <uses-feature> ? [ManifestTypo]\n" +
-            "    <user-feature android:name=\"android.hardware.wifi\" />\n" +
-            "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 1 warnings\n" +
-            "",
+        assertEquals(""
+                + "AndroidManifest.xml:11: Warning: Misspelled tag <user-feature>: Did you mean <uses-feature> ? [ManifestTypo]\n"
+                + "    <user-feature android:name=\"android.hardware.wifi\" />\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
 
             lintProject(
                     "typo_uses_feature2.xml=>AndroidManifest.xml",
@@ -149,12 +106,11 @@ public class ManifestTypoDetectorTest extends AbstractCheckTest {
     }
 
     public void testTypoUsesLibrary() throws Exception {
-        mEnabled = Collections.singleton(ManifestTypoDetector.ISSUE);
-        assertEquals(
-            "AndroidManifest.xml:16: Warning: <use-library> looks like a typo; did you mean <uses-library> ? [ManifestTypo]\n" +
-            "        <use-library android:name=\"com.example.helloworld\" />\n" +
-            "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 1 warnings\n",
+        assertEquals(""
+                + "AndroidManifest.xml:16: Warning: Misspelled tag <use-library>: Did you mean <uses-library> ? [ManifestTypo]\n"
+                + "        <use-library android:name=\"com.example.helloworld\" />\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
 
             lintProject(
                     "typo_uses_library.xml=>AndroidManifest.xml",
@@ -162,15 +118,44 @@ public class ManifestTypoDetectorTest extends AbstractCheckTest {
     }
 
     public void testTypoUsesLibrary2() throws Exception {
-        mEnabled = Collections.singleton(ManifestTypoDetector.ISSUE);
-        assertEquals(
-            "AndroidManifest.xml:16: Warning: <user-library> looks like a typo; did you mean <uses-library> ? [ManifestTypo]\n" +
-            "        <user-library android:name=\"com.example.helloworld\" />\n" +
-            "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 1 warnings\n",
+        assertEquals(""
+                + "AndroidManifest.xml:16: Warning: Misspelled tag <user-library>: Did you mean <uses-library> ? [ManifestTypo]\n"
+                + "        <user-library android:name=\"com.example.helloworld\" />\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
 
             lintProject(
                     "typo_uses_library2.xml=>AndroidManifest.xml",
                     "res/values/strings.xml"));
+    }
+
+    public void testOtherTypos() throws Exception {
+        assertEquals(""
+                + "AndroidManifest.xml:2: Warning: Misspelled tag <mannifest>: Did you mean <manifest> ? [ManifestTypo]\n"
+                + "<mannifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "^\n"
+                + "AndroidManifest.xml:7: Warning: Misspelled tag <uses-sd>: Did you mean <uses-sdk> ? [ManifestTypo]\n"
+                + "    <uses-sd android:minSdkVersion=\"14\" />\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "AndroidManifest.xml:9: Warning: Misspelled tag <spplication>: Did you mean <application> ? [ManifestTypo]\n"
+                + "    <spplication\n"
+                + "    ^\n"
+                + "AndroidManifest.xml:12: Warning: Misspelled tag <acctivity>: Did you mean <activity> ? [ManifestTypo]\n"
+                + "        <acctivity\n"
+                + "        ^\n"
+                + "AndroidManifest.xml:15: Warning: Misspelled tag <inten-filter>: Did you mean <intent-filter> ? [ManifestTypo]\n"
+                + "            <inten-filter >\n"
+                + "            ^\n"
+                + "AndroidManifest.xml:16: Warning: Misspelled tag <aktion>: Did you mean <action> ? [ManifestTypo]\n"
+                + "                <aktion android:name=\"android.intent.action.MAIN\" />\n"
+                + "                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "AndroidManifest.xml:18: Warning: Misspelled tag <caaategory>: Did you mean <category> ? [ManifestTypo]\n"
+                + "                <caaategory android:name=\"android.intent.category.LAUNCHER\" />\n"
+                + "                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 7 warnings\n",
+
+                lintProject(
+                        "typo_manifest.xml=>AndroidManifest.xml",
+                        "res/values/strings.xml"));
     }
 }

@@ -45,11 +45,21 @@ public final class AndroidManifest {
     public static final String NODE_ACTION = "action";
     public static final String NODE_CATEGORY = "category";
     public static final String NODE_USES_SDK = "uses-sdk";
+    public static final String NODE_PERMISSION = "permission";
+    public static final String NODE_PERMISSION_TREE = "permission-tree";
+    public static final String NODE_PERMISSION_GROUP = "permission-group";
+    public static final String NODE_USES_PERMISSION = "uses-permission";
     public static final String NODE_INSTRUMENTATION = "instrumentation";
     public static final String NODE_USES_LIBRARY = "uses-library";
     public static final String NODE_SUPPORTS_SCREENS = "supports-screens";
+    public static final String NODE_COMPATIBLE_SCREENS = "compatible-screens";
     public static final String NODE_USES_CONFIGURATION = "uses-configuration";
     public static final String NODE_USES_FEATURE = "uses-feature";
+    public static final String NODE_METADATA = "meta-data";
+    public static final String NODE_DATA = "data";
+    public static final String NODE_GRANT_URI_PERMISSION = "grant-uri-permission";
+    public static final String NODE_PATH_PERMISSION = "path-permission";
+    public static final String NODE_SUPPORTS_GL_TEXTURE = "supports-gl-texture";
 
     public static final String ATTRIBUTE_PACKAGE = "package";
     public static final String ATTRIBUTE_VERSIONCODE = "versionCode";
