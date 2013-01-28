@@ -874,4 +874,27 @@ public class ApiDetectorTest extends AbstractCheckTest {
                         "apicheck/ApiSourceCheck2.class.data=>bin/classes/test/pkg/ApiSourceCheck2.class"
                 ));
     }
+
+    public void testInheritCompatLibrary() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/MyActivityImpl.java:8: Error: Call requires API level 11 (current min is 1): android.app.Activity#isChangingConfigurations [NewApi]\n"
+                + "  boolean isChanging = super.isChangingConfigurations();\n"
+                + "                             ~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/MyActivityImpl.java:13: Error: Call requires API level 11 (current min is 1): android.app.Activity#isChangingConfigurations [NewApi]\n"
+                + "  return super.isChangingConfigurations();\n"
+                + "               ~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/MyActivityImpl.java:12: Error: This method is not overriding anything with the current build target, but will in API level 11 (current target is 3): test.pkg.MyActivityImpl#isChangingConfigurations [Override]\n"
+                + " public boolean isChangingConfigurations() {\n"
+                + "                ~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "3 errors, 0 warnings\n",
+
+                lintProject(
+                        "apicheck/classpath=>.classpath",
+                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "project.properties1=>project.properties",
+                        "apicheck/MyActivityImpl.java.txt=>src/test/pkg/MyActivityImpl.java",
+                        "apicheck/MyActivityImpl.class.data=>bin/classes/test/pkg/MyActivityImpl.class",
+                        "apicheck/android-support-v4.jar.data=>libs/android-support-v4.jar"
+                ));
+    }
 }
