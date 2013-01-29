@@ -37,5 +37,15 @@ public class ToastTest {
     public ToastTest(Context context) {
         Toast.makeText(context, "foo", Toast.LENGTH_LONG);
     }
+
+    @android.annotation.SuppressLint("ShowToast")
+    private void checkSuppress1(Context context) {
+        Toast toast = Toast.makeText(this, "MyToast", Toast.LENGTH_LONG);
+    }
+
+    private void checkSuppress2(Context context) {
+        @android.annotation.SuppressLint("ShowToast")
+        Toast toast = Toast.makeText(this, "MyToast", Toast.LENGTH_LONG);
+    }
 }
 
