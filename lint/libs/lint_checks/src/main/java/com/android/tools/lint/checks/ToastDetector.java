@@ -109,7 +109,7 @@ public class ToastDetector extends Detector implements Detector.JavaScanner {
         ShowFinder finder = new ShowFinder(node);
         method.accept(finder);
         if (!finder.isShowCalled()) {
-            context.report(ISSUE, method, context.getLocation(node),
+            context.report(ISSUE, node, context.getLocation(node),
                     "Toast created but not shown: did you forget to call show() ?", null);
         }
     }
