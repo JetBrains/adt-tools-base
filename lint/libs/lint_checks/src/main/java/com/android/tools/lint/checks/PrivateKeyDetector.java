@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
@@ -40,6 +41,7 @@ public class PrivateKeyDetector extends Detector implements Detector.OtherFileSc
     /** Packaged private key files */
     public static final Issue ISSUE = Issue.create(
             "PackagedPrivateKey", //$NON-NLS-1$
+            "Packaged private key",
             "Looks for packaged private key files",
 
             "In general, you should not package private key files inside your app.",
@@ -47,8 +49,7 @@ public class PrivateKeyDetector extends Detector implements Detector.OtherFileSc
             Category.SECURITY,
             8,
             Severity.WARNING,
-            PrivateKeyDetector.class,
-            Scope.OTHER_SCOPE);
+            new Implementation(PrivateKeyDetector.class, Scope.OTHER_SCOPE));
 
     /** Constructs a new {@link PrivateKeyDetector} check */
     public PrivateKeyDetector() {

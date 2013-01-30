@@ -38,6 +38,7 @@ import static com.android.resources.ResourceFolderType.MENU;
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Scope;
@@ -63,6 +64,7 @@ public class DetectMissingPrefix extends LayoutDetector {
     /** Attributes missing the android: prefix */
     public static final Issue MISSING_NAMESPACE = Issue.create(
             "MissingPrefix", //$NON-NLS-1$
+            "Missing Android XML namespace",
             "Detect XML attributes not using the Android namespace",
             "Most Android views have attributes in the Android namespace. When referencing " +
             "these attributes you *must* include the namespace prefix, or your attribute will " +
@@ -74,10 +76,10 @@ public class DetectMissingPrefix extends LayoutDetector {
             Category.CORRECTNESS,
             6,
             Severity.ERROR,
-            DetectMissingPrefix.class,
-            EnumSet.of(Scope.MANIFEST, Scope.RESOURCE_FILE))
-            .addAnalysisScope(Scope.MANIFEST_SCOPE)
-            .addAnalysisScope(Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    DetectMissingPrefix.class,
+                    EnumSet.of(Scope.MANIFEST, Scope.RESOURCE_FILE),
+                    Scope.MANIFEST_SCOPE, Scope.RESOURCE_FILE_SCOPE));
 
     private static final Set<String> NO_PREFIX_ATTRS = new HashSet<String>();
     static {

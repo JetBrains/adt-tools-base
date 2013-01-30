@@ -32,6 +32,7 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LayoutDetector;
@@ -86,7 +87,9 @@ public class MergeRootFrameLayoutDetector extends LayoutDetector implements Dete
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "MergeRootFrame", //$NON-NLS-1$
-            "Checks whether a root <FrameLayout> can be replaced with a <merge> tag",
+            "FrameLayout can be replaced with `<merge>` tag",
+            "Checks whether a root <FrameLayout> can be replaced with a `<merge>` tag",
+
             "If a `<FrameLayout>` is the root of a layout and does not provide background " +
             "or padding etc, it can often be replaced with a `<merge>` tag which is slightly " +
             "more efficient. Note that this depends on context, so make sure you understand " +
@@ -94,8 +97,10 @@ public class MergeRootFrameLayoutDetector extends LayoutDetector implements Dete
             Category.PERFORMANCE,
             4,
             Severity.WARNING,
-            MergeRootFrameLayoutDetector.class,
-            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.JAVA_FILE)).setMoreInfo(
+            new Implementation(
+                    MergeRootFrameLayoutDetector.class,
+                    EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.JAVA_FILE)))
+            .addMoreInfo(
             "http://android-developers.blogspot.com/2009/03/android-layout-tricks-3-optimize-by.html"); //$NON-NLS-1$
 
     /** Constructs a new {@link MergeRootFrameLayoutDetector} */

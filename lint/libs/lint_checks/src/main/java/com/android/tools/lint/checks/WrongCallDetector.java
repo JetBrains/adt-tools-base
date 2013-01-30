@@ -26,6 +26,7 @@ import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -46,7 +47,9 @@ public class WrongCallDetector extends Detector implements ClassScanner {
     /** Calling the wrong method */
     public static final Issue ISSUE = Issue.create(
             "WrongCall", //$NON-NLS-1$
-            "Finds cases where the wrong call is made, such as calling onMeasure instead of measure",
+            "Using wrong draw/layout method",
+            "Finds cases where the wrong call is made, such as calling `onMeasure` "
+                    + "instead of `measure`",
 
             "Custom views typically need to call `measure()` on their children, not `onMeasure`. " +
             "Ditto for onDraw, onLayout, etc.",
@@ -54,8 +57,9 @@ public class WrongCallDetector extends Detector implements ClassScanner {
             Category.CORRECTNESS,
             6,
             Severity.ERROR,
-            WrongCallDetector.class,
-            Scope.CLASS_FILE_SCOPE);
+            new Implementation(
+                    WrongCallDetector.class,
+                    Scope.CLASS_FILE_SCOPE));
 
     /** Constructs a new {@link WrongCallDetector} */
     public WrongCallDetector() {

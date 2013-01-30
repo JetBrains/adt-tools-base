@@ -32,6 +32,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Location;
@@ -58,21 +59,25 @@ import java.util.Map.Entry;
 public class RegistrationDetector extends LayoutDetector implements ClassScanner {
     /** Unregistered activities and services */
     public static final Issue ISSUE = Issue.create(
-        "Registered", //$NON-NLS-1$
-        "Ensures that Activities, Services and Content Providers are registered in the manifest",
+            "Registered", //$NON-NLS-1$
+            "Class is not registered in the manifest",
+            "Ensures that Activities, Services and Content Providers are registered in the " +
+            "manifest",
 
-        "Activities, services and content providers should be registered in the " +
-        "`AndroidManifest.xml` file using `<activity>`, `<service>` and `<provider>` tags.\n" +
-        "\n" +
-        "If your activity is simply a parent class intended to be subclassed by other " +
-        "\"real\" activities, make it an abstract class.",
+            "Activities, services and content providers should be registered in the " +
+            "`AndroidManifest.xml` file using `<activity>`, `<service>` and `<provider>` tags.\n" +
+            "\n" +
+            "If your activity is simply a parent class intended to be subclassed by other " +
+            "\"real\" activities, make it an abstract class.",
 
-        Category.CORRECTNESS,
-        6,
-        Severity.WARNING,
-        RegistrationDetector.class,
-        EnumSet.of(Scope.MANIFEST, Scope.CLASS_FILE)).setMoreInfo(
-        "http://developer.android.com/guide/topics/manifest/manifest-intro.html"); //$NON-NLS-1$
+            Category.CORRECTNESS,
+            6,
+            Severity.WARNING,
+            new Implementation(
+                    RegistrationDetector.class,
+                    EnumSet.of(Scope.MANIFEST, Scope.CLASS_FILE)))
+            .addMoreInfo(
+            "http://developer.android.com/guide/topics/manifest/manifest-intro.html"); //$NON-NLS-1$
 
     protected Multimap<String, String> mManifestRegistrations;
 

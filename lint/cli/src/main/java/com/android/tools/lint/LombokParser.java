@@ -148,7 +148,6 @@ public class LombokParser implements IJavaParser {
             return Location.create(mFile, null /*contents*/, pos.getStart(), pos.getEnd());
         }
 
-
         @Override
         public void setClientData(@Nullable Object clientData) {
             mClientData = clientData;

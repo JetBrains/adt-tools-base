@@ -26,6 +26,7 @@ import static com.android.SdkConstants.VALUE_MATCH_PARENT;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -49,7 +50,8 @@ public class ScrollViewChildDetector extends LayoutDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "ScrollViewSize", //$NON-NLS-1$
-            "Checks that ScrollViews use wrap_content in scrolling dimension",
+            "ScrollView size validation",
+            "Checks that ScrollViews use `wrap_content` in the scrolling dimension",
             // TODO add a better explanation here!
             "ScrollView children must set their `layout_width` or `layout_height` attributes " +
             "to `wrap_content` rather than `fill_parent` or `match_parent` in the scrolling " +
@@ -57,8 +59,9 @@ public class ScrollViewChildDetector extends LayoutDetector {
             Category.CORRECTNESS,
             7,
             Severity.WARNING,
-            ScrollViewChildDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    ScrollViewChildDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     /** Constructs a new {@link ScrollViewChildDetector} */
     public ScrollViewChildDetector() {

@@ -32,6 +32,7 @@ import static com.android.SdkConstants.VALUE_TRUE;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Scope;
@@ -53,14 +54,16 @@ public class DeprecationDetector extends LayoutDetector {
     /** Usage of deprecated views or attributes */
     public static final Issue ISSUE = Issue.create(
             "Deprecated", //$NON-NLS-1$
+            "Using deprecated resources",
             "Looks for usages of deprecated layouts, attributes, and so on.",
             "Deprecated views, attributes and so on are deprecated because there " +
             "is a better way to do something. Do it that new way. You've been warned.",
             Category.CORRECTNESS,
             2,
             Severity.WARNING,
-            DeprecationDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    DeprecationDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     /** Constructs a new {@link DeprecationDetector} */
     public DeprecationDetector() {

@@ -24,6 +24,7 @@ import static com.android.SdkConstants.SCROLL_VIEW;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -45,30 +46,35 @@ import java.util.Collection;
  */
 public class ChildCountDetector extends LayoutDetector {
 
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            ChildCountDetector.class,
+            Scope.RESOURCE_FILE_SCOPE);
+
     /** The main issue discovered by this detector */
     public static final Issue SCROLLVIEW_ISSUE = Issue.create(
             "ScrollViewCount", //$NON-NLS-1$
+            "ScrollViews can have only one child",
             "Checks that ScrollViews have exactly one child widget",
             "ScrollViews can only have one child widget. If you want more children, wrap them " +
             "in a container layout.",
             Category.CORRECTNESS,
             8,
             Severity.WARNING,
-            ChildCountDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** The main issue discovered by this detector */
-    public static final Issue ADAPTERVIEW_ISSUE = Issue.create(
+    public static final Issue ADAPTER_VIEW_ISSUE = Issue.create(
             "AdapterViewChildren", //$NON-NLS-1$
+            "AdapterViews cannot have children in XML",
             "Checks that AdapterViews do not define their children in XML",
             "AdapterViews such as ListViews must be configured with data from Java code, " +
             "such as a ListAdapter.",
             Category.CORRECTNESS,
             10,
             Severity.WARNING,
-            ChildCountDetector.class,
-            Scope.RESOURCE_FILE_SCOPE).setMoreInfo(
-                "http://developer.android.com/reference/android/widget/AdapterView.html"); //$NON-NLS-1$
+            IMPLEMENTATION)
+            .addMoreInfo(
+                    "http://developer.android.com/reference/android/widget/AdapterView.html"); //$NON-NLS-1$
 
     /** Constructs a new {@link ChildCountDetector} */
     public ChildCountDetector() {
@@ -104,7 +110,7 @@ public class ChildCountDetector extends LayoutDetector {
         } else {
             // Adapter view
             if (childCount > 0 && getAccurateChildCount(element) > 0) {
-                context.report(ADAPTERVIEW_ISSUE, element,
+                context.report(ADAPTER_VIEW_ISSUE, element,
                         context.getLocation(element),
                         "A list/grid should have no children declared in XML", null);
             }

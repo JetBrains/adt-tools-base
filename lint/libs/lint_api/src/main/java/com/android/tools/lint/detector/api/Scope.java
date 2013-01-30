@@ -149,4 +149,14 @@ public enum Scope {
     public static final EnumSet<Scope> MANIFEST_SCOPE = EnumSet.of(MANIFEST);
     /** Scope-set used for detectors which correspond to some other context */
     public static final EnumSet<Scope> OTHER_SCOPE = EnumSet.of(OTHER);
+    /** Scope-set used for detectors which are affected by a single ProGuard class file */
+    public static final EnumSet<Scope> PROGUARD_SCOPE = EnumSet.of(PROGUARD_FILE);
+    /** Scope-set used for detectors which are affected by single XML and Java source files */
+    public static final EnumSet<Scope> JAVA_AND_RESOURCE_FILES =
+            EnumSet.of(RESOURCE_FILE, JAVA_FILE);
+    /** Scope-set used for analyzing individual class files and all resource files */
+    public static final EnumSet<Scope> CLASS_AND_ALL_RESOURCE_FILES =
+            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.CLASS_FILE);
+    /** Scope-set used for detectors which are affected by Java libraries */
+    public static final EnumSet<Scope> JAVA_LIBRARY_SCOPE = EnumSet.of(Scope.JAVA_LIBRARIES);
 }

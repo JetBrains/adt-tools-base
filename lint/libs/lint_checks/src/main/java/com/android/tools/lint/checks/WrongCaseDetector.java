@@ -18,6 +18,7 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Scope;
@@ -37,21 +38,22 @@ import java.util.Collection;
  */
 public class WrongCaseDetector extends LayoutDetector {
     /** Using the wrong case for layout tags */
-    public static final Issue WRONGCASE = Issue.create(
+    public static final Issue WRONG_CASE = Issue.create(
             "WrongCase", //$NON-NLS-1$
+            "Wrong case for view tag",
             "Ensures that the correct case is used for special layout tags such as <fragment>",
 
-            ""
-            + "Most layout tags, such as <Button>, refer to actual view classes and are therefore "
-            + "capitalized. However, there are exceptions such as <fragment> and <include>. This "
-            + "lint check looks for incorrect capitalizations.",
+            "Most layout tags, such as <Button>, refer to actual view classes and are therefore " +
+            "capitalized. However, there are exceptions such as <fragment> and <include>. This " +
+            "lint check looks for incorrect capitalizations.",
 
             Category.CORRECTNESS,
             8,
             Severity.WARNING,
-            WrongCaseDetector.class,
-            Scope.RESOURCE_FILE_SCOPE)
-            .setMoreInfo("http://developer.android.com/guide/components/fragments.html"); //$NON-NLS-1$
+            new Implementation(
+                    WrongCaseDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE))
+            .addMoreInfo("http://developer.android.com/guide/components/fragments.html"); //$NON-NLS-1$
 
     /** Constructs a new {@link WrongCaseDetector} */
     public WrongCaseDetector() {
@@ -77,7 +79,7 @@ public class WrongCaseDetector extends LayoutDetector {
     public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
         String tag = element.getTagName();
         String correct = Character.toLowerCase(tag.charAt(0)) + tag.substring(1);
-        context.report(WRONGCASE, element, context.getLocation(element),
+        context.report(WRONG_CASE, element, context.getLocation(element),
                 String.format("Invalid tag <%1$s>; should be <%2$s>", tag, correct), null);
     }
 }

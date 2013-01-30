@@ -31,6 +31,7 @@ import com.android.tools.lint.client.api.IJavaParser;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -87,9 +88,20 @@ import lombok.ast.VariableReference;
  * TODO: Handle Resources.getQuantityString as well
  */
 public class StringFormatDetector extends ResourceXmlDetector implements Detector.JavaScanner {
+
+    private static final Implementation IMPLEMENTATION_XML = new Implementation(
+            StringFormatDetector.class,
+            Scope.ALL_RESOURCES_SCOPE);
+
+    private static final Implementation IMPLEMENTATION_XML_AND_JAVA = new Implementation(
+            StringFormatDetector.class,
+            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.JAVA_FILE));
+
+
     /** Whether formatting strings are invalid */
     public static final Issue INVALID = Issue.create(
             "StringFormatInvalid", //$NON-NLS-1$
+            "Invalid format string",
             "Checks that format strings are valid",
 
             "If a string contains a '%' character, then the string may be a formatting string " +
@@ -112,12 +124,12 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             Category.MESSAGES,
             9,
             Severity.ERROR,
-            StringFormatDetector.class,
-            Scope.ALL_RESOURCES_SCOPE);
+            IMPLEMENTATION_XML);
 
     /** Whether formatting argument types are consistent across translations */
     public static final Issue ARG_COUNT = Issue.create(
             "StringFormatCount", //$NON-NLS-1$
+            "Formatting argument types inconsistent across translations",
             "Ensures that all format strings are used and that the same number is defined "
                 + "across translations",
 
@@ -128,14 +140,14 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             Category.MESSAGES,
             5,
             Severity.WARNING,
-            StringFormatDetector.class,
-            Scope.ALL_RESOURCES_SCOPE);
+            IMPLEMENTATION_XML);
 
     /** Whether the string format supplied in a call to String.format matches the format string */
     public static final Issue ARG_TYPES = Issue.create(
             "StringFormatMatches", //$NON-NLS-1$
-            "Ensures that the format used in <string> definitions is compatible with the "
-                + "String.format call",
+            "`String.format` string doesn't match the XML format string",
+            "Ensures that the format used in `<string>` definitions is compatible with the "
+                + "`String.format` call",
 
             "This lint check ensures the following:\n" +
             "(1) If there are multiple translations of the format string, then all translations " +
@@ -146,8 +158,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             Category.MESSAGES,
             9,
             Severity.ERROR,
-            StringFormatDetector.class,
-            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.JAVA_FILE));
+            IMPLEMENTATION_XML_AND_JAVA);
 
     /**
      * Map from a format string name to a list of declaration file and actual

@@ -22,6 +22,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
@@ -49,6 +50,7 @@ public class ViewConstructorDetector extends Detector implements Detector.ClassS
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "ViewConstructor", //$NON-NLS-1$
+            "Missing View constructors for XML inflation",
             "Checks that custom views define the expected constructors",
 
             "Some layout tools (such as the Android layout editor for Eclipse) needs to " +
@@ -65,8 +67,9 @@ public class ViewConstructorDetector extends Detector implements Detector.ClassS
             Category.USABILITY,
             3,
             Severity.WARNING,
-            ViewConstructorDetector.class,
-            Scope.CLASS_FILE_SCOPE);
+            new Implementation(
+                    ViewConstructorDetector.class,
+                    Scope.CLASS_FILE_SCOPE));
 
     /** Constructs a new {@link ViewConstructorDetector} check */
     public ViewConstructorDetector() {

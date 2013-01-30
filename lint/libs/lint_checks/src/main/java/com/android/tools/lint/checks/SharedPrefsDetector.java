@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -52,7 +53,8 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "CommitPrefEdits", //$NON-NLS-1$
-            "Looks for code editing a SharedPreference but forgetting to call commit() on it",
+            "Missing `commit()` on `SharedPreference` editor",
+            "Looks for code editing a `SharedPreference` but forgetting to call `commit()` on it",
 
             "After calling `edit()` on a `SharedPreference`, you must call `commit()` " +
             "or `apply()` on the editor to save the results.",
@@ -60,8 +62,9 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
             Category.CORRECTNESS,
             6,
             Severity.WARNING,
-            SharedPrefsDetector.class,
-            Scope.JAVA_FILE_SCOPE);
+            new Implementation(
+                    SharedPrefsDetector.class,
+                    Scope.JAVA_FILE_SCOPE));
 
     /** Constructs a new {@link SharedPrefsDetector} check */
     public SharedPrefsDetector() {

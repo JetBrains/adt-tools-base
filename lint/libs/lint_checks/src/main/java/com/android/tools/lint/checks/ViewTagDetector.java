@@ -24,6 +24,7 @@ import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
@@ -52,9 +53,10 @@ public class ViewTagDetector extends Detector implements ClassScanner {
     /** Using setTag and leaking memory */
     public static final Issue ISSUE = Issue.create(
             "ViewTag", //$NON-NLS-1$
-            "Finds potential leaks when using View.setTag",
+            "Tagged object leaks",
+            "Finds potential leaks when using `View.setTag`",
 
-            "Prior to Android 4.0, the implementation of View.setTag(int, Object) would " +
+            "Prior to Android 4.0, the implementation of `View.setTag(int, Object)` would " +
             "store the objects in a static map, where the values were strongly referenced. " +
             "This means that if the object contains any references pointing back to the " +
             "context, the context (which points to pretty much everything else) will leak. " +
@@ -65,8 +67,9 @@ public class ViewTagDetector extends Detector implements ClassScanner {
             Category.PERFORMANCE,
             6,
             Severity.WARNING,
-            ViewTagDetector.class,
-            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.CLASS_FILE));
+            new Implementation(
+                    ViewTagDetector.class,
+                    Scope.CLASS_AND_ALL_RESOURCE_FILES));
 
     /** Constructs a new {@link ViewTagDetector} */
     public ViewTagDetector() {

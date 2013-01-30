@@ -48,6 +48,7 @@ import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -143,9 +144,18 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     private static final EnumSet<Scope> ICON_TYPE_SCOPE = EnumSet.of(Scope.ALL_RESOURCE_FILES,
             Scope.JAVA_FILE, Scope.MANIFEST);
 
+    private static final Implementation IMPLEMENTATION_JAVA = new Implementation(
+            IconDetector.class,
+            ICON_TYPE_SCOPE);
+
+    private static final Implementation IMPLEMENTATION_RES_ONLY = new Implementation(
+            IconDetector.class,
+            Scope.ALL_RESOURCES_SCOPE);
+
     /** Wrong icon size according to published conventions */
     public static final Issue ICON_EXPECTED_SIZE = Issue.create(
             "IconExpectedSize", //$NON-NLS-1$
+            "Icon has incorrect size",
             "Ensures that launcher icons, notification icons etc have the correct size",
             "There are predefined sizes (for each density) for launcher icons. You " +
             "should follow these conventions to make sure your icons fit in with the " +
@@ -153,16 +163,16 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             Category.ICONS,
             5,
             Severity.WARNING,
-            IconDetector.class,
-            ICON_TYPE_SCOPE)
+            IMPLEMENTATION_JAVA)
             // Still some potential false positives:
             .setEnabledByDefault(false)
-            .setMoreInfo(
-            "http://developer.android.com/design/style/iconography.html"); //$NON-NLS-1$
+            .addMoreInfo(
+                    "http://developer.android.com/design/style/iconography.html"); //$NON-NLS-1$
 
     /** Inconsistent dip size across densities */
     public static final Issue ICON_DIP_SIZE = Issue.create(
             "IconDipSize", //$NON-NLS-1$
+            "Icon density-independent size validation",
             "Ensures that icons across densities provide roughly the same density-independent size",
             "Checks the all icons which are provided in multiple densities, all compute to " +
             "roughly the same density-independent pixel (`dip`) size. This catches errors where " +
@@ -171,12 +181,12 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             Category.ICONS,
             5,
             Severity.WARNING,
-            IconDetector.class,
-            Scope.ALL_RESOURCES_SCOPE);
+            IMPLEMENTATION_RES_ONLY);
 
     /** Images in res/drawable folder */
     public static final Issue ICON_LOCATION = Issue.create(
             "IconLocation", //$NON-NLS-1$
+            "Image defined in density-independent drawable folder",
             "Ensures that images are not defined in the density-independent drawable folder",
             "The res/drawable folder is intended for density-independent graphics such as " +
             "shapes defined in XML. For bitmaps, move it to `drawable-mdpi` and consider " +
@@ -186,13 +196,13 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             Category.ICONS,
             5,
             Severity.WARNING,
-            IconDetector.class,
-            Scope.ALL_RESOURCES_SCOPE).setMoreInfo(
+            IMPLEMENTATION_RES_ONLY).addMoreInfo(
             "http://developer.android.com/guide/practices/screens_support.html"); //$NON-NLS-1$
 
     /** Missing density versions of image */
     public static final Issue ICON_DENSITIES = Issue.create(
             "IconDensities", //$NON-NLS-1$
+            "Icon densities validation",
             "Ensures that icons provide custom versions for all supported densities",
             "Icons will look best if a custom version is provided for each of the " +
             "major screen density classes (low, medium, high, extra high). " +
@@ -207,13 +217,13 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             Category.ICONS,
             4,
             Severity.WARNING,
-            IconDetector.class,
-            Scope.ALL_RESOURCES_SCOPE).setMoreInfo(
+            IMPLEMENTATION_RES_ONLY).addMoreInfo(
             "http://developer.android.com/guide/practices/screens_support.html"); //$NON-NLS-1$
 
     /** Missing density folders */
     public static final Issue ICON_MISSING_FOLDER = Issue.create(
             "IconMissingDensityFolder", //$NON-NLS-1$
+            "Missing density folder",
             "Ensures that all the density folders are present",
             "Icons will look best if a custom version is provided for each of the " +
             "major screen density classes (low, medium, high, extra high). " +
@@ -227,26 +237,26 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             Category.ICONS,
             3,
             Severity.WARNING,
-            IconDetector.class,
-            Scope.ALL_RESOURCES_SCOPE).setMoreInfo(
+            IMPLEMENTATION_RES_ONLY).addMoreInfo(
             "http://developer.android.com/guide/practices/screens_support.html"); //$NON-NLS-1$
 
     /** Using .gif bitmaps */
     public static final Issue GIF_USAGE = Issue.create(
             "GifUsage", //$NON-NLS-1$
+            "Using `.gif` format for bitmaps is discouraged",
             "Checks for images using the GIF file format which is discouraged",
             "The `.gif` file format is discouraged. Consider using `.png` (preferred) " +
             "or `.jpg` (acceptable) instead.",
             Category.ICONS,
             5,
             Severity.WARNING,
-            IconDetector.class,
-            Scope.ALL_RESOURCES_SCOPE).setMoreInfo(
+            IMPLEMENTATION_RES_ONLY).addMoreInfo(
             "http://developer.android.com/guide/topics/resources/drawable-resource.html#Bitmap"); //$NON-NLS-1$
 
     /** Duplicated icons across different names */
     public static final Issue DUPLICATES_NAMES = Issue.create(
             "IconDuplicates", //$NON-NLS-1$
+            "Duplicated icons under different names",
             "Finds duplicated icons under different names",
             "If an icon is repeated under different names, you can consolidate and just " +
             "use one of the icons and delete the others to make your application smaller. " +
@@ -255,12 +265,12 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             Category.ICONS,
             3,
             Severity.WARNING,
-            IconDetector.class,
-            Scope.ALL_RESOURCES_SCOPE);
+            IMPLEMENTATION_RES_ONLY);
 
     /** Duplicated contents across configurations for a given name */
     public static final Issue DUPLICATES_CONFIGURATIONS = Issue.create(
             "IconDuplicatesConfig", //$NON-NLS-1$
+            "Identical bitmaps across various configurations",
             "Finds icons that have identical bitmaps across various configuration parameters",
             "If an icon is provided under different configuration parameters such as " +
             "`drawable-hdpi` or `-v11`, they should typically be different. This detector " +
@@ -269,13 +279,13 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             Category.ICONS,
             5,
             Severity.WARNING,
-            IconDetector.class,
-            Scope.ALL_RESOURCES_SCOPE);
+            IMPLEMENTATION_RES_ONLY);
 
     /** Icons appearing in both -nodpi and a -Ndpi folder */
     public static final Issue ICON_NODPI = Issue.create(
             "IconNoDpi", //$NON-NLS-1$
-            "Finds icons that appear in both a -nodpi folder and a dpi folder",
+            "Icon appears in both `-nodpi` and dpi folders",
+            "Finds icons that appear in both a `-nodpi` folder and a dpi folder",
             "Bitmaps that appear in `drawable-nodpi` folders will not be scaled by the " +
             "Android framework. If a drawable resource of the same name appears *both* in " +
             "a `-nodpi` folder as well as a dpi folder such as `drawable-hdpi`, then " +
@@ -284,39 +294,39 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             Category.ICONS,
             7,
             Severity.WARNING,
-            IconDetector.class,
-            Scope.ALL_RESOURCES_SCOPE);
+            IMPLEMENTATION_RES_ONLY);
 
     /** Icons appearing as both drawable xml files and bitmaps */
     public static final Issue ICON_XML_AND_PNG = Issue.create(
             "IconXmlAndPng", //$NON-NLS-1$
-            "Finds icons that appear both as a drawable .xml file and as bitmaps",
-            "If a drawable resource appears as an .xml file in the drawable/ folder, " +
+            "Icon is specified both as `.xml` file and as a bitmap",
+            "Finds icons that appear both as a drawable `.xml` file and as bitmaps",
+            "If a drawable resource appears as an `.xml` file in the `drawable/` folder, " +
             "it's usually not intentional for it to also appear as a bitmap using the " +
             "same name; generally you expect the drawable XML file to define states " +
             "and each state has a corresponding drawable bitmap.",
             Category.ICONS,
             7,
             Severity.WARNING,
-            IconDetector.class,
-            Scope.ALL_RESOURCES_SCOPE);
+            IMPLEMENTATION_RES_ONLY);
 
     /** Wrong filename according to the format */
     public static final Issue ICON_EXTENSION = Issue.create(
             "IconExtension", //$NON-NLS-1$
+            "Icon format does not match the file extension",
             "Checks that the icon file extension matches the actual image format in the file",
 
-            "Ensures that icons have the correct file extension (e.g. a .png file is " +
-            "really in the PNG format and not for example a GIF file named .png.)",
+            "Ensures that icons have the correct file extension (e.g. a `.png` file is " +
+            "really in the PNG format and not for example a GIF file named `.png`.)",
             Category.ICONS,
             3,
             Severity.WARNING,
-            IconDetector.class,
-            Scope.ALL_RESOURCES_SCOPE);
+            IMPLEMENTATION_RES_ONLY);
 
     /** Wrong filename according to the format */
     public static final Issue ICON_COLORS = Issue.create(
             "IconColors", //$NON-NLS-1$
+            "Icon colors do not follow the recommended visual style",
             "Checks that icons follow the recommended visual style",
 
             "Notification icons and Action Bar icons should only white and shades of gray. " +
@@ -329,13 +339,13 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             Category.ICONS,
             6,
             Severity.WARNING,
-            IconDetector.class,
-            ICON_TYPE_SCOPE).setMoreInfo(
+            IMPLEMENTATION_JAVA).addMoreInfo(
                 "http://developer.android.com/design/style/iconography.html"); //$NON-NLS-1$
 
     /** Wrong launcher icon shape */
     public static final Issue ICON_LAUNCHER_SHAPE = Issue.create(
             "IconLauncherShape", //$NON-NLS-1$
+            "The launcher icon shape should use a distinct silhouette",
             "Checks that launcher icons follow the recommended visual style",
 
             "According to the Android Design Guide " +
@@ -349,8 +359,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             Category.ICONS,
             6,
             Severity.WARNING,
-            IconDetector.class,
-            ICON_TYPE_SCOPE).setMoreInfo(
+            IMPLEMENTATION_JAVA).addMoreInfo(
                 "http://developer.android.com/design/style/iconography.html"); //$NON-NLS-1$
 
     /** Constructs a new {@link IconDetector} check */

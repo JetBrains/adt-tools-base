@@ -24,6 +24,7 @@ import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
@@ -50,10 +51,16 @@ import java.util.List;
  * for missing {@code commit} calls on FragmentTransactions, etc.
  */
 public class CleanupDetector extends Detector implements ClassScanner {
+
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            CleanupDetector.class,
+            Scope.CLASS_FILE_SCOPE);
+
     /** Problems with missing recycle calls */
     public static final Issue RECYCLE_RESOURCE = Issue.create(
         "Recycle", //$NON-NLS-1$
-        "Looks for missing recycle() calls on resources",
+        "Missing `recycle()` calls",
+        "Looks for missing `recycle()` calls on resources",
 
         "Many resources, such as TypedArrays, VelocityTrackers, etc., " +
         "should be recycled (with a `recycle()` call) after use. This lint check looks " +
@@ -62,21 +69,20 @@ public class CleanupDetector extends Detector implements ClassScanner {
         Category.PERFORMANCE,
         7,
         Severity.WARNING,
-        CleanupDetector.class,
-        Scope.CLASS_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Problems with missing commit calls. */
     public static final Issue COMMIT_FRAGMENT = Issue.create(
             "CommitTransaction", //$NON-NLS-1$
-            "Looks for missing commit() calls on FragmentTransactions",
+            "Missing `commit()` calls",
+            "Looks for missing `commit()` calls on `FragmentTransactions`",
 
             "After creating a `FragmentTransaction`, you typically need to commit it as well",
 
             Category.CORRECTNESS,
             7,
             Severity.WARNING,
-            CleanupDetector.class,
-            Scope.CLASS_FILE_SCOPE);
+            IMPLEMENTATION);
 
     // Target method names
     private static final String RECYCLE = "recycle";                                  //$NON-NLS-1$

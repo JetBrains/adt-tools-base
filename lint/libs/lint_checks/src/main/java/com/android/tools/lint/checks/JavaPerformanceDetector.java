@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
@@ -60,9 +61,15 @@ import lombok.ast.VariableReference;
  * drawing operations and using HashMap instead of SparseArray.
  */
 public class JavaPerformanceDetector extends Detector implements Detector.JavaScanner {
+
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            JavaPerformanceDetector.class,
+            Scope.JAVA_FILE_SCOPE);
+
     /** Allocating objects during a paint method */
     public static final Issue PAINT_ALLOC = Issue.create(
             "DrawAllocation", //$NON-NLS-1$
+            "Memory allocations within drawing code",
             "Looks for memory allocations within drawing code",
 
             "You should avoid allocating objects during a drawing or layout operation. These " +
@@ -78,12 +85,12 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
             Category.PERFORMANCE,
             9,
             Severity.WARNING,
-            JavaPerformanceDetector.class,
-            Scope.JAVA_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Using HashMaps where SparseArray would be better */
-    public static final Issue USE_SPARSEARRAY = Issue.create(
+    public static final Issue USE_SPARSE_ARRAY = Issue.create(
             "UseSparseArrays", //$NON-NLS-1$
+            "HashMap can be replaced with SparseArray",
             "Looks for opportunities to replace HashMaps with the more efficient SparseArray",
 
             "For maps where the keys are of type integer, it's typically more efficient to " +
@@ -101,13 +108,13 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
             Category.PERFORMANCE,
             4,
             Severity.WARNING,
-            JavaPerformanceDetector.class,
-            Scope.JAVA_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Using {@code new Integer()} instead of the more efficient {@code Integer.valueOf} */
-    public static final Issue USE_VALUEOF = Issue.create(
+    public static final Issue USE_VALUE_OF = Issue.create(
             "UseValueOf", //$NON-NLS-1$
-            "Looks for usages of \"new\" for wrapper classes which should use \"valueOf\" instead",
+            "Should use `valueOf` instead of `new`",
+            "Looks for usages of `new` for wrapper classes which should use `valueOf` instead",
 
             "You should not call the constructor for wrapper classes directly, such as" +
             "`new Integer(42)`. Instead, call the `valueOf` factory method, such as " +
@@ -117,8 +124,7 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
             Category.PERFORMANCE,
             4,
             Severity.WARNING,
-            JavaPerformanceDetector.class,
-            Scope.JAVA_FILE_SCOPE);
+            IMPLEMENTATION);
 
     static final String ON_MEASURE = "onMeasure";                           //$NON-NLS-1$
     static final String ON_DRAW = "onDraw";                                 //$NON-NLS-1$
@@ -179,8 +185,8 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
             mContext = context;
 
             mCheckAllocations = context.isEnabled(PAINT_ALLOC);
-            mCheckMaps = context.isEnabled(USE_SPARSEARRAY);
-            mCheckValueOf = context.isEnabled(USE_VALUEOF);
+            mCheckMaps = context.isEnabled(USE_SPARSE_ARRAY);
+            mCheckValueOf = context.isEnabled(USE_VALUE_OF);
         }
 
         @Override
@@ -220,7 +226,7 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                         && node.astTypeReference().astParts().size() == 1
                         && node.astArguments().size() == 1) {
                     String argument = node.astArguments().first().toString();
-                    mContext.report(USE_VALUEOF, node, mContext.getLocation(node),
+                    mContext.report(USE_VALUE_OF, node, mContext.getLocation(node),
                             String.format("Use %1$s.valueOf(%2$s) instead", typeName, argument),
                             null);
                 }
@@ -492,19 +498,19 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                 if (first.getTypeName().equals(INTEGER)) {
                     String valueType = types.last().getTypeName();
                     if (valueType.equals(INTEGER)) {
-                        mContext.report(USE_SPARSEARRAY, node, mContext.getLocation(node),
+                        mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                             "Use new SparseIntArray(...) instead for better performance",
                             null);
                     } else if (valueType.equals(BOOLEAN)) {
-                        mContext.report(USE_SPARSEARRAY, node, mContext.getLocation(node),
+                        mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                                 "Use new SparseBooleanArray(...) instead for better performance",
                                 null);
                     } else if (valueType.equals(LONG) && mContext.getProject().getMinSdk() >= 17) {
-                        mContext.report(USE_SPARSEARRAY, node, mContext.getLocation(node),
+                        mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                                 "Use new SparseLongArray(...) instead for better performance",
                                 null);
                     } else {
-                        mContext.report(USE_SPARSEARRAY, node, mContext.getLocation(node),
+                        mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                             String.format(
                                 "Use new SparseArray<%1$s>(...) instead for better performance",
                               valueType),
@@ -521,15 +527,15 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                 TypeReference first = types.first();
                 String valueType = first.getTypeName();
                 if (valueType.equals(INTEGER)) {
-                    mContext.report(USE_SPARSEARRAY, node, mContext.getLocation(node),
+                    mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                         "Use new SparseIntArray(...) instead for better performance",
                         null);
                 } else if (valueType.equals(BOOLEAN)) {
-                    mContext.report(USE_SPARSEARRAY, node, mContext.getLocation(node),
+                    mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                             "Use new SparseBooleanArray(...) instead for better performance",
                             null);
                 } else if (valueType.equals(LONG) && mContext.getProject().getMinSdk() >= 17) {
-                    mContext.report(USE_SPARSEARRAY, node, mContext.getLocation(node),
+                    mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                             "Use new SparseLongArray(...) instead for better performance",
                             null);
                 }

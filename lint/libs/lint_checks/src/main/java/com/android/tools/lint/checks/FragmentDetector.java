@@ -26,6 +26,7 @@ import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
@@ -53,7 +54,8 @@ public class FragmentDetector extends Detector implements ClassScanner {
     /** Are fragment subclasses instantiatable? */
     public static final Issue ISSUE = Issue.create(
         "ValidFragment", //$NON-NLS-1$
-        "Ensures that Fragment subclasses can be instantiated",
+        "Fragment not instantiatable",
+        "Ensures that `Fragment` subclasses can be instantiated",
 
         "From the Fragment documentation:\n" +
         "*Every* fragment must have an empty constructor, so it can be instantiated when " +
@@ -66,9 +68,11 @@ public class FragmentDetector extends Detector implements ClassScanner {
         Category.CORRECTNESS,
         6,
         Severity.ERROR,
-        FragmentDetector.class,
-        Scope.CLASS_FILE_SCOPE).setMoreInfo(
-        "http://developer.android.com/reference/android/app/Fragment.html#Fragment()"); //$NON-NLS-1$
+        new Implementation(
+                FragmentDetector.class,
+                Scope.CLASS_FILE_SCOPE)
+        ).addMoreInfo(
+            "http://developer.android.com/reference/android/app/Fragment.html#Fragment()"); //$NON-NLS-1$
 
 
     /** Constructs a new {@link FragmentDetector} */

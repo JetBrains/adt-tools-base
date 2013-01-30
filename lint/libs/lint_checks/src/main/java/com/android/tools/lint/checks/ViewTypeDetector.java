@@ -29,6 +29,7 @@ import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -60,15 +61,18 @@ import lombok.ast.StrictListAccessor;
 /** Detector for finding inconsistent usage of views and casts */
 public class ViewTypeDetector extends ResourceXmlDetector implements Detector.JavaScanner {
     /** Mismatched view types */
-    public static final Issue ISSUE = Issue.create("WrongViewCast", //$NON-NLS-1$
+    public static final Issue ISSUE = Issue.create(
+            "WrongViewCast", //$NON-NLS-1$
+            "Mismatched view type",
             "Looks for incorrect casts to views that according to the XML are of a different type",
             "Keeps track of the view types associated with ids and if it finds a usage of " +
             "the id in the Java code it ensures that it is treated as the same type.",
             Category.CORRECTNESS,
             9,
             Severity.ERROR,
-            ViewTypeDetector.class,
-            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES));
+            new Implementation(
+                    ViewTypeDetector.class,
+                    EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES)));
 
     private final Map<String, Object> mIdToViewTag = new HashMap<String, Object>(50);
 

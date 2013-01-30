@@ -31,6 +31,7 @@ import static com.android.SdkConstants.NEW_ID_PREFIX;
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Location;
@@ -52,7 +53,8 @@ public class TextFieldDetector extends LayoutDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "TextFields", //$NON-NLS-1$
-            "Looks for text fields missing inputType or hint settings",
+            "Missing `inputType` or `hint`",
+            "Looks for text fields missing `inputType` or `hint` settings",
 
             "Providing an `inputType` attribute on a text field improves usability " +
             "because depending on the data to be input, optimized keyboards can be shown " +
@@ -71,8 +73,9 @@ public class TextFieldDetector extends LayoutDetector {
             Category.USABILITY,
             5,
             Severity.WARNING,
-            TextFieldDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    TextFieldDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     /** Constructs a new {@link TextFieldDetector} */
     public TextFieldDetector() {

@@ -43,6 +43,7 @@ import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
@@ -93,9 +94,14 @@ public class ButtonDetector extends ResourceXmlDetector {
     private static final String ANDROID_CANCEL_RESOURCE =
             ANDROID_STRING_PREFIX + "cancel"; //$NON-NLS-1$
 
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            ButtonDetector.class,
+            Scope.RESOURCE_FILE_SCOPE);
+
     /** The main issue discovered by this detector */
     public static final Issue ORDER = Issue.create(
             "ButtonOrder", //$NON-NLS-1$
+            "Button order",
             "Ensures the dismissive action of a dialog is on the left and affirmative on " +
             "the right",
 
@@ -114,14 +120,14 @@ public class ButtonDetector extends ResourceXmlDetector {
             Category.USABILITY,
             8,
             Severity.WARNING,
-            ButtonDetector.class,
-            Scope.RESOURCE_FILE_SCOPE)
-            .setMoreInfo(
-                "http://developer.android.com/design/building-blocks/dialogs.html"); //$NON-NLS-1$
+            IMPLEMENTATION)
+            .addMoreInfo(
+                    "http://developer.android.com/design/building-blocks/dialogs.html"); //$NON-NLS-1$
 
     /** The main issue discovered by this detector */
     public static final Issue STYLE = Issue.create(
             "ButtonStyle", //$NON-NLS-1$
+            "Button should be borderless",
             "Ensures that buttons in button bars are borderless",
 
             "Button bars typically use a borderless style for the buttons. Set the " +
@@ -132,14 +138,14 @@ public class ButtonDetector extends ResourceXmlDetector {
             Category.USABILITY,
             5,
             Severity.WARNING,
-            ButtonDetector.class,
-            Scope.RESOURCE_FILE_SCOPE)
-            .setMoreInfo(
-                "http://developer.android.com/design/building-blocks/buttons.html"); //$NON-NLS-1$
+            IMPLEMENTATION)
+            .addMoreInfo(
+                    "http://developer.android.com/design/building-blocks/buttons.html"); //$NON-NLS-1$
 
     /** The main issue discovered by this detector */
-    public static final Issue BACKBUTTON = Issue.create(
+    public static final Issue BACK_BUTTON = Issue.create(
             "BackButton", //$NON-NLS-1$
+            "Back button",
             "Looks for Back buttons, which are not common on the Android platform.",
             // TODO: Look for ">" as label suffixes as well
 
@@ -157,15 +163,15 @@ public class ButtonDetector extends ResourceXmlDetector {
             Category.USABILITY,
             6,
             Severity.WARNING,
-            ButtonDetector.class,
-            Scope.RESOURCE_FILE_SCOPE)
+            IMPLEMENTATION)
             .setEnabledByDefault(false)
-            .setMoreInfo(
-                "http://developer.android.com/design/patterns/pure-android.html"); //$NON-NLS-1$
+            .addMoreInfo(
+                 "http://developer.android.com/design/patterns/pure-android.html"); //$NON-NLS-1$
 
     /** The main issue discovered by this detector */
     public static final Issue CASE = Issue.create(
             "ButtonCase", //$NON-NLS-1$
+            "Cancel/OK dialog button capitalization",
             "Ensures that Cancel/OK dialog buttons use the canonical capitalization",
 
             "The standard capitalization for OK/Cancel dialogs is \"OK\" and \"Cancel\". " +
@@ -175,8 +181,7 @@ public class ButtonDetector extends ResourceXmlDetector {
             Category.USABILITY,
             2,
             Severity.WARNING,
-            ButtonDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Set of resource names whose value was either OK or Cancel */
     private Set<String> mApplicableResources;
@@ -343,8 +348,8 @@ public class ButtonDetector extends ResourceXmlDetector {
                     } else {
                         assert BACK_LABEL.equalsIgnoreCase(label) : label + ':' + context.file;
                         Location location = context.getLocation(element);
-                        if (context.isEnabled(BACKBUTTON)) {
-                            context.report(BACKBUTTON, element, location,
+                        if (context.isEnabled(BACK_BUTTON)) {
+                            context.report(BACK_BUTTON, element, location,
                                 "Back buttons are not standard on Android; see design guide's " +
                                 "navigation section", null);
                         }

@@ -27,6 +27,7 @@ import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Location.Handle;
@@ -59,6 +60,7 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "DuplicateDefinition", //$NON-NLS-1$
+            "Duplicate definitions of resources",
             "Discovers duplicate definitions of resources",
 
             "You can define a resource multiple times in different resource folders; that's how " +
@@ -70,8 +72,10 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
             Category.CORRECTNESS,
             6,
             Severity.ERROR,
-            DuplicateResourceDetector.class,
-            Scope.ALL_RESOURCES_SCOPE).addAnalysisScope(Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    DuplicateResourceDetector.class,
+                    Scope.ALL_RESOURCES_SCOPE,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     private static final String PRODUCT = "product";   //$NON-NLS-1$
     private Map<ResourceType, Set<String>> mTypeMap;

@@ -23,6 +23,7 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
@@ -44,6 +45,7 @@ public class ColorUsageDetector extends Detector implements Detector.JavaScanner
     /** Attempting to set a resource id as a color */
     public static final Issue ISSUE = Issue.create(
             "ResourceAsColor", //$NON-NLS-1$
+            "Should pass resolved color instead of resource id",
             "Looks for calls to setColor where a resource id is passed instead of a " +
             "resolved color",
 
@@ -54,8 +56,9 @@ public class ColorUsageDetector extends Detector implements Detector.JavaScanner
             Category.CORRECTNESS,
             7,
             Severity.ERROR,
-            ColorUsageDetector.class,
-            Scope.JAVA_FILE_SCOPE);
+            new Implementation(
+                    ColorUsageDetector.class,
+                    Scope.JAVA_FILE_SCOPE));
 
     /** Constructs a new {@link ColorUsageDetector} check */
     public ColorUsageDetector() {

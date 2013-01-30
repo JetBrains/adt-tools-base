@@ -50,6 +50,7 @@ import static com.android.SdkConstants.VALUE_TRUE;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Location;
@@ -69,9 +70,15 @@ import java.util.Collection;
  * Checks for cases where a TextView should probably be an EditText instead
  */
 public class TextViewDetector extends LayoutDetector {
+
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            TextViewDetector.class,
+            Scope.RESOURCE_FILE_SCOPE);
+
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "TextViewEdits", //$NON-NLS-1$
+            "TextView should probably be an EditText instead",
             "Looks for TextViews being used for input",
 
             "Using a `<TextView>` to input text is generally an error, you should be " +
@@ -88,12 +95,12 @@ public class TextViewDetector extends LayoutDetector {
             Category.CORRECTNESS,
             7,
             Severity.WARNING,
-            TextViewDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Text could be selectable */
     public static final Issue SELECTABLE = Issue.create(
             "SelectableText", //$NON-NLS-1$
+            "Dynamic text should probably be selectable",
             "Looks for TextViews which should probably allow their text to be selected",
 
             "If a `<TextView>` is used to display data, the user might want to copy that " +
@@ -107,8 +114,7 @@ public class TextViewDetector extends LayoutDetector {
             Category.USABILITY,
             7,
             Severity.WARNING,
-            TextViewDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            IMPLEMENTATION);
 
     /** Constructs a new {@link TextViewDetector} */
     public TextViewDetector() {

@@ -21,6 +21,7 @@ import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
@@ -39,7 +40,6 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.io.File;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -50,7 +50,9 @@ import lombok.ast.libs.org.parboiled.google.collect.Lists;
  */
 public class InvalidPackageDetector extends Detector implements Detector.ClassScanner {
     /** Accessing an invalid package */
-    public static final Issue ISSUE = Issue.create("InvalidPackage", //$NON-NLS-1$
+    public static final Issue ISSUE = Issue.create(
+            "InvalidPackage", //$NON-NLS-1$
+            "Package not included in Android",
             "Finds API accesses to APIs that are not supported in Android",
 
             "This check scans through libraries looking for calls to APIs that are not included " +
@@ -70,8 +72,9 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
             Category.CORRECTNESS,
             6,
             Severity.ERROR,
-            InvalidPackageDetector.class,
-            EnumSet.of(Scope.JAVA_LIBRARIES));
+            new Implementation(
+                    InvalidPackageDetector.class,
+                    Scope.JAVA_LIBRARY_SCOPE));
 
     private static final String JAVA_PKG_PREFIX = "java/";    //$NON-NLS-1$
     private static final String JAVAX_PKG_PREFIX = "javax/";  //$NON-NLS-1$

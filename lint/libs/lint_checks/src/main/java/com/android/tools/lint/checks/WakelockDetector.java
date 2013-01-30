@@ -26,6 +26,7 @@ import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
@@ -52,26 +53,28 @@ public class WakelockDetector extends Detector implements ClassScanner {
 
     /** Problems using wakelocks */
     public static final Issue ISSUE = Issue.create(
-        "Wakelock", //$NON-NLS-1$
-        "Looks for problems with wakelock usage",
+            "Wakelock", //$NON-NLS-1$
+            "Incorrect `WakeLock` usage",
+            "Looks for problems with `WakeLock` usage",
 
-        "Failing to release a wakelock properly can keep the Android device in " +
-        "a high power mode, which reduces battery life. There are several causes " +
-        "of this, such as releasing the wake lock in `onDestroy()` instead of in " +
-        "`onPause()`, failing to call `release()` in all possible code paths after " +
-        "an `acquire()`, and so on.\n" +
-        "\n" +
-        "NOTE: If you are using the lock just to keep the screen on, you should " +
-        "strongly consider using `FLAG_KEEP_SCREEN_ON` instead. This window flag " +
-        "will be correctly managed by the platform as the user moves between " +
-        "applications and doesn't require a special permission. See " +
-        "http://developer.android.com/reference/android/view/WindowManager.LayoutParams.html#FLAG_KEEP_SCREEN_ON.",
+            "Failing to release a wakelock properly can keep the Android device in " +
+            "a high power mode, which reduces battery life. There are several causes " +
+            "of this, such as releasing the wake lock in `onDestroy()` instead of in " +
+            "`onPause()`, failing to call `release()` in all possible code paths after " +
+            "an `acquire()`, and so on.\n" +
+            "\n" +
+            "NOTE: If you are using the lock just to keep the screen on, you should " +
+            "strongly consider using `FLAG_KEEP_SCREEN_ON` instead. This window flag " +
+            "will be correctly managed by the platform as the user moves between " +
+            "applications and doesn't require a special permission. See " +
+            "http://developer.android.com/reference/android/view/WindowManager.LayoutParams.html#FLAG_KEEP_SCREEN_ON.",
 
-        Category.PERFORMANCE,
-        9,
-        Severity.WARNING,
-        WakelockDetector.class,
-        Scope.CLASS_FILE_SCOPE);
+            Category.PERFORMANCE,
+            9,
+            Severity.WARNING,
+            new Implementation(
+                    WakelockDetector.class,
+                    Scope.CLASS_FILE_SCOPE));
 
     private static final String WAKELOCK_OWNER = "android/os/PowerManager$WakeLock"; //$NON-NLS-1$
     private static final String RELEASE_METHOD = "release"; //$NON-NLS-1$

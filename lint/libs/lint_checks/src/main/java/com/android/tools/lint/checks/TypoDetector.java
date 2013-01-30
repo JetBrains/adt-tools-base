@@ -28,6 +28,7 @@ import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
@@ -88,6 +89,7 @@ public class TypoDetector extends ResourceXmlDetector {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "Typos", //$NON-NLS-1$
+            "Spelling error",
             "Looks for typos in messages",
 
             "This check looks through the string definitions, and if it finds any words " +
@@ -95,8 +97,9 @@ public class TypoDetector extends ResourceXmlDetector {
             Category.MESSAGES,
             7,
             Severity.WARNING,
-            TypoDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            new Implementation(
+                    TypoDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     /** Constructs a new detector */
     public TypoDetector() {

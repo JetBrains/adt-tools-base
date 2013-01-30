@@ -21,6 +21,7 @@ import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
@@ -52,6 +53,7 @@ public class FieldGetterDetector extends Detector implements Detector.ClassScann
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "FieldGetter", //$NON-NLS-1$
+            "Using getter instead of field",
             "Suggests replacing uses of getters with direct field access within a class",
 
             "Accessing a field within the class that defines a getter for that field is " +
@@ -59,18 +61,20 @@ public class FieldGetterDetector extends Detector implements Detector.ClassScann
             "nothing other than return the field, you might want to just reference the " +
             "local field directly instead.\n" +
             "\n" +
-            "NOTE: As of Android 2.3 (Gingerbread), this optimization is performed " +
+            "*NOTE*: As of Android 2.3 (Gingerbread), this optimization is performed " +
             "automatically by Dalvik, so there is no need to change your code; this is " +
             "only relevant if you are targeting older versions of Android.",
 
             Category.PERFORMANCE,
             4,
             Severity.WARNING,
-            FieldGetterDetector.class,
-            Scope.CLASS_FILE_SCOPE).
+            new Implementation(
+                    FieldGetterDetector.class,
+                    Scope.CLASS_FILE_SCOPE)).
             // This is a micro-optimization: not enabled by default
-            setEnabledByDefault(false).setMoreInfo(
-           "http://developer.android.com/guide/practices/design/performance.html#internal_get_set"); //$NON-NLS-1$
+            setEnabledByDefault(false).
+            addMoreInfo(
+            "http://developer.android.com/guide/practices/design/performance.html#internal_get_set"); //$NON-NLS-1$
     private ArrayList<Entry> mPendingCalls;
 
     /** Constructs a new {@link FieldGetterDetector} check */

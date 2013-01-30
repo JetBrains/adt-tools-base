@@ -29,6 +29,7 @@ import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
@@ -54,6 +55,7 @@ public class OverrideDetector extends Detector implements ClassScanner {
     /** Accidental overrides */
     public static final Issue ISSUE = Issue.create(
             "DalvikOverride", //$NON-NLS-1$
+            "Method considered overridden by Dalvik",
             "Looks for methods treated as overrides by Dalvik",
 
             "The Android virtual machine will treat a package private method in one " +
@@ -70,8 +72,9 @@ public class OverrideDetector extends Detector implements ClassScanner {
             Category.CORRECTNESS,
             7,
             Severity.ERROR,
-            OverrideDetector.class,
-            EnumSet.of(Scope.ALL_CLASS_FILES));
+            new Implementation(
+                    OverrideDetector.class,
+                    EnumSet.of(Scope.ALL_CLASS_FILES)));
 
     /** map from owner class name to JVM signatures for its package private methods  */
     private final Map<String, Set<String>> mPackagePrivateMethods = Maps.newHashMap();
@@ -171,7 +174,7 @@ public class OverrideDetector extends Detector implements ClassScanner {
             }
 
             if (mErrors != null) {
-                context.requestRepeat(this, ISSUE.getScope());
+                context.requestRepeat(this, ISSUE.getImplementation().getScope());
             }
         } else {
             assert context.getPhase() == 2;

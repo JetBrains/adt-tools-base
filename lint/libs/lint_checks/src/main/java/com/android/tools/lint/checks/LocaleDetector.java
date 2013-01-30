@@ -25,6 +25,7 @@ import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
@@ -56,7 +57,8 @@ public class LocaleDetector extends Detector implements ClassScanner {
     /** Calling risky convenience methods */
     public static final Issue STRING_LOCALE = Issue.create(
             "DefaultLocale", //$NON-NLS-1$
-            "Finds calls to locale-ambiguous String manipulation methods",
+            "Implied default locale in case conversion",
+            "Finds calls to locale-ambiguous `String` manipulation methods",
 
             "Calling `String#toLowerCase()` or `#toUpperCase()` *without specifying an " +
             "explicit locale* is a common source of bugs. The reason for that is that those " +
@@ -72,14 +74,17 @@ public class LocaleDetector extends Detector implements ClassScanner {
             Category.CORRECTNESS,
             6,
             Severity.WARNING,
-            LocaleDetector.class,
-            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.CLASS_FILE)).setMoreInfo(
-             "http://developer.android.com/reference/java/util/Locale.html#default_locale"); //$NON-NLS-1$
+            new Implementation(
+                    LocaleDetector.class,
+                    Scope.CLASS_AND_ALL_RESOURCE_FILES))
+            .addMoreInfo(
+                    "http://developer.android.com/reference/java/util/Locale.html#default_locale"); //$NON-NLS-1$
 
     /** Constructing SimpleDateFormat without an explicit locale */
     public static final Issue DATE_FORMAT = Issue.create(
             "SimpleDateFormat", //$NON-NLS-1$
-            "Using SimpleDateFormat directly without an explicit locale",
+            "Implied locale in date format",
+            "Using `SimpleDateFormat` directly without an explicit locale",
 
             "Almost all callers should use `getDateInstance()`, `getDateTimeInstance()`, or " +
             "`getTimeInstance()` to get a ready-made instance of SimpleDateFormat suitable " +
@@ -95,9 +100,11 @@ public class LocaleDetector extends Detector implements ClassScanner {
             Category.CORRECTNESS,
             6,
             Severity.WARNING,
-            LocaleDetector.class,
-            Scope.CLASS_FILE_SCOPE).setMoreInfo(
-             "http://developer.android.com/reference/java/text/SimpleDateFormat.html"); //$NON-NLS-1$
+            new Implementation(
+                    LocaleDetector.class,
+                    Scope.CLASS_FILE_SCOPE))
+            .addMoreInfo(
+            "http://developer.android.com/reference/java/text/SimpleDateFormat.html"); //$NON-NLS-1$
 
     static final String DATE_FORMAT_OWNER = "java/text/SimpleDateFormat"; //$NON-NLS-1$
     private static final String STRING_OWNER = "java/lang/String";                //$NON-NLS-1$

@@ -82,7 +82,7 @@ public class XmlReporterTest extends AbstractCheckTest {
             String report = Files.toString(file, Charsets.UTF_8);
             assertEquals(
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<issues format=\"3\" by=\"lint unittest\">\n" +
+                "<issues format=\"4\" by=\"lint unittest\">\n" +
                 "\n" +
                 "    <issue\n" +
                 "        id=\"UsesMinSdkAttributes\"\n" +
@@ -93,6 +93,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 "        summary=\"Checks that the minimum SDK and target SDK attributes are defined\"\n" +
                 "        explanation=\"The manifest should contain a `&lt;uses-sdk>` element which defines the minimum API Level required for the application to run, as well as the target version (the highest API level you have tested the version for.)\"\n" +
                 "        url=\"http://developer.android.com/guide/topics/manifest/uses-sdk-element.html\"\n" +
+                "        urls=\"http://developer.android.com/guide/topics/manifest/uses-sdk-element.html\"\n" +
                 "        errorLine1=\"    &lt;uses-sdk android:minSdkVersion=&quot;8&quot; />\"\n" +
                 "        errorLine2=\"    ^\">\n" +
                 "        <location\n" +
@@ -183,7 +184,7 @@ public class XmlReporterTest extends AbstractCheckTest {
             String report = Files.toString(file, Charsets.UTF_8);
             assertEquals(
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<issues format=\"3\" by=\"lint unittest\">\n" +
+                "<issues format=\"4\" by=\"lint unittest\">\n" +
                 "\n" +
                 "    <issue\n" +
                 "        id=\"UsesMinSdkAttributes\"\n" +
@@ -194,6 +195,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 "        summary=\"Checks that the minimum SDK and target SDK attributes are defined\"\n" +
                 "        explanation=\"The manifest should contain a `&lt;uses-sdk>` element which defines the minimum API Level required for the application to run, as well as the target version (the highest API level you have tested the version for.)\"\n" +
                 "        url=\"http://developer.android.com/guide/topics/manifest/uses-sdk-element.html\"\n" +
+                "        urls=\"http://developer.android.com/guide/topics/manifest/uses-sdk-element.html\"\n" +
                 "        errorLine1=\"    &lt;uses-sdk android:minSdkVersion=&quot;8&quot; />\"\n" +
                 "        errorLine2=\"    ^\">\n" +
                 "        <location\n" +

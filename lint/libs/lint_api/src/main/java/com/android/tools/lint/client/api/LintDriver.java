@@ -36,7 +36,6 @@ import com.android.annotations.VisibleForTesting;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.client.api.LintListener.EventType;
-import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -500,7 +499,7 @@ public class LintDriver {
         Multimap<Class<? extends Detector>, Issue> issueMap =
                 ArrayListMultimap.create(issues.size(), 3);
         for (Issue issue : issues) {
-            issueMap.put(issue.getDetectorClass(), issue);
+            issueMap.put(issue.getImplementation().getDetectorClass(), issue);
         }
 
         Map<Class<? extends Detector>, EnumSet<Scope>> detectorToScope =
@@ -532,7 +531,7 @@ public class LintDriver {
                     add = true; // Include detector if any of its issues are enabled
 
                     EnumSet<Scope> s = detectorToScope.get(detectorClass);
-                    EnumSet<Scope> issueScope = issue.getScope();
+                    EnumSet<Scope> issueScope = issue.getImplementation().getScope();
                     if (s == null) {
                         detectorToScope.put(detectorClass, issueScope);
                     } else if (!s.containsAll(issueScope)) {
@@ -872,10 +871,8 @@ public class LintDriver {
         if (mCanceled) {
             mClient.report(
                 projectContext,
-                // Must provide an issue since API guarantees that the issue parameter
-                // is valid
-                Issue.create("Lint", "", "", Category.PERFORMANCE, 0, Severity.INFORMATIONAL, //$NON-NLS-1$
-                        Detector.class, EnumSet.noneOf(Scope.class)),
+                    // Must provide an issue since API guarantees that the issue parameter
+                IssueRegistry.CANCELLED,
                 Severity.INFORMATIONAL,
                 null /*range*/,
                 "Lint canceled by user", null);

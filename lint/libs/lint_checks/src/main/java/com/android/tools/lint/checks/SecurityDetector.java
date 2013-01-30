@@ -40,6 +40,7 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -73,9 +74,18 @@ import lombok.ast.StrictListAccessor;
 public class SecurityDetector extends Detector implements Detector.XmlScanner,
         Detector.JavaScanner {
 
+    private static final Implementation IMPLEMENTATION_MANIFEST = new Implementation(
+            SecurityDetector.class,
+            Scope.MANIFEST_SCOPE);
+
+    private static final Implementation IMPLEMENTATION_JAVA = new Implementation(
+            SecurityDetector.class,
+            Scope.JAVA_FILE_SCOPE);
+
     /** Exported services */
     public static final Issue EXPORTED_SERVICE = Issue.create(
             "ExportedService", //$NON-NLS-1$
+            "Exported service does not require permission",
             "Checks for exported services that do not require permissions",
             "Exported services (services which either set `exported=true` or contain " +
             "an intent-filter and do not specify `exported=false`) should define a " +
@@ -84,12 +94,12 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
             Category.SECURITY,
             5,
             Severity.WARNING,
-            SecurityDetector.class,
-            Scope.MANIFEST_SCOPE);
+            IMPLEMENTATION_MANIFEST);
 
     /** Exported content providers */
     public static final Issue EXPORTED_PROVIDER = Issue.create(
             "ExportedContentProvider", //$NON-NLS-1$
+            "Content provider does not require permission",
             "Checks for exported content providers that do not require permissions",
             "Content providers are exported by default and any application on the " +
             "system can potentially use them to read and write data. If the content " +
@@ -99,12 +109,12 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
             Category.SECURITY,
             5,
             Severity.WARNING,
-            SecurityDetector.class,
-            Scope.MANIFEST_SCOPE);
+            IMPLEMENTATION_MANIFEST);
 
     /** Exported receivers */
     public static final Issue EXPORTED_RECEIVER = Issue.create(
             "ExportedReceiver", //$NON-NLS-1$
+            "Receiver does not require permission",
             "Checks for exported receivers that do not require permissions",
             "Exported receivers (receivers which either set `exported=true` or contain " +
             "an intent-filter and do not specify `exported=false`) should define a " +
@@ -113,27 +123,27 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
             Category.SECURITY,
             5,
             Severity.WARNING,
-            SecurityDetector.class,
-            Scope.MANIFEST_SCOPE);
+            IMPLEMENTATION_MANIFEST);
 
     /** Content provides which grant all URIs access */
     public static final Issue OPEN_PROVIDER = Issue.create(
             "GrantAllUris", //$NON-NLS-1$
-            "Checks for <grant-uri-permission> elements where everything is shared",
+            "Content provider shares everything",
+            "Checks for `<grant-uri-permission>` elements where everything is shared",
             "The `<grant-uri-permission>` element allows specific paths to be shared. " +
             "This detector checks for a path URL of just '/' (everything), which is " +
             "probably not what you want; you should limit access to a subset.",
             Category.SECURITY,
             7,
             Severity.WARNING,
-            SecurityDetector.class,
-            Scope.MANIFEST_SCOPE);
+            IMPLEMENTATION_MANIFEST);
 
     /** Using the world-writable flag */
     public static final Issue WORLD_WRITEABLE = Issue.create(
             "WorldWriteableFiles", //$NON-NLS-1$
-            "Checks for openFileOutput() and getSharedPreferences() calls passing " +
-            "MODE_WORLD_WRITEABLE",
+            "`openFileOutput()` call passing `MODE_WORLD_WRITEABLE`",
+            "Checks for `openFileOutput()` and `getSharedPreferences()` calls passing " +
+            "`MODE_WORLD_WRITEABLE`",
             "There are cases where it is appropriate for an application to write " +
             "world writeable files, but these should be reviewed carefully to " +
             "ensure that they contain no private data, and that if the file is " +
@@ -142,15 +152,15 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
             Category.SECURITY,
             4,
             Severity.WARNING,
-            SecurityDetector.class,
-            Scope.JAVA_FILE_SCOPE);
+            IMPLEMENTATION_JAVA);
 
 
     /** Using the world-readable flag */
     public static final Issue WORLD_READABLE = Issue.create(
             "WorldReadableFiles", //$NON-NLS-1$
-            "Checks for openFileOutput() and getSharedPreferences() calls passing " +
-            "MODE_WORLD_READABLE",
+            "`openFileOutput()` call passing `MODE_WORLD_READABLE`",
+            "Checks for `openFileOutput()` and `getSharedPreferences()` calls passing " +
+            "`MODE_WORLD_READABLE`",
             "There are cases where it is appropriate for an application to write " +
             "world readable files, but these should be reviewed carefully to " +
             "ensure that they contain no private data that is leaked to other " +
@@ -158,8 +168,7 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
             Category.SECURITY,
             4,
             Severity.WARNING,
-            SecurityDetector.class,
-            Scope.JAVA_FILE_SCOPE);
+            IMPLEMENTATION_JAVA);
 
     /** Constructs a new {@link SecurityDetector} check */
     public SecurityDetector() {
