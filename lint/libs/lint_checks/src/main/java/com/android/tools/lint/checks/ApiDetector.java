@@ -36,9 +36,9 @@ import static com.android.tools.lint.detector.api.Location.SearchDirection.BACKW
 import static com.android.tools.lint.detector.api.Location.SearchDirection.FORWARD;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.NEAREST;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.detector.api.Category;
@@ -966,8 +966,8 @@ public class ApiDetector extends ResourceXmlDetector
                     }
                 }
 
-                for (int api = 1; api <= SdkConstants.HIGHEST_KNOWN_API; api++) {
-                    String code = LintUtils.getBuildCode(api);
+                for (int api = 1; api <= SdkVersionInfo.HIGHEST_KNOWN_API; api++) {
+                    String code = SdkVersionInfo.getBuildCode(api);
                     if (code != null && code.equalsIgnoreCase(targetApi)) {
                         return api;
                     }
@@ -1557,8 +1557,8 @@ public class ApiDetector extends ResourceXmlDetector
     }
 
     private static int codeNameToApi(String codename) {
-        for (int api = 1; api <= SdkConstants.HIGHEST_KNOWN_API; api++) {
-            String code = LintUtils.getBuildCode(api);
+        for (int api = 1; api <= SdkVersionInfo.HIGHEST_KNOWN_API; api++) {
+            String code = SdkVersionInfo.getBuildCode(api);
             if (code != null && code.equalsIgnoreCase(codename)) {
                 return api;
             }
