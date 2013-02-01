@@ -11,11 +11,8 @@
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="module" module-name="common" />
-    <orderEntry type="module" module-name="lint-api" />
     <orderEntry type="module" module-name="lint-checks" />
     <orderEntry type="module" module-name="testutils" scope="TEST" />
-    <orderEntry type="module" module-name="layoutlib-api" scope="TEST" />
     <orderEntry type="library" scope="TEST" name="JUnit3" level="project" />
   </component>
 </module>

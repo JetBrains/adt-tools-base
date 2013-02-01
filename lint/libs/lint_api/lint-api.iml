@@ -9,11 +9,9 @@
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="module" module-name="common" />
-    <orderEntry type="module" module-name="layoutlib-api" />
-    <orderEntry type="module" module-name="sdklib" />
     <orderEntry type="library" exported="" name="asm-tools" level="project" />
     <orderEntry type="library" exported="" name="lombok-ast" level="project" />
+    <orderEntry type="module" module-name="sdk_common" exported="" />
   </component>
 </module>
 
