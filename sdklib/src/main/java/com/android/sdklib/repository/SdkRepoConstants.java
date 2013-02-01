@@ -17,9 +17,12 @@
 package com.android.sdklib.repository;
 
 
+import com.android.annotations.NonNull;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 
 import java.io.InputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Public constants for the sdk-repository XML Schema.
@@ -30,7 +33,7 @@ public class SdkRepoConstants extends RepoConstants {
      * The latest version of the sdk-repository XML Schema.
      * Valid version numbers are between 1 and this number, included.
      */
-    public static final int NS_LATEST_VERSION = 7;
+    public static final int NS_LATEST_VERSION = 8;
 
     /**
      * The min version of the sdk-repository XML Schema we'll try to load.
@@ -103,6 +106,8 @@ public class SdkRepoConstants extends RepoConstants {
     public static final String NODE_TOOL            = "tool";                 //$NON-NLS-1$
     /** A platform-tool package. */
     public static final String NODE_PLATFORM_TOOL   = "platform-tool";        //$NON-NLS-1$
+    /** A build-tool package. */
+    public static final String NODE_BUILD_TOOL      = "build-tool";           //$NON-NLS-1$
     /** A doc package. */
     public static final String NODE_DOC             = "doc";                  //$NON-NLS-1$
     /** A sample package. */
@@ -143,4 +148,25 @@ public class SdkRepoConstants extends RepoConstants {
     public static String getSchemaUri(int version) {
         return String.format(NS_BASE + "%d", version);           //$NON-NLS-1$
     }
+
+    /**
+     * Checks whether the schema version is greater or equal to the specified one.
+     *
+     * @param nsUri A non-null sdk-repository schema URI.
+     * @param minVersion The minimum version accepted.
+     * @return True if the URI is valid and has at least the required version. False otherwise.
+     */
+    public static boolean versionGreaterOrEqualThan(@NonNull String nsUri, int minVersion) {
+        Pattern nsPattern = Pattern.compile(SdkRepoConstants.NS_PATTERN);
+        Matcher m = nsPattern.matcher(nsUri);
+        if (m.matches()) {
+            String version = m.group(1);
+            try {
+                return Integer.parseInt(version) >= minVersion;
+            } catch (NumberFormatException e) {
+            }
+        }
+        return false;
+    }
+
 }

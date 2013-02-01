@@ -57,7 +57,7 @@ public class MockExtraPackage extends ExtraPackage {
             "url", // descUrl,
             Os.getCurrentOs(), // archiveOs,
             Arch.getCurrentArch(), // archiveArch,
-            "foo" // archiveOsPath
+            source == null ? "foo" : null // archiveOsPath, null for remote non-instaled pkgs
             );
     }
 

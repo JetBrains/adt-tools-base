@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2013 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,29 +21,29 @@ import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 
 /**
- * A mock {@link PlatformToolPackage} for testing.
+ * A mock {@link BuildToolPackage} for testing.
  *
  * By design, this package contains one and only one archive.
  */
-public class MockPlatformToolPackage extends PlatformToolPackage {
+public class MockBuildToolPackage extends BuildToolPackage {
 
     /**
-     * Creates a {@link MockPlatformToolPackage} with the given revision and hardcoded defaults
+     * Creates a {@link MockBuildToolPackage} with the given revision and hardcoded defaults
      * for everything else.
      * <p/>
      * By design, this creates a package with one and only one archive.
      */
-    public MockPlatformToolPackage(int revision) {
+    public MockBuildToolPackage(int revision) {
         this(null /*source*/, revision);
     }
 
     /**
-     * Creates a {@link MockPlatformToolPackage} with the given revision and hardcoded defaults
+     * Creates a {@link MockBuildToolPackage} with the given revision and hardcoded defaults
      * for everything else.
      * <p/>
      * By design, this creates a package with one and only one archive.
      */
-    public MockPlatformToolPackage(SdkSource source, int revision) {
+    public MockBuildToolPackage(SdkSource source, int revision) {
         super(
             source, // source,
             null, // props,
@@ -53,17 +53,17 @@ public class MockPlatformToolPackage extends PlatformToolPackage {
             "url", // descUrl,
             Os.getCurrentOs(), // archiveOs,
             Arch.getCurrentArch(), // archiveArch,
-            source == null ? "foo" : null // archiveOsPath, null for remote non-instaled pkgs
+            "foo" // archiveOsPath
             );
     }
 
     /**
-     * Creates a {@link MockPlatformToolPackage} with the given revision and hardcoded defaults
+     * Creates a {@link MockBuildToolPackage} with the given revision and hardcoded defaults
      * for everything else.
      * <p/>
      * By design, this creates a package with one and only one archive.
      */
-    public MockPlatformToolPackage(SdkSource source, FullRevision revision) {
+    public MockBuildToolPackage(SdkSource source, FullRevision revision) {
         super(
                 source, // source,
                 FullRevisionPackageTest.createProps(revision), // props,

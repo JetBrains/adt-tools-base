@@ -188,6 +188,19 @@ public class ValidateRepositoryXmlTest extends TestCase {
 
     }
 
+    /** Validate a valid sample using namespace version 5 using an InputStream */
+    public void testValidateLocalRepositoryFile8() throws Exception {
+        InputStream xmlStream = this.getClass().getResourceAsStream(
+                    "/com/android/sdklib/testdata/repository_sample_8.xml");
+        Source source = new StreamSource(xmlStream);
+
+        CaptureErrorHandler handler = new CaptureErrorHandler();
+        Validator validator = getRepoValidator(8, handler);
+        validator.validate(source);
+        handler.verify();
+
+    }
+
     // IMPORTANT: each time you add a test here, you should add a corresponding
     // test in SdkRepoSourceTest to validate the XML content is parsed correctly.
 

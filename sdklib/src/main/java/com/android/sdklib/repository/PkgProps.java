@@ -87,7 +87,8 @@ public class PkgProps {
 
     // ToolPackage
 
-    public static final String MIN_PLATFORM_TOOLS_REV   = "Platform.MinPlatformToolsRev";//$NON-NLS-1$
+    public static final String MIN_PLATFORM_TOOLS_REV = "Platform.MinPlatformToolsRev";//$NON-NLS-1$
+    public static final String MIN_BUILD_TOOLS_REV      = "Platform.MinBuildToolsRev"; //$NON-NLS-1$
 
 
     // SamplePackage

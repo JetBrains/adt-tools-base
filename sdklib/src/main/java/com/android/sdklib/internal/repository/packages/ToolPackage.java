@@ -26,6 +26,7 @@ import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
+import com.android.sdklib.internal.repository.packages.FullRevision.PreviewComparison;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
@@ -38,8 +39,6 @@ import org.w3c.dom.Node;
 import java.io.File;
 import java.util.Map;
 import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Represents a tool XML node in an SDK repository.
@@ -80,21 +79,7 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
         if (mMinPlatformToolsRevision.equals(MIN_PLATFORM_TOOLS_REV_INVALID)) {
             // This revision number is mandatory starting with sdk-repository-3.xsd
             // and did not exist before. Complain if the URI has level >= 3.
-
-            boolean needRevision = false;
-
-            Pattern nsPattern = Pattern.compile(SdkRepoConstants.NS_PATTERN);
-            Matcher m = nsPattern.matcher(nsUri);
-            if (m.matches()) {
-                String version = m.group(1);
-                try {
-                    needRevision = Integer.parseInt(version) >= 3;
-                } catch (NumberFormatException e) {
-                    // ignore. needRevision defaults to false
-                }
-            }
-
-            if (needRevision) {
+            if (SdkRepoConstants.versionGreaterOrEqualThan(nsUri, 3)) {
                 throw new IllegalArgumentException(
                         String.format("Missing %1$s element in %2$s package",
                                 SdkRepoConstants.NODE_MIN_PLATFORM_TOOLS_REV,
@@ -145,6 +130,7 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
                 archiveArch,
                 archiveOsPath);
 
+        // Setup min-platform-tool
         String revStr = getProperty(props, PkgProps.MIN_PLATFORM_TOOLS_REV, null);
 
         FullRevision rev = MIN_PLATFORM_TOOLS_REV_INVALID;
@@ -157,12 +143,6 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
         mMinPlatformToolsRevision = rev;
     }
 
-    /**
-    * The minimal revision of the tools package required by this package if > 0,
-    * or {@link #MIN_PLATFORM_TOOLS_REV_INVALID} if the value was missing.
-    * <p/>
-    * This attribute is mandatory and should not be normally missing.
-     */
     @Override
     public FullRevision getMinPlatformToolsRevision() {
         return mMinPlatformToolsRevision;
@@ -242,18 +222,23 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
      */
     @Override
     public boolean sameItemAs(Package pkg) {
-        // Only one tool package so any tool package is the same item
-        return sameItemAs(pkg, false /*ignorePreviews*/);
+        return sameItemAs(pkg, PreviewComparison.COMPARE_TYPE);
     }
 
     @Override
-    public boolean sameItemAs(Package pkg, boolean ignorePreviews) {
-        // only one tool package so any tool package is the same item.
+    public boolean sameItemAs(Package pkg, PreviewComparison comparePreview) {
+        // only one tool package so any platform-tool package is the same item.
         if (pkg instanceof ToolPackage) {
-            if (ignorePreviews) {
+            switch (comparePreview) {
+            case IGNORE:
                 return true;
-            } else {
-                // however previews can only match previews by default, unless we ignore that check.
+
+            case COMPARE_NUMBER:
+                // Voluntary break-through.
+            case COMPARE_TYPE:
+                // There's only one tool so the preview number doesn't matter;
+                // however previews can only match previews by default so both cases
+                // are treated the same.
                 return pkg.getRevision().isPreview() == getRevision().isPreview();
             }
         }

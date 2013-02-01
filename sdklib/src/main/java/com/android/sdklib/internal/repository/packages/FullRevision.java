@@ -241,9 +241,29 @@ public class FullRevision implements Comparable<FullRevision> {
      * lack of preview number was "+inf":
      * "18.1.2 rc5" => "18.1.2.5" so its less than "18.1.2.+INF" but more than "18.1.1.0"
      * and more than "18.1.2.4"
+     *
+     * @param rhs The right-hand side {@link FullRevision} to compare with.
+     * @return &lt;0 if lhs &lt; rhs; 0 if lhs==rhs; &gt;0 if lhs &gt; rhs.
      */
     @Override
     public int compareTo(FullRevision rhs) {
+        return compareTo(rhs, PreviewComparison.COMPARE_NUMBER);
+    }
+
+    /**
+     * Trivial comparison of a version, e.g 17.1.2 < 18.0.0.
+     *
+     * Note that preview/release candidate are released before their final version,
+     * so "18.0.0 rc1" comes below "18.0.0". The best way to think of it as if the
+     * lack of preview number was "+inf":
+     * "18.1.2 rc5" => "18.1.2.5" so its less than "18.1.2.+INF" but more than "18.1.1.0"
+     * and more than "18.1.2.4"
+     *
+     * @param rhs The right-hand side {@link FullRevision} to compare with.
+     * @param comparePreview How to compare the preview value.
+     * @return &lt;0 if lhs &lt; rhs; 0 if lhs==rhs; &gt;0 if lhs &gt; rhs.
+     */
+    public int compareTo(FullRevision rhs, PreviewComparison comparePreview) {
         int delta = mMajor - rhs.mMajor;
         if (delta != 0) {
             return delta;
@@ -259,10 +279,38 @@ public class FullRevision implements Comparable<FullRevision> {
             return delta;
         }
 
-        int p1 = mPreview == NOT_A_PREVIEW ? Integer.MAX_VALUE : mPreview;
-        int p2 = rhs.mPreview == NOT_A_PREVIEW ? Integer.MAX_VALUE : rhs.mPreview;
-        delta = p1 - p2;
+        int p1, p2;
+        switch (comparePreview) {
+        case IGNORE:
+            // Nothing to compare.
+            break;
+
+        case COMPARE_NUMBER:
+            p1 =     mPreview == NOT_A_PREVIEW ? Integer.MAX_VALUE :     mPreview;
+            p2 = rhs.mPreview == NOT_A_PREVIEW ? Integer.MAX_VALUE : rhs.mPreview;
+            delta = p1 - p2;
+            break;
+
+        case COMPARE_TYPE:
+            p1 =     mPreview == NOT_A_PREVIEW ? 1 : 0;
+            p2 = rhs.mPreview == NOT_A_PREVIEW ? 1 : 0;
+            delta = p1 - p2;
+            break;
+        }
         return delta;
+    }
+
+    /** Indicates how to compare the preview field in
+     *  {@link FullRevision#compareTo(FullRevision, PreviewComparison)} */
+    public enum PreviewComparison {
+        /** Both revisions must have exactly the same preview number. */
+        COMPARE_NUMBER,
+        /** Both revisions must have the same preview type (both must be previews
+         *  or both must not be previews, but the actual number is irrelevant.)
+         *  This is the most typical choice used to find updates of the same type. */
+        COMPARE_TYPE,
+        /** The preview field is ignore and not used in the comparison. */
+        IGNORE
     }
 
 
