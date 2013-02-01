@@ -29,9 +29,9 @@ import static com.android.SdkConstants.RES_FOLDER;
 import static com.android.SdkConstants.TAG_USES_SDK;
 import static com.android.SdkConstants.VALUE_TRUE;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.tools.lint.client.api.CircularDependencyException;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.LintClient;
@@ -359,7 +359,7 @@ public class Project {
 
         if (folders.size() == 1 && isAospFrameworksProject(mDir)) {
             // No manifest file for this project: just init the manifest values here
-            mMinSdk = mTargetSdk = SdkConstants.HIGHEST_KNOWN_API;
+            mMinSdk = mTargetSdk = SdkVersionInfo.HIGHEST_KNOWN_API;
             File folder = new File(folders.get(0), RES_FOLDER);
             if (!folder.exists()) {
                 folders = Collections.emptyList();

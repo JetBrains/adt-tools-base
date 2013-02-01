@@ -23,9 +23,9 @@ import static com.android.SdkConstants.LIBS_FOLDER;
 import static com.android.SdkConstants.RES_FOLDER;
 import static com.android.SdkConstants.SRC_FOLDER;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
 import com.android.tools.lint.detector.api.Context;
@@ -636,7 +636,7 @@ public abstract class LintClient {
      * @return the highest known API level
      */
     public int getHighestKnownApiLevel() {
-        int max = SdkConstants.HIGHEST_KNOWN_API;
+        int max = SdkVersionInfo.HIGHEST_KNOWN_API;
 
         for (IAndroidTarget target : getTargets()) {
             if (target.isPlatform()) {
