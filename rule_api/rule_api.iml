@@ -8,8 +8,8 @@
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="module" module-name="common" />
-    <orderEntry type="module" module-name="layoutlib-api" />
+    <orderEntry type="module" module-name="common" exported="" />
+    <orderEntry type="module" module-name="layoutlib-api" exported="" />
   </component>
 </module>
 

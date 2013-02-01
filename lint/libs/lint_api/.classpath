@@ -3,6 +3,7 @@
 	<classpathentry excluding="Android.mk" kind="src" path="src/main/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/common"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/sdk_common"/>
 	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/asm-tools/asm-4.0.jar" sourcepath="/ANDROID_SRC/prebuilts/tools/common/asm-tools/src-4.0.zip"/>
 	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/asm-tools/asm-tree-4.0.jar" sourcepath="/ANDROID_SRC/prebuilts/tools/common/asm-tools/src-4.0.zip"/>
 	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/guava-tools/guava-13.0.1.jar" sourcepath="/ANDROID_SRC/prebuilts/tools/common/guava-tools/src-4.0.zip"/>

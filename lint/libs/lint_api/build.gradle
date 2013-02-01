@@ -1,5 +1,6 @@
 dependencies {
     compile project(':common')
+    compile project(':sdk_common')
     compile project(':sdklib')
     compile project(':layoutlib_api')
 

@@ -10,6 +10,7 @@
 	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/lombok-ast/lombok-ast-0.2.jar" sourcepath="/ANDROID_SRC/prebuilts/tools/common/lombok-ast/src-4.0.zip"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/layoutlib_api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/common"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/sdk_common"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/SdkLib"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
