@@ -7,15 +7,6 @@ dependencies {
     testCompile project(':testutils')
 }
 
-def getVersion() {
-    if (project.has("release")) {
-        return project.ext.baseVersion
-    }
-
-    return project.ext.baseVersion + '-SNAPSHOT'
-}
-
-version = getVersion()
 group = 'com.android.tools.lint'
 archivesBaseName = 'lint-checks'
 

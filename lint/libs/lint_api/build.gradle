@@ -10,15 +10,6 @@ dependencies {
     compile 'org.ow2.asm:asm-tree:4.0'
 }
 
-def getVersion() {
-    if (project.has("release")) {
-        return project.ext.baseVersion
-    }
-
-    return project.ext.baseVersion + '-SNAPSHOT'
-}
-
-version = getVersion()
 group = 'com.android.tools.lint'
 archivesBaseName = 'lint-api'
 

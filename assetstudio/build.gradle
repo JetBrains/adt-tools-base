@@ -4,15 +4,6 @@ dependencies {
     testCompile 'junit:junit:3.8.1'
 }
 
-def getVersion() {
-    if (project.has("release")) {
-        return project.ext.baseVersion
-    }
-
-    return project.ext.baseVersion + '-SNAPSHOT'
-}
-
-version = getVersion()
 group = 'com.android.tools'
 archivesBaseName = 'asset-studio'
 

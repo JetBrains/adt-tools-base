@@ -7,7 +7,16 @@ ext.androidRootDir = file(new File(ext.androidHostOut, "../../../"))
 // rootProject.buildDir is specific to this gradle build.
 buildDir = new File(file(ext.androidHostOut), "tools/base/build")
 
-subprojects {
+
+def getVersion(Project p, String baseVersion) {
+    if (p.has("release")) {
+        return baseVersion
+    }
+
+    return baseVersion + '-SNAPSHOT'
+}
+
+subprojects { Project project ->
     // Change buildDir first so that all plugins pick up the new value.
     project.buildDir = project.file("$project.parent.buildDir/../$project.name")
 
@@ -19,10 +28,7 @@ subprojects {
         mavenCentral()
     }
 
-    dependencies {
-    }
-
-    project.ext.baseVersion = '22.0'
+    version = getVersion(project, '22.0')
 
     project.ext.sonatypeUsername = project.hasProperty('sonatypeUsername') ? sonatypeUsername : ""
     project.ext.sonatypePassword = project.hasProperty('sonatypePassword') ? sonatypePassword : ""
@@ -35,6 +41,42 @@ subprojects {
     task disableTestFailures << {
         tasks.withType(Test) {
             ignoreFailures = true
+        }
+    }
+
+    project.ext.getClassPath = {
+        String classPath = ""
+        project.configurations.runtime.files.each { file ->
+            String name = file.name
+            String suffix = "-" + project.version + ".jar"
+            if (name.endsWith(suffix)) {
+                name = name.substring(0, name.size() - suffix.size()) + ".jar"
+            }
+            classPath = classPath + " " + name
+        }
+        return classPath
+    }
+
+    task prebuiltJar(type: Jar) {
+        from(sourceSets.main.output)
+    }
+
+    task distZip(type: Zip) {
+        from(prebuiltJar) {
+            rename "(.*)-${project.version}.jar", '$1.jar'
+        }
+        from(project.configurations.runtime) {
+            rename "(.*)-${project.version}.jar", '$1.jar'
+        }
+
+        archiveName archivesBaseName + ".zip"
+    }
+
+    // delay computing the manifest classpath only if the
+    // prebuiltJar task is set to run.
+    project.gradle.taskGraph.whenReady { taskGraph ->
+        if (taskGraph.hasTask(prebuiltJar)) {
+            prebuiltJar.manifest.attributes("Class-Path": project.ext.getClassPath())
         }
     }
 
