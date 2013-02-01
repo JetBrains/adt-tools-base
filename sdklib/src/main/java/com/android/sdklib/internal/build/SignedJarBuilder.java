@@ -52,7 +52,10 @@ import java.util.zip.ZipInputStream;
 
 /**
  * A Jar file builder with signature support.
+ * 
+ * @deprecated Use Android-Builder instead
  */
+@Deprecated
 public class SignedJarBuilder {
     private static final String DIGEST_ALGORITHM = "SHA1";
     private static final String DIGEST_ATTR = "SHA1-Digest";

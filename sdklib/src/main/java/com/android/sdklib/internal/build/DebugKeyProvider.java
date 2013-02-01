@@ -34,7 +34,10 @@ import java.security.cert.CertificateException;
 /**
  * A provider of a dummy key to sign Android application for debugging purpose.
  * <p/>This provider uses a custom keystore to create and store a key with a known password.
+ * 
+ * @deprecated Use Android-Builder instead
  */
+@Deprecated
 public class DebugKeyProvider {
 
     public interface IKeyGenOutput {

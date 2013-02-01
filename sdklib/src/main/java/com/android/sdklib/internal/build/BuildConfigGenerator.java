@@ -30,7 +30,10 @@ import java.util.Map.Entry;
 /**
  * Class able to generate a BuildConfig class in Android project.
  * The BuildConfig class contains constants related to the build target.
+ * 
+ * @deprecated Use Android-Builder instead
  */
+@Deprecated
 public class BuildConfigGenerator {
 
     public static final String BUILD_CONFIG_NAME = "BuildConfig.java";

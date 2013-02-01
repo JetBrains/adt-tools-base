@@ -33,7 +33,10 @@ import java.util.ArrayList;
 
 /**
  * A Helper to create new keystore/key.
+ * 
+ * @deprecated Use Android-Builder instead
  */
+@Deprecated
 public final class KeystoreHelper {
 
     /**

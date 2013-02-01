@@ -15,16 +15,14 @@
  */
 package com.android.sdklib.internal.build;
 
-import com.android.sdklib.internal.build.SymbolLoader.SymbolEntry;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Table;
 import com.google.common.io.Files;
+import junit.framework.TestCase;
 
 import java.io.File;
 
-import junit.framework.TestCase;
-
-@SuppressWarnings("javadoc")
+@SuppressWarnings({"javadoc", "deprecation"})
 public class SymbolLoaderTest extends TestCase {
     public void test() throws Exception {
         String r = "" +
@@ -34,7 +32,7 @@ public class SymbolLoaderTest extends TestCase {
         Files.write(r, file, Charsets.UTF_8);
         SymbolLoader loader = new SymbolLoader(file);
         loader.load();
-        Table<String, String, SymbolEntry> symbols = loader.getSymbols();
+        Table<String, String, SymbolLoader.SymbolEntry> symbols = loader.getSymbols();
         assertNotNull(symbols);
         assertEquals(1, symbols.size());
         assertNotNull(symbols.get("xml", "authenticator"));
@@ -52,7 +50,7 @@ public class SymbolLoaderTest extends TestCase {
         Files.write(r, file, Charsets.UTF_8);
         SymbolLoader loader = new SymbolLoader(file);
         loader.load();
-        Table<String, String, SymbolEntry> symbols = loader.getSymbols();
+        Table<String, String, SymbolLoader.SymbolEntry> symbols = loader.getSymbols();
         assertNotNull(symbols);
         assertEquals(4, symbols.size());
     }
