@@ -33,6 +33,7 @@ import com.android.tools.lint.detector.api.Speed;
 import java.io.File;
 
 import lombok.ast.AstVisitor;
+import lombok.ast.MethodDeclaration;
 import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
 import lombok.ast.Select;
@@ -90,18 +91,24 @@ public class ColorUsageDetector extends Detector implements Detector.JavaScanner
                 select = select.getParent();
             }
 
-            // See if this method is being called on a setter
-            if (select.getParent() instanceof MethodInvocation) {
-                MethodInvocation call = (MethodInvocation) select.getParent();
-                String methodName = call.astName().astValue();
-                if (methodName.endsWith("Color")              //$NON-NLS-1$
-                        && methodName.startsWith("set")) {    //$NON-NLS-1$
-                    context.report(
-                            ISSUE, select, context.getLocation(select), String.format(
-                                "Should pass resolved color instead of resource id here: " +
-                                "getResources().getColor(%1$s)", select.toString()),
-                            null);
+            Node current = select.getParent();
+            while (current != null) {
+                if (current.getClass() == MethodInvocation.class) {
+                    MethodInvocation call = (MethodInvocation) current;
+                    String methodName = call.astName().astValue();
+                    if (methodName.endsWith("Color")              //$NON-NLS-1$
+                            && methodName.startsWith("set")) {    //$NON-NLS-1$
+                        context.report(
+                                ISSUE, select, context.getLocation(select), String.format(
+                                    "Should pass resolved color instead of resource id here: " +
+                                    "getResources().getColor(%1$s)", select.toString()),
+                                null);
+                    }
+                    break;
+                } else if (current.getClass() == MethodDeclaration.class) {
+                    break;
                 }
+                current = current.getParent();
             }
         }
     }

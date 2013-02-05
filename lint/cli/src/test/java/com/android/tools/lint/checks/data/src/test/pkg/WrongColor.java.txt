@@ -10,6 +10,7 @@ public class WrongColor {
         // Wrong
         textView.setTextColor(R.color.red);
         textView.setTextColor(android.R.color.red);
+        textView.setTextColor(foo > 0 ? R.color.green : R.color.blue);
         // OK
         textView.setTextColor(getResources().getColor(R.color.red));
     }
