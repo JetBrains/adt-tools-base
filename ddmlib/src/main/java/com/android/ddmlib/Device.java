@@ -26,6 +26,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -191,11 +193,17 @@ final class Device implements IDevice {
 
     @Override
     public String getName() {
-        if (mName == null) {
-            mName = constructName();
+        if (mName != null) {
+            return mName;
         }
 
-        return mName;
+        if (isOnline()) {
+            // cache name only if device is online
+            mName = constructName();
+            return mName;
+        } else {
+            return constructName();
+        }
     }
 
     private String constructName() {
@@ -207,10 +215,18 @@ final class Device implements IDevice {
                 return getSerialNumber();
             }
         } else {
-            String manufacturer = cleanupStringForDisplay(
-                    getProperty(PROP_DEVICE_MANUFACTURER));
-            String model = cleanupStringForDisplay(
-                    getProperty(PROP_DEVICE_MODEL));
+            String manufacturer = null;
+            String model = null;
+
+            try {
+                manufacturer = cleanupStringForDisplay(
+                    getPropertyCacheOrSync(PROP_DEVICE_MANUFACTURER));
+                model = cleanupStringForDisplay(
+                    getPropertyCacheOrSync(PROP_DEVICE_MODEL));
+            } catch (Exception e) {
+                // If there are exceptions thrown while attempting to get these properties,
+                // we can just use the serial number, so ignore these exceptions.
+            }
 
             StringBuilder sb = new StringBuilder(20);
 
@@ -310,12 +326,20 @@ final class Device implements IDevice {
     @Override
     public String getPropertySync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
-        CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+        CountDownLatch latch = new CountDownLatch(1);
+        CollectingOutputReceiver receiver = new CollectingOutputReceiver(latch);
         executeShellCommand(String.format("getprop '%s'", name), receiver, GETPROP_TIMEOUT);
+        try {
+            latch.await(GETPROP_TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            return null;
+        }
+
         String value = receiver.getOutput().trim();
         if (value.isEmpty()) {
             return null;
         }
+
         return value;
     }
 
