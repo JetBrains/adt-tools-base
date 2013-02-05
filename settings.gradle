@@ -1,20 +1,23 @@
-include 'common'
-include 'layoutlib_api'
 include 'assetstudio'
-include 'dvlib'
-include 'sdklib'
+include 'common'
 include 'ddmlib'
-include 'manifmerger'
-include 'lint_api'
-include 'lint_checks'
-include 'lint'
-include 'testutils'
-include 'sdk_common'
+include 'dvlib'
 include 'fat32lib'
 include 'jobb'
+include 'layoutlib_api'
+include 'lint'
+include 'lint_api'
+include 'lint_checks'
+include 'manifmerger'
+include 'sdklib'
+include 'sdklib-test'
+include 'sdk_common'
+include 'testutils'
 
 project(':dvlib').projectDir = new File('device_validator/dvlib')
+project(':fat32lib').projectDir = new File('../external/fat32lib')
+project(':lint').projectDir = new File('lint/cli')
 project(':lint_api').projectDir = new File('lint/libs/lint_api')
 project(':lint_checks').projectDir = new File('lint/libs/lint_checks')
-project(':lint').projectDir = new File('lint/cli')
-project(':fat32lib').projectDir = new File('../external/fat32lib')
+project(':sdklib-test').projectDir = new File('sdklib')
+project(':sdklib-test').buildFileName = 'test.gradle'
