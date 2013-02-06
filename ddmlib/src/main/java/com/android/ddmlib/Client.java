@@ -16,6 +16,7 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
 import com.android.ddmlib.ClientData.MethodProfilingStatus;
 import com.android.ddmlib.DebugPortManager.IDebugPortProvider;
 import com.android.ddmlib.AndroidDebugBridge.IClientChangeListener;
@@ -210,6 +211,7 @@ public class Client {
     /**
      * Returns the {@link ClientData} object containing this client information.
      */
+    @NonNull
     public ClientData getClientData() {
         return mClientData;
     }

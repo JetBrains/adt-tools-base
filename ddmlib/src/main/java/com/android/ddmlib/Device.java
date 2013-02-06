@@ -16,6 +16,7 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.concurrency.GuardedBy;
 import com.android.ddmlib.log.LogReceiver;
 
 import java.io.File;
@@ -26,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -57,11 +59,17 @@ final class Device implements IDevice {
     private final Map<String, String> mProperties = new HashMap<String, String>();
     private final Map<String, String> mMountPoints = new HashMap<String, String>();
 
-    private final ArrayList<Client> mClients = new ArrayList<Client>();
+    @GuardedBy("mClients")
+    private final List<Client> mClients = new ArrayList<Client>();
+
+    /** Maps pid's of clients in {@link #mClients} to their package name. */
+    private final Map<Integer, String> mClientInfo = new ConcurrentHashMap<Integer, String>();
+
     private DeviceMonitor mMonitor;
 
     private static final String LOG_TAG = "Device";
     private static final char SEPARATOR = '-';
+    private static final String UNKNOWN_PACKAGE = "";   //$NON-NLS-1$
 
     /**
      * Socket for the connection monitoring client connection/disconnection.
@@ -392,44 +400,6 @@ final class Device implements IDevice {
 
     /*
      * (non-Javadoc)
-     * @see com.android.ddmlib.IDevice#hasClients()
-     */
-    @Override
-    public boolean hasClients() {
-        return mClients.size() > 0;
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see com.android.ddmlib.IDevice#getClients()
-     */
-    @Override
-    public Client[] getClients() {
-        synchronized (mClients) {
-            return mClients.toArray(new Client[mClients.size()]);
-        }
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see com.android.ddmlib.IDevice#getClient(java.lang.String)
-     */
-    @Override
-    public Client getClient(String applicationName) {
-        synchronized (mClients) {
-            for (Client c : mClients) {
-                if (applicationName.equals(c.getClientData().getClientDescription())) {
-                    return c;
-                }
-            }
-
-        }
-
-        return null;
-    }
-
-    /*
-     * (non-Javadoc)
      * @see com.android.ddmlib.IDevice#getSyncService()
      */
     @Override
@@ -521,24 +491,6 @@ final class Device implements IDevice {
                 String.format("%s:%s", namespace.getType(), remoteSocketName));   //$NON-NLS-1$
     }
 
-    /*
-     * (non-Javadoc)
-     * @see com.android.ddmlib.IDevice#getClientName(int)
-     */
-    @Override
-    public String getClientName(int pid) {
-        synchronized (mClients) {
-            for (Client c : mClients) {
-                if (c.getClientData().getPid() == pid) {
-                    return c.getClientData().getClientDescription();
-                }
-            }
-        }
-
-        return null;
-    }
-
-
     Device(DeviceMonitor monitor, String serialNumber, DeviceState deviceState) {
         mMonitor = monitor;
         mSerialNumber = serialNumber;
@@ -549,32 +501,68 @@ final class Device implements IDevice {
         return mMonitor;
     }
 
+    @Override
+    public boolean hasClients() {
+        synchronized (mClients) {
+            return mClients.size() > 0;
+        }
+    }
+
+    @Override
+    public Client[] getClients() {
+        synchronized (mClients) {
+            return mClients.toArray(new Client[mClients.size()]);
+        }
+    }
+
+    @Override
+    public Client getClient(String applicationName) {
+        synchronized (mClients) {
+            for (Client c : mClients) {
+                if (applicationName.equals(c.getClientData().getClientDescription())) {
+                    return c;
+                }
+            }
+        }
+
+        return null;
+    }
+
     void addClient(Client client) {
         synchronized (mClients) {
             mClients.add(client);
         }
+
+        addClientInfo(client);
     }
 
     List<Client> getClientList() {
         return mClients;
     }
 
-    boolean hasClient(int pid) {
-        synchronized (mClients) {
-            for (Client client : mClients) {
-                if (client.getClientData().getPid() == pid) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
     void clearClientList() {
         synchronized (mClients) {
             mClients.clear();
         }
+
+        clearClientInfo();
+    }
+
+    /**
+     * Removes a {@link Client} from the list.
+     * @param client the client to remove.
+     * @param notify Whether or not to notify the listeners of a change.
+     */
+    void removeClient(Client client, boolean notify) {
+        mMonitor.addPortToAvailableList(client.getDebuggerListenPort());
+        synchronized (mClients) {
+            mClients.remove(client);
+        }
+        if (notify) {
+            mMonitor.getServer().deviceChanged(this, CHANGE_CLIENT_LIST);
+        }
+
+        removeClientInfo(client);
     }
 
     /**
@@ -592,21 +580,6 @@ final class Device implements IDevice {
         return mSocketChannel;
     }
 
-    /**
-     * Removes a {@link Client} from the list.
-     * @param client the client to remove.
-     * @param notify Whether or not to notify the listeners of a change.
-     */
-    void removeClient(Client client, boolean notify) {
-        mMonitor.addPortToAvailableList(client.getDebuggerListenPort());
-        synchronized (mClients) {
-            mClients.remove(client);
-        }
-        if (notify) {
-            mMonitor.getServer().deviceChanged(this, CHANGE_CLIENT_LIST);
-        }
-    }
-
     void update(int changeMask) {
         if ((changeMask & CHANGE_BUILD_INFO) != 0) {
             mArePropertiesSet = true;
@@ -616,6 +589,7 @@ final class Device implements IDevice {
 
     void update(Client client, int changeMask) {
         mMonitor.getServer().clientChanged(client, changeMask);
+        updateClientInfo(client, changeMask);
     }
 
     void addProperty(String label, String value) {
@@ -624,6 +598,39 @@ final class Device implements IDevice {
 
     void setMountingPoint(String name, String value) {
         mMountPoints.put(name, value);
+    }
+
+    private void addClientInfo(Client client) {
+        ClientData cd = client.getClientData();
+        setClientInfo(cd.getPid(), cd.getClientDescription());
+    }
+
+    private void updateClientInfo(Client client, int changeMask) {
+        if ((changeMask & Client.CHANGE_NAME) == Client.CHANGE_NAME) {
+            addClientInfo(client);
+        }
+    }
+
+    private void removeClientInfo(Client client) {
+        int pid = client.getClientData().getPid();
+        mClientInfo.remove(Integer.valueOf(pid));
+    }
+
+    private void clearClientInfo() {
+        mClientInfo.clear();
+    }
+
+    private void setClientInfo(int pid, String pkgName) {
+        if (pkgName == null) {
+            pkgName = UNKNOWN_PACKAGE;
+        }
+
+        mClientInfo.put(Integer.valueOf(pid), pkgName);
+    }
+
+    @Override
+    public String getClientName(int pid) {
+        return mClientInfo.get(Integer.valueOf(pid));
     }
 
     @Override
