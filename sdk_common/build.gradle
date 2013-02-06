@@ -5,15 +5,6 @@ dependencies {
     testCompile project(':sdklib').sourceSets.test.output
 }
 
-def getVersion() {
-    if (project.has("release")) {
-        return project.ext.baseVersion
-    }
-
-    return project.ext.baseVersion + '-SNAPSHOT'
-}
-
-version = getVersion()
 group = 'com.android.tools'
 archivesBaseName = 'sdk-common'
 

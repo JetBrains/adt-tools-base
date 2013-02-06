@@ -1,3 +1,0 @@
-Main-Class: com.android.validator.DeviceValidator
-Class-Path: dvlib.jar
-
