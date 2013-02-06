@@ -15,6 +15,8 @@
  */
 package com.android.utils;
 
+import static com.android.SdkConstants.XMLNS;
+
 import com.android.SdkConstants;
 import com.android.annotations.Nullable;
 
@@ -28,11 +30,10 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
 import java.io.StringReader;
+import java.util.Locale;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-
-import static com.android.SdkConstants.XMLNS;
 
 @SuppressWarnings("javadoc")
 public class XmlUtilsTest extends TestCase {
@@ -270,5 +271,35 @@ public class XmlUtilsTest extends TestCase {
         DocumentBuilder builder;
         builder = factory.newDocumentBuilder();
         return builder.parse(new InputSource(new StringReader(xml)));
+    }
+
+    public void testFormatFloatValue() throws Exception {
+        assertEquals("1", XmlUtils.formatFloatAttribute(1.0f));
+        assertEquals("2", XmlUtils.formatFloatAttribute(2.0f));
+        assertEquals("1.50", XmlUtils.formatFloatAttribute(1.5f));
+        assertEquals("1.50", XmlUtils.formatFloatAttribute(1.50f));
+        assertEquals("1.51", XmlUtils.formatFloatAttribute(1.51f));
+        assertEquals("1.51", XmlUtils.formatFloatAttribute(1.514542f));
+        assertEquals("1.52", XmlUtils.formatFloatAttribute(1.516542f));
+        assertEquals("-1.51", XmlUtils.formatFloatAttribute(-1.51f));
+        assertEquals("-1", XmlUtils.formatFloatAttribute(-1f));
+    }
+
+    public void testFormatFloatValueLocale() throws Exception {
+        // Ensure that the layout float values aren't affected by
+        // locale settings, like using commas instead of of periods
+        Locale originalDefaultLocale = Locale.getDefault();
+
+        try {
+            Locale.setDefault(Locale.FRENCH);
+
+            // Ensure that this is a locale which uses a comma instead of a period:
+            assertEquals("5,24", String.format("%.2f", 5.236f));
+
+            // Ensure that the formatFloatAttribute is immune
+            assertEquals("1.50", XmlUtils.formatFloatAttribute(1.5f));
+        } finally {
+            Locale.setDefault(originalDefaultLocale);
+        }
     }
 }

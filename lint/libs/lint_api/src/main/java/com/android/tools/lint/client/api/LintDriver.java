@@ -623,7 +623,7 @@ public class LintDriver {
                 }
             }
 
-            List<Detector> otherDetectors = mScopeDetectors.get(Scope.OTHER_SCOPE);
+            List<Detector> otherDetectors = mScopeDetectors.get(Scope.OTHER);
             if (otherDetectors != null) {
                 for (Detector detector : otherDetectors) {
                     assert detector instanceof Detector.OtherFileScanner : detector;
