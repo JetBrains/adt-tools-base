@@ -15,6 +15,17 @@
  */
 package com.android.utils;
 
+import static com.android.SdkConstants.AMP_ENTITY;
+import static com.android.SdkConstants.ANDROID_NS_NAME;
+import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.APOS_ENTITY;
+import static com.android.SdkConstants.APP_PREFIX;
+import static com.android.SdkConstants.LT_ENTITY;
+import static com.android.SdkConstants.QUOT_ENTITY;
+import static com.android.SdkConstants.XMLNS;
+import static com.android.SdkConstants.XMLNS_PREFIX;
+import static com.android.SdkConstants.XMLNS_URI;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -29,20 +40,10 @@ import org.xml.sax.InputSource;
 
 import java.io.StringReader;
 import java.util.HashSet;
+import java.util.Locale;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-
-import static com.android.SdkConstants.AMP_ENTITY;
-import static com.android.SdkConstants.ANDROID_NS_NAME;
-import static com.android.SdkConstants.ANDROID_URI;
-import static com.android.SdkConstants.APOS_ENTITY;
-import static com.android.SdkConstants.APP_PREFIX;
-import static com.android.SdkConstants.LT_ENTITY;
-import static com.android.SdkConstants.QUOT_ENTITY;
-import static com.android.SdkConstants.XMLNS;
-import static com.android.SdkConstants.XMLNS_PREFIX;
-import static com.android.SdkConstants.XMLNS_URI;
 
 /** XML Utilities */
 public class XmlUtils {
@@ -409,6 +410,23 @@ public class XmlUtils {
             default:
                 throw new UnsupportedOperationException(
                         "Unsupported node type " + nodeType + ": not yet implemented");
+        }
+    }
+
+    /**
+     * Format the given floating value into an XML string, omitting decimals if
+     * 0
+     *
+     * @param value the value to be formatted
+     * @return the corresponding XML string for the value
+     */
+    public static String formatFloatAttribute(double value) {
+        if (value != (int) value) {
+            // Run String.format without a locale, because we don't want locale-specific
+            // conversions here like separating the decimal part with a comma instead of a dot!
+            return String.format((Locale) null, "%.2f", value); //$NON-NLS-1$
+        } else {
+            return Integer.toString((int) value);
         }
     }
 }
