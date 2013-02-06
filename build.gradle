@@ -23,6 +23,7 @@ subprojects { Project project ->
     apply plugin: 'java'
     apply plugin: 'maven'
     apply plugin: 'signing'
+    apply plugin: 'findbugs'
 
     repositories {
         mavenCentral()
@@ -106,6 +107,12 @@ subprojects { Project project ->
                 repository(url: uri("$rootProject.ext.androidHostOut/repo"))
             }
         }
+    }
+
+    findbugs {
+        ignoreFailures = true
+        effort = "max"
+        reportLevel = "high"
     }
 }
 
