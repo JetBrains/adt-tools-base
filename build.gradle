@@ -62,15 +62,9 @@ subprojects { Project project ->
         from(sourceSets.main.output)
     }
 
-    task distZip(type: Zip) {
-        from(prebuiltJar) {
-            rename "(.*)-${project.version}.jar", '$1.jar'
-        }
-        from(project.configurations.runtime) {
-            rename "(.*)-${project.version}.jar", '$1.jar'
-        }
-
-        archiveName archivesBaseName + ".zip"
+    if (project.hasProperty("prebuiltPath")) {
+        prebuiltJar.destinationDir file(prebuiltPath)
+        prebuiltJar.archiveName project.archivesBaseName + ".jar"
     }
 
     // delay computing the manifest classpath only if the
@@ -125,3 +119,19 @@ task aggregateResults(type: Copy) {
     from { testTasks*.testResultsDir }
     into { file("$buildDir/results") }
 }
+
+// work in progress
+def libs = subprojects.collect { it.configurations.runtime.files }.flatten()
+
+task distZip(type: Zip) {
+    from(getTasksByName("prebuiltJar", true)*.archivePath) {
+        rename "(.*)-${project.version}.jar", '$1.jar'
+    }
+    from(libs) {
+        rename "(.*)-${project.version}.jar", '$1.jar'
+    }
+
+    destinationDir file("$buildDir/dist")
+    archiveName "dist.zip"
+}
+

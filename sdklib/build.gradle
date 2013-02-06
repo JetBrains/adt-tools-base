@@ -18,6 +18,24 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
+if (project.hasProperty("prebuiltPath")) {
+    prebuiltJar.doLast {
+        File destFolder = file(prebuiltPath + "/repository")
+        destFolder.deleteDir()
+        destFolder.mkdir()
+
+        copy {
+            from sourceSets.main.resources.srcDirs
+            include '**/*.xsd'
+
+            into destFolder
+            eachFile { details ->
+                details.path = details.name
+            }
+        }
+    }
+}
+
 uploadArchives {
     repositories {
         mavenDeployer {
