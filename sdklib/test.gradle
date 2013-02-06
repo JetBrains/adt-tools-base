@@ -1,0 +1,16 @@
+dependencies {
+    compile project(':sdklib')
+    compile 'junit:junit:3.8.1'
+}
+
+group = 'com.android.tools.sdk'
+archivesBaseName = 'sdklib-test'
+
+sourceSets {
+    main.resources.srcDirs = [ 'src/test/java' ]
+}
+
+javadoc {
+    enabled = false
+    dependsOn = []
+}
