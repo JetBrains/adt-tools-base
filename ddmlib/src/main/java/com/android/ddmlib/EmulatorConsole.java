@@ -212,7 +212,7 @@ public final class EmulatorConsole {
 
         if (console != null) {
             // if the console exist, we ping the emulator to check the connection.
-            if (console.ping() == false) {
+            if (!console.ping()) {
                 RemoveConsole(console.mPort);
                 console = null;
             }
@@ -564,7 +564,7 @@ public final class EmulatorConsole {
         } catch (Exception e) {
             return false;
         } finally {
-            if (result == false) {
+            if (!result) {
                 // FIXME connection failed somehow, we need to disconnect the console.
                 RemoveConsole(mPort);
             }
@@ -610,7 +610,7 @@ public final class EmulatorConsole {
             int numWaits = 0;
             boolean stop = false;
 
-            while (buf.position() != buf.limit() && stop == false) {
+            while (buf.position() != buf.limit() && !stop) {
                 int count;
 
                 count = mSocketChannel.read(buf);
@@ -652,14 +652,11 @@ public final class EmulatorConsole {
      * @param currentPosition The current position
      */
     private boolean endsWithOK(int currentPosition) {
-        if (mBuffer[currentPosition-1] == '\n' &&
-                mBuffer[currentPosition-2] == '\r' &&
-                mBuffer[currentPosition-3] == 'K' &&
-                mBuffer[currentPosition-4] == 'O') {
-            return true;
-        }
+        return mBuffer[currentPosition - 1] == '\n' &&
+                mBuffer[currentPosition - 2] == '\r' &&
+                mBuffer[currentPosition - 3] == 'K' &&
+                mBuffer[currentPosition - 4] == 'O';
 
-        return false;
     }
 
     /**

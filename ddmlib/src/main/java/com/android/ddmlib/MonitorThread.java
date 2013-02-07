@@ -110,7 +110,7 @@ final class MonitorThread extends Thread {
             return;
         }
 
-        if (AndroidDebugBridge.getClientSupport() == false) {
+        if (!AndroidDebugBridge.getClientSupport()) {
             return;
         }
 
@@ -302,7 +302,7 @@ final class MonitorThread extends Thread {
         Client client = (Client)key.attachment();
 
         try {
-            if (key.isReadable() == false || key.isValid() == false) {
+            if (!key.isReadable() || !key.isValid()) {
                 Log.d("ddms", "Invalid key from " + client + ". Dropping client.");
                 dropClient(client, true /* notify */);
                 return;
@@ -428,7 +428,7 @@ final class MonitorThread extends Thread {
         }
 
         synchronized (mClientList) {
-            if (mClientList.remove(client) == false) {
+            if (!mClientList.remove(client)) {
                 return;
             }
         }

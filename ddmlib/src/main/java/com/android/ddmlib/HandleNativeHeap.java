@@ -267,7 +267,7 @@ final class HandleNativeHeap extends ChunkHandler {
                     String tmpLib = line.substring(index);
 
                     if (library == null ||
-                            (library != null && tmpLib.equals(library) == false)) {
+                            (library != null && !tmpLib.equals(library))) {
 
                         if (library != null) {
                             cd.addNativeLibraryMapInfo(startAddr, endAddr, library);

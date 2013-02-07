@@ -116,7 +116,7 @@ public final class LogReceiver {
         }
 
         // loop while there is still data to be read and the receiver has not be cancelled.
-        while (length > 0 && mIsCancelled == false) {
+        while (length > 0 && !mIsCancelled) {
             // first check if we have no current entry.
             if (mCurrentEntry == null) {
                 if (mEntryHeaderOffset + length < ENTRY_HEADER_SIZE) {

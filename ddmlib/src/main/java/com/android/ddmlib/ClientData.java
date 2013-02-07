@@ -133,7 +133,7 @@ public class ClientData {
      * String for feature indicating support for tracing OpenGL calls.
      * @see #hasFeature(String)
      */
-    public final static String FEATURE_OPENGL_TRACING = "opengl-tracing"; //$NON-NLS-1$
+    public static final String FEATURE_OPENGL_TRACING = "opengl-tracing"; //$NON-NLS-1$
 
     /**
      * String for feature indicating support for providing view hierarchy.
@@ -472,7 +472,7 @@ public class ClientData {
      * name to replace a specified one.
      */
     void setClientDescription(String description) {
-        if (mClientDescription == null && description.length() > 0) {
+        if (mClientDescription == null && !description.isEmpty()) {
             /*
              * The application VM is first named <pre-initialized> before being assigned
              * its real name.
@@ -480,7 +480,7 @@ public class ClientData {
              * another one setting the final actual name. So if we get a SetClientDescription
              * with this value we ignore it.
              */
-            if (PRE_INITIALIZED.equals(description) == false) {
+            if (!PRE_INITIALIZED.equals(description)) {
                 mClientDescription = description;
             }
         }

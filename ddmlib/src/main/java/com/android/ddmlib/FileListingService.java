@@ -337,11 +337,8 @@ public final class FileListingService {
                 return true;
             }
             long current = System.currentTimeMillis();
-            if (current-fetchTime > REFRESH_TEST) {
-                return true;
-            }
+            return current - fetchTime > REFRESH_TEST;
 
-            return false;
         }
 
         /**
@@ -445,13 +442,13 @@ public final class FileListingService {
         public void processNewLines(String[] lines) {
             for (String line : lines) {
                 // no need to handle empty lines.
-                if (line.length() == 0) {
+                if (line.isEmpty()) {
                     continue;
                 }
 
                 // run the line through the regexp
                 Matcher m = LS_L_PATTERN.matcher(line);
-                if (m.matches() == false) {
+                if (!m.matches()) {
                     continue;
                 }
 
@@ -693,7 +690,7 @@ public final class FileListingService {
             final IListingReceiver receiver) {
         // first thing we do is check the cache, and if we already have a recent
         // enough children list, we just return that.
-        if (useCache && entry.needFetch() == false) {
+        if (useCache && !entry.needFetch()) {
             return entry.getCachedChildren();
         }
 
@@ -730,7 +727,7 @@ public final class FileListingService {
                             @Override
                             public void processNewLines(String[] lines) {
                                 for (String line : lines) {
-                                    if (line.length() > 0) {
+                                    if (!line.isEmpty()) {
                                         // get the filepath and package from the line
                                         Matcher m = sPmPattern.matcher(line);
                                         if (m.matches()) {
@@ -761,7 +758,7 @@ public final class FileListingService {
                     mThreadList.remove(this);
 
                     // then launch the next one if applicable.
-                    if (mThreadList.size() > 0) {
+                    if (!mThreadList.isEmpty()) {
                         Thread t = mThreadList.get(0);
                         t.start();
                     }

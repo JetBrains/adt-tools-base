@@ -99,7 +99,7 @@ final class Device implements IDevice {
         @Override
         public void processNewLines(String[] lines) {
             for (String line : lines) {
-                if (line.length() > 0) {
+                if (!line.isEmpty()) {
                     if (line.startsWith(SUCCESS_OUTPUT)) {
                         mErrorMessage = null;
                     } else {
@@ -191,7 +191,7 @@ final class Device implements IDevice {
      * Sets the name of the AVD
      */
     void setAvdName(String avdName) {
-        if (isEmulator() == false) {
+        if (!isEmulator()) {
             throw new IllegalArgumentException(
                     "Cannot set the AVD name of the device is not an emulator");
         }
@@ -504,7 +504,7 @@ final class Device implements IDevice {
     @Override
     public boolean hasClients() {
         synchronized (mClients) {
-            return mClients.size() > 0;
+            return !mClients.isEmpty();
         }
     }
 
@@ -613,7 +613,7 @@ final class Device implements IDevice {
 
     private void removeClientInfo(Client client) {
         int pid = client.getClientData().getPid();
-        mClientInfo.remove(Integer.valueOf(pid));
+        mClientInfo.remove(pid);
     }
 
     private void clearClientInfo() {
@@ -625,12 +625,12 @@ final class Device implements IDevice {
             pkgName = UNKNOWN_PACKAGE;
         }
 
-        mClientInfo.put(Integer.valueOf(pid), pkgName);
+        mClientInfo.put(pid, pkgName);
     }
 
     @Override
     public String getClientName(int pid) {
-        return mClientInfo.get(Integer.valueOf(pid));
+        return mClientInfo.get(pid);
     }
 
     @Override
