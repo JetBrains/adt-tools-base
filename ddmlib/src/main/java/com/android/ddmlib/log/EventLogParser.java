@@ -156,7 +156,7 @@ public final class EventLogParser {
      */
     private void processTagLine(String line) {
         // ignore empty lines and comment lines
-        if (line.length() > 0 && line.charAt(0) != '#') {
+        if (!line.isEmpty() && line.charAt(0) != '#') {
             Matcher m = PATTERN_TAG_WITH_DESC.matcher(line);
             if (m.matches()) {
                 try {
@@ -176,7 +176,7 @@ public final class EventLogParser {
                     } else {
 
                         String description = m.group(3);
-                        if (description != null && description.length() > 0) {
+                        if (description != null && !description.isEmpty()) {
                             EventValueDescription[] desc =
                                 processDescription(description);
 
@@ -221,7 +221,7 @@ public final class EventLogParser {
                     }
 
                     typeString = m.group(3);
-                    if (typeString != null && typeString.length() > 0) {
+                    if (typeString != null && !typeString.isEmpty()) {
                         //skip the |
                         typeString = typeString.substring(1);
 
@@ -245,7 +245,7 @@ public final class EventLogParser {
             }
         }
 
-        if (list.size() == 0) {
+        if (list.isEmpty()) {
             return null;
         }
 
@@ -297,7 +297,7 @@ public final class EventLogParser {
         // [value1,value2...]
         // or
         // value
-        if (textLogLine.length() == 0) {
+        if (textLogLine.isEmpty()) {
             return null;
         }
 
@@ -397,7 +397,7 @@ public final class EventLogParser {
                 ival = ArrayHelper.swap32bitFromArray(eventData, offset);
                 offset += 4;
 
-                list.add(new Integer(ival));
+                list.add(ival);
             }
             break;
         case EVENT_TYPE_LONG: { /* 64-bit signed long */
@@ -408,7 +408,7 @@ public final class EventLogParser {
                 lval = ArrayHelper.swap64bitFromArray(eventData, offset);
                 offset += 8;
 
-                list.add(new Long(lval));
+                list.add(lval);
             }
             break;
         case EVENT_TYPE_STRING: { /* UTF-8 chars, not NULL-terminated */

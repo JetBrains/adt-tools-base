@@ -89,7 +89,7 @@ final class AdbHelper {
             write(adbChan, req);
 
             AdbResponse resp = readAdbResponse(adbChan, false);
-            if (resp.okay == false) {
+            if (!resp.okay) {
                 throw new AdbCommandRejectedException(resp.message);
             }
 
@@ -136,7 +136,7 @@ final class AdbHelper {
             write(adbChan, req);
 
             AdbResponse resp = readAdbResponse(adbChan, false /* readDiagString */);
-            if (resp.okay == false) {
+            if (!resp.okay) {
                 throw new AdbCommandRejectedException(resp.message);
             }
 
@@ -287,7 +287,7 @@ final class AdbHelper {
             write(adbChan, request);
 
             AdbResponse resp = readAdbResponse(adbChan, false /* readDiagString */);
-            if (resp.okay == false) {
+            if (!resp.okay) {
                 throw new AdbCommandRejectedException(resp.message);
             }
 
@@ -311,7 +311,7 @@ final class AdbHelper {
             buf.order(ByteOrder.LITTLE_ENDIAN);
 
             // fill the RawImage with the header
-            if (imageParams.readHeader(version, buf) == false) {
+            if (!imageParams.readHeader(version, buf)) {
                 Log.e("Screenshot", "Unsupported protocol: " + version);
                 return null;
             }
@@ -376,7 +376,7 @@ final class AdbHelper {
             write(adbChan, request);
 
             AdbResponse resp = readAdbResponse(adbChan, false /* readDiagString */);
-            if (resp.okay == false) {
+            if (!resp.okay) {
                 Log.e("ddms", "ADB rejected shell command (" + command + "): " + resp.message);
                 throw new AdbCommandRejectedException(resp.message);
             }
@@ -472,7 +472,7 @@ final class AdbHelper {
             write(adbChan, request);
 
             AdbResponse resp = readAdbResponse(adbChan, false /* readDiagString */);
-            if (resp.okay == false) {
+            if (!resp.okay) {
                 throw new AdbCommandRejectedException(resp.message);
             }
 
@@ -540,7 +540,7 @@ final class AdbHelper {
             write(adbChan, request);
 
             AdbResponse resp = readAdbResponse(adbChan, false /* readDiagString */);
-            if (resp.okay == false) {
+            if (!resp.okay) {
                 Log.w("create-forward", "Error creating forward: " + resp.message);
                 throw new AdbCommandRejectedException(resp.message);
             }
@@ -584,7 +584,7 @@ final class AdbHelper {
             write(adbChan, request);
 
             AdbResponse resp = readAdbResponse(adbChan, false /* readDiagString */);
-            if (resp.okay == false) {
+            if (!resp.okay) {
                 Log.w("remove-forward", "Error creating forward: " + resp.message);
                 throw new AdbCommandRejectedException(resp.message);
             }
@@ -748,7 +748,7 @@ final class AdbHelper {
             write(adbChan, device_query);
 
             AdbResponse resp = readAdbResponse(adbChan, false /* readDiagString */);
-            if (resp.okay == false) {
+            if (!resp.okay) {
                 throw new AdbCommandRejectedException(resp.message,
                         true/*errorDuringDeviceSelection*/);
             }

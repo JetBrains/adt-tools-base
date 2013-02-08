@@ -84,7 +84,7 @@ public final class Log {
          * @return a <code>LogLevel</code> object or <code>null</code> if no match were found.
          */
         public static LogLevel getByLetterString(String letter) {
-            if (letter.length() > 0) {
+            if (!letter.isEmpty()) {
                 return getByLetter(letter.charAt(0));
             }
 

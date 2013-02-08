@@ -333,7 +333,7 @@ public class EventContainer {
             data = ((Object[])mData)[index];
         }
 
-        if (data.getClass().equals(data.getClass()) == false) {
+        if (!data.getClass().equals(data.getClass())) {
             throw new InvalidTypeException();
         }
 
@@ -378,9 +378,9 @@ public class EventContainer {
                 throw new InvalidTypeException();
             case BIT_CHECK:
                 if (data instanceof Integer) {
-                    return (((Integer)data).intValue() & ((Integer)value).intValue()) != 0;
+                    return ((Integer) data & (Integer) value) != 0;
                 } else if (data instanceof Long) {
-                    return (((Long)data).longValue() & ((Long)value).longValue()) != 0;
+                    return ((Long) data & (Long) value) != 0;
                 }
 
                 // other types can't use this compare method.

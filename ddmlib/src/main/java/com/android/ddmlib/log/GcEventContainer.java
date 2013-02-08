@@ -82,10 +82,10 @@ final class GcEventContainer extends EventContainer {
             throws InvalidTypeException {
         // do a quick easy check on the type.
         if (index == 0) {
-            if ((value instanceof String) == false) {
+            if (!(value instanceof String)) {
                 throw new InvalidTypeException();
             }
-        } else if ((value instanceof Long) == false) {
+        } else if (!(value instanceof Long)) {
             throw new InvalidTypeException();
         }
         
@@ -94,18 +94,18 @@ final class GcEventContainer extends EventContainer {
                 if (index == 0) {
                     return processId.equals(value);
                 } else {
-                    return getValueAsLong(index) == ((Long)value).longValue();
+                    return getValueAsLong(index) == (Long) value;
                 }
             case LESSER_THAN:
-                return getValueAsLong(index) <= ((Long)value).longValue();
+                return getValueAsLong(index) <= (Long) value;
             case LESSER_THAN_STRICT:
-                return getValueAsLong(index) < ((Long)value).longValue();
+                return getValueAsLong(index) < (Long) value;
             case GREATER_THAN:
-                return getValueAsLong(index) >= ((Long)value).longValue();
+                return getValueAsLong(index) >= (Long) value;
             case GREATER_THAN_STRICT:
-                return getValueAsLong(index) > ((Long)value).longValue();
+                return getValueAsLong(index) > (Long) value;
             case BIT_CHECK:
-                return (getValueAsLong(index) & ((Long)value).longValue()) != 0;
+                return (getValueAsLong(index) & (Long) value) != 0;
         }
 
         throw new ArrayIndexOutOfBoundsException();
@@ -118,7 +118,7 @@ final class GcEventContainer extends EventContainer {
         }
         
         try {
-            return new Long(getValueAsLong(valueIndex));
+            return getValueAsLong(valueIndex);
         } catch (InvalidTypeException e) {
             // this would only happened if valueIndex was 0, which we test above.
         }

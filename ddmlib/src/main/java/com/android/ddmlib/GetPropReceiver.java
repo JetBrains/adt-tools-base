@@ -47,7 +47,7 @@ final class GetPropReceiver extends MultiLineReceiver {
         // after all that.
 
         for (String line : lines) {
-            if (line.length() == 0 || line.startsWith("#")) {
+            if (line.isEmpty() || line.startsWith("#")) {
                 continue;
             }
 
@@ -56,7 +56,7 @@ final class GetPropReceiver extends MultiLineReceiver {
                 String label = m.group(1);
                 String value = m.group(2);
 
-                if (label.length() > 0) {
+                if (!label.isEmpty()) {
                     mDevice.addProperty(label, value);
                 }
             }

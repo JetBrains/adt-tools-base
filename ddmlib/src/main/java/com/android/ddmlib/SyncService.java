@@ -172,7 +172,7 @@ public final class SyncService {
 
             AdbResponse resp = AdbHelper.readAdbResponse(mChannel, false /* readDiagString */);
 
-            if (resp.okay == false) {
+            if (!resp.okay) {
                 Log.w("ddms", "Got unhappy response from ADB sync req: " + resp.message);
                 mChannel.close();
                 mChannel = null;
@@ -246,10 +246,10 @@ public final class SyncService {
 
         // first we check the destination is a directory and exists
         File f = new File(localPath);
-        if (f.exists() == false) {
+        if (!f.exists()) {
             throw new SyncException(SyncError.NO_DIR_TARGET);
         }
-        if (f.isDirectory() == false) {
+        if (!f.isDirectory()) {
             throw new SyncException(SyncError.TARGET_IS_FILE);
         }
 
@@ -333,7 +333,7 @@ public final class SyncService {
      */
     public void push(String[] local, FileEntry remote, ISyncProgressMonitor monitor)
             throws SyncException, IOException, TimeoutException {
-        if (remote.isDirectory() == false) {
+        if (!remote.isDirectory()) {
             throw new SyncException(SyncError.REMOTE_IS_FILE);
         }
 
@@ -367,7 +367,7 @@ public final class SyncService {
     public void pushFile(String local, String remote, ISyncProgressMonitor monitor)
             throws SyncException, IOException, TimeoutException {
         File f = new File(local);
-        if (f.exists() == false) {
+        if (!f.exists()) {
             throw new SyncException(SyncError.NO_LOCAL_FILE);
         }
 
@@ -445,7 +445,7 @@ public final class SyncService {
 
         for (FileEntry e : entries) {
             // check if we're cancelled
-            if (monitor.isCanceled() == true) {
+            if (monitor.isCanceled()) {
                 throw new SyncException(SyncError.CANCELED);
             }
 
@@ -506,8 +506,8 @@ public final class SyncService {
             AdbHelper.read(mChannel, pullResult, -1, timeOut);
 
             // check we have the proper data back
-            if (checkResult(pullResult, ID_DATA) == false &&
-                    checkResult(pullResult, ID_DONE) == false) {
+            if (!checkResult(pullResult, ID_DATA) &&
+                    !checkResult(pullResult, ID_DONE)) {
                 throw new SyncException(SyncError.TRANSFER_PROTOCOL_ERROR,
                         readErrorMessage(pullResult, timeOut));
             }
@@ -530,7 +530,7 @@ public final class SyncService {
             // loop to get data until we're done.
             while (true) {
                 // check if we're cancelled
-                if (monitor.isCanceled() == true) {
+                if (monitor.isCanceled()) {
                     throw new SyncException(SyncError.CANCELED);
                 }
 
@@ -538,7 +538,7 @@ public final class SyncService {
                 if (checkResult(pullResult, ID_DONE)) {
                     break;
                 }
-                if (checkResult(pullResult, ID_DATA) == false) {
+                if (!checkResult(pullResult, ID_DATA)) {
                     // hmm there's an error
                     throw new SyncException(SyncError.TRANSFER_PROTOCOL_ERROR,
                             readErrorMessage(pullResult, timeOut));
@@ -589,7 +589,7 @@ public final class SyncService {
             throws SyncException, IOException, TimeoutException {
         for (File f : fileArray) {
             // check if we're canceled
-            if (monitor.isCanceled() == true) {
+            if (monitor.isCanceled()) {
                 throw new SyncException(SyncError.CANCELED);
             }
             if (f.exists()) {
@@ -651,7 +651,7 @@ public final class SyncService {
             // look while there is something to read
             while (true) {
                 // check if we're canceled
-                if (monitor.isCanceled() == true) {
+                if (monitor.isCanceled()) {
                     throw new SyncException(SyncError.CANCELED);
                 }
 
@@ -694,7 +694,7 @@ public final class SyncService {
         byte[] result = new byte[8];
         AdbHelper.read(mChannel, result, -1 /* full length */, timeOut);
 
-        if (checkResult(result, ID_OKAY) == false) {
+        if (!checkResult(result, ID_OKAY)) {
             throw new SyncException(SyncError.TRANSFER_PROTOCOL_ERROR,
                     readErrorMessage(result, timeOut));
         }
@@ -746,7 +746,7 @@ public final class SyncService {
         AdbHelper.read(mChannel, statResult, -1 /* full length */, DdmPreferences.getTimeOut());
 
         // check we have the proper data back
-        if (checkResult(statResult, ID_STAT) == false) {
+        if (!checkResult(statResult, ID_STAT)) {
             return null;
         }
 
@@ -833,14 +833,10 @@ public final class SyncService {
      * @return true if the code matches.
      */
     private static boolean checkResult(byte[] result, byte[] code) {
-        if (result[0] != code[0] ||
+        return !(result[0] != code[0] ||
                 result[1] != code[1] ||
                 result[2] != code[2] ||
-                result[3] != code[3]) {
-            return false;
-        }
-
-        return true;
+                result[3] != code[3]);
 
     }
 

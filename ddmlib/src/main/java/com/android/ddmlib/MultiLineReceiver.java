@@ -49,7 +49,7 @@ public abstract class MultiLineReceiver implements IShellOutputReceiver {
      */
     @Override
     public final void addOutput(byte[] data, int offset, int length) {
-        if (isCancelled() == false) {
+        if (!isCancelled()) {
             String s = null;
             try {
                 s = new String(data, offset, length, "UTF-8"); //$NON-NLS-1$
@@ -59,46 +59,44 @@ public abstract class MultiLineReceiver implements IShellOutputReceiver {
             }
 
             // ok we've got a string
-            if (s != null) {
-                // if we had an unfinished line we add it.
-                if (mUnfinishedLine != null) {
-                    s = mUnfinishedLine + s;
-                    mUnfinishedLine = null;
+            // if we had an unfinished line we add it.
+            if (mUnfinishedLine != null) {
+                s = mUnfinishedLine + s;
+                mUnfinishedLine = null;
+            }
+
+            // now we split the lines
+            mArray.clear();
+            int start = 0;
+            do {
+                int index = s.indexOf("\r\n", start); //$NON-NLS-1$
+
+                // if \r\n was not found, this is an unfinished line
+                // and we store it to be processed for the next packet
+                if (index == -1) {
+                    mUnfinishedLine = s.substring(start);
+                    break;
                 }
 
-                // now we split the lines
-                mArray.clear();
-                int start = 0;
-                do {
-                    int index = s.indexOf("\r\n", start); //$NON-NLS-1$
-
-                    // if \r\n was not found, this is an unfinished line
-                    // and we store it to be processed for the next packet
-                    if (index == -1) {
-                        mUnfinishedLine = s.substring(start);
-                        break;
-                    }
-
-                    // so we found a \r\n;
-                    // extract the line
-                    String line = s.substring(start, index);
-                    if (mTrimLines) {
-                        line = line.trim();
-                    }
-                    mArray.add(line);
-
-                    // move start to after the \r\n we found
-                    start = index + 2;
-                } while (true);
-
-                if (mArray.size() > 0) {
-                    // at this point we've split all the lines.
-                    // make the array
-                    String[] lines = mArray.toArray(new String[mArray.size()]);
-
-                    // send it for final processing
-                    processNewLines(lines);
+                // so we found a \r\n;
+                // extract the line
+                String line = s.substring(start, index);
+                if (mTrimLines) {
+                    line = line.trim();
                 }
+                mArray.add(line);
+
+                // move start to after the \r\n we found
+                start = index + 2;
+            } while (true);
+
+            if (!mArray.isEmpty()) {
+                // at this point we've split all the lines.
+                // make the array
+                String[] lines = mArray.toArray(new String[mArray.size()]);
+
+                // send it for final processing
+                processNewLines(lines);
             }
         }
     }

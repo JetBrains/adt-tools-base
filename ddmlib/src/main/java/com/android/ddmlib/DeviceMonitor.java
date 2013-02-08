@@ -165,7 +165,7 @@ final class DeviceMonitor {
                         mConnectionAttempt++;
                         Log.e("DeviceMonitor", "Connection attempts: " + mConnectionAttempt);
                         if (mConnectionAttempt > 10) {
-                            if (mServer.startAdb() == false) {
+                            if (!mServer.startAdb()) {
                                 mRestartAttemptCount++;
                                 Log.e("DeviceMonitor",
                                         "adb restart attempts: " + mRestartAttemptCount);
@@ -180,7 +180,7 @@ final class DeviceMonitor {
                     }
                 }
 
-                if (mMainAdbConnection != null && mMonitoring == false) {
+                if (mMainAdbConnection != null && !mMonitoring) {
                     mMonitoring = sendDeviceListMonitoringRequest();
                 }
 
@@ -203,11 +203,11 @@ final class DeviceMonitor {
             } catch (IOException ioe) {
                 handleExpectionInMonitorLoop(ioe);
             }
-        } while (mQuit == false);
+        } while (!mQuit);
     }
 
     private void handleExpectionInMonitorLoop(Exception e) {
-        if (mQuit == false) {
+        if (!mQuit) {
             if (e instanceof TimeoutException) {
                 Log.e("DeviceMonitor", "Adb connection Error: timeout");
             } else {
@@ -280,7 +280,7 @@ final class DeviceMonitor {
             AdbResponse resp = AdbHelper.readAdbResponse(mMainAdbConnection,
                     false /* readDiagString */);
 
-            if (resp.okay == false) {
+            if (!resp.okay) {
                 // request was refused by adb!
                 Log.e("DeviceMonitor", "adb refused request: " + resp.message);
             }
@@ -366,8 +366,8 @@ final class DeviceMonitor {
                                 // if the device just got ready/online, we need to start
                                 // monitoring it.
                                 if (device.isOnline()) {
-                                    if (AndroidDebugBridge.getClientSupport() == true) {
-                                        if (startMonitoringDevice(device) == false) {
+                                    if (AndroidDebugBridge.getClientSupport()) {
+                                        if (!startMonitoringDevice(device)) {
                                             Log.e("DeviceMonitor",
                                                     "Failed to start monitoring "
                                                     + device.getSerialNumber());
@@ -386,7 +386,7 @@ final class DeviceMonitor {
                         }
                     }
 
-                    if (foundMatch == false) {
+                    if (!foundMatch) {
                         // the device is gone, we need to remove it, and keep current index
                         // to process the next one.
                         removeDevice(device);
@@ -405,7 +405,7 @@ final class DeviceMonitor {
                     mServer.deviceConnected(newDevice);
 
                     // start monitoring them.
-                    if (AndroidDebugBridge.getClientSupport() == true) {
+                    if (AndroidDebugBridge.getClientSupport()) {
                         if (newDevice.isOnline()) {
                             startMonitoringDevice(newDevice);
                         }
@@ -496,7 +496,7 @@ final class DeviceMonitor {
             @Override
             public void processNewLines(String[] lines) {
                 for (String line : lines) {
-                    if (line.length() > 0) {
+                    if (!line.isEmpty()) {
                         // this should be the only one.
                         device.setMountingPoint(name, line);
                     }
@@ -598,7 +598,7 @@ final class DeviceMonitor {
                 }
 
                 synchronized (mClientsToReopen) {
-                    if (mClientsToReopen.size() > 0) {
+                    if (!mClientsToReopen.isEmpty()) {
                         Set<Client> clients = mClientsToReopen.keySet();
                         MonitorThread monitorThread = MonitorThread.getInstance();
 
@@ -669,12 +669,10 @@ final class DeviceMonitor {
                     }
                 }
             } catch (IOException e) {
-                if (mQuit == false) {
-
-                }
+                Log.e("DeviceMonitor", "Connection error while monitoring clients.");
             }
 
-        } while (mQuit == false);
+        } while (!mQuit);
     }
 
     private boolean sendDeviceMonitoringRequest(SocketChannel socket, Device device)
@@ -689,7 +687,7 @@ final class DeviceMonitor {
 
             AdbResponse resp = AdbHelper.readAdbResponse(socket, false /* readDiagString */);
 
-            if (resp.okay == false) {
+            if (!resp.okay) {
                 // request was refused by adb!
                 Log.e("DeviceMonitor", "adb refused request: " + resp.message);
             }
@@ -743,7 +741,7 @@ final class DeviceMonitor {
             synchronized (clients) {
                 for (Client c : clients) {
                     existingClients.put(
-                            Integer.valueOf(c.getClientData().getPid()),
+                            c.getClientData().getPid(),
                             c);
                 }
             }
@@ -765,7 +763,7 @@ final class DeviceMonitor {
                 openClient(device, newPid, getNextDebuggerPort(), monitorThread);
             }
 
-            if (pidsToAdd.size() > 0 || clientsToRemove.size() > 0) {
+            if (!pidsToAdd.isEmpty() || !clientsToRemove.isEmpty()) {
                 mServer.deviceChanged(device, Device.CHANGE_CLIENT_LIST);
             }
         }
@@ -856,14 +854,14 @@ final class DeviceMonitor {
     private int getNextDebuggerPort() {
         // get the first port and remove it
         synchronized (mDebuggerPorts) {
-            if (mDebuggerPorts.size() > 0) {
+            if (!mDebuggerPorts.isEmpty()) {
                 int port = mDebuggerPorts.get(0);
 
                 // remove it.
                 mDebuggerPorts.remove(0);
 
                 // if there's nothing left, add the next port to the list
-                if (mDebuggerPorts.size() == 0) {
+                if (mDebuggerPorts.isEmpty()) {
                     mDebuggerPorts.add(port+1);
                 }
 

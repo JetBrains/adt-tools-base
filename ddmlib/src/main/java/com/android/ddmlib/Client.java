@@ -328,7 +328,7 @@ public class Client {
      */
     public void setThreadUpdateEnabled(boolean enabled) {
         mThreadUpdateEnabled = enabled;
-        if (enabled == false) {
+        if (!enabled) {
             mClientData.clearThreads();
         }
 

@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-final public class HandleViewDebug extends ChunkHandler {
+public final class HandleViewDebug extends ChunkHandler {
     /** Enable/Disable tracing of OpenGL calls. */
     public static final int CHUNK_VUGL = type("VUGL");
 
@@ -85,7 +85,7 @@ final public class HandleViewDebug extends ChunkHandler {
     @Override
     public void clientDisconnected(Client client) {}
 
-    public static abstract class ViewDumpHandler extends ChunkHandler {
+    public abstract static class ViewDumpHandler extends ChunkHandler {
         private final CountDownLatch mLatch = new CountDownLatch(1);
         private final int mChunkType;
 
@@ -267,28 +267,28 @@ final public class HandleViewDebug extends ChunkHandler {
                 Object arg = args[i];
                 if (arg instanceof Boolean) {
                     b.putChar('Z');
-                    b.put((byte) (((Boolean) arg).booleanValue() ? 1 : 0));
+                    b.put((byte) ((Boolean) arg ? 1 : 0));
                 } else if (arg instanceof Byte) {
                     b.putChar('B');
-                    b.put(((Byte) arg).byteValue());
+                    b.put((Byte) arg);
                 } else if (arg instanceof Character) {
                     b.putChar('C');
-                    b.putChar(((Character) arg).charValue());
+                    b.putChar((Character) arg);
                 } else if (arg instanceof Short) {
                     b.putChar('S');
-                    b.putShort(((Short) arg).shortValue());
+                    b.putShort((Short) arg);
                 } else if (arg instanceof Integer) {
                     b.putChar('I');
-                    b.putInt(((Integer) arg).intValue());
+                    b.putInt((Integer) arg);
                 } else if (arg instanceof Long) {
                     b.putChar('J');
-                    b.putLong(((Long) arg).longValue());
+                    b.putLong((Long) arg);
                 } else if (arg instanceof Float) {
                     b.putChar('F');
-                    b.putFloat(((Float) arg).floatValue());
+                    b.putFloat((Float) arg);
                 } else if (arg instanceof Double) {
                     b.putChar('D');
-                    b.putDouble(((Double) arg).doubleValue());
+                    b.putDouble((Double) arg);
                 } else {
                     Log.e(TAG, "View method invocation only supports primitive arguments, supplied: " + arg);
                     return;

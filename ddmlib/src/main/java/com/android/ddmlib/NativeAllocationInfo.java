@@ -138,7 +138,7 @@ public final class NativeAllocationInfo {
             mResolvedStackCall.clear();
         }
         mResolvedStackCall.addAll(resolvedStackCall);
-        mIsStackCallResolved = mResolvedStackCall.size() != 0;
+        mIsStackCallResolved = !mResolvedStackCall.isEmpty();
     }
 
     /**
@@ -275,7 +275,7 @@ public final class NativeAllocationInfo {
             }
 
             // couldn't find a relevant one, so we'll return the first one if it exists.
-            if (mResolvedStackCall.size() > 0)
+            if (!mResolvedStackCall.isEmpty())
                 return mResolvedStackCall.get(0);
         }
 

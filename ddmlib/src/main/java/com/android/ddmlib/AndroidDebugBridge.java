@@ -307,7 +307,7 @@ public final class AndroidDebugBridge {
         synchronized (sLock) {
             if (sThis != null) {
                 if (sThis.mAdbOsLocation != null && sThis.mAdbOsLocation.equals(osLocation) &&
-                        forceNewBridge == false) {
+                        !forceNewBridge) {
                     return sThis;
                 } else {
                     // stop the current server
@@ -392,7 +392,7 @@ public final class AndroidDebugBridge {
      */
     public static void addDebugBridgeChangeListener(IDebugBridgeChangeListener listener) {
         synchronized (sLock) {
-            if (sBridgeListeners.contains(listener) == false) {
+            if (!sBridgeListeners.contains(listener)) {
                 sBridgeListeners.add(listener);
                 if (sThis != null) {
                     // we attempt to catch any exception so that a bad listener doesn't kill our
@@ -426,7 +426,7 @@ public final class AndroidDebugBridge {
      */
     public static void addDeviceChangeListener(IDeviceChangeListener listener) {
         synchronized (sLock) {
-            if (sDeviceListeners.contains(listener) == false) {
+            if (!sDeviceListeners.contains(listener)) {
                 sDeviceListeners.add(listener);
             }
         }
@@ -452,7 +452,7 @@ public final class AndroidDebugBridge {
      */
     public static void addClientChangeListener(IClientChangeListener listener) {
         synchronized (sLock) {
-            if (sClientListeners.contains(listener) == false) {
+            if (!sClientListeners.contains(listener)) {
                 sClientListeners.add(listener);
             }
         }
@@ -551,7 +551,7 @@ public final class AndroidDebugBridge {
      * @throws InvalidParameterException
      */
     private AndroidDebugBridge(String osLocation) throws InvalidParameterException {
-        if (osLocation == null || osLocation.length() == 0) {
+        if (osLocation == null || osLocation.isEmpty()) {
             throw new InvalidParameterException();
         }
         mAdbOsLocation = osLocation;
@@ -705,7 +705,7 @@ public final class AndroidDebugBridge {
      * @return true if success.
      */
     boolean start() {
-        if (mAdbOsLocation != null && (mVersionCheck == false || startAdb() == false)) {
+        if (mAdbOsLocation != null && (!mVersionCheck || !startAdb())) {
             return false;
         }
 
@@ -724,7 +724,7 @@ public final class AndroidDebugBridge {
      */
     boolean stop() {
         // if we haven't started we return false;
-        if (mStarted == false) {
+        if (!mStarted) {
             return false;
         }
 
@@ -732,7 +732,7 @@ public final class AndroidDebugBridge {
         mDeviceMonitor.stop();
         mDeviceMonitor = null;
 
-        if (stopAdb() == false) {
+        if (!stopAdb()) {
             return false;
         }
 
@@ -751,7 +751,7 @@ public final class AndroidDebugBridge {
             return false;
         }
 
-        if (mVersionCheck == false) {
+        if (!mVersionCheck) {
             Log.logAndDisplay(LogLevel.ERROR, ADB,
                     "Attempting to restart adb, but version check failed!"); //$NON-NLS-1$
             return false;
@@ -947,7 +947,7 @@ public final class AndroidDebugBridge {
             ProcessBuilder processBuilder = new ProcessBuilder(command);
             if (DdmPreferences.getUseAdbHost()) {
                 String adbHostValue = DdmPreferences.getAdbHostValue();
-                if (adbHostValue != null && adbHostValue.length() > 0) {
+                if (adbHostValue != null && !adbHostValue.isEmpty()) {
                     //TODO : check that the String is a valid IP address
                     Map<String, String> env = processBuilder.environment();
                     env.put("ADBHOST", adbHostValue);
@@ -1142,7 +1142,7 @@ public final class AndroidDebugBridge {
                 adb_env_var = adb_env_var.trim();
             }
 
-            if (adb_env_var != null && adb_env_var.length() > 0) {
+            if (adb_env_var != null && !adb_env_var.isEmpty()) {
                 // C tools (adb, emulator) accept hex and octal port numbers, so need to accept
                 // them too.
                 result = Integer.decode(adb_env_var);
