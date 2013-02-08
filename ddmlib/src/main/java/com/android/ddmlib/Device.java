@@ -630,7 +630,8 @@ final class Device implements IDevice {
 
     @Override
     public String getClientName(int pid) {
-        return mClientInfo.get(pid);
+        String pkgName = mClientInfo.get(pid);
+        return pkgName == null ? UNKNOWN_PACKAGE : pkgName;
     }
 
     @Override

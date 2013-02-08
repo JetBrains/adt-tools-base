@@ -1,5 +1,6 @@
 dependencies {
     compile project(':common')
+
     compile 'kxml2:kxml2:2.3.0'
 
     testCompile 'org.easymock:easymock:3.1'
