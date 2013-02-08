@@ -223,7 +223,7 @@ public class XmlTestRunListener implements ITestRunListener {
         serializer.attribute(ns, ATTR_TESTS, Integer.toString(mRunResult.getNumTests()));
         serializer.attribute(ns, ATTR_FAILURES, Integer.toString(mRunResult.getNumFailedTests()));
         serializer.attribute(ns, ATTR_ERRORS, Integer.toString(mRunResult.getNumErrorTests()));
-        serializer.attribute(ns, ATTR_TIME, Long.toString(elapsedTime));
+        serializer.attribute(ns, ATTR_TIME, Double.toString((double) elapsedTime / 1000.f));
         serializer.attribute(ns, TIMESTAMP, timestamp);
         serializer.attribute(ns, HOSTNAME, mHostName);
 
@@ -260,7 +260,7 @@ public class XmlTestRunListener implements ITestRunListener {
         serializer.attribute(ns, ATTR_NAME, getTestName(testId));
         serializer.attribute(ns, ATTR_CLASSNAME, testId.getClassName());
         long elapsedTimeMs = testResult.getEndTime() - testResult.getStartTime();
-        serializer.attribute(ns, ATTR_TIME, Long.toString(elapsedTimeMs));
+        serializer.attribute(ns, ATTR_TIME, Double.toString((double) elapsedTimeMs / 1000.f));
 
         if (!TestStatus.PASSED.equals(testResult.getStatus())) {
             String result = testResult.getStatus().equals(TestStatus.FAILURE) ? FAILURE : ERROR;
