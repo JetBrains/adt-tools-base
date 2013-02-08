@@ -18,6 +18,7 @@ package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
+import com.android.sdklib.internal.repository.packages.FullRevision.PreviewComparison;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
@@ -149,7 +150,7 @@ public abstract class FullRevisionPackage extends Package
         }
 
         // check they are the same item, ignoring the preview bit.
-        if (!sameItemAs(replacementPackage, true /*ignorePreviews*/)) {
+        if (!sameItemAs(replacementPackage, PreviewComparison.IGNORE)) {
             return UpdateInfo.INCOMPATIBLE;
         }
 

@@ -24,6 +24,7 @@ import com.android.sdklib.internal.repository.DownloadCache;
 import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.packages.AddonPackage;
+import com.android.sdklib.internal.repository.packages.BuildToolPackage;
 import com.android.sdklib.internal.repository.packages.DocPackage;
 import com.android.sdklib.internal.repository.packages.ExtraPackage;
 import com.android.sdklib.internal.repository.packages.Package;
@@ -912,6 +913,8 @@ public abstract class SdkSource implements IDescription, Comparable<SdkSource> {
                                 p = new ToolPackage(this, child, nsUri, licenses);
                             } else if (SdkRepoConstants.NODE_PLATFORM_TOOL.equals(name)) {
                                 p = new PlatformToolPackage(this, child, nsUri, licenses);
+                            } else if (SdkRepoConstants.NODE_BUILD_TOOL.equals(name)) {
+                                p = new BuildToolPackage(this, child, nsUri, licenses);
                             } else if (SdkRepoConstants.NODE_SAMPLE.equals(name)) {
                                 p = new SamplePackage(this, child, nsUri, licenses);
                             } else if (SdkRepoConstants.NODE_SYSTEM_IMAGE.equals(name)) {

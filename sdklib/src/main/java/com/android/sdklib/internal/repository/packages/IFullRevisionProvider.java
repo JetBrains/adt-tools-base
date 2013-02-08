@@ -16,6 +16,8 @@
 
 package com.android.sdklib.internal.repository.packages;
 
+import com.android.sdklib.internal.repository.packages.FullRevision.PreviewComparison;
+
 
 
 /**
@@ -29,15 +31,14 @@ package com.android.sdklib.internal.repository.packages;
 public interface IFullRevisionProvider {
 
     /**
-     * Returns whether the give package represents the same item as the current package.
+     * Returns whether the given package represents the same item as the current package.
      * <p/>
      * Two packages are considered the same if they represent the same thing, except for the
      * revision number.
-     * @param pkg the package to compare
-     * @param ignorePreviews true if 2 packages should be considered the same even if one
-     *    is a preview and the other one is not.
-     * @return true if the item are the same.
+     * @param pkg The package to compare
+     * @param comparePreview How to compare previews.
+     * @return true if the items are the same.
      */
-    public abstract boolean sameItemAs(Package pkg, boolean ignorePreviews);
+    public abstract boolean sameItemAs(Package pkg, PreviewComparison comparePreview);
 
 }

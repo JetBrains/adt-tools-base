@@ -227,6 +227,8 @@ public final class SdkConstants {
     public static final String FD_SUPPORT = "support";                  //$NON-NLS-1$
     /** Name of the SDK platform tools folder. */
     public static final String FD_PLATFORM_TOOLS = "platform-tools";    //$NON-NLS-1$
+    /** Name of the SDK build tools folder. */
+    public static final String FD_BUILD_TOOLS = "build-tools";          //$NON-NLS-1$
     /** Name of the SDK tools/lib folder. */
     public static final String FD_LIB = "lib";                          //$NON-NLS-1$
     /** Name of the SDK docs folder. */

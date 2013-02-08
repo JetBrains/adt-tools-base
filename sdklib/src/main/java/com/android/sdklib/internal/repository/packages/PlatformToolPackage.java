@@ -26,6 +26,7 @@ import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
+import com.android.sdklib.internal.repository.packages.FullRevision.PreviewComparison;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 
 import org.w3c.dom.Node;
@@ -95,10 +96,19 @@ public class PlatformToolPackage extends FullRevisionPackage {
                 for (File file : files) {
                     names.add(file.getName());
                 }
-                for (String name : new String[] { SdkConstants.FN_ADB,
-                                                  SdkConstants.FN_AAPT,
-                                                  SdkConstants.FN_AIDL,
-                                                  SdkConstants.FN_DX } ) {
+
+                // Package-tools revision 17+ matches sdk-repository-8 and above
+                // and only requires adb (other tools moved to the build-tool packages.)
+                String[] expected = new String[] { SdkConstants.FN_ADB };
+                if (ptp.getRevision().getMajor() < 17) {
+                    // Platform-tools before revision 17 should have adb, aapt, aidl and dx.
+                    expected = new String[] { SdkConstants.FN_ADB,
+                                              SdkConstants.FN_AAPT,
+                                              SdkConstants.FN_AIDL,
+                                              SdkConstants.FN_DX };
+                }
+
+                for (String name : expected) {
                     if (!names.contains(name)) {
                         if (error == null) {
                             error = "platform-tools folder is missing ";
@@ -211,7 +221,8 @@ public class PlatformToolPackage extends FullRevisionPackage {
      * Computes a potential installation folder if an archive of this package were
      * to be installed right away in the given SDK root.
      * <p/>
-     * A "tool" package should always be located in SDK/tools.
+     * A "platform-tool" package should always be located in SDK/platform-tools.
+     * There can be only one installed at once.
      *
      * @param osSdkRoot The OS path of the SDK root folder.
      * @param sdkManager An existing SDK manager to list current platforms and addons.
@@ -228,19 +239,24 @@ public class PlatformToolPackage extends FullRevisionPackage {
      */
     @Override
     public boolean sameItemAs(Package pkg) {
-        return sameItemAs(pkg, false /*ignorePreviews*/);
+        return sameItemAs(pkg, PreviewComparison.COMPARE_TYPE);
     }
 
     @Override
-    public boolean sameItemAs(Package pkg, boolean ignorePreviews) {
+    public boolean sameItemAs(Package pkg, PreviewComparison comparePreview) {
         // only one platform-tool package so any platform-tool package is the same item.
         if (pkg instanceof PlatformToolPackage) {
-            if (ignorePreviews) {
+            switch (comparePreview) {
+            case IGNORE:
                 return true;
-            } else {
-                // however previews can only match previews by default, unless we ignore that check.
-                return pkg.getRevision().isPreview() ==
-                    getRevision().isPreview();
+
+            case COMPARE_NUMBER:
+                // Voluntary break-through.
+            case COMPARE_TYPE:
+                // There's only one platform-tools so the preview number doesn't matter;
+                // however previews can only match previews by default so both cases
+                // are treated the same.
+                return pkg.getRevision().isPreview() == getRevision().isPreview();
             }
         }
         return false;

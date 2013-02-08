@@ -21,6 +21,7 @@ import com.android.sdklib.internal.repository.ITask;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.packages.AddonPackage;
+import com.android.sdklib.internal.repository.packages.BuildToolPackage;
 import com.android.sdklib.internal.repository.packages.DocPackage;
 import com.android.sdklib.internal.repository.packages.ExtraPackage;
 import com.android.sdklib.internal.repository.packages.FullRevision;
@@ -201,6 +202,12 @@ public class SdkUpdaterLogic {
      * recent than the highest platform currently installed.
      * A side effect is that for an empty SDK install this will list *all*
      * platforms available (since there's no "highest" installed platform.)
+     * <p/>
+     * This also adds "silent" dependencies. For example the user probably
+     * needs to have at least one version of the build-tools package although
+     * there is nothing that directly depends on it. So if the user doesn't have
+     * any installed or selected version, selected the most recent one as a
+     * candidate for install.
      *
      * @param archives The in-out list of archives to install. Typically the
      *  list is not empty at first as it should contain any archives that is
@@ -221,6 +228,7 @@ public class SdkUpdaterLogic {
         ArchiveInfo[] localArchives = createLocalArchives(localPkgs);
 
         // Find the highest platform installed
+        double currentBuildToolScore = 0;
         double currentPlatformScore = 0;
         double currentSampleScore = 0;
         double currentAddonScore = 0;
@@ -243,7 +251,9 @@ public class SdkUpdaterLogic {
                     // allows revisions to rank appropriately.
                     double score = api * 1000 + (isPreview ? 999 : 0) + rev;
 
-                    if (p instanceof PlatformPackage) {
+                    if (p instanceof BuildToolPackage) {
+                        currentBuildToolScore = Math.max(currentBuildToolScore, score);
+                    } else if (p instanceof PlatformPackage) {
                         currentPlatformScore = Math.max(currentPlatformScore, score);
                     } else if (p instanceof SamplePackage) {
                         currentSampleScore = Math.max(currentSampleScore, score);
@@ -263,6 +273,7 @@ public class SdkUpdaterLogic {
         fetchRemotePackages(remotePkgs, remoteSources);
 
         Package suggestedDoc = null;
+        Package suggestedBuildTool = null;
 
         for (Package p : remotePkgs) {
             // Skip obsolete packages unless requested to include them.
@@ -282,7 +293,14 @@ public class SdkUpdaterLogic {
             double score = api * 1000 + (isPreview ? 999 : 0) + rev;
 
             boolean shouldAdd = false;
-            if (p instanceof PlatformPackage) {
+            if (p instanceof BuildToolPackage) {
+                // We don't want all the build-tool packages, only the most recent one
+                // if not is currently installed.
+                if (currentBuildToolScore == 0 && score > currentBuildToolScore) {
+                    suggestedBuildTool = p;
+                    currentBuildToolScore = score;
+                }
+            } else if (p instanceof PlatformPackage) {
                 shouldAdd = score > currentPlatformScore;
             } else if (p instanceof SamplePackage) {
                 shouldAdd = score > currentSampleScore;
@@ -348,6 +366,21 @@ public class SdkUpdaterLogic {
         if (suggestedDoc != null) {
             // We should suggest this package for installation.
             for (Archive a : suggestedDoc.getArchives()) {
+                if (a.isCompatible()) {
+                    insertArchive(a,
+                            archives,
+                            null /*selectedArchives*/,
+                            remotePkgs,
+                            remoteSources,
+                            localArchives,
+                            true /*automated*/);
+                }
+            }
+        }
+
+        if (suggestedBuildTool != null) {
+            // We should suggest this package for installation.
+            for (Archive a : suggestedBuildTool.getArchives()) {
                 if (a.isCompatible()) {
                     insertArchive(a,
                             archives,

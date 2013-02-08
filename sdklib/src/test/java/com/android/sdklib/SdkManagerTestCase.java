@@ -146,10 +146,13 @@ public class SdkManagerTestCase extends TestCase {
 
         File toolsDir = new File(sdkDir, SdkConstants.OS_SDK_TOOLS_FOLDER);
         toolsDir.mkdir();
+        createSourceProps(toolsDir, PkgProps.PKG_REVISION, "1.0.1");
         new File(toolsDir, SdkConstants.androidCmdName()).createNewFile();
         new File(toolsDir, SdkConstants.FN_EMULATOR).createNewFile();
 
-        // TODO makePlatformTools with at least a source props
+        makePlatformTools(new File(sdkDir, SdkConstants.FD_PLATFORM_TOOLS));
+        makeBuildTools(new File(sdkDir, SdkConstants.FD_BUILD_TOOLS));
+
 
         File toolsLibEmuDir = new File(sdkDir, SdkConstants.OS_SDK_TOOLS_LIB_FOLDER + "emulator");
         toolsLibEmuDir.mkdirs();
@@ -189,15 +192,12 @@ public class SdkManagerTestCase extends TestCase {
         new File(targetDir, SdkConstants.FN_FRAMEWORK_LIBRARY).createNewFile();
         new File(targetDir, SdkConstants.FN_FRAMEWORK_AIDL).createNewFile();
 
-        File sourceProp = new File(targetDir, SdkConstants.FN_SOURCE_PROP);
-        sourceProp.createNewFile();
-        FileWriter out = new FileWriter(sourceProp);
-        out.write(PkgProps.LAYOUTLIB_API + "=5\n");
-        out.write(PkgProps.LAYOUTLIB_REV + "=2\n");
-        out.close();
+        createSourceProps(targetDir,
+                PkgProps.LAYOUTLIB_API, "5",
+                PkgProps.LAYOUTLIB_REV, "2");
 
         File buildProp = new File(targetDir, SdkConstants.FN_BUILD_PROP);
-        out = new FileWriter(buildProp);
+        FileWriter out = new FileWriter(buildProp);
         out.write(SdkManager.PROP_VERSION_RELEASE + "=0.0\n");
         out.write(SdkManager.PROP_VERSION_SDK + "=0\n");
         out.write(SdkManager.PROP_VERSION_CODENAME + "=REL\n");
@@ -210,12 +210,9 @@ public class SdkManagerTestCase extends TestCase {
         imagesDir.mkdirs();
         new File(imagesDir, "userdata.img").createNewFile();
 
-        File sourceProp = new File(imagesDir, SdkConstants.FN_SOURCE_PROP);
-        sourceProp.createNewFile();
-        FileWriter out = new FileWriter(sourceProp);
-        out.write(PkgProps.VERSION_API_LEVEL + "=0\n");
-        out.write(PkgProps.SYS_IMG_ABI + "=" + abiType + "\n");
-        out.close();
+        createSourceProps(imagesDir,
+                PkgProps.VERSION_API_LEVEL, "0",
+                PkgProps.SYS_IMG_ABI, abiType);
     }
 
     /** Utility to make a fake skin for the given target */
@@ -228,11 +225,7 @@ public class SdkManagerTestCase extends TestCase {
         File sourcesDir = FileOp.append(sdkDir, SdkConstants.FD_PKG_SOURCES, "android-0");
         sourcesDir.mkdirs();
 
-        File sourceProp = new File(sourcesDir, SdkConstants.FN_SOURCE_PROP);
-        sourceProp.createNewFile();
-        FileWriter out = new FileWriter(sourceProp);
-        out.write(PkgProps.VERSION_API_LEVEL + "=0\n");
-        out.close();
+        createSourceProps(sourcesDir, PkgProps.VERSION_API_LEVEL, "0");
 
         File dir1 = FileOp.append(sourcesDir, "src", "com", "android");
         dir1.mkdirs();
@@ -241,6 +234,42 @@ public class SdkManagerTestCase extends TestCase {
 
         FileOp.append(sourcesDir, "res", "values").mkdirs();
         FileOp.append(sourcesDir, "res", "values", "styles.xml").createNewFile();
+    }
+
+    private void makePlatformTools(File platformToolsDir) throws IOException {
+        platformToolsDir.mkdir();
+        createSourceProps(platformToolsDir, PkgProps.PKG_REVISION, "17.1.2");
+
+        // platform-tools revision >= 17 requires only an adb file to be valid.
+        new File(platformToolsDir, SdkConstants.FN_ADB).createNewFile();
+    }
+
+    private void makeBuildTools(File buildToolsTopDir) throws IOException {
+        buildToolsTopDir.mkdir();
+        for (String revision : new String[] { "3.0.0", "3.0.1", "12.3.4 rc5" }) {
+
+            File buildToolsDir = new File(buildToolsTopDir, revision);
+            buildToolsDir.mkdir();
+
+            createSourceProps(buildToolsDir, PkgProps.PKG_REVISION, revision);
+
+            new File(buildToolsDir, SdkConstants.FN_AAPT).createNewFile();
+            new File(buildToolsDir, SdkConstants.FN_AIDL).createNewFile();
+            new File(buildToolsDir, SdkConstants.FN_DX).createNewFile();
+        }
+    }
+
+    private void createSourceProps(File parentDir, String...paramValuePairs) throws IOException {
+        File sourceProp = new File(parentDir, SdkConstants.FN_SOURCE_PROP);
+        sourceProp.createNewFile();
+        FileWriter out = new FileWriter(sourceProp);
+        int n = paramValuePairs.length;
+        assertTrue("paramValuePairs must have an even length, format [param=value]+", n %2 == 0);
+        for (int i = 0; i < n; i += 2) {
+            out.write(paramValuePairs[i] + '=' + paramValuePairs[i+1] + '\n');
+        }
+        out.close();
+
     }
 
     /**

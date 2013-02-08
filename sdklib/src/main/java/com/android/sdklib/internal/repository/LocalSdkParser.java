@@ -25,6 +25,7 @@ import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.packages.AddonPackage;
+import com.android.sdklib.internal.repository.packages.BuildToolPackage;
 import com.android.sdklib.internal.repository.packages.DocPackage;
 import com.android.sdklib.internal.repository.packages.ExtraPackage;
 import com.android.sdklib.internal.repository.packages.Package;
@@ -79,6 +80,8 @@ public class LocalSdkParser {
     public static final int PARSE_SOURCES        = 0x0200;
     /** Parse the SDK/extras folder. */
     public static final int PARSE_EXTRAS         = 0x0400;
+    /** Parse the SDK/build-tools folder. */
+    public static final int PARSE_BUILD_TOOLS    = 0x0800;
 
     public LocalSdkParser() {
         // pass
@@ -145,7 +148,7 @@ public class LocalSdkParser {
         ArrayList<Package> packages = new ArrayList<Package>();
         HashSet<File> visited = new HashSet<File>();
 
-        monitor.setProgressMax(10);
+        monitor.setProgressMax(11);
 
         File dir = null;
         Package pkg = null;
@@ -177,6 +180,11 @@ public class LocalSdkParser {
                 packages.add(pkg);
                 visited.add(dir);
             }
+        }
+        monitor.incProgress(1);
+
+        if ((parseFilter & PARSE_BUILD_TOOLS) != 0) {
+            scanBuildTools(sdkManager, visited, packages, monitor);
         }
         monitor.incProgress(1);
 
@@ -590,6 +598,43 @@ public class LocalSdkParser {
             log.error(e, null);
         }
         return null;
+    }
+
+    /**
+     * Scan the build-tool/folders and register valid as well as broken build tool packages.
+     */
+    private void scanBuildTools(
+            SdkManager sdkManager,
+            HashSet<File> visited,
+            ArrayList<Package> packages,
+            ILogger log) {
+        File buildToolRoot = new File(sdkManager.getLocation(), SdkConstants.FD_BUILD_TOOLS);
+
+        File[] subDirs = buildToolRoot.listFiles();
+        if (subDirs == null) {
+            return;
+        }
+
+        // The build-tool root folder contains a list of revisioned folders.
+        for (File buildToolDir : subDirs) {
+            if (buildToolDir.isDirectory() && !visited.contains(buildToolDir)) {
+                visited.add(buildToolDir);
+
+                // Ignore empty directories
+                File[] srcFiles = buildToolDir.listFiles();
+                if (srcFiles != null && srcFiles.length > 0) {
+                    Properties props =
+                        parseProperties(new File(buildToolDir, SdkConstants.FN_SOURCE_PROP));
+
+                    try {
+                        Package pkg = BuildToolPackage.create(buildToolDir, props);
+                        packages.add(pkg);
+                    } catch (Exception e) {
+                        log.error(e, null);
+                    }
+                }
+            }
+        }
     }
 
     /**

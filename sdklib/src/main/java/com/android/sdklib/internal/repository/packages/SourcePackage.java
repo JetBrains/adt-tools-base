@@ -61,7 +61,8 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
      *          parameters that vary according to the originating XML schema.
      * @param licenses The licenses loaded from the XML originating document.
      */
-    public SourcePackage(SdkSource source,
+    public SourcePackage(
+            SdkSource source,
             Node packageNode,
             String nsUri,
             Map<String,String> licenses) {
