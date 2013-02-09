@@ -33,10 +33,14 @@ import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.packages.ExtraPackage;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.packages.PlatformToolPackage;
+import com.android.sdklib.io.FileOp;
+import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.utils.ILogger;
 import com.android.utils.NullLogger;
 import com.android.utils.Pair;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -106,8 +110,11 @@ public class SdkManager {
     private final String mOsSdkPath;
     /** Valid targets that have been loaded. Can be empty but not null. */
     private IAndroidTarget[] mTargets = new IAndroidTarget[0];
+    /** Valid build-tool folders that have been loaded. Can be empty but not null. */
+    private Map<FullRevision, BuildToolInfo> mBuildTools = Maps.newTreeMap();
     /** A map to keep information on directories to see if they change later. */
-    private final Map<File, DirInfo> mTargetDirs = new HashMap<File, SdkManager.DirInfo>();
+    private final Map<File, DirInfo> mVisistedDirs = new HashMap<File, SdkManager.DirInfo>();
+
 
     /**
      * Create a new {@link SdkManager} instance.
@@ -116,17 +123,20 @@ public class SdkManager {
      * @param osSdkPath the location of the SDK.
      */
     @VisibleForTesting(visibility=Visibility.PRIVATE)
-    protected SdkManager(String osSdkPath) {
+    protected SdkManager(@NonNull String osSdkPath) {
         mOsSdkPath = osSdkPath;
     }
 
     /**
      * Creates an {@link SdkManager} for a given sdk location.
      * @param osSdkPath the location of the SDK.
-     * @param log the ILogger object receiving warning/error from the parsing. Cannot be null.
+     * @param log the ILogger object receiving warning/error from the parsing.
      * @return the created {@link SdkManager} or null if the location is not valid.
      */
-    public static SdkManager createManager(String osSdkPath, ILogger log) {
+    @Nullable
+    public static SdkManager createManager(
+            @NonNull String osSdkPath,
+            @NonNull ILogger log) {
         try {
             SdkManager manager = new SdkManager(osSdkPath);
             manager.reloadSdk(log);
@@ -142,14 +152,16 @@ public class SdkManager {
     /**
      * Reloads the content of the SDK.
      *
-     * @param log the ILogger object receiving warning/error from the parsing. Cannot be null.
+     * @param log the ILogger object receiving warning/error from the parsing.
      */
-    public void reloadSdk(ILogger log) {
+    public void reloadSdk(@NonNull ILogger log) {
         // get the current target list.
-        mTargetDirs.clear();
-        ArrayList<IAndroidTarget> targets = new ArrayList<IAndroidTarget>();
-        loadPlatforms(mOsSdkPath, targets, mTargetDirs, log);
-        loadAddOns(mOsSdkPath, targets, mTargetDirs, log);
+        mVisistedDirs.clear();
+        ArrayList<IAndroidTarget> targets = Lists.newArrayList();
+        loadPlatforms(mOsSdkPath, targets, mVisistedDirs, log);
+        loadAddOns(mOsSdkPath, targets, mVisistedDirs, log);
+        Map<FullRevision, BuildToolInfo> buildTools = Maps.newHashMap();
+        loadBuildTools(mOsSdkPath, buildTools, mVisistedDirs, log);
 
         // For now replace the old list with the new one.
         // In the future we may want to keep the current objects, so that ADT doesn't have to deal
@@ -158,13 +170,14 @@ public class SdkManager {
         // sort the targets/add-ons
         Collections.sort(targets);
         setTargets(targets.toArray(new IAndroidTarget[targets.size()]));
+        setBuildTools(buildTools);
 
         // load the samples, after the targets have been set.
         initializeSamplePaths(log);
     }
 
     /**
-     * Checks whether any of the SDK platforms/add-ons have changed on-disk
+     * Checks whether any of the SDK platforms/add-ons/build-tools have changed on-disk
      * since we last loaded the SDK. This does not reload the SDK nor does it
      * change the underlying targets.
      *
@@ -174,16 +187,22 @@ public class SdkManager {
         Set<File> visited = new HashSet<File>();
         boolean changed = false;
 
-        File platformFolder = new File(mOsSdkPath, SdkConstants.FD_PLATFORMS);
-        if (platformFolder.isDirectory()) {
-            File[] platforms  = platformFolder.listFiles();
-            if (platforms != null) {
-                for (File platform : platforms) {
-                    if (!platform.isDirectory()) {
+        for (String dirName : new String[] { SdkConstants.FD_PLATFORMS,
+                                             SdkConstants.FD_ADDONS,
+                                             SdkConstants.FD_BUILD_TOOLS }) {
+
+            File folder = new File(mOsSdkPath, dirName);
+            if (folder.isDirectory()) {
+                File[] subFolders = folder.listFiles();
+                if (subFolders == null) {
+                    continue;
+                }
+                for (File subFolder : subFolders) {
+                    if (!subFolder.isDirectory()) {
                         continue;
                     }
-                    visited.add(platform);
-                    DirInfo dirInfo = mTargetDirs.get(platform);
+                    visited.add(subFolder);
+                    DirInfo dirInfo = mVisistedDirs.get(subFolder);
                     if (dirInfo == null) {
                         // This is a new platform directory.
                         changed = true;
@@ -193,43 +212,18 @@ public class SdkManager {
                     if (changed) {
                         if (DEBUG) {
                             System.out.println("SDK changed due to " +              //$NON-NLS-1$
-                                (dirInfo != null ? dirInfo.toString() : platform.getPath()));
+                                (dirInfo != null ? dirInfo.toString() : subFolder.getPath()));
                         }
+                        break;
                     }
                 }
             }
         }
 
-        File addonFolder = new File(mOsSdkPath, SdkConstants.FD_ADDONS);
-
-        if (!changed && addonFolder.isDirectory()) {
-            File[] addons  = addonFolder.listFiles();
-            if (addons != null) {
-                for (File addon : addons) {
-                    if (!addon.isDirectory()) {
-                        continue;
-                    }
-                    visited.add(addon);
-                    DirInfo dirInfo = mTargetDirs.get(addon);
-                    if (dirInfo == null) {
-                        // This is a new add-on directory.
-                        changed = true;
-                    } else {
-                        changed = dirInfo.hasChanged();
-                    }
-                    if (changed) {
-                        if (DEBUG) {
-                            System.out.println("SDK changed due to " +              //$NON-NLS-1$
-                                (dirInfo != null ? dirInfo.toString() : addon.getPath()));
-                        }
-                    }
-                }
-            }
-        }
 
         if (!changed) {
             // Check whether some pre-existing target directories have vanished.
-            for (File previousDir : mTargetDirs.keySet()) {
+            for (File previousDir : mVisistedDirs.keySet()) {
                 if (!visited.contains(previousDir)) {
                     // This directory is no longer present.
                     changed = true;
@@ -248,6 +242,7 @@ public class SdkManager {
     /**
      * Returns the location of the SDK.
      */
+    @NonNull
     public String getLocation() {
         return mOsSdkPath;
     }
@@ -257,6 +252,7 @@ public class SdkManager {
      * <p/>
      * The array can be empty but not null.
      */
+    @NonNull
     public IAndroidTarget[] getTargets() {
         return mTargets;
     }
@@ -267,9 +263,32 @@ public class SdkManager {
      * The array can be empty but not null.
      */
     @VisibleForTesting(visibility=Visibility.PRIVATE)
-    protected void setTargets(IAndroidTarget[] targets) {
+    protected void setTargets(@NonNull IAndroidTarget[] targets) {
         assert targets != null;
         mTargets = targets;
+    }
+
+    private void setBuildTools(@NonNull Map<FullRevision, BuildToolInfo> buildTools) {
+        assert buildTools != null;
+        mBuildTools = buildTools;
+    }
+
+    /** Returns an unmodifiable set of known build-tools revisions. Can be empty but not null. */
+    @NonNull
+    public Set<FullRevision> getBuildTools() {
+        return Collections.unmodifiableSet(mBuildTools.keySet());
+    }
+
+    /**
+     * Returns the {@link BuildToolInfo} for the given revision.
+     *
+     * @param revision The requested revision.
+     * @return A {@link BuildToolInfo}. Can be null if {@code revision} is null or is
+     *  not part of the known set returned by {@link #getBuildTools()}.
+     */
+    @Nullable
+    public BuildToolInfo getBuildTool(@Nullable FullRevision revision) {
+        return mBuildTools.get(revision);
     }
 
     /**
@@ -278,7 +297,8 @@ public class SdkManager {
      * @param hash the {@link IAndroidTarget} hash string.
      * @return The matching {@link IAndroidTarget} or null.
      */
-    public IAndroidTarget getTargetFromHashString(String hash) {
+    @Nullable
+    public IAndroidTarget getTargetFromHashString(@Nullable String hash) {
         if (hash != null) {
             for (IAndroidTarget target : mTargets) {
                 if (hash.equals(target.hashString())) {
@@ -337,6 +357,7 @@ public class SdkManager {
      * @deprecated This does NOT solve the right problem and will be changed later.
      */
     @Deprecated
+    @Nullable
     public LayoutlibVersion getMaxLayoutlibVersion() {
         LayoutlibVersion maxVersion = null;
 
@@ -455,13 +476,14 @@ public class SdkManager {
      * @param sdkOsPath Location of the SDK
      * @param targets the list to fill with the platforms.
      * @param dirInfos a map to keep information on directories to see if they change later.
-     * @param log the ILogger object receiving warning/error from the parsing. Cannot be null.
+     * @param log the ILogger object receiving warning/error from the parsing.
      * @throws RuntimeException when the "platforms" folder is missing and cannot be created.
      */
     private static void loadPlatforms(
-            String sdkOsPath,
-            ArrayList<IAndroidTarget> targets,
-            Map<File, DirInfo> dirInfos, ILogger log) {
+            @NonNull String sdkOsPath,
+            @NonNull ArrayList<IAndroidTarget> targets,
+            @NonNull Map<File, DirInfo> dirInfos,
+            @NonNull ILogger log) {
         File platformFolder = new File(sdkOsPath, SdkConstants.FD_PLATFORMS);
 
         if (platformFolder.isDirectory()) {
@@ -503,12 +525,13 @@ public class SdkManager {
      * Loads a specific Platform at a given location.
      * @param sdkOsPath Location of the SDK
      * @param platformFolder the root folder of the platform.
-     * @param log the ILogger object receiving warning/error from the parsing. Cannot be null.
+     * @param log the ILogger object receiving warning/error from the parsing.
      */
+    @Nullable
     private static PlatformTarget loadPlatform(
-            String sdkOsPath,
-            File platformFolder,
-            ILogger log) {
+            @NonNull String sdkOsPath,
+            @NonNull File platformFolder,
+            @NonNull ILogger log) {
         FileWrapper buildProp = new FileWrapper(platformFolder, SdkConstants.FN_BUILD_PROP);
         FileWrapper sourcePropFile = new FileWrapper(platformFolder, SdkConstants.FN_SOURCE_PROP);
 
@@ -647,9 +670,10 @@ public class SdkManager {
      *
      * @param root Root of the add-on target being loaded.
      * @return an array of ISystemImage containing all the system images for the target.
-     *              The list can be empty.
+     *              The list can be empty but not null.
     */
-    private static ISystemImage[] getAddonSystemImages(File root) {
+    @NonNull
+    private static ISystemImage[] getAddonSystemImages(@NonNull File root) {
         Set<ISystemImage> found = new TreeSet<ISystemImage>();
 
         root = new File(root, SdkConstants.OS_IMAGES_FOLDER);
@@ -695,12 +719,13 @@ public class SdkManager {
      * @param root Root of the platform target being loaded.
      * @param version API level + codename of platform being loaded.
      * @return an array of ISystemImage containing all the system images for the target.
-     *              The list can be empty.
-    */
+     *              The list can be empty but not null.
+     */
+    @NonNull
     private static ISystemImage[] getPlatformSystemImages(
-            String sdkOsPath,
-            File root,
-            AndroidVersion version) {
+            @NonNull String sdkOsPath,
+            @NonNull File root,
+            @NonNull AndroidVersion version) {
         Set<ISystemImage> found = new TreeSet<ISystemImage>();
         Set<String> abiFound = new HashSet<String>();
 
@@ -741,8 +766,7 @@ public class SdkManager {
                                         abi));
                                 abiFound.add(abi);
                             }
-                        } catch (Exception ignore) {
-                        }
+                        } catch (Exception ignore) {}
                     }
                 }
             }
@@ -795,13 +819,14 @@ public class SdkManager {
      * @param osSdkPath Location of the SDK
      * @param targets the list to fill with the add-ons.
      * @param dirInfos a map to keep information on directories to see if they change later.
-     * @param log the ILogger object receiving warning/error from the parsing. Cannot be null.
+     * @param log the ILogger object receiving warning/error from the parsing.
      * @throws RuntimeException when the "add-ons" folder is missing and cannot be created.
      */
     private static void loadAddOns(
-            String osSdkPath,
-            ArrayList<IAndroidTarget> targets,
-            Map<File, DirInfo> dirInfos, ILogger log) {
+            @NonNull String osSdkPath,
+            @NonNull ArrayList<IAndroidTarget> targets,
+            @NonNull Map<File, DirInfo> dirInfos,
+            @NonNull ILogger log) {
         File addonFolder = new File(osSdkPath, SdkConstants.FD_ADDONS);
 
         if (addonFolder.isDirectory()) {
@@ -846,12 +871,13 @@ public class SdkManager {
      * Loads a specific Add-on at a given location.
      * @param addonDir the location of the add-on directory.
      * @param targetList The list of Android target that were already loaded from the SDK.
-     * @param log the ILogger object receiving warning/error from the parsing. Cannot be null.
+     * @param log the ILogger object receiving warning/error from the parsing.
      */
-    private static AddOnTarget loadAddon(File addonDir,
-            IAndroidTarget[] targetList,
-            ILogger log) {
-
+    @Nullable
+    private static AddOnTarget loadAddon(
+            @NonNull File addonDir,
+            @NonNull IAndroidTarget[] targetList,
+            @NonNull ILogger log) {
         // Parse the addon properties to ensure we can load it.
         Pair<Map<String, String>, String> infos = parseAddonProperties(addonDir, targetList, log);
 
@@ -978,8 +1004,8 @@ public class SdkManager {
             target.setSkins(skins, defaultSkin);
 
             return target;
-        }
-        catch (Exception e) {
+
+        } catch (Exception e) {
             log.warning("Ignoring add-on '%1$s': error %2$s.",
                     addonDir.getName(), e.toString());
         }
@@ -992,15 +1018,16 @@ public class SdkManager {
      *
      * @param addonDir the location of the addon directory.
      * @param targetList The list of Android target that were already loaded from the SDK.
-     * @param log the ILogger object receiving warning/error from the parsing. Cannot be null.
+     * @param log the ILogger object receiving warning/error from the parsing.
      * @return A pair with the property map and an error string. Both can be null but not at the
      *  same time. If a non-null error is present then the property map must be ignored. The error
      *  should be translatable as it might show up in the SdkManager UI.
      */
+    @NonNull
     public static Pair<Map<String, String>, String> parseAddonProperties(
-            File addonDir,
-            IAndroidTarget[] targetList,
-            ILogger log) {
+            @NonNull File addonDir,
+            @NonNull IAndroidTarget[] targetList,
+            @NonNull ILogger log) {
         Map<String, String> propertyMap = null;
         String error = null;
 
@@ -1079,7 +1106,7 @@ public class SdkManager {
      * @param value the string to convert.
      * @return the int value, or {@link IAndroidTarget#NO_USB_ID} if the conversion failed.
      */
-    private static int convertId(String value) {
+    private static int convertId(@Nullable String value) {
         if (value != null && value.length() > 0) {
             if (PATTERN_USB_IDS.matcher(value).matches()) {
                 String v = value.substring(2);
@@ -1101,7 +1128,8 @@ public class SdkManager {
      *
      * @param valueName The missing manifest value, for display.
      */
-    private static String addonManifestWarning(String valueName) {
+    @NonNull
+    private static String addonManifestWarning(@NonNull String valueName) {
         return String.format("'%1$s' is missing from %2$s.",
                 valueName, SdkConstants.FN_MANIFEST_INI);
     }
@@ -1113,9 +1141,11 @@ public class SdkManager {
      * aidl(.exe), dx(.bat), and dx.jar
      *
      * @param platform The folder containing the platform.
-     * @param log Logger. Cannot be null.
+     * @param log Logger.
      */
-    private static boolean checkPlatformContent(File platform, ILogger log) {
+    private static boolean checkPlatformContent(
+            @NonNull File platform,
+            @NonNull ILogger log) {
         for (String relativePath : sPlatformContentList) {
             File f = new File(platform, relativePath);
             if (!f.exists()) {
@@ -1134,7 +1164,8 @@ public class SdkManager {
      * Parses the skin folder and builds the skin list.
      * @param osPath The path of the skin root folder.
      */
-    private static String[] parseSkinFolder(String osPath) {
+    @NonNull
+    private static String[] parseSkinFolder(@NonNull String osPath) {
         File skinRootFolder = new File(osPath);
 
         if (skinRootFolder.isDirectory()) {
@@ -1168,9 +1199,9 @@ public class SdkManager {
      * have a separate SDK/samples/samples-API directory. This parses either directories
      * and sets the targets' sample path accordingly.
      *
-     * @param log Logger. Cannot be null.
+     * @param log Logger.
      */
-    private void initializeSamplePaths(ILogger log) {
+    private void initializeSamplePaths(@NonNull ILogger log) {
         File sampleFolder = new File(mOsSdkPath, SdkConstants.FD_SAMPLES);
         if (sampleFolder.isDirectory()) {
             File[] platforms  = sampleFolder.listFiles();
@@ -1198,10 +1229,13 @@ public class SdkManager {
      * Returns the {@link AndroidVersion} of the sample in the given folder.
      *
      * @param folder The sample's folder.
-     * @param log Logger for errors. Cannot be null.
+     * @param log Logger for errors.
      * @return An {@link AndroidVersion} or null on error.
      */
-    private AndroidVersion getSamplesVersion(File folder, ILogger log) {
+    @Nullable
+    private AndroidVersion getSamplesVersion(
+            @NonNull File folder,
+            @NonNull ILogger log) {
         File sourceProp = new File(folder, SdkConstants.FN_SOURCE_PROP);
         try {
             Properties p = new Properties();
@@ -1230,6 +1264,95 @@ public class SdkManager {
         return null;
     }
 
+    /**
+     * Loads the build-tools from the SDK.
+     * Creates the "build-tools" folder if necessary.
+     *
+     * @param sdkOsPath Location of the SDK
+     * @param infos the map to fill with the build-tools.
+     * @param dirInfos a map to keep information on directories to see if they change later.
+     * @param log the ILogger object receiving warning/error from the parsing.
+     * @throws RuntimeException when the "platforms" folder is missing and cannot be created.
+     */
+    private static void loadBuildTools(
+            @NonNull String sdkOsPath,
+            @NonNull Map<FullRevision, BuildToolInfo> infos,
+            @NonNull Map<File, DirInfo> dirInfos,
+            @NonNull ILogger log) {
+        File buildToolsFolder = new File(sdkOsPath, SdkConstants.FD_BUILD_TOOLS);
+
+        if (buildToolsFolder.isDirectory()) {
+            File[] folders  = buildToolsFolder.listFiles();
+
+            for (File subFolder : folders) {
+                if (subFolder.isDirectory()) {
+                    BuildToolInfo info = loadBuildTool(sdkOsPath, subFolder, log);
+                    if (info != null) {
+                        infos.put(info.getRevision(), info);
+                    }
+                    // Remember we visited this file/directory,
+                    // even if we failed to load anything from it.
+                    dirInfos.put(subFolder, new DirInfo(subFolder));
+                } else {
+                    log.warning("Ignoring build-tool '%1$s', not a folder.", subFolder.getName());
+                }
+            }
+
+            return;
+        }
+
+        // Try to create it or complain if something else is in the way.
+        if (!buildToolsFolder.exists()) {
+            if (!buildToolsFolder.mkdir()) {
+                throw new RuntimeException(
+                        String.format("Failed to create %1$s.",
+                                buildToolsFolder.getAbsolutePath()));
+            }
+        } else {
+            throw new RuntimeException(
+                    String.format("%1$s is not a folder.",
+                            buildToolsFolder.getAbsolutePath()));
+        }
+    }
+
+    /**
+     * Loads a specific Platform at a given location.
+     * @param sdkOsPath Location of the SDK
+     * @param folder the root folder of the platform.
+     * @param log the ILogger object receiving warning/error from the parsing.
+     */
+    @Nullable
+    private static BuildToolInfo loadBuildTool(
+            @NonNull String sdkOsPath,
+            @NonNull File folder,
+            @NonNull ILogger log) {
+        FileOp f = new FileOp();
+
+        File sourcePropFile = new File(folder, SdkConstants.FN_SOURCE_PROP);
+        if (!f.isFile(sourcePropFile)) {
+            log.warning("Ignoring build-tool '%1$s': missing file %2$s",
+                    folder.getName(), SdkConstants.FN_SOURCE_PROP);
+        } else {
+            Properties props = f.loadProperties(sourcePropFile);
+            String revStr = props.getProperty(PkgProps.PKG_REVISION);
+
+            try {
+                FullRevision rev =
+                    FullRevision.parseRevision(props.getProperty(PkgProps.PKG_REVISION));
+
+                BuildToolInfo info = new BuildToolInfo(rev, folder);
+                return info.isValid(log) ? info : null;
+
+            } catch (NumberFormatException e) {
+                log.warning("Ignoring build-tool '%1$s': invalid revision '%2$s'",
+                        folder.getName(), revStr);
+            }
+
+        }
+
+        return null;
+    }
+
     // -------------
 
     public static class LayoutlibVersion implements Comparable<LayoutlibVersion> {
@@ -1252,7 +1375,7 @@ public class SdkManager {
         }
 
         @Override
-        public int compareTo(LayoutlibVersion rhs) {
+        public int compareTo(@NonNull LayoutlibVersion rhs) {
             boolean useRev = this.mRevision > NOT_SPECIFIED && rhs.mRevision > NOT_SPECIFIED;
             int lhsValue = (this.mApi << 16) + (useRev ? this.mRevision : 0);
             int rhsValue = (rhs.mApi  << 16) + (useRev ? rhs.mRevision  : 0);
@@ -1336,7 +1459,7 @@ public class SdkManager {
          * Computes an adler32 checksum (source.props are small files, so this
          * should be OK with an acceptable collision rate.)
          */
-        private static long getFileChecksum(File file) {
+        private static long getFileChecksum(@NonNull File file) {
             FileInputStream fis = null;
             try {
                 fis = new FileInputStream(file);

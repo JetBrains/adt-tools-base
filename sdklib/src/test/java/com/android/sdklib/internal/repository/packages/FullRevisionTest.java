@@ -16,6 +16,8 @@
 
 package com.android.sdklib.internal.repository.packages;
 
+import com.android.sdklib.repository.FullRevision;
+
 import java.util.Arrays;
 
 import junit.framework.TestCase;

@@ -24,6 +24,7 @@ import com.android.sdklib.internal.avd.AvdManager;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.mock.MockLog;
 import com.android.sdklib.repository.PkgProps;
+import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.utils.ILogger;
 
 import java.io.File;
@@ -42,6 +43,7 @@ public class SdkManagerTestCase extends TestCase {
     private MockLog mLog;
     private SdkManager mSdkManager;
     private TmpAvdManager mAvdManager;
+    private int mRepoXsdLevel;
 
     /** Returns the {@link MockLog} for this test case. */
     public MockLog getLog() {
@@ -62,14 +64,23 @@ public class SdkManagerTestCase extends TestCase {
      * Sets up a {@link MockLog}, a fake SDK in a temporary directory
      * and an AVD Manager pointing to an initially-empty AVD directory.
      */
-    @Override
-    public void setUp() throws Exception {
+    public void setUp(int repoXsdLevel) throws Exception {
+        mRepoXsdLevel = repoXsdLevel;
         mLog = new MockLog();
         mFakeSdk = makeFakeSdk();
         mSdkManager = SdkManager.createManager(mFakeSdk.getAbsolutePath(), mLog);
         assertNotNull("SdkManager location was invalid", mSdkManager);
 
         mAvdManager = new TmpAvdManager(mSdkManager, mLog);
+    }
+
+    /**
+     * Sets up a {@link MockLog}, a fake SDK in a temporary directory
+     * and an AVD Manager pointing to an initially-empty AVD directory.
+     */
+    @Override
+    public void setUp() throws Exception {
+        setUp(SdkRepoConstants.NS_LATEST_VERSION);
     }
 
     /**
@@ -151,8 +162,10 @@ public class SdkManagerTestCase extends TestCase {
         new File(toolsDir, SdkConstants.FN_EMULATOR).createNewFile();
 
         makePlatformTools(new File(sdkDir, SdkConstants.FD_PLATFORM_TOOLS));
-        makeBuildTools(new File(sdkDir, SdkConstants.FD_BUILD_TOOLS));
 
+        if (mRepoXsdLevel >= 8) {
+            makeBuildTools(new File(sdkDir, SdkConstants.FD_BUILD_TOOLS));
+        }
 
         File toolsLibEmuDir = new File(sdkDir, SdkConstants.OS_SDK_TOOLS_LIB_FOLDER + "emulator");
         toolsLibEmuDir.mkdirs();
@@ -256,6 +269,12 @@ public class SdkManagerTestCase extends TestCase {
             new File(buildToolsDir, SdkConstants.FN_AAPT).createNewFile();
             new File(buildToolsDir, SdkConstants.FN_AIDL).createNewFile();
             new File(buildToolsDir, SdkConstants.FN_DX).createNewFile();
+            new File(buildToolsDir, SdkConstants.FN_DX_JAR).createNewFile();
+            new File(buildToolsDir, SdkConstants.FN_RENDERSCRIPT).createNewFile();
+            new File(buildToolsDir, SdkConstants.FN_FRAMEWORK_RENDERSCRIPT).mkdir();
+            new File(buildToolsDir, SdkConstants.OS_FRAMEWORK_RS).mkdir();
+            new File(buildToolsDir, SdkConstants.OS_FRAMEWORK_RS_CLANG).mkdir();
+
         }
     }
 
