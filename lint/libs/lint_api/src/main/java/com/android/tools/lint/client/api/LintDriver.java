@@ -57,6 +57,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -1362,6 +1363,73 @@ public class LintDriver {
                 mClient.log(null, "Error processing %1$s: broken class file?", entry.path());
             }
         }
+    }
+
+    /**
+     * Returns the {@link ClassNode} corresponding to the given type, if possible, or null
+     *
+     * @param type the fully qualified type, using JVM signatures (/ and $, not . as path
+     *             separators)
+     * @param flags the ASM flags to pass to the {@link ClassReader}, normally 0 but can
+     *              for example be {@link ClassReader#SKIP_CODE} and/oor
+     *              {@link ClassReader#SKIP_DEBUG}
+     * @return the class node for the type, or null
+     */
+    @Nullable
+    public ClassNode findClass(@NonNull ClassContext context, @NonNull String type, int flags) {
+        String relative = type.replace('/', File.separatorChar) + DOT_CLASS;
+        File classFile = findClassFile(context.getProject(), relative);
+        if (classFile != null) {
+            if (classFile.getPath().endsWith(DOT_JAR)) {
+                // TODO: Handle .jar files
+                return null;
+            }
+
+            try {
+                byte[] bytes = mClient.readBytes(classFile);
+                ClassReader reader = new ClassReader(bytes);
+                ClassNode classNode = new ClassNode();
+                reader.accept(classNode, flags);
+
+                return classNode;
+            } catch (Throwable t) {
+                mClient.log(null, "Error processing %1$s: broken class file?",
+                        classFile.getPath());
+            }
+        }
+
+        return null;
+    }
+
+    @Nullable
+    private File findClassFile(@NonNull Project project, String relativePath) {
+        for (File root : mClient.getJavaClassFolders(project)) {
+            File path = new File(root, relativePath);
+            if (path.exists()) {
+                return path;
+            }
+        }
+        // Search in the libraries
+        for (File root : mClient.getJavaLibraries(project)) {
+            // TODO: Handle .jar files!
+            //if (root.getPath().endsWith(DOT_JAR)) {
+            //}
+
+            File path = new File(root, relativePath);
+            if (path.exists()) {
+                return path;
+            }
+        }
+
+        // Search dependent projects
+        for (Project library : project.getDirectLibraries()) {
+            File path = findClassFile(library, relativePath);
+            if (path != null) {
+                return path;
+            }
+        }
+
+        return null;
     }
 
     /** Visitor skimming classes and initializing a map of super classes */
