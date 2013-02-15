@@ -24,6 +24,7 @@ import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
+import com.android.sdklib.internal.repository.IListDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
@@ -58,7 +59,7 @@ import java.util.Properties;
  * <p/>
  * Derived classes must implement the {@link IDescription} methods.
  */
-public abstract class Package implements IDescription, Comparable<Package> {
+public abstract class Package implements IDescription, IListDescription, Comparable<Package> {
 
     private final String mObsolete;
     private final License mLicense;
@@ -305,10 +306,7 @@ public abstract class Package implements IDescription, Comparable<Package> {
             @Nullable Properties props,
             @NonNull String propKey,
             @Nullable String defaultValue) {
-        if (props == null) {
-            return defaultValue;
-        }
-        return props.getProperty(propKey, defaultValue);
+        return PackageParserUtils.getProperty(props, propKey, defaultValue);
     }
 
     /**
@@ -327,13 +325,7 @@ public abstract class Package implements IDescription, Comparable<Package> {
             @Nullable Properties props,
             @NonNull String propKey,
             int defaultValue) {
-        String s = props != null ? props.getProperty(propKey, null) : null;
-        if (s != null) {
-            try {
-                return Integer.parseInt(s);
-            } catch (Exception ignore) {}
-        }
-        return defaultValue;
+        return PackageParserUtils.getPropertyInt(props, propKey, defaultValue);
     }
 
     /**
@@ -580,6 +572,7 @@ public abstract class Package implements IDescription, Comparable<Package> {
      * In contrast, {@link #getShortDescription()} should be used if you want more details
      * such as the package revision number or the API, if applicable.
      */
+    @Override
     public abstract String getListDescription();
 
     /**

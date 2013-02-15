@@ -23,6 +23,7 @@ import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.sdklib.internal.avd.AvdManager;
 import com.android.sdklib.io.FileOp;
+import com.android.sdklib.local.LocalPlatformPkgInfo;
 import com.android.sdklib.mock.MockLog;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
@@ -228,13 +229,16 @@ public class SdkManagerTestCase extends TestCase {
         new File(targetDir, SdkConstants.FN_FRAMEWORK_AIDL).createNewFile();
 
         createSourceProps(targetDir,
+                PkgProps.PKG_REVISION, "1",
+                PkgProps.PLATFORM_VERSION, "0.0",
+                PkgProps.VERSION_API_LEVEL, "0",
                 PkgProps.LAYOUTLIB_API, "5",
                 PkgProps.LAYOUTLIB_REV, "2");
 
         createFileProps(SdkConstants.FN_BUILD_PROP, targetDir,
-                SdkManager.PROP_VERSION_RELEASE,  "0.0",
-                SdkManager.PROP_VERSION_SDK,      "0",
-                SdkManager.PROP_VERSION_CODENAME, "REL");
+                LocalPlatformPkgInfo.PROP_VERSION_RELEASE,  "0.0",
+                LocalPlatformPkgInfo.PROP_VERSION_SDK,      "0",
+                LocalPlatformPkgInfo.PROP_VERSION_CODENAME, "REL");
 
         return targetDir;
     }
@@ -245,6 +249,7 @@ public class SdkManagerTestCase extends TestCase {
         new File(imagesDir, "userdata.img").createNewFile();
 
         createSourceProps(imagesDir,
+                PkgProps.PKG_REVISION, "0",
                 PkgProps.VERSION_API_LEVEL, "0",
                 PkgProps.SYS_IMG_ABI, abiType);
     }

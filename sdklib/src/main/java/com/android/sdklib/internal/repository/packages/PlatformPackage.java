@@ -18,6 +18,7 @@ package com.android.sdklib.internal.repository.packages;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.AndroidTargetHash;
@@ -99,17 +100,19 @@ public class PlatformPackage extends MinToolsPackage
      * <p/>
      * By design, this creates a package with one and only one archive.
      */
-    public static Package create(IAndroidTarget target, Properties props) {
+    public static Package create(@NonNull IAndroidTarget target, @Nullable Properties props) {
         return new PlatformPackage(target, props);
     }
 
     @VisibleForTesting(visibility=Visibility.PRIVATE)
-    protected PlatformPackage(IAndroidTarget target, Properties props) {
+    protected PlatformPackage(@NonNull IAndroidTarget target, @Nullable Properties props) {
         this(null /*source*/, target, props);
     }
 
     @VisibleForTesting(visibility=Visibility.PRIVATE)
-    protected PlatformPackage(SdkSource source, IAndroidTarget target, Properties props) {
+    protected PlatformPackage(@Nullable SdkSource source,
+                              @NonNull IAndroidTarget target,
+                              @Nullable Properties props) {
         super(  source,                     //source
                 props,                      //properties
                 target.getRevision(),       //revision
