@@ -163,7 +163,7 @@ JVM_OPTS[${#JVM_OPTS[*]}]="-Dorg.gradle.appname=$APP_BASE_NAME"
 
 # Change the project's .gradle to the android out dir.
 if [[ -z "$ANDROID_CACHE_DIR" ]]; then
-  ANDROID_CACHE_DIR="$APP_HOME/../../out/host/common/tools/base/.gradle"
+  ANDROID_CACHE_DIR="$APP_HOME/../../out/host/gradle/tools/base/.gradle"
 fi
 
 exec "$JAVACMD" "${JVM_OPTS[@]}" \
