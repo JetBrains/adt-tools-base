@@ -16,6 +16,7 @@
 
 package com.android.sdklib.internal.repository.packages;
 
+import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.SdkRepoConstants;
 
 /**

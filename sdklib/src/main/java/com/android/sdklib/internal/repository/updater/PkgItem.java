@@ -17,11 +17,11 @@
 package com.android.sdklib.internal.repository.updater;
 
 import com.android.sdklib.internal.repository.archives.Archive;
-import com.android.sdklib.internal.repository.packages.FullRevision;
 import com.android.sdklib.internal.repository.packages.IAndroidVersionProvider;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.packages.Package.UpdateInfo;
 import com.android.sdklib.internal.repository.sources.SdkSource;
+import com.android.sdklib.repository.FullRevision;
 
 /**
  * A {@link PkgItem} represents one main {@link Package} combined with its state

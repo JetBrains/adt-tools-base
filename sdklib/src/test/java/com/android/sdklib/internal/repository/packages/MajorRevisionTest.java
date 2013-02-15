@@ -16,6 +16,9 @@
 
 package com.android.sdklib.internal.repository.packages;
 
+import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.MajorRevision;
+
 import junit.framework.TestCase;
 
 public class MajorRevisionTest extends TestCase {

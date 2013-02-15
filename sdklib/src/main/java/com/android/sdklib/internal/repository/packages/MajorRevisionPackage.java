@@ -19,6 +19,8 @@ package com.android.sdklib.internal.repository.packages;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
+import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 

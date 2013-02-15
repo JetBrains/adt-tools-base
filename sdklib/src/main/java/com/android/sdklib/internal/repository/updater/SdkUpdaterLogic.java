@@ -24,7 +24,6 @@ import com.android.sdklib.internal.repository.packages.AddonPackage;
 import com.android.sdklib.internal.repository.packages.BuildToolPackage;
 import com.android.sdklib.internal.repository.packages.DocPackage;
 import com.android.sdklib.internal.repository.packages.ExtraPackage;
-import com.android.sdklib.internal.repository.packages.FullRevision;
 import com.android.sdklib.internal.repository.packages.IAndroidVersionProvider;
 import com.android.sdklib.internal.repository.packages.IExactApiLevelDependency;
 import com.android.sdklib.internal.repository.packages.IMinApiLevelDependency;
@@ -41,6 +40,7 @@ import com.android.sdklib.internal.repository.packages.SystemImagePackage;
 import com.android.sdklib.internal.repository.packages.ToolPackage;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.internal.repository.sources.SdkSources;
+import com.android.sdklib.repository.FullRevision;
 
 import java.util.ArrayList;
 import java.util.Arrays;

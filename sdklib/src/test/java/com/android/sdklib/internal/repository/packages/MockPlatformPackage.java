@@ -20,6 +20,7 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.internal.repository.MockPlatformTarget;
 import com.android.sdklib.internal.repository.packages.PlatformPackage;
 import com.android.sdklib.internal.repository.sources.SdkSource;
+import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
 
 import java.util.Properties;

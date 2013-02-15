@@ -32,6 +32,7 @@ import com.android.sdklib.internal.repository.sources.SdkAddonSource;
 import com.android.sdklib.internal.repository.sources.SdkRepoSource;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.io.IFileOp;
+import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.sdklib.repository.SdkRepoConstants;
