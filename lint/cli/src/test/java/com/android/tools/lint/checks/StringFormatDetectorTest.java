@@ -199,4 +199,14 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
         assertTrue(isLocaleSpecific(" %g "));
         assertTrue(isLocaleSpecific(" %1$tm %1$te,%1$tY "));
     }
+
+    public void testGetStringAsParameter() throws Exception {
+        assertEquals(""
+                + "No warnings.",
+
+                lintProject(
+                        "res/values/formatstrings6.xml",
+                        "src/test/pkg/StringFormat4.java.txt=>src/test/pkg/StringFormat3.java"));
+    }
+
 }
