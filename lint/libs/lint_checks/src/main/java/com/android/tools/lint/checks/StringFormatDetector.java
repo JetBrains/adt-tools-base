@@ -960,7 +960,9 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             specifiesLocale = firstName.startsWith("Locale.")                     //$NON-NLS-1$
                     || firstName.contains("locale")                               //$NON-NLS-1$
                     || firstName.equals("null")                                   //$NON-NLS-1$
-                    || second != null && second.toString().contains("getString"); //$NON-NLS-1$
+                    || (second != null && second.toString().contains("getString") //$NON-NLS-1$
+                        && !firstName.contains("getString")                       //$NON-NLS-1$
+                        && !(first instanceof StringLiteral));
         }
 
         List<Pair<Handle, String>> list = mFormatStrings.get(name);
@@ -978,7 +980,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                     String message = String.format(
                             "Wrong argument count, format string %1$s requires %2$d but format " +
                             "call supplies %3$d",
-                            name, count, args.size() - 1);
+                            name, count, args.size() - 1 - (specifiesLocale ? 1 : 0));
                     context.report(ARG_TYPES, method, location, message, null);
                 } else {
                     for (int i = 1; i <= count; i++) {
