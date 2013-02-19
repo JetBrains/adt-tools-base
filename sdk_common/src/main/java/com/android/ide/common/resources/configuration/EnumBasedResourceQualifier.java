@@ -16,6 +16,7 @@
 
 package com.android.ide.common.resources.configuration;
 
+import com.android.annotations.Nullable;
 import com.android.resources.ResourceEnum;
 
 /**
@@ -24,6 +25,7 @@ import com.android.resources.ResourceEnum;
  */
 abstract class EnumBasedResourceQualifier extends ResourceQualifier {
 
+    @Nullable
     abstract ResourceEnum getEnumValue();
 
     @Override
@@ -33,7 +35,9 @@ abstract class EnumBasedResourceQualifier extends ResourceQualifier {
 
     @Override
     public boolean hasFakeValue() {
-        return getEnumValue().isFakeValue();
+        ResourceEnum value = getEnumValue();
+        return value != null && value.isFakeValue();
+
     }
 
     @Override
