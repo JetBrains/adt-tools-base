@@ -897,4 +897,29 @@ public class ApiDetectorTest extends AbstractCheckTest {
                         "apicheck/android-support-v4.jar.data=>libs/android-support-v4.jar"
                 ));
     }
+
+    public void testImplements() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/ApiCallTest13.java:8: Error: Class requires API level 14 (current min is 4): android.widget.GridLayout [NewApi]\n"
+                + "public class ApiCallTest13 extends GridLayout implements\n"
+                + "                                   ~~~~~~~~~~\n"
+                + "src/test/pkg/ApiCallTest13.java:9: Error: Class requires API level 11 (current min is 4): android.view.View.OnLayoutChangeListener [NewApi]\n"
+                + "  View.OnSystemUiVisibilityChangeListener, OnLayoutChangeListener {\n"
+                + "                                           ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/ApiCallTest13.java:9: Error: Class requires API level 11 (current min is 4): android.view.View.OnSystemUiVisibilityChangeListener [NewApi]\n"
+                + "  View.OnSystemUiVisibilityChangeListener, OnLayoutChangeListener {\n"
+                + "       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/ApiCallTest13.java:12: Error: Call requires API level 14 (current min is 4): new android.widget.GridLayout [NewApi]\n"
+                + "  super(context);\n"
+                + "  ~~~~~\n"
+                + "4 errors, 0 warnings\n",
+
+                lintProject(
+                        "apicheck/classpath=>.classpath",
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "project.properties1=>project.properties",
+                        "apicheck/ApiCallTest13.java.txt=>src/test/pkg/ApiCallTest13.java",
+                        "apicheck/ApiCallTest13.class.data=>bin/classes/test/pkg/ApiCallTest13.class"
+                ));
+    }
 }

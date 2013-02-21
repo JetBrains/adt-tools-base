@@ -475,6 +475,20 @@ public class ApiDetector extends ResourceXmlDetector
             }
         }
 
+        if (checkCalls) { // Check implements/extends
+            if (classNode.superName != null) {
+                String signature = classNode.superName;
+                checkExtendsClass(context, classNode, classMinSdk, signature);
+            }
+            if (classNode.interfaces != null) {
+                @SuppressWarnings("unchecked") // ASM API
+                List<String> interfaceList = classNode.interfaces;
+                for (String signature : interfaceList) {
+                    checkExtendsClass(context, classNode, classMinSdk, signature);
+                }
+            }
+        }
+
         for (Object m : methodList) {
             MethodNode method = (MethodNode) m;
 
@@ -693,6 +707,25 @@ public class ApiDetector extends ResourceXmlDetector
                     }
                 }
             }
+        }
+    }
+
+    private void checkExtendsClass(ClassContext context, ClassNode classNode, int classMinSdk,
+            String signature) {
+        int api = mApiDatabase.getClassVersion(signature);
+        if (api > classMinSdk) {
+            String fqcn = ClassContext.getFqcn(signature);
+            String message = String.format(
+                    "Class requires API level %1$d (current min is %2$d): %3$s",
+                    api, classMinSdk, fqcn);
+
+            String name = signature.substring(signature.lastIndexOf('/') + 1);
+            name = name.substring(name.lastIndexOf('$') + 1);
+            SearchHints hints = SearchHints.create(BACKWARD).matchJavaSymbol();
+            int lineNumber = ClassContext.findLineNumber(classNode);
+            Location location = context.getLocationForLine(lineNumber, name, null,
+                    hints);
+            context.report(UNSUPPORTED, location, message, null);
         }
     }
 
