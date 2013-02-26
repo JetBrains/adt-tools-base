@@ -18,6 +18,7 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_BACKGROUND;
+import static com.android.SdkConstants.ATTR_CONTEXT;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_THEME;
@@ -31,10 +32,12 @@ import static com.android.SdkConstants.TAG_ACTIVITY;
 import static com.android.SdkConstants.TAG_APPLICATION;
 import static com.android.SdkConstants.TAG_BITMAP;
 import static com.android.SdkConstants.TAG_STYLE;
+import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.TRANSPARENT_COLOR;
 import static com.android.SdkConstants.VALUE_DISABLED;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
@@ -269,7 +272,8 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
     @Override
     public void visitAttribute(@NonNull XmlContext context, @NonNull Attr attribute) {
         // Only consider the root element's background
-        if (attribute.getOwnerDocument().getDocumentElement() == attribute.getOwnerElement()) {
+        Element documentElement = attribute.getOwnerDocument().getDocumentElement();
+        if (documentElement == attribute.getOwnerElement()) {
             // If the drawable is a non-repeated pattern then the overdraw might be
             // intentional since the image isn't covering the whole screen
             String background = attribute.getValue();
@@ -306,6 +310,14 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
                 mRootAttributes = new ArrayList<Pair<Location,String>>();
             }
             mRootAttributes.add(Pair.of(location, attribute.getValue()));
+
+            String activity = documentElement.getAttributeNS(TOOLS_URI, ATTR_CONTEXT);
+            if (activity != null && !activity.isEmpty()) {
+                if (activity.startsWith(".")) { //$NON-NLS-1$
+                    activity = context.getProject().getPackage() + activity;
+                }
+                registerLayoutActivity(LintUtils.getLayoutName(context.file), activity);
+            }
         }
     }
 
@@ -468,6 +480,18 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
         }
     }
 
+    private void registerLayoutActivity(String layout, String classFqn) {
+        if (mLayoutToActivity == null) {
+            mLayoutToActivity = new HashMap<String, List<String>>();
+        }
+        List<String> list = mLayoutToActivity.get(layout);
+        if (list == null) {
+            list = new ArrayList<String>();
+            mLayoutToActivity.put(layout, list);
+        }
+        list.add(classFqn);
+    }
+
     // ---- Implements JavaScanner ----
 
     @Override
@@ -526,15 +550,7 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
                         .equals("R")                             //$NON-NLS-1$
                     && node.getParent() instanceof Select) {
                 String layout = ((Select) node.getParent()).astIdentifier().astValue();
-                if (mLayoutToActivity == null) {
-                    mLayoutToActivity = new HashMap<String, List<String>>();
-                }
-                List<String> list = mLayoutToActivity.get(layout);
-                if (list == null) {
-                    list = new ArrayList<String>();
-                    mLayoutToActivity.put(layout, list);
-                }
-                list.add(mClassFqn);
+                registerLayoutActivity(layout, mClassFqn);
             }
 
             return false;

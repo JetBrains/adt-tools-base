@@ -99,4 +99,39 @@ public class OverdrawDetectorTest extends AbstractCheckTest {
             ));
     }
 
+    public void testContextAttribute() throws Exception {
+        assertEquals(""
+                + "No warnings.",
+
+                lintProject(
+                        "overdraw/.classpath=>.classpath",
+                        "overdraw/.project=>.project",
+                        "overdraw/AndroidManifest.xml=>AndroidManifest.xml",
+                        "overdraw/project.properties=>project.properties",
+                        "overdraw/res/drawable-hdpi/ic_launcher.png=>res/drawable-hdpi/ic_launcher.png",
+                        "overdraw/res/drawable-ldpi/ic_launcher.png=>res/drawable-ldpi/ic_launcher.png",
+                        "overdraw/res/drawable-mdpi/ic_launcher.png=>res/drawable-mdpi/ic_launcher.png",
+                        "overdraw/res/layout/fourth_context.xml=>res/layout/fourth.xml",
+                        "overdraw/res/values/strings.xml=>res/values/strings.xml",
+                        "overdraw/res/values/styles.xml=>res/values/styles.xml"
+                ));
+    }
+
+    public void testContextAttribute2() throws Exception {
+        assertEquals(""
+                + "No warnings.",
+
+                lintProject(
+                        "overdraw/.classpath=>.classpath",
+                        "overdraw/.project=>.project",
+                        "overdraw/AndroidManifest.xml=>AndroidManifest.xml",
+                        "overdraw/project.properties=>project.properties",
+                        "overdraw/res/drawable-hdpi/ic_launcher.png=>res/drawable-hdpi/ic_launcher.png",
+                        "overdraw/res/drawable-ldpi/ic_launcher.png=>res/drawable-ldpi/ic_launcher.png",
+                        "overdraw/res/drawable-mdpi/ic_launcher.png=>res/drawable-mdpi/ic_launcher.png",
+                        "overdraw/res/layout/fourth_context2.xml=>res/layout/fourth.xml",
+                        "overdraw/res/values/strings.xml=>res/values/strings.xml",
+                        "overdraw/res/values/styles.xml=>res/values/styles.xml"
+                ));
+    }
 }
