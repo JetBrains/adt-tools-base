@@ -17,12 +17,14 @@
 package com.android.sdklib;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.sdklib.SdkManager.LayoutlibVersion;
 import com.android.sdklib.util.SparseArray;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -231,6 +233,11 @@ final class PlatformTarget implements IAndroidTarget {
     @Override
     public String getPath(int pathId) {
         return mPaths.get(pathId);
+    }
+
+    @Override @NonNull
+    public List<String> getBootClasspath() {
+        return Collections.singletonList(getPath(IAndroidTarget.ANDROID_JAR));
     }
 
     /**

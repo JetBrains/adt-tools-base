@@ -17,11 +17,14 @@
 package com.android.sdklib;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -267,6 +270,11 @@ final class AddOnTarget implements IAndroidTarget {
             default :
                 return mBasePlatform.getPath(pathId);
         }
+    }
+
+    @Override @NonNull
+    public List<String> getBootClasspath() {
+        return Collections.singletonList(getPath(IAndroidTarget.ANDROID_JAR));
     }
 
     @Override

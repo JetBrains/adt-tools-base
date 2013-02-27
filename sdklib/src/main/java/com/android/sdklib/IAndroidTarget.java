@@ -16,6 +16,9 @@
 
 package com.android.sdklib;
 
+import com.android.annotations.NonNull;
+
+import java.util.List;
 import java.util.Map;
 
 
@@ -179,6 +182,16 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
      * {@link IAndroidTarget} interface can be used.
      */
     String getPath(int pathId);
+
+    /**
+     * Returns the boot classpath for this target.
+     * In most case, this is similar to calling {@link #getPath(int)} with
+     * {@link IAndroidTarget#ANDROID_JAR}.
+     *
+     * @return a non null list of the boot classpath.
+     */
+    @NonNull
+    List<String> getBootClasspath();
 
     /**
      * Returns whether the target is able to render layouts.

@@ -17,6 +17,7 @@
 package com.android.sdklib.internal.repository;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
@@ -24,6 +25,7 @@ import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.SystemImage;
 import com.android.sdklib.io.FileOp;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -103,6 +105,11 @@ public class MockPlatformTarget implements IAndroidTarget {
 
     @Override
     public String getPath(int pathId) {
+        throw new UnsupportedOperationException("Implement this as needed for tests");
+    }
+
+    @Override @NonNull
+    public List<String> getBootClasspath() {
         throw new UnsupportedOperationException("Implement this as needed for tests");
     }
 
