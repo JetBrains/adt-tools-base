@@ -17,6 +17,7 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
@@ -26,6 +27,7 @@ import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.PkgProps;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -159,6 +161,11 @@ public class MockAddonPackage extends AddonPackage {
 
         @Override
         public String getPath(int pathId) {
+            throw new UnsupportedOperationException("Implement this as needed for tests");
+        }
+
+        @Override @NonNull
+        public List<String> getBootClasspath() {
             throw new UnsupportedOperationException("Implement this as needed for tests");
         }
 
