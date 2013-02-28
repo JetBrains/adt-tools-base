@@ -24,6 +24,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
 import com.google.common.annotations.Beta;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.Closeables;
 
 import org.w3c.dom.Document;
@@ -161,6 +162,10 @@ public class DefaultConfiguration extends Configuration {
                 if (suppressedPath.equals(relativePath)) {
                     return true;
                 }
+                // Also allow a prefix
+                if (relativePath.startsWith(suppressedPath)) {
+                    return true;
+                }
             }
         }
 
@@ -282,6 +287,14 @@ public class DefaultConfiguration extends Configuration {
                                 formatError("Missing required %1$s attribute under %2$s",
                                     ATTR_PATH, id);
                             } else {
+                                // Normalize path format to File.separator. Also
+                                // handle the file format containing / or \.
+                                if (File.separatorChar == '/') {
+                                    path = path.replace('\\', '/');
+                                } else {
+                                    path = path.replace('/', File.separatorChar);
+                                }
+
                                 List<String> paths = mSuppressed.get(id);
                                 if (paths == null) {
                                     paths = new ArrayList<String>(n / 2 + 1);
@@ -348,7 +361,7 @@ public class DefaultConfiguration extends Configuration {
                         for (String path : paths) {
                             writer.write("        <");                   //$NON-NLS-1$
                             writer.write(TAG_IGNORE);
-                            writeAttribute(writer, ATTR_PATH, path);
+                            writeAttribute(writer, ATTR_PATH, path.replace('\\', '/'));
                             writer.write(" />\n");                       //$NON-NLS-1$
                         }
                         writer.write("    </");                          //$NON-NLS-1$
@@ -458,5 +471,10 @@ public class DefaultConfiguration extends Configuration {
     public void finishBulkEditing() {
         mBulkEditing = false;
         writeConfig();
+    }
+
+    @VisibleForTesting
+    File getConfigFile() {
+        return mConfigFile;
     }
 }
