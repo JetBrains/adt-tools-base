@@ -25,6 +25,7 @@ import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Splitter;
 import com.google.common.io.Closeables;
 
 import org.w3c.dom.Document;
@@ -247,14 +248,16 @@ public class DefaultConfiguration extends Configuration {
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(source);
             NodeList issues = document.getElementsByTagName(TAG_ISSUE);
+            Splitter splitter = Splitter.on(',').trimResults().omitEmptyStrings();
             for (int i = 0, count = issues.getLength(); i < count; i++) {
                 Node node = issues.item(i);
                 Element element = (Element) node;
-                String id = element.getAttribute(ATTR_ID);
-                if (id.isEmpty()) {
+                String idList = element.getAttribute(ATTR_ID);
+                if (idList.isEmpty()) {
                     formatError("Invalid lint config file: Missing required issue id attribute");
                     continue;
                 }
+                Iterable<String> ids = splitter.split(idList);
 
                 NamedNodeMap attributes = node.getAttributes();
                 for (int j = 0, n = attributes.getLength(); j < n; j++) {
@@ -266,7 +269,9 @@ public class DefaultConfiguration extends Configuration {
                     } else if (ATTR_SEVERITY.equals(name)) {
                         for (Severity severity : Severity.values()) {
                             if (value.equalsIgnoreCase(severity.name())) {
-                                mSeverity.put(id, severity);
+                                for (String id : ids) {
+                                    mSeverity.put(id, severity);
+                                }
                                 break;
                             }
                         }
@@ -285,7 +290,7 @@ public class DefaultConfiguration extends Configuration {
                             String path = ignore.getAttribute(ATTR_PATH);
                             if (path.isEmpty()) {
                                 formatError("Missing required %1$s attribute under %2$s",
-                                    ATTR_PATH, id);
+                                    ATTR_PATH, idList);
                             } else {
                                 // Normalize path format to File.separator. Also
                                 // handle the file format containing / or \.
@@ -295,12 +300,14 @@ public class DefaultConfiguration extends Configuration {
                                     path = path.replace('/', File.separatorChar);
                                 }
 
-                                List<String> paths = mSuppressed.get(id);
-                                if (paths == null) {
-                                    paths = new ArrayList<String>(n / 2 + 1);
-                                    mSuppressed.put(id, paths);
+                                for (String id : ids) {
+                                    List<String> paths = mSuppressed.get(id);
+                                    if (paths == null) {
+                                        paths = new ArrayList<String>(n / 2 + 1);
+                                        mSuppressed.put(id, paths);
+                                    }
+                                    paths.add(path);
                                 }
-                                paths.add(path);
                             }
                         }
                     }

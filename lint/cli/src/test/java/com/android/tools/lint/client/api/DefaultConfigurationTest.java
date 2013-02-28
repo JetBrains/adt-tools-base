@@ -16,6 +16,7 @@
 package com.android.tools.lint.client.api;
 
 import com.android.tools.lint.checks.AbstractCheckTest;
+import com.android.tools.lint.checks.AccessibilityDetector;
 import com.android.tools.lint.checks.ApiDetector;
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.checks.FieldGetterDetector;
@@ -45,7 +46,7 @@ public class DefaultConfigurationTest extends AbstractCheckTest {
                 + "    </issue>\n"
                 + "    <issue id=\"FloatMath\" severity=\"ignore\" />\n"
                 + "    <issue id=\"FieldGetter\" severity=\"error\" />\n"
-                + "    <issue id=\"SdCardPath\" severity=\"ignore\" />"
+                + "    <issue id=\"SdCardPath,ContentDescription\" severity=\"ignore\" />"
                 + "    <issue id=\"NewApi\">\n"
                 + "        <ignore path=\"res/layout-xlarge\" />\n"
                 + "    </issue>\n"
@@ -53,6 +54,9 @@ public class DefaultConfigurationTest extends AbstractCheckTest {
         assertTrue(configuration.isEnabled(ObsoleteLayoutParamsDetector.ISSUE));
         assertFalse(configuration.isEnabled(SdCardDetector.ISSUE));
         assertFalse(configuration.isEnabled(MathDetector.ISSUE));
+        assertFalse(configuration.isEnabled(AccessibilityDetector.ISSUE));
+        assertEquals(Severity.IGNORE, configuration.getSeverity(AccessibilityDetector.ISSUE));
+        assertEquals(Severity.WARNING, AccessibilityDetector.ISSUE.getDefaultSeverity());
         assertEquals(Severity.WARNING, FieldGetterDetector.ISSUE.getDefaultSeverity());
         assertEquals(Severity.ERROR, configuration.getSeverity(FieldGetterDetector.ISSUE));
         assertEquals(Severity.IGNORE, configuration.getSeverity(MathDetector.ISSUE));
