@@ -636,6 +636,9 @@ public final class SdkConstants {
     public static final String TAG_DRAWABLE = "drawable";              //$NON-NLS-1$
     public static final String TAG_MENU = "menu";                      //$NON-NLS-1$
 
+    // Tags: XML
+    public static final String TAG_HEADER = "header";                  //$NON-NLS-1$
+
     // Tags: Layouts
     public static final String VIEW_TAG = "view";                      //$NON-NLS-1$
     public static final String VIEW_INCLUDE = "include";               //$NON-NLS-1$
@@ -710,6 +713,7 @@ public final class SdkConstants {
 
     // Attributes: Resources
     public static final String ATTR_NAME = "name";                     //$NON-NLS-1$
+    public static final String ATTR_FRAGMENT = "fragment";             //$NON-NLS-1$
     public static final String ATTR_TYPE = "type";                     //$NON-NLS-1$
     public static final String ATTR_PARENT = "parent";                 //$NON-NLS-1$
     public static final String ATTR_TRANSLATABLE = "translatable";     //$NON-NLS-1$

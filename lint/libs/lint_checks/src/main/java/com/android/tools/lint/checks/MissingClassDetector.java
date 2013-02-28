@@ -19,17 +19,22 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ANDROID_PKG_PREFIX;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_CLASS;
+import static com.android.SdkConstants.ATTR_FRAGMENT;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
 import static com.android.SdkConstants.TAG_ACTIVITY;
 import static com.android.SdkConstants.TAG_APPLICATION;
+import static com.android.SdkConstants.TAG_HEADER;
 import static com.android.SdkConstants.TAG_PROVIDER;
 import static com.android.SdkConstants.TAG_RECEIVER;
 import static com.android.SdkConstants.TAG_SERVICE;
 import static com.android.SdkConstants.TAG_STRING;
 import static com.android.SdkConstants.VIEW_FRAGMENT;
 import static com.android.SdkConstants.VIEW_TAG;
+import static com.android.resources.ResourceFolderType.LAYOUT;
+import static com.android.resources.ResourceFolderType.VALUES;
+import static com.android.resources.ResourceFolderType.XML;
 
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
@@ -153,7 +158,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
 
     @Override
     public boolean appliesTo(@NonNull ResourceFolderType folderType) {
-        return folderType == ResourceFolderType.VALUES || folderType == ResourceFolderType.LAYOUT;
+        return folderType == VALUES || folderType == LAYOUT || folderType == XML;
     }
 
     @Override
@@ -163,7 +168,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
         String className;
         String tag = element.getTagName();
         ResourceFolderType folderType = context.getResourceFolderType();
-        if (folderType == ResourceFolderType.VALUES) {
+        if (folderType == VALUES) {
             if (!tag.equals(TAG_STRING)) {
                 return;
             }
@@ -173,7 +178,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             }
             className = attr.getValue();
             classNameNode = attr;
-        } else if (folderType == ResourceFolderType.LAYOUT) {
+        } else if (folderType == LAYOUT) {
             if (tag.indexOf('.') > 0) {
                 className = tag;
                 classNameNode = element;
@@ -190,6 +195,16 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             } else {
                 return;
             }
+        } else if (folderType == XML) {
+            if (!tag.equals(TAG_HEADER)) {
+                return;
+            }
+            Attr attr = element.getAttributeNodeNS(ANDROID_URI, ATTR_FRAGMENT);
+            if (attr == null) {
+                return;
+            }
+            className = attr.getValue();
+            classNameNode = attr;
         } else {
             // Manifest file
             if (TAG_APPLICATION.equals(tag)
@@ -231,7 +246,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
         } else { // else: the class name is already a fully qualified class name
             fqcn = className;
             // Only look for fully qualified tracker names in analytics files
-            if (folderType == ResourceFolderType.VALUES
+            if (folderType == VALUES
                     && !SdkUtils.endsWith(context.file.getPath(), "analytics.xml")) { //$NON-NLS-1$
                 return;
             }
@@ -256,13 +271,13 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
 
             handle = context.parser.createLocationHandle(context, element);
             mReferencedClasses.put(signature, handle);
-            if (folderType == ResourceFolderType.LAYOUT && !tag.equals(VIEW_FRAGMENT)) {
+            if (folderType == LAYOUT && !tag.equals(VIEW_FRAGMENT)) {
                 mCustomViews.add(ClassContext.getInternalName(className));
             }
         }
 
-        if (signature.indexOf('$') != -1 && pkg != null) {
-            if (className.indexOf('$') == -1 && className.indexOf('.', 1) > 0) {
+        if (signature.indexOf('$') != -1) {
+            if (pkg != null && className.indexOf('$') == -1 && className.indexOf('.', 1) > 0) {
                 boolean haveUpperCase = false;
                 for (int i = 0, n = pkg.length(); i < n; i++) {
                     if (Character.isUpperCase(pkg.charAt(i))) {
@@ -310,7 +325,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                     if (!mReferencedClasses.containsKey(signature)) {
                         continue;
                     }
-                } else {
+                } else if (signature.indexOf('$') != -1) {
                     signature = signature.replace('$', '/');
                     if (!mReferencedClasses.containsKey(signature)) {
                         continue;
@@ -331,11 +346,16 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                 if (parentFile != null) {
                     String parent = parentFile.getName();
                     ResourceFolderType type = ResourceFolderType.getFolderType(parent);
-                    if (type == ResourceFolderType.LAYOUT) {
+                    if (type == LAYOUT) {
                         message = String.format(
                             "Class referenced in the layout file, %1$s, was not found in "
                                 + "the project or the libraries", fqcn);
-                    } else if (type == ResourceFolderType.VALUES) {
+                    } else if (type == XML) {
+                        message = String.format(
+                                "Class referenced in the preference header file, %1$s, was not "
+                                        + "found in the project or the libraries", fqcn);
+
+                    } else if (type == VALUES) {
                         message = String.format(
                                 "Class referenced in the analytics file, %1$s, was not "
                                         + "found in the project or the libraries", fqcn);

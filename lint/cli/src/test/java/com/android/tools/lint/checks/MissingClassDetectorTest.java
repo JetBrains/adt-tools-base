@@ -315,7 +315,10 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
             + "res/layout/fragment2.xml:17: Error: Class referenced in the layout file, my.app.Fragment2, was not found in the project or the libraries [MissingRegistered]\n"
             + "    <fragment\n"
             + "    ^\n"
-            + "3 errors, 0 warnings\n",
+            + "src/test/pkg/Foo/Bar.java:6: Warning: The default constructor must be public [Instantiatable]\n"
+            + "    private Bar() {\n"
+            + "    ^\n"
+            + "3 errors, 1 warnings\n",
 
         lintProject(
             "bytecode/AndroidManifestRegs.xml=>AndroidManifest.xml",
@@ -340,6 +343,7 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
     }
 
     public void testAnalytics() throws Exception {
+        mScopes = null;
         mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         assertEquals(""
                 + "res/values/analytics.xml:13: Error: Class referenced in the analytics file, com.example.app.BaseActivity, was not found in the project or the libraries [MissingRegistered]\n"
@@ -359,6 +363,7 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
     }
 
     public void testCustomView() throws Exception {
+        mScopes = null;
         mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         assertEquals(""
                 + "res/layout/customview.xml:21: Error: Class referenced in the layout file, foo.bar.Baz, was not found in the project or the libraries [MissingRegistered]\n"
@@ -375,6 +380,9 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
     }
 
     public void testFragments() throws Exception {
+        mScopes = Scope.MANIFEST_SCOPE;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
+
         // Ensure that we don't do instantiation checks here since they are handled by
         // the FragmentDetector
         assertEquals(
@@ -389,5 +397,28 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
                         "bytecode/FragmentTest$Fragment6.class.data=>bin/classes/test/pkg/FragmentTest$Fragment6.class",
                         "bytecode/FragmentTest$NotAFragment.class.data=>bin/classes/test/pkg/FragmentTest$NotAFragment.class",
                         "bytecode/FragmentTest.java.txt=>src/test/pkg/FragmentTest.java"));
+    }
+
+    public void testHeaders() throws Exception {
+        // See https://code.google.com/p/android/issues/detail?id=51851
+        mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INNERCLASS);
+        assertEquals(""
+                + "res/xml/prefs_headers.xml:3: Error: Class referenced in the preference header file, foo.bar.MyFragment.Missing, was not found in the project or the libraries [MissingRegistered]\n"
+                + "<header\n"
+                + "^\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "bytecode/FragmentTest$Fragment1.class.data=>bin/classes/test/pkg/FragmentTest$Fragment1.class",
+                        "bytecode/FragmentTest$Fragment2.class.data=>bin/classes/test/pkg/FragmentTest$Fragment2.class",
+                        "bytecode/FragmentTest$Fragment3.class.data=>bin/classes/test/pkg/FragmentTest$Fragment3.class",
+                        "bytecode/FragmentTest$Fragment4.class.data=>bin/classes/test/pkg/FragmentTest$Fragment4.class",
+                        "bytecode/FragmentTest$Fragment5.class.data=>bin/classes/test/pkg/FragmentTest$Fragment5.class",
+                        "bytecode/FragmentTest$Fragment6.class.data=>bin/classes/test/pkg/FragmentTest$Fragment6.class",
+                        "bytecode/FragmentTest$NotAFragment.class.data=>bin/classes/test/pkg/FragmentTest$NotAFragment.class",
+                        "bytecode/FragmentTest.java.txt=>src/test/pkg/FragmentTest.java",
+                        "bytecode/.classpath=>.classpath",
+                        "res/xml/prefs_headers.xml"));
     }
 }
