@@ -95,4 +95,22 @@ public class WrongIdDetectorTest extends AbstractCheckTest {
                           "res/layout/detailed_item.xml"));
     }
 
+    public void testSiblings() throws Exception {
+        assertEquals(""
+                + "res/layout/siblings.xml:55: Error: @id/button5 is not a sibling in the same RelativeLayout [NotSibling]\n"
+                + "        android:layout_alignTop=\"@id/button5\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/siblings.xml:56: Error: @id/button6 is not a sibling in the same RelativeLayout [NotSibling]\n"
+                + "        android:layout_toRightOf=\"@id/button6\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/siblings.xml:63: Error: @+id/button5 is not a sibling in the same RelativeLayout [NotSibling]\n"
+                + "        android:layout_alignTop=\"@+id/button5\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/siblings.xml:64: Error: @+id/button6 is not a sibling in the same RelativeLayout [NotSibling]\n"
+                + "        android:layout_toRightOf=\"@+id/button6\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "4 errors, 0 warnings\n",
+
+                lintFiles("res/layout/siblings.xml"));
+    }
 }
