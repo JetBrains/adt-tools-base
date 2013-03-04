@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="swing-worker">
-    <CLASSES>
-      <root url="jar://$TOOLS_PREBUILTS$/common/swing-worker/swing-worker-1.1.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
