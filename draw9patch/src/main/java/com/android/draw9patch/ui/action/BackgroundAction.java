@@ -16,9 +16,8 @@
 
 package com.android.draw9patch.ui.action;
 
-import org.jdesktop.swingworker.SwingWorker;
-
 import javax.swing.AbstractAction;
+import javax.swing.SwingWorker;
 
 public abstract class BackgroundAction extends AbstractAction {
     protected void executeBackgroundTask(SwingWorker<?, ?> worker) {
