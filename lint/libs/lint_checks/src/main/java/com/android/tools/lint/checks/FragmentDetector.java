@@ -100,16 +100,7 @@ public class FragmentDetector extends Detector implements ClassScanner {
 
         if (!(driver.isSubclassOf(classNode, FRAGMENT)
                 || driver.isSubclassOf(classNode, FRAGMENT_V4))) {
-            if (!context.getScope().contains(Scope.ALL_JAVA_FILES)) {
-                // Single file checking: Just check that it looks like a fragment class
-                // (since we don't have a full superclass map)
-                if (!classNode.name.endsWith(FRAGMENT_NAME_SUFFIX) ||
-                        classNode.superName == null) {
-                    return;
-                }
-            } else {
-                return;
-            }
+            return;
         }
 
         if ((classNode.access & Opcodes.ACC_PUBLIC) == 0) {
