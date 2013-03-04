@@ -31,6 +31,7 @@ import static com.android.SdkConstants.ATTR_IME_OPTIONS;
 import static com.android.SdkConstants.ATTR_INPUT_METHOD;
 import static com.android.SdkConstants.ATTR_INPUT_TYPE;
 import static com.android.SdkConstants.ATTR_NUMERIC;
+import static com.android.SdkConstants.ATTR_ON_CLICK;
 import static com.android.SdkConstants.ATTR_PASSWORD;
 import static com.android.SdkConstants.ATTR_PHONE_NUMBER;
 import static com.android.SdkConstants.ATTR_PRIVATE_IME_OPTIONS;
@@ -114,7 +115,9 @@ public class TextViewDetector extends LayoutDetector {
             Category.USABILITY,
             7,
             Severity.WARNING,
-            IMPLEMENTATION);
+            IMPLEMENTATION)
+            // Apparently setting this can have some undesirable side effects
+            .setEnabledByDefault(false);
 
     /** Constructs a new {@link TextViewDetector} */
     public TextViewDetector() {
@@ -146,6 +149,7 @@ public class TextViewDetector extends LayoutDetector {
                     && element.hasAttributeNS(ANDROID_URI, ATTR_ID)
                     && !element.hasAttributeNS(ANDROID_URI, ATTR_TEXT_IS_SELECTABLE)
                     && !element.hasAttributeNS(ANDROID_URI, ATTR_VISIBILITY)
+                    && !element.hasAttributeNS(ANDROID_URI, ATTR_ON_CLICK)
                     && context.getMainProject().getTargetSdk() >= 11) {
                 context.report(SELECTABLE, element, context.getLocation(element),
                         "Consider making the text value selectable by specifying " +
