@@ -18,6 +18,8 @@ package com.android.tools.lint.client.api;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ATTR_IGNORE;
+import static com.android.SdkConstants.CLASS_CONSTRUCTOR;
+import static com.android.SdkConstants.CONSTRUCTOR_NAME;
 import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.DOT_JAVA;
@@ -28,8 +30,10 @@ import static com.android.SdkConstants.RES_FOLDER;
 import static com.android.SdkConstants.SUPPRESS_ALL;
 import static com.android.SdkConstants.SUPPRESS_LINT;
 import static com.android.SdkConstants.TOOLS_URI;
+import static com.android.tools.lint.detector.api.LintUtils.isAnonymousClass;
 import static org.objectweb.asm.Opcodes.ASM4;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -60,11 +64,14 @@ import com.google.common.io.Closeables;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
@@ -2025,6 +2032,11 @@ public class LintDriver {
                 if (field != null && isSuppressed(issue, field)) {
                     return true;
                 }
+            } else if (classNode.outerClass != null && classNode.outerMethod == null
+                        && isAnonymousClass(classNode)) {
+                if (isSuppressed(issue, classNode)) {
+                    return true;
+                }
             }
         }
 
@@ -2032,11 +2044,33 @@ public class LintDriver {
     }
 
     @Nullable
-    private FieldNode findField(ClassNode classNode, String owner, String name) {
-        while (classNode != null) {
-            if (owner.equals(classNode.name)) {
+    private static MethodInsnNode findConstructorInvocation(
+            @NonNull MethodNode method,
+            @NonNull String className) {
+        InsnList nodes = ((MethodNode) method).instructions;
+        for (int i = 0, n = nodes.size(); i < n; i++) {
+            AbstractInsnNode instruction = nodes.get(i);
+            if (instruction.getOpcode() == Opcodes.INVOKESPECIAL) {
+                MethodInsnNode call = (MethodInsnNode) instruction;
+                if (className.equals(call.owner)) {
+                    return call;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    @Nullable
+    private FieldNode findField(
+            @NonNull ClassNode classNode,
+            @NonNull String owner,
+            @NonNull String name) {
+        ClassNode current = classNode;
+        while (current != null) {
+            if (owner.equals(current.name)) {
                 @SuppressWarnings("rawtypes") // ASM API
-                List fieldList = classNode.fields;
+                List fieldList = current.fields;
                 for (Object f : fieldList) {
                     FieldNode field = (FieldNode) f;
                     if (field.name.equals(name)) {
@@ -2045,7 +2079,32 @@ public class LintDriver {
                 }
                 return null;
             }
-            classNode = getOuterClassNode(classNode);
+            current = getOuterClassNode(current);
+        }
+        return null;
+    }
+
+    @Nullable
+    private MethodNode findMethod(
+            @NonNull ClassNode classNode,
+            @NonNull String name,
+            boolean includeInherited) {
+        ClassNode current = classNode;
+        while (current != null) {
+            @SuppressWarnings("rawtypes") // ASM API
+            List methodList = current.methods;
+            for (Object f : methodList) {
+                MethodNode method = (MethodNode) f;
+                if (method.name.equals(name)) {
+                    return method;
+                }
+            }
+
+            if (includeInherited) {
+                current = getOuterClassNode(current);
+            } else {
+                break;
+            }
         }
         return null;
     }
@@ -2081,6 +2140,31 @@ public class LintDriver {
             @SuppressWarnings("unchecked")
             List<AnnotationNode> annotations = classNode.invisibleAnnotations;
             return isSuppressed(issue, annotations);
+        }
+
+        if (classNode.outerClass != null && classNode.outerMethod == null
+                && isAnonymousClass(classNode)) {
+            ClassNode outer = getOuterClassNode(classNode);
+            if (outer != null) {
+                MethodNode m = findMethod(outer, CONSTRUCTOR_NAME, false);
+                if (m != null) {
+                    MethodInsnNode call = findConstructorInvocation(m, classNode.name);
+                    if (call != null) {
+                        if (isSuppressed(issue, outer, m, call)) {
+                            return true;
+                        }
+                    }
+                }
+                m = findMethod(outer, CLASS_CONSTRUCTOR, false);
+                if (m != null) {
+                    MethodInsnNode call = findConstructorInvocation(m, classNode.name);
+                    if (call != null) {
+                        if (isSuppressed(issue, outer, m, call)) {
+                            return true;
+                        }
+                    }
+                }
+            }
         }
 
         return false;

@@ -922,4 +922,19 @@ public class ApiDetectorTest extends AbstractCheckTest {
                         "apicheck/ApiCallTest13.class.data=>bin/classes/test/pkg/ApiCallTest13.class"
                 ));
     }
+
+    public void testFieldSuppress() throws Exception {
+        // See https://code.google.com/p/android/issues/detail?id=52726
+        assertEquals(""
+                + "No warnings.",
+
+                lintProject(
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "apicheck/ApiCallTest14.java.txt=>src/test/pkg/ApiCallTest14.java",
+                        "apicheck/ApiCallTest14.class.data=>bin/classes/test/pkg/ApiCallTest14.class",
+                        "apicheck/ApiCallTest14$1.class.data=>bin/classes/test/pkg/ApiCallTest14$1.class",
+                        "apicheck/ApiCallTest14$2.class.data=>bin/classes/test/pkg/ApiCallTest14$2.class",
+                        "apicheck/ApiCallTest14$3.class.data=>bin/classes/test/pkg/ApiCallTest14$3.class"
+                ));
+    }
 }
