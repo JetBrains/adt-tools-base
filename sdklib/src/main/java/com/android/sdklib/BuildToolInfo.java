@@ -17,6 +17,7 @@
 package com.android.sdklib;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
@@ -56,24 +57,45 @@ public class BuildToolInfo {
 
     private final Map<PathId, String> mPaths = Maps.newEnumMap(PathId.class);
 
-    public BuildToolInfo(FullRevision revision, File path) {
+    public BuildToolInfo(@NonNull FullRevision revision, @NonNull File path) {
         mRevision = revision;
         mPath = path;
 
         add(PathId.AAPT, SdkConstants.FN_AAPT);
         add(PathId.AIDL, SdkConstants.FN_AIDL);
         add(PathId.DX, SdkConstants.FN_DX);
-        add(PathId.DX_JAR, SdkConstants.FN_DX_JAR);
+        add(PathId.DX_JAR, SdkConstants.FD_LIB + File.separator + SdkConstants.FN_DX_JAR);
         add(PathId.LLVM_RS_CC, SdkConstants.FN_RENDERSCRIPT);
         add(PathId.ANDROID_RS, SdkConstants.OS_FRAMEWORK_RS);
         add(PathId.ANDROID_RS_CLANG, SdkConstants.OS_FRAMEWORK_RS_CLANG);
+    }
 
+    public BuildToolInfo(FullRevision revision, @NonNull File mainPath,
+            @NonNull File aapt,
+            @NonNull File aidl,
+            @NonNull File dx,
+            @NonNull File dxJar,
+            @NonNull File llmvRsCc,
+            @NonNull File androidRs,
+            @NonNull File androidRsClang) {
+        mRevision = revision;
+        mPath = mainPath;
+        add(PathId.AAPT, aapt);
+        add(PathId.AIDL, aidl);
+        add(PathId.DX, dx);
+        add(PathId.DX_JAR, dxJar);
+        add(PathId.LLVM_RS_CC, llmvRsCc);
+        add(PathId.ANDROID_RS, androidRs);
+        add(PathId.ANDROID_RS_CLANG, androidRsClang);
     }
 
     private void add(PathId id, String leaf) {
-        File f = new File(mPath, leaf);
-        String str = f.getAbsolutePath();
-        if (f.isDirectory() && str.charAt(str.length() - 1) != File.separatorChar) {
+        add(id, new File(mPath, leaf));
+    }
+
+    private void add(PathId id, File path) {
+        String str = path.getAbsolutePath();
+        if (path.isDirectory() && str.charAt(str.length() - 1) != File.separatorChar) {
             str += File.separatorChar;
         }
         mPaths.put(id, str);
@@ -82,6 +104,7 @@ public class BuildToolInfo {
     /**
      * Returns the revision.
      */
+    @NonNull
     public FullRevision getRevision() {
         return mRevision;
     }
@@ -92,7 +115,8 @@ public class BuildToolInfo {
      * For compatibility reasons, use {@link #getPath(PathId)} if you need the path to a
      * specific tool.
      */
-    File getLocation() {
+    @NonNull
+    public File getLocation() {
         return mPath;
     }
 
@@ -103,7 +127,7 @@ public class BuildToolInfo {
      * @return The absolute path for that tool, with a / separator if it's a folder.
      *         Null if the path-id is unknown.
      */
-    String getPath(PathId pathId) {
+    public String getPath(PathId pathId) {
         return mPaths.get(pathId);
     }
 
@@ -120,9 +144,9 @@ public class BuildToolInfo {
             File f = new File(entry.getValue());
             if (!f.exists()) {
                 if (log != null) {
-                    log.warning("Build-tool %1$s is missing %2$s",  //$NON-NLS-1$
+                    log.warning("Build-tool %1$s is missing %2$s at %3$s",  //$NON-NLS-1$
                             mRevision.toString(),
-                            entry.getKey());
+                            entry.getKey(), f.getAbsolutePath());
                 }
                 return false;
             }

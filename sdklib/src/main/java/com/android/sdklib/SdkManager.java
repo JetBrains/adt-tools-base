@@ -1306,18 +1306,20 @@ public class SdkManager {
 
         if (buildToolsFolder.isDirectory()) {
             File[] folders  = buildToolsFolder.listFiles();
-
-            for (File subFolder : folders) {
-                if (subFolder.isDirectory()) {
-                    BuildToolInfo info = loadBuildTool(sdkOsPath, subFolder, log);
-                    if (info != null) {
-                        infos.put(info.getRevision(), info);
+            if (folders != null) {
+                for (File subFolder : folders) {
+                    if (subFolder.isDirectory()) {
+                        BuildToolInfo info = loadBuildTool(sdkOsPath, subFolder, log);
+                        if (info != null) {
+                            infos.put(info.getRevision(), info);
+                        }
+                        // Remember we visited this file/directory,
+                        // even if we failed to load anything from it.
+                        dirInfos.put(subFolder, new DirInfo(subFolder));
+                    } else {
+                        log.warning("Ignoring build-tool '%1$s', not a folder.",
+                                subFolder.getName());
                     }
-                    // Remember we visited this file/directory,
-                    // even if we failed to load anything from it.
-                    dirInfos.put(subFolder, new DirInfo(subFolder));
-                } else {
-                    log.warning("Ignoring build-tool '%1$s', not a folder.", subFolder.getName());
                 }
             }
 

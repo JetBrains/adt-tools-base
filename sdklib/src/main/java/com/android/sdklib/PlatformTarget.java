@@ -118,20 +118,6 @@ final class PlatformTarget implements IAndroidTarget {
         mPaths.put(CATEGORIES, mRootFolderOsPath + SdkConstants.OS_PLATFORM_DATA_FOLDER +
                 SdkConstants.FN_INTENT_CATEGORIES);
         mPaths.put(ANT, mRootFolderOsPath + SdkConstants.OS_PLATFORM_ANT_FOLDER);
-
-        // location for aapt, aidl, dx is now in the platform-tools folder.
-        mPaths.put(AAPT, sdkOsPath + SdkConstants.OS_SDK_PLATFORM_TOOLS_FOLDER +
-                SdkConstants.FN_AAPT);
-        mPaths.put(AIDL, sdkOsPath + SdkConstants.OS_SDK_PLATFORM_TOOLS_FOLDER +
-                SdkConstants.FN_AIDL);
-        mPaths.put(DX, sdkOsPath + SdkConstants.OS_SDK_PLATFORM_TOOLS_FOLDER +
-                SdkConstants.FN_DX);
-        mPaths.put(DX_JAR, sdkOsPath + SdkConstants.OS_SDK_PLATFORM_TOOLS_LIB_FOLDER +
-                SdkConstants.FN_DX_JAR);
-        mPaths.put(ANDROID_RS, sdkOsPath + SdkConstants.OS_SDK_PLATFORM_TOOLS_FOLDER +
-                SdkConstants.OS_FRAMEWORK_RS);
-        mPaths.put(ANDROID_RS_CLANG, sdkOsPath + SdkConstants.OS_SDK_PLATFORM_TOOLS_FOLDER +
-                SdkConstants.OS_FRAMEWORK_RS_CLANG);
     }
 
     /**

@@ -20,3 +20,4 @@ dependencies{
 //Include provided for compilation
 sourceSets.main.compileClasspath += configurations.provided
 
+javadoc.classpath += configurations.provided

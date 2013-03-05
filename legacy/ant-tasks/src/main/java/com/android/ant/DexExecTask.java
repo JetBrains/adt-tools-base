@@ -79,7 +79,7 @@ public class DexExecTask extends SingleDependencyTask {
 
     /**
      * Sets the value of the "nolocals" attribute.
-     * @param verbose the value.
+     * @param nolocals the value.
      */
     public void setNoLocals(boolean nolocals) {
         mNoLocals = nolocals;

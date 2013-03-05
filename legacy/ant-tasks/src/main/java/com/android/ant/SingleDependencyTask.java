@@ -73,7 +73,7 @@ public abstract class SingleDependencyTask extends BuildTypedTask {
      * Set up the dependency graph by passing it the location of the ".d" file, and the new input
      * paths.
      * @param dependencyFile path to the dependency file to use
-     * @param the new input paths for this new compilation.
+     * @param inputPaths the new input paths for this new compilation.
      * @return true if the dependency graph was successfully initialized
      */
     protected boolean initDependencies(String dependencyFile, List<InputPath> inputPaths) {

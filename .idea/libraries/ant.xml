@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="ant">
+    <CLASSES>
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/internal/org/apache/ant/ant/1.8.0/ant-1.8.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

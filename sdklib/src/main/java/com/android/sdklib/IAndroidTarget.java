@@ -70,32 +70,8 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     public static final int SOURCES             = 18;
     /** OS Path to the target specific docs */
     public static final int DOCS                = 19;
-    /** OS Path to the target's version of the aapt tool.
-      * This is deprecated as aapt is now in the platform tools and not in the platform. */
-    @Deprecated
-    public static final int AAPT                = 20;
-    /** OS Path to the target's version of the aidl tool.
-      * This is deprecated as aidl is now in the platform tools and not in the platform. */
-    @Deprecated
-    public static final int AIDL                = 21;
-    /** OS Path to the target's version of the dx too.<br>
-     * This is deprecated as dx is now in the platform tools and not in the platform. */
-    @Deprecated
-    public static final int DX                  = 22;
-    /** OS Path to the target's version of the dx.jar file.<br>
-     * This is deprecated as dx.jar is now in the platform tools and not in the platform. */
-    @Deprecated
-    public static final int DX_JAR              = 23;
     /** OS Path to the "ant" folder which contains the ant build rules (ver 2 and above) */
     public static final int ANT                 = 24;
-    /** OS Path to the Renderscript include folder.
-      * This is deprecated as this is now in the platform tools and not in the platform. */
-    @Deprecated
-    public static final int ANDROID_RS          = 25;
-    /** OS Path to the Renderscript(clang) include folder.
-      * This is deprecated as this is now in the platform tools and not in the platform. */
-    @Deprecated
-    public static final int ANDROID_RS_CLANG    = 26;
     /** OS Path to the "uiautomator.jar" file. */
     public static final int UI_AUTOMATOR_JAR    = 27;
 
