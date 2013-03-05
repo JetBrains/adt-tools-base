@@ -58,8 +58,6 @@ class CloneArtifactsPlugin implements org.gradle.api.Plugin<Project> {
             project.afterEvaluate {
                 downloadArtifactsTask.dependsOn project.subprojects*.tasks.cloneArtifacts
             }
-
-        } else {
         }
     }
 }
