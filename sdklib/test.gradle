@@ -15,3 +15,5 @@ javadoc {
     enabled = false
     dependsOn = []
 }
+
+shipping.isShipping = false
