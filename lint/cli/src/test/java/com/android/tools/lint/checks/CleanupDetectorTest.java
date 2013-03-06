@@ -117,4 +117,36 @@ public class CleanupDetectorTest extends AbstractCheckTest {
         assertFalse(CleanupDetector.hasReturnType("android/app/FragmentTransaction",
                 "()android/app/FragmentTransaction;"));
     }
+
+    public void testCommit3() throws Exception {
+        assertEquals("" +
+                "No warnings.",
+
+                lintProject(
+                        "apicheck/classpath=>.classpath",
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "project.properties1=>project.properties",
+                        "bytecode/CommitTest2.java.txt=>src/test/pkg/CommitTest2.java",
+                        "bytecode/CommitTest2$MyDialogFragment.class.data=>bin/classes/test/pkg/CommitTest2$MyDialogFragment.class",
+                        "bytecode/CommitTest2.class.data=>bin/classes/test/pkg/CommitTest2.class"
+                ));
+    }
+
+    public void testCommit4() throws Exception {
+        assertEquals("" +
+                "src/test/pkg/CommitTest3.java:35: Warning: This transaction should be completed with a commit() call [Recycle]\n"
+                + "    getCompatFragmentManager().beginTransaction();\n"
+                + "                               ~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "apicheck/classpath=>.classpath",
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "project.properties1=>project.properties",
+                        "bytecode/CommitTest3.java.txt=>src/test/pkg/CommitTest3.java",
+                        "bytecode/CommitTest3.class.data=>bin/classes/test/pkg/CommitTest3.class",
+                        "bytecode/CommitTest3$MyDialogFragment.class.data=>bin/classes/test/pkg/CommitTest3$MyDialogFragment.class",
+                        "bytecode/CommitTest3$MyCompatDialogFragment.class.data=>bin/classes/test/pkg/CommitTest3$MyCompatDialogFragment.class"
+                ));
+    }
 }

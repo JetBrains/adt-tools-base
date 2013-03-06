@@ -87,6 +87,7 @@ public class CleanupDetector extends Detector implements ClassScanner {
     // Target method names
     private static final String RECYCLE = "recycle";                                  //$NON-NLS-1$
     private static final String OBTAIN = "obtain";                                    //$NON-NLS-1$
+    private static final String SHOW = "show";                                        //$NON-NLS-1$
     private static final String OBTAIN_NO_HISTORY = "obtainNoHistory";                //$NON-NLS-1$
     private static final String OBTAIN_ATTRIBUTES = "obtainAttributes";               //$NON-NLS-1$
     private static final String OBTAIN_TYPED_ARRAY = "obtainTypedArray";              //$NON-NLS-1$
@@ -100,13 +101,19 @@ public class CleanupDetector extends Detector implements ClassScanner {
     private static final String TYPED_ARRAY_CLS = "android/content/res/TypedArray";   //$NON-NLS-1$
     private static final String CONTEXT_CLS = "android/content/Context";              //$NON-NLS-1$
     private static final String MOTION_EVENT_CLS = "android/view/MotionEvent";        //$NON-NLS-1$
-    private static final String HANDLER_CLS = "android/os/Handler";                   //$NON-NLS-1$
     private static final String RESOURCES_CLS = "android/content/res/Resources";      //$NON-NLS-1$
     private static final String PARCEL_CLS = "android/os/Parcel";                     //$NON-NLS-1$
     private static final String FRAGMENT_MANAGER_CLS = "android/app/FragmentManager"; //$NON-NLS-1$
-    private static final String FRAGMENT_MANAGER_V4_CLS = "android/support/v4/app/FragmentManager";         //$NON-NLS-1$
-    private static final String FRAGMENT_TRANSACTION_CLS = "android/app/FragmentTransaction";               //$NON-NLS-1$
-    private static final String FRAGMENT_TRANSACTION_V4_CLS = "android/support/v4/app/FragmentTransaction"; //$NON-NLS-1$
+    private static final String FRAGMENT_MANAGER_V4_CLS =
+            "android/support/v4/app/FragmentManager";                                 //$NON-NLS-1$
+    private static final String FRAGMENT_TRANSACTION_CLS =
+            "android/app/FragmentTransaction";                                        //$NON-NLS-1$
+    private static final String FRAGMENT_TRANSACTION_V4_CLS =
+            "android/support/v4/app/FragmentTransaction";                             //$NON-NLS-1$
+    private static final String DIALOG_FRAGMENT_SHOW_DESC =
+            "(Landroid/app/FragmentTransaction;Ljava/lang/String;)I";                 //$NON-NLS-1$
+    private static final String DIALOG_FRAGMENT_SHOW_V4_DESC =
+            "(Landroid/support/v4/app/FragmentTransaction;Ljava/lang/String;)I";      //$NON-NLS-1$
 
     // Target description signatures
     private static final String TYPED_ARRAY_SIG = "Landroid/content/res/TypedArray;"; //$NON-NLS-1$
@@ -154,7 +161,8 @@ public class CleanupDetector extends Detector implements ClassScanner {
                 OBTAIN_NO_HISTORY,
                 BEGIN_TRANSACTION,
                 COMMIT,
-                COMMIT_ALLOWING_LOSS
+                COMMIT_ALLOWING_LOSS,
+                SHOW
         );
     }
 
@@ -168,7 +176,12 @@ public class CleanupDetector extends Detector implements ClassScanner {
         String owner = call.owner;
         String desc = call.desc;
         int phase = context.getDriver().getPhase();
-        if (RECYCLE.equals(name) && desc.equals("()V")) { //$NON-NLS-1$
+        if (SHOW.equals(name)) {
+            if (desc.equals(DIALOG_FRAGMENT_SHOW_DESC)
+                    || desc.equals(DIALOG_FRAGMENT_SHOW_V4_DESC)) {
+                mCommitsTransaction = true;
+            }
+        } else if (RECYCLE.equals(name) && desc.equals("()V")) { //$NON-NLS-1$
             if (owner.equals(TYPED_ARRAY_CLS)) {
                 mRecyclesTypedArray = true;
             } else if (owner.equals(VELOCITY_TRACKER_CLS)) {
@@ -238,7 +251,8 @@ public class CleanupDetector extends Detector implements ClassScanner {
             mObtainsTransaction = true;
             if (phase == 2 && !mCommitsTransaction) {
                 context.report(COMMIT_FRAGMENT, method, call, context.getLocation(call),
-                    getErrorMessage(FRAGMENT_MANAGER_CLS), null);
+                    getErrorMessage(owner.equals(FRAGMENT_MANAGER_CLS)
+                            ? FRAGMENT_TRANSACTION_CLS : FRAGMENT_TRANSACTION_V4_CLS), null);
             } else if (phase == 1
                     && checkMethodFlow(context, classNode, method, call,
                     owner.equals(FRAGMENT_MANAGER_CLS)
@@ -430,6 +444,13 @@ public class CleanupDetector extends Detector implements ClassScanner {
                     } else if ((call.name.equals(COMMIT) || call.name.equals(COMMIT_ALLOWING_LOSS))
                             && call.owner.equals(mRecycleOwner)) {
                         if (values != null && values.size() == 1 && values.get(0) == INSTANCE) {
+                            mIsCleanedUp = true;
+                            return INSTANCE;
+                        }
+                    } else if (call.name.equals(SHOW) && (
+                            call.desc.equals(DIALOG_FRAGMENT_SHOW_DESC)
+                                || call.desc.equals(DIALOG_FRAGMENT_SHOW_V4_DESC))) {
+                        if (values != null && values.size() == 3 && values.get(1) == INSTANCE) {
                             mIsCleanedUp = true;
                             return INSTANCE;
                         }
