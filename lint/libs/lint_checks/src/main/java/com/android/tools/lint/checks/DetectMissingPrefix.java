@@ -17,6 +17,7 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_PKG_PREFIX;
+import static com.android.SdkConstants.ANDROID_SUPPORT_PKG_PREFIX;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_CLASS;
 import static com.android.SdkConstants.ATTR_CORE_APP;
@@ -168,6 +169,7 @@ public class DetectMissingPrefix extends LayoutDetector {
             return true;
         }
 
-        return tag.indexOf('.') != -1 && !tag.startsWith(ANDROID_PKG_PREFIX);
+        return tag.indexOf('.') != -1 && (!tag.startsWith(ANDROID_PKG_PREFIX)
+                || tag.startsWith(ANDROID_SUPPORT_PKG_PREFIX));
     }
 }

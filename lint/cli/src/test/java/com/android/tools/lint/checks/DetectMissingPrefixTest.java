@@ -81,4 +81,11 @@ public class DetectMissingPrefixTest extends AbstractCheckTest {
 
             lintFiles("res/layout/namespace4.xml"));
     }
+
+    public void testUnusedNamespace() throws Exception {
+        assertEquals(
+                "No warnings.",
+
+                lintProject("res/layout/message_edit_detail.xml"));
+    }
 }
