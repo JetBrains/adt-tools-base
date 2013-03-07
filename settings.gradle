@@ -1,3 +1,5 @@
+include 'anttasks'
+include 'archquery'
 include 'assetstudio'
 include 'common'
 include 'ddmlib'
@@ -14,6 +16,8 @@ include 'sdklib-test'
 include 'sdk_common'
 include 'testutils'
 
+project(':anttasks').projectDir = new File('legacy/anttasks')
+project(':archquery').projectDir = new File('legacy/archquery')
 project(':dvlib').projectDir = new File('device_validator/dvlib')
 project(':fat32lib').projectDir = new File('../external/fat32lib')
 project(':lint').projectDir = new File('lint/cli')

@@ -59,16 +59,33 @@ class DownloadArtifactsTask extends DefaultTask {
 
         // gather the main and secondary dependencies for all the sub-projects.
         for (Project subProject : project.allprojects) {
-            ResolutionResult resolutionResult = subProject.configurations.compile
-                    .getIncoming().getResolutionResult()
-            // if the sub project doesn't ship then we put it's main dependencies in the secondary
-            // list.
-            buildArtifactList(resolutionResult.getRoot(),
-                    subProject.shipping.isShipping ? mainList : secondaryList)
+            ResolutionResult resolutionResult
+            try {
+                resolutionResult = subProject.configurations.getByName("compile")
+                        .getIncoming().getResolutionResult()
+                // if the sub project doesn't ship then we put it's main dependencies in
+                // the secondary list.
+                buildArtifactList(resolutionResult.getRoot(),
+                        subProject.shipping.isShipping ? mainList : secondaryList)
+            } catch (UnknownDomainObjectException e) {
+                // ignore
+            }
 
-            resolutionResult = subProject.configurations.testCompile
-                    .getIncoming().getResolutionResult()
-            buildArtifactList(resolutionResult.getRoot(), secondaryList)
+            try {
+                resolutionResult = subProject.configurations.getByName("testCompile")
+                        .getIncoming().getResolutionResult()
+                buildArtifactList(resolutionResult.getRoot(), secondaryList)
+            } catch (UnknownDomainObjectException e) {
+                // ignore
+            }
+
+            try {
+                resolutionResult = subProject.configurations.getByName("provided")
+                        .getIncoming().getResolutionResult()
+                buildArtifactList(resolutionResult.getRoot(), secondaryList)
+            } catch (UnknownDomainObjectException e) {
+                // ignore
+            }
 
             // manually add some artifacts that aren't detected because they are added dynamically
             // when their task run.

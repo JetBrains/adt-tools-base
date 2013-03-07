@@ -31,7 +31,7 @@ task copyXsd(type: Copy) {
 copyXsd.doFirst {
     File destFolder = file(rootProject.distribution.destinationPath + "/repository")
     destFolder.deleteDir()
-    destFolder.mkdir()
+    destFolder.mkdirs()
 }
 // clean up crap after since the copy task still creates the empty folders.
 copyXsd.doLast {
