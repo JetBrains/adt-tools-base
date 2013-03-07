@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.buildsrc
-
 import com.google.common.base.Charsets
 import com.google.common.base.Joiner
 import com.google.common.collect.Lists
@@ -65,52 +64,63 @@ class GatherNoticesTask extends DefaultTask {
             copyNoticeAndAddHeader(fromFile, toFile, subProject.name + ".jar")
 
             Configuration configuration = subProject.configurations.compile
-            Set<ResolvedArtifact> artifacts = configuration.resolvedConfiguration.resolvedArtifacts
-            for (ResolvedArtifact artifact : artifacts) {
-                // check it's not an android artifact
-                if (!artifact.moduleVersion.id.group.startsWith("com.android") &&
-                        artifact.moduleVersion.id.group != "base") {
-                    if (artifact.type == "jar") {
-                        ModuleVersionIdentifier id = artifact.moduleVersion.id
-                        // manually look for the NOTICE file in the repo
-                        if (!dependencyCache.contains(id)) {
-                            dependencyCache.add(id)
-
-                            fromFile = new File(repo,
-                                    id.group.replace('.','/') +
-                                            '/' + id.name + '/' + id.version + '/NOTICE')
-                            if (!fromFile.isFile()) {
-                                throw new GradleException(
-                                        "Missing NOTICE file: " + fromFile.absolutePath)
-                            }
-
-                            toFile = new File(noticeDir, "NOTICE_" + artifact.file.name + ".txt")
-                            copyNoticeAndAddHeader(fromFile, toFile, artifact.file.name)
-                        }
-                    }
-                }
-            }
+            gatherFromConfiguration(configuration, dependencyCache, repo, noticeDir)
         }
 
         // merge all the files together.
         File mainNoticeFile = new File(mainDir, "NOTICE.txt")
         BufferedWriter writer = Files.newWriter(mainNoticeFile, Charsets.UTF_8)
         File[] folders = mainDir.listFiles()
+        Set<String> noticeCache = Sets.newHashSet()
         if (folders != null) {
             for (File folder : folders) {
                 if (folder.isDirectory()) {
-                    appendNoticeFrom(folder, writer)
+                    appendNoticeFrom(folder, writer, noticeCache)
                 }
             }
         }
         writer.close()
     }
 
-    private static void appendNoticeFrom(File folder, BufferedWriter noticeWriter) {
+    private static void gatherFromConfiguration(Configuration configuration,
+                                                Set<ModuleVersionIdentifier> dependencyCache,
+                                                File repo, File noticeDir) {
+        File toFile, fromFile
+        Set<ResolvedArtifact> artifacts = configuration.resolvedConfiguration.resolvedArtifacts
+        for (ResolvedArtifact artifact : artifacts) {
+            // check it's not an android artifact
+            if (!artifact.moduleVersion.id.group.startsWith("com.android.tools") &&
+                    artifact.moduleVersion.id.group != "base") {
+                if (artifact.type == "jar") {
+                    ModuleVersionIdentifier id = artifact.moduleVersion.id
+                    // manually look for the NOTICE file in the repo
+                    if (!dependencyCache.contains(id)) {
+                        dependencyCache.add(id)
+
+                        fromFile = new File(repo,
+                                id.group.replace('.', '/') +
+                                        '/' + id.name + '/' + id.version + '/NOTICE')
+                        if (!fromFile.isFile()) {
+                            throw new GradleException(
+                                    "Missing NOTICE file: " + fromFile.absolutePath)
+                        }
+
+                        toFile = new File(noticeDir, "NOTICE_" + artifact.file.name + ".txt")
+                        copyNoticeAndAddHeader(fromFile, toFile, artifact.file.name)
+                    }
+                }
+            }
+        }
+    }
+
+    private static void appendNoticeFrom(File folder, BufferedWriter noticeWriter,
+                                         Set<String> noticeCache) {
         File[] files = folder.listFiles();
         if (files != null) {
             for (File file : files) {
-                if (file.isFile() && file.name.startsWith("NOTICE_")) {
+                if (file.isFile() && file.name.startsWith("NOTICE_") &&
+                        !noticeCache.contains(file.name)) {
+                    noticeCache.add(file.name)
                     List<String> lines = Files.readLines(file, Charsets.UTF_8)
                     for (String line : lines) {
                         noticeWriter.write(line, 0, line.length())

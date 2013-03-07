@@ -36,7 +36,7 @@ class CopyDependenciesTask extends DefaultTask {
         File dir = getDistributionDir()
         for (ResolvedArtifact artifact : artifacts) {
             // check it's not an android artifact
-            if (!artifact.moduleVersion.id.group.startsWith("com.android") &&
+            if (!artifact.moduleVersion.id.group.startsWith("com.android.tools") &&
                     artifact.moduleVersion.id.group != "base") {
                 if (artifact.type == "jar") {
                     Files.copy(artifact.file, new File(dir, artifact.file.name))
