@@ -15,8 +15,8 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
-// configure the manifest of the prebuiltJar
-prebuiltJar.manifest.attributes("Main-Class": "com.android.tools.lint.Main")
+// configure the manifest of the buildDistributionJar task.
+buildDistributionJar.manifest.attributes("Main-Class": "com.android.tools.lint.Main")
 
 uploadArchives {
     repositories {

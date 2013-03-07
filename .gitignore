@@ -11,3 +11,7 @@ cygdrive
 /repo
 .idea/workspace.xml
 .idea/dictionaries/tnorbye.xml
+misc/distrib_plugins/build
+misc/distrib_plugins/buildSrc/build
+misc/distrib_plugins/buildSrc/out
+misc/distrib_plugins/buildSrc/buildSrc.i*

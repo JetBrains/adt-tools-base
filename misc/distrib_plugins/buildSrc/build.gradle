@@ -1,0 +1,33 @@
+apply plugin: 'groovy'
+apply plugin: 'idea'
+apply plugin: 'maven'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile gradleApi()
+    groovy localGroovy()
+
+    compile "org.apache.commons:commons-io:1.3.2"
+    compile "com.google.guava:guava:14.0"
+
+    testCompile "junit:junit:3.8.1"
+}
+
+group = "com.android.tools.internal"
+archivesBaseName = "internal-plugins"
+version="1.0"
+
+task updatePrebuilts(type: Upload) {
+    configuration = configurations.archives
+    repositories {
+        mavenDeployer {
+            repository(url: uri("$rootDir/../../../../../prebuilts/tools/common/gradle-plugins/repository"))
+        }
+    }
+}
+
+updatePrebuilts.dependsOn check
+

@@ -1,3 +1,26 @@
+buildscript {
+    repositories {
+        maven { url "$rootDir/../../prebuilts/tools/common/gradle-plugins/repository" }
+    }
+    dependencies {
+        classpath 'com.android.tools.internal:internal-plugins:1.0'
+    }
+}
+
+apply plugin: 'clone-artifacts'
+apply plugin: 'distrib'
+
+// artifact cloning destinations
+cloneArtifacts {
+    mainRepo = "$rootDir/../../prebuilts/tools/common/m2/repository"
+    secondaryRepo = "$rootDir/../../prebuilts/tools/common/m2/internal"
+}
+// set up the distribution destination
+distribution {
+    destinationPath = "$rootDir/../../prebuilts/devtools"
+    dependenciesRepo = cloneArtifacts.mainRepo
+}
+
 // ext.androidHostOut is shared by all tools/{base,build,swt} gradle projects/
 ext.androidHostOut = file("$rootDir/../../out/host/gradle")
 ext.androidRootDir = file(new File(ext.androidHostOut, "../../../"))
@@ -20,9 +43,22 @@ subprojects { Project project ->
     apply plugin: 'maven'
     apply plugin: 'signing'
     apply plugin: 'findbugs'
+    apply plugin: 'distrib'
+    apply plugin: 'clone-artifacts'
 
     repositories {
-        mavenCentral()
+        maven { url = uri(rootProject.cloneArtifacts.mainRepo) }
+        maven { url = uri(rootProject.cloneArtifacts.secondaryRepo) }
+    }
+
+    // find bug dependencies is added dynamically so it's hard for the
+    // clone artifact plugin to find it. This custom config lets us manually
+    // add such dependencies.
+    configurations {
+        cloneArtifact
+    }
+    dependencies {
+        cloneArtifact "com.google.code.findbugs:findbugs:2.0.1"
     }
 
     version = getVersion(project, '22.0')
@@ -38,36 +74,6 @@ subprojects { Project project ->
     task disableTestFailures << {
         tasks.withType(Test) {
             ignoreFailures = true
-        }
-    }
-
-    project.ext.getClassPath = {
-        String classPath = ""
-        project.configurations.runtime.files.each { file ->
-            String name = file.name
-            String suffix = "-" + project.version + ".jar"
-            if (name.endsWith(suffix)) {
-                name = name.substring(0, name.size() - suffix.size()) + ".jar"
-            }
-            classPath = classPath + " " + name
-        }
-        return classPath
-    }
-
-    task prebuiltJar(type: Jar) {
-        from(sourceSets.main.output)
-    }
-
-    if (project.hasProperty("prebuiltPath")) {
-        prebuiltJar.destinationDir file(prebuiltPath)
-        prebuiltJar.archiveName project.archivesBaseName + ".jar"
-    }
-
-    // delay computing the manifest classpath only if the
-    // prebuiltJar task is set to run.
-    project.gradle.taskGraph.whenReady { taskGraph ->
-        if (taskGraph.hasTask(prebuiltJar)) {
-            prebuiltJar.manifest.attributes("Class-Path": project.ext.getClassPath())
         }
     }
 
@@ -115,19 +121,3 @@ task aggregateResults(type: Copy) {
     from { testTasks*.testResultsDir }
     into { file("$buildDir/results") }
 }
-
-// work in progress
-def libs = subprojects.collect { it.configurations.runtime.files }.flatten()
-
-task distZip(type: Zip) {
-    from(getTasksByName("prebuiltJar", true)*.archivePath) {
-        rename "(.*)-${project.version}.jar", '$1.jar'
-    }
-    from(libs) {
-        rename "(.*)-${project.version}.jar", '$1.jar'
-    }
-
-    destinationDir file("$buildDir/dist")
-    archiveName "dist.zip"
-}
-

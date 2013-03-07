@@ -18,23 +18,28 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
-if (project.hasProperty("prebuiltPath")) {
-    prebuiltJar.doLast {
-        File destFolder = file(prebuiltPath + "/repository")
-        destFolder.deleteDir()
-        destFolder.mkdir()
+task copyXsd(type: Copy) {
+    from sourceSets.main.resources.srcDirs
+    include '**/*.xsd'
 
-        copy {
-            from sourceSets.main.resources.srcDirs
-            include '**/*.xsd'
-
-            into destFolder
-            eachFile { details ->
-                details.path = details.name
-            }
-        }
+    into file(rootProject.distribution.destinationPath + "/repository")
+    eachFile { details ->
+        details.path = details.name
     }
 }
+// delete the destination folder first
+copyXsd.doFirst {
+    File destFolder = file(rootProject.distribution.destinationPath + "/repository")
+    destFolder.deleteDir()
+    destFolder.mkdir()
+}
+// clean up crap after since the copy task still creates the empty folders.
+copyXsd.doLast {
+    File destFolder = file(rootProject.distribution.destinationPath + "/repository/com")
+    destFolder.deleteDir()
+}
+
+buildDistributionJar.dependsOn copyXsd
 
 uploadArchives {
     repositories {
