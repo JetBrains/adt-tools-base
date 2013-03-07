@@ -692,7 +692,7 @@ public class XmlPrettyPrinter {
 
     private void removeLastLineSeparator() {
         int newLength = mOut.length() - mLineSeparator.length();
-        if (newLength > 0) {
+        if (newLength >= 0) {
             mOut.setLength(newLength);
         }
     }
