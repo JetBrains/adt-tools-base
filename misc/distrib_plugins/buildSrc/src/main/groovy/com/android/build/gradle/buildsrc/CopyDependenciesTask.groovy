@@ -16,13 +16,12 @@
 
 package com.android.build.gradle.buildsrc
 import com.google.common.io.Files
-import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.tasks.TaskAction
 
-class CopyDependenciesTask extends DefaultTask {
+class CopyDependenciesTask extends BaseTask {
 
     Project project
 
@@ -37,7 +36,7 @@ class CopyDependenciesTask extends DefaultTask {
         for (ResolvedArtifact artifact : artifacts) {
             // check it's not an android artifact
             if (!artifact.moduleVersion.id.group.startsWith("com.android.tools") &&
-                    artifact.moduleVersion.id.group != "base") {
+                    !isLocalArtifact(artifact.moduleVersion.id)) {
                 if (artifact.type == "jar") {
                     Files.copy(artifact.file, new File(dir, artifact.file.name))
                 }
