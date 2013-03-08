@@ -917,13 +917,24 @@ public class ArchiveInstaller {
                 // implementations can be expected to do that.
                 name = name.replace('\\', '/');
 
-                // Zip entries are always packages in a top-level directory
-                // (e.g. docs/index.html). However we want to use our top-level
-                // directory so we drop the first segment of the path name.
+                // Zip entries are always packages in a top-level directory (e.g. docs/index.html).
                 int pos = name.indexOf('/');
-                if (pos < 0 || pos == name.length() - 1) {
+                if (pos == -1) {
+                    // All zip entries should have a root folder.
+                    // This zip entry seems located at the root of the zip.
+                    // Rather than ignore the file, just place it at the root.
+                } else if (pos == name.length() - 1) {
+                    // This is a zip *directory* entry in the form dir/, so essentially
+                    // it's the root directory of the SDK. It's safe to ignore that one
+                    // since we want to use our own root directory and we'll recreate
+                    // root directories as needed.
+                    // A direct consequence is that if a malformed archive has multiple
+                    // root directories, their content will all be merged together.
                     continue;
                 } else {
+                    // This is the expected behavior: the zip entry is in the form root/file
+                    // or root/dir/. We want to use our top-level directory so we drop the
+                    // first segment of the path name.
                     name = name.substring(pos + 1);
                 }
 
@@ -940,6 +951,13 @@ public class ArchiveInstaller {
                     continue;
                 } else if (name.indexOf('/') != -1) {
                     // Otherwise it's a file in a sub-directory.
+
+                    // Sanity check: since we're always unzipping in a fresh temp folder
+                    // the destination file shouldn't already exist.
+                    if (mFileOp.exists(destFile)) {
+                        monitor.logVerbose("Duplicate file found:  %1$s", name);
+                    }
+
                     // Make sure the parent directory has been created.
                     File parentDir = destFile.getParentFile();
                     if (!mFileOp.isDirectory(parentDir)) {
