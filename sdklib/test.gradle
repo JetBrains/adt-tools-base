@@ -1,11 +1,11 @@
+group = 'com.android.tools'
+archivesBaseName = 'sdklib-test'
+
 dependencies {
     compile project(':sdklib')
     compile project(':dvlib').sourceSets.test.output
     compile 'junit:junit:3.8.1'
 }
-
-group = 'com.android.tools.sdk'
-archivesBaseName = 'sdklib-test'
 
 sourceSets {
     main.resources.srcDirs = [ 'src/test/java' ]
