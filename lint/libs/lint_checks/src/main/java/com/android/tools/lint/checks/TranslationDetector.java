@@ -315,6 +315,26 @@ public class TranslationDetector extends ResourceXmlDetector {
         Set<String> defaultStrings = languageToStrings.get(defaultLanguage);
         if (defaultStrings == null) {
             defaultStrings = new HashSet<String>();
+
+            // See if it looks like the user has named a specific locale as the base language
+            // (this impacts whether we report strings as "extra" or "missing")
+            if (mFileToLocale != null) {
+                Set<String> specifiedLocales = Sets.newHashSet();
+                for (Map.Entry<File, String> entry : mFileToLocale.entrySet()) {
+                    String locale = entry.getValue();
+                    int index = locale.indexOf('-');
+                    if (index != -1) {
+                        locale = locale.substring(0, index);
+                    }
+                    specifiedLocales.add(locale);
+                }
+                if (specifiedLocales.size() == 1) {
+                    String first = specifiedLocales.iterator().next();
+                    Set<String> languageStrings = languageToStrings.get(first);
+                    assert languageStrings != null;
+                    defaultStrings.addAll(languageStrings);
+                }
+            }
         }
 
         // Fast check to see if there's no problem: if the default locale set is the
