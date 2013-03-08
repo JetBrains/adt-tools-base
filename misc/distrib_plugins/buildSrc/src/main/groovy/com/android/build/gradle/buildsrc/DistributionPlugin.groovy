@@ -17,7 +17,6 @@
 package com.android.build.gradle.buildsrc
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.bundling.Jar
@@ -112,13 +111,6 @@ class DistributionPlugin implements org.gradle.api.Plugin<Project> {
 
         Configuration configuration = project.configurations.runtime
         getClassPathFromConfiguration(configuration, sb)
-
-        try {
-            configuration = project.configurations.getByName("swt")
-            getClassPathFromConfiguration(configuration, sb)
-        } catch (UnknownDomainObjectException e) {
-            // ignore
-        }
 
         return sb.toString()
     }
