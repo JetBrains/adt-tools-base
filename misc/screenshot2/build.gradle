@@ -1,0 +1,14 @@
+group = 'com.android.tools'
+archivesBaseName = 'screenshot2'
+
+dependencies {
+    compile project(':ddmlib')
+}
+
+shipping {
+    launcherScripts = ['etc/screenshot2']
+    isShipping = false
+}
+
+
+

@@ -11,6 +11,7 @@ include 'lint'
 include 'lint_api'
 include 'lint_checks'
 include 'manifmerger'
+include 'screenshot2'
 include 'sdklib'
 include 'sdklib-test'
 include 'sdk_common'
@@ -23,5 +24,6 @@ project(':fat32lib').projectDir = new File('../external/fat32lib')
 project(':lint').projectDir = new File('lint/cli')
 project(':lint_api').projectDir = new File('lint/libs/lint_api')
 project(':lint_checks').projectDir = new File('lint/libs/lint_checks')
+project(':screenshot2').projectDir = new File('misc/screenshot2')
 project(':sdklib-test').projectDir = new File('sdklib')
 project(':sdklib-test').buildFileName = 'test.gradle'
