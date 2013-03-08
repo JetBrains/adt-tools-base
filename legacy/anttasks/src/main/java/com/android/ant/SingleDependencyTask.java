@@ -144,7 +144,7 @@ public abstract class SingleDependencyTask extends BuildTypedTask {
 
             ps.close();
         } catch (FileNotFoundException e) {
-            new BuildException(e);
+            throw new BuildException(e);
         }
     }
 
