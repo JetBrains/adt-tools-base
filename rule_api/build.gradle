@@ -1,0 +1,8 @@
+group = 'com.android.tools'
+archivesBaseName = 'rule_api'
+
+dependencies {
+    compile project(':common')
+    compile project(':layoutlib_api')
+}
+
