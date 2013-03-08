@@ -20,7 +20,6 @@ import com.google.common.base.Joiner
 import com.google.common.collect.Lists
 import com.google.common.collect.Sets
 import com.google.common.io.Files
-import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -28,7 +27,7 @@ import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.tasks.TaskAction
 
-class GatherNoticesTask extends DefaultTask {
+class GatherNoticesTask extends BaseTask {
 
     Project project
 
@@ -90,7 +89,7 @@ class GatherNoticesTask extends DefaultTask {
         for (ResolvedArtifact artifact : artifacts) {
             // check it's not an android artifact
             if (!artifact.moduleVersion.id.group.startsWith("com.android.tools") &&
-                    artifact.moduleVersion.id.group != "base") {
+                    !isLocalArtifact(artifact.moduleVersion.id)) {
                 if (artifact.type == "jar") {
                     ModuleVersionIdentifier id = artifact.moduleVersion.id
                     // manually look for the NOTICE file in the repo

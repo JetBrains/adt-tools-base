@@ -22,7 +22,6 @@ import com.google.common.hash.HashFunction
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
 import org.apache.commons.io.FileUtils
-import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.artifacts.ModuleVersionIdentifier
@@ -35,7 +34,7 @@ import org.gradle.api.artifacts.result.UnresolvedDependencyResult
 import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier
 import org.gradle.api.tasks.TaskAction
 
-class DownloadArtifactsTask extends DefaultTask {
+class DownloadArtifactsTask extends BaseTask {
 
     private static final String URL_MAVEN_CENTRAL = "http://repo1.maven.org/maven2"
 
@@ -131,7 +130,7 @@ class DownloadArtifactsTask extends DefaultTask {
     private void pullArtifact(ModuleVersionIdentifier artifact, File rootDestination,
                               Set<ModuleVersionIdentifier> downloadedSet) {
         // ignore all android artifacts and already downloaded artifacts
-        if (artifact.group.startsWith("com.android") || artifact.group == "base") {
+        if (artifact.group.startsWith("com.android") || isLocalArtifact(artifact)) {
             return
         }
 
