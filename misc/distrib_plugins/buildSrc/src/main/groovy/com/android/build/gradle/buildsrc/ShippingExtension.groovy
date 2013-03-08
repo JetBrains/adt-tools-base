@@ -21,5 +21,5 @@ package com.android.build.gradle.buildsrc;
  */
 public class ShippingExtension {
     boolean isShipping = true
-    String launcherScript
+    List<String> launcherScripts
 }
