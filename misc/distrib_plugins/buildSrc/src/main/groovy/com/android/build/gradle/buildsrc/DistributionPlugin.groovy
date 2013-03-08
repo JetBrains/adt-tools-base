@@ -19,6 +19,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.bundling.Jar
 
 class DistributionPlugin implements org.gradle.api.Plugin<Project> {
@@ -70,6 +71,18 @@ class DistributionPlugin implements org.gradle.api.Plugin<Project> {
                 }
             }
 
+            Copy copyTask = project.tasks.add("copyLauncherScripts", Copy)
+            copyTask.from {
+                if (project.shipping.launcherScripts != null) {
+                    return project.files(project.shipping.launcherScripts.toArray())
+                }
+                return null
+            }
+            copyTask.conventionMapping.destinationDir = {
+                project.file(project.rootProject.distribution.destinationPath + "/tools")
+            }
+            pushDistribution.dependsOn copyTask
+
             // also copy the dependencies
             CopyDependenciesTask copyDependenciesTask = project.tasks.add(
                     "copyDependencies", CopyDependenciesTask)
@@ -88,6 +101,7 @@ class DistributionPlugin implements org.gradle.api.Plugin<Project> {
                 if (!project.shipping.isShipping) {
                     buildTask.enabled = false
                     copyDependenciesTask.enabled = false
+                    copyTask.enabled = false
                 }
             }
         }

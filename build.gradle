@@ -113,7 +113,7 @@ subprojects { Project project ->
 }
 
 // delay evaluation of this project before all subprojects have been evaluated.
-subprojects.each { subproject -> evaluationDependsOn(subproject.name) }
+subprojects.each { subproject -> evaluationDependsOn(subproject.path) }
 
 def testTasks = subprojects.collect { it.tasks.withType(Test) }.flatten()
 
