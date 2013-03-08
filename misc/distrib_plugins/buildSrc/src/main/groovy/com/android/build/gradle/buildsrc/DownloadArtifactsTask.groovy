@@ -90,7 +90,7 @@ class DownloadArtifactsTask extends DefaultTask {
             // manually add some artifacts that aren't detected because they are added dynamically
             // when their task run.
             try {
-                resolutionResult = subProject.configurations.getByName("cloneArtifacts")
+                resolutionResult = subProject.configurations.getByName("hidden")
                         .getIncoming().getResolutionResult()
                 buildArtifactList(resolutionResult.getRoot(), secondaryList)
             } catch (UnknownDomainObjectException e) {
@@ -131,7 +131,7 @@ class DownloadArtifactsTask extends DefaultTask {
     private void pullArtifact(ModuleVersionIdentifier artifact, File rootDestination,
                               Set<ModuleVersionIdentifier> downloadedSet) {
         // ignore all android artifacts and already downloaded artifacts
-        if (artifact.group.startsWith("com.android.tools") || artifact.group == "base") {
+        if (artifact.group.startsWith("com.android") || artifact.group == "base") {
             return
         }
 

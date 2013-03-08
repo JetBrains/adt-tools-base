@@ -17,6 +17,8 @@
 package com.android.build.gradle.buildsrc
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.UnknownDomainObjectException
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.bundling.Jar
 
 class DistributionPlugin implements org.gradle.api.Plugin<Project> {
@@ -91,16 +93,30 @@ class DistributionPlugin implements org.gradle.api.Plugin<Project> {
         }
     }
 
-    def getClassPath() {
-        String classPath = ""
-        project.configurations.runtime.files.each { file ->
+    private String getClassPath() {
+        StringBuilder sb = new StringBuilder()
+
+        Configuration configuration = project.configurations.runtime
+        getClassPathFromConfiguration(configuration, sb)
+
+        try {
+            configuration = project.configurations.getByName("swt")
+            getClassPathFromConfiguration(configuration, sb)
+        } catch (UnknownDomainObjectException e) {
+            // ignore
+        }
+
+        return sb.toString()
+    }
+
+    protected void getClassPathFromConfiguration(Configuration configuration, StringBuilder sb) {
+        for (File file : configuration.files) {
             String name = file.name
             String suffix = "-" + project.version + ".jar"
             if (name.endsWith(suffix)) {
                 name = name.substring(0, name.size() - suffix.size()) + ".jar"
             }
-            classPath = classPath + " " + name
+            sb.append(' ').append(name)
         }
-        return classPath
     }
 }

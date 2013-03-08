@@ -55,10 +55,10 @@ subprojects { Project project ->
     // clone artifact plugin to find it. This custom config lets us manually
     // add such dependencies.
     configurations {
-        cloneArtifact
+        hidden
     }
     dependencies {
-        cloneArtifact "com.google.code.findbugs:findbugs:2.0.1"
+        hidden "com.google.code.findbugs:findbugs:2.0.1"
     }
 
     version = getVersion(project, '22.0')
