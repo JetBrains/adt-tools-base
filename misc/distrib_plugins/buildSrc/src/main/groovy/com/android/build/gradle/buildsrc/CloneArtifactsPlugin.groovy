@@ -17,6 +17,7 @@
 package com.android.build.gradle.buildsrc
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.UnknownTaskException
 
 class CloneArtifactsPlugin implements org.gradle.api.Plugin<Project> {
 
@@ -56,7 +57,14 @@ class CloneArtifactsPlugin implements org.gradle.api.Plugin<Project> {
             cloneArtifacts.dependsOn downloadArtifactsTask
 
             project.afterEvaluate {
-                downloadArtifactsTask.dependsOn project.subprojects*.tasks.cloneArtifacts
+                for (Project subProject : project.subprojects) {
+                    try {
+                        Task task = subProject.tasks.getByName("cloneArtifacts")
+                        downloadArtifactsTask.dependsOn task
+                    } catch (UnknownTaskException e) {
+                        // ignore
+                    }
+                }
             }
         }
     }
