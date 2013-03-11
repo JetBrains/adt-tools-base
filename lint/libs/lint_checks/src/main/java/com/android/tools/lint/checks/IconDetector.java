@@ -296,6 +296,20 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             Severity.WARNING,
             IMPLEMENTATION_RES_ONLY);
 
+    /** Drawables provided as both .9.png and .png files */
+    public static final Issue ICON_MIX_9PNG = Issue.create(
+            "IconMixedNinePatch", //$NON-NLS-1$
+            "Clashing PNG and 9-PNG files",
+            "Checks for filename clashes between .png files and nine patch (.9.png) files",
+
+            "If you accidentally name two separate resources `file.png` and `file.9.png`, " +
+            "the image file and the nine patch file will both map to the same drawable " +
+            "resource, `@drawable/file`, which is probably not what was intended.",
+            Category.ICONS,
+            5,
+            Severity.WARNING,
+            IMPLEMENTATION_RES_ONLY);
+
     /** Icons appearing as both drawable xml files and bitmaps */
     public static final Issue ICON_XML_AND_PNG = Issue.create(
             "IconXmlAndPng", //$NON-NLS-1$
@@ -402,6 +416,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                 boolean checkFolders = context.isEnabled(ICON_DENSITIES)
                         || context.isEnabled(ICON_MISSING_FOLDER)
                         || context.isEnabled(ICON_NODPI)
+                        || context.isEnabled(ICON_MIX_9PNG)
                         || context.isEnabled(ICON_XML_AND_PNG);
                 boolean checkDipSizes = context.isEnabled(ICON_DIP_SIZE);
                 boolean checkDuplicates = context.isEnabled(DUPLICATES_NAMES)
@@ -920,13 +935,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                     Collections.sort(list);
 
                     // Chain locations together
-                    Collections.sort(files);
-                    Location location = null;
-                    for (File file : files) {
-                        Location linkedLocation = location;
-                        location = Location.create(file);
-                        location.setSecondary(linkedLocation);
-                    }
+                    Location location = chainLocations(files);
 
                     context.report(ICON_NODPI, location,
                         String.format(
@@ -936,6 +945,10 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                         null);
                 }
             }
+        }
+
+        if (context.isEnabled(ICON_MIX_9PNG)) {
+            checkMixedNinePatches(context, folderToNames);
         }
 
         if (context.isEnabled(ICON_XML_AND_PNG)) {
@@ -978,15 +991,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                     Collections.sort(sorted);
                     for (String name : sorted) {
                         List<File> lists = Lists.newArrayList(map.get(name));
-                        Collections.sort(lists);
-
-                        // Chain locations together
-                        Location location = null;
-                        for (File file : lists) {
-                            Location linkedLocation = location;
-                            location = Location.create(file);
-                            location.setSecondary(linkedLocation);
-                        }
+                        Location location = chainLocations(lists);
 
                         List<String> fileNames = Lists.newArrayList();
                         boolean seenXml = false;
@@ -1460,6 +1465,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         }
     }
 
+    // Like LintUtils.getBaseName, but for files like .svn it returns "" rather than ".svn"
     private static String getBaseName(String name) {
         String baseName = name;
         int index = baseName.indexOf('.');
@@ -1468,6 +1474,83 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         }
 
         return baseName;
+    }
+
+    private static void checkMixedNinePatches(Context context,
+            Map<File, Set<String>> folderToNames) {
+        Set<String> conflictSet = null;
+
+        for (Entry<File, Set<String>> entry : folderToNames.entrySet()) {
+            Set<String> baseNames = new HashSet<String>();
+            Set<String> names = entry.getValue();
+            for (String name : names) {
+                assert isDrawableFile(name) : name;
+                String base = getBaseName(name);
+                if (baseNames.contains(base)) {
+                    String ninepatch = base + DOT_9PNG;
+                    String png = base + DOT_PNG;
+                    if (names.contains(ninepatch) && names.contains(png)) {
+                        if (conflictSet == null) {
+                            conflictSet = Sets.newHashSet();
+                        }
+                        conflictSet.add(base);
+                    }
+                } else {
+                    baseNames.add(base);
+                }
+            }
+        }
+
+        if (conflictSet == null || conflictSet.isEmpty()) {
+            return;
+        }
+
+        Map<String, List<File>> conflicts = null;
+        for (Entry<File, Set<String>> entry : folderToNames.entrySet()) {
+            File dir = entry.getKey();
+            Set<String> names = entry.getValue();
+            for (String name : names) {
+                assert isDrawableFile(name) : name;
+                String base = getBaseName(name);
+                if (conflictSet.contains(base)) {
+                    if (conflicts == null) {
+                        conflicts = Maps.newHashMap();
+                    }
+                    List<File> files = conflicts.get(base);
+                    if (files == null) {
+                        files = Lists.newArrayList();
+                        conflicts.put(base, files);
+                    }
+                    files.add(new File(dir, name));
+                }
+            }
+        }
+
+        assert !conflicts.isEmpty() : conflictSet;
+        List<String> names = new ArrayList<String>(conflicts.keySet());
+        Collections.sort(names);
+        for (String name : names) {
+            List<File> files = conflicts.get(name);
+            assert files != null : name;
+            Location location = chainLocations(files);
+
+            String message = String.format(
+                    "The files %1$s.png and %1$s.9.png clash; both "
+                    + "will map to @drawable/%1$s", name);
+            context.report(ICON_MIX_9PNG, location, message, null);
+        }
+    }
+
+    private static Location chainLocations(List<File> files) {
+        // Chain locations together
+        Collections.sort(files);
+        Location location = null;
+        for (File file : files) {
+            Location linkedLocation = location;
+            location = Location.create(file);
+            location.setSecondary(linkedLocation);
+        }
+        return location;
     }
 
     private void checkExpectedSizes(Context context, File folder, File[] files) {
@@ -1674,7 +1757,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     private Multimap<String, String> mMenuToIcons;
 
     private boolean isLauncherIcon(String name) {
-        assert name.indexOf('.') == -1; // Should supply base name
+        assert name.indexOf('.') == -1 : name; // Should supply base name
 
         // Naming convention
         if (name.startsWith("ic_launcher")) { //$NON-NLS-1$
