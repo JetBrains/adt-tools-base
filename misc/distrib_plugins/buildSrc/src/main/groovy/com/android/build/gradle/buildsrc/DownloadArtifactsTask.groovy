@@ -176,7 +176,7 @@ class DownloadArtifactsTask extends BaseTask {
         return artifact.getGroup().replaceAll("\\.", "/") + "/" + artifact.getName()
     }
 
-    private static File downloadFile(String folder, String name, File rootDestination,
+    private File downloadFile(String folder, String name, File rootDestination,
                                      boolean force, boolean printDownload) {
         File destinationFolder = new File(rootDestination, folder)
         destinationFolder.mkdirs()
@@ -238,7 +238,7 @@ class DownloadArtifactsTask extends BaseTask {
         return packaging == null || "jar".equals(packaging) || "bundle".equals(packaging)
     }
 
-    private static void checksum(File file, File checksumFile, HashFunction hashFunction)
+    private void checksum(File file, File checksumFile, HashFunction hashFunction)
             throws IOException {
         // get the checksum value
         List<String> lines = Files.readLines(checksumFile, Charsets.UTF_8)
@@ -261,7 +261,7 @@ class DownloadArtifactsTask extends BaseTask {
         String hashCodeString = hashCode.toString()
 
         if (!checksum.equals(hashCodeString)) {
-            throw new IOException(String.format(
+            project.logger.warn(String.format(
                     "Wrong checksum!\n\t%s computed for %s\n\t%s read from %s",
                 hashCodeString, file,
                 checksum, checksumFile))
