@@ -1,3 +1,6 @@
+group = 'com.android.tools.ddms'
+archivesBaseName = 'ddmlib'
+
 dependencies {
     compile project(':common')
 
@@ -6,9 +9,6 @@ dependencies {
     testCompile 'org.easymock:easymock:3.1'
     testCompile 'junit:junit:3.8.1'
 }
-
-group = 'com.android.tools'
-archivesBaseName = 'ddmlib'
 
 sourceSets {
     main.resources.srcDir 'src/main/java'

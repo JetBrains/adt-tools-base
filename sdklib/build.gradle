@@ -10,7 +10,7 @@ dependencies {
     testCompile 'junit:junit:3.8.1'
 }
 
-group = 'com.android.tools.sdk'
+group = 'com.android.tools'
 archivesBaseName = 'sdklib'
 
 sourceSets {
@@ -33,7 +33,7 @@ copyXsd.doFirst {
     destFolder.deleteDir()
     destFolder.mkdirs()
 }
-// clean up crap after since the copy task still creates the empty folders.
+// clean up after the copy task which creates empty folders.
 copyXsd.doLast {
     File destFolder = file(rootProject.distribution.destinationPath + "/repository/com")
     destFolder.deleteDir()
