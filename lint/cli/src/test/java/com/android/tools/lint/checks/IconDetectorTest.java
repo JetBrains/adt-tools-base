@@ -51,6 +51,7 @@ public class IconDetectorTest extends AbstractCheckTest {
         ALL.add(IconDetector.ICON_COLORS);
         ALL.add(IconDetector.ICON_XML_AND_PNG);
         ALL.add(IconDetector.ICON_LAUNCHER_SHAPE);
+        ALL.add(IconDetector.ICON_MIX_9PNG);
     }
 
     @Override
@@ -457,5 +458,23 @@ public class IconDetectorTest extends AbstractCheckTest {
                     "res/drawable-hdpi/filled.png=>res/drawable-hdpi/ic_launcher_filled.png",
                     "res/drawable-mdpi/sample_icon.gif=>res/drawable-mdpi/ic_launcher_2.gif"
             ));
+    }
+
+    public void testMixNinePatch() throws Exception {
+        // https://code.google.com/p/android/issues/detail?id=43075
+        mEnabled = Collections.singleton(IconDetector.ICON_MIX_9PNG);
+        assertEquals(""
+                + "res/drawable-mdpi/ic_launcher_filled.png: Warning: The files ic_launcher_filled.png and ic_launcher_filled.9.png clash; both will map to @drawable/ic_launcher_filled [IconMixedNinePatch]\n"
+                + "    res/drawable-hdpi/ic_launcher_filled.png: <No location-specific message\n"
+                + "    res/drawable-hdpi/ic_launcher_filled.9.png: <No location-specific message\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "res/drawable-hdpi/filled.png=>res/drawable-mdpi/ic_launcher_filled.png",
+                        "res/drawable-hdpi/filled.png=>res/drawable-hdpi/ic_launcher_filled.png",
+                        "res/drawable-hdpi/filled.png=>res/drawable-hdpi/ic_launcher_filled.9.png",
+                        "res/drawable-mdpi/sample_icon.gif=>res/drawable-mdpi/ic_launcher_2.gif"
+                ));
     }
 }
