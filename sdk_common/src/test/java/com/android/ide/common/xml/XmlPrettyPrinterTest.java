@@ -1102,6 +1102,25 @@ public class XmlPrettyPrinterTest extends TestCase {
                 xml);
     }
 
+    public void test52887() throws Exception {
+        // https://code.google.com/p/android/issues/detail?id=52887
+        String xml = ""
+                + "<!--Comment-->\n"
+                + "<RelativeLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "\t\t    android:layout_width=\"match_parent\"\n"
+                + "    android:layout_height=\"match_parent\"/>\n";
+
+        Document doc = parse(xml);
+        xml = XmlPrettyPrinter.prettyPrint(doc);
+        assertEquals(""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<!-- Comment -->\n"
+                + "<RelativeLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    android:layout_width=\"match_parent\"\n"
+                + "    android:layout_height=\"match_parent\" />\n",
+                xml);
+    }
+
     @Nullable
     private static Document createEmptyPlainDocument() throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
