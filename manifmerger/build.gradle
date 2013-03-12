@@ -1,3 +1,6 @@
+group = 'com.android.tools.build'
+archivesBaseName = 'manifmerger'
+
 dependencies {
     compile project(':common')
     compile project(':sdklib')
@@ -6,9 +9,6 @@ dependencies {
     testCompile project(':sdklib').sourceSets.test.output
     testCompile 'junit:junit:3.8.1'
 }
-
-group = 'com.android.tools.build'
-archivesBaseName = 'manifest-merger'
 
 sourceSets {
     main.resources.srcDir 'src/main/java'
