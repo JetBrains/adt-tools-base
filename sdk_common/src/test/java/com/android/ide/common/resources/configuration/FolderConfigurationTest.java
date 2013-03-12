@@ -79,6 +79,25 @@ public class FolderConfigurationTest extends TestCase {
         }
     }
 
+    public void testGetConfig1() {
+        FolderConfiguration configForFolder =
+                FolderConfiguration.getConfig(new String[] { "values", "en", "rUS" });
+        assertNotNull(configForFolder);
+        assertEquals("en", configForFolder.getLanguageQualifier().getValue());
+        assertEquals("US", configForFolder.getRegionQualifier().getValue());
+        assertNull(configForFolder.getScreenDimensionQualifier());
+        assertNull(configForFolder.getLayoutDirectionQualifier());
+    }
+
+    public void testGetConfig2() {
+        FolderConfiguration configForFolder =
+                FolderConfiguration.getConfigForFolder("values-en-rUS");
+        assertNotNull(configForFolder);
+        assertEquals("en", configForFolder.getLanguageQualifier().getValue());
+        assertEquals("US", configForFolder.getRegionQualifier().getValue());
+        assertNull(configForFolder.getScreenDimensionQualifier());
+        assertNull(configForFolder.getLayoutDirectionQualifier());
+    }
 
     // --- helper methods
 

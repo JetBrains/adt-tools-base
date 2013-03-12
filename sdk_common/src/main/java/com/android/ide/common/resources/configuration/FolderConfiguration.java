@@ -17,9 +17,12 @@
 package com.android.ide.common.resources.configuration;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ScreenOrientation;
+import com.google.common.base.Splitter;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -73,7 +76,8 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      * the name of the folder
      * @return a FolderConfiguration object, or null if the folder name isn't valid..
      */
-    public static FolderConfiguration getConfig(String[] folderSegments) {
+    @Nullable
+    public static FolderConfiguration getConfig(@NonNull String[] folderSegments) {
         FolderConfiguration config = new FolderConfiguration();
 
         // we are going to loop through the segments, and match them with the first
@@ -113,7 +117,8 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      * @return a FolderConfiguration object, or null if the folder name isn't valid..
      * @see FolderConfiguration#getConfig(String[])
      */
-    public static FolderConfiguration getConfig(Iterable<String>folderSegments) {
+    @Nullable
+    public static FolderConfiguration getConfig(@NonNull Iterable<String>folderSegments) {
         FolderConfiguration config = new FolderConfiguration();
 
         // we are going to loop through the segments, and match them with the first
@@ -150,6 +155,17 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         }
 
         return config;
+    }
+
+    /**
+     * Creates a {@link FolderConfiguration} matching the given folder name.
+     *
+     * @param folderName the folder name
+     * @return a FolderConfiguration object, or null if the folder name isn't valid..
+     */
+    @Nullable
+    public static FolderConfiguration getConfigForFolder(@NonNull String folderName) {
+        return getConfig(Splitter.on('-').split(folderName));
     }
 
     /**
