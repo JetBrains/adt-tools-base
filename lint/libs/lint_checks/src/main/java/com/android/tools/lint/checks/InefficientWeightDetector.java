@@ -18,6 +18,7 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_BASELINE_ALIGNED;
+import static com.android.SdkConstants.ATTR_ID;
 import static com.android.SdkConstants.ATTR_LAYOUT_HEIGHT;
 import static com.android.SdkConstants.ATTR_LAYOUT_WEIGHT;
 import static com.android.SdkConstants.ATTR_LAYOUT_WIDTH;
@@ -135,7 +136,11 @@ public class InefficientWeightDetector extends LayoutDetector {
             + "why only the first child is visible (when the subsequent children are "
             + "off screen to the right). This lint rule helps pinpoint this issue by "
             + "warning whenever a LinearLayout is used with an implicit orientation "
-            + "and multiple children.",
+            + "and multiple children.\n"
+            + "\n"
+            + "It also checks for empty LinearLayouts without an `orientation` attribute "
+            + "that also defines an `id` attribute. This catches the scenarios where "
+            + "children will be added to the `LinearLayout` dynamically. ",
 
             Category.CORRECTNESS,
             2,
@@ -227,6 +232,12 @@ public class InefficientWeightDetector extends LayoutDetector {
                         + "least one has layout_width=\"match_parent\"";
                 context.report(ORIENTATION, element, context.getLocation(element), message, null);
             }
+        } else if (children.isEmpty() && (orientation == null || orientation.isEmpty())
+                && context.isEnabled(ORIENTATION)
+                && element.hasAttributeNS(ANDROID_URI, ATTR_ID)) {
+            String message = "No orientation specified, and the default is horizontal. "
+                    + "This is a common source of bugs when children are added dynamically.";
+            context.report(ORIENTATION, element, context.getLocation(element), message, null);
         }
 
         if (context.isEnabled(BASELINE_WEIGHTS) && weightChild != null

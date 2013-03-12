@@ -124,4 +124,14 @@ public class InefficientWeightDetectorTest extends AbstractCheckTest {
 
             lintFiles("res/layout/wrong0dp.xml"));
     }
+
+    public void testOrientation() throws Exception {
+        assertEquals(""
+                + "res/layout/orientation.xml:52: Error: No orientation specified, and the default is horizontal. This is a common source of bugs when children are added dynamically. [Orientation]\n"
+                + "    <LinearLayout\n"
+                + "    ^\n"
+                + "1 errors, 0 warnings\n",
+
+                lintFiles("res/layout/orientation.xml"));
+    }
 }
