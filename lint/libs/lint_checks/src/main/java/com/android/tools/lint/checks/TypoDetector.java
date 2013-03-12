@@ -35,6 +35,7 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 
@@ -120,23 +121,67 @@ public class TypoDetector extends ResourceXmlDetector {
             return;
         }
 
+        Pair<String, String> locale = getLocale(parent);
+        if (locale != null) {
+            mLanguage = locale.getFirst();
+            mRegion = locale.getSecond();
+        }
+    }
+
+    /**
+     * Returns the locale for the given parent folder.
+     *
+     * @param parent the name of the parent folder
+     * @return null if the locale is not known, or a pair of language and region
+     *        where one or the other but not both can be null
+     */
+    @Nullable
+    public static Pair<String, String> getLocale(@NonNull String parent) {
+        String language = null;
+        String region = null;
         for (String qualifier : Splitter.on('-').split(parent)) {
             int qualifierLength = qualifier.length();
             if (qualifierLength == 2) {
                 char first = qualifier.charAt(0);
                 char second = qualifier.charAt(1);
                 if (first >= 'a' && first <= 'z' && second >= 'a' && second <= 'z') {
-                    mLanguage = qualifier;
+                    language = qualifier;
                 }
             } else if (qualifierLength == 3 && qualifier.charAt(0) == 'r') {
                 char first = qualifier.charAt(1);
                 char second = qualifier.charAt(2);
                 if (first >= 'A' && first <= 'Z' && second >= 'A' && second <= 'Z') {
-                    mRegion = new String(new char[] { first, second }); // Don't include the "r"
+                    region = new String(new char[] { first, second }); // Don't include the "r"
                 }
                 break;
             }
         }
+
+        if (language != null || region != null) {
+            return Pair.of(language, region);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the locale for the given context.
+     *
+     * @param context the context to look up the locale for
+     * @return null if the locale is not known, or a pair of language and region
+     *        where one or the other but not both can be null
+     */
+    @Nullable
+    public static Pair<String, String> getLocale(@NonNull XmlContext context) {
+        Element root = context.document.getDocumentElement();
+        if (root != null) {
+            String locale = root.getAttributeNS(TOOLS_URI, ATTR_LOCALE);
+            if (locale != null && !locale.isEmpty()) {
+                return getLocale(locale);
+            }
+        }
+
+        return getLocale(context.file.getParentFile().getName());
     }
 
     @Override
