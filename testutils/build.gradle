@@ -1,3 +1,6 @@
+group = 'com.android.tools'
+archivesBaseName = 'sdktestutils'
+
 dependencies {
     compile project(':common')
     compile 'junit:junit:3.8.1'
@@ -8,5 +11,7 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
+// Needed for ADT
+// TODO: be able to ship to prebuilts/devtools/adt
 shipping.isShipping = false
 
