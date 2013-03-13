@@ -220,4 +220,22 @@ public class TranslationDetectorTest extends AbstractCheckTest {
                         "res/values-es/donottranslate.xml" // to make app multilingual
                 ));
     }
+
+    public void testIssue33845() throws Exception {
+        // See http://code.google.com/p/android/issues/detail?id=33845
+        assertEquals(""
+                + "res/values/strings.xml:5: Error: \"dateTimeFormat\" is not translated in de [MissingTranslation]\n"
+                + "    <string name=\"dateTimeFormat\">MM/dd/yyyy - HH:mm</string>\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "locale33845/.classpath=>.classpath",
+                        "locale33845/AndroidManifest.xml=>AndroidManifest.xml",
+                        "locale33845/project.properties=>project.properties",
+                        "locale33845/res/values/strings.xml=>res/values/strings.xml",
+                        "locale33845/res/values-de/strings.xml=>res/values-de/strings.xml",
+                        "locale33845/res/values-en-rGB/strings.xml=>res/values-en-rGB/strings.xml"
+                ));
+    }
 }
