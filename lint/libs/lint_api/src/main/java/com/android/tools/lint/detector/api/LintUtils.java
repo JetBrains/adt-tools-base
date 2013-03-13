@@ -569,6 +569,26 @@ public class LintUtils {
     }
 
     /**
+     * Returns true if the given class node represents an anonymous inner class
+     *
+     * @param classNode the class to be checked
+     * @return true if the class appears to be an anonymous class
+     */
+    public static boolean isAnonymousClass(@NonNull ClassNode classNode) {
+        if (classNode.outerClass == null) {
+            return false;
+        }
+
+        String name = classNode.name;
+        int index = name.lastIndexOf('$');
+        if (index == -1 || index == name.length() - 1) {
+            return false;
+        }
+
+        return Character.isDigit(name.charAt(index + 1));
+    }
+
+    /**
      * Returns the previous opcode prior to the given node, ignoring label and
      * line number nodes
      *
