@@ -71,6 +71,8 @@ public class XmlPrettyPrinter {
     private boolean mOpenTagOnly;
     /** List of indentation to use for each given depth */
     private String[] mIndentationLevels;
+    /** Whether the formatter should end the document with a newline */
+    private boolean mEndWithNewline;
 
     /**
      * Creates a new {@link XmlPrettyPrinter}
@@ -91,6 +93,17 @@ public class XmlPrettyPrinter {
     }
 
     /**
+     * Sets whether the document should end with a newline/ line separator
+     *
+     * @param endWithNewline if true, ensure that the document ends with a newline
+     * @return this, for constructor chaining
+     */
+    public XmlPrettyPrinter setEndWithNewline(boolean endWithNewline) {
+        mEndWithNewline = endWithNewline;
+        return this;
+    }
+
+    /**
      * Sets the indentation levels to use (indentation string to use for each depth,
      * indexed by depth
      *
@@ -99,6 +112,11 @@ public class XmlPrettyPrinter {
      */
     public void setIndentationLevels(String[] indentationLevels) {
         mIndentationLevels = indentationLevels;
+    }
+
+    @NonNull
+    private String getLineSeparator() {
+        return mLineSeparator;
     }
 
     /**
@@ -122,6 +140,7 @@ public class XmlPrettyPrinter {
         Document document = XmlUtils.parseDocumentSilently(xml, true);
         if (document != null) {
             XmlPrettyPrinter printer = new XmlPrettyPrinter(prefs, style, lineSeparator);
+            printer.setEndWithNewline(xml.endsWith(printer.getLineSeparator()));
             StringBuilder sb = new StringBuilder(3 * xml.length() / 2);
             printer.prettyPrint(-1, document, null, null, sb, false /*openTagOnly*/);
             return sb.toString();
@@ -140,14 +159,39 @@ public class XmlPrettyPrinter {
      * @param lineSeparator the line separator to use, or null to use the
      *            default
      * @return a formatted string
+     * @deprecated Use {@link #prettyPrint(org.w3c.dom.Node, XmlFormatPreferences,
+     *      XmlFormatStyle, String, boolean)} instead
+     */
+    @NonNull
+    @Deprecated
+    public static String prettyPrint(
+            @NonNull Node node,
+            @NonNull XmlFormatPreferences prefs,
+            @NonNull XmlFormatStyle style,
+            @Nullable String lineSeparator) {
+        return prettyPrint(node, prefs, style, lineSeparator, false);
+    }
+
+    /**
+     * Pretty prints the given node
+     *
+     * @param node the node, usually a document, to be printed
+     * @param prefs the formatting preferences
+     * @param style the formatting style to use
+     * @param lineSeparator the line separator to use, or null to use the
+     *            default
+     * @param endWithNewline if true, ensure that the printed output ends with a newline
+     * @return a formatted string
      */
     @NonNull
     public static String prettyPrint(
             @NonNull Node node,
             @NonNull XmlFormatPreferences prefs,
             @NonNull XmlFormatStyle style,
-            @Nullable String lineSeparator) {
+            @Nullable String lineSeparator,
+            boolean endWithNewline) {
         XmlPrettyPrinter printer = new XmlPrettyPrinter(prefs, style, lineSeparator);
+        printer.setEndWithNewline(endWithNewline);
         StringBuilder sb = new StringBuilder(1000);
         printer.prettyPrint(-1, node, null, null, sb, false /*openTagOnly*/);
         String xml = sb.toString();
@@ -162,11 +206,25 @@ public class XmlPrettyPrinter {
      *
      * @param node the node, usually a document, to be printed
      * @return the resulting formatted string
+     * @deprecated Use {@link #prettyPrint(org.w3c.dom.Node, boolean)} instead
      */
     @NonNull
+    @Deprecated
     public static String prettyPrint(@NonNull Node node) {
+        return prettyPrint(node, false);
+    }
+
+    /**
+     * Pretty prints the given node using default styles
+     *
+     * @param node the node, usually a document, to be printed
+     * @param endWithNewline if true, ensure that the printed output ends with a newline
+     * @return the resulting formatted string
+     */
+    @NonNull
+    public static String prettyPrint(@NonNull Node node, boolean endWithNewline) {
         return prettyPrint(node, XmlFormatPreferences.defaults(), XmlFormatStyle.get(node),
-                SdkUtils.getLineSeparator());
+                SdkUtils.getLineSeparator(), endWithNewline);
     }
 
     /**
@@ -200,6 +258,10 @@ public class XmlPrettyPrinter {
         mIndentString = mPrefs.getOneIndentUnit();
 
         visitNode(rootDepth, root);
+
+        if (mEndWithNewline && !endsWithLineSeparator()) {
+            mOut.append(mLineSeparator);
+        }
     }
 
     /** Visit the given node at the given depth */
