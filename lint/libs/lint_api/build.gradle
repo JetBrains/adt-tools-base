@@ -1,3 +1,6 @@
+group = 'com.android.tools.lint'
+archivesBaseName = 'lint_api'
+
 dependencies {
     compile project(':sdk_common')
 
@@ -5,9 +8,6 @@ dependencies {
     compile 'org.ow2.asm:asm:4.0'
     compile 'org.ow2.asm:asm-tree:4.0'
 }
-
-group = 'com.android.tools.lint'
-archivesBaseName = 'lint-api'
 
 sourceSets {
     main.resources.srcDir 'src/main/java'

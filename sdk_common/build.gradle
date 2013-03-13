@@ -1,12 +1,12 @@
+group = 'com.android.tools'
+archivesBaseName = 'sdk_common'
+
 dependencies {
     compile project(':sdklib')
 
     testCompile 'junit:junit:3.8.1'
     testCompile project(':sdklib').sourceSets.test.output
 }
-
-group = 'com.android.tools'
-archivesBaseName = 'sdk-common'
 
 sourceSets {
     main.resources.srcDir 'src/main/java'

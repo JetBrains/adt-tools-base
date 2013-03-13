@@ -1,3 +1,6 @@
+group = 'com.android.tools.lint'
+archivesBaseName = 'lint_checks'
+
 dependencies {
     compile project(':lint_api')
     compile 'org.ow2.asm:asm-analysis:4.0'
@@ -6,9 +9,6 @@ dependencies {
     testCompile 'junit:junit:3.8.1'
     testCompile project(':testutils')
 }
-
-group = 'com.android.tools.lint'
-archivesBaseName = 'lint-checks'
 
 sourceSets {
     main.resources.srcDir 'src/main/java'
