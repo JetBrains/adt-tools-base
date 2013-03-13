@@ -80,18 +80,6 @@ public class XmlPrettyPrinterTest extends TestCase {
         return null;
     }
 
-    protected int getCaretOffset(String fileContent, String caretLocation) {
-        int caretDelta = caretLocation.indexOf("^"); //$NON-NLS-1$
-        assertTrue(caretLocation, caretDelta != -1);
-
-        String caretContext = caretLocation.substring(0, caretDelta)
-                + caretLocation.substring(caretDelta + 1); // +1: skip "^"
-        int caretContextIndex = fileContent.indexOf(caretContext);
-        assertTrue("Caret content " + caretContext + " not found in file",
-                caretContextIndex != -1);
-        return caretContextIndex + caretDelta;
-    }
-
     private void checkFormat(XmlFormatPreferences prefs, String xml,
             String expected, String delimiter) throws Exception {
         checkFormat(prefs, xml, expected, delimiter, null, null);
@@ -928,7 +916,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                         "<myroot baz=\"baz\" foo=\"bar\"><mychild/><hasComment><!--This is my comment--></hasComment><hasText>  This is my text  </hasText></myroot>",
                 xml);
 
-        xml = XmlPrettyPrinter.prettyPrint(doc);
+        xml = XmlPrettyPrinter.prettyPrint(doc, false);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<myroot\n"
@@ -963,6 +951,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 + "</resources>";
 
         Document doc = parse(xml);
+        assertNotNull(doc);
 
         String formatted = XmlUtils.toXml(doc, true);
         assertEquals(""
@@ -975,7 +964,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 + "</resources>",
                 formatted);
 
-        formatted = XmlPrettyPrinter.prettyPrint(doc);
+        formatted = XmlPrettyPrinter.prettyPrint(doc, false);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<resources>\n"
@@ -998,11 +987,12 @@ public class XmlPrettyPrinterTest extends TestCase {
                 + "    <!-- ============== -->\n"
                 + "</root>";
         Document doc = parse(xml);
+        assertNotNull(doc);
 
         String formatted = XmlUtils.toXml(doc, true);
         assertEquals(xml, formatted);
 
-        xml = XmlPrettyPrinter.prettyPrint(doc);
+        xml = XmlPrettyPrinter.prettyPrint(doc, false);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<root>\n"
@@ -1025,6 +1015,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 + " <string     name=\"test\">test</string>\n"
                 + "</resources>";
         Document doc = parse(xml);
+        assertNotNull(doc);
 
         String formatted = XmlUtils.toXml(doc, true);
         assertEquals(""
@@ -1037,7 +1028,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 + "</resources>",
                 formatted);
 
-        xml = XmlPrettyPrinter.prettyPrint(doc);
+        xml = XmlPrettyPrinter.prettyPrint(doc, false);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<resources>\n"
@@ -1060,6 +1051,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 + "<!-- ============== -->\n"
                 + "<root/>";
         Document doc = parse(xml);
+        assertNotNull(doc);
 
         xml = XmlUtils.toXml(doc, true);
         assertEquals(""
@@ -1067,7 +1059,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 + "<!-- ============== --><!-- Generic styles --><!-- ============== --><root/>",
                 xml);
 
-        xml = XmlPrettyPrinter.prettyPrint(doc);
+        xml = XmlPrettyPrinter.prettyPrint(doc, false);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<!-- ============== -->\n"
@@ -1087,7 +1079,9 @@ public class XmlPrettyPrinterTest extends TestCase {
                 + "value=\"2\"/></attr></resources>";
 
         Document doc = parse(xml);
-        xml = XmlPrettyPrinter.prettyPrint(doc);
+        assertNotNull(doc);
+
+        xml = XmlPrettyPrinter.prettyPrint(doc, false);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<resources>\n"
@@ -1111,7 +1105,9 @@ public class XmlPrettyPrinterTest extends TestCase {
                 + "    android:layout_height=\"match_parent\"/>\n";
 
         Document doc = parse(xml);
-        xml = XmlPrettyPrinter.prettyPrint(doc);
+        assertNotNull(doc);
+
+        xml = XmlPrettyPrinter.prettyPrint(doc, false);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<!-- Comment -->\n"
@@ -1119,6 +1115,23 @@ public class XmlPrettyPrinterTest extends TestCase {
                 + "    android:layout_width=\"match_parent\"\n"
                 + "    android:layout_height=\"match_parent\" />\n",
                 xml);
+    }
+
+    public void testPreserveNewlines() throws Exception {
+        XmlFormatPreferences prefs = XmlFormatPreferences.defaults();
+        XmlFormatStyle style = XmlFormatStyle.LAYOUT;
+
+        String before = "<LinearLayout><Button></Button></LinearLayout>\n";
+
+        String expected =
+                "<LinearLayout>\n" +
+                "\n" +
+                "    <Button />\n" +
+                "\n" +
+                "</LinearLayout>\n";
+
+        String after = XmlPrettyPrinter.prettyPrint(before, prefs, style, "\n");
+        assertEquals(expected, after);
     }
 
     @Nullable
@@ -1134,18 +1147,6 @@ public class XmlPrettyPrinterTest extends TestCase {
 
     @Nullable
     private static Document parse(String xml) throws Exception {
-        if (true) {
-            return XmlUtils.parseDocumentSilently(xml, true);
-        }
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        factory.setValidating(false);
-        factory.setExpandEntityReferences(false);
-        factory.setXIncludeAware(false);
-        factory.setIgnoringComments(false);
-        factory.setCoalescing(false);
-        DocumentBuilder builder;
-        builder = factory.newDocumentBuilder();
-        return builder.parse(new InputSource(new StringReader(xml)));
+        return XmlUtils.parseDocumentSilently(xml, true);
     }
 }
