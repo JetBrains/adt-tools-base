@@ -1,5 +1,5 @@
 group = 'com.android.tools'
-archivesBaseName = 'sdk_common'
+archivesBaseName = 'sdk-common'
 
 dependencies {
     compile project(':sdklib')
@@ -29,8 +29,8 @@ uploadArchives {
             }
 
             pom.project {
-                name 'Android Tools sdk_common library'
-                description 'sdk_common library used by other Android tools libraries.'
+                name 'Android Tools sdk-common library'
+                description 'sdk-common library used by other Android tools libraries.'
                 url 'http://tools.android.com'
                 inceptionYear '2007'
 

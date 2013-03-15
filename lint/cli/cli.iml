@@ -11,7 +11,7 @@
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="module" module-name="lint_checks" />
+    <orderEntry type="module" module-name="lint-checks" />
     <orderEntry type="module" module-name="testutils" scope="TEST" />
     <orderEntry type="library" scope="TEST" name="JUnit3" level="project" />
   </component>

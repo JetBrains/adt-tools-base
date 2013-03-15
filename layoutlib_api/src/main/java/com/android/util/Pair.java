@@ -33,7 +33,7 @@ package com.android.util;
  * @param <S> The type of the first value
  * @param <T> The type of the second value
  *
- * @deprecated This is used for backward compatibility with layoutlib_api. Use com.android.utils.Pair instead
+ * @deprecated This is used for backward compatibility with layoutlib-api. Use com.android.utils.Pair instead
  */
 @Deprecated
 public class Pair<S,T> {

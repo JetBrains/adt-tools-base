@@ -1,5 +1,8 @@
+group = 'com.android.tools.build'
+archivesBaseName = 'ant-tasks'
+
 dependencies {
-    compile project(':manifmerger')
+    compile project(':manifest-merger')
 
     testCompile 'junit:junit:3.8.1'
 }
@@ -17,5 +20,3 @@ dependencies{
 //Include provided for compilation
 sourceSets.main.compileClasspath += configurations.provided
 
-group = 'com.android.tools.build'
-archivesBaseName = 'ant-tasks'

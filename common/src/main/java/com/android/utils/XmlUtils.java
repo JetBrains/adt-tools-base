@@ -334,7 +334,7 @@ public class XmlUtils {
     /**
      * Dump an XML tree to string. This does not perform any pretty printing.
      * To perform pretty printing, use {@code XmlPrettyPrinter.prettyPrint(node)} in
-     * {@code sdk_common}.
+     * {@code sdk-common}.
      */
     public static String toXml(Node node, boolean preserveWhitespace) {
         StringBuilder sb = new StringBuilder(1000);

@@ -1,14 +1,14 @@
+group = 'com.android.tools.lint'
+archivesBaseName = 'lint'
+
 dependencies {
-    compile project(':lint_api')
-    compile project(':lint_checks')
+    compile project(':lint-api')
+    compile project(':lint-checks')
 
     testCompile 'org.easymock:easymock:3.1'
     testCompile 'junit:junit:3.8.1'
     testCompile project(':testutils')
 }
-
-group = 'com.android.tools.lint'
-archivesBaseName = 'lint'
 
 sourceSets {
     main.resources.srcDir 'src/main/java'

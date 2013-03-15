@@ -13,6 +13,6 @@
 	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/http-client/httpmime-4.1.1.jar" sourcepath="/ANDROID_SRC/prebuilts/tools/common/http-client/src/httpcomponents-client-4.1.1-src.zip"/>
 	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/guava-tools/guava-13.0.1.jar" sourcepath="/ANDROID_SRC/prebuilts/tools/common/guava-tools/src.zip"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dvlib"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/layoutlib_api"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/layoutlib-api"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

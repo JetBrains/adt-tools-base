@@ -1,5 +1,5 @@
 group = 'com.android.tools.build'
-archivesBaseName = 'manifmerger'
+archivesBaseName = 'manifest-merger'
 
 dependencies {
     compile project(':common')
