@@ -97,9 +97,9 @@ public class DebugKeyProviderTest extends TestCase {
         assertTrue("30 year expiration failed",
                 certificate.getNotAfter().compareTo(c.getTime()) > 0);
 
-        // however expiration date should be passed in 30 years + 1 hour
-        c.add(Calendar.HOUR, 1);
-        assertFalse("30 year and 1 hour expiration failed",
+        // however expiration date should be passed in 30 years + a few hours
+        c.add(Calendar.HOUR, 5);
+        assertFalse("30 year and a few hours expiration failed",
                 certificate.getNotAfter().compareTo(c.getTime()) > 0);
     }
 
