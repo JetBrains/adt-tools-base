@@ -99,7 +99,7 @@ public final class AndroidManifest {
      */
     public static IAbstractFile getManifest(IAbstractFolder projectFolder) {
         IAbstractFile file = projectFolder.getFile(SdkConstants.FN_ANDROID_MANIFEST_XML);
-        if (file.exists()) {
+        if (file != null && file.exists()) {
             return file;
         }
 
