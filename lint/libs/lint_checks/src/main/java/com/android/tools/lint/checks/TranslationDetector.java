@@ -454,7 +454,7 @@ public class TranslationDetector extends ResourceXmlDetector {
         // to obtain a FolderConfiguration, then call
         // getLanguageQualifier() on it, and if not null, call getValue() to get the
         // actual language value.
-        // However, we don't have sdk_common on the build path for lint, so for now
+        // However, we don't have sdk-common on the build path for lint, so for now
         // use a simple guess about what constitutes a language qualifier here:
 
         String language = null;

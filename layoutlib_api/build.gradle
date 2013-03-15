@@ -1,5 +1,5 @@
 group = 'com.android.tools.layoutlib'
-archivesBaseName = 'layoutlib_api'
+archivesBaseName = 'layoutlib-api'
 
 dependencies {
     compile project(':common')
@@ -24,7 +24,7 @@ uploadArchives {
             }
 
             pom.project {
-                name 'Android Tools layoutlib_api'
+                name 'Android Tools layoutlib-api'
                 description 'Library to use the rendering library for Android layouts: layoutlib'
                 url 'http://tools.android.com'
                 inceptionYear '2007'

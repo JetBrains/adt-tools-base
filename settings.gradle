@@ -1,32 +1,35 @@
-include 'anttasks'
+include 'ant-tasks'
 include 'archquery'
-include 'assetstudio'
+include 'asset-studio'
 include 'common'
 include 'ddmlib'
 include 'draw9patch'
 include 'dvlib'
 include 'fat32lib'
 include 'jobb'
-include 'layoutlib_api'
+include 'layoutlib-api'
 include 'lint'
-include 'lint_api'
-include 'lint_checks'
-include 'manifmerger'
+include 'lint-api'
+include 'lint-checks'
+include 'manifest-merger'
 include 'ninepatch'
-include 'rule_api'
+include 'rule-api'
 include 'screenshot2'
-include 'sdk_common'
+include 'sdk-common'
 include 'sdklib'
 include 'sdklib-test'
 include 'testutils'
 
-project(':anttasks').projectDir = new File('legacy/anttasks')
-project(':archquery').projectDir = new File('legacy/archquery')
-project(':dvlib').projectDir = new File('device_validator/dvlib')
-project(':fat32lib').projectDir = new File('../external/fat32lib')
-project(':lint').projectDir = new File('lint/cli')
-project(':lint_api').projectDir = new File('lint/libs/lint_api')
-project(':lint_checks').projectDir = new File('lint/libs/lint_checks')
-project(':screenshot2').projectDir = new File('misc/screenshot2')
-project(':sdklib-test').buildFileName = 'test.gradle'
-project(':sdklib-test').projectDir = new File('sdklib')
+project(':ant-tasks'      ).projectDir = new File('legacy/anttasks')
+project(':asset-studio'   ).projectDir = new File('assetstudio')
+project(':archquery'      ).projectDir = new File('legacy/archquery')
+project(':dvlib'          ).projectDir = new File('device_validator/dvlib')
+project(':fat32lib'       ).projectDir = new File('../external/fat32lib')
+project(':lint'           ).projectDir = new File('lint/cli')
+project(':lint-api'       ).projectDir = new File('lint/libs/lint_api')
+project(':lint-checks'    ).projectDir = new File('lint/libs/lint_checks')
+project(':manifest-merger').projectDir = new File('manifmerger')
+project(':screenshot2'    ).projectDir = new File('misc/screenshot2')
+project(':sdklib-test'    ).projectDir = new File('sdklib')
+project(':sdklib-test'    ).buildFileName = 'test.gradle'
+

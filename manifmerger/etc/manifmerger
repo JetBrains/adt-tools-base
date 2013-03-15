@@ -33,7 +33,7 @@ progdir=`pwd`
 prog="${progdir}"/`basename "${prog}"`
 cd "${oldwd}"
 
-jarfile=manifmerger.jar
+jarfile=manifest-merger.jar
 frameworkdir="$progdir"
 if [ ! -r "$frameworkdir/$jarfile" ]
 then

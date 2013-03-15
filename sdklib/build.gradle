@@ -1,5 +1,8 @@
+group = 'com.android.tools'
+archivesBaseName = 'sdklib'
+
 dependencies {
-    compile project(':layoutlib_api')
+    compile project(':layoutlib-api')
     compile project(':dvlib')
 
     compile 'org.apache.commons:commons-compress:1.0'
@@ -9,9 +12,6 @@ dependencies {
     testCompile project(':dvlib').sourceSets.test.output
     testCompile 'junit:junit:3.8.1'
 }
-
-group = 'com.android.tools'
-archivesBaseName = 'sdklib'
 
 sourceSets {
     main.resources.srcDir 'src/main/java'

@@ -10,7 +10,7 @@ IMPORTANT NOTE REGARDING CHANGES IN LAYOUTLIB_API:
   This is true for all the classes under com.android.ide.common.rendering.api and
   com.android.layoutlib.api although the latter is obsolete and should not be changed at all.
 
-- Updated version of layoutlib_api should be copied to the current in-dev branch of
-  prebuilt/common/layoutlib_api/layoutlib_api-prebuilt.jar
+- Updated version of layoutlib-api should be copied to the current in-dev branch of
+  prebuilt/common/layoutlib_api/layoutlib-api-prebuilt.jar
   The PREBUILT file in the same folder must be updated as well to reflect how to rebuild this
   prebuilt jar file.
