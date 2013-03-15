@@ -20,15 +20,13 @@ include 'sdklib'
 include 'sdklib-test'
 include 'testutils'
 
-project(':ant-tasks'      ).projectDir = new File('legacy/anttasks')
-project(':asset-studio'   ).projectDir = new File('assetstudio')
+project(':ant-tasks'      ).projectDir = new File('legacy/ant-tasks')
 project(':archquery'      ).projectDir = new File('legacy/archquery')
 project(':dvlib'          ).projectDir = new File('device_validator/dvlib')
 project(':fat32lib'       ).projectDir = new File('../external/fat32lib')
 project(':lint'           ).projectDir = new File('lint/cli')
-project(':lint-api'       ).projectDir = new File('lint/libs/lint_api')
-project(':lint-checks'    ).projectDir = new File('lint/libs/lint_checks')
-project(':manifest-merger').projectDir = new File('manifmerger')
+project(':lint-api'       ).projectDir = new File('lint/libs/lint-api')
+project(':lint-checks'    ).projectDir = new File('lint/libs/lint-checks')
 project(':screenshot2'    ).projectDir = new File('misc/screenshot2')
 project(':sdklib-test'    ).projectDir = new File('sdklib')
 project(':sdklib-test'    ).buildFileName = 'test.gradle'
