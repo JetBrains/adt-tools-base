@@ -34,7 +34,7 @@ import java.util.Map;
  * Usage: <br/>
  * {@code $ manifmerger merge --main main_manifest.xml --libs lib1.xml lib2.xml --out result.xml}
  * <p/>
- * When used as a library, please call {@link ManifestMerger#process(File, File, File[], Map)}
+ * When used as a library, please call {@link ManifestMerger#process(File, File, File[], Map, String)}
  * directly.
  */
 public class Main {
@@ -71,7 +71,8 @@ public class Main {
                 new File(mArgvParser.getParamOut()),
                 new File(mArgvParser.getParamMain()),
                 libFiles,
-                null /*injectAttributes*/
+                null /*injectAttributes*/,
+                null /*packageOverride*/
                 );
         System.exit(ok ? 0 : 1);
     }
