@@ -10,8 +10,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="common" />
-    <orderEntry type="module" module-name="layoutlib-api" />
+    <orderEntry type="module" module-name="common" exported="" />
+    <orderEntry type="module" module-name="layoutlib-api" exported="" />
     <orderEntry type="library" scope="TEST" name="JUnit3" level="project" />
   </component>
 </module>

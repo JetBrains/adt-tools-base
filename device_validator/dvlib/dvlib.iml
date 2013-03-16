@@ -12,7 +12,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="library" scope="TEST" name="JUnit3" level="project" />
-    <orderEntry type="module" module-name="common" />
+    <orderEntry type="module" module-name="common" exported="" />
   </component>
 </module>
 
