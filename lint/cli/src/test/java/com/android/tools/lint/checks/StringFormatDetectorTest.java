@@ -209,4 +209,13 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                         "src/test/pkg/StringFormat4.java.txt=>src/test/pkg/StringFormat3.java"));
     }
 
+    public void testNotLocaleMethod() throws Exception {
+        // https://code.google.com/p/android/issues/detail?id=53238
+        assertEquals(""
+                + "No warnings.",
+
+                lintProject(
+                        "res/values/formatstrings7.xml",
+                        "src/test/pkg/StringFormat5.java.txt=>src/test/pkg/StringFormat5.java"));
+    }
 }
