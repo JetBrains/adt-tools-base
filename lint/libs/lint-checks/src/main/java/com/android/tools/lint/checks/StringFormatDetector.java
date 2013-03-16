@@ -21,6 +21,7 @@ import static com.android.SdkConstants.DOT_JAVA;
 import static com.android.SdkConstants.FORMAT_METHOD;
 import static com.android.SdkConstants.GET_STRING_METHOD;
 import static com.android.SdkConstants.R_CLASS;
+import static com.android.SdkConstants.R_PREFIX;
 import static com.android.SdkConstants.TAG_STRING;
 
 import com.android.annotations.NonNull;
@@ -953,6 +954,8 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
         }
         if (parameterType != null) {
             specifiesLocale = parameterType.getTypeName().equals("java.util.Locale"); //$NON-NLS-1$
+        } else if (!call.astName().astValue().equals(FORMAT_METHOD)) {
+            specifiesLocale = false;
         } else {
             // No type information with this AST; use string patterns instead to make
             // an educated guess
@@ -962,6 +965,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                     || firstName.equals("null")                                   //$NON-NLS-1$
                     || (second != null && second.toString().contains("getString") //$NON-NLS-1$
                         && !firstName.contains("getString")                       //$NON-NLS-1$
+                        && !firstName.contains(R_PREFIX)
                         && !(first instanceof StringLiteral));
         }
 
