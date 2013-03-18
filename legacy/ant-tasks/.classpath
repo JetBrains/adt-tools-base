@@ -3,9 +3,8 @@
 	<classpathentry kind="src" path="src/main/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/sdklib"/>
-	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/ant/ant.jar"/>
+	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/m2/internal/org/apache/ant/ant/1.8.0/ant-1.8.0.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/common"/>
-	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/guava-tools/guava-13.0.1.jar" sourcepath="ANDROID_SRC/prebuilts/tools/common/guava-tools/src.zip"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/manifest-merger"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

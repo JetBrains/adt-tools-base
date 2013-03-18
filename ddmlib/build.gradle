@@ -4,7 +4,7 @@ archivesBaseName = 'ddmlib'
 dependencies {
     compile project(':common')
 
-    compile 'kxml2:kxml2:2.3.0'
+    compile 'net.sf.kxml2:kxml2:2.3.0'
 
     testCompile 'org.easymock:easymock:3.1'
     testCompile 'junit:junit:3.8.1'
