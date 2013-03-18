@@ -2,7 +2,6 @@ group = 'com.android.tools.lint'
 archivesBaseName = 'lint'
 
 dependencies {
-    compile project(':lint-api')
     compile project(':lint-checks')
 
     testCompile 'org.easymock:easymock:3.1'
