@@ -1,13 +1,15 @@
 <component name="libraryTable">
   <library name="asm-tools">
     <CLASSES>
-      <root url="jar://$TOOLS_PREBUILTS$/common/asm-tools/asm-4.0.jar!/" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/asm-tools/asm-analysis-4.0.jar!/" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/asm-tools/asm-tree-4.0.jar!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/ow2/asm/asm/4.0/asm-4.0.jar!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/ow2/asm/asm-analysis/4.0/asm-analysis-4.0.jar!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/ow2/asm/asm-tree/4.0/asm-tree-4.0.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$TOOLS_PREBUILTS$/common/asm-tools/src-4.0.zip!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/ow2/asm/asm/4.0/asm-4.0-sources.jar!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/ow2/asm/asm-analysis/4.0/asm-analysis-4.0-sources.jar!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/ow2/asm/asm-tree/4.0/asm-tree-4.0-sources.jar!/" />
     </SOURCES>
   </library>
 </component>
