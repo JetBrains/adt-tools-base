@@ -1,26 +1,19 @@
 <component name="libraryTable">
   <library name="http-client">
     <CLASSES>
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/commons-codec-1.4.jar!/" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/commons-logging-1.1.1.jar!/" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/httpclient-4.1.1.jar!/" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/httpcore-4.1.jar!/" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/httpmime-4.1.1.jar!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/commons-codec/commons-codec/1.4/commons-codec-1.4.jar!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/apache/httpcomponents/httpclient/4.1.1/httpclient-4.1.1.jar!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/apache/httpcomponents/httpcore/4.1/httpcore-4.1.jar!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/apache/httpcomponents/httpmime/4.1/httpmime-4.1.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/src/commons-codec-1.4-src.zip!/commons-codec-1.4-src/src/java" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/src/commons-logging-1.1.1-src.zip!/commons-logging-1.1.1-src/src/java" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/src/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient/src/main/java" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/src/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient-cache/src/main/java" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/src/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpmime/src/main/java" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/src/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient-benchmark/src/main/java" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/src/httpcomponents-client-4.1.1-src.zip!/httpcomponents-client-4.1.1/httpclient-contrib/src/main/java" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/src/httpcomponents-core-4.1-src.zip!/httpcomponents-core-4.1/httpcore-contrib/src/main/java" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/src/httpcomponents-core-4.1-src.zip!/httpcomponents-core-4.1/httpcore-nio/src/main/java" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/src/httpcomponents-core-4.1-src.zip!/httpcomponents-core-4.1/httpcore-benchmark/src/main/java" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/src/httpcomponents-core-4.1-src.zip!/httpcomponents-core-4.1/httpcore/src/main/java" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/http-client/src/httpcomponents-core-4.1-src.zip!/httpcomponents-core-4.1/httpcore-ab/src/main/java" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/commons-codec/commons-codec/1.4/commons-codec-1.4-sources.jar!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1-sources.jar!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/apache/httpcomponents/httpclient/4.1.1/httpclient-4.1.1-sources.jar!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/apache/httpcomponents/httpcore/4.1/httpcore-4.1-sources.jar!/" />
+      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/apache/httpcomponents/httpmime/4.1/httpmime-4.1-sources.jar!/" />
     </SOURCES>
   </library>
 </component>
