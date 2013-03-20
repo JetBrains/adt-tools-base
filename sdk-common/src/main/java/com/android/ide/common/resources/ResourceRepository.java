@@ -653,8 +653,14 @@ public abstract class ResourceRepository {
         return null;
     }
 
+    /**
+     * Looks up the {@link ResourceFile} for the given {@link File}, if possible
+     *
+     * @param file the file
+     * @return the corresponding {@link ResourceFile}, or null if not a known {@link ResourceFile}
+     */
     @Nullable
-    private ResourceFile findResourceFile(@NonNull File file) {
+    protected ResourceFile findResourceFile(@NonNull File file) {
         // Look up the right resource file for this path
         String parentName = file.getParentFile().getName();
         IAbstractFolder folder = getResFolder().getFolder(parentName);
