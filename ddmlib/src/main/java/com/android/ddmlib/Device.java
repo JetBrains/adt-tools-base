@@ -809,7 +809,8 @@ final class Device implements IDevice {
     @Override
     public void removeRemotePackage(String remoteFilePath) throws InstallException {
         try {
-            executeShellCommand("rm " + remoteFilePath, new NullOutputReceiver(), INSTALL_TIMEOUT);
+            executeShellCommand(String.format("rm \"%1$s\"", remoteFilePath),
+                    new NullOutputReceiver(), INSTALL_TIMEOUT);
         } catch (IOException e) {
             throw new InstallException(e);
         } catch (TimeoutException e) {
