@@ -67,17 +67,26 @@ class GatherNoticesTask extends BaseTask {
         }
 
         // merge all the files together.
-        File mainNoticeFile = new File(mainDir, "NOTICE.txt")
-        BufferedWriter writer = Files.newWriter(mainNoticeFile, Charsets.UTF_8)
+        // First gather them so that they can be sorted before merging them. This will limit
+        // the amount of diff in git when there is an update.
         File[] folders = mainDir.listFiles()
-        Set<String> noticeCache = Sets.newHashSet()
+        Set<String> noticeCache = Sets.newTreeSet();
+        List<File> notices = Lists.newArrayList();
         if (folders != null) {
             for (File folder : folders) {
                 if (folder.isDirectory()) {
-                    appendNoticeFrom(folder, writer, noticeCache)
+                    gatherNotices(folder, noticeCache, notices)
                 }
             }
         }
+
+        // sort the notices
+        Collections.sort(notices);
+
+        // merge and write the result
+        File mainNoticeFile = new File(mainDir, "NOTICE.txt")
+        BufferedWriter writer = Files.newWriter(mainNoticeFile, Charsets.UTF_8)
+        mergeNotices(notices, writer);
         writer.close()
     }
 
@@ -112,22 +121,28 @@ class GatherNoticesTask extends BaseTask {
         }
     }
 
-    private static void appendNoticeFrom(File folder, BufferedWriter noticeWriter,
-                                         Set<String> noticeCache) {
+    private static void gatherNotices(File folder, Set<String> filenameCache,
+                                      List<File> noticeList) {
         File[] files = folder.listFiles();
         if (files != null) {
             for (File file : files) {
                 if (file.isFile() && file.name.startsWith("NOTICE_") &&
-                        !noticeCache.contains(file.name)) {
-                    noticeCache.add(file.name)
-                    List<String> lines = Files.readLines(file, Charsets.UTF_8)
-                    for (String line : lines) {
-                        noticeWriter.write(line, 0, line.length())
-                        noticeWriter.newLine()
-                    }
-                    noticeWriter.newLine()
+                        !filenameCache.contains(file.name)) {
+                    filenameCache.add(file.name)
+                    noticeList.add(file)
                 }
             }
+        }
+    }
+
+    private static void mergeNotices(List<File> notices, BufferedWriter noticeWriter) {
+        for (File file : notices) {
+            List<String> lines = Files.readLines(file, Charsets.UTF_8)
+            for (String line : lines) {
+                noticeWriter.write(line, 0, line.length())
+                noticeWriter.newLine()
+            }
+            noticeWriter.newLine()
         }
     }
 
