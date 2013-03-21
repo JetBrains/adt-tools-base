@@ -58,7 +58,12 @@ public class SdkManagerTest extends SdkManagerTestCase {
         assertEquals("[]", getLog().toString());  // no errors in the logger
         assertEquals("[3.0.0, 3.0.1, 12.3.4 rc5]", Arrays.toString(v.toArray()));
 
-        // Get infos, first one that doesn't exit returns null.
+        assertEquals(new FullRevision(3, 0, 1),
+                     sdkman.getLatestBuildTool(false /*isPreview*/).getRevision());
+        assertEquals(new FullRevision(12, 3, 4, 5),
+                     sdkman.getLatestBuildTool(true /*isPreview*/).getRevision());
+
+        // Get infos, first one that doesn't exist returns null.
         assertNull(sdkman.getBuildTool(new FullRevision(1)));
 
         // Now some that exist.

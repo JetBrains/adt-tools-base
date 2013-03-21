@@ -280,6 +280,29 @@ public class SdkManager {
     }
 
     /**
+     * Returns the highest build-tool revision known. Can be null.
+     *
+     * @param isPreview True if it should be a preview version, false if it should NOT be a preview.
+     * @return The highest build-tool revision known, or null.
+     */
+    @Nullable
+    public BuildToolInfo getLatestBuildTool(final boolean isPreview) {
+        if (mBuildTools.isEmpty()) {
+            return null;
+        }
+
+        FullRevision max = null;
+        for (FullRevision r : mBuildTools.keySet()) {
+            if (r.isPreview() == isPreview) {
+                if (max == null || r.compareTo(max) > 0) {
+                    max = r;
+                }
+            }
+        }
+        return mBuildTools.get(max);
+    }
+
+    /**
      * Returns the {@link BuildToolInfo} for the given revision.
      *
      * @param revision The requested revision.
