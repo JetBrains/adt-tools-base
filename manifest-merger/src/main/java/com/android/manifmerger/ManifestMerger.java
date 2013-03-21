@@ -33,6 +33,7 @@ import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -211,19 +212,22 @@ public class ManifestMerger {
      *   (note the space separator between the attribute URI and its local name.)
      *   The elements will be created if they don't exists. Existing attributes will be modified.
      *   The replacement is done on the main document <em>before</em> merging.
+     * @param packageOverride an optional package override. This only affects the package attribute,
+     *   all components (activities, receivers, etc...) are not affected by this.
      * @return True if the merge was completed, false otherwise.
      */
     public boolean process(
             File outputFile,
             File mainFile,
             File[] libraryFiles,
-            Map<String, String> injectAttributes) {
+            Map<String, String> injectAttributes,
+            String packageOverride) {
         Document mainDoc = MergerXmlUtils.parseDocument(mainFile, mLog);
         if (mainDoc == null) {
             return false;
         }
 
-        boolean success = process(mainDoc, libraryFiles, injectAttributes);
+        boolean success = process(mainDoc, libraryFiles, injectAttributes, packageOverride);
 
         if (!MergerXmlUtils.printXmlFile(mainDoc, outputFile, mLog)) {
             success = false;
@@ -248,12 +252,15 @@ public class ManifestMerger {
      *   (note the space separator between the attribute URI and its local name.)
      *   The elements will be created if they don't exists. Existing attributes will be modified.
      *   The replacement is done on the main document <em>before</em> merging.
+     * @param packageOverride an optional package override. This only affects the package attribute,
+     *   all components (activities, receivers, etc...) are not affected by this.
      * @return True on success, false if any error occurred (printed to the {@link IMergerLog}).
      */
     public boolean process(
             Document mainDoc,
             File[] libraryFiles,
-            Map<String, String> injectAttributes) {
+            Map<String, String> injectAttributes,
+            String packageOverride) {
 
         boolean success = true;
         mMainDoc = mainDoc;
@@ -269,6 +276,12 @@ public class ManifestMerger {
             if (libDoc == null || !mergeLibDoc(cleanupToolsAttributes(libDoc))) {
                 success = false;
             }
+        }
+
+        if (packageOverride != null) {
+            MergerXmlUtils.injectAttributes(mainDoc,
+                    Collections.singletonMap("/manifest| package", packageOverride),
+                    mLog);
         }
 
         cleanupToolsAttributes(mainDoc);

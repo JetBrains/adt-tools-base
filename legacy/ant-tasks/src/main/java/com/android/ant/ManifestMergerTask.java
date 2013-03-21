@@ -24,6 +24,7 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.io.FileOp;
 import com.android.utils.StdLogger;
+import com.google.common.collect.Lists;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.types.Path;
@@ -77,7 +78,7 @@ public class ManifestMergerTask extends SingleDependencyTask {
         }
 
         // if we merge, then get the rest of the input paths.
-        List<File> libraries = new ArrayList<File>();
+        List<File> libraries = Lists.newArrayList();
         if (mLibraryPaths != null) {
             for (Path pathList : mLibraryPaths) {
                 for (String path : pathList.list()) {
@@ -87,7 +88,7 @@ public class ManifestMergerTask extends SingleDependencyTask {
         }
 
         // prepare input files
-        ArrayList<File> allInputs = new ArrayList<File>(libraries.size() + 1);
+        ArrayList<File> allInputs = Lists.newArrayListWithCapacity(libraries.size() + 1);
 
         // always: the input manifest.
         File appManifestFile = new File(mAppManifest);
@@ -105,7 +106,7 @@ public class ManifestMergerTask extends SingleDependencyTask {
         List<InputPath> inputPaths = getInputPaths(allInputs, null /*extensionsToCheck*/,
                 null /*factory*/);
 
-        if (initDependencies(depFile, inputPaths) && dependenciesHaveChanged() == false) {
+        if (initDependencies(depFile, inputPaths) && !dependenciesHaveChanged()) {
             System.out.println(
                     "No changes in the AndroidManifest files.");
             return;
@@ -113,8 +114,8 @@ public class ManifestMergerTask extends SingleDependencyTask {
 
         System.out.println("Merging AndroidManifest files into one.");
 
-        if (mEnabled == false || libraries.size() == 0) {
-            if (mEnabled == false) {
+        if (!mEnabled || libraries.isEmpty()) {
+            if (!mEnabled) {
                 System.out.println("Manifest merger disabled. Using project manifest only.");
             } else {
                 System.out.println("No libraries. Using project manifest only.");
@@ -149,11 +150,12 @@ public class ManifestMergerTask extends SingleDependencyTask {
                             return ICallback.UNKNOWN_CODENAME;
                         }
                     });
-            if (merger.process(
+            if (!merger.process(
                     new File(mOutManifest),
                     appManifestFile,
                     libraries.toArray(new File[libraries.size()]),
-                    null /*injectAttributes*/) == false) {
+                    null /*injectAttributes*/,
+                    null /*packageOverride*/)) {
                 throw new BuildException();
             }
         }

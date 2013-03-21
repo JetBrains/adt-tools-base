@@ -17,8 +17,13 @@
 package com.android.manifmerger;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.manifmerger.IMergerLog.FileAndLine;
 import com.android.sdklib.mock.MockLog;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import org.w3c.dom.Document;
 
@@ -37,10 +42,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 /**
  * Some utilities to reduce repetitions in the {@link ManifestMergerTest}s.
@@ -80,7 +81,7 @@ public class ManifestMergerTest extends TestCase {
      * The section is composed of one or more lines with the
      * syntax: "/node/node|attr-URI attrName=attrValue".
      * This is essentially a pseudo XPath-like expression that is described in
-     * {@link ManifestMerger#process(Document, File[], Map)}.
+     * {@link ManifestMerger#process(Document, File[], Map, String)}.
      */
     private static final String DELIM_INJECT_ATTR   = "inject";
     /**
@@ -89,6 +90,12 @@ public class ManifestMergerTest extends TestCase {
      * syntax: "functionName=false|true".
      */
     private static final String DELIM_FEATURES      = "features";
+
+    /**
+     * Delimiter for a section that declares how to override the package.
+     * The section is composed of one line containing the new package name.
+     */
+    private static final String DELIM_PACKAGE       = "package";
 
 
     /*
@@ -107,6 +114,7 @@ public class ManifestMergerTest extends TestCase {
         "02_ignore_instrumentation",
         "03_inject_attributes",
         "04_inject_attributes",
+        "05_inject_package",
         "10_activity_merge",
         "11_activity_dup",
         "12_alias_dup",
@@ -194,6 +202,7 @@ public class ManifestMergerTest extends TestCase {
         private final File mMain;
         private final File[] mLibs;
         private final Map<String, String> mInjectAttributes;
+        private final String mPackageOverride;
         private final File mActualResult;
         private final String mExpectedResult;
         private final String mExpectedErrors;
@@ -207,6 +216,7 @@ public class ManifestMergerTest extends TestCase {
                 @NonNull File[] libs,
                 @NonNull Map<String, Boolean> features,
                 @NonNull Map<String, String> injectAttributes,
+                @Nullable String packageOverride,
                 @NonNull File actualResult,
                 @NonNull String expectedResult,
                 @NonNull String expectedErrors) {
@@ -214,6 +224,7 @@ public class ManifestMergerTest extends TestCase {
             mMain = main;
             mLibs = libs;
             mFeatures = features;
+            mPackageOverride = packageOverride;
             mInjectAttributes = injectAttributes;
             mActualResult = actualResult;
             mExpectedResult = expectedResult;
@@ -234,12 +245,19 @@ public class ManifestMergerTest extends TestCase {
             return mLibs;
         }
 
+        @NonNull
         public Map<String, Boolean> getFeatures() {
             return mFeatures;
         }
 
+        @NonNull
         public Map<String, String> getInjectAttributes() {
             return mInjectAttributes;
+        }
+
+        @Nullable
+        public String getPackageOverride() {
+            return mPackageOverride;
         }
 
         @NonNull
@@ -366,6 +384,7 @@ public class ManifestMergerTest extends TestCase {
 
             boolean shouldFail = false;
             Map<String, Boolean> features = new HashMap<String, Boolean>();
+            String packageOverride = null;
             Map<String, String> injectAttributes = new HashMap<String, String>();
             StringBuilder expectedResult = new StringBuilder();
             StringBuilder expectedErrors = new StringBuilder();
@@ -375,13 +394,13 @@ public class ManifestMergerTest extends TestCase {
             int tempIndex = 0;
 
             while ((line = reader.readLine()) != null) {
-                if (skipEmpty && line.trim().length() == 0) {
+                if (skipEmpty && line.trim().isEmpty()) {
                     continue;
                 }
-                if (line.length() > 0 && line.charAt(0) == '#') {
+                if (!line.isEmpty() && line.charAt(0) == '#') {
                     continue;
                 }
-                if (line.length() > 0 && line.charAt(0) == '@') {
+                if (!line.isEmpty() && line.charAt(0) == '@') {
                     delimiter = line.substring(1);
                     assertTrue(
                         "Unknown delimiter @" + delimiter + " in " + filename,
@@ -391,7 +410,8 @@ public class ManifestMergerTest extends TestCase {
                         delimiter.equals(DELIM_ERRORS)  ||
                         delimiter.equals(DELIM_FAILS)   ||
                         delimiter.equals(DELIM_FEATURES) ||
-                        delimiter.equals(DELIM_INJECT_ATTR));
+                        delimiter.equals(DELIM_INJECT_ATTR) ||
+                        delimiter.equals(DELIM_PACKAGE));
 
                     skipEmpty = true;
 
@@ -407,7 +427,8 @@ public class ManifestMergerTest extends TestCase {
 
                     } else if (!delimiter.equals(DELIM_ERRORS) &&
                                !delimiter.equals(DELIM_FEATURES) &&
-                               !delimiter.equals(DELIM_INJECT_ATTR)) {
+                               !delimiter.equals(DELIM_INJECT_ATTR) &&
+                               !delimiter.equals(DELIM_PACKAGE)) {
                         tempFile = new File(tempDir, String.format("%1$s%2$d_%3$s.xml",
                                 this.getClass().getSimpleName(),
                                 tempIndex++,
@@ -438,7 +459,7 @@ public class ManifestMergerTest extends TestCase {
                 }
                 if (delimiter != null &&
                         skipEmpty &&
-                        line.length() > 0 &&
+                        !line.isEmpty() &&
                         line.charAt(0) != '#' &&
                         line.charAt(0) != '@') {
                     skipEmpty = false;
@@ -460,6 +481,10 @@ public class ManifestMergerTest extends TestCase {
                     if (in != null && in.length == 2) {
                         features.put(in[0], Boolean.parseBoolean(in[1]));
                     }
+                } else if (DELIM_PACKAGE.equals(delimiter)) {
+                    if (packageOverride == null) {
+                        packageOverride = line;
+                    }
                 }
             }
 
@@ -477,6 +502,7 @@ public class ManifestMergerTest extends TestCase {
                     libFiles.toArray(new File[libFiles.size()]),
                     features,
                     injectAttributes,
+                    packageOverride,
                     actualResultFile,
                     expectedResult.toString(),
                     expectedErrors.toString());
@@ -517,7 +543,7 @@ public class ManifestMergerTest extends TestCase {
 
     /**
      * Processes the data from the given {@link TestFiles} by
-     * invoking {@link ManifestMerger#process(File, File, File[], Map)}:
+     * invoking {@link ManifestMerger#process(File, File, File[], Map, String)}:
      * the given library files are applied consecutively to the main XML
      * document and the output is generated.
      * <p/>
@@ -554,7 +580,8 @@ public class ManifestMergerTest extends TestCase {
         boolean processOK = merger.process(testFiles.getActualResult(),
                                   testFiles.getMain(),
                                   testFiles.getLibs(),
-                                  testFiles.getInjectAttributes());
+                                  testFiles.getInjectAttributes(),
+                                  testFiles.getPackageOverride());
 
         String expectedErrors = testFiles.getExpectedErrors().trim();
         StringBuilder actualErrors = new StringBuilder();
