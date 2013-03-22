@@ -75,6 +75,7 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     /** OS Path to the "uiautomator.jar" file. */
     public static final int UI_AUTOMATOR_JAR    = 27;
 
+
     /**
      * Return value for {@link #getUsbVendorId()} meaning no USB vendor IDs are defined by the
      * Android target.
@@ -158,6 +159,14 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
      * {@link IAndroidTarget} interface can be used.
      */
     String getPath(int pathId);
+
+    /**
+     * Returns a BuildToolInfo for backward compatibility. If an older SDK is used this will return
+     * paths located in the platform-tools, otherwise it'll return paths located in the lastest
+     * build-tools.
+     * @return a BuildToolInfo or null if none are available.
+     */
+    BuildToolInfo getBuildToolInfo();
 
     /**
      * Returns the boot classpath for this target.

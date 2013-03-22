@@ -142,8 +142,8 @@ public class SdkManager {
             manager.reloadSdk(log);
 
             return manager;
-        } catch (IllegalArgumentException e) {
-            log.error(e, "Error parsing the sdk.");
+        } catch (Throwable throwable) {
+            log.error(throwable, "Error parsing the sdk.");
         }
 
         return null;
@@ -157,11 +157,33 @@ public class SdkManager {
     public void reloadSdk(@NonNull ILogger log) {
         // get the current target list.
         mVisistedDirs.clear();
-        ArrayList<IAndroidTarget> targets = Lists.newArrayList();
-        loadPlatforms(mOsSdkPath, targets, mVisistedDirs, log);
-        loadAddOns(mOsSdkPath, targets, mVisistedDirs, log);
+
+        // load the buildtools
         Map<FullRevision, BuildToolInfo> buildTools = Maps.newHashMap();
         loadBuildTools(mOsSdkPath, buildTools, mVisistedDirs, log);
+        setBuildTools(buildTools);
+
+        BuildToolInfo latestBuildTools = getLatestBuildTool(false);
+        if (latestBuildTools == null) {
+            // no build tools? Check version of platform-tools. if <17 and lower this means
+            // an older SDK (while this code is used in an external tool) and so we go in
+            // compatibility mode with a BuildToolInfo mapping the path to the platform-tools.
+            // If platform-tools is newer, then we fail with a broken SDK.
+            String platformToolsVersion = getPlatformToolsVersion();
+            if (platformToolsVersion == null) {
+                log.error(null, "Missing platform-tools");
+            } else {
+                FullRevision fullRevision = FullRevision.parseRevision(platformToolsVersion);
+                if (fullRevision.compareTo(new FullRevision(17)) < 0) {
+                    // older SDK, create a compatible buildtools
+                    latestBuildTools = getCompatibilityBuildTools(fullRevision);
+                }
+            }
+        }
+
+        ArrayList<IAndroidTarget> targets = Lists.newArrayList();
+        loadPlatforms(mOsSdkPath, targets, mVisistedDirs, latestBuildTools, log);
+        loadAddOns(mOsSdkPath, targets, mVisistedDirs, log);
 
         // For now replace the old list with the new one.
         // In the future we may want to keep the current objects, so that ADT doesn't have to deal
@@ -170,10 +192,27 @@ public class SdkManager {
         // sort the targets/add-ons
         Collections.sort(targets);
         setTargets(targets.toArray(new IAndroidTarget[targets.size()]));
-        setBuildTools(buildTools);
 
         // load the samples, after the targets have been set.
         initializeSamplePaths(log);
+    }
+
+    private BuildToolInfo getCompatibilityBuildTools(FullRevision fullRevision) {
+        File platformTools = new File(mOsSdkPath, SdkConstants.FD_PLATFORM_TOOLS);
+        File platformToolsLib = new File(platformTools, SdkConstants.FD_LIB);
+        File platformToolsRs = new File(platformTools, SdkConstants.FN_FRAMEWORK_RENDERSCRIPT);
+
+        return new BuildToolInfo(
+                fullRevision,
+                platformTools,
+                new File(platformTools, SdkConstants.FN_AAPT),
+                new File(platformTools, SdkConstants.FN_AIDL),
+                new File(platformTools, SdkConstants.FN_DX),
+                new File(platformToolsLib, SdkConstants.FN_DX_JAR),
+                new File(platformTools, SdkConstants.FN_RENDERSCRIPT),
+                new File(platformToolsRs, SdkConstants.FN_FRAMEWORK_INCLUDE),
+                new File(platformToolsRs, SdkConstants.FN_FRAMEWORK_INCLUDE_CLANG)
+                );
     }
 
     /**
@@ -499,6 +538,7 @@ public class SdkManager {
      * @param sdkOsPath Location of the SDK
      * @param targets the list to fill with the platforms.
      * @param dirInfos a map to keep information on directories to see if they change later.
+     * @param latestBuildTools the latestBuildTools
      * @param log the ILogger object receiving warning/error from the parsing.
      * @throws RuntimeException when the "platforms" folder is missing and cannot be created.
      */
@@ -506,24 +546,27 @@ public class SdkManager {
             @NonNull String sdkOsPath,
             @NonNull ArrayList<IAndroidTarget> targets,
             @NonNull Map<File, DirInfo> dirInfos,
+                     BuildToolInfo latestBuildTools,
             @NonNull ILogger log) {
         File platformFolder = new File(sdkOsPath, SdkConstants.FD_PLATFORMS);
 
         if (platformFolder.isDirectory()) {
             File[] platforms  = platformFolder.listFiles();
 
-            for (File platform : platforms) {
-                PlatformTarget target = null;
-                if (platform.isDirectory()) {
-                    target = loadPlatform(sdkOsPath, platform, log);
-                    if (target != null) {
-                        targets.add(target);
+            if (platforms != null) {
+                for (File platform : platforms) {
+                    PlatformTarget target;
+                    if (platform.isDirectory()) {
+                        target = loadPlatform(sdkOsPath, platform, latestBuildTools, log);
+                        if (target != null) {
+                            targets.add(target);
+                        }
+                        // Remember we visited this file/directory,
+                        // even if we failed to load anything from it.
+                        dirInfos.put(platform, new DirInfo(platform));
+                    } else {
+                        log.warning("Ignoring platform '%1$s', not a folder.", platform.getName());
                     }
-                    // Remember we visited this file/directory,
-                    // even if we failed to load anything from it.
-                    dirInfos.put(platform, new DirInfo(platform));
-                } else {
-                    log.warning("Ignoring platform '%1$s', not a folder.", platform.getName());
                 }
             }
 
@@ -548,12 +591,14 @@ public class SdkManager {
      * Loads a specific Platform at a given location.
      * @param sdkOsPath Location of the SDK
      * @param platformFolder the root folder of the platform.
+     * @param latestBuildTools the latestBuildTools
      * @param log the ILogger object receiving warning/error from the parsing.
      */
     @Nullable
     private static PlatformTarget loadPlatform(
             @NonNull String sdkOsPath,
             @NonNull File platformFolder,
+                     BuildToolInfo latestBuildTools,
             @NonNull ILogger log) {
         FileWrapper buildProp = new FileWrapper(platformFolder, SdkConstants.FN_BUILD_PROP);
         FileWrapper sourcePropFile = new FileWrapper(platformFolder, SdkConstants.FN_SOURCE_PROP);
@@ -666,7 +711,8 @@ public class SdkManager {
                     revision,
                     layoutlibVersion,
                     systemImages,
-                    platformProp);
+                    platformProp,
+                    latestBuildTools);
 
             // need to parse the skins.
             String[] skins = parseSkinFolder(target.getPath(IAndroidTarget.SKINS));
@@ -860,7 +906,7 @@ public class SdkManager {
             if (addons != null) {
                 for (File addon : addons) {
                     // Add-ons have to be folders. Ignore files and no need to warn about them.
-                    AddOnTarget target = null;
+                    AddOnTarget target;
                     if (addon.isDirectory()) {
                         target = loadAddon(addon, targetList, log);
                         if (target != null) {

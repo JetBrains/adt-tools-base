@@ -272,6 +272,11 @@ final class AddOnTarget implements IAndroidTarget {
         }
     }
 
+    @Override
+    public BuildToolInfo getBuildToolInfo() {
+        return mBasePlatform.getBuildToolInfo();
+    }
+
     @Override @NonNull
     public List<String> getBootClasspath() {
         return Collections.singletonList(getPath(IAndroidTarget.ANDROID_JAR));
