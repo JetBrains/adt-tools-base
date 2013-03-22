@@ -17,6 +17,7 @@
 package com.android.sdklib.internal.repository;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.utils.ILogger;
 import com.android.utils.NullLogger;
 
@@ -113,7 +114,7 @@ public class NullTaskMonitor implements ITaskMonitor {
     // --- ILogger ---
 
     @Override
-    public void error(Throwable t, String errorFormat, Object... args) {
+    public void error(@Nullable Throwable t, @Nullable String errorFormat, Object... args) {
         mLog.error(t, errorFormat, args);
     }
 

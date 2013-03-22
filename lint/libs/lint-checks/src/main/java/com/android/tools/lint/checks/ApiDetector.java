@@ -320,6 +320,7 @@ public class ApiDetector extends ResourceXmlDetector
                 return;
             }
         }
+        assert name != null : value;
         int api = mApiDatabase.getFieldVersion(owner, name);
         int minSdk = getMinSdk(context);
         if (api > minSdk && api > context.getFolderVersion()

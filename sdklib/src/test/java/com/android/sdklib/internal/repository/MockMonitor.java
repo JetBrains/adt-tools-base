@@ -17,6 +17,7 @@
 package com.android.sdklib.internal.repository;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 /**
  * Mock implementation of {@link ITaskMonitor} that simply captures
@@ -100,7 +101,7 @@ public class MockMonitor implements ITaskMonitor {
     }
 
     @Override
-    public void error(Throwable t, String errorFormat, Object... args) {
+    public void error(@Nullable Throwable t, @Nullable String errorFormat, Object... args) {
     }
 
     @Override

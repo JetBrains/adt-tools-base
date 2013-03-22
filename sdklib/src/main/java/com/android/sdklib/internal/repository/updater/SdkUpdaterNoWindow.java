@@ -17,6 +17,7 @@
 package com.android.sdklib.internal.repository.updater;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.ITask;
 import com.android.sdklib.internal.repository.ITaskFactory;
@@ -263,7 +264,7 @@ public class SdkUpdaterNoWindow {
         // --- ILogger ---
 
         @Override
-        public void error(Throwable t, String errorFormat, Object... args) {
+        public void error(@Nullable Throwable t, @Nullable String errorFormat, Object... args) {
             mSdkLog.error(t, errorFormat, args);
         }
 
@@ -602,7 +603,7 @@ public class SdkUpdaterNoWindow {
         // --- ILogger ---
 
         @Override
-        public void error(Throwable t, String errorFormat, Object... args) {
+        public void error(@Nullable Throwable t, @Nullable String errorFormat, Object... args) {
             mRoot.error(t, errorFormat, args);
         }
 
