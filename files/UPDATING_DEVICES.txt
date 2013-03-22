@@ -1,0 +1,84 @@
+UPDATING devices.xml FOR A NEW DEVICE
+----------------------------------------
+
+First, import the sdk/apps/DeviceConfig project into ADT, and run it
+on the given device.  When prompted, click on the button on the bottom
+to generate a config file, then send it to yourself, for example via
+Drive.
+
+Next, edit the device description as follows:
+
+* Double check the vendor (fix capitalization etc)
+
+* Fix the screen attributes. In particular, the detection does not
+  seem to account for the space taken by the system bar, so look up
+  the official specs for the device and change the screen size. This
+  also affects the screen diagonal length, and the xdpi and ydpi
+  densities. For example, here are the specs used for the Nexus 4,
+  Nexus 7 and Nexus 10 configurations:
+
+      http://www.google.com/nexus/4/specs/
+      http://www.google.com/nexus/7/specs/
+      http://www.google.com/nexus/10/specs/
+
+
+* For devices that don't have external storage, the element
+   <d:removable-storage> </d:removable-storage>
+  is missing the required unit attribute; change it to
+   <d:removable-storage unit="MiB"> </d:removable-storage>
+
+* The config detector cannot detect the available states; insert these
+  manually by copying from another device description in devices.xml,
+  assuming it has the normal states (landscape, portrait). Make sure
+  you pick the default state carefully; e.g. for Nexus 4 portrait is
+  the default and for Nexus 10 landscape is the default.
+
+* Double check the <ram> and <internal-storage> values; they did not
+  seem to be correct for the devices I configured. I looked up the
+  specs instead, and then converted to the (required) MiB or GiB
+  units. E.g. 2GB of RAM means 1.86GiB.
+
+  NOTE: The <ram> element (and possibly the other storage sizes as
+  well) requires the value to be an integer, so use KiB rather than
+  say 1.86GiB here (since decimals aren't allowed).
+
+  I used the GB/GiB calculator found here:
+  http://www.dr-lex.be/info-stuff/bytecalc.html
+
+* The DeviceConfig app does not produce values for all the required
+  elements. It leaves these as blank, but if you don't fill them in,
+  the devices.xml file will fail to parse properly at runtime, which
+  means the devices won't be added.
+
+  To fix this, make sure the following elements have proper values
+  (some sample values are shown; if these are not correct, consult
+  devices.xsd for the valid enum values):
+            <d:mechanism>finger</d:mechanism>
+            <d:screen-type>capacitive</d:screen-type>
+            <d:power-type>battery</d:power-type>
+            <d:nav>nonav</d:nav>
+            <d:cpu>Dual-core A15</d:cpu>
+            <d:gpu>Quad-core Mali T604</d:gpu>
+
+* You must add this required line (set value to true or false as
+  appropriate) to the end of the <software> section:
+            <d:status-bar>true</d:status-bar>
+  after the <gl-extensions> element.
+
+* If you are running a newer version of the OS than the device
+  originally shipped with, adjust the <api-level> element to the
+  lowest supported value.
+
+* Reformat the XML, using a 4 space indent. The format of the file as
+  emitted by DeviceConfig does not use the same formatting as the
+  overall devices.xml file, and besides, a couple of lines aren't
+  indented as expected.
+
+* Finally, merge the new device description (e.g. everything except
+  the root XML <devices> element) into devices.xml and check it in.
+
+* To test, copy the file into the SDK install (tools/lib/devices.xml),
+  open the layout editor and make sure the new device shows up in the
+  Device dropdown, and that when selecting it things look good. You
+  should also try creating a device based on this description in the
+  AVD manager and then creating and running an AVD based on it.
