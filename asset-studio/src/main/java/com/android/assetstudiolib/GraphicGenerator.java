@@ -23,6 +23,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.JarURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.ProtectionDomain;
@@ -260,15 +261,26 @@ public abstract class GraphicGenerator {
         List<String> names = new ArrayList<String>(80);
         try {
             String pathPrefix = "images/clipart/big/"; //$NON-NLS-1$
+            ZipFile zipFile = null;
             ProtectionDomain protectionDomain = GraphicGenerator.class.getProtectionDomain();
             URL url = protectionDomain.getCodeSource().getLocation();
-            File file;
-            try {
-                file = new File(url.toURI());
-            } catch (URISyntaxException e) {
-                file = new File(url.getPath());
+            if (url != null) {
+                File file;
+                try {
+                    file = new File(url.toURI());
+                } catch (URISyntaxException e) {
+                    file = new File(url.getPath());
+                }
+                zipFile = new JarFile(file);
+            } else {
+                Enumeration<URL> en =
+                        GraphicGenerator.class.getClassLoader().getResources(pathPrefix);
+                if (en.hasMoreElements()) {
+                    url = en.nextElement();
+                    JarURLConnection urlConn = (JarURLConnection)(url.openConnection());
+                    zipFile = urlConn.getJarFile();
+                }
             }
-            final ZipFile zipFile = new JarFile(file);
             Enumeration<? extends ZipEntry> enumeration = zipFile.entries();
             while (enumeration.hasMoreElements()) {
                 ZipEntry zipEntry = enumeration.nextElement();
