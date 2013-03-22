@@ -50,6 +50,7 @@ final class PlatformTarget implements IAndroidTarget {
     private String[] mSkins;
     private final ISystemImage[] mSystemImages;
     private final LayoutlibVersion mLayoutlibVersion;
+    private final BuildToolInfo mBuildToolInfo;
 
     /**
      * Creates a Platform target.
@@ -72,8 +73,9 @@ final class PlatformTarget implements IAndroidTarget {
             int revision,
             LayoutlibVersion layoutlibVersion,
             ISystemImage[] systemImages,
-            Map<String, String> properties) {
-        if (platformOSPath.endsWith(File.separator) == false) {
+            Map<String, String> properties,
+            @NonNull BuildToolInfo buildToolInfo) {
+        if (!platformOSPath.endsWith(File.separator)) {
             platformOSPath = platformOSPath + File.separator;
         }
         mRootFolderOsPath = platformOSPath;
@@ -82,6 +84,7 @@ final class PlatformTarget implements IAndroidTarget {
         mVersionName = versionName;
         mRevision = revision;
         mLayoutlibVersion = layoutlibVersion;
+        mBuildToolInfo = buildToolInfo;
         mSystemImages = systemImages == null ? new ISystemImage[0] : systemImages;
         Arrays.sort(mSystemImages);
 
@@ -219,6 +222,11 @@ final class PlatformTarget implements IAndroidTarget {
     @Override
     public String getPath(int pathId) {
         return mPaths.get(pathId);
+    }
+
+    @Override
+    public BuildToolInfo getBuildToolInfo() {
+        return mBuildToolInfo;
     }
 
     @Override @NonNull

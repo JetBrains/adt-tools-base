@@ -75,7 +75,7 @@ public class SdkManagerTest extends SdkManagerTestCase {
                     "AAPT=$SDK/build-tools/3.0.0/aapt, " +
                     "AIDL=$SDK/build-tools/3.0.0/aidl, " +
                     "DX=$SDK/build-tools/3.0.0/dx, " +
-                    "DX_JAR=$SDK/build-tools/3.0.0/dx.jar, " +
+                    "DX_JAR=$SDK/build-tools/3.0.0/lib/dx.jar, " +
                     "LLVM_RS_CC=$SDK/build-tools/3.0.0/llvm-rs-cc, " +
                     "ANDROID_RS=$SDK/build-tools/3.0.0/renderscript/include/, " +
                     "ANDROID_RS_CLANG=$SDK/build-tools/3.0.0/renderscript/clang-include/}>",
@@ -89,7 +89,7 @@ public class SdkManagerTest extends SdkManagerTestCase {
                     "AAPT=$SDK/build-tools/12.3.4 rc5/aapt, " +
                     "AIDL=$SDK/build-tools/12.3.4 rc5/aidl, " +
                     "DX=$SDK/build-tools/12.3.4 rc5/dx, " +
-                    "DX_JAR=$SDK/build-tools/12.3.4 rc5/dx.jar, " +
+                    "DX_JAR=$SDK/build-tools/12.3.4 rc5/lib/dx.jar, " +
                     "LLVM_RS_CC=$SDK/build-tools/12.3.4 rc5/llvm-rs-cc, " +
                     "ANDROID_RS=$SDK/build-tools/12.3.4 rc5/renderscript/include/, " +
                     "ANDROID_RS_CLANG=$SDK/build-tools/12.3.4 rc5/renderscript/clang-include/}>",

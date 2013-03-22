@@ -19,6 +19,7 @@ package com.android.sdklib.internal.repository.packages;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.ISystemImage.LocationType;
@@ -162,6 +163,11 @@ public class MockAddonPackage extends AddonPackage {
         @Override
         public String getPath(int pathId) {
             throw new UnsupportedOperationException("Implement this as needed for tests");
+        }
+
+        @Override
+        public BuildToolInfo getBuildToolInfo() {
+            return null;
         }
 
         @Override @NonNull

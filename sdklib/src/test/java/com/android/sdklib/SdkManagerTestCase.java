@@ -27,11 +27,11 @@ import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.utils.ILogger;
 
+import junit.framework.TestCase;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-
-import junit.framework.TestCase;
 
 /**
  * Test case that allocates a temporary SDK, a temporary AVD base folder
@@ -269,12 +269,15 @@ public class SdkManagerTestCase extends TestCase {
             new File(buildToolsDir, SdkConstants.FN_AAPT).createNewFile();
             new File(buildToolsDir, SdkConstants.FN_AIDL).createNewFile();
             new File(buildToolsDir, SdkConstants.FN_DX).createNewFile();
-            new File(buildToolsDir, SdkConstants.FN_DX_JAR).createNewFile();
-            new File(buildToolsDir, SdkConstants.FN_RENDERSCRIPT).createNewFile();
-            new File(buildToolsDir, SdkConstants.FN_FRAMEWORK_RENDERSCRIPT).mkdir();
-            new File(buildToolsDir, SdkConstants.OS_FRAMEWORK_RS).mkdir();
-            new File(buildToolsDir, SdkConstants.OS_FRAMEWORK_RS_CLANG).mkdir();
 
+            File libFolder = new File(buildToolsDir, SdkConstants.FD_LIB);
+            libFolder.mkdir();
+            new File(libFolder, SdkConstants.FN_DX_JAR).createNewFile();
+
+            new File(buildToolsDir, SdkConstants.FN_RENDERSCRIPT).createNewFile();
+
+            new File(buildToolsDir, SdkConstants.OS_FRAMEWORK_RS).mkdirs();
+            new File(buildToolsDir, SdkConstants.OS_FRAMEWORK_RS_CLANG).mkdirs();
         }
     }
 
