@@ -193,8 +193,8 @@ public final class AaptExecTask extends SingleDependencyTask {
      * Sets the value of the "usecrunchcache" attribute
      * @param usecrunch whether to use the crunch cache.
      */
-    public void setNoCrunch(boolean nocrunch) {
-        mUseCrunchCache = nocrunch;
+    public void setNoCrunch(boolean usecrunch) {
+        mUseCrunchCache = usecrunch;
     }
 
     public void setNonConstantId(boolean nonConstantId) {
@@ -341,7 +341,7 @@ public final class AaptExecTask extends SingleDependencyTask {
      * Set the property name of the property that contains the list of res folder for
      * Library Projects. This sets the name and not the value itself to handle the case where
      * it doesn't exist.
-     * @param projectLibrariesResName
+     * @param libraryResFolderPathRefid
      */
     public void setLibraryResFolderPathRefid(String libraryResFolderPathRefid) {
         mLibraryResFolderPathRefid = libraryResFolderPathRefid;

@@ -166,7 +166,8 @@ public class DependencyHelper {
     /**
      *
      * @param projectFolder the project root folder.
-     * @param source an {@link IPropertySource} that can provide the project properties values.
+     * @param properties an {@link IPropertySource} that can provide the project properties values.
+     * @param verbose whether the output is verbose
      */
     public DependencyHelper(File projectFolder, IPropertySource properties, boolean verbose) {
         mProjectFolder = projectFolder;
