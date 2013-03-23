@@ -578,13 +578,13 @@
             </d:gl-extensions>
             <d:status-bar>true</d:status-bar>
         </d:software>
-        <d:state name="Portrait" default="true">
+        <d:state name="Portrait">
             <d:description>The phone in portrait view</d:description>
             <d:screen-orientation>port</d:screen-orientation>
             <d:keyboard-state>keyssoft</d:keyboard-state>
             <d:nav-state>nonav</d:nav-state>
         </d:state>
-        <d:state name="Landscape">
+        <d:state name="Landscape" default="true">
             <d:description>The phone in landscape view</d:description>
             <d:screen-orientation>land</d:screen-orientation>
             <d:keyboard-state>keyssoft</d:keyboard-state>
