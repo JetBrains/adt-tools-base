@@ -16,21 +16,19 @@
 
 package com.android.ide.common.xml;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.utils.XmlUtils;
-
-import junit.framework.TestCase;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-
-import java.io.StringReader;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+
+import junit.framework.TestCase;
 
 @SuppressWarnings("javadoc")
 public class XmlPrettyPrinterTest extends TestCase {
@@ -1145,8 +1143,11 @@ public class XmlPrettyPrinterTest extends TestCase {
         return builder.newDocument();
     }
 
-    @Nullable
+    @SuppressWarnings("null")
+    @NonNull
     private static Document parse(String xml) throws Exception {
-        return XmlUtils.parseDocumentSilently(xml, true);
+        Document doc = XmlUtils.parseDocumentSilently(xml, true);
+        assertNotNull(doc);
+        return doc;
     }
 }

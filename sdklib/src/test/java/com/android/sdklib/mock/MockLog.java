@@ -17,6 +17,7 @@
 package com.android.sdklib.mock;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.utils.ILogger;
 
 import java.util.ArrayList;
@@ -53,7 +54,7 @@ public class MockLog implements ILogger {
     }
 
     @Override
-    public void error(Throwable t, String format, Object... args) {
+    public void error(@Nullable Throwable t, @Nullable String format, Object... args) {
         if (t != null) {
             add("T", "%s", t.toString());
         }

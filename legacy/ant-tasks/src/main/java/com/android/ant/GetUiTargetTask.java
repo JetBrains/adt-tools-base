@@ -17,6 +17,7 @@
 package com.android.ant;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.IAndroidTarget.IOptionalLibrary;
 import com.android.sdklib.SdkManager;
@@ -69,7 +70,8 @@ public class GetUiTargetTask extends Task {
         final ArrayList<String> messages = new ArrayList<String>();
         SdkManager manager = SdkManager.createManager(sdkDir.getPath(), new ILogger() {
             @Override
-            public void error(Throwable t, String errorFormat, Object... args) {
+            public void error(@Nullable Throwable t, @Nullable String errorFormat,
+                    Object... args) {
                 if (errorFormat != null) {
                     messages.add(String.format("Error: " + errorFormat, args));
                 }

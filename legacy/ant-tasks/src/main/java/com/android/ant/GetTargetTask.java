@@ -18,6 +18,7 @@ package com.android.ant;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.IAndroidTarget.IOptionalLibrary;
@@ -120,7 +121,8 @@ public class GetTargetTask extends Task {
         final ArrayList<String> messages = new ArrayList<String>();
         SdkManager manager = SdkManager.createManager(sdkDir.getPath(), new ILogger() {
             @Override
-            public void error(Throwable t, String errorFormat, Object... args) {
+            public void error(@Nullable Throwable t, @Nullable String errorFormat,
+                    Object... args) {
                 if (errorFormat != null) {
                     messages.add(String.format("Error: " + errorFormat, args));
                 }
