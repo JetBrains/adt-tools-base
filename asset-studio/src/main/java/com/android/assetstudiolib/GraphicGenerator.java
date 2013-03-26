@@ -17,6 +17,7 @@
 package com.android.assetstudiolib;
 
 import com.android.resources.Density;
+import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
 
 import java.awt.image.BufferedImage;
@@ -26,6 +27,7 @@ import java.io.InputStream;
 import java.net.JarURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -277,8 +279,14 @@ public abstract class GraphicGenerator {
                         GraphicGenerator.class.getClassLoader().getResources(pathPrefix);
                 if (en.hasMoreElements()) {
                     url = en.nextElement();
-                    JarURLConnection urlConn = (JarURLConnection)(url.openConnection());
-                    zipFile = urlConn.getJarFile();
+                    URLConnection urlConnection = url.openConnection();
+                    if (urlConnection instanceof JarURLConnection) {
+                        JarURLConnection urlConn = (JarURLConnection)(urlConnection);
+                        zipFile = urlConn.getJarFile();
+                    } else if ("file".equals(url.getProtocol())) { //$NON-NLS-1$
+                        File directory = new File(url.getPath());
+                        return Lists.newArrayList(directory.list()).iterator();
+                    }
                 }
             }
             Enumeration<? extends ZipEntry> enumeration = zipFile.entries();
