@@ -24,7 +24,8 @@ public enum UiMode implements ResourceEnum {
     NORMAL("", "Normal"),
     CAR("car", "Car Dock"),
     DESK("desk", "Desk Dock"),
-    TELEVISION("television", "Television");
+    TELEVISION("television", "Television"),
+    APPLIANCE("appliance", "Appliance");
 
     private final String mValue;
     private final String mDisplayValue;
