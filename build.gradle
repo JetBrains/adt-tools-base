@@ -61,7 +61,7 @@ subprojects { Project project ->
         hidden "com.google.code.findbugs:findbugs:2.0.1"
     }
 
-    version = getVersion(project, '21.2')
+    version = getVersion(project, '22.0')
 
     project.ext.sonatypeUsername = project.hasProperty('sonatypeUsername') ? sonatypeUsername : ""
     project.ext.sonatypePassword = project.hasProperty('sonatypePassword') ? sonatypePassword : ""
