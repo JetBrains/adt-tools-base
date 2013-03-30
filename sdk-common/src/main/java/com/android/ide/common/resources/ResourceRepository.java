@@ -60,7 +60,7 @@ import java.util.TreeSet;
  * {@link #getResourceFolder(IAbstractFolder)} and {@link #getSourceFiles(ResourceType, String, FolderConfiguration)}
  * give access to the folders and files of the resource folder.
  *
- * {@link #getResources(ResourceType)} gives access to the resources directly.
+ * {@link #getResourceItemsOfType(ResourceType)} gives access to the resources directly.
  *
  */
 public abstract class ResourceRepository {
@@ -80,8 +80,6 @@ public abstract class ResourceRepository {
     private final boolean mFrameworkRepository;
     private boolean mCleared = true;
     private boolean mInitializing = false;
-
-    protected final IntArrayWrapper mWrapper = new IntArrayWrapper(null);
 
     /**
      * Makes a resource repository
@@ -666,6 +664,14 @@ public abstract class ResourceRepository {
         IAbstractFolder folder = getResFolder().getFolder(parentName);
         if (folder != null) {
             ResourceFolder resourceFolder = getResourceFolder(folder);
+            if (resourceFolder == null) {
+                FolderConfiguration configForFolder = FolderConfiguration
+                        .getConfigForFolder(parentName);
+                if (configForFolder != null) {
+                    resourceFolder = add(ResourceFolderType.getFolderType(parentName),
+                            configForFolder, folder);
+                }
+            }
             if (resourceFolder != null) {
                 ResourceFile resourceFile = resourceFolder.getFile(file.getName());
                 if (resourceFile != null) {
@@ -824,8 +830,20 @@ public abstract class ResourceRepository {
         Map<String, ResourceItem> map = mResourceMap.get(type);
         if (map != null) {
             Collection<ResourceItem> values = map.values();
+            List<ResourceItem> toDelete = null;
             for (ResourceItem item : values) {
                 item.removeFile(file);
+                if (item.hasNoSourceFile()) {
+                    if (toDelete == null) {
+                        toDelete = new ArrayList<ResourceItem>(values.size());
+                    }
+                    toDelete.add(item);
+                }
+            }
+            if (toDelete != null) {
+                for (ResourceItem item : toDelete) {
+                    map.remove(item.getName());
+                }
             }
         }
     }
@@ -860,7 +878,6 @@ public abstract class ResourceRepository {
 
         return map;
     }
-
 
     /**
      * Cleans up the repository of resource items that have no source file anymore.
