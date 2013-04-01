@@ -140,7 +140,7 @@ public class ResourceItem implements Comparable<ResourceItem> {
      * @return
      */
     protected boolean hasNoSourceFile() {
-        return mFiles.size() == 0;
+        return mFiles.isEmpty();
     }
 
     /**
