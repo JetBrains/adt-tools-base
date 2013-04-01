@@ -31,8 +31,6 @@ import java.util.List;
  * This is a representation of the resource, not of its value(s). It gives access to all
  * the source files that generate this particular resource which then can be used to access
  * the actual value(s).
- *
- * @see ResourceFile#getResources(ResourceType, ResourceRepository)
  */
 public class ResourceItem implements Comparable<ResourceItem> {
 

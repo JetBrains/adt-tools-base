@@ -565,7 +565,7 @@ public abstract class ResourceRepository {
             if (t == ResourceType.ID) {
                 continue;
             }
-            ResourceFile match = getMatchingFile(name, type, config);
+            ResourceFile match = getMatchingFile(name, t, config);
             if (match != null) {
                 return match;
             }
