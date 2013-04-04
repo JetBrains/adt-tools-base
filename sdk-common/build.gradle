@@ -6,11 +6,7 @@ dependencies {
 
     testCompile 'junit:junit:3.8.1'
     testCompile project(':sdklib').sourceSets.test.output
-}
-
-sourceSets {
-    main.resources.srcDir 'src/main/java'
-    test.resources.srcDir 'src/test/java'
+    testCompile project(':testutils')
 }
 
 uploadArchives {

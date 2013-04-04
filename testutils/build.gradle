@@ -1,5 +1,5 @@
 group = 'com.android.tools'
-archivesBaseName = 'sdktestutils'
+archivesBaseName = 'testutils'
 
 dependencies {
     compile project(':common')
