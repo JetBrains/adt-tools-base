@@ -16,12 +16,13 @@
 
 package com.android.sdklib.internal.build;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilterOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.security.DigestOutputStream;
@@ -161,7 +162,7 @@ public class SignedJarBuilder {
      */
     public SignedJarBuilder(OutputStream out, PrivateKey key, X509Certificate certificate)
             throws IOException, NoSuchAlgorithmException {
-        mOutputJar = new JarOutputStream(out);
+        mOutputJar = new JarOutputStream(new BufferedOutputStream(out));
         mOutputJar.setLevel(9);
         mKey = key;
         mCertificate = certificate;
