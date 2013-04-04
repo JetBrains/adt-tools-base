@@ -668,8 +668,10 @@ public abstract class ResourceRepository {
                 FolderConfiguration configForFolder = FolderConfiguration
                         .getConfigForFolder(parentName);
                 if (configForFolder != null) {
-                    resourceFolder = add(ResourceFolderType.getFolderType(parentName),
-                            configForFolder, folder);
+                    ResourceFolderType folderType = ResourceFolderType.getFolderType(parentName);
+                    if (folderType != null) {
+                        resourceFolder = add(folderType, configForFolder, folder);
+                    }
                 }
             }
             if (resourceFolder != null) {
