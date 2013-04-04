@@ -358,6 +358,34 @@ public class ResourceRepositoryTest extends TestCase {
         assertTrue(mRepository.hasResourceItem("@layout/layout6"));
     }
 
+    public void testFindResourceFile() throws Exception {
+        assertTrue(mRepository.hasResourceItem("@layout/layout1"));
+        ResourceItem item = mRepository.getResourceItem(ResourceType.LAYOUT, "layout1");
+        assertNotNull(item);
+        List<ResourceFile> sourceFileList = item.getSourceFileList();
+        assertNotNull(sourceFileList);
+        assertTrue(!sourceFileList.isEmpty());
+        ResourceFile first = sourceFileList.get(0);
+        IAbstractFile abstractFile = first.getFile();
+        assertNotNull(abstractFile);
+        assertTrue(abstractFile instanceof File);
+        File f = (File) abstractFile;
+        assertSame(first, mRepository.findResourceFile(f));
+        assertSame(first, mRepository.findResourceFile(new File(f.getPath())));
+
+        File file = new File(f.getParentFile().getParentFile(), "layout" +
+                File.separator + "layout2.xml");
+        ResourceFile resourceFile = mRepository.findResourceFile(file);
+        assertNotNull(resourceFile);
+
+        // Invalid paths
+        assertNull(mRepository.findResourceFile(file.getParentFile()));
+        assertNull(mRepository.findResourceFile(file.getParentFile().getParentFile()));
+        assertNull(mRepository.findResourceFile(file.getParentFile().getParentFile().
+                getParentFile()));
+        assertNull(mRepository.findResourceFile(new File("/tmp")));
+    }
+
     private static class TestResourceRepository extends ResourceRepository {
         private TestResourceRepository(@NonNull IAbstractFolder resFolder,
                 boolean isFrameworkRepository) {
