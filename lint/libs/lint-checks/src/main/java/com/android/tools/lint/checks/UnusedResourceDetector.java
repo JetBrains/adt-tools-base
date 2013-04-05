@@ -19,6 +19,7 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_REF_PREFIX;
+import static com.android.SdkConstants.ATTR_TYPE;
 import static com.android.SdkConstants.DOT_GIF;
 import static com.android.SdkConstants.DOT_JPG;
 import static com.android.SdkConstants.DOT_PNG;
@@ -387,7 +388,10 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                     }
                     String type = item.getTagName();
                     if (type.equals(TAG_ITEM)) {
-                        type = RESOURCE_CLZ_ID;
+                        type = item.getAttribute(ATTR_TYPE);
+                        if (type == null || type.isEmpty()) {
+                            type = RESOURCE_CLZ_ID;
+                        }
                     } else if (type.equals("declare-styleable")) {   //$NON-NLS-1$
                         type = RESOURCE_CLR_STYLEABLE;
                     } else if (type.contains("array")) {             //$NON-NLS-1$
