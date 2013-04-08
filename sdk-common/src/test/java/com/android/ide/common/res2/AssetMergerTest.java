@@ -24,7 +24,6 @@ import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
 public class AssetMergerTest extends BaseTestCase {
@@ -201,7 +200,8 @@ public class AssetMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "assetOut"));
 
         // write the content of the resource merger.
-        assetMerger.writeDataFolder(resFolder);
+        MergedAssetWriter writer = new MergedAssetWriter(resFolder);
+        assetMerger.mergeData(writer);
 
         // Check the content by checking the colors. All files should be green
         checkImageColor(new File(resFolder, "untouched.png"), (int) 0xFF00FF00);
@@ -362,12 +362,13 @@ public class AssetMergerTest extends BaseTestCase {
     }
 
     private static File getWrittenResources() throws DuplicateDataException, IOException,
-            ExecutionException, InterruptedException {
+            MergeConsumer.ConsumerException {
         AssetMerger assetMerger = getAssetMerger();
 
         File folder = Files.createTempDir();
 
-        assetMerger.writeDataFolder(folder);
+        MergedAssetWriter writer = new MergedAssetWriter(folder);
+        assetMerger.mergeData(writer);
 
         return folder;
     }

@@ -18,7 +18,6 @@ package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
-import com.android.ide.common.internal.WaitableExecutor;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
@@ -45,7 +44,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -68,42 +66,6 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     private final List<S> mDataSets = Lists.newArrayList();
 
     public DataMerger() { }
-
-    /**
-     * Post write processing.
-     *
-     * This can be used for delayed file writing.
-     *
-     * @param rootFolder the root of the output.
-     *
-     * @throws IOException
-     */
-    protected abstract void postWriteDataFolder(File rootFolder) throws IOException;
-
-    /**
-     * Removes an data Item.
-     *
-     * This method can optionally receive the item that replaces the removed item in case
-     * processing can be optimized. the replacement item has already been written.
-     *
-     * @param rootFolder
-     * @param item
-     * @param replacedBy
-     */
-    protected abstract void removeItem(File rootFolder, I item, I replacedBy);
-
-    /**
-     * Writes a given DataItem to a given root folder.
-     *
-     * @param rootFolder the root res folder
-     * @param item the resource to add.
-     * @param executor an executor
-     * @throws java.io.IOException
-     */
-    protected abstract void writeItem(@NonNull final File rootFolder,
-                                      @NonNull final I item,
-                                      @NonNull WaitableExecutor executor) throws IOException;
-
 
     protected abstract S createFromXml(Node node);
 
@@ -176,18 +138,17 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     }
 
     /**
-     * Writes the result of the merge to a destination data folder.
+     * Merges the data into a given consumer.
      *
-     * @param rootFolder the folder to write the resources in.
+     * @param consumer the consumer of the merge.
      * @throws java.io.IOException
      * @throws DuplicateDataException
-     * @throws ExecutionException
-     * @throws InterruptedException
+     * @throws MergeConsumer.ConsumerException
      */
-    public void writeDataFolder(@NonNull File rootFolder)
-            throws IOException, DuplicateDataException, ExecutionException, InterruptedException {
+    public void mergeData(@NonNull MergeConsumer<I> consumer)
+            throws IOException, DuplicateDataException, MergeConsumer.ConsumerException {
 
-        WaitableExecutor executor = new WaitableExecutor();
+        consumer.start();
 
         // get all the items keys.
         Set<String> dataItemKeys = Sets.newHashSet();
@@ -253,12 +214,11 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                 // nothing to write? delete only then.
                 assert previouslyWritten.isRemoved();
 
-                removeItem(rootFolder, previouslyWritten, null /*replacedBy*/);
+                consumer.removeItem(previouslyWritten, null /*replacedBy*/);
 
             } else if (previouslyWritten == null || previouslyWritten == toWrite) {
                 // easy one: new or updated res
-
-                writeItem(rootFolder, toWrite, executor);
+                consumer.addItem(toWrite);
             } else {
                 // replacement of a resource by another.
 
@@ -266,15 +226,13 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                 toWrite.setTouched();
 
                 // write the new value
-                writeItem(rootFolder, toWrite, executor);
-
-                removeItem(rootFolder, previouslyWritten, toWrite);
+                consumer.addItem(toWrite);
+                // and remove the old one
+                consumer.removeItem(previouslyWritten, toWrite);
             }
         }
 
-        postWriteDataFolder(rootFolder);
-
-        executor.waitForTasks();
+        consumer.end();
     }
 
     /**
