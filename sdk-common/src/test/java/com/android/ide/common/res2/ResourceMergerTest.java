@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -280,7 +279,8 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
 
         // write the content of the resource merger.
-        resourceMerger.writeDataFolder(resFolder, null /*aaptRunner*/);
+        MergedResourceWriter writer = new MergedResourceWriter(resFolder, null /*aaptRunner*/);
+        resourceMerger.mergeData(writer);
 
         // Check the content.
         checkImageColor(new File(resFolder, "drawable" + File.separator + "touched.png"),
@@ -393,7 +393,8 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
 
         // write the content of the resource merger.
-        resourceMerger.writeDataFolder(resFolder, null /*aaptRunner*/);
+        MergedResourceWriter writer = new MergedResourceWriter(resFolder, null /*aaptRunner*/);
+        resourceMerger.mergeData(writer);
 
         // Check the content.
         // values/values.xml
@@ -469,7 +470,8 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
 
         // write the content of the resource merger.
-        resourceMerger.writeDataFolder(resFolder, null /*aaptRunner*/);
+        MergedResourceWriter writer = new MergedResourceWriter(resFolder, null /*aaptRunner*/);
+        resourceMerger.mergeData(writer);
 
         // Check the content.
         // values/values.xml
@@ -567,7 +569,8 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
 
         // write the content of the resource merger.
-        resourceMerger.writeDataFolder(resFolder, null /*aaptRunner*/);
+        MergedResourceWriter writer = new MergedResourceWriter(resFolder, null /*aaptRunner*/);
+        resourceMerger.mergeData(writer);
 
         // deleted layout/file_replaced_by_alias.xml
         assertFalse(new File(resFolder, "layout" + File.separator + "file_replaced_by_alias.xml")
@@ -731,12 +734,13 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     private static File getWrittenResources() throws DuplicateDataException, IOException,
-            ExecutionException, InterruptedException {
+            MergeConsumer.ConsumerException {
         ResourceMerger resourceMerger = getResourceMerger();
 
         File folder = Files.createTempDir();
 
-        resourceMerger.writeDataFolder(folder, null /*aaptRunner*/);
+        MergedResourceWriter writer = new MergedResourceWriter(folder, null /*aaptRunner*/);
+        resourceMerger.mergeData(writer);
 
         return folder;
     }
