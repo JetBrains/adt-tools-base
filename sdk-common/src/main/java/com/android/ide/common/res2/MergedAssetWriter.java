@@ -17,6 +17,7 @@
 package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.io.Files;
 
 import java.io.File;
@@ -32,7 +33,7 @@ public class MergedAssetWriter extends MergeWriter<AssetItem> {
     }
 
     @Override
-    public void addItem(final AssetItem item) throws ConsumerException {
+    public void addItem(@NonNull final AssetItem item) throws ConsumerException {
         // Only write it if the state is TOUCHED.
         if (item.isTouched()) {
             getExecutor().execute(new Callable<Void>() {
@@ -59,7 +60,7 @@ public class MergedAssetWriter extends MergeWriter<AssetItem> {
     }
 
     @Override
-    public void removeItem(AssetItem removedItem, AssetItem replacedBy)
+    public void removeItem(@NonNull AssetItem removedItem, @Nullable AssetItem replacedBy)
             throws ConsumerException {
         if (replacedBy == null) {
             File removedFile = new File(getRootFolder(), removedItem.getName());

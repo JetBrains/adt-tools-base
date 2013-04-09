@@ -39,8 +39,6 @@ import java.util.regex.Pattern;
 
 public class ResourceMergerTest extends BaseTestCase {
 
-    private static ResourceMerger sResourceMerger = null;
-
     public void testMergeByCount() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
@@ -54,6 +52,7 @@ public class ResourceMergerTest extends BaseTestCase {
                 "drawable/icon",
                 "drawable-ldpi/icon",
                 "drawable/icon2",
+                "drawable/patch",
                 "raw/foo",
                 "layout/main",
                 "layout/layout_ref",
@@ -149,7 +148,7 @@ public class ResourceMergerTest extends BaseTestCase {
         merger.writeBlobTo(folder);
 
         ResourceMerger loadedMerger = new ResourceMerger();
-        loadedMerger.loadFromBlob(folder);
+        loadedMerger.loadFromBlob(folder, true /*incrementalState*/);
 
         compareResourceMaps(merger, loadedMerger, true /*full compare*/);
     }
@@ -163,7 +162,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File fakeRoot = getMergedBlobFolder(root);
 
         ResourceMerger resourceMerger = new ResourceMerger();
-        resourceMerger.loadFromBlob(fakeRoot);
+        resourceMerger.loadFromBlob(fakeRoot, true /*incrementalState*/);
         checkSourceFolders(resourceMerger);
 
         List<ResourceSet> sets = resourceMerger.getDataSets();
@@ -183,7 +182,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File root = getIncMergeRoot("basicFiles");
         File fakeRoot = getMergedBlobFolder(root);
         ResourceMerger resourceMerger = new ResourceMerger();
-        resourceMerger.loadFromBlob(fakeRoot);
+        resourceMerger.loadFromBlob(fakeRoot, true /*incrementalState*/);
         checkSourceFolders(resourceMerger);
 
         List<ResourceSet> sets = resourceMerger.getDataSets();
@@ -280,7 +279,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         // write the content of the resource merger.
         MergedResourceWriter writer = new MergedResourceWriter(resFolder, null /*aaptRunner*/);
-        resourceMerger.mergeData(writer);
+        resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
         checkImageColor(new File(resFolder, "drawable" + File.separator + "touched.png"),
@@ -300,7 +299,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File root = getIncMergeRoot("basicValues");
         File fakeRoot = getMergedBlobFolder(root);
         ResourceMerger resourceMerger = new ResourceMerger();
-        resourceMerger.loadFromBlob(fakeRoot);
+        resourceMerger.loadFromBlob(fakeRoot, true /*incrementalState*/);
         checkSourceFolders(resourceMerger);
 
         List<ResourceSet> sets = resourceMerger.getDataSets();
@@ -394,7 +393,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         // write the content of the resource merger.
         MergedResourceWriter writer = new MergedResourceWriter(resFolder, null /*aaptRunner*/);
-        resourceMerger.mergeData(writer);
+        resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
         // values/values.xml
@@ -417,7 +416,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File root = getIncMergeRoot("basicValues2");
         File fakeRoot = getMergedBlobFolder(root);
         ResourceMerger resourceMerger = new ResourceMerger();
-        resourceMerger.loadFromBlob(fakeRoot);
+        resourceMerger.loadFromBlob(fakeRoot, true /*incrementalState*/);
         checkSourceFolders(resourceMerger);
 
         List<ResourceSet> sets = resourceMerger.getDataSets();
@@ -471,7 +470,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         // write the content of the resource merger.
         MergedResourceWriter writer = new MergedResourceWriter(resFolder, null /*aaptRunner*/);
-        resourceMerger.mergeData(writer);
+        resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
         // values/values.xml
@@ -485,7 +484,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File root = getIncMergeRoot("filesVsValues");
         File fakeRoot = getMergedBlobFolder(root);
         ResourceMerger resourceMerger = new ResourceMerger();
-        resourceMerger.loadFromBlob(fakeRoot);
+        resourceMerger.loadFromBlob(fakeRoot, true /*incrementalState*/);
         checkSourceFolders(resourceMerger);
 
         List<ResourceSet> sets = resourceMerger.getDataSets();
@@ -570,7 +569,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         // write the content of the resource merger.
         MergedResourceWriter writer = new MergedResourceWriter(resFolder, null /*aaptRunner*/);
-        resourceMerger.mergeData(writer);
+        resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // deleted layout/file_replaced_by_alias.xml
         assertFalse(new File(resFolder, "layout" + File.separator + "file_replaced_by_alias.xml")
@@ -608,7 +607,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         // reload it
         ResourceMerger loadedMerger = new ResourceMerger();
-        loadedMerger.loadFromBlob(folder);
+        loadedMerger.loadFromBlob(folder, true /*incrementalState*/);
 
         String expected = merger1.toString();
         String actual = loadedMerger.toString();
@@ -712,25 +711,23 @@ public class ResourceMergerTest extends BaseTestCase {
 
     private static ResourceMerger getResourceMerger()
             throws DuplicateDataException, IOException {
-        if (sResourceMerger == null) {
-            File root = TestUtils.getRoot("resources", "baseMerge");
+        File root = TestUtils.getRoot("resources", "baseMerge");
 
-            ResourceSet res = ResourceSetTest.getBaseResourceSet();
+        ResourceSet res = ResourceSetTest.getBaseResourceSet();
 
-            RecordingLogger logger = new RecordingLogger();
+        RecordingLogger logger = new RecordingLogger();
 
-            ResourceSet overlay = new ResourceSet("overlay");
-            overlay.addSource(new File(root, "overlay"));
-            overlay.loadFromFiles(logger);
+        ResourceSet overlay = new ResourceSet("overlay");
+        overlay.addSource(new File(root, "overlay"));
+        overlay.loadFromFiles(logger);
 
-            checkLogger(logger);
+        checkLogger(logger);
 
-            sResourceMerger = new ResourceMerger();
-            sResourceMerger.addDataSet(res);
-            sResourceMerger.addDataSet(overlay);
-        }
+        ResourceMerger resourceMerger = new ResourceMerger();
+        resourceMerger.addDataSet(res);
+        resourceMerger.addDataSet(overlay);
 
-        return sResourceMerger;
+        return resourceMerger;
     }
 
     private static File getWrittenResources() throws DuplicateDataException, IOException,
@@ -740,7 +737,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File folder = Files.createTempDir();
 
         MergedResourceWriter writer = new MergedResourceWriter(folder, null /*aaptRunner*/);
-        resourceMerger.mergeData(writer);
+        resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         return folder;
     }

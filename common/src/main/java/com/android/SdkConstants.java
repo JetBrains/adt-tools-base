@@ -718,6 +718,7 @@ public final class SdkConstants {
     public static final String ATTR_PARENT = "parent";                 //$NON-NLS-1$
     public static final String ATTR_TRANSLATABLE = "translatable";     //$NON-NLS-1$
     public static final String ATTR_COLOR = "color";                   //$NON-NLS-1$
+    public static final String ATTR_VALUE = "value";                   //$NON-NLS-1$
 
     // Attributes: Layout
     public static final String ATTR_LAYOUT_RESOURCE_PREFIX = "layout_";//$NON-NLS-1$
@@ -961,8 +962,13 @@ public final class SdkConstants {
     public static final String ID_PREFIX = "@id/";                      //$NON-NLS-1$
     public static final String DRAWABLE_PREFIX = "@drawable/";          //$NON-NLS-1$
     public static final String STRING_PREFIX = "@string/";              //$NON-NLS-1$
-    public static final String ANDROID_STRING_PREFIX = "@android:string/"; //$NON-NLS-1$
+
     public static final String ANDROID_LAYOUT_RESOURCE_PREFIX = "@android:layout/"; //$NON-NLS-1$
+    public static final String ANDROID_STYLE_RESOURCE_PREFIX = "@android:style/";   //$NON-NLS-1$
+    public static final String ANDROID_NEW_ID_PREFIX = "@android:+id/";             //$NON-NLS-1$
+    public static final String ANDROID_ID_PREFIX = "@android:id/";                  //$NON-NLS-1$
+    public static final String ANDROID_DRAWABLE_PREFIX = "@android:drawable/";      //$NON-NLS-1$
+    public static final String ANDROID_STRING_PREFIX = "@android:string/";          //$NON-NLS-1$
 
     public static final String RESOURCE_CLZ_ID = "id";                  //$NON-NLS-1$
     public static final String RESOURCE_CLZ_COLOR = "color";            //$NON-NLS-1$
@@ -971,7 +977,6 @@ public final class SdkConstants {
     public static final String RESOURCE_CLR_STYLEABLE = "styleable";    //$NON-NLS-1$
     public static final String NULL_RESOURCE = "@null";                 //$NON-NLS-1$
     public static final String TRANSPARENT_COLOR = "@android:color/transparent";      //$NON-NLS-1$
-    public static final String ANDROID_STYLE_RESOURCE_PREFIX = "@android:style/";     //$NON-NLS-1$
     public static final String REFERENCE_STYLE = "style/";                     //$NON-NLS-1$
     public static final String PREFIX_ANDROID = "android:";                    //$NON-NLS-1$
 

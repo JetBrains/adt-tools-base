@@ -23,6 +23,7 @@ import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ScreenOrientation;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Iterators;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -78,36 +79,14 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      */
     @Nullable
     public static FolderConfiguration getConfig(@NonNull String[] folderSegments) {
-        FolderConfiguration config = new FolderConfiguration();
-
-        // we are going to loop through the segments, and match them with the first
-        // available qualifier. If the segment doesn't match we try with the next qualifier.
-        // Because the order of the qualifier is fixed, we do not reset the first qualifier
-        // after each successful segment.
-        // If we run out of qualifier before processing all the segments, we fail.
-
-        int qualifierIndex = 0;
-        int qualifierCount = DEFAULT_QUALIFIERS.length;
-
-        for (int i = 1 ; i < folderSegments.length; i++) {
-            String seg = folderSegments[i];
-            if (seg.length() > 0) {
-                while (qualifierIndex < qualifierCount &&
-                        DEFAULT_QUALIFIERS[qualifierIndex].checkAndSet(seg, config) == false) {
-                    qualifierIndex++;
-                }
-
-                // if we reached the end of the qualifier we didn't find a matching qualifier.
-                if (qualifierIndex == qualifierCount) {
-                    return null;
-                }
-
-            } else {
-                return null;
-            }
+        Iterator<String> iterator = Iterators.forArray(folderSegments);
+        if (iterator.hasNext()) {
+            // Skip the first segment: it should be just the base folder, such as "values" or
+            // "layout"
+            iterator.next();
         }
 
-        return config;
+        return getConfigFromQualifiers(iterator);
     }
 
     /**
@@ -118,7 +97,40 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      * @see FolderConfiguration#getConfig(String[])
      */
     @Nullable
-    public static FolderConfiguration getConfig(@NonNull Iterable<String>folderSegments) {
+    public static FolderConfiguration getConfig(@NonNull Iterable<String> folderSegments) {
+        Iterator<String> iterator = folderSegments.iterator();
+        if (iterator.hasNext()) {
+            // Skip the first segment: it should be just the base folder, such as "values" or
+            // "layout"
+            iterator.next();
+        }
+
+        return getConfigFromQualifiers(iterator);
+    }
+
+    /**
+     * Creates a {@link FolderConfiguration} matching the qualifiers.
+     *
+     * @param qualifiers the qualifiers.
+     *
+     * @return a FolderConfiguration object, or null if the folder name isn't valid..
+     */
+    @Nullable
+    public static FolderConfiguration getConfigFromQualifiers(
+            @NonNull Iterable<String> qualifiers) {
+        return getConfigFromQualifiers(qualifiers.iterator());
+    }
+
+    /**
+     * Creates a {@link FolderConfiguration} matching the qualifiers.
+     *
+     * @param qualifiers An iterator on the qualifiers.
+     *
+     * @return a FolderConfiguration object, or null if the folder name isn't valid..
+     */
+    @Nullable
+    public static FolderConfiguration getConfigFromQualifiers(
+            @NonNull Iterator<String> qualifiers) {
         FolderConfiguration config = new FolderConfiguration();
 
         // we are going to loop through the segments, and match them with the first
@@ -130,17 +142,11 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         int qualifierIndex = 0;
         int qualifierCount = DEFAULT_QUALIFIERS.length;
 
-        Iterator<String> iterator = folderSegments.iterator();
-        if (iterator.hasNext()) {
-            // Skip the first segment: it should be just the base folder, such as "values" or
-            // "layout"
-            iterator.next();
-        }
-        while (iterator.hasNext()) {
-            String seg = iterator.next();
-            if (seg.length() > 0) {
+        while (qualifiers.hasNext()) {
+            String seg = qualifiers.next();
+            if (!seg.isEmpty()) {
                 while (qualifierIndex < qualifierCount &&
-                        DEFAULT_QUALIFIERS[qualifierIndex].checkAndSet(seg, config) == false) {
+                        !DEFAULT_QUALIFIERS[qualifierIndex].checkAndSet(seg, config)) {
                     qualifierIndex++;
                 }
 
@@ -198,7 +204,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         if (config != null) {
             for (int i = 0 ; i < INDEX_COUNT ; i++) {
                 ResourceQualifier q = config.mQualifiers[i];
-                if (nonFakeValuesOnly == false || q == null || q.hasFakeValue() == false) {
+                if (!nonFakeValuesOnly || q == null || !q.hasFakeValue()) {
                     mQualifiers[i] = q;
                 }
             }
@@ -245,7 +251,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      */
     public ResourceQualifier getInvalidQualifier() {
         for (int i = 0 ; i < INDEX_COUNT ; i++) {
-            if (mQualifiers[i] != null && mQualifiers[i].isValid() == false) {
+            if (mQualifiers[i] != null && !mQualifiers[i].isValid()) {
                 return mQualifiers[i];
             }
         }
@@ -599,7 +605,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
                 ResourceQualifier qualifier = mQualifiers[i];
                 ResourceQualifier fcQualifier = fc.mQualifiers[i];
                 if (qualifier != null) {
-                    if (qualifier.equals(fcQualifier) == false) {
+                    if (!qualifier.equals(fcQualifier)) {
                         return false;
                     }
                 } else if (fcQualifier != null) {
@@ -640,7 +646,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         for (ResourceQualifier qualifier : mQualifiers) {
             if (qualifier != null) {
                 String segment = qualifier.getFolderSegment();
-                if (segment != null && segment.length() > 0) {
+                if (segment != null && !segment.isEmpty()) {
                     result.append(SdkConstants.RES_QUALIFIER_SEP);
                     result.append(segment);
                 }
@@ -763,7 +769,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      *
      * @return an item from the given list of {@link Configurable} or null.
      *
-     * @see http://d.android.com/guide/topics/resources/resources-i18n.html#best-match
+     * See http://d.android.com/guide/topics/resources/resources-i18n.html#best-match
      */
     public Configurable findMatchingConfigurable(List<? extends Configurable> configurables) {
         //
@@ -778,9 +784,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
 
         // 1: eliminate resources that contradict
         ArrayList<Configurable> matchingConfigurables = new ArrayList<Configurable>();
-        for (int i = 0 ; i < configurables.size(); i++) {
-            Configurable res = configurables.get(i);
-
+        for (Configurable res : configurables) {
             if (res.getConfiguration().isMatchFor(this)) {
                 matchingConfigurables.add(res);
             }
@@ -789,7 +793,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         // if there is only one match, just take it
         if (matchingConfigurables.size() == 1) {
             return matchingConfigurables.get(0);
-        } else if (matchingConfigurables.size() == 0) {
+        } else if (matchingConfigurables.isEmpty()) {
             return null;
         }
 
@@ -836,7 +840,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
                         // this resources has no qualifier of this type: rejected.
                         matchingConfigurables.remove(configurable);
                     } else if (referenceQualifier != null && bestMatch != null &&
-                            bestMatch.equals(qualifier) == false) {
+                            !bestMatch.equals(qualifier)) {
                         // there's a reference qualifier and there is a better match for it than
                         // this resource, so we reject it.
                         matchingConfigurables.remove(configurable);
@@ -857,7 +861,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         // Because we accept resources whose configuration have qualifiers where the reference
         // configuration doesn't, we can end up with more than one match. In this case, we just
         // take the first one.
-        if (matchingConfigurables.size() == 0) {
+        if (matchingConfigurables.isEmpty()) {
             return null;
         }
         return matchingConfigurables.get(0);
@@ -886,7 +890,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
 
             // it's only a non match if both qualifiers are non-null, and they don't match.
             if (testQualifier != null && referenceQualifier != null &&
-                        testQualifier.isMatchFor(referenceQualifier) == false) {
+                    !testQualifier.isMatchFor(referenceQualifier)) {
                 return false;
             }
         }

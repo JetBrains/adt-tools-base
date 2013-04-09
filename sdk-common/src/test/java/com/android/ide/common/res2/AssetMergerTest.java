@@ -73,7 +73,7 @@ public class AssetMergerTest extends BaseTestCase {
         merger.writeBlobTo(folder);
 
         AssetMerger loadedMerger = new AssetMerger();
-        loadedMerger.loadFromBlob(folder);
+        loadedMerger.loadFromBlob(folder, true /*incrementalState*/);
 
         compareResourceMaps(merger, loadedMerger, true /*full compare*/);
     }
@@ -87,7 +87,7 @@ public class AssetMergerTest extends BaseTestCase {
         File fakeRoot = getMergedBlobFolder(root);
 
         AssetMerger assetMerger = new AssetMerger();
-        assetMerger.loadFromBlob(fakeRoot);
+        assetMerger.loadFromBlob(fakeRoot, true /*incrementalState*/);
         checkSourceFolders(assetMerger);
 
         List<AssetSet> sets = assetMerger.getDataSets();
@@ -107,7 +107,7 @@ public class AssetMergerTest extends BaseTestCase {
         File root = getIncMergeRoot("basicFiles");
         File fakeRoot = getMergedBlobFolder(root);
         AssetMerger assetMerger = new AssetMerger();
-        assetMerger.loadFromBlob(fakeRoot);
+        assetMerger.loadFromBlob(fakeRoot, true /*incrementalState*/);
         checkSourceFolders(assetMerger);
 
         List<AssetSet> sets = assetMerger.getDataSets();
@@ -201,7 +201,7 @@ public class AssetMergerTest extends BaseTestCase {
 
         // write the content of the resource merger.
         MergedAssetWriter writer = new MergedAssetWriter(resFolder);
-        assetMerger.mergeData(writer);
+        assetMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content by checking the colors. All files should be green
         checkImageColor(new File(resFolder, "untouched.png"), (int) 0xFF00FF00);
@@ -235,7 +235,7 @@ public class AssetMergerTest extends BaseTestCase {
 
         // reload it
         AssetMerger loadedMerger = new AssetMerger();
-        loadedMerger.loadFromBlob(folder);
+        loadedMerger.loadFromBlob(folder, true /*incrementalState*/);
 
         String expected = merger1.toString();
         String actual = loadedMerger.toString();
@@ -368,7 +368,7 @@ public class AssetMergerTest extends BaseTestCase {
         File folder = Files.createTempDir();
 
         MergedAssetWriter writer = new MergedAssetWriter(folder);
-        assetMerger.mergeData(writer);
+        assetMerger.mergeData(writer, false /*doCleanUp*/);
 
         return folder;
     }

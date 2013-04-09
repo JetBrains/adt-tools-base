@@ -21,6 +21,7 @@ import static com.android.SdkConstants.RES_QUALIFIER_SEP;
 import static com.android.SdkConstants.TAG_RESOURCES;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.ide.common.internal.AaptRunner;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.resources.ResourceFolderType;
@@ -49,6 +50,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
     private static final String FN_VALUES_XML = "values.xml";
 
+    @Nullable
     private final AaptRunner mAaptRunner;
 
     /**
@@ -63,7 +65,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
      */
     private Set<String> mQualifierWithDeletedValues;
 
-    public MergedResourceWriter(@NonNull File rootFolder, AaptRunner aaptRunner) {
+    public MergedResourceWriter(@NonNull File rootFolder, @Nullable AaptRunner aaptRunner) {
         super(rootFolder);
         mAaptRunner = aaptRunner;
     }
@@ -84,7 +86,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     }
 
     @Override
-    public void addItem(final ResourceItem item) throws ConsumerException {
+    public void addItem(@NonNull final ResourceItem item) throws ConsumerException {
         ResourceFile.FileType type = item.getSource().getType();
 
         if (type == ResourceFile.FileType.MULTI) {
@@ -93,12 +95,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
             // just add the node to write to the map based on the qualifier.
             // We'll figure out later if the files needs to be written or (not)
 
-            String qualifier = item.getSource().getQualifiers();
-            if (qualifier == null) {
-                qualifier = "";
-            }
-
-            mValuesResMap.put(qualifier, item);
+            mValuesResMap.put(item.getSource().getQualifiers(), item);
         } else {
             // This is a single value file.
             // Only write it if the state is TOUCHED.
@@ -136,7 +133,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     }
 
     @Override
-    public void removeItem(ResourceItem removedItem, ResourceItem replacedBy)
+    public void removeItem(@NonNull ResourceItem removedItem, @Nullable ResourceItem replacedBy)
             throws ConsumerException {
         ResourceFile.FileType removedType = removedItem.getSource().getType();
         ResourceFile.FileType replacedType = replacedBy != null ?

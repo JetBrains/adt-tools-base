@@ -16,8 +16,11 @@
 
 package com.android.ide.common.res2;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 /**
- * A consumer of merges. Used with {@link DataMerger#mergeData(MergeConsumer)}.
+ * A consumer of merges. Used with {@link DataMerger#mergeData(MergeConsumer, boolean)}.
  */
 public interface MergeConsumer<I extends DataItem> {
 
@@ -40,13 +43,14 @@ public interface MergeConsumer<I extends DataItem> {
     void end() throws ConsumerException;
 
     /**
-     * Adds a new item.
+     * Adds an item. The item may already be existing. Calling {@link DataItem#isTouched()} will
+     * indicate whether the item actually changed.
      *
      * @param item the new item.
      *
      * @throws ConsumerException
      */
-    void addItem(I item) throws ConsumerException;
+    void addItem(@NonNull I item) throws ConsumerException;
 
     /**
      * Removes an item. Optionally pass the item that will replace this one.
@@ -58,5 +62,5 @@ public interface MergeConsumer<I extends DataItem> {
      *
      * @throws ConsumerException
      */
-    void removeItem(I removedItem, I replacedBy) throws ConsumerException;
+    void removeItem(@NonNull I removedItem, @Nullable I replacedBy) throws ConsumerException;
 }

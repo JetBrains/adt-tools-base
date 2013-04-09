@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.ide.common.resources;
+package com.android.ide.common.res2;
 
-import static com.android.ide.common.resources.ValueResourceParser.escapeResourceString;
-import static com.android.ide.common.resources.ValueResourceParser.isEscaped;
-import static com.android.ide.common.resources.ValueResourceParser.unescapeResourceString;
+import static com.android.ide.common.res2.ValueXmlHelper.escapeResourceString;
+import static com.android.ide.common.res2.ValueXmlHelper.isEscaped;
+import static com.android.ide.common.res2.ValueXmlHelper.unescapeResourceString;
 
 import junit.framework.TestCase;
 
-public class ValueResourceParserTest extends TestCase {
+public class ValueXmlHelperTest extends TestCase {
 
     public void testEscapeStringShouldEscapeXmlSpecialCharacters() throws Exception {
         assertEquals("&lt;", escapeResourceString("<"));
