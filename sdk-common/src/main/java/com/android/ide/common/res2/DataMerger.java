@@ -141,107 +141,116 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
      * Merges the data into a given consumer.
      *
      * @param consumer the consumer of the merge.
+     * @param doCleanUp clean up the state to be able to do further incremental merges. If this
+     *                  is a one-shot merge, this can be false to improve performance.
      * @throws java.io.IOException
      * @throws DuplicateDataException
      * @throws MergeConsumer.ConsumerException
      */
-    public void mergeData(@NonNull MergeConsumer<I> consumer)
+    public void mergeData(@NonNull MergeConsumer<I> consumer, boolean doCleanUp)
             throws IOException, DuplicateDataException, MergeConsumer.ConsumerException {
 
         consumer.start();
 
-        // get all the items keys.
-        Set<String> dataItemKeys = Sets.newHashSet();
+        try {
+            // get all the items keys.
+            Set<String> dataItemKeys = Sets.newHashSet();
 
-        for (S dataSet : mDataSets) {
-            // quick check on duplicates in the resource set.
-            dataSet.checkItems();
-            ListMultimap<String, I> map = dataSet.getDataMap();
-            dataItemKeys.addAll(map.keySet());
-        }
-
-        // loop on all the data items.
-        for (String dataItemKey : dataItemKeys) {
-            // for each items, look in the data sets, starting from the end of the list.
-
-            I previouslyWritten = null;
-            I toWrite = null;
-
-            /*
-             * We are looking for what to write/delete: the last non deleted item, and the
-             * previously written one.
-             */
-
-            setLoop: for (int i = mDataSets.size() - 1 ; i >= 0 ; i--) {
-                S dataSet = mDataSets.get(i);
-
-                // look for the resource key in the set
-                ListMultimap<String, I> itemMap = dataSet.getDataMap();
-
-                List<I> items = itemMap.get(dataItemKey);
-                if (items.isEmpty()) {
-                    continue;
-                }
-
-                // The list can contain at max 2 items. One touched and one deleted.
-                // More than one deleted means there was more than one which isn't possible
-                // More than one touched means there is more than one and this isn't possible.
-                for (int ii = items.size() - 1 ; ii >= 0 ; ii--) {
-                    I item = items.get(ii);
-
-                    if (item.isWritten()) {
-                        assert previouslyWritten == null;
-                        previouslyWritten = item;
-                    }
-
-                    if (toWrite == null && !item.isRemoved()) {
-                        toWrite = item;
-                    }
-
-                    if (toWrite != null && previouslyWritten != null) {
-                        break setLoop;
-                    }
-                }
+            for (S dataSet : mDataSets) {
+                // quick check on duplicates in the resource set.
+                dataSet.checkItems();
+                ListMultimap<String, I> map = dataSet.getDataMap();
+                dataItemKeys.addAll(map.keySet());
             }
 
-            // done searching, we should at least have something.
-            assert previouslyWritten != null || toWrite != null;
+            // loop on all the data items.
+            for (String dataItemKey : dataItemKeys) {
+                // for each items, look in the data sets, starting from the end of the list.
 
-            // now need to handle, the type of each (single res file, multi res file), whether
-            // they are the same object or not, whether the previously written object was deleted.
+                I previouslyWritten = null;
+                I toWrite = null;
 
-            if (toWrite == null) {
-                // nothing to write? delete only then.
-                assert previouslyWritten.isRemoved();
+                /*
+                 * We are looking for what to write/delete: the last non deleted item, and the
+                 * previously written one.
+                 */
 
-                consumer.removeItem(previouslyWritten, null /*replacedBy*/);
+                setLoop: for (int i = mDataSets.size() - 1 ; i >= 0 ; i--) {
+                    S dataSet = mDataSets.get(i);
 
-            } else if (previouslyWritten == null || previouslyWritten == toWrite) {
-                // easy one: new or updated res
-                consumer.addItem(toWrite);
-            } else {
-                // replacement of a resource by another.
+                    // look for the resource key in the set
+                    ListMultimap<String, I> itemMap = dataSet.getDataMap();
 
-                // first force the writing of the new one.
-                toWrite.setTouched();
+                    List<I> items = itemMap.get(dataItemKey);
+                    if (items.isEmpty()) {
+                        continue;
+                    }
 
-                // write the new value
-                consumer.addItem(toWrite);
-                // and remove the old one
-                consumer.removeItem(previouslyWritten, toWrite);
+                    // The list can contain at max 2 items. One touched and one deleted.
+                    // More than one deleted means there was more than one which isn't possible
+                    // More than one touched means there is more than one and this isn't possible.
+                    for (int ii = items.size() - 1 ; ii >= 0 ; ii--) {
+                        I item = items.get(ii);
+
+                        if (item.isWritten()) {
+                            assert previouslyWritten == null;
+                            previouslyWritten = item;
+                        }
+
+                        if (toWrite == null && !item.isRemoved()) {
+                            toWrite = item;
+                        }
+
+                        if (toWrite != null && previouslyWritten != null) {
+                            break setLoop;
+                        }
+                    }
+                }
+
+                // done searching, we should at least have something.
+                assert previouslyWritten != null || toWrite != null;
+
+                // now need to handle, the type of each (single res file, multi res file), whether
+                // they are the same object or not, whether the previously written object was deleted.
+
+                if (toWrite == null) {
+                    // nothing to write? delete only then.
+                    assert previouslyWritten.isRemoved();
+
+                    consumer.removeItem(previouslyWritten, null /*replacedBy*/);
+
+                } else if (previouslyWritten == null || previouslyWritten == toWrite) {
+                    // easy one: new or updated res
+                    consumer.addItem(toWrite);
+                } else {
+                    // replacement of a resource by another.
+
+                    // force write the new value
+                    toWrite.setTouched();
+                    consumer.addItem(toWrite);
+                    // and remove the old one
+                    consumer.removeItem(previouslyWritten, toWrite);
+                }
             }
+        } finally {
+            consumer.end();
         }
 
-        consumer.end();
+        if (doCleanUp) {
+            // reset all states. We can't just reset the toWrite and previouslyWritten objects
+            // since overlayed items might have been touched as well.
+            // Should also clean (remove) objects that are removed.
+            postMergeCleanUp();
+        }
     }
 
     /**
-     * Writes a single blog file to store all that the DataMerger knows about.
+     * Writes a single blob file to store all that the DataMerger knows about.
      *
      * @param blobRootFolder the root folder where blobs are store.
      * @throws IOException
      *
-     * @see #loadFromBlob(File)
+     * @see #loadFromBlob(File, boolean)
      */
     public void writeBlobTo(File blobRootFolder) throws IOException {
         // write "compact" blob
@@ -277,13 +286,24 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     /**
      * Loads the merger state from a blob file.
      *
+     * This can be loaded into two different ways that differ only by the state on the
+     * {@link DataItem} objects.
+     *
+     * If <var>incrementalState</var> is <code>true</code> then the items that are on disk are
+     * marked as written ({@link DataItem#isWritten()} returning <code>true</code>.
+     * This is to be used by {@link MergeWriter} to update a merged res folder.
+     *
+     * If <code>false</code>, the items are marked as touched, and this can be used to feed a new
+     * {@link ResourceRepository} object.
+     *
      * @param blobRootFolder the folder containing the blob.
+     * @param incrementalState whether to load into an incremental state or a new state.
      * @return true if the blob was loaded.
      * @throws IOException
      *
      * @see #writeBlobTo(File)
      */
-    public boolean loadFromBlob(File blobRootFolder) throws IOException {
+    public boolean loadFromBlob(File blobRootFolder, boolean incrementalState) throws IOException {
         File file = new File(blobRootFolder, FN_MERGER_XML);
         if (!file.isFile()) {
             return false;
@@ -322,7 +342,11 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                 }
             }
 
-            setItemsToWritten();
+            if (incrementalState) {
+                setPostBlobLoadStateToWritten();
+            } else {
+                setPostBlobLoadStateToTouched();
+            }
 
             return true;
         } catch (FileNotFoundException e) {
@@ -343,15 +367,23 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     }
 
     /**
-     * Sets all existing items to have their state be WRITTEN.
+     * Sets the post blob load state to WRITTEN.
      *
-     * This only sets the last item to be written.
+     * After a load from the blob file, all items have their state set to nothing.
+     * If the load mode is set to incrementalState then we want the items that are in the current
+     * merge result to have their state be WRITTEN.
      *
+     * This will allow further updates with {@link #mergeData(MergeConsumer, boolean)} to ignore the
+     * state at load time and only apply the new changes.
+     *
+     * @see #loadFromBlob(java.io.File, boolean)
      * @see DataItem#isWritten()
      */
-    private void setItemsToWritten() {
+    private void setPostBlobLoadStateToWritten() {
         ListMultimap<String, I> itemMap = ArrayListMultimap.create();
 
+        // put all the sets into list per keys. The order is important as the lower sets are
+        // overridden by the higher sets.
         for (S dataSet : mDataSets) {
             ListMultimap<String, I> map = dataSet.getDataMap();
             for (Map.Entry<String, Collection<I>> entry : map.asMap().entrySet()) {
@@ -359,6 +391,79 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             }
         }
 
+        // the items that represent the current state is the last item in the list for each key.
+        for (String key : itemMap.keySet()) {
+            List<I> itemList = itemMap.get(key);
+            itemList.get(itemList.size() - 1).resetStatusToWritten();
+        }
+    }
+
+    /**
+     * Sets the post blob load state to TOUCHED.
+     *
+     * After a load from the blob file, all items have their state set to nothing.
+     * If the load mode is not set to incrementalState then we want the items that are in the
+     * current merge result to have their state be TOUCHED.
+     *
+     * This will allow the first use of {@link #mergeData(MergeConsumer, boolean)} to add these
+     * to the consumer as if they were new items.
+     *
+     * @see #loadFromBlob(java.io.File, boolean)
+     * @see DataItem#isTouched()
+     */
+    private void setPostBlobLoadStateToTouched() {
+        ListMultimap<String, I> itemMap = ArrayListMultimap.create();
+
+        // put all the sets into list per keys. The order is important as the lower sets are
+        // overridden by the higher sets.
+        for (S dataSet : mDataSets) {
+            ListMultimap<String, I> map = dataSet.getDataMap();
+            for (Map.Entry<String, Collection<I>> entry : map.asMap().entrySet()) {
+                itemMap.putAll(entry.getKey(), entry.getValue());
+            }
+        }
+
+        // the items that represent the current state is the last item in the list for each key.
+        for (String key : itemMap.keySet()) {
+            List<I> itemList = itemMap.get(key);
+            itemList.get(itemList.size() - 1).resetStatusToTouched();
+        }
+    }
+
+    /**
+     * Post merge clean up.
+     *
+     * - Remove the removed items.
+     * - Clear the state of all the items (this allow newly overridden items to lose their
+     *   WRITTEN state)
+     * - Set the items that are part of the new merge to be WRITTEN to allow the next merge to
+     *   be incremental.
+     */
+    private void postMergeCleanUp() {
+        ListMultimap<String, I> itemMap = ArrayListMultimap.create();
+
+        // remove all removed items, and copy the rest in the full map while resetting their state.
+        for (S dataSet : mDataSets) {
+            ListMultimap<String, I> map = dataSet.getDataMap();
+
+            List<String> keys = Lists.newArrayList(map.keySet());
+            for (String key : keys) {
+                List<I> list = map.get(key);
+                for (int i = 0 ; i < list.size() ;) {
+                    I item = list.get(i);
+                    if (item.isRemoved()) {
+                        list.remove(i);
+                    } else {
+                        //noinspection unchecked
+                        itemMap.put(key, (I) item.resetStatus());
+                        i++;
+                    }
+                }
+            }
+        }
+
+        // for the last items (the one that have been written into the consumer), set their
+        // state to WRITTEN
         for (String key : itemMap.keySet()) {
             List<I> itemList = itemMap.get(key);
             itemList.get(itemList.size() - 1).resetStatusToWritten();

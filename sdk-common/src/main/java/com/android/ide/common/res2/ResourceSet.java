@@ -17,8 +17,8 @@
 package com.android.ide.common.res2;
 
 import static com.android.ide.common.res2.ResourceFile.ATTR_QUALIFIER;
-import static com.android.ide.common.res2.ResourceFile.ATTR_TYPE;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.android.resources.FolderTypeRelationship;
@@ -67,9 +67,9 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
     @Override
     protected ResourceFile createFileAndItems(File file, Node fileNode) {
         Attr qualifierAttr = (Attr) fileNode.getAttributes().getNamedItem(ATTR_QUALIFIER);
-        String qualifier = qualifierAttr != null ? qualifierAttr.getValue() : null;
+        String qualifier = qualifierAttr != null ? qualifierAttr.getValue() : "";
 
-        Attr typeAttr = (Attr) fileNode.getAttributes().getNamedItem(ATTR_TYPE);
+        Attr typeAttr = (Attr) fileNode.getAttributes().getNamedItem(SdkConstants.ATTR_TYPE);
         if (typeAttr == null) {
             // multi res file
             List<ResourceItem> resourceList = Lists.newArrayList();
@@ -256,7 +256,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
      * temp structure containing a qualifier string and a {@link com.android.resources.ResourceType}.
      */
     private static class FolderData {
-        String qualifiers = null;
+        String qualifiers = "";
         ResourceType type = null;
         ResourceFolderType folderType = null;
     }

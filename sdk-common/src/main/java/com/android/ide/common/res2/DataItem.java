@@ -23,7 +23,7 @@ import org.w3c.dom.Node;
 /**
  * Base item.
  *
- * This includes its name and source file as a {@link com.android.builder.resources.DataFile}.
+ * This includes its name and source file as a {@link DataFile}.
  *
  */
 abstract class DataItem<F extends DataFile> {
@@ -78,6 +78,16 @@ abstract class DataItem<F extends DataFile> {
     }
 
     /**
+     * Resets the state of the item be nothing.
+     * @return this
+     *
+     */
+    DataItem resetStatus() {
+        mStatus = 0;
+        return this;
+    }
+
+    /**
      * Resets the state of the item be WRITTEN. All other states are removed.
      * @return this
      *
@@ -85,6 +95,17 @@ abstract class DataItem<F extends DataFile> {
      */
     DataItem resetStatusToWritten() {
         mStatus = MASK_WRITTEN;
+        return this;
+    }
+
+    /**
+     * Resets the state of the item be TOUCHED. All other states are removed.
+     * @return this
+     *
+     * @see #isWritten()
+     */
+    DataItem resetStatusToTouched() {
+        mStatus = MASK_TOUCHED;
         return this;
     }
 
@@ -118,6 +139,7 @@ abstract class DataItem<F extends DataFile> {
      */
     DataItem setTouched() {
         mStatus |= MASK_TOUCHED;
+        wasTouched();
         return this;
     }
 
@@ -169,16 +191,30 @@ abstract class DataItem<F extends DataFile> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
-        DataItem resource = (DataItem) o;
+        DataItem dataItem = (DataItem) o;
 
-        return mName.equals(resource.mName);
+        if (!mName.equals(dataItem.mName)) {
+            return false;
+        }
+
+        return !(mSource != null ? !mSource.equals(dataItem.mSource) : dataItem.mSource != null);
     }
 
     @Override
     public int hashCode() {
-        return mName.hashCode();
+        int result = mName.hashCode();
+        result = 31 * result + (mSource != null ? mSource.hashCode() : 0);
+        return result;
+    }
+
+    protected void wasTouched() {
+
     }
 }

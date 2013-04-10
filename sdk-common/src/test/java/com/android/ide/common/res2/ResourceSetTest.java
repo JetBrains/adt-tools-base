@@ -23,8 +23,6 @@ import java.io.IOException;
 
 public class ResourceSetTest extends BaseTestCase {
 
-    private static ResourceSet sBaseResourceSet = null;
-
     public void testBaseResourceSetByCount() throws Exception {
         ResourceSet resourceSet = getBaseResourceSet();
         assertEquals(23, resourceSet.size());
@@ -97,17 +95,15 @@ public class ResourceSetTest extends BaseTestCase {
     }
 
     static ResourceSet getBaseResourceSet() throws DuplicateDataException, IOException {
-        if (sBaseResourceSet == null) {
-            File root = TestUtils.getRoot("resources", "baseSet");
+        File root = TestUtils.getRoot("resources", "baseSet");
 
-            sBaseResourceSet = new ResourceSet("main");
-            sBaseResourceSet.addSource(root);
-            RecordingLogger logger =  new RecordingLogger();
-            sBaseResourceSet.loadFromFiles(logger);
+        ResourceSet resourceSet = new ResourceSet("main");
+        resourceSet.addSource(root);
+        RecordingLogger logger =  new RecordingLogger();
+        resourceSet.loadFromFiles(logger);
 
-            checkLogger(logger);
-        }
+        checkLogger(logger);
 
-        return sBaseResourceSet;
+        return resourceSet;
     }
 }
