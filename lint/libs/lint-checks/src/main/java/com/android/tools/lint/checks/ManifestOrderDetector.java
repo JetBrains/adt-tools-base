@@ -32,6 +32,7 @@ import static com.android.SdkConstants.TAG_SERVICE;
 import static com.android.SdkConstants.TAG_USES_LIBRARY;
 import static com.android.SdkConstants.TAG_USES_PERMISSION;
 import static com.android.SdkConstants.TAG_USES_SDK;
+import static com.android.SdkConstants.TAG_USES_FEATURE;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -266,6 +267,35 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
             Severity.WARNING,
             IMPLEMENTATION);
 
+    /** Declaring a uses-feature multiple time */
+    public static final Issue DUPLICATE_USES_FEATURE = Issue.create(
+            "DuplicateUsesFeature", //$NON-NLS-1$
+            "Feature declared more than once",
+            "Ensures you declare each hardware or software feature only once in the manifest",
+
+            "A given feature should only be declared once in the manifest.",
+
+            Category.CORRECTNESS,
+            5,
+            Severity.WARNING,
+            IMPLEMENTATION);
+
+    /** Not explicitly defining application icon */
+    public static final Issue APPLICATION_ICON = Issue.create(
+            "MissingApplicationIcon", //$NON-NLS-1$
+            "Missing application icon",
+            "Checks that the application icon is set",
+
+            "You should set an icon for the application as whole because there is no " +
+            "default. This attribute must be set as a reference to a drawable resource " +
+            "containing the image (for example `@drawable/icon`).",
+
+            Category.ICONS,
+            5,
+            Severity.WARNING,
+            IMPLEMENTATION).addMoreInfo(
+            "http://developer.android.com/tools/publishing/preparing.html#publishing-configure"); //$NON-NLS-1$
+
     /** Constructs a new {@link ManifestOrderDetector} check */
     public ManifestOrderDetector() {
     }
@@ -277,6 +307,9 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
 
     /** Activities we've encountered */
     private final Set<String> mActivities = new HashSet<String>();
+
+    /** Features we've encountered */
+    private final Set<String> mUsesFeatures = new HashSet<String>();
 
     /** Permission basenames */
     private Map<String, String> mPermissionNames;
@@ -352,7 +385,7 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
                 "permission-group",        //$NON-NLS-1$
                 TAG_USES_SDK,
                 "uses-configuration",      //$NON-NLS-1$
-                "uses-feature",            //$NON-NLS-1$
+                TAG_USES_FEATURE,
                 "supports-screens",        //$NON-NLS-1$
                 "compatible-screens",      //$NON-NLS-1$
                 "supports-gl-texture",     //$NON-NLS-1$
@@ -541,6 +574,11 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
                             "false (it's true by default, and that can have some security " +
                             "implications for the application's data)", null);
             }
+
+            if (!element.hasAttributeNS(ANDROID_URI, SdkConstants.ATTR_ICON)) {
+                context.report(APPLICATION_ICON, element, context.getLocation(element),
+                            "Should explicitly set android:icon, there is no default", null);
+            }
         } else if (mSeenApplication) {
             if (context.isEnabled(ORDER)) {
                 context.report(ORDER, element, context.getLocation(element),
@@ -549,6 +587,23 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
 
             // Don't complain for *every* element following the <application> tag
             mSeenApplication = false;
+        }
+
+        if (tag.equals(TAG_USES_FEATURE)) {
+            Attr nameNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME);
+            if (nameNode != null) {
+                String name = nameNode.getValue();
+                if (!name.isEmpty()) {
+                    if (mUsesFeatures.contains(name)) {
+                        String message = String.format(
+                                "Duplicate declaration of uses-feature %1$s", name);
+                        context.report(DUPLICATE_USES_FEATURE, element,
+                                context.getLocation(nameNode), message, null);
+                    } else {
+                        mUsesFeatures.add(name);
+                    }
+                }
+            }
         }
     }
 

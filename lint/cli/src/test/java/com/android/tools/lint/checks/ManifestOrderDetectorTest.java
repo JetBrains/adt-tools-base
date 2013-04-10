@@ -320,4 +320,46 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
 
             lintProject("illegal_version.xml=>AndroidManifest.xml"));
     }
+
+    public void testDuplicateUsesFeature() throws Exception {
+        mEnabled = Collections.singleton(ManifestOrderDetector.DUPLICATE_USES_FEATURE);
+        assertEquals(
+            "AndroidManifest.xml:11: Warning: Duplicate declaration of uses-feature android.hardware.camera [DuplicateUsesFeature]\n" +
+            "    <uses-feature android:name=\"android.hardware.camera\"/>\n" +
+            "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "0 errors, 1 warnings\n",
+            lintProject(
+                    "duplicate_uses_feature.xml=>AndroidManifest.xml",
+                    "res/values/strings.xml"));
+    }
+
+    public void testDuplicateUsesFeatureOk() throws Exception {
+        mEnabled = Collections.singleton(ManifestOrderDetector.DUPLICATE_USES_FEATURE);
+        assertEquals(
+            "No warnings.",
+            lintProject(
+                    "duplicate_uses_feature_ok.xml=>AndroidManifest.xml",
+                    "res/values/strings.xml"));
+    }
+
+    public void testMissingApplicationIcon() throws Exception {
+        mEnabled = Collections.singleton(ManifestOrderDetector.APPLICATION_ICON);
+        assertEquals(
+            "AndroidManifest.xml:9: Warning: Should explicitly set android:icon, there is no default [MissingApplicationIcon]\n" +
+            "    <application\n" +
+            "    ^\n" +
+            "0 errors, 1 warnings\n",
+            lintProject(
+                "missing_application_icon.xml=>AndroidManifest.xml",
+                "res/values/strings.xml"));
+    }
+
+    public void testMissingApplicationIconOk() throws Exception {
+        mEnabled = Collections.singleton(ManifestOrderDetector.APPLICATION_ICON);
+        assertEquals(
+            "No warnings.",
+            lintProject(
+                "AndroidManifest.xml",
+                "res/values/strings.xml"));
+    }
 }
