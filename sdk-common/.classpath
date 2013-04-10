@@ -6,7 +6,6 @@
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/layoutlib-api"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/common"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/sdklib"/>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/testutils"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/testutils"/>
 	<classpathentry kind="output" path="bin"/>
