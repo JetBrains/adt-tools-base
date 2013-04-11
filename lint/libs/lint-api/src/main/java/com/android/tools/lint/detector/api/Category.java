@@ -139,6 +139,9 @@ public final class Category implements Comparable<Category> {
     /** Issues related to internationalization */
     public static final Category I18N = create("Internationalization", 50);
 
+    /** Issues related to right to left and bi-directional text support */
+    public static final Category RTL = create("Bi-directional Text", 40);
+
     // Sub categories
 
     /** Issues related to icons */

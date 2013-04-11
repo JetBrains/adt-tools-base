@@ -474,6 +474,9 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             // In unit tests, include issues that are ignored by default
             Severity severity = super.getDefaultSeverity(issue);
             if (severity == Severity.IGNORE) {
+                if (issue.getDefaultSeverity() != Severity.IGNORE) {
+                    return issue.getDefaultSeverity();
+                }
                 return Severity.WARNING;
             }
             return severity;
