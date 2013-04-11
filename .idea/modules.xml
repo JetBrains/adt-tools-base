@@ -9,7 +9,6 @@
       <module fileurl="file://$PROJECT_DIR$/ddmlib/ddmlib.iml" filepath="$PROJECT_DIR$/ddmlib/ddmlib.iml" />
       <module fileurl="file://$PROJECT_DIR$/draw9patch/draw9patch.iml" filepath="$PROJECT_DIR$/draw9patch/draw9patch.iml" />
       <module fileurl="file://$PROJECT_DIR$/device_validator/dvlib/dvlib.iml" filepath="$PROJECT_DIR$/device_validator/dvlib/dvlib.iml" />
-      <module fileurl="file://$PROJECT_DIR$/jobb/jobb.iml" filepath="$PROJECT_DIR$/jobb/jobb.iml" />
       <module fileurl="file://$PROJECT_DIR$/layoutlib-api/layoutlib-api.iml" filepath="$PROJECT_DIR$/layoutlib-api/layoutlib-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/lint/libs/lint-api/lint-api.iml" filepath="$PROJECT_DIR$/lint/libs/lint-api/lint-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/lint/libs/lint-checks/lint-checks.iml" filepath="$PROJECT_DIR$/lint/libs/lint-checks/lint-checks.iml" />
