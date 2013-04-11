@@ -9,6 +9,10 @@ dependencies {
     testCompile project(':testutils')
 }
 
+jar {
+    from 'NOTICE'
+}
+
 uploadArchives {
     repositories {
         mavenDeployer {
