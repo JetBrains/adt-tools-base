@@ -339,6 +339,10 @@ public final class SdkConstants {
      *  This is an OS path, ending with a separator. */
     public static final String OS_SDK_PLATFORM_TOOLS_FOLDER = FD_PLATFORM_TOOLS + File.separator;
 
+    /** Path of the build tools directory relative to the sdk folder.
+     *  This is an OS path, ending with a separator. */
+    public static final String OS_SDK_BUILD_TOOLS_FOLDER = FD_BUILD_TOOLS + File.separator;
+
     /** Path of the Platform tools Lib directory relative to the sdk folder.
      *  This is an OS path, ending with a separator. */
     public static final String OS_SDK_PLATFORM_TOOLS_LIB_FOLDER =

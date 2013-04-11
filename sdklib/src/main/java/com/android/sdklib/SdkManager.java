@@ -223,6 +223,18 @@ public class SdkManager {
      * @return True if at least one directory or source.prop has changed.
      */
     public boolean hasChanged() {
+        return hasChanged(null);
+    }
+
+    /**
+     * Checks whether any of the SDK platforms/add-ons/build-tools have changed on-disk
+     * since we last loaded the SDK. This does not reload the SDK nor does it
+     * change the underlying targets.
+     *
+     * @param log An optional logger used to print verbose info on what changed. Can be null.
+     * @return True if at least one directory or source.prop has changed.
+     */
+    public boolean hasChanged(@Nullable ILogger log) {
         Set<File> visited = new HashSet<File>();
         boolean changed = false;
 
@@ -246,12 +258,17 @@ public class SdkManager {
                         // This is a new platform directory.
                         changed = true;
                     } else {
-                        changed = dirInfo.hasChanged();
+                        changed = changed || dirInfo.hasChanged();
                     }
                     if (changed) {
+                        String s = "SDK changed due to " +                          //$NON-NLS-1$
+                                (dirInfo != null ? dirInfo.toString() : subFolder.getPath());
+
+                        if (log != null) {
+                            log.verbose("%s", s);                                   //$NON-NLS-1$
+                        }
                         if (DEBUG) {
-                            System.out.println("SDK changed due to " +              //$NON-NLS-1$
-                                (dirInfo != null ? dirInfo.toString() : subFolder.getPath()));
+                            System.out.println(s);
                         }
                         break;
                     }
@@ -266,9 +283,15 @@ public class SdkManager {
                 if (!visited.contains(previousDir)) {
                     // This directory is no longer present.
                     changed = true;
+
+                    String s = String.format("SDK changed: %s removed",             //$NON-NLS-1$
+                                             previousDir.getPath());
+
+                    if (log != null) {
+                        log.verbose("%s", s);                                       //$NON-NLS-1$
+                    }
                     if (DEBUG) {
-                        System.out.println("SDK changed: " +                        //$NON-NLS-1$
-                                previousDir.getPath() + " removed");                //$NON-NLS-1$
+                        System.out.println(s);
                     }
                     break;
                 }
