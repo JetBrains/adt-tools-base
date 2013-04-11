@@ -19,6 +19,10 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
+jar {
+    from 'NOTICE'
+}
+
 task copyXsd(type: Copy) {
     from sourceSets.main.resources.srcDirs
     include '**/*.xsd'

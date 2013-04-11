@@ -15,6 +15,10 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
+jar {
+    from 'NOTICE'
+}
+
 uploadArchives {
     repositories {
         mavenDeployer {
