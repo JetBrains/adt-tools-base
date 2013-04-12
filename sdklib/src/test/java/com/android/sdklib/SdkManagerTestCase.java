@@ -27,11 +27,11 @@ import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.utils.ILogger;
 
-import junit.framework.TestCase;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+
+import junit.framework.TestCase;
 
 /**
  * Test case that allocates a temporary SDK, a temporary AVD base folder
@@ -198,6 +198,26 @@ public class SdkManagerTestCase extends TestCase {
 
     //----
 
+    private void createTextFile(File dir, String filepath, String...lines) throws IOException {
+        File file = new File(dir, filepath);
+
+        File parent = file.getParentFile();
+        if (!parent.isDirectory()) {
+            parent.mkdirs();
+        }
+
+        if (!file.isFile()) {
+            assertTrue(file.createNewFile());
+        }
+        if (lines != null && lines.length > 0) {
+            FileWriter out = new FileWriter(file);
+            for (String line : lines) {
+                out.write(line);
+            }
+            out.close();
+        }
+    }
+
     /** Utility used by {@link #makeFakeSdk()} to create a fake target with API 0, rev 0. */
     private File makeFakeTargetInternal(File platformsDir) throws IOException {
         File targetDir = new File(platformsDir, "v0_0");
@@ -209,12 +229,11 @@ public class SdkManagerTestCase extends TestCase {
                 PkgProps.LAYOUTLIB_API, "5",
                 PkgProps.LAYOUTLIB_REV, "2");
 
-        File buildProp = new File(targetDir, SdkConstants.FN_BUILD_PROP);
-        FileWriter out = new FileWriter(buildProp);
-        out.write(SdkManager.PROP_VERSION_RELEASE + "=0.0\n");
-        out.write(SdkManager.PROP_VERSION_SDK + "=0\n");
-        out.write(SdkManager.PROP_VERSION_CODENAME + "=REL\n");
-        out.close();
+        createFileProps(SdkConstants.FN_BUILD_PROP, targetDir,
+                SdkManager.PROP_VERSION_RELEASE,  "0.0",
+                SdkManager.PROP_VERSION_SDK,      "0",
+                SdkManager.PROP_VERSION_CODENAME, "REL");
+
         return targetDir;
     }
 
@@ -262,28 +281,35 @@ public class SdkManagerTestCase extends TestCase {
         for (String revision : new String[] { "3.0.0", "3.0.1", "12.3.4 rc5" }) {
 
             File buildToolsDir = new File(buildToolsTopDir, revision);
-            buildToolsDir.mkdir();
-
             createSourceProps(buildToolsDir, PkgProps.PKG_REVISION, revision);
 
-            new File(buildToolsDir, SdkConstants.FN_AAPT).createNewFile();
-            new File(buildToolsDir, SdkConstants.FN_AIDL).createNewFile();
-            new File(buildToolsDir, SdkConstants.FN_DX).createNewFile();
-
-            File libFolder = new File(buildToolsDir, SdkConstants.FD_LIB);
-            libFolder.mkdir();
-            new File(libFolder, SdkConstants.FN_DX_JAR).createNewFile();
-
-            new File(buildToolsDir, SdkConstants.FN_RENDERSCRIPT).createNewFile();
-
-            new File(buildToolsDir, SdkConstants.OS_FRAMEWORK_RS).mkdirs();
-            new File(buildToolsDir, SdkConstants.OS_FRAMEWORK_RS_CLANG).mkdirs();
+            createTextFile(buildToolsDir, SdkConstants.FN_AAPT);
+            createTextFile(buildToolsDir, SdkConstants.FN_AIDL);
+            createTextFile(buildToolsDir, SdkConstants.FN_DX);
+            createTextFile(buildToolsDir, SdkConstants.FD_LIB + File.separator +
+                                          SdkConstants.FN_DX_JAR);
+            createTextFile(buildToolsDir, SdkConstants.FN_RENDERSCRIPT);
+            createTextFile(buildToolsDir, SdkConstants.OS_FRAMEWORK_RS + File.separator +
+                                          "placeholder.txt");
+            createTextFile(buildToolsDir, SdkConstants.OS_FRAMEWORK_RS_CLANG + File.separator +
+                                          "placeholder.txt");
         }
+
     }
 
     private void createSourceProps(File parentDir, String...paramValuePairs) throws IOException {
-        File sourceProp = new File(parentDir, SdkConstants.FN_SOURCE_PROP);
-        sourceProp.createNewFile();
+        createFileProps(SdkConstants.FN_SOURCE_PROP, parentDir, paramValuePairs);
+    }
+
+    private void createFileProps(String fileName, File parentDir, String...paramValuePairs) throws IOException {
+        File sourceProp = new File(parentDir, fileName);
+        parentDir = sourceProp.getParentFile();
+        if (!parentDir.isDirectory()) {
+            assertTrue(parentDir.mkdirs());
+        }
+        if (!sourceProp.isFile()) {
+            assertTrue(sourceProp.createNewFile());
+        }
         FileWriter out = new FileWriter(sourceProp);
         int n = paramValuePairs.length;
         assertTrue("paramValuePairs must have an even length, format [param=value]+", n %2 == 0);
@@ -293,6 +319,7 @@ public class SdkManagerTestCase extends TestCase {
         out.close();
 
     }
+
 
     /**
      * Recursive delete directory. Mostly for fake SDKs.
