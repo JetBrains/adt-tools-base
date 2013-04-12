@@ -7,6 +7,9 @@ dependencies {
 group = 'com.android.tools'
 archivesBaseName = 'common'
 
+jar {
+    from 'NOTICE'
+}
 
 uploadArchives {
     repositories {
