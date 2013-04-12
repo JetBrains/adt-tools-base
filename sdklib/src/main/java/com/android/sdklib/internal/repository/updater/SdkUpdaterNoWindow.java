@@ -107,12 +107,14 @@ public class SdkUpdaterNoWindow {
      * @param includeAll True to list and install all packages, including obsolete ones.
      * @param dryMode True to check what would be updated/installed but do not actually
      *   download or install anything.
+     * @param acceptLicense SDK licenses to automatically accept.
      */
     public void updateAll(
             ArrayList<String> pkgFilter,
             boolean includeAll,
-            boolean dryMode) {
-        mUpdaterData.updateOrInstallAll_NoGUI(pkgFilter, includeAll, dryMode);
+            boolean dryMode,
+            String acceptLicense) {
+        mUpdaterData.updateOrInstallAll_NoGUI(pkgFilter, includeAll, dryMode, acceptLicense);
     }
 
     /**
