@@ -309,7 +309,7 @@ public class FullRevision implements Comparable<FullRevision> {
          *  or both must not be previews, but the actual number is irrelevant.)
          *  This is the most typical choice used to find updates of the same type. */
         COMPARE_TYPE,
-        /** The preview field is ignore and not used in the comparison. */
+        /** The preview field is ignored and not used in the comparison. */
         IGNORE
     }
 
