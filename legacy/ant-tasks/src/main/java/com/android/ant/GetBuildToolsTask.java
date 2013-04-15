@@ -59,7 +59,7 @@ public class GetBuildToolsTask extends Task {
 
         if (buildToolInfo == null) {
             // get the latest one instead
-            buildToolInfo = sdkManager.getLatestBuildTool(false);
+            buildToolInfo = sdkManager.getLatestBuildTool();
 
             if (buildToolInfo == null) {
                 throw new BuildException("SDK does not have any Build Tools installed.");

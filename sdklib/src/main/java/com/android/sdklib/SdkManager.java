@@ -163,7 +163,7 @@ public class SdkManager {
         loadBuildTools(mOsSdkPath, buildTools, mVisistedDirs, log);
         setBuildTools(buildTools);
 
-        BuildToolInfo latestBuildTools = getLatestBuildTool(false);
+        BuildToolInfo latestBuildTools = getLatestBuildTool();
         if (latestBuildTools == null) {
             // no build tools? Check version of platform-tools. if <17 and lower this means
             // an older SDK (while this code is used in an external tool) and so we go in
@@ -344,21 +344,18 @@ public class SdkManager {
     /**
      * Returns the highest build-tool revision known. Can be null.
      *
-     * @param isPreview True if it should be a preview version, false if it should NOT be a preview.
      * @return The highest build-tool revision known, or null.
      */
     @Nullable
-    public BuildToolInfo getLatestBuildTool(final boolean isPreview) {
+    public BuildToolInfo getLatestBuildTool() {
         if (mBuildTools.isEmpty()) {
             return null;
         }
 
         FullRevision max = null;
         for (FullRevision r : mBuildTools.keySet()) {
-            if (r.isPreview() == isPreview) {
-                if (max == null || r.compareTo(max) > 0) {
-                    max = r;
-                }
+            if (max == null || r.compareTo(max) > 0) {
+                max = r;
             }
         }
         return mBuildTools.get(max);
