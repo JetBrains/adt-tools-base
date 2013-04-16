@@ -51,7 +51,7 @@ import org.w3c.dom.NodeList;
  * in case of a resource coming from a value file.
  *
  */
-class ResourceItem extends DataItem<ResourceFile> implements Configurable  {
+class ResourceItem extends DataItem<ResourceFile> implements Configurable, Comparable<ResourceItem>  {
 
     private static final int DEFAULT_NS_PREFIX_LEN = ANDROID_NS_NAME_PREFIX.length();
 
@@ -156,6 +156,7 @@ class ResourceItem extends DataItem<ResourceFile> implements Configurable  {
     @Nullable
     ResourceValue getResourceValue(boolean isFrameworks) {
         if (mResourceValue == null) {
+            //noinspection VariableNotUsedInsideIf
             if (mValue == null) {
                 mResourceValue = new ResourceValue(mType, getName(),
                         getSource().getFile().getAbsolutePath(), isFrameworks);
@@ -364,5 +365,15 @@ class ResourceItem extends DataItem<ResourceFile> implements Configurable  {
         }
 
         return sb.toString();
+    }
+
+    @Override
+    public int compareTo(ResourceItem resourceItem) {
+        int comp = mType.compareTo(resourceItem.getType());
+        if (comp == 0) {
+            comp = getName().compareTo(resourceItem.getName());
+        }
+
+        return comp;
     }
 }
