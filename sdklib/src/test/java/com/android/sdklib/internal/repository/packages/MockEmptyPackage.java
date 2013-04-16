@@ -57,6 +57,27 @@ public class MockEmptyPackage extends MajorRevisionPackage {
      * Creates a new {@link MockEmptyPackage} with a local archive.
      *
      * @param testHandle The comparison handle for {@link #sameItemAs(Package)}.
+     * @param props The package properties.
+     */
+    public MockEmptyPackage(String testHandle, Properties props) {
+        super(
+            null /*source*/,
+            props,
+            0 /*revision*/,
+            null /*license*/,
+            null /*description*/,
+            null /*descUrl*/,
+            Os.ANY /*archiveOs*/,
+            Arch.ANY /*archiveArch*/,
+            "/sdk/tmp/empty_pkg" /*archiveOsPath*/
+            );
+        mTestHandle = testHandle;
+    }
+
+    /**
+     * Creates a new {@link MockEmptyPackage} with a local archive.
+     *
+     * @param testHandle The comparison handle for {@link #sameItemAs(Package)}.
      * @param revision The revision of the package, printed in the short description.
      */
     public MockEmptyPackage(String testHandle, int revision) {
