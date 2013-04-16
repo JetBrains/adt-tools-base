@@ -36,7 +36,8 @@ import org.w3c.dom.Node;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -94,7 +95,6 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
             // just add the node to write to the map based on the qualifier.
             // We'll figure out later if the files needs to be written or (not)
-
             mValuesResMap.put(item.getSource().getQualifiers(), item);
         } else {
             // This is a single value file.
@@ -109,7 +109,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         String filename = file.getName();
                         String folderName = item.getType().getName();
                         String qualifiers = resourceFile.getQualifiers();
-                        if (qualifiers != null && !qualifiers.isEmpty()) {
+                        if (!qualifiers.isEmpty()) {
                             folderName = folderName + RES_QUALIFIER_SEP + qualifiers;
                         }
 
@@ -174,7 +174,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
             boolean mustWriteFile = mQualifierWithDeletedValues.remove(key);
 
             // get the list of items to write
-            Collection<ResourceItem> items = mValuesResMap.get(key);
+            List<ResourceItem> items = mValuesResMap.get(key);
 
             // now check if we really have to write it
             if (!mustWriteFile) {
@@ -208,12 +208,14 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     Node rootNode = document.createElement(TAG_RESOURCES);
                     document.appendChild(rootNode);
 
+                    Collections.sort(items);
+
                     for (ResourceItem item : items) {
                         Node adoptedNode = NodeUtils.adoptNode(document, item.getValue());
                         rootNode.appendChild(adoptedNode);
                     }
 
-                    String content = XmlPrettyPrinter.prettyPrint(document);
+                    String content = XmlPrettyPrinter.prettyPrint(document, true);
 
                     Files.write(content, outFile, Charsets.UTF_8);
                 } catch (Throwable t) {
