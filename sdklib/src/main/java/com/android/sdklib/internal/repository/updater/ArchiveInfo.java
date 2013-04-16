@@ -16,6 +16,8 @@
 
 package com.android.sdklib.internal.repository.updater;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.archives.ArchiveReplacement;
 
@@ -65,7 +67,10 @@ public class ArchiveInfo extends ArchiveReplacement implements Comparable<Archiv
      *          means we need to install the dependency first. Can be null or empty.
      *          However it cannot contain nulls.
      */
-    public ArchiveInfo(Archive newArchive, Archive replaced, ArchiveInfo[] dependsOn) {
+    public ArchiveInfo(
+            @Nullable Archive newArchive,
+            @Nullable Archive replaced,
+            @Nullable ArchiveInfo[] dependsOn) {
         super(newArchive, replaced);
         mDependsOn = dependsOn;
     }
@@ -78,6 +83,7 @@ public class ArchiveInfo extends ArchiveReplacement implements Comparable<Archiv
      * <p/>
      * This array can be null or empty. It can't contain nulls though.
      */
+    @Nullable
     public ArchiveInfo[] getDependsOn() {
         return mDependsOn;
     }
@@ -94,6 +100,7 @@ public class ArchiveInfo extends ArchiveReplacement implements Comparable<Archiv
      * Adds an {@link ArchiveInfo} for which <em>this</em> package is a dependency.
      * This means the package added here depends on this package.
      */
+    @NonNull
     public ArchiveInfo addDependencyFor(ArchiveInfo dependencyFor) {
         if (!mDependencyFor.contains(dependencyFor)) {
             mDependencyFor.add(dependencyFor);
@@ -109,6 +116,7 @@ public class ArchiveInfo extends ArchiveReplacement implements Comparable<Archiv
      * Implementation detail: this is the internal mutable list. Callers should not modify it.
      * This list can be empty but is never null.
      */
+    @NonNull
     public Collection<ArchiveInfo> getDependenciesFor() {
         return mDependencyFor;
     }
