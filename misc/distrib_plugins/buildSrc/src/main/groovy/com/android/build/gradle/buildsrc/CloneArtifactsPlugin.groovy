@@ -15,11 +15,16 @@
  */
 
 package com.android.build.gradle.buildsrc
+
+import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.UnknownTaskException
 
-class CloneArtifactsPlugin implements org.gradle.api.Plugin<Project> {
+class CloneArtifactsPlugin implements Plugin<Project> {
+
+    final static String GRADLE_SNAPSHOT_REPO = 'http://repo.gradle.org/gradle/libs-snapshots-local';
+    final static String GRADLE_RELEASES_REPO = "http://repo.gradle.org/gradle/libs-releases-local";
 
     @Override
     void apply(Project project) {
@@ -33,6 +38,8 @@ class CloneArtifactsPlugin implements org.gradle.api.Plugin<Project> {
         setupTask << {
             project.repositories {
                 mavenCentral()
+                maven { url GRADLE_SNAPSHOT_REPO }
+                maven { url GRADLE_RELEASES_REPO }
             }
         }
 

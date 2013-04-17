@@ -55,6 +55,7 @@ class DownloadArtifactsTask extends BaseTask {
 
         Set<ModuleVersionIdentifier> mainList = Sets.newHashSet()
         Set<ModuleVersionIdentifier> secondaryList = Sets.newHashSet()
+        Set<ModuleVersionIdentifier> gradleRepoList = Sets.newHashSet()
 
         // gather the main and secondary dependencies for all the sub-projects.
         for (Project subProject : project.allprojects) {
@@ -66,7 +67,7 @@ class DownloadArtifactsTask extends BaseTask {
                 // the secondary list.
                 buildArtifactList(resolutionResult.getRoot(),
                         subProject.shipping.isShipping ? mainList : secondaryList)
-            } catch (UnknownDomainObjectException e) {
+            } catch (UnknownDomainObjectException ignored) {
                 // ignore
             }
 
@@ -74,15 +75,26 @@ class DownloadArtifactsTask extends BaseTask {
                 resolutionResult = subProject.configurations.getByName("testCompile")
                         .getIncoming().getResolutionResult()
                 buildArtifactList(resolutionResult.getRoot(), secondaryList)
-            } catch (UnknownDomainObjectException e) {
+            } catch (UnknownDomainObjectException ignored) {
                 // ignore
             }
 
             try {
+                resolutionResult = subProject.configurations.getByName("testRuntime")
+                        .getIncoming().getResolutionResult()
+                buildArtifactList(resolutionResult.getRoot(), secondaryList)
+            } catch (UnknownDomainObjectException ignored) {
+                // ignore
+            }
+
+            // provided is for artifacts that we need to get from MavenCentral but that
+            // are not copied through pushDistribution (because CopyDependenciesTask only
+            // look at "compile".
+            try {
                 resolutionResult = subProject.configurations.getByName("provided")
                         .getIncoming().getResolutionResult()
                 buildArtifactList(resolutionResult.getRoot(), secondaryList)
-            } catch (UnknownDomainObjectException e) {
+            } catch (UnknownDomainObjectException ignored) {
                 // ignore
             }
 
@@ -92,7 +104,16 @@ class DownloadArtifactsTask extends BaseTask {
                 resolutionResult = subProject.configurations.getByName("hidden")
                         .getIncoming().getResolutionResult()
                 buildArtifactList(resolutionResult.getRoot(), secondaryList)
-            } catch (UnknownDomainObjectException e) {
+            } catch (UnknownDomainObjectException ignored) {
+                // ignore
+            }
+
+            // Download some artifact from the gradle repo.
+            try {
+                resolutionResult = subProject.configurations.getByName("gradleRepo")
+                        .getIncoming().getResolutionResult()
+                buildArtifactList(resolutionResult.getRoot(), gradleRepoList)
+            } catch (UnknownDomainObjectException ignored) {
                 // ignore
             }
         }
@@ -100,13 +121,20 @@ class DownloadArtifactsTask extends BaseTask {
         File mainRepoFile = getMainRepo()
         File secondaryRepoFile = getSecondaryRepo()
 
+        String[] repoUrls = [ URL_MAVEN_CENTRAL, CloneArtifactsPlugin.GRADLE_RELEASES_REPO,
+                CloneArtifactsPlugin.GRADLE_SNAPSHOT_REPO ]
+
         Set<ModuleVersionIdentifier> downloadedSet = Sets.newHashSet()
         for (ModuleVersionIdentifier id : mainList) {
-            pullArtifact(id, mainRepoFile, downloadedSet)
+            pullArtifact(repoUrls, id, mainRepoFile, downloadedSet)
         }
 
         for (ModuleVersionIdentifier id : secondaryList) {
-            pullArtifact(id, secondaryRepoFile, downloadedSet)
+            pullArtifact(repoUrls, id, secondaryRepoFile, downloadedSet)
+        }
+
+        for (ModuleVersionIdentifier id : gradleRepoList) {
+            pullArtifact(repoUrls, id, secondaryRepoFile, downloadedSet)
         }
     }
 
@@ -117,7 +145,7 @@ class DownloadArtifactsTask extends BaseTask {
         for (DependencyResult d : module.getDependencies()) {
             if (d instanceof UnresolvedDependencyResult) {
                 UnresolvedDependencyResult dependency = (UnresolvedDependencyResult) d
-                ModuleVersionSelector attempted = dependency.getAttempted();
+                ModuleVersionSelector attempted = dependency.getAttempted()
                 ModuleVersionIdentifier id = DefaultModuleVersionIdentifier.newId(
                         attempted.getGroup(), attempted.getName(), attempted.getVersion())
                 list.add(id)
@@ -127,15 +155,15 @@ class DownloadArtifactsTask extends BaseTask {
         }
     }
 
-    private void pullArtifact(ModuleVersionIdentifier artifact, File rootDestination,
-                              Set<ModuleVersionIdentifier> downloadedSet) {
+    private void pullArtifact(String[] repoUrls, ModuleVersionIdentifier artifact,
+                              File rootDestination, Set<ModuleVersionIdentifier> downloadedSet) {
         // ignore all android artifacts and already downloaded artifacts
         if (artifact.group.startsWith("com.android") || isLocalArtifact(artifact)) {
             return
         }
 
         if (downloadedSet.contains(artifact)) {
-            System.out.println("DUPLCTE " + artifact);
+            System.out.println("DUPLCTE " + artifact)
             return
         }
 
@@ -144,7 +172,8 @@ class DownloadArtifactsTask extends BaseTask {
         String folder = getFolder(artifact)
 
         // download the artifact metadata file.
-        downloadFile(folder, MAVEN_METADATA_XML, rootDestination, true, false)
+        String repoUrl = tryToDownloadFile(repoUrls, folder, MAVEN_METADATA_XML, rootDestination,
+                true, false)
 
         // move to the folder of the required version
         folder = folder + "/" + artifact.getVersion()
@@ -153,57 +182,75 @@ class DownloadArtifactsTask extends BaseTask {
         String baseName = artifact.getName() + "-" + artifact.getVersion()
 
         // download the pom
-        File pomFile = downloadFile(folder, baseName + DOT_POM, rootDestination, false, true)
+        File pomFile = downloadFile(repoUrl ,folder, baseName + DOT_POM, rootDestination,
+                false, true)
 
         // read the pom to figure out parents, relocation and packaging
-        if (!handlePom(pomFile, rootDestination, downloadedSet)) {
+        if (!handlePom(repoUrls, pomFile, rootDestination, downloadedSet)) {
             // pom said there's no jar to download: abort
             return
         }
 
         // download the jar artifact
-        downloadFile(folder, baseName + DOT_JAR, rootDestination, false, false)
+        downloadFile(repoUrl, folder, baseName + DOT_JAR, rootDestination, false, false)
 
         // download the source if available
         try {
-            downloadFile(folder, baseName + SOURCES_JAR, rootDestination, false, false)
-        } catch (IOException e) {
+            downloadFile(repoUrl, folder, baseName + SOURCES_JAR, rootDestination, false, false)
+        } catch (IOException ignored) {
             // ignore if missing
         }
     }
 
     private static String getFolder(ModuleVersionIdentifier artifact) {
         return artifact.getGroup().replaceAll("\\.", "/") + "/" + artifact.getName()
+
     }
 
-    private File downloadFile(String folder, String name, File rootDestination,
-                                     boolean force, boolean printDownload) {
+    private String tryToDownloadFile(String[] repoUrls, String folder,
+                                            String name, File rootDestination,
+                                            boolean force, boolean printDownload) {
+        for (String repoUrl : repoUrls) {
+            try {
+                downloadFile(repoUrl, folder, name, rootDestination, force, printDownload)
+                return repoUrl
+            } catch (IOException ignored) {
+                // ignore
+            }
+        }
+
+        // if we get here, the file was not found in any repo.
+        throw new IOException(String.format("Failed to find %s/%s in any repo", folder, name))
+    }
+
+    private File downloadFile(String repoUrl, String folder, String name, File rootDestination,
+                              boolean force, boolean printDownload) throws IOException {
         File destinationFolder = new File(rootDestination, folder)
         destinationFolder.mkdirs()
 
-        URL fileURL = new URL(URL_MAVEN_CENTRAL + "/" + folder + "/" + name)
+        URL fileURL = new URL(repoUrl + "/" + folder + "/" + name)
         File destinationFile = new File(destinationFolder, name)
 
         if (force || !destinationFile.isFile()) {
             if (printDownload) {
-                System.out.println("DWNLOAD " + destinationFile.absolutePath);
+                System.out.println("DWNLOAD " + destinationFile.absolutePath)
             }
             FileUtils.copyURLToFile(fileURL, destinationFile)
 
             // get the checksums
-            URL md5URL = new URL(URL_MAVEN_CENTRAL + "/" + folder + "/" + name + DOT_MD5)
+            URL md5URL = new URL(repoUrl + "/" + folder + "/" + name + DOT_MD5)
             File md5File = new File(destinationFolder, name + DOT_MD5)
             FileUtils.copyURLToFile(md5URL, md5File)
 
-            checksum(destinationFile, md5File, Hashing.md5());
+            checksum(destinationFile, md5File, Hashing.md5())
 
-            URL sha15URL = new URL(URL_MAVEN_CENTRAL + "/" + folder + "/" + name + DOT_SHA1)
+            URL sha15URL = new URL(repoUrl + "/" + folder + "/" + name + DOT_SHA1)
             File sha1File = new File(destinationFolder, name + DOT_SHA1)
             FileUtils.copyURLToFile(sha15URL, sha1File)
 
-            checksum(destinationFile, sha1File, Hashing.sha1());
+            checksum(destinationFile, sha1File, Hashing.sha1())
         } else if (printDownload) {
-            System.out.println("SKIPPED " + destinationFile.absolutePath);
+            System.out.println("SKIPPED " + destinationFile.absolutePath)
         }
 
         return destinationFile
@@ -217,22 +264,22 @@ class DownloadArtifactsTask extends BaseTask {
      *
      * @return true if jar packaging must be downloaded
      */
-    private boolean handlePom(File pomFile, File rootDestination,
+    private boolean handlePom(String[] repoUrls, File pomFile, File rootDestination,
                               Set<ModuleVersionIdentifier> downloadedSet) {
         PomHandler pomHandler = new PomHandler(pomFile)
 
-        ModuleVersionIdentifier relocation = pomHandler.getRelocation();
+        ModuleVersionIdentifier relocation = pomHandler.getRelocation()
         if (relocation != null) {
-            pullArtifact(relocation, rootDestination, downloadedSet);
+            pullArtifact(repoUrls, relocation, rootDestination, downloadedSet)
             return false
         }
 
         ModuleVersionIdentifier parentPom = pomHandler.getParentPom()
         if (parentPom != null) {
-            pullArtifact(parentPom, rootDestination, downloadedSet)
+            pullArtifact(repoUrls, parentPom, rootDestination, downloadedSet)
         }
 
-        String packaging = pomHandler.getPackaging();
+        String packaging = pomHandler.getPackaging()
 
         // default packaging is jar so missing data is ok.
         return packaging == null || "jar".equals(packaging) || "bundle".equals(packaging)
@@ -257,7 +304,7 @@ class DownloadArtifactsTask extends BaseTask {
         }
 
         // hash the file.
-        HashCode hashCode = Files.asByteSource(file).hash(hashFunction);
+        HashCode hashCode = Files.asByteSource(file).hash(hashFunction)
         String hashCodeString = hashCode.toString()
 
         if (!checksum.equals(hashCodeString)) {
