@@ -16,13 +16,14 @@
 
 package com.android.screenshot;
 
+import com.android.SdkConstants;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
-import com.android.ddmlib.RawImage;
-import com.android.ddmlib.TimeoutException;
 import com.android.ddmlib.Log.ILogOutput;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.ddmlib.RawImage;
+import com.android.ddmlib.TimeoutException;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -101,10 +102,12 @@ public class Screenshot {
         }
 
         Log.setLogOutput(new ILogOutput() {
+            @Override
             public void printAndPromptLog(LogLevel logLevel, String tag, String message) {
                 System.err.println(logLevel.getStringValue() + ":" + tag + ":" + message);
             }
 
+            @Override
             public void printLog(LogLevel logLevel, String tag, String message) {
                 System.err.println(logLevel.getStringValue() + ":" + tag + ":" + message);
             }
@@ -112,12 +115,7 @@ public class Screenshot {
 
         // init the lib
         // [try to] ensure ADB is running
-        String adbLocation = System.getProperty("com.android.screenshot.bindir"); //$NON-NLS-1$
-        if (adbLocation != null && adbLocation.length() != 0) {
-            adbLocation += File.separator + "adb"; //$NON-NLS-1$
-        } else {
-            adbLocation = "adb"; //$NON-NLS-1$
-        }
+        String adbLocation = getAdbLocation();
 
         AndroidDebugBridge.init(false /* debugger support */);
 
@@ -129,7 +127,7 @@ public class Screenshot {
             // them from ADB may not be done getting the first list.
             // Since we don't really want getDevices() to be blocking, we wait here manually.
             int count = 0;
-            while (bridge.hasInitialDeviceList() == false) {
+            while (!bridge.hasInitialDeviceList()) {
                 try {
                     Thread.sleep(100);
                     count++;
@@ -200,6 +198,41 @@ public class Screenshot {
             AndroidDebugBridge.terminate();
         }
     }
+
+    private static String getAdbLocation() {
+        String toolsDir = System.getProperty("com.android.screenshot.bindir"); //$NON-NLS-1$
+        if (toolsDir == null) {
+            return null;
+        }
+
+        File sdk = new File(toolsDir).getParentFile();
+
+        // check if adb is present in platform-tools
+        File platformTools = new File(sdk, "platform-tools");
+        File adb = new File(platformTools, SdkConstants.FN_ADB);
+        if (adb.exists()) {
+            return adb.getAbsolutePath();
+        }
+
+        // check if adb is present in the tools directory
+        adb = new File(toolsDir, SdkConstants.FN_ADB);
+        if (adb.exists()) {
+            return adb.getAbsolutePath();
+        }
+
+        // check if we're in the Android source tree where adb is in $ANDROID_HOST_OUT/bin/adb
+        String androidOut = System.getenv("ANDROID_HOST_OUT");
+        if (androidOut != null) {
+            String adbLocation = androidOut + File.separator + "bin" + File.separator +
+                    SdkConstants.FN_ADB;
+            if (new File(adbLocation).exists()) {
+                return adbLocation;
+            }
+        }
+
+        return null;
+    }
+
 
     /*
      * Grab an image from an ADB-connected device.
