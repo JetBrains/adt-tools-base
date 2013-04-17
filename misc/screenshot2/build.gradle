@@ -7,8 +7,8 @@ dependencies {
 
 shipping {
     launcherScripts = ['etc/screenshot2']
-    isShipping = false
+    isShipping = true
 }
 
-
-
+// configure the manifest of the buildDistributionJar task.
+buildDistributionJar.manifest.attributes("Main-Class": "com.android.screenshot.Screenshot")
