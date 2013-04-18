@@ -105,6 +105,14 @@ subprojects { Project project ->
         }
     }
 
+    def userHome = System.getProperty("user.home")
+    publishLocal.doFirst {
+        System.setProperty("user.home", file("$buildDir/fakem2home").absolutePath)
+    }
+    publishLocal.doLast {
+        System.setProperty("user.home", userHome)
+    }
+
     findbugs {
         ignoreFailures = true
         effort = "max"
