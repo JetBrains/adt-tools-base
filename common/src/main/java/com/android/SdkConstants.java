@@ -1066,8 +1066,6 @@ public final class SdkConstants {
     public static final String VALUE_ZERO_DP = "0dp";                           //$NON-NLS-1$
     public static final String VALUE_ONE_DP = "1dp";                            //$NON-NLS-1$
     public static final String VALUE_TOP = "top";                               //$NON-NLS-1$
-    public static final String VALUE_LEFT = "left";                             //$NON-NLS-1$
-    public static final String VALUE_RIGHT = "right";                           //$NON-NLS-1$
     public static final String VALUE_BOTTOM = "bottom";                         //$NON-NLS-1$
     public static final String VALUE_CENTER_VERTICAL = "center_vertical";       //$NON-NLS-1$
     public static final String VALUE_CENTER_HORIZONTAL = "center_horizontal";   //$NON-NLS-1$
@@ -1081,8 +1079,10 @@ public final class SdkConstants {
     // (centerHorizontal versus center_horizontal)
     public static final String GRAVITY_VALUE_ = "center";                             //$NON-NLS-1$
     public static final String GRAVITY_VALUE_CENTER = "center";                       //$NON-NLS-1$
-    public static final String GRAVITY_VALUE_RIGHT = "right";                         //$NON-NLS-1$
     public static final String GRAVITY_VALUE_LEFT = "left";                           //$NON-NLS-1$
+    public static final String GRAVITY_VALUE_RIGHT = "right";                         //$NON-NLS-1$
+    public static final String GRAVITY_VALUE_START = "start";                         //$NON-NLS-1$
+    public static final String GRAVITY_VALUE_END = "end";                             //$NON-NLS-1$
     public static final String GRAVITY_VALUE_BOTTOM = "bottom";                       //$NON-NLS-1$
     public static final String GRAVITY_VALUE_TOP = "top";                             //$NON-NLS-1$
     public static final String GRAVITY_VALUE_FILL_HORIZONTAL = "fill_horizontal";     //$NON-NLS-1$
