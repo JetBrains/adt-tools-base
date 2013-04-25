@@ -63,6 +63,7 @@ import java.util.Set;
 public class DetectMissingPrefix extends LayoutDetector {
 
     /** Attributes missing the android: prefix */
+    @SuppressWarnings("unchecked")
     public static final Issue MISSING_NAMESPACE = Issue.create(
             "MissingPrefix", //$NON-NLS-1$
             "Missing Android XML namespace",

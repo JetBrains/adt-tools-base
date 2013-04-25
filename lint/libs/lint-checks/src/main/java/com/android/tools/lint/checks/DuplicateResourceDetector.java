@@ -58,6 +58,7 @@ import java.util.Set;
 public class DuplicateResourceDetector extends ResourceXmlDetector {
 
     /** The main issue discovered by this detector */
+    @SuppressWarnings("unchecked")
     public static final Issue ISSUE = Issue.create(
             "DuplicateDefinition", //$NON-NLS-1$
             "Duplicate definitions of resources",
