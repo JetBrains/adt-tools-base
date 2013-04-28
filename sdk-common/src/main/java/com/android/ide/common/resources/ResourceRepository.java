@@ -328,7 +328,7 @@ public abstract class ResourceRepository {
      * @return A resource item matching the type and name.
      */
     @NonNull
-    protected ResourceItem getResourceItem(@NonNull ResourceType type, @NonNull String name) {
+    public ResourceItem getResourceItem(@NonNull ResourceType type, @NonNull String name) {
         ensureInitialized();
 
         // looking for an existing ResourceItem with this type and name
