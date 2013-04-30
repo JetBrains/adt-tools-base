@@ -19,12 +19,12 @@ package com.android.ddmlib.testrunner;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 
 import java.io.IOException;
 import java.util.Collections;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link RemoteAndroidTestRunner}.
@@ -44,7 +44,7 @@ public class RemoteAndroidTestRunnerTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         mMockDevice = EasyMock.createMock(IDevice.class);
-        EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn("serial");
+        EasyMock.expect(mMockDevice.getName()).andStubReturn("serial");
         mMockListener = EasyMock.createNiceMock(ITestRunListener.class);
         mRunner = new RemoteAndroidTestRunner(TEST_PACKAGE, TEST_RUNNER, mMockDevice);
     }
