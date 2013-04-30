@@ -18,7 +18,7 @@ package com.android.ddmlib.testrunner;
 
 
 import com.android.ddmlib.AdbCommandRejectedException;
-import com.android.ddmlib.IDevice;
+import com.android.ddmlib.IShellEnabledDevice;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.TimeoutException;
@@ -37,7 +37,7 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
 
     private final String mPackageName;
     private final String mRunnerName;
-    private IDevice mRemoteDevice;
+    private IShellEnabledDevice mRemoteDevice;
     // default to no timeout
     private int mMaxTimeToOutputResponse = 0;
     private String mRunName = null;
@@ -71,7 +71,7 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
      */
     public RemoteAndroidTestRunner(String packageName,
                                    String runnerName,
-                                   IDevice remoteDevice) {
+                                   IShellEnabledDevice remoteDevice) {
 
         mPackageName = packageName;
         mRunnerName = runnerName;
@@ -86,7 +86,7 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
      * @param remoteDevice the Android device to execute tests on
      */
     public RemoteAndroidTestRunner(String packageName,
-                                   IDevice remoteDevice) {
+                                   IShellEnabledDevice remoteDevice) {
         this(packageName, null, remoteDevice);
     }
 
@@ -203,7 +203,7 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
         final String runCaseCommandStr = String.format("am instrument -w -r %1$s %2$s",
             getArgsCommand(), getRunnerPath());
         Log.i(LOG_TAG, String.format("Running %1$s on %2$s", runCaseCommandStr,
-                mRemoteDevice.getSerialNumber()));
+                mRemoteDevice.getName()));
         String runName = mRunName == null ? mPackageName : mRunName;
         mParser = new InstrumentationResultParser(runName, listeners);
 
@@ -211,14 +211,14 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
             mRemoteDevice.executeShellCommand(runCaseCommandStr, mParser, mMaxTimeToOutputResponse);
         } catch (IOException e) {
             Log.w(LOG_TAG, String.format("IOException %1$s when running tests %2$s on %3$s",
-                    e.toString(), getPackageName(), mRemoteDevice.getSerialNumber()));
+                    e.toString(), getPackageName(), mRemoteDevice.getName()));
             // rely on parser to communicate results to listeners
             mParser.handleTestRunFailed(e.toString());
             throw e;
         } catch (ShellCommandUnresponsiveException e) {
             Log.w(LOG_TAG, String.format(
                     "ShellCommandUnresponsiveException %1$s when running tests %2$s on %3$s",
-                    e.toString(), getPackageName(), mRemoteDevice.getSerialNumber()));
+                    e.toString(), getPackageName(), mRemoteDevice.getName()));
             mParser.handleTestRunFailed(String.format(
                     "Failed to receive adb shell test output within %1$d ms. " +
                     "Test may have timed out, or adb connection to device became unresponsive",
@@ -227,13 +227,13 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
         } catch (TimeoutException e) {
             Log.w(LOG_TAG, String.format(
                     "TimeoutException when running tests %1$s on %2$s", getPackageName(),
-                    mRemoteDevice.getSerialNumber()));
+                    mRemoteDevice.getName()));
             mParser.handleTestRunFailed(e.toString());
             throw e;
         } catch (AdbCommandRejectedException e) {
             Log.w(LOG_TAG, String.format(
                     "AdbCommandRejectedException %1$s when running tests %2$s on %3$s",
-                    e.toString(), getPackageName(), mRemoteDevice.getSerialNumber()));
+                    e.toString(), getPackageName(), mRemoteDevice.getName()));
             mParser.handleTestRunFailed(e.toString());
             throw e;
         }
