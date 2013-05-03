@@ -23,4 +23,19 @@ package com.android.ddmlib;
  */
 public class TimeoutException extends Exception {
     private static final long serialVersionUID = 1L;
+
+    public TimeoutException() {
+    }
+
+    public TimeoutException(String s) {
+        super(s);
+    }
+
+    public TimeoutException(String s, Throwable throwable) {
+        super(s, throwable);
+    }
+
+    public TimeoutException(Throwable throwable) {
+        super(throwable);
+    }
 }
