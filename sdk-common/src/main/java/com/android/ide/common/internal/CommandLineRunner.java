@@ -83,17 +83,10 @@ public class CommandLineRunner {
 
         OutputGrabber grabber = new OutputGrabber();
 
-        int exitCode = GrabProcessOutput.grabProcessOutput(
+        return GrabProcessOutput.grabProcessOutput(
                 process,
                 GrabProcessOutput.Wait.WAIT_FOR_READERS, // we really want to make sure we get all the output!
                 grabber);
-
-        if (exitCode == 0 && grabber.foundError()) {
-            mLogger.error(null, "Process output to error stream but exitCode is " + exitCode);
-            exitCode = -42;
-        }
-
-        return exitCode;
     }
 
     private void printCommand(String[] command) {
