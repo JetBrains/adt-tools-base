@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.ide.common.internal.WaitableExecutor;
 
 import java.io.File;
+import java.util.concurrent.ExecutionException;
 
 /**
  * A {@link MergeConsumer} that writes the result on the disk.
@@ -45,9 +46,16 @@ public abstract class MergeWriter<I extends DataItem> implements MergeConsumer<I
         try {
             postWriteAction();
 
-            getExecutor().waitForTasks();
-        } catch (Throwable t) {
-            throw new ConsumerException(t);
+            getExecutor().waitForTasksWithQuickFail();
+        } catch (InterruptedException e) {
+            // if this thread was cancelled we need to cancel the rest of the executor tasks.
+            getExecutor().cancelAllTasks();
+            throw new ConsumerException(e);
+        } catch (ExecutionException e) {
+            // if a task fail, we also want to cancel the rest of the tasks.
+            mExecutor.cancelAllTasks();
+            // and return the first error
+            throw new ConsumerException(e.getCause());
         }
     }
 

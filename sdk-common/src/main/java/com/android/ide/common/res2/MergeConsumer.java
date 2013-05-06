@@ -24,6 +24,10 @@ import com.android.annotations.Nullable;
  */
 public interface MergeConsumer<I extends DataItem> {
 
+    /**
+     * An exception thrown during by the consumer. It always contains the original exception
+     * as its cause.
+     */
     public static class ConsumerException extends Exception {
         public ConsumerException(Throwable cause) {
             super(cause);
