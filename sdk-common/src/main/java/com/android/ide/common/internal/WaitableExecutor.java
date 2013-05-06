@@ -31,11 +31,15 @@ import java.util.concurrent.Future;
  *
  * Tasks are submitted as {@link Callable} with {@link #execute(java.util.concurrent.Callable)}.
  *
- * After executing all tasks, it is possible to wait on them with {@link #waitForTasks()}.
+ * After executing all tasks, it is possible to wait on them with
+ * {@link #waitForTasksWithQuickFail()}, or {@link #waitForAllTasks()}.
+ *
+ * This class is not Thread safe!
  */
 public class WaitableExecutor<T> {
 
     private final CompletionService<T> mCompletionService;
+
     private int mCount = 0;
 
     public WaitableExecutor() {
@@ -53,20 +57,90 @@ public class WaitableExecutor<T> {
     }
 
     /**
-     * Waits for all tasks to be executed. If a tasks through an exception, it will be thrown here.
+     * Waits for all tasks to be executed. If a tasks throws an exception, it will be thrown from
+     * this method inside the ExecutionException, preventing access to the result of the other
+     * threads.
+     *
+     * If you want to get the results of all tasks (result and/or exception), use
+     * {@link #waitForAllTasks()}
      *
      * @return a list of all the return values from the tasks.
      *
-     * @throws InterruptedException
-     * @throws ExecutionException
+     * @throws InterruptedException if this thread was interrupted. Not if the tasks were interrupted.
+     * @throws ExecutionException if a task fails with an interruption. The cause if the original exception.
      */
-    public List<T> waitForTasks() throws InterruptedException, ExecutionException {
+    public List<T> waitForTasksWithQuickFail() throws InterruptedException, ExecutionException {
         List<T> results = Lists.newArrayListWithCapacity(mCount);
         for (int i = 0 ; i < mCount ; i++) {
             Future<T> result = mCompletionService.take();
+            // Get the result from the task. If the task threw an exception just throw it too.
             results.add(result.get());
         }
 
         return results;
+    }
+
+    public static final class TaskResult<T> {
+        public T value;
+        public Throwable exception;
+
+        static <T> TaskResult<T> withValue(T value) {
+            TaskResult<T> result = new TaskResult<T>(null);
+            result.value = value;
+            return result;
+        }
+
+        TaskResult(Throwable cause) {
+            exception = cause;
+        }
+    }
+
+    /**
+     * Waits for all tasks to be executed, and returns a {@link TaskResult} for each, containing
+     * either the result or the exception thrown by the task.
+     *
+     * If a task is cancelled (and it threw InterruptedException) then the result for the task
+     * is *not* included.
+     *
+     * @return a list of all the return values from the tasks.
+     *
+     * @throws InterruptedException if this thread was interrupted. Not if the tasks were interrupted.
+     */
+    public List<TaskResult<T>> waitForAllTasks() throws InterruptedException {
+        List<TaskResult<T>> results = Lists.newArrayListWithCapacity(mCount);
+        for (int i = 0 ; i < mCount ; i++) {
+            Future<T> task = mCompletionService.take();
+            // Get the result from the task.
+            try {
+                results.add(TaskResult.withValue(task.get()));
+            } catch (ExecutionException e) {
+                // the original exception thrown by the task is the cause of this one.
+                Throwable cause = e.getCause();
+
+                //noinspection StatementWithEmptyBody
+                if (cause instanceof InterruptedException) {
+                    // if the task was cancelled we probably don't care about its result.
+                } else {
+                    // there was an error.
+                    results.add(new TaskResult<T>(cause));
+                }
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Cancel all remaining tasks.
+     */
+    public void cancelAllTasks() {
+        while (true) {
+            Future<T> task = mCompletionService.poll();
+            if (task != null) {
+                task.cancel(true /*mayInterruptIfRunning*/);
+            } else {
+                break;
+            }
+        }
     }
 }
