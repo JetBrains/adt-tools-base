@@ -42,8 +42,18 @@ public class WaitableExecutor<T> {
 
     private int mCount = 0;
 
+    public WaitableExecutor(int nThreads) {
+        if (nThreads < 1) {
+            mCompletionService = new ExecutorCompletionService<T>(
+                    Executors.newCachedThreadPool());
+        } else {
+            mCompletionService = new ExecutorCompletionService<T>(
+                    Executors.newFixedThreadPool(nThreads));
+        }
+    }
+
     public WaitableExecutor() {
-        mCompletionService = new ExecutorCompletionService<T>(Executors.newCachedThreadPool());
+        this(0);
     }
 
     /**
