@@ -19,7 +19,9 @@ package com.android.sdklib.devices;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.dvlib.DeviceSchema;
+import com.android.resources.ScreenOrientation;
 
+import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -163,6 +165,43 @@ public final class Device {
             }
         }
         return null;
+    }
+
+    @SuppressWarnings("SuspiciousNameCombination") // Deliberately swapping orientations
+    @Nullable
+    public Dimension getScreenSize(@NonNull ScreenOrientation orientation) {
+        Screen screen = getDefaultHardware().getScreen();
+        if (screen == null) {
+            return null;
+        }
+
+        // compute width and height to take orientation into account.
+        int x = screen.getXDimension();
+        int y = screen.getYDimension();
+        int screenWidth, screenHeight;
+
+        if (x > y) {
+            if (orientation == ScreenOrientation.LANDSCAPE) {
+                screenWidth = x;
+                screenHeight = y;
+            }
+            else {
+                screenWidth = y;
+                screenHeight = x;
+            }
+        }
+        else {
+            if (orientation == ScreenOrientation.LANDSCAPE) {
+                screenWidth = y;
+                screenHeight = x;
+            }
+            else {
+                screenWidth = x;
+                screenHeight = y;
+            }
+        }
+
+        return new Dimension(screenWidth, screenHeight);
     }
 
     public static class Builder {
