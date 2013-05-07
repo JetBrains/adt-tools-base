@@ -110,6 +110,7 @@ public class HardwareConfigHelper {
      * Creates and returns the HardwareConfig object.
      * @return the config
      */
+    @SuppressWarnings("SuspiciousNameCombination") // Deliberately swapping orientations
     @NonNull
     public HardwareConfig getConfig() {
         Screen screen = mDevice.getDefaultHardware().getScreen();

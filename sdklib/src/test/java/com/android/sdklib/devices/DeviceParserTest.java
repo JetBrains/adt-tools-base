@@ -16,16 +16,6 @@
 
 package com.android.sdklib.devices;
 
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import junit.framework.TestCase;
-
-import org.xml.sax.SAXParseException;
-
 import com.android.dvlib.DeviceSchemaTest;
 import com.android.resources.Density;
 import com.android.resources.Keyboard;
@@ -37,6 +27,17 @@ import com.android.resources.ScreenRatio;
 import com.android.resources.ScreenSize;
 import com.android.resources.TouchScreen;
 import com.android.sdklib.devices.Storage.Unit;
+
+import junit.framework.TestCase;
+
+import org.xml.sax.SAXParseException;
+
+import java.awt.Dimension;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class DeviceParserTest extends TestCase {
 
@@ -179,5 +180,19 @@ public class DeviceParserTest extends TestCase {
         } catch (SAXParseException e) {
             assertTrue(e.getMessage().startsWith("cvc-enumeration-valid: Value 'NFD'"));
         }
+    }
+
+    public void testScreenDimension() throws Exception {
+        InputStream devicesFile = DeviceSchemaTest.class.getResourceAsStream(
+                "devices_minimal.xml");
+        List<Device> devices = DeviceParser.parse(devicesFile);
+        assertEquals("Parsing devices_minimal.xml produces the wrong number of devices", 1,
+                devices.size());
+
+        Device device = devices.get(0);
+        assertEquals("Galaxy Nexus", device.getName());
+
+        assertEquals(new Dimension(1280, 720), device.getScreenSize(ScreenOrientation.LANDSCAPE));
+        assertEquals(new Dimension(720, 1280), device.getScreenSize(ScreenOrientation.PORTRAIT));
     }
 }
