@@ -118,6 +118,12 @@ subprojects { Project project ->
         effort = "max"
         reportLevel = "high"
     }
+
+    signing {
+        required { project.has("release") && gradle.taskGraph.hasTask("uploadArchives") }
+        sign configurations.archives
+    }
+
 }
 
 // delay evaluation of this project before all subprojects have been evaluated.
