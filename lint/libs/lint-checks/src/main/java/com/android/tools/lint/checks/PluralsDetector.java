@@ -120,6 +120,17 @@ public class PluralsDetector extends ResourceXmlDetector {
 
     @Override
     public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
+        int count = LintUtils.getChildCount(element);
+        if (count == 0) {
+            context.report(MISSING, element, context.getLocation(element),
+                    "There should be at least one quantity string in this <plural> definition",
+                    null);
+            return;
+        }
+        if (true) {
+            return;
+        }
+
         Pair<String, String> locale = TypoDetector.getLocale(context);
         if (locale == null) {
             return;

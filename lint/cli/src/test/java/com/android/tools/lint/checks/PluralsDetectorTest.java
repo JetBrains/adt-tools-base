@@ -55,4 +55,15 @@ public class PluralsDetectorTest extends AbstractCheckTest {
                         "res/values-zh-rCN/plurals3.xml",
                         "res/values-cs/plurals3.xml"));
     }
+
+    public void testEmptyPlural() throws Exception {
+        assertEquals(""
+                + "res/values/plurals4.xml:3: Warning: There should be at least one quantity string in this <plural> definition [MissingQuantity]\n"
+                + "   <plurals name=\"minutes_until_num\">\n"
+                + "   ^\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "res/values/plurals4.xml"));
+    }
 }
