@@ -1,5 +1,5 @@
 package test.pkg;
-
+import android.content.ClipboardManager;
 import android.app.Activity;
 import android.app.WallpaperManager;
 import android.content.Context;
@@ -21,5 +21,10 @@ public class SystemServiceTest extends Activity {
                 .getSystemService(DISPLAY_SERVICE);
         DisplayManager displayServiceWrong = (DisplayManager) context
                 .getSystemService(DEVICE_POLICY_SERVICE);
+    }
+
+    public void clipboard() {
+      ClipboardManager clipboard = (ClipboardManager)context.getSystemService(Context.CLIPBOARD_SERVICE);
+      android.content.ClipboardManager clipboard =  (android.content.ClipboardManager)context.getSystemService(Context.CLIPBOARD_SERVICE);
     }
 }

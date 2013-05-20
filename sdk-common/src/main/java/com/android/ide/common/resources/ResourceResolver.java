@@ -481,7 +481,6 @@ public class ResourceResolver extends RenderResources {
      * @param styles the styles for which we compute the parent.
      * @param inProjectStyleMap the map of project styles.
      * @param inFrameworkStyleMap the map of framework styles.
-     * @param outInheritanceMap the map of style inheritance. This is filled by the method.
      */
     private void computeStyleInheritance(Collection<ResourceValue> styles,
             Map<String, ResourceValue> inProjectStyleMap,
