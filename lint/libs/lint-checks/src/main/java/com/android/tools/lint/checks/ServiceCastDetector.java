@@ -103,6 +103,12 @@ public class ServiceCastDetector extends Detector implements Detector.JavaScanne
                         expectedClass = stripPackage(expectedClass);
                     }
                     if (!castType.equals(expectedClass)) {
+                        // It's okay to mix and match
+                        // android.content.ClipboardManager and android.text.ClipboardManager
+                        if (isClipboard(castType) && isClipboard(expectedClass)) {
+                            return;
+                        }
+
                         String message = String.format("Suspicious cast to %1$s for a %2$s: expected %3$s",
                                 stripPackage(castType), name, stripPackage(expectedClass));
                         context.report(ISSUE, node, context.getLocation(cast), message, null);
@@ -111,6 +117,11 @@ public class ServiceCastDetector extends Detector implements Detector.JavaScanne
 
             }
         }
+    }
+
+    private static boolean isClipboard(String cls) {
+        return cls.equals("android.content.ClipboardManager")      //$NON-NLS-1$
+                || cls.equals("android.text.ClipboardManager");    //$NON-NLS-1$
     }
 
     private static String stripPackage(String fqcn) {
