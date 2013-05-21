@@ -1,19 +1,19 @@
 <component name="libraryTable">
   <library name="http-client">
     <CLASSES>
-      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/commons-codec/commons-codec/1.4/commons-codec-1.4.jar!/" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar!/" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/apache/httpcomponents/httpclient/4.1.1/httpclient-4.1.1.jar!/" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/apache/httpcomponents/httpcore/4.1/httpcore-4.1.jar!/" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/apache/httpcomponents/httpmime/4.1/httpmime-4.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/commons-codec/commons-codec/1.4/commons-codec-1.4.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/apache/httpcomponents/httpclient/4.1.1/httpclient-4.1.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/apache/httpcomponents/httpcore/4.1/httpcore-4.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/apache/httpcomponents/httpmime/4.1/httpmime-4.1.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/commons-codec/commons-codec/1.4/commons-codec-1.4-sources.jar!/" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1-sources.jar!/" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/apache/httpcomponents/httpclient/4.1.1/httpclient-4.1.1-sources.jar!/" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/apache/httpcomponents/httpcore/4.1/httpcore-4.1-sources.jar!/" />
-      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/org/apache/httpcomponents/httpmime/4.1/httpmime-4.1-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/commons-codec/commons-codec/1.4/commons-codec-1.4-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/apache/httpcomponents/httpclient/4.1.1/httpclient-4.1.1-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/apache/httpcomponents/httpcore/4.1/httpcore-4.1-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/apache/httpcomponents/httpmime/4.1/httpmime-4.1-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

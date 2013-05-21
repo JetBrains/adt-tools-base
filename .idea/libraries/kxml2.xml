@@ -1,11 +1,11 @@
 <component name="libraryTable">
   <library name="kxml2">
     <CLASSES>
-      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/net/sf/kxml/kxml2/2.3.0/kxml2-2.3.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/net/sf/kxml/kxml2/2.3.0/kxml2-2.3.0.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$TOOLS_PREBUILTS$/common/m2/repository/net/sf/kxml/kxml2/2.3.0/kxml2-2.3.0-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/net/sf/kxml/kxml2/2.3.0/kxml2-2.3.0-sources.jar!/" />
     </SOURCES>
   </library>
 </component>
