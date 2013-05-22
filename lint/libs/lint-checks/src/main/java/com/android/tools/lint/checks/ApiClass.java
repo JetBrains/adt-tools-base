@@ -121,10 +121,6 @@ public class ApiClass {
             }
         }
 
-        if (min == Integer.MAX_VALUE) {
-            min = 1;
-        }
-
         return min;
     }
 
@@ -184,10 +180,6 @@ public class ApiClass {
                     }
                 }
             }
-        }
-
-        if (min == Integer.MAX_VALUE) {
-            min = 1;
         }
 
         return min;
