@@ -123,6 +123,32 @@ public class LocaleManager {
     }
 
     /**
+     * Returns the region code for the given language. <b>Note that there can be
+     * many regions that speak a given language; this just picks one</b>.
+     * Note that if the current locale of the user happens to have the same
+     * language as the given language code, in that case we pick the current
+     * region.
+     *
+     * @param languageCode the language to look up
+     * @return the corresponding region code, if any
+     */
+    @Nullable
+    public static String getLanguageRegion(@NonNull String languageCode) {
+        // Prefer the local registration of the current locale; even if
+        // for example the default locale for English is the US, if the current
+        // default locale is English, then use its associated country, which could
+        // for example be Australia.
+        @SuppressWarnings("UnnecessaryFullyQualifiedName")
+        java.util.Locale locale = java.util.Locale.getDefault();
+        if (languageCode.equalsIgnoreCase(locale.getLanguage())) {
+            return locale.getCountry();
+        }
+
+
+        return sLanguageToCountry.get(languageCode);
+    }
+
+    /**
      * Populate the various maps.
      * <p>
      * The language to region mapping was constructed by using the ISO 639-1 table from
@@ -1117,17 +1143,17 @@ public class LocaleManager {
     }
 
     @VisibleForTesting
-    static Map<String, String> getLanguageToCountryMap() {
+    public static Map<String, String> getLanguageToCountryMap() {
         return sLanguageToCountry;
     }
 
     @VisibleForTesting
-    static Map<String, String> getLanguageNamesMap() {
+    public static Map<String, String> getLanguageNamesMap() {
         return sLanguageNames;
     }
 
     @VisibleForTesting
-    static Map<String, String> getRegionNamesMap() {
+    public static Map<String, String> getRegionNamesMap() {
         return sRegionNames;
     }
 }
