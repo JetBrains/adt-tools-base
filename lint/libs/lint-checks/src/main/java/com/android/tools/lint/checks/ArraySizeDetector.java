@@ -177,6 +177,10 @@ public class ArraySizeDetector extends ResourceXmlDetector {
                 Collections.sort(names);
                 for (String name : names) {
                     Location location = mLocations.get(name);
+                    if (location == null) {
+                        // Suppressed; see visitElement
+                        continue;
+                    }
                     // We were prepending locations, but we want to prefer the base folders
                     location = Location.reverse(location);
 
