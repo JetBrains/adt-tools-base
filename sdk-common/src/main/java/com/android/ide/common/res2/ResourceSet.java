@@ -140,8 +140,13 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         FolderData folderData = getFolderData(changedFile.getParentFile());
         ResourceFile resourceFile = getDataFile(changedFile);
 
+        if (resourceFile == null) {
+            throw new RuntimeException(
+                    "changedFile has no data file: " + changedFile.getAbsolutePath());
+        }
+
         if (folderData.type != null) {
-                    // single res file
+            // single res file
             resourceFile.getItem().setTouched();
         } else {
             // multi res. Need to parse the file and compare the items one by one.
