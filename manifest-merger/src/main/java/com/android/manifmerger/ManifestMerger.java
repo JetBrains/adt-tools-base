@@ -224,14 +224,19 @@ public class ManifestMerger {
             String packageOverride) {
         Document mainDoc = MergerXmlUtils.parseDocument(mainFile, mLog);
         if (mainDoc == null) {
+            mLog.error(Severity.ERROR, new FileAndLine(mainFile.getAbsolutePath(), 0),
+                    "Failed to read manifest file.");
             return false;
         }
 
         boolean success = process(mainDoc, libraryFiles, injectAttributes, packageOverride);
 
         if (!MergerXmlUtils.printXmlFile(mainDoc, outputFile, mLog)) {
+            mLog.error(Severity.ERROR, new FileAndLine(outputFile.getAbsolutePath(), 0),
+                    "Failed to write manifest file.");
             success = false;
         }
+
         return success;
     }
 
