@@ -127,9 +127,6 @@ public class PluralsDetector extends ResourceXmlDetector {
                     null);
             return;
         }
-        if (true) {
-            return;
-        }
 
         Pair<String, String> locale = TypoDetector.getLocale(context);
         if (locale == null) {
