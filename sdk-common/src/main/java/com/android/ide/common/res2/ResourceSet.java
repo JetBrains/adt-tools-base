@@ -141,8 +141,9 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         ResourceFile resourceFile = getDataFile(changedFile);
 
         if (resourceFile == null) {
-            throw new RuntimeException(
-                    "changedFile has no data file: " + changedFile.getAbsolutePath());
+            throw new RuntimeException(String.format(
+                    "In DataSet '%s', no data file for changedFile '%s'",
+                    getConfigName(), changedFile.getAbsolutePath()));
         }
 
         if (folderData.type != null) {
