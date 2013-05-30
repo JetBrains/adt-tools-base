@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  * <p/>Note: the ddmlib does not resolve the stack trace automatically. While this class provides
  * storage for resolved stack trace, this is merely for convenience.
  */
-public final class NativeAllocationInfo {
+public class NativeAllocationInfo {
     /* Keywords used as delimiters in the string representation of a NativeAllocationInfo */
     public static final String END_STACKTRACE_KW = "EndStacktrace";
     public static final String BEGIN_STACKTRACE_KW = "BeginStacktrace:";
@@ -308,11 +308,5 @@ public final class NativeAllocationInfo {
         }
 
         return true;
-    }
-
-    public void subtract(NativeAllocationInfo other) {
-        if (mAllocations > other.mAllocations) {
-            mAllocations -= other.mAllocations;
-        }
     }
 }
