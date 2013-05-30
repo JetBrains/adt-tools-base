@@ -27,17 +27,21 @@ import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  */
@@ -78,14 +82,18 @@ public class ResourceRepository {
         mFramework = isFramework;
     }
 
+    public boolean isFramework() {
+        return mFramework;
+    }
+
     @NonNull
-    MergeConsumer<ResourceItem> getMergeConsumer() {
+    public MergeConsumer<ResourceItem> getMergeConsumer() {
         return mConsumer;
     }
 
     @NonNull
     @VisibleForTesting
-    Map<ResourceType, ListMultimap<String, ResourceItem>> getItems() {
+    public Map<ResourceType, ListMultimap<String, ResourceItem>> getItems() {
         return mItems;
     }
 
@@ -269,7 +277,7 @@ public class ResourceRepository {
         synchronized (mItems) {
             for (ResourceType key : ResourceType.values()) {
                 // get the local results and put them in the map
-                map.put(key, getConfiguredResource(key, referenceConfig));
+                map.put(key, getConfiguredResources(key, referenceConfig));
             }
         }
 
@@ -284,7 +292,7 @@ public class ResourceRepository {
      * @param referenceConfig the configuration to best match.
      */
     @NonNull
-    private Map<String, ResourceValue> getConfiguredResource(
+    public Map<String, ResourceValue> getConfiguredResources(
             @NonNull ResourceType type,
             @NonNull FolderConfiguration referenceConfig) {
 
@@ -305,14 +313,37 @@ public class ResourceRepository {
             // look for the best match for the given configuration
             // the match has to be of type ResourceFile since that's what the input list contains
             ResourceItem match = (ResourceItem) referenceConfig.findMatchingConfigurable(keyItems);
-
-            ResourceValue value = match.getResourceValue(mFramework);
-            if (value != null) {
-                map.put(match.getName(), value);
+            if (match != null) {
+                ResourceValue value = match.getResourceValue(mFramework);
+                if (value != null) {
+                    map.put(match.getName(), value);
+                }
             }
         }
 
         return map;
+    }
+
+    @Nullable
+    public ResourceValue getConfiguredValue(
+            @NonNull ResourceType type,
+            @NonNull String name,
+            @NonNull FolderConfiguration referenceConfig) {
+        // get the resource item for the given type
+        ListMultimap<String, ResourceItem> items = mItems.get(type);
+        if (items == null) {
+            return null;
+        }
+
+        List<ResourceItem> keyItems = items.get(name);
+        if (keyItems == null) {
+            return null;
+        }
+
+        // look for the best match for the given configuration
+        // the match has to be of type ResourceFile since that's what the input list contains
+        ResourceItem match = (ResourceItem) referenceConfig.findMatchingConfigurable(keyItems);
+        return match != null ? match.getResourceValue(mFramework) : null;
     }
 
     private void addItem(@NonNull ResourceItem item) {
@@ -334,6 +365,111 @@ public class ResourceRepository {
             Multimap<String, ResourceItem> map = mItems.get(removedItem.getType());
             if (map != null) {
                 map.remove(removedItem.getName(), removedItem);
+            }
+        }
+    }
+
+    /**
+     * Returns the sorted list of languages used in the resources.
+     */
+    @NonNull
+    public SortedSet<String> getLanguages() {
+        SortedSet<String> set = new TreeSet<String>();
+
+        // As an optimization we could just look for values since that's typically where
+        // the languages are defined -- not on layouts, menus, etc -- especially if there
+        // are no translations for it
+        Set<String> qualifiers = Sets.newHashSet();
+        for (ListMultimap<String, ResourceItem> map : mItems.values()) {
+            for (ResourceItem item : map.values()) {
+                ResourceFile source = item.getSource();
+                if (source != null) {
+                    qualifiers.add(source.getQualifiers());
+                }
+            }
+        }
+
+        Splitter splitter = Splitter.on('-');
+        for (String s : qualifiers) {
+            for (String qualifier : splitter.split(s)) {
+                if (qualifier.length() == 2 && Character.isLetter(qualifier.charAt(0))
+                        && Character.isLetter(qualifier.charAt(1))) {
+                    set.add(qualifier);
+                }
+            }
+        }
+
+        return set;
+    }
+
+    /**
+     * Returns the sorted list of regions used in the resources with the given language.
+     * @param currentLanguage the current language the region must be associated with.
+     */
+    @NonNull
+    public SortedSet<String> getRegions(@NonNull String currentLanguage) {
+        SortedSet<String> set = new TreeSet<String>();
+
+        // As an optimization we could just look for values since that's typically where
+        // the languages are defined -- not on layouts, menus, etc -- especially if there
+        // are no translations for it
+        Set<String> qualifiers = Sets.newHashSet();
+        for (ListMultimap<String, ResourceItem> map : mItems.values()) {
+            for (ResourceItem item : map.values()) {
+                ResourceFile source = item.getSource();
+                if (source != null) {
+                    qualifiers.add(source.getQualifiers());
+                }
+            }
+        }
+
+        Splitter splitter = Splitter.on('-');
+        for (String s : qualifiers) {
+            boolean rightLanguage = false;
+            for (String qualifier : splitter.split(s)) {
+                if (currentLanguage.equals(qualifier)) {
+                    rightLanguage = true;
+                } else if (rightLanguage
+                        && qualifier.length() == 3
+                        && qualifier.charAt(0) == 'r'
+                        && Character.isUpperCase(qualifier.charAt(1))
+                        && Character.isUpperCase(qualifier.charAt(2))) {
+                    set.add(qualifier.substring(1));
+                }
+            }
+        }
+
+        return set;
+    }
+
+    @Nullable
+    protected Collection<String> getMergeIds() {
+        return null;
+    }
+
+    public void clear() {
+        mItems.clear();
+    }
+
+    public void mergeIds() {
+        Collection<String> ids = getMergeIds();
+        if (ids == null) {
+            return;
+        }
+        ListMultimap<String, ResourceItem> idMap = mItems.get(ResourceType.ID);
+        if (idMap == null) {
+            idMap = ArrayListMultimap.create();
+            mItems.put(ResourceType.ID, idMap);
+            for (String id : ids) {
+                idMap.put(id, new ResourceItem(id, ResourceType.ID, null));
+            }
+            return;
+        }
+
+        for (String id : ids) {
+            List<ResourceItem> items = idMap.get(id);
+            if (items == null || items.isEmpty()) {
+                idMap.put(id, new ResourceItem(id, ResourceType.ID, null));
             }
         }
     }

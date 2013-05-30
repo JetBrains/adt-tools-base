@@ -17,6 +17,7 @@
 package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -65,6 +66,7 @@ abstract class DataItem<F extends DataFile> {
      * Returns the DataFile the item is coming from. Can be null.
      * @return the data file.
      */
+    @Nullable
     public F getSource() {
         return mSource;
     }

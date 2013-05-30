@@ -51,7 +51,7 @@ import org.w3c.dom.NodeList;
  * in case of a resource coming from a value file.
  *
  */
-class ResourceItem extends DataItem<ResourceFile> implements Configurable, Comparable<ResourceItem>  {
+public class ResourceItem extends DataItem<ResourceFile> implements Configurable, Comparable<ResourceItem>  {
 
     private static final int DEFAULT_NS_PREFIX_LEN = ANDROID_NS_NAME_PREFIX.length();
 
@@ -88,8 +88,18 @@ class ResourceItem extends DataItem<ResourceFile> implements Configurable, Compa
      * Returns the optional value of the resource. Can be null
      * @return the value or null.
      */
+    @Nullable
     public Node getValue() {
         return mValue;
+    }
+
+  /**
+   * Returns the optional string value of the resource. Can be null
+   * @return the value or null.
+   */
+    @Nullable
+    public String getValueText() {
+        return mValue != null ? mValue.getTextContent() : null;
     }
 
     /**
@@ -154,7 +164,7 @@ class ResourceItem extends DataItem<ResourceFile> implements Configurable, Compa
     }
 
     @Nullable
-    ResourceValue getResourceValue(boolean isFrameworks) {
+    public ResourceValue getResourceValue(boolean isFrameworks) {
         if (mResourceValue == null) {
             //noinspection VariableNotUsedInsideIf
             if (mValue == null) {
@@ -239,7 +249,14 @@ class ResourceItem extends DataItem<ResourceFile> implements Configurable, Compa
         switch (type) {
             case STYLE:
                 String parent = getAttributeValue(attributes, ATTR_PARENT);
-                value = parseStyleValue(new StyleResourceValue(type, name, parent, isFrameworks));
+                try {
+                    value = parseStyleValue(new StyleResourceValue(type, name, parent, isFrameworks));
+                } catch (Throwable t) {
+                    // TEMPORARY DIAGNOSTICS
+                    System.err.println("Problem parsing attribute " + name + " of type " + type
+                            + " for node " + mValue);
+                    return null;
+                }
                 break;
             case DECLARE_STYLEABLE:
                 value = new DeclareStyleableResourceValue(
@@ -299,7 +316,8 @@ class ResourceItem extends DataItem<ResourceFile> implements Configurable, Compa
                         isFrameworkAttr = true;
                     }
 
-                    ResourceValue resValue = new ResourceValue(null, name, isFrameworkAttr);
+                    ResourceValue resValue = new ResourceValue(null, name,
+                            styleValue.isFramework());
                     resValue.setValue(
                             ValueXmlHelper.unescapeResourceString(getTextNode(child), false, true));
                     styleValue.addValue(resValue, isFrameworkAttr);
@@ -344,7 +362,7 @@ class ResourceItem extends DataItem<ResourceFile> implements Configurable, Compa
     }
 
     @NonNull
-    private static String getTextNode(Node node) {
+    private static String getTextNode(@NonNull Node node) {
         StringBuilder sb = new StringBuilder();
 
         NodeList children = node.getChildNodes();
@@ -368,7 +386,7 @@ class ResourceItem extends DataItem<ResourceFile> implements Configurable, Compa
     }
 
     @Override
-    public int compareTo(ResourceItem resourceItem) {
+    public int compareTo(@NonNull ResourceItem resourceItem) {
         int comp = mType.compareTo(resourceItem.getType());
         if (comp == 0) {
             comp = getName().compareTo(resourceItem.getName());
