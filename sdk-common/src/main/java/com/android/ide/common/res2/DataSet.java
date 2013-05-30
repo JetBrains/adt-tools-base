@@ -106,8 +106,8 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      *
      * @param sourceFolder the source folder to load the resources from.
      *
-     * @throws com.android.builder.resources.DuplicateDataException
-     * @throws java.io.IOException
+     * @throws DuplicateDataException
+     * @throws IOException
      */
     protected abstract void readSourceFolder(File sourceFolder, ILogger logger)
             throws DuplicateDataException, IOException;
