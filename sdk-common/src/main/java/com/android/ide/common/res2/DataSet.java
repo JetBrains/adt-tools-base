@@ -22,6 +22,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -347,7 +348,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      *
      * @throws DuplicateDataException if a duplicated item is found.
      */
-    void checkItems() throws DuplicateDataException {
+    protected void checkItems() throws DuplicateDataException {
         // check a list for duplicate, ignoring removed items.
         for (Map.Entry<String, Collection<I>> entry : mItems.asMap().entrySet()) {
             Collection<I> items = entry.getValue();

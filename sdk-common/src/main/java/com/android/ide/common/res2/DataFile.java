@@ -33,7 +33,7 @@ import java.util.Map;
  * It contains a link to its {@link java.io.File}, and the {@DataItem}s it generates.
  *
  */
-abstract class DataFile<I extends DataItem> {
+public abstract class DataFile<I extends DataItem> {
 
     static enum FileType {
         SINGLE, MULTI
@@ -83,7 +83,7 @@ abstract class DataFile<I extends DataItem> {
     }
 
     @NonNull
-    File getFile() {
+    public File getFile() {
         return mFile;
     }
 
