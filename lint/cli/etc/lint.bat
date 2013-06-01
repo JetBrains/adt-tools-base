@@ -54,5 +54,5 @@ if debug NEQ "%1" goto NoDebug
 set jarpath=%frameworkdir%%jarfile%
 set javaextdirs=%frameworkdir%
 
-call %java_exe% %java_debug% -Xmx512m -Dcom.android.tools.lint.bindir=%prog_dir% -Dcom.android.tools.lint.workdir=%work_dir% -classpath "%jarpath%" com.android.tools.lint.Main %*
+call %java_exe% %java_debug% -Xmx512m -Dcom.android.tools.lint.bindir=%prog_dir% -Dcom.android.tools.lint.workdir=%work_dir% -Djava.awt.headless=true -classpath "%jarpath%" com.android.tools.lint.Main %*
 
