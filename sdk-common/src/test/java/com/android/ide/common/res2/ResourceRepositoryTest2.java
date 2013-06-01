@@ -24,6 +24,7 @@ import static com.android.SdkConstants.FD_RES_VALUES;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.resources.configuration.LanguageQualifier;
+import com.android.ide.common.resources.configuration.RegionQualifier;
 import com.android.ide.common.resources.configuration.ScreenOrientationQualifier;
 import com.android.resources.ResourceType;
 import com.android.resources.ScreenOrientation;
@@ -35,8 +36,10 @@ import junit.framework.TestCase;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
 
 @SuppressWarnings("javadoc")
 public class ResourceRepositoryTest2 extends TestCase {
@@ -59,11 +62,13 @@ public class ResourceRepositoryTest2 extends TestCase {
         File layoutLand = new File(mRes, FD_RES_LAYOUT + "-land");
         File values = new File(mRes, FD_RES_VALUES);
         File valuesEs = new File(mRes, FD_RES_VALUES + "-es");
+        File valuesEsUs = new File(mRes, FD_RES_VALUES + "-es-rUS");
         File drawable = new File(mRes, FD_RES_DRAWABLE);
         layout.mkdirs();
         layoutLand.mkdirs();
         values.mkdirs();
         valuesEs.mkdirs();
+        valuesEsUs.mkdirs();
         drawable.mkdirs();
         new File(layout, "layout1.xml").createNewFile();
         new File(layoutLand, "layout1.xml").createNewFile();
@@ -90,6 +95,11 @@ public class ResourceRepositoryTest2 extends TestCase {
                 + "<resources>\n"
                 + "    <string name=\"show_all_apps\">Todo</string>\n"
                 + "</resources>\n", new File(valuesEs, "strings.xml"), Charsets.UTF_8);
+        Files.write(""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources>\n"
+                + "    <string name=\"show_all_apps\">Todo</string>\n"
+                + "</resources>\n", new File(valuesEsUs, "strings.xml"), Charsets.UTF_8);
 
         mResourceMerger = new ResourceMerger();
         ResourceSet resourceSet = new ResourceSet("main");
@@ -189,10 +199,10 @@ public class ResourceRepositoryTest2 extends TestCase {
         //assertTrue(item.hasDefault());
         assertEquals(2, itemList.size());
 
-//        SortedSet<String> languages = mRepository.getLanguages();
-//        assertEquals(1, languages.size());
-//        assertTrue(languages.contains("es"));
-//        assertTrue(mRepository.getRegions("es").isEmpty());
+        SortedSet<String> languages = mRepository.getLanguages();
+        assertEquals(1, languages.size());
+        assertTrue(languages.contains("es"));
+        assertEquals(Collections.singleton("US"), mRepository.getRegions("es"));
 
 //        List<ResourceFile> layouts = mRepository.getSourceFiles(ResourceType.LAYOUT, "layout1",
 //                folderConfig);

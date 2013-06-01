@@ -83,8 +83,8 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
      * Returns the list of ResourceSet objects.
      * @return the resource sets.
      */
-    @VisibleForTesting
-    List<S> getDataSets() {
+    @NonNull
+    public List<S> getDataSets() {
         return mDataSets;
     }
 

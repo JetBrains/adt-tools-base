@@ -33,7 +33,7 @@ import java.util.List;
  * The type of the file is based on whether the file is located in a values folder (FileType.MULTI)
  * or in another folder (FileType.SINGLE).
  */
-class ResourceFile extends DataFile<ResourceItem> {
+public class ResourceFile extends DataFile<ResourceItem> {
 
     static final String ATTR_QUALIFIER = "qualifiers";
 
