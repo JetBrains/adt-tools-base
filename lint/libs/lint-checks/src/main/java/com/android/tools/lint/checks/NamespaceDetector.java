@@ -21,12 +21,14 @@ import static com.android.SdkConstants.AUTO_URI;
 import static com.android.SdkConstants.URI_PREFIX;
 import static com.android.SdkConstants.XMLNS_PREFIX;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.LintUtils;
+import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
@@ -94,6 +96,25 @@ public class NamespaceDetector extends LayoutDetector {
             6,
             Severity.ERROR,
             IMPLEMENTATION);
+
+    /** Unused namespace declarations */
+    public static final Issue RES_AUTO = Issue.create(
+            "ResAuto", //$NON-NLS-1$
+            "Hardcoded Package in Namespace",
+            "Finds resource namespaces with hardcoded package names",
+
+            "In Gradle projects, the actual package used in the final APK can vary; for " +
+            "you can add a `.debug` package suffix in one version and not the other. " +
+            "Therefore, you should *not* hardcode the application package in the resource; " +
+            "instead, use the special namespace `http://schemas.android.com/apk/res-auto` " +
+            "which will cause the tools to figure out the right namespace for the resource " +
+            "regardless of the actual package used during the build.",
+
+            Category.CORRECTNESS,
+            9,
+            Severity.ERROR,
+            IMPLEMENTATION);
+
 
     /** Prefix relevant for custom namespaces */
     private static final String XMLNS_ANDROID = "xmlns:android";                    //$NON-NLS-1$
@@ -190,8 +211,11 @@ public class NamespaceDetector extends LayoutDetector {
         }
 
         if (haveCustomNamespace) {
-          boolean checkCustomAttrs = context.isEnabled(CUSTOM_VIEW)
-                  && context.getProject().isLibrary();
+            Project project = context.getProject();
+            boolean checkCustomAttrs =
+                    context.isEnabled(CUSTOM_VIEW) && project.isLibrary()
+                    || context.isEnabled(RES_AUTO) && project.isGradleProject();
+
             mCheckUnused = context.isEnabled(UNUSED);
 
             if (checkCustomAttrs) {
@@ -218,9 +242,15 @@ public class NamespaceDetector extends LayoutDetector {
                 String uri = attribute.getValue();
                 if (uri != null && !uri.isEmpty() && uri.startsWith(URI_PREFIX)
                         && !uri.equals(ANDROID_URI)) {
-                    context.report(CUSTOM_VIEW, attribute, context.getLocation(attribute),
-                        "When using a custom namespace attribute in a library project, " +
-                        "use the namespace \"" + AUTO_URI + "\" instead.", null);
+                    if (context.getProject().isGradleProject()) {
+                        context.report(RES_AUTO, attribute, context.getLocation(attribute),
+                            "In Gradle projects, always use " + AUTO_URI + " for custom " +
+                            "attributes", null);
+                    } else {
+                        context.report(CUSTOM_VIEW, attribute, context.getLocation(attribute),
+                            "When using a custom namespace attribute in a library project, " +
+                            "use the namespace \"" + AUTO_URI + "\" instead.", null);
+                    }
                 }
             }
         }

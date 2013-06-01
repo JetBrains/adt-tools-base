@@ -1962,6 +1962,17 @@ public class LintDriver {
         public String getProjectName(@NonNull Project project) {
             return mDelegate.getProjectName(project);
         }
+
+        @Override
+        public boolean isGradleProject(Project project) {
+            return mDelegate.isGradleProject(project);
+        }
+
+        @NonNull
+        @Override
+        protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+            return mDelegate.createProject(dir, referenceDir);
+        }
     }
 
     /**

@@ -34,7 +34,7 @@ public class PxUsageDetectorTest extends AbstractCheckTest {
             "        android:layout_height=\"120in\"\n" +
             "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "res/layout/now_playing_after.xml:41: Warning: Avoid using \"px\" as units; use \"dp\" instead [PxUsage]\n" +
-            "        android:layout_width=\"1px\"\n" +
+            "        android:layout_width=\"2px\"\n" +
             "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "0 errors, 3 warnings\n",
             lintFiles("res/layout/now_playing_after.xml"));

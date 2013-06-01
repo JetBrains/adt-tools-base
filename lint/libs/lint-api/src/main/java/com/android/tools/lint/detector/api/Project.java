@@ -93,6 +93,7 @@ public class Project {
     private List<Project> mDirectLibraries;
     private List<Project> mAllLibraries;
     private boolean mReportIssues = true;
+    private Boolean mGradleProject;
 
     /**
      * Creates a new {@link Project} for the given directory.
@@ -108,6 +109,19 @@ public class Project {
             @NonNull File dir,
             @NonNull File referenceDir) {
         return new Project(client, dir, referenceDir);
+    }
+
+    /**
+     * Returns true if this project is a Gradle-based Android project
+     *
+     * @return true if this is a Gradle-based project
+     */
+    public boolean isGradleProject() {
+        if (mGradleProject == null) {
+            mGradleProject = mClient.isGradleProject(this);
+        }
+
+        return mGradleProject;
     }
 
     /** Creates a new Project. Use one of the factory methods to create. */

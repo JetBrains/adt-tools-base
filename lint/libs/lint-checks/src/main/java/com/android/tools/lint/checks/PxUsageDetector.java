@@ -169,8 +169,9 @@ public class PxUsageDetector extends LayoutDetector {
 
         String value = attribute.getValue();
         if (value.endsWith(UNIT_PX) && value.matches("\\d+px")) { //$NON-NLS-1$
-            if (value.charAt(0) == '0') {
+            if (value.charAt(0) == '0' || value.equals("1px")) { //$NON-NLS-1$
                 // 0px is fine. 0px is 0dp regardless of density...
+                // Similarly, 1px is typically used to create a single thin line (see issue 55722)
                 return;
             }
             if (context.isEnabled(PX_ISSUE)) {
@@ -249,7 +250,8 @@ public class PxUsageDetector extends LayoutDetector {
             if (!Character.isWhitespace(c)) {
                 if (c == 'x' && text.charAt(j - 1) == 'p') { // ends with px
                     text = text.trim();
-                    if (text.matches("\\d+px") && text.charAt(0) != '0') { //$NON-NLS-1$
+                    if (text.matches("\\d+px") && text.charAt(0) != '0' && //$NON-NLS-1$
+                            !text.equals("1px")) { //$NON-NLS-1$
                         if (context.isEnabled(PX_ISSUE)) {
                             context.report(PX_ISSUE, item, context.getLocation(textNode),
                                 "Avoid using \"px\" as units; use \"dp\" instead", null);
