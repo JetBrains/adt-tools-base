@@ -96,7 +96,7 @@ public class TypographyDetector extends ResourceXmlDetector {
             "Fraction string can be replaced with fraction character",
             "Looks for fraction strings which can be replaced with a fraction character",
             "You can replace certain strings, such as 1/2, and 1/4, with dedicated " +
-            "characters for these, such as \u00BD (&#189;) and \00BC (&#188;). " +
+            "characters for these, such as \u00BD (&#189;) and \u00BC (&#188;). " +
             "This can help make the text more readable.",
             Category.TYPOGRAPHY,
             5,
