@@ -19,8 +19,10 @@ package com.android.tools.lint;
 import com.android.tools.lint.checks.AbstractCheckTest;
 import com.android.tools.lint.checks.HardcodedValuesDetector;
 import com.android.tools.lint.checks.ManifestOrderDetector;
+import com.android.tools.lint.checks.TypographyDetector;
 import com.android.tools.lint.detector.api.DefaultPosition;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
@@ -29,6 +31,7 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -233,6 +236,75 @@ public class XmlReporterTest extends AbstractCheckTest {
             Document document = new PositionXmlParser().parse(report);
             assertNotNull(document);
             assertEquals(2, document.getElementsByTagName("issue").getLength());
+        } finally {
+            file.delete();
+        }
+    }
+
+    public void testNonPrintableChars() throws Exception {
+        // See https://code.google.com/p/android/issues/detail?id=56205
+        File file = new File(getTargetDir(), "report");
+        try {
+            Main client = new Main() {
+                @Override
+                String getRevision() {
+                    return "unittest"; // Hardcode version to keep unit test output stable
+                }
+            };
+            file.getParentFile().mkdirs();
+            XmlReporter reporter = new XmlReporter(client, file);
+            Project project = Project.create(client, new File("/foo/bar/Foo"),
+                    new File("/foo/bar/Foo"));
+
+            Warning warning1 = new Warning(TypographyDetector.FRACTIONS,
+                    String.format("Use fraction character %1$c (%2$s) instead of %3$s ?",
+                            '\u00BC', "&#188;", "1/4"), Severity.WARNING, project, null);
+            warning1.line = 592;
+            warning1.file = new File("/foo/bar/Foo/AndroidManifest.xml");
+            warning1.errorLine =
+                    "        <string name=\"user_registration_name3_3\">Register 3/3</string>\n" +
+                    "                                             ^";
+            warning1.path = "res/values-en/common_strings.xml";
+            warning1.location = Location.create(warning1.file,
+                    new DefaultPosition(592, 46, -1), null);
+
+            List<Warning> warnings = new ArrayList<Warning>();
+            warnings.add(warning1);
+
+            reporter.write(0, 2, warnings);
+
+            String report = Files.toString(file, Charsets.UTF_8);
+            assertEquals(""
+                    + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                    + "<issues format=\"4\" by=\"lint unittest\">\n"
+                    + "\n"
+                    + "    <issue\n"
+                    + "        id=\"TypographyFractions\"\n"
+                    + "        severity=\"Warning\"\n"
+                    + "        message=\"Use fraction character ¼ (&amp;#188;) instead of 1/4 ?\"\n"
+                    + "        category=\"Usability:Typography\"\n"
+                    + "        priority=\"5\"\n"
+                    + "        summary=\"Looks for fraction strings which can be replaced with a fraction character\"\n"
+                    + "        explanation=\"You can replace certain strings, such as 1/2, and 1/4, with dedicated characters for these, such as ½ (&amp;#189;) and ¼ (&amp;#188;). This can help make the text more readable.\"\n"
+                    + "        url=\"http://en.wikipedia.org/wiki/Number_Forms\"\n"
+                    + "        urls=\"http://en.wikipedia.org/wiki/Number_Forms\">\n"
+                    + "        <location\n"
+                    + "            file=\"AndroidManifest.xml\"\n"
+                    + "            line=\"593\"\n"
+                    + "            column=\"47\"/>\n"
+                    + "    </issue>\n"
+                    + "\n"
+                    + "</issues>\n",
+                    report);
+
+            // Make sure the XML is valid
+            Document document = new PositionXmlParser().parse(report);
+            assertNotNull(document);
+            assertEquals(1, document.getElementsByTagName("issue").getLength());
+            String explanation =  ((Element)document.getElementsByTagName("issue").item(0)).
+                    getAttribute("explanation");
+            assertEquals(TypographyDetector.FRACTIONS.getExplanation(Issue.OutputFormat.RAW),
+                    explanation);
         } finally {
             file.delete();
         }
