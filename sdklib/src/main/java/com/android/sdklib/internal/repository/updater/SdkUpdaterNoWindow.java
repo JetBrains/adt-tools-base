@@ -18,18 +18,24 @@ package com.android.sdklib.internal.repository.updater;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.ITask;
 import com.android.sdklib.internal.repository.ITaskFactory;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.NullTaskMonitor;
 import com.android.sdklib.internal.repository.UserCredentials;
+import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.utils.ILogger;
+import com.android.utils.IReaderLogger;
+import com.android.utils.NullLogger;
 import com.android.utils.Pair;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -125,6 +131,53 @@ public class SdkUpdaterNoWindow {
      */
     public void listRemotePackages(boolean includeAll, boolean extendedOutput) {
         mUpdaterData.listRemotePackages_NoGUI(includeAll, extendedOutput);
+    }
+
+    /**
+     * Installs a platform package given its target hash string.
+     * <p/>
+     * This does not work for add-ons right now, just basic platforms.
+     *
+     * @param hashString The hash string of the platform to install.
+     * @return A boolean indicating whether the installation was successful (meaning the package
+     *   was either already present, or got installed or updated properly) and a {@link File}
+     *   with the path to the root folder of the package. The file is null when the boolean
+     *   is false, otherwise it should point to an existing valid folder.
+     */
+    public Pair<Boolean, File> installPlatformPackage(String hashString) {
+
+        // TODO right now we really need the caller to use a reader-logger to
+        // handle license confirmations. This isn't optimal and should be addressed
+        // when we provide a proper UI for this.
+        assert mSdkLog instanceof IReaderLogger;
+
+        SdkManager sm = mUpdaterData.getSdkManager();
+        IAndroidTarget target = sm.getTargetFromHashString(hashString);
+
+        if (target == null) {
+            // Otherwise try to install it.
+            // This currently only works for platforms since the package's "install id"
+            // is an exactly match with the IAndroidTarget hash string.
+            ArrayList<String> filter = new ArrayList<String>();
+            filter.add(hashString);
+            List<Archive> installed = mUpdaterData.updateOrInstallAll_NoGUI(
+                    filter,
+                    true,  //includeAll
+                    false, //dryMode
+                    null); //acceptLicense
+
+            if (installed != null) {
+                sm.reloadSdk(new NullLogger());
+                target = sm.getTargetFromHashString(hashString);
+            }
+        }
+
+        if (target != null) {
+            // Return existing target
+            return Pair.of(Boolean.TRUE, new File(target.getLocation()));
+        }
+
+        return null;
     }
 
     // -----
