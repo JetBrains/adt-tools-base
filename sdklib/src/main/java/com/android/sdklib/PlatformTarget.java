@@ -31,8 +31,6 @@ import java.util.Map;
  * Represents a platform target in the SDK.
  */
 final class PlatformTarget implements IAndroidTarget {
-    /** String used to get a hash to the platform target */
-    private static final String PLATFORM_HASH = "android-%s";
 
     private static final String PLATFORM_VENDOR = "Android Open Source Project";
 
@@ -321,7 +319,7 @@ final class PlatformTarget implements IAndroidTarget {
 
     @Override
     public String hashString() {
-        return String.format(PLATFORM_HASH, mVersion.getApiString());
+        return AndroidTargetHash.getPlatformHashString(mVersion);
     }
 
     @Override
