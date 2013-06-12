@@ -33,11 +33,6 @@ import java.util.Map.Entry;
  * An add-on extends a standard {@link PlatformTarget}.
  */
 final class AddOnTarget implements IAndroidTarget {
-    /**
-     * String to compute hash for add-on targets.
-     * Format is vendor:name:apiVersion
-     * */
-    private static final String ADD_ON_FORMAT = "%s:%s:%s"; //$NON-NLS-1$
 
     private static final class OptionalLibrary implements IOptionalLibrary {
         private final String mJarName;
@@ -374,7 +369,7 @@ final class AddOnTarget implements IAndroidTarget {
 
     @Override
     public String hashString() {
-        return String.format(ADD_ON_FORMAT, mVendor, mName,
+        return String.format(AndroidTargetHash.ADD_ON_FORMAT, mVendor, mName,
                 mBasePlatform.getVersion().getApiString());
     }
 
