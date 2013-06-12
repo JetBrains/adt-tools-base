@@ -17,10 +17,12 @@
 package com.android.sdklib;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.repository.PkgProps;
 
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 /**
  * Represents the version of a target or device.
@@ -108,6 +110,47 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
 
         // reaching here means the Properties object did not contain the apiLevel which is required.
         throw new AndroidVersionException(PkgProps.VERSION_API_LEVEL + " not found!", error);
+    }
+
+    /**
+     * Creates an {@link AndroidVersion} from a string that may be an integer API
+     * level or a string codename.
+     * <p/>
+     * <Em>Important</em>: An important limitation of this method is that cannot possible
+     * recreate the API level integer from a pure string codename. This is only OK to use
+     * if the caller can guarantee that only {@link #getApiString()} will be used later.
+     * Wrong things will happen if the caller then tries to resolve the numeric
+     * {@link #getApiLevel()}.
+     *
+     * @param apiOrCodename A non-null API integer or a codename in its "ALL_CAPS" format.
+     *                      "REL" is notable not a valid codename.
+     * @throws AndroidVersionException if the input isn't a pure integer or doesn't look like
+     *                      a valid string codename.
+     */
+    public AndroidVersion(@NonNull String apiOrCodename) throws AndroidVersionException {
+        int apiLevel = 0;
+        String codename = null;
+        try {
+            apiLevel = Integer.parseInt(apiOrCodename);
+        } catch (NumberFormatException ignore) {
+            // We don't know the API level. Android platform codenames are all caps.
+            // REL is a release-reserved keyword which we can use here.
+
+            if (!SdkConstants.CODENAME_RELEASE.equals(apiOrCodename)) {
+                if (Pattern.matches("[A-Z_]+", apiOrCodename)) {
+                    codename = apiOrCodename;
+                }
+            }
+        }
+
+        mApiLevel = apiLevel;
+        mCodename = sanitizeCodename(codename);
+
+        if (mApiLevel <= 0 && codename == null) {
+            throw new AndroidVersionException(
+                    "Invalid android API or codename " + apiOrCodename,     //$NON-NLS-1$
+                    null);
+        }
     }
 
     public void saveProperties(Properties props) {
