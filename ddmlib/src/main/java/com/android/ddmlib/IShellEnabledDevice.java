@@ -17,6 +17,7 @@
 package com.android.ddmlib;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * An abstract device that can receive shell commands.
@@ -28,6 +29,15 @@ public interface IShellEnabledDevice {
      * a combination of the manufacturer name, model name & serial number for devices.
      */
     public String getName();
+
+    /**
+     * @deprecated Use {@link #executeShellCommand(String, IShellOutputReceiver, long, java.util.concurrent.TimeUnit)}.
+     */
+    @Deprecated
+    public void executeShellCommand(String command, IShellOutputReceiver receiver,
+            int maxTimeToOutputResponse)
+            throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
+            IOException;
 
     /**
      * Executes a shell command on the device, and sends the result to a <var>receiver</var>.
@@ -48,6 +58,7 @@ public interface IShellEnabledDevice {
      *            to not output any response. A value of 0 means the method will wait forever
      *            (until the <var>receiver</var> cancels the execution) for command output and
      *            never throw.
+     * @param maxTimeUnits Units for non-zero {@code maxTimeToOutputResponse} values.
      * @throws TimeoutException in case of timeout on the connection when sending the command.
      * @throws AdbCommandRejectedException if adb rejects the command.
      * @throws ShellCommandUnresponsiveException in case the shell command doesn't send any output
@@ -57,7 +68,7 @@ public interface IShellEnabledDevice {
      * @see DdmPreferences#getTimeOut()
      */
     public void executeShellCommand(String command, IShellOutputReceiver receiver,
-            int maxTimeToOutputResponse)
+            long maxTimeToOutputResponse, TimeUnit maxTimeUnits)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             IOException;
 }

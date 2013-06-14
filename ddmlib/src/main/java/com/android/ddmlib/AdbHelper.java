@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Helper class to handle requests and connections to adb.
@@ -336,6 +337,18 @@ final class AdbHelper {
     }
 
     /**
+     * @deprecated Use {@link #executeRemoteCommand(java.net.InetSocketAddress, String, IDevice, IShellOutputReceiver, long, java.util.concurrent.TimeUnit)}.
+     */
+    @Deprecated
+    static void executeRemoteCommand(InetSocketAddress adbSockAddr,
+        String command, IDevice device, IShellOutputReceiver rcvr, int maxTimeToOutputResponse)
+        throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
+        IOException {
+        executeRemoteCommand(adbSockAddr, command, device, rcvr, maxTimeToOutputResponse,
+                TimeUnit.MILLISECONDS);
+    }
+
+    /**
      * Executes a shell command on the device and retrieve the output. The output is
      * handed to <var>rcvr</var> as it arrives.
      *
@@ -348,6 +361,7 @@ final class AdbHelper {
      *            between command output, the method will throw
      *            {@link ShellCommandUnresponsiveException}. A value of 0 means the method will
      *            wait forever for command output and never throw.
+     * @param maxTimeUnits Units for non-zero {@code maxTimeToOutputResponse} values.
      * @throws TimeoutException in case of timeout on the connection when sending the command.
      * @throws AdbCommandRejectedException if adb rejects the command
      * @throws ShellCommandUnresponsiveException in case the shell command doesn't send any output
@@ -357,9 +371,18 @@ final class AdbHelper {
      * @see DdmPreferences#getTimeOut()
      */
     static void executeRemoteCommand(InetSocketAddress adbSockAddr,
-            String command, IDevice device, IShellOutputReceiver rcvr, int maxTimeToOutputResponse)
-            throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
-            IOException {
+        String command, IDevice device, IShellOutputReceiver rcvr, long maxTimeToOutputResponse,
+        TimeUnit maxTimeUnits) throws TimeoutException, AdbCommandRejectedException,
+        ShellCommandUnresponsiveException, IOException {
+
+        long maxTimeToOutputMs = 0;
+        if (maxTimeToOutputResponse > 0) {
+            if (maxTimeUnits == null) {
+                throw new NullPointerException("Time unit must not be null for non-zero max.");
+            }
+            maxTimeToOutputMs = maxTimeUnits.toMillis(maxTimeToOutputResponse);
+        }
+
         Log.v("ddms", "execute: running " + command);
 
         SocketChannel adbChan = null;
@@ -383,7 +406,7 @@ final class AdbHelper {
 
             byte[] data = new byte[16384];
             ByteBuffer buf = ByteBuffer.wrap(data);
-            int timeToResponseCount = 0;
+            long timeToResponseCount = 0;
             while (true) {
                 int count;
 
@@ -403,8 +426,7 @@ final class AdbHelper {
                     try {
                         int wait = WAIT_TIME * 5;
                         timeToResponseCount += wait;
-                        if (maxTimeToOutputResponse > 0 &&
-                                timeToResponseCount > maxTimeToOutputResponse) {
+                        if (maxTimeToOutputMs > 0 && timeToResponseCount > maxTimeToOutputMs) {
                             throw new ShellCommandUnresponsiveException();
                         }
                         Thread.sleep(wait);
