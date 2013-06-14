@@ -113,4 +113,24 @@ public class WrongIdDetectorTest extends AbstractCheckTest {
 
                 lintFiles("res/layout/siblings.xml"));
     }
+
+    public void testInvalidIds() throws Exception {
+        // See https://code.google.com/p/android/issues/detail?id=56029
+        assertEquals(""
+                + "res/layout/invalid_ids.xml:23: Error: ID definitions *must* be of the form @+id/name; try using @+id/menu_Reload [InvalidId]\n"
+                + "        android:id=\"@+menu/Reload\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/invalid_ids.xml:31: Error: ID definitions *must* be of the form @+id/name; try using @+id/_id_foo [InvalidId]\n"
+                + "        android:id=\"@+/id_foo\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/invalid_ids.xml:37: Error: ID definitions *must* be of the form @+id/name; try using @+id/myid_button5 [InvalidId]\n"
+                + "            android:id=\"@+myid/button5\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/invalid_ids.xml:43: Error: ID definitions *must* be of the form @+id/name; try using @+id/string_whatevs [InvalidId]\n"
+                + "            android:id=\"@+string/whatevs\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "4 errors, 0 warnings\n",
+
+                lintFiles("res/layout/invalid_ids.xml"));
+    }
 }
