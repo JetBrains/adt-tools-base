@@ -77,7 +77,7 @@ public class ApiLookup {
     /** Relative path to the api-versions.xml database file within the Lint installation */
     private static final String XML_FILE_PATH = "platform-tools/api/api-versions.xml"; //$NON-NLS-1$
     private static final String FILE_HEADER = "API database used by Android lint\000";
-    private static final int BINARY_FORMAT_VERSION = 5;
+    private static final int BINARY_FORMAT_VERSION = 6;
     private static final boolean DEBUG_FORCE_REGENERATE_BINARY = false;
     private static final boolean DEBUG_SEARCH = false;
     private static final boolean WRITE_STATS = false;
