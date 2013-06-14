@@ -66,6 +66,9 @@ import java.util.Set;
  * Checks for duplicate ids within a layout and within an included layout
  */
 public class WrongIdDetector extends LayoutDetector {
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            WrongIdDetector.class,
+            Scope.RESOURCE_FILE_SCOPE);
 
     /** Ids bound to widgets in any of the layout files */
     private final Set<String> mGlobalIds = new HashSet<String>(100);
@@ -114,9 +117,23 @@ public class WrongIdDetector extends LayoutDetector {
             Category.CORRECTNESS,
             6,
             Severity.ERROR,
-            new Implementation(
-                    WrongIdDetector.class,
-                    Scope.RESOURCE_FILE_SCOPE));
+            IMPLEMENTATION);
+
+    /** An ID declaration which is not valid */
+    public static final Issue INVALID = Issue.create(
+            "InvalidId", //$NON-NLS-1$
+            "Invalid ID declaration",
+            "Checks for invalid ID definitions",
+            "An id definition *must* be of the form `@+id/yourname`. The tools have not " +
+            "rejected strings of the form `@+foo/bar` in the past, but that was an error, " +
+            "and could lead to tricky errors because of the way the id integers are assigned.\n" +
+            "\n" +
+            "If you really want to have different \"scopes\" for your id's, use prefixes " +
+            "instead, such as `login_button1` and `login_button2`.",
+            Category.CORRECTNESS,
+            6,
+            Severity.ERROR,
+            IMPLEMENTATION);
 
     /** Reference to an id that is not in the current layout */
     public static final Issue UNKNOWN_ID_LAYOUT = Issue.create(
@@ -335,6 +352,14 @@ public class WrongIdDetector extends LayoutDetector {
         String id = attribute.getValue();
         mFileIds.add(id);
         mGlobalIds.add(id);
+
+        if (id.startsWith("@+") && !id.startsWith(NEW_ID_PREFIX) //$NON-NLS-1$
+                && !id.startsWith("@+android:id/")) {//$NON-NLS-1$
+            String message = String.format(
+                    "ID definitions *must* be of the form @+id/name; try using %1$s",
+                    NEW_ID_PREFIX + id.substring(2).replace('/', '_'));
+            context.report(INVALID, attribute, context.getLocation(attribute), message, null);
+        }
     }
 
     private static boolean idDefined(Set<String> ids, String id) {
