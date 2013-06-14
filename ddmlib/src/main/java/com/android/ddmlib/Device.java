@@ -446,6 +446,15 @@ final class Device implements IDevice {
     }
 
     @Override
+    public void executeShellCommand(String command, IShellOutputReceiver receiver,
+            long maxTimeToOutputResponse, TimeUnit maxTimeUnits)
+            throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
+            IOException {
+        AdbHelper.executeRemoteCommand(AndroidDebugBridge.getSocketAddress(), command, this,
+                receiver, maxTimeToOutputResponse, maxTimeUnits);
+    }
+
+    @Override
     public void runEventLogService(LogReceiver receiver)
             throws TimeoutException, AdbCommandRejectedException, IOException {
         AdbHelper.runEventLogService(AndroidDebugBridge.getSocketAddress(), this, receiver);

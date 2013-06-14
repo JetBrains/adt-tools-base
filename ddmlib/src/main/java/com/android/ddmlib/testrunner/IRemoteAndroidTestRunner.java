@@ -23,6 +23,7 @@ import com.android.ddmlib.TimeoutException;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Interface for running a Android test command remotely and reporting result to a listener.
@@ -173,6 +174,12 @@ public interface IRemoteAndroidTestRunner {
     public void setCoverage(boolean coverage);
 
     /**
+     * @deprecated Use {@link #setMaxTimeToOutputResponse(long, java.util.concurrent.TimeUnit)}.
+     */
+    @Deprecated
+    public void setMaxtimeToOutputResponse(int maxTimeToOutputResponse);
+
+    /**
      * Sets the maximum time allowed between output of the shell command running the tests on
      * the devices.
      * <p/>
@@ -181,9 +188,15 @@ public interface IRemoteAndroidTestRunner {
      * <p/>
      * By default no timeout will be specified.
      *
+     * @param maxTimeToOutputResponse the maximum amount of time during which the command is allowed
+     *            to not output any response. A value of 0 means the method will wait forever
+     *            (until the <var>receiver</var> cancels the execution) for command output and
+     *            never throw.
+     * @param maxTimeUnits Units for non-zero {@code maxTimeToOutputResponse} values.
+     *
      * @see IDevice#executeShellCommand(String, com.android.ddmlib.IShellOutputReceiver, int)
      */
-    public void setMaxtimeToOutputResponse(int maxTimeToOutputResponse);
+    public void setMaxTimeToOutputResponse(long maxTimeToOutputResponse, TimeUnit maxTimeUnits);
 
     /**
      * Set a custom run name to be reported to the {@link ITestRunListener} on {@link #run}
