@@ -45,6 +45,32 @@ public class MockExtraPackage extends ExtraPackage {
             Properties props,
             String vendor,
             String path,
+            int revision,
+            String license,
+            String description,
+            String descUrl,
+            Os archiveOs,
+            Arch archiveArch,
+            String archiveOsPath) {
+        super(
+            source,
+            props,
+            vendor,
+            path,
+            revision,
+            license,
+            description,
+            descUrl,
+            archiveOs,
+            archiveArch,
+            archiveOsPath);
+    }
+
+    public MockExtraPackage(
+            SdkSource source,
+            Properties props,
+            String vendor,
+            String path,
             int revision) {
         super(
             source,

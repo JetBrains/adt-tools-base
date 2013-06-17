@@ -144,6 +144,30 @@ public class ValidateAddonXmlTest extends TestCase {
         handler.verify();
     }
 
+    /** Validate a valid sample using namespace version 5 using an InputStream */
+    public void testValidateLocalAddonFile5() throws Exception {
+        InputStream xmlStream = this.getClass().getResourceAsStream(
+                    "/com/android/sdklib/testdata/addon_sample_5.xml");
+        Source source = new StreamSource(xmlStream);
+
+        CaptureErrorHandler handler = new CaptureErrorHandler();
+        Validator validator = getAddonValidator(5, handler);
+        validator.validate(source);
+        handler.verify();
+    }
+
+    /** Validate a valid sample using namespace version 6 using an InputStream */
+    public void testValidateLocalAddonFile6() throws Exception {
+        InputStream xmlStream = this.getClass().getResourceAsStream(
+                    "/com/android/sdklib/testdata/addon_sample_6.xml");
+        Source source = new StreamSource(xmlStream);
+
+        CaptureErrorHandler handler = new CaptureErrorHandler();
+        Validator validator = getAddonValidator(6, handler);
+        validator.validate(source);
+        handler.verify();
+    }
+
     // IMPORTANT: each time you add a test here, you should add a corresponding
     // test in SdkAddonSourceTest to validate the XML content is parsed correctly.
 
@@ -189,7 +213,7 @@ public class ValidateAddonXmlTest extends TestCase {
     public void testExtraPathWithSlash() throws Exception {
         String document = "<?xml version=\"1.0\"?>" +
             OPEN_TAG_ADDON +
-            "<r:extra> <r:revision>1</r:revision> <r:path>path/cannot\\contain\\segments</r:path> " +
+            "<r:extra> <r:revision><r:major>1</r:major></r:revision> <r:path>path/cannot\\contain\\segments</r:path> " +
             "<r:archives> <r:archive os=\"any\"> <r:size>1</r:size> <r:checksum>2822ae37115ebf13412bbef91339ee0d9454525e</r:checksum> " +
             "<r:url>url</r:url> </r:archive> </r:archives> </r:extra>" +
             CLOSE_TAG_ADDON;

@@ -111,6 +111,36 @@ public abstract class MajorRevisionPackage extends Package {
     }
 
     @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + ((mRevision == null) ? 0 : mRevision.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!super.equals(obj)) {
+            return false;
+        }
+        if (!(obj instanceof MajorRevisionPackage)) {
+            return false;
+        }
+        MajorRevisionPackage other = (MajorRevisionPackage) obj;
+        if (mRevision == null) {
+            if (other.mRevision != null) {
+                return false;
+            }
+        } else if (!mRevision.equals(other.mRevision)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     public UpdateInfo canBeUpdatedBy(Package replacementPackage) {
         if (replacementPackage == null) {
             return UpdateInfo.INCOMPATIBLE;
