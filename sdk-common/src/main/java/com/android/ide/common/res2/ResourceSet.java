@@ -61,6 +61,10 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         // get the type.
         FolderData folderData = getFolderData(file.getParentFile());
 
+        if (folderData.folderType == null) {
+            return null;
+        }
+
         return createResourceFile(file, folderData, logger);
     }
 
@@ -127,17 +131,27 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
     }
 
     @Override
-    protected boolean isValidSourceFile(File sourceFolder, File file) {
+    protected boolean isValidSourceFile(@NonNull File sourceFolder, @NonNull File file) {
+        if (!super.isValidSourceFile(sourceFolder, file)) {
+            return false;
+        }
+
         File resFolder = file.getParentFile();
         // valid files are right under a resource folder under the source folder
         return resFolder.getParentFile().equals(sourceFolder) &&
+                PackagingUtils.checkFolderForPackaging(resFolder.getName()) &&
                 ResourceFolderType.getFolderType(resFolder.getName()) != null;
     }
 
     @Override
-    protected boolean handleChangedFile(File sourceFolder, File changedFile) throws IOException {
+    protected boolean handleChangedFile(@NonNull File sourceFolder, @NonNull File changedFile)
+            throws IOException {
 
         FolderData folderData = getFolderData(changedFile.getParentFile());
+        if (folderData.folderType == null) {
+            return true;
+        }
+
         ResourceFile resourceFile = getDataFile(changedFile);
 
         if (resourceFile == null) {
@@ -285,7 +299,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
             fd.folderType = ResourceFolderType.getTypeByName(folderName);
         }
 
-        if (fd.folderType != ResourceFolderType.VALUES) {
+        if (fd.folderType != null && fd.folderType != ResourceFolderType.VALUES) {
             fd.type = FolderTypeRelationship.getRelatedResourceTypes(fd.folderType).get(0);
         }
 

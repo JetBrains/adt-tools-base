@@ -16,6 +16,7 @@
 
 package com.android.ide.common.res2;
 
+import com.android.annotations.NonNull;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.android.utils.ILogger;
 
@@ -65,10 +66,18 @@ public class AssetSet extends DataSet<AssetItem, AssetFile> {
     }
 
     @Override
-    protected boolean isValidSourceFile(File sourceFolder, File file) {
-        // valid files are right under the source folder
+    protected boolean isValidSourceFile(@NonNull File sourceFolder, @NonNull File file) {
+        if (!super.isValidSourceFile(sourceFolder, file)) {
+            return false;
+        }
+
+        // valid files are under the source folder, in any directory unless
+        // the directory is excluded from packaging.
         File parent = file.getParentFile();
         while (parent != null && !parent.equals(sourceFolder)) {
+            if (!PackagingUtils.checkFolderForPackaging(parent.getName())) {
+                return false;
+            }
             parent = parent.getParentFile();
         }
 
@@ -90,7 +99,7 @@ public class AssetSet extends DataSet<AssetItem, AssetFile> {
                         handleNewFile(sourceFolder, file, logger);
                     }
                 } else if (file.isDirectory()) {
-                    if (PackagingUtils.checkFolderForPackaging(folder.getName())) {
+                    if (PackagingUtils.checkFolderForPackaging(file.getName())) {
                         readFiles(sourceFolder, file, logger);
                     }
                 }
