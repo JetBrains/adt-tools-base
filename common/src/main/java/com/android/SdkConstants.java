@@ -775,6 +775,8 @@ public final class SdkConstants {
     public static final String ATTR_PADDING_TOP = "paddingTop";        //$NON-NLS-1$
     public static final String ATTR_PADDING_RIGHT = "paddingRight";    //$NON-NLS-1$
     public static final String ATTR_PADDING_LEFT = "paddingLeft";      //$NON-NLS-1$
+    public static final String ATTR_PADDING_START = "paddingStart";    //$NON-NLS-1$
+    public static final String ATTR_PADDING_END = "paddingEnd";        //$NON-NLS-1$
     public static final String ATTR_FOREGROUND = "foreground";         //$NON-NLS-1$
     public static final String ATTR_BACKGROUND = "background";         //$NON-NLS-1$
     public static final String ATTR_ORIENTATION = "orientation";       //$NON-NLS-1$
@@ -827,26 +829,34 @@ public final class SdkConstants {
     // RelativeLayout layout params:
     public static final String ATTR_LAYOUT_ALIGN_LEFT = "layout_alignLeft";        //$NON-NLS-1$
     public static final String ATTR_LAYOUT_ALIGN_RIGHT = "layout_alignRight";      //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_START = "layout_alignStart";      //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_END = "layout_alignEnd";          //$NON-NLS-1$
     public static final String ATTR_LAYOUT_ALIGN_TOP = "layout_alignTop";          //$NON-NLS-1$
     public static final String ATTR_LAYOUT_ALIGN_BOTTOM = "layout_alignBottom";    //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_ALIGN_PARENT_TOP = "layout_alignParentTop"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_ALIGN_PARENT_BOTTOM = "layout_alignParentBottom"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_ALIGN_PARENT_LEFT = "layout_alignParentLeft";//$NON-NLS-1$
-    public static final String ATTR_LAYOUT_ALIGN_PARENT_RIGHT = "layout_alignParentRight";   //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_ALIGN_WITH_PARENT_MISSING = "layout_alignWithParentIfMissing"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_ALIGN_BASELINE = "layout_alignBaseline"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_CENTER_IN_PARENT = "layout_centerInParent"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_CENTER_VERTICAL = "layout_centerVertical"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_CENTER_HORIZONTAL = "layout_centerHorizontal"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_TO_RIGHT_OF = "layout_toRightOf";    //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_TO_LEFT_OF = "layout_toLeftOf";      //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_BELOW = "layout_below";              //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_ABOVE = "layout_above";              //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_PARENT_LEFT = "layout_alignParentLeft";        //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_PARENT_RIGHT = "layout_alignParentRight";      //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_PARENT_START = "layout_alignParentStart";      //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_PARENT_END = "layout_alignParentEnd";          //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_PARENT_TOP = "layout_alignParentTop";          //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_PARENT_BOTTOM = "layout_alignParentBottom";    //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_WITH_PARENT_MISSING = "layout_alignWithParentIfMissing";   //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_BASELINE = "layout_alignBaseline";             //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_CENTER_IN_PARENT = "layout_centerInParent";          //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_CENTER_VERTICAL = "layout_centerVertical";           //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_CENTER_HORIZONTAL = "layout_centerHorizontal";       //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_TO_RIGHT_OF = "layout_toRightOf";        //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_TO_LEFT_OF = "layout_toLeftOf";          //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_TO_START_OF = "layout_toStartOf";        //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_TO_END_OF = "layout_toEndOf";            //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_BELOW = "layout_below";                  //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ABOVE = "layout_above";                  //$NON-NLS-1$
 
     // Margins
     public static final String ATTR_LAYOUT_MARGIN = "layout_margin";               //$NON-NLS-1$
     public static final String ATTR_LAYOUT_MARGIN_LEFT = "layout_marginLeft";      //$NON-NLS-1$
     public static final String ATTR_LAYOUT_MARGIN_RIGHT = "layout_marginRight";    //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_MARGIN_START = "layout_marginStart";    //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_MARGIN_END = "layout_marginEnd";        //$NON-NLS-1$
     public static final String ATTR_LAYOUT_MARGIN_TOP = "layout_marginTop";        //$NON-NLS-1$
     public static final String ATTR_LAYOUT_MARGIN_BOTTOM = "layout_marginBottom";  //$NON-NLS-1$
 
@@ -1086,6 +1096,8 @@ public final class SdkConstants {
     // TextView
     public static final String ATTR_DRAWABLE_RIGHT = "drawableRight";              //$NON-NLS-1$
     public static final String ATTR_DRAWABLE_LEFT = "drawableLeft";                //$NON-NLS-1$
+    public static final String ATTR_DRAWABLE_START = "drawableStart";              //$NON-NLS-1$
+    public static final String ATTR_DRAWABLE_END = "drawableEnd";                  //$NON-NLS-1$
     public static final String ATTR_DRAWABLE_BOTTOM = "drawableBottom";            //$NON-NLS-1$
     public static final String ATTR_DRAWABLE_TOP = "drawableTop";                  //$NON-NLS-1$
     public static final String ATTR_DRAWABLE_PADDING = "drawablePadding";          //$NON-NLS-1$
@@ -1214,7 +1226,8 @@ public final class SdkConstants {
 
     public static final String ATTR_SRC = "src"; //$NON-NLS-1$
 
-    public static final String ATTR_GRAVITY = "gravity"; //$NON-NLS-1$
+    public static final String ATTR_GRAVITY = "gravity";        //$NON-NLS-1$
+
     public static final String ATTR_WEIGHT_SUM = "weightSum"; //$NON-NLS-1$
     public static final String ATTR_EMS = "ems"; //$NON-NLS-1$
 
