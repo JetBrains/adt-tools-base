@@ -32,7 +32,7 @@ import java.util.Map;
  */
 public abstract class Bridge {
 
-    public static final int API_CURRENT = 9;
+    public static final int API_CURRENT = 10;
 
     /**
      * Returns the API level of the layout library.
@@ -141,6 +141,15 @@ public abstract class Bridge {
      */
     public Result getViewIndex(Object viewObject) {
         return NOT_IMPLEMENTED.createResult();
+    }
+
+    /**
+     * Returns true if the character orientation of the locale is right to left.
+     * @param locale The locale formatted as language-region
+     * @return true if the locale is right to left.
+     */
+    public boolean isRtl(String locale) {
+        return false;
     }
 
     /**
