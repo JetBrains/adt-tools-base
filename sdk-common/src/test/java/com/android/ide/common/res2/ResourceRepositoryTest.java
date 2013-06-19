@@ -45,7 +45,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals(3, items.get(ResourceType.STRING).size());
         assertEquals(1, items.get(ResourceType.STYLE).size());
         assertEquals(1, items.get(ResourceType.ARRAY).size());
-        assertEquals(4, items.get(ResourceType.ATTR).size());
+        assertEquals(6, items.get(ResourceType.ATTR).size());
         assertEquals(1, items.get(ResourceType.DECLARE_STYLEABLE).size());
         assertEquals(1, items.get(ResourceType.DIMEN).size());
         assertEquals(1, items.get(ResourceType.ID).size());
@@ -77,6 +77,8 @@ public class ResourceRepositoryTest extends BaseTestCase {
                 "attr/string_attr",
                 "attr/enum_attr",
                 "attr/flag_attr",
+                "attr/android:colorForegroundInverse",
+                "attr/blah",
                 "declare-styleable/declare_styleable",
                 "dimen/dimen",
                 "id/item_id",

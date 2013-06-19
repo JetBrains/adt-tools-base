@@ -49,7 +49,8 @@ public class TestUtils {
                 root = new File(root, name);
             }
 
-            TestCase.assertTrue("Test folder '" + name + "' does not exist!",
+            TestCase.assertTrue("Test folder '" + name + "' does not exist! "
+                    + "(Tip: Check unit test launch config pwd)",
                     root.isDirectory());
 
         }

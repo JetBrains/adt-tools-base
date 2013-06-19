@@ -42,7 +42,7 @@ public class ResourceMergerTest extends BaseTestCase {
     public void testMergeByCount() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
-        assertEquals(25, merger.size());
+        assertEquals(27, merger.size());
     }
 
     public void testMergedResourcesByName() throws Exception {
@@ -70,6 +70,8 @@ public class ResourceMergerTest extends BaseTestCase {
                 "attr/string_attr",
                 "attr/enum_attr",
                 "attr/flag_attr",
+                "attr/android:colorForegroundInverse",
+                "attr/blah",
                 "declare-styleable/declare_styleable",
                 "dimen/dimen",
                 "id/item_id",
