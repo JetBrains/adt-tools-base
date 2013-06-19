@@ -452,9 +452,13 @@ public class ResourceResolver extends RenderResources {
 
         // project theme names have been prepended with a *
         if (isProjectTheme) {
-            theme = projectStyleMap.get(themeName);
+            if (projectStyleMap != null) {
+                theme = projectStyleMap.get(themeName);
+            }
         } else {
-            theme = frameworkStyleMap.get(themeName);
+            if (frameworkStyleMap != null) {
+                theme = frameworkStyleMap.get(themeName);
+            }
         }
 
         if (theme instanceof StyleResourceValue) {
