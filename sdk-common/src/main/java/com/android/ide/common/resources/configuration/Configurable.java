@@ -24,5 +24,5 @@ public interface Configurable {
     /**
      * Returns the {@link FolderConfiguration} for this object.
      */
-    public FolderConfiguration getConfiguration();
+    FolderConfiguration getConfiguration();
 }

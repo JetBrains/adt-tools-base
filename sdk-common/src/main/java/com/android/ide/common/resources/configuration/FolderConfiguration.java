@@ -771,7 +771,12 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      *
      * See http://d.android.com/guide/topics/resources/resources-i18n.html#best-match
      */
+    @Nullable
     public Configurable findMatchingConfigurable(List<? extends Configurable> configurables) {
+        if (configurables == null) {
+            return null;
+        }
+
         //
         // 1: eliminate resources that contradict the reference configuration
         // 2: pick next qualifier type
@@ -785,7 +790,8 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         // 1: eliminate resources that contradict
         ArrayList<Configurable> matchingConfigurables = new ArrayList<Configurable>();
         for (Configurable res : configurables) {
-            if (res.getConfiguration().isMatchFor(this)) {
+            final FolderConfiguration configuration = res.getConfiguration();
+            if (configuration != null && configuration.isMatchFor(this)) {
                 matchingConfigurables.add(res);
             }
         }
