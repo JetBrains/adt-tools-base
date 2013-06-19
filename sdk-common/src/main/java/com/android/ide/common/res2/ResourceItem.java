@@ -64,7 +64,7 @@ public class ResourceItem extends DataItem<ResourceFile>
 
     private Node mValue;
 
-    private ResourceValue mResourceValue;
+    protected ResourceValue mResourceValue;
 
     /**
      * Constructs the object with a name, type and optional value.
