@@ -722,6 +722,31 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         return result == null ? null : result.toString();
     }
 
+    /**
+     * Returns a string for display purposes which uses only the short names of the qualifiers
+     */
+    public String toShortDisplayString() {
+        if (isDefault()) {
+            return "default";
+        }
+
+        StringBuilder result = new StringBuilder();
+        int index = 0;
+
+        // pre- language/region qualifiers
+        while (index < INDEX_COUNT) {
+            ResourceQualifier qualifier = mQualifiers[index++];
+            if (qualifier != null) {
+                if (result.length() > 0) {
+                    result.append(',');
+                }
+                result.append(qualifier.getShortDisplayValue());
+            }
+        }
+
+        return result.toString();
+    }
+
     @Override
     public int compareTo(FolderConfiguration folderConfig) {
         // default are always at the top.

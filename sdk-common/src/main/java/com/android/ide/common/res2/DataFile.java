@@ -92,24 +92,43 @@ public abstract class DataFile<I extends DataItem> {
     }
 
     @NonNull
-    Collection<I> getItems() {
+    public Collection<I> getItems() {
         return mItems.values();
     }
 
     @NonNull
-    Map<String, I> getItemMap() {
+    public Map<String, I> getItemMap() {
         return mItems;
     }
 
-    void addItems(Collection<I> items) {
+    public void addItems(@NonNull Collection<I> items) {
         for (I item : items) {
-            mItems.put(item.getKey(), item);
             item.setSource(this);
+            mItems.put(item.getKey(), item);
         }
+    }
+
+    public void removeItems(@NonNull Collection<I> items) {
+        for (I item : items) {
+            mItems.remove(item.getKey());
+            item.setSource(null);
+        }
+    }
+
+    public void removeItem(ResourceItem item) {
+        mItems.remove(item.getKey());
+        item.setSource(null);
     }
 
     void addExtraAttributes(Document document, Node node, String namespaceUri) {
         // nothing
+    }
+
+    public void replace(@NonNull I oldItem, @NonNull I newItem) {
+        mItems.remove(oldItem.getKey());
+        oldItem.setSource(null);
+        newItem.setSource(this);
+        mItems.put(newItem.getKey(), newItem);
     }
 
     @Override
