@@ -125,7 +125,7 @@ public class StretchesViewer extends JPanel {
         int remainderHorizontal = 0;
         int remainderVertical = 0;
 
-        if (patchInfo.fixed.size() > 0) {
+        if (!patchInfo.fixed.isEmpty()) {
             int start = patchInfo.fixed.get(0).y;
             for (Rectangle rect : patchInfo.fixed) {
                 if (rect.y > start) {
@@ -140,6 +140,17 @@ public class StretchesViewer extends JPanel {
                     endRow = false;
                     start = rect.y;
                 }
+            }
+        } else {
+            /* fully stretched without fixed regions (often single pixel high or wide). Since
+             * width of vertical patches (and height of horizontal patches) are fixed, use them to
+             * determine fixed space
+             */
+            for (Rectangle rect : patchInfo.verticalPatches) {
+                remainderHorizontal += rect.width;
+            }
+            for (Rectangle rect : patchInfo.horizontalPatches) {
+                remainderVertical += rect.height;
             }
         }
 
