@@ -24,7 +24,7 @@ import com.android.util.Pair;
 import java.util.HashMap;
 
 /**
- * Represents an android style resources with a name and a list of children {@link ResourceValue}.
+ * Represents an android style resource with a name and a list of children {@link ResourceValue}.
  */
 @SuppressWarnings("deprecation")
 public final class StyleResourceValue extends ResourceValue implements IStyleResourceValue {
