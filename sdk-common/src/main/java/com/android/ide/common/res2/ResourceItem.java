@@ -31,10 +31,13 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.rendering.api.AttrResourceValue;
 import com.android.ide.common.rendering.api.DeclareStyleableResourceValue;
+import com.android.ide.common.rendering.api.DensityBasedResourceValue;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.resources.configuration.Configurable;
+import com.android.ide.common.resources.configuration.DensityQualifier;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
+import com.android.resources.Density;
 import com.android.resources.ResourceType;
 import com.google.common.base.Splitter;
 
@@ -168,14 +171,39 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
         if (mResourceValue == null) {
             //noinspection VariableNotUsedInsideIf
             if (mValue == null) {
-                mResourceValue = new ResourceValue(mType, getName(),
-                        getSource().getFile().getAbsolutePath(), isFrameworks);
+                // Density based resource value?
+                Density density = getFolderDensity();
+                if (density != null) {
+                    mResourceValue = new DensityBasedResourceValue(mType, getName(),
+                            getSource().getFile().getAbsolutePath(), density, isFrameworks);
+                } else {
+                    mResourceValue = new ResourceValue(mType, getName(),
+                            getSource().getFile().getAbsolutePath(), isFrameworks);
+                }
             } else {
                 mResourceValue = parseXmlToResourceValue(isFrameworks);
             }
         }
 
         return mResourceValue;
+    }
+
+    // TODO: We should be storing shared FolderConfiguration instances on the ResourceFiles
+    // instead. This is a temporary fix to make rendering work properly again.
+    @Nullable
+    private Density getFolderDensity() {
+        String qualifiers = getSource().getQualifiers();
+        if (!qualifiers.isEmpty() && qualifiers.contains("dpi")) {
+            Iterable<String> segments = Splitter.on('-').split(qualifiers);
+            FolderConfiguration config = FolderConfiguration.getConfigFromQualifiers(segments);
+            if (config != null) {
+                DensityQualifier densityQualifier = config.getDensityQualifier();
+                if (densityQualifier != null) {
+                    return densityQualifier.getValue();
+                }
+            }
+        }
+        return null;
     }
 
     /**
