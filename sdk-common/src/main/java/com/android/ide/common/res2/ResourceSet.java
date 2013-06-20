@@ -278,7 +278,6 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
         String folderName = folder.getName();
         int pos = folderName.indexOf(ResourceConstants.RES_QUALIFIER_SEP);
-        ResourceFolderType folderType;
         if (pos != -1) {
             fd.folderType = ResourceFolderType.getTypeByName(folderName.substring(0, pos));
             fd.qualifiers = folderName.substring(pos + 1);
