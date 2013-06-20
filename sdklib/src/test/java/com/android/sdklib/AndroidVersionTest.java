@@ -16,6 +16,8 @@
 
 package com.android.sdklib;
 
+import com.android.sdklib.AndroidVersion.AndroidVersionException;
+
 import junit.framework.TestCase;
 
 /**
@@ -68,4 +70,34 @@ public class AndroidVersionTest extends TestCase {
         assertFalse(v.isGreaterOrEqualThan(Integer.MAX_VALUE));
    }
 
+    public final void testAndroidVersion_apiOrCodename() throws AndroidVersionException {
+        // A valid integer is considered an API level
+        AndroidVersion v = new AndroidVersion("15");
+        assertEquals(15, v.getApiLevel());
+        assertEquals("15", v.getApiString());
+        assertFalse(v.isPreview());
+        assertNull(v.getCodename());
+        assertTrue(v.equals(15));
+        assertEquals(15, v.hashCode());
+        assertEquals("API 15", v.toString());
+
+        // A valid name is considered a codename
+        v = new AndroidVersion("CODE_NAME");
+        assertEquals("CODE_NAME", v.getApiString());
+        assertTrue(v.isPreview());
+        assertEquals("CODE_NAME", v.getCodename());
+        assertTrue(v.equals("CODE_NAME"));
+        assertEquals(0, v.getApiLevel());
+        assertEquals("API 0, CODE_NAME preview", v.toString());
+
+        // invalid code name should fail
+        for (String s : new String[] { "REL", "code.name", "10val", "" }) {
+            try {
+                v = new AndroidVersion(s);
+                fail("Invalid code name '" + s + "': Expected to fail. Actual: did not fail.");
+            } catch (AndroidVersionException e) {
+                assertEquals("Invalid android API or codename " + s, e.getMessage());
+            }
+        }
+    }
 }

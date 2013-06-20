@@ -20,6 +20,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
+import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
@@ -193,7 +194,7 @@ public class PlatformPackage extends MinToolsPackage
      */
     @Override
     public String installId() {
-        return "android-" + mVersion.getApiString();    //$NON-NLS-1$
+        return AndroidTargetHash.getPlatformHashString(mVersion);
     }
 
     /**

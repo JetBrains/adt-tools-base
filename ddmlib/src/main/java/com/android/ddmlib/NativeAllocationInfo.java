@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  * <p/>Note: the ddmlib does not resolve the stack trace automatically. While this class provides
  * storage for resolved stack trace, this is merely for convenience.
  */
-public final class NativeAllocationInfo {
+public class NativeAllocationInfo {
     /* Keywords used as delimiters in the string representation of a NativeAllocationInfo */
     public static final String END_STACKTRACE_KW = "EndStacktrace";
     public static final String BEGIN_STACKTRACE_KW = "BeginStacktrace:";
@@ -59,8 +59,7 @@ public final class NativeAllocationInfo {
 
     private final boolean mIsZygoteChild;
 
-    private final int mAllocations;
-
+    private int mAllocations;
     private final ArrayList<Long> mStackCallAddresses = new ArrayList<Long>();
 
     private ArrayList<NativeStackCallInfo> mResolvedStackCall = null;
@@ -87,7 +86,7 @@ public final class NativeAllocationInfo {
     }
 
     /**
-     * Returns the total size of this allocation.
+     * Returns the size of this allocation.
      */
     public int getSize() {
         return mSize;
@@ -169,24 +168,32 @@ public final class NativeAllocationInfo {
             return true;
         if (obj instanceof NativeAllocationInfo) {
             NativeAllocationInfo mi = (NativeAllocationInfo)obj;
-            // quick compare of size, alloc, and stackcall size
-            if (mSize != mi.mSize || mAllocations != mi.mAllocations ||
-                    mStackCallAddresses.size() != mi.mStackCallAddresses.size()) {
+            // compare of size and alloc
+            if (mSize != mi.mSize || mAllocations != mi.mAllocations) {
                 return false;
             }
-            // compare the stack addresses
-            int count = mStackCallAddresses.size();
-            for (int i = 0 ; i < count ; i++) {
-                long a = mStackCallAddresses.get(i);
-                long b = mi.mStackCallAddresses.get(i);
-                if (a != b) {
-                    return false;
-                }
-            }
 
-            return true;
+            // compare stacks
+            return stackEquals(mi);
         }
         return false;
+    }
+
+    public boolean stackEquals(NativeAllocationInfo mi) {
+        if (mStackCallAddresses.size() != mi.mStackCallAddresses.size()) {
+            return false;
+        }
+
+        int count = mStackCallAddresses.size();
+        for (int i = 0 ; i < count ; i++) {
+            long a = mStackCallAddresses.get(i);
+            long b = mi.mStackCallAddresses.get(i);
+            if (a != b) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
 

@@ -386,7 +386,7 @@ public class ResourceResolver extends RenderResources {
         Map<String, ResourceValue> typeMap;
 
         // if allowed, search in the project resources first.
-        if (frameworkOnly == false) {
+        if (!frameworkOnly) {
             typeMap = mProjectResources.get(resType);
             ResourceValue item = typeMap.get(resName);
             if (item != null) {
@@ -452,9 +452,13 @@ public class ResourceResolver extends RenderResources {
 
         // project theme names have been prepended with a *
         if (isProjectTheme) {
-            theme = projectStyleMap.get(themeName);
+            if (projectStyleMap != null) {
+                theme = projectStyleMap.get(themeName);
+            }
         } else {
-            theme = frameworkStyleMap.get(themeName);
+            if (frameworkStyleMap != null) {
+                theme = frameworkStyleMap.get(themeName);
+            }
         }
 
         if (theme instanceof StyleResourceValue) {
@@ -467,21 +471,20 @@ public class ResourceResolver extends RenderResources {
             // we want to force looking in the framework style only to avoid using
             // similarly named styles from the project.
             // To do this, we pass null in lieu of the project style map.
-            computeStyleInheritance(frameworkStyleMap.values(), null /*inProjectStyleMap */,
-                    frameworkStyleMap);
+            if (frameworkStyleMap != null) {
+                computeStyleInheritance(frameworkStyleMap.values(), null /*inProjectStyleMap */,
+                        frameworkStyleMap);
+            }
 
             mTheme = (StyleResourceValue) theme;
         }
     }
-
-
 
     /**
      * Compute the parent style for all the styles in a given list.
      * @param styles the styles for which we compute the parent.
      * @param inProjectStyleMap the map of project styles.
      * @param inFrameworkStyleMap the map of framework styles.
-     * @param outInheritanceMap the map of style inheritance. This is filled by the method.
      */
     private void computeStyleInheritance(Collection<ResourceValue> styles,
             Map<String, ResourceValue> inProjectStyleMap,
@@ -509,7 +512,6 @@ public class ResourceResolver extends RenderResources {
             }
         }
     }
-
 
     /**
      * Computes the name of the parent style, or <code>null</code> if the style is a root style.
@@ -565,12 +567,15 @@ public class ResourceResolver extends RenderResources {
         ResourceValue parent = null;
 
         // if allowed, search in the project resources.
-        if (frameworkOnly == false && inProjectStyleMap != null) {
+        if (!frameworkOnly && inProjectStyleMap != null) {
             parent = inProjectStyleMap.get(name);
         }
 
         // if not found, then look in the framework resources.
         if (parent == null) {
+            if (inFrameworkStyleMap == null) {
+                return null;
+            }
             parent = inFrameworkStyleMap.get(name);
         }
 

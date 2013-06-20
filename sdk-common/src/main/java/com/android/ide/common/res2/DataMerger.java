@@ -83,8 +83,8 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
      * Returns the list of ResourceSet objects.
      * @return the resource sets.
      */
-    @VisibleForTesting
-    List<S> getDataSets() {
+    @NonNull
+    public List<S> getDataSets() {
         return mDataSets;
     }
 
@@ -524,7 +524,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     public Pair<S, File> getDataSetContaining(File file) {
         for (S dataSet : mDataSets) {
             File sourceFile = dataSet.findMatchingSourceFile(file);
-            if (file != null) {
+            if (sourceFile != null) {
                 return Pair.of(dataSet, sourceFile);
             }
         }

@@ -39,6 +39,19 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
             ));
     }
 
+    public void testGradle() throws Exception {
+        assertEquals(""
+                + "res/layout/customview.xml:5: Error: In Gradle projects, always use http://schemas.android.com/apk/res-auto for custom attributes [ResAuto]\n"
+                + "    xmlns:foo=\"http://schemas.android.com/apk/res/foo\"\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "multiproject/library.properties=>build.gradle", // dummy; only name counts
+                        "res/layout/customview.xml"
+                ));
+    }
+
     public void testCustomOk() throws Exception {
         assertEquals(
             "No warnings.",

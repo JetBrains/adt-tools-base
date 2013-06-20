@@ -367,6 +367,19 @@ public abstract class LintClient {
     private Map<Project, ClassPathInfo> mProjectInfo;
 
     /**
+     * Returns true if this project is a Gradle-based Android project
+     *
+     * @param project the project to check
+     * @return true if this is a Gradle-based project
+     */
+    public boolean isGradleProject(Project project) {
+        // This is not an accurate test; specific LintClient implementations (e.g.
+        // IDEs or a gradle-integration of lint) have more context and can perform a more accurate
+        // check
+        return new File(project.getDir(), "build.gradle").exists();
+    }
+
+    /**
      * Information about class paths (sources, class files and libraries)
      * usually associated with a project.
      */

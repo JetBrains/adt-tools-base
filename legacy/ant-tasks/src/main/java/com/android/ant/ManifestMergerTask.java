@@ -20,6 +20,9 @@ import com.android.annotations.NonNull;
 import com.android.manifmerger.ICallback;
 import com.android.manifmerger.ManifestMerger;
 import com.android.manifmerger.MergerLog;
+import com.android.sdklib.AndroidTargetHash;
+import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.AndroidVersion.AndroidVersionException;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.io.FileOp;
@@ -141,10 +144,15 @@ public class ManifestMergerTask extends SingleDependencyTask {
                                         new StdLogger(StdLogger.Level.VERBOSE));
                             }
                             if (mManager != null) {
-                                IAndroidTarget t = mManager.getTargetFromHashString(
-                                        IAndroidTarget.PLATFORM_HASH_PREFIX + codename);
-                                if (t != null) {
-                                    return t.getVersion().getApiLevel();
+                                try {
+                                    AndroidVersion version = new AndroidVersion(codename);
+                                    IAndroidTarget t = mManager.getTargetFromHashString(
+                                            AndroidTargetHash.getPlatformHashString(version));
+                                    if (t != null) {
+                                        return t.getVersion().getApiLevel();
+                                    }
+                                } catch (AndroidVersionException ignored) {
+                                    // Not a valid API or codename.
                                 }
                             }
                             return ICallback.UNKNOWN_CODENAME;

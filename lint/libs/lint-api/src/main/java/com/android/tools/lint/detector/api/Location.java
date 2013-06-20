@@ -506,7 +506,7 @@ public class Location {
      * @param location the first location in the list
      * @return the first location in the reversed list
      */
-    public static Location reverse(Location location) {
+    public static Location reverse(@NonNull Location location) {
         Location next = location.getSecondary();
         location.setSecondary(null);
         while (next != null) {

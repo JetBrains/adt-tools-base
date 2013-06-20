@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Runs a Android test command remotely and reports results.
@@ -39,7 +40,8 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
     private final String mRunnerName;
     private IShellEnabledDevice mRemoteDevice;
     // default to no timeout
-    private int mMaxTimeToOutputResponse = 0;
+    private long mMaxTimeToOutputResponse = 0;
+    private TimeUnit mMaxTimeUnits = TimeUnit.MILLISECONDS;
     private String mRunName = null;
 
     /** map of name-value instrumentation argument pairs */
@@ -181,7 +183,13 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
 
     @Override
     public void setMaxtimeToOutputResponse(int maxTimeToOutputResponse) {
+        setMaxTimeToOutputResponse(maxTimeToOutputResponse, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void setMaxTimeToOutputResponse(long maxTimeToOutputResponse, TimeUnit maxTimeUnits) {
         mMaxTimeToOutputResponse = maxTimeToOutputResponse;
+        mMaxTimeUnits = maxTimeUnits;
     }
 
     @Override
@@ -208,7 +216,8 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
         mParser = new InstrumentationResultParser(runName, listeners);
 
         try {
-            mRemoteDevice.executeShellCommand(runCaseCommandStr, mParser, mMaxTimeToOutputResponse);
+            mRemoteDevice.executeShellCommand(runCaseCommandStr, mParser, mMaxTimeToOutputResponse,
+                    mMaxTimeUnits);
         } catch (IOException e) {
             Log.w(LOG_TAG, String.format("IOException %1$s when running tests %2$s on %3$s",
                     e.toString(), getPackageName(), mRemoteDevice.getName()));
