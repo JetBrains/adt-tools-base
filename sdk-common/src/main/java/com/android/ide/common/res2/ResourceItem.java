@@ -287,8 +287,9 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
                 }
                 break;
             case DECLARE_STYLEABLE:
-                value = new DeclareStyleableResourceValue(
-                        type, name, isFrameworks);
+                //noinspection deprecation
+                value = parseDeclareStyleable(new DeclareStyleableResourceValue(type, name,
+                        isFrameworks));
                 break;
             case ATTR:
                 value = parseAttrValue(new AttrResourceValue(type, name, isFrameworks));
@@ -357,8 +358,14 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
     }
 
     @NonNull
-    private ResourceValue parseAttrValue(@NonNull AttrResourceValue attrValue) {
-        NodeList children = mValue.getChildNodes();
+    private AttrResourceValue parseAttrValue(@NonNull AttrResourceValue attrValue) {
+       return parseAttrValue(mValue, attrValue);
+    }
+
+    @NonNull
+    private static AttrResourceValue parseAttrValue(@NonNull Node valueNode,
+            @NonNull AttrResourceValue attrValue) {
+        NodeList children = valueNode.getChildNodes();
         for (int i = 0, n = children.getLength(); i < n; i++) {
             Node child = children.item(i);
 
@@ -381,6 +388,35 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
         }
 
         return attrValue;
+    }
+
+    @SuppressWarnings("deprecation") // support for deprecated (but supported) API
+    @NonNull
+    private ResourceValue parseDeclareStyleable(
+            @NonNull DeclareStyleableResourceValue declareStyleable) {
+        NodeList children = mValue.getChildNodes();
+        for (int i = 0, n = children.getLength(); i < n; i++) {
+            Node child = children.item(i);
+
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                NamedNodeMap attributes = child.getAttributes();
+                String name = getAttributeValue(attributes, ATTR_NAME);
+                if (name != null) {
+                    // is the attribute in the android namespace?
+                    boolean isFrameworkAttr = declareStyleable.isFramework();
+                    if (name.startsWith(ANDROID_NS_NAME_PREFIX)) {
+                        name = name.substring(DEFAULT_NS_PREFIX_LEN);
+                        isFrameworkAttr = true;
+                    }
+
+                    AttrResourceValue attr = parseAttrValue(child,
+                            new AttrResourceValue(ResourceType.ATTR, name, isFrameworkAttr));
+                    declareStyleable.addValue(attr);
+                }
+            }
+        }
+
+        return declareStyleable;
     }
 
     @NonNull
