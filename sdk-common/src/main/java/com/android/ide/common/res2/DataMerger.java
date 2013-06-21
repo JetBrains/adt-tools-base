@@ -17,9 +17,9 @@
 package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.xml.XmlPrettyPrinter;
-import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
@@ -513,23 +513,82 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     }
 
     /**
-     * Returns a DataSet that contains a given file.
+     * Finds the {@link DataSet} that contains the given file.
+     * This methods will also performs some checks to make sure the given file is a valid file
+     * in the data set.
      *
-     * "contains" means that the DataSet has a source file/folder that is the root folder
+     * All the information is set in a {@link FileValidity} object that is returned.
+     *
+     * {@link FileValidity} contains information about the changed file including:
+     * - is it from an known set, is it an ignored file, or is it unknown?
+     * - what data set does it belong to
+     * - what source folder in the data set does it belong to.
+     *
+     * "belong" means that the DataSet has a source file/folder that is the root folder
      * of this file. The folder and/or file doesn't have to exist.
      *
      * @param file the file to check
-     * @return a pair containing the ResourceSet and its source file that contains the file.
+     *
+     * @return a new FileValidity.
      */
-    public Pair<S, File> getDataSetContaining(File file) {
+    public FileValidity<S> findDataSetContaining(@NonNull File file) {
+        return findDataSetContaining(file, null);
+    }
+
+    /**
+     * Finds the {@link DataSet} that contains the given file.
+     * This methods will also performs some checks to make sure the given file is a valid file
+     * in the data set.
+     *
+     * All the information is set in a {@link FileValidity} object that is returned. If an instance
+     * is passed, then this object is filled instead, and returned.
+     *
+     * {@link FileValidity} contains information about the changed file including:
+     * - is it from an known set, is it an ignored file, or is it unknown?
+     * - what data set does it belong to
+     * - what source folder in the data set does it belong to.
+     *
+     * "belong" means that the DataSet has a source file/folder that is the root folder
+     * of this file. The folder and/or file doesn't have to exist.
+     *
+     * @param file the file to check
+     * @param fileValidity an optional FileValidity to fill. If null a new one is returned.
+     *
+     * @return a new FileValidity or the one given as a parameter.
+     */
+    public FileValidity<S> findDataSetContaining(@NonNull File file,
+                                                 @Nullable FileValidity<S> fileValidity) {
+        if (fileValidity == null) {
+            fileValidity = new FileValidity<S>();
+        }
+
+        if (mDataSets.isEmpty()) {
+            fileValidity.status = FileValidity.FileStatus.UNKNOWN_FILE;
+            return fileValidity;
+        }
+
+        // get the first dataset to check on the file if it's part of a IGNORED_FILE.
+        // This is mostly a work-around for the fact that the method is on data sets.
+        S tempDataSet = mDataSets.get(0);
+        if (!tempDataSet.checkFileForAndroidRes(file)) {
+            fileValidity.status = FileValidity.FileStatus.IGNORED_FILE;
+            return fileValidity;
+        }
+
         for (S dataSet : mDataSets) {
             File sourceFile = dataSet.findMatchingSourceFile(file);
+
             if (sourceFile != null) {
-                return Pair.of(dataSet, sourceFile);
+                fileValidity.dataSet = dataSet;
+                fileValidity.sourceFile = sourceFile;
+                fileValidity.status = dataSet.isValidSourceFile(sourceFile, file) ?
+                        FileValidity.FileStatus.VALID_FILE : FileValidity.FileStatus.IGNORED_FILE;
+                return fileValidity;
             }
         }
 
-        return null;
+        fileValidity.status = FileValidity.FileStatus.UNKNOWN_FILE;
+        return fileValidity;
     }
 
     protected synchronized void createDir(File folder) throws IOException {

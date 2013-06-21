@@ -315,6 +315,19 @@ public class AssetMergerTest extends BaseTestCase {
         assertFalse(merger1.checkValidUpdate(merger2.getDataSets()));
     }
 
+    public void testChangedIgnoredFile() throws Exception {
+        AssetSet assetSet = AssetSetTest.getBaseAssetSet();
+
+        AssetMerger assetMerger = new AssetMerger();
+        assetMerger.addDataSet(assetSet);
+
+        File root = TestUtils.getRoot("assets", "baseSet");
+        File changedCVSFoo = new File(root, "CVS/foo.txt");
+        FileValidity<AssetSet> fileValidity = assetMerger.findDataSetContaining(changedCVSFoo);
+
+        assertEquals(FileValidity.FileStatus.IGNORED_FILE, fileValidity.status);
+    }
+
     /**
      * Creates a fake merge with given sets.
      *
