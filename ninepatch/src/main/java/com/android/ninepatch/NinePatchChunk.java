@@ -239,7 +239,7 @@ public class NinePatchChunk implements Serializable {
         int remainderHorizontal = 0;
         int remainderVertical = 0;
 
-        if (mFixed.size() > 0) {
+        if (!mFixed.isEmpty()) {
             int start = mFixed.get(0).y;
             for (Rectangle rect : mFixed) {
                 if (rect.y > start) {
@@ -254,6 +254,17 @@ public class NinePatchChunk implements Serializable {
                     endRow = false;
                     start = rect.y;
                 }
+            }
+        } else {
+            /* fully stretched without fixed regions (often single pixel high or wide). Since
+             * width of vertical patches (and height of horizontal patches) are fixed, use them to
+             * determine fixed space
+             */
+            for (Rectangle rect : mVerticalPatches) {
+                remainderHorizontal += rect.width;
+            }
+            for (Rectangle rect : mHorizontalPatches) {
+                remainderVertical += rect.height;
             }
         }
 
