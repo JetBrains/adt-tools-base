@@ -262,6 +262,15 @@ public interface IDevice extends IShellEnabledDevice {
             IOException;
 
     /**
+     * @deprecated Use {@link #executeShellCommand(String, IShellOutputReceiver, long, java.util.concurrent.TimeUnit)}.
+     */
+    @Deprecated
+    public void executeShellCommand(String command, IShellOutputReceiver receiver,
+            int maxTimeToOutputResponse)
+            throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
+            IOException;
+
+    /**
      * Executes a shell command on the device, and sends the result to a <var>receiver</var>
      * <p/>This is similar to calling
      * <code>executeShellCommand(command, receiver, DdmPreferences.getTimeOut())</code>.
