@@ -24,7 +24,6 @@ import org.w3c.dom.Node;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -70,7 +69,7 @@ public abstract class DataFile<I extends DataItem> {
      * This must be called from the constructor of the children classes.
      * @param items the items
      */
-    protected void init(@NonNull List<I> items) {
+    protected void init(@NonNull Iterable<I> items) {
         for (I item : items) {
             item.setSource(this);
             mItems.put(item.getKey(), item);

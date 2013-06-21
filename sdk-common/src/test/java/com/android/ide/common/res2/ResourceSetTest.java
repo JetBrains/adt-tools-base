@@ -90,7 +90,25 @@ public class ResourceSetTest extends BaseTestCase {
             gotException = true;
         }
 
-        assertTrue(gotException);
+        assertTrue("ResourceSet processing should have failed, but didn't", gotException);
+        assertFalse(logger.getErrorMsgs().isEmpty());
+    }
+
+    public void testBrokenSet2() throws Exception {
+        File root = TestUtils.getRoot("resources", "brokenSet2");
+
+        ResourceSet set = new ResourceSet("main");
+        set.addSource(root);
+
+        boolean gotException = false;
+        RecordingLogger logger =  new RecordingLogger();
+        try {
+            set.loadFromFiles(logger);
+        } catch (IOException e) {
+            gotException = true;
+        }
+
+        assertTrue("ResourceSet processing should have failed, but didn't", gotException);
         assertFalse(logger.getErrorMsgs().isEmpty());
     }
 
