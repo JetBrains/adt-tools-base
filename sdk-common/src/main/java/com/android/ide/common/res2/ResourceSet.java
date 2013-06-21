@@ -285,7 +285,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
             fd.folderType = ResourceFolderType.getTypeByName(folderName);
         }
 
-        if (fd.folderType != ResourceFolderType.VALUES) {
+        if (fd.folderType != null && fd.folderType != ResourceFolderType.VALUES) {
             fd.type = FolderTypeRelationship.getRelatedResourceTypes(fd.folderType).get(0);
         }
 
