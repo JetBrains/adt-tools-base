@@ -16,7 +16,7 @@
 
 package com.android.ide.common.res2;
 
-import static com.android.SdkConstants.DOT_9PNG;
+import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.RES_QUALIFIER_SEP;
 import static com.android.SdkConstants.TAG_RESOURCES;
 
@@ -118,7 +118,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
                         File outFile = new File(typeFolder, filename);
 
-                        if (mAaptRunner != null && filename.endsWith(DOT_9PNG)) {
+                        if (mAaptRunner != null && filename.endsWith(DOT_PNG)) {
                             // run aapt in single crunch mode on the original file to write the
                             // destination file.
                             mAaptRunner.crunchPng(file, outFile);
