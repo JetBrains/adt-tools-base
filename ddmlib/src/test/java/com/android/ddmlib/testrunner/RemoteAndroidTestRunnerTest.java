@@ -16,7 +16,7 @@
 
 package com.android.ddmlib.testrunner;
 
-import com.android.ddmlib.IDevice;
+import com.android.ddmlib.IShellEnabledDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 
 import junit.framework.TestCase;
@@ -25,6 +25,7 @@ import org.easymock.EasyMock;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Unit tests for {@link RemoteAndroidTestRunner}.
@@ -32,7 +33,7 @@ import java.util.Collections;
 public class RemoteAndroidTestRunnerTest extends TestCase {
 
     private RemoteAndroidTestRunner mRunner;
-    private IDevice mMockDevice;
+    private IShellEnabledDevice mMockDevice;
     private ITestRunListener mMockListener;
 
     private static final String TEST_PACKAGE = "com.test";
@@ -43,7 +44,7 @@ public class RemoteAndroidTestRunnerTest extends TestCase {
      */
     @Override
     protected void setUp() throws Exception {
-        mMockDevice = EasyMock.createMock(IDevice.class);
+        mMockDevice = EasyMock.createMock(IShellEnabledDevice.class);
         EasyMock.expect(mMockDevice.getName()).andStubReturn("serial");
         mMockListener = EasyMock.createNiceMock(ITestRunListener.class);
         mRunner = new RemoteAndroidTestRunner(TEST_PACKAGE, TEST_RUNNER, mMockDevice);
@@ -107,7 +108,7 @@ public class RemoteAndroidTestRunnerTest extends TestCase {
     @SuppressWarnings("unchecked")
     public void testRun_ioException() throws Exception {
         mMockDevice.executeShellCommand((String)EasyMock.anyObject(), (IShellOutputReceiver)
-                EasyMock.anyObject(), EasyMock.eq(0));
+                EasyMock.anyObject(), EasyMock.eq(0L), EasyMock.eq(TimeUnit.MILLISECONDS));
         EasyMock.expectLastCall().andThrow(new IOException());
         // verify that the listeners run started, run failure, and run ended methods are called
         mMockListener.testRunStarted(TEST_PACKAGE, 0);
@@ -130,7 +131,7 @@ public class RemoteAndroidTestRunnerTest extends TestCase {
      */
     private void runAndVerify(String expectedCmd) throws Exception {
         mMockDevice.executeShellCommand(expectedCmd, (IShellOutputReceiver)
-                EasyMock.anyObject(), EasyMock.eq(0));
+                EasyMock.anyObject(), EasyMock.eq(0L), EasyMock.eq(TimeUnit.MILLISECONDS));
         EasyMock.replay(mMockDevice);
         mRunner.run(mMockListener);
         EasyMock.verify(mMockDevice);
