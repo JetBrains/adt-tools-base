@@ -31,15 +31,6 @@ public interface IShellEnabledDevice {
     public String getName();
 
     /**
-     * @deprecated Use {@link #executeShellCommand(String, IShellOutputReceiver, long, java.util.concurrent.TimeUnit)}.
-     */
-    @Deprecated
-    public void executeShellCommand(String command, IShellOutputReceiver receiver,
-            int maxTimeToOutputResponse)
-            throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
-            IOException;
-
-    /**
      * Executes a shell command on the device, and sends the result to a <var>receiver</var>.
      * <p/><var>maxTimeToOutputResponse</var> is used as a maximum waiting time when expecting the
      * command output from the device.<br>
