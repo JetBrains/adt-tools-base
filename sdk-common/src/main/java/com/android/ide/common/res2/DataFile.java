@@ -39,7 +39,7 @@ public abstract class DataFile<I extends DataItem> {
     }
 
     private final FileType mType;
-    private final File mFile;
+    protected File mFile;
     private final Map<String, I> mItems = Maps.newHashMap();
 
     /**
