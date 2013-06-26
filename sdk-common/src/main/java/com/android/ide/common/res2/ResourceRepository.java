@@ -73,7 +73,7 @@ public class ResourceRepository {
         }
     }
 
-    private final Map<ResourceType, ListMultimap<String, ResourceItem>> mItems = Maps.newEnumMap(
+    protected final Map<ResourceType, ListMultimap<String, ResourceItem>> mItems = Maps.newEnumMap(
             ResourceType.class);
     private final RepositoryMerger mConsumer = new RepositoryMerger();
 
@@ -97,6 +97,7 @@ public class ResourceRepository {
         return mItems;
     }
 
+    // TODO: Rename to getResourceItemList?
     @Nullable
     public List<ResourceItem> getResourceItem(@NonNull ResourceType resourceType,
             @NonNull String resourceName) {
@@ -442,35 +443,7 @@ public class ResourceRepository {
         return set;
     }
 
-    @Nullable
-    protected Collection<String> getMergeIds() {
-        return null;
-    }
-
     public void clear() {
         mItems.clear();
-    }
-
-    public void mergeIds() {
-        Collection<String> ids = getMergeIds();
-        if (ids == null) {
-            return;
-        }
-        ListMultimap<String, ResourceItem> idMap = mItems.get(ResourceType.ID);
-        if (idMap == null) {
-            idMap = ArrayListMultimap.create();
-            mItems.put(ResourceType.ID, idMap);
-            for (String id : ids) {
-                idMap.put(id, new ResourceItem(id, ResourceType.ID, null));
-            }
-            return;
-        }
-
-        for (String id : ids) {
-            List<ResourceItem> items = idMap.get(id);
-            if (items == null || items.isEmpty()) {
-                idMap.put(id, new ResourceItem(id, ResourceType.ID, null));
-            }
-        }
     }
 }
