@@ -443,6 +443,9 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
                 case Node.TEXT_NODE:
                     sb.append(child.getNodeValue());
                     break;
+                case Node.CDATA_SECTION_NODE:
+                    sb.append(child.getNodeValue());
+                    break;
             }
         }
 
