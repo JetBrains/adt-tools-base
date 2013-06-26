@@ -21,7 +21,10 @@ import com.android.layoutlib.api.IStyleResourceValue;
 import com.android.resources.ResourceType;
 import com.android.util.Pair;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Represents an android style resource with a name and a list of children {@link ResourceValue}.
@@ -30,7 +33,7 @@ import java.util.HashMap;
 public final class StyleResourceValue extends ResourceValue implements IStyleResourceValue {
 
     private String mParentStyle = null;
-    private HashMap<Pair<String, Boolean>, ResourceValue> mItems = new HashMap<Pair<String, Boolean>, ResourceValue>();
+    private Map<Pair<String, Boolean>, ResourceValue> mItems = new HashMap<Pair<String, Boolean>, ResourceValue>();
 
     public StyleResourceValue(ResourceType type, String name, boolean isFramework) {
         super(type, name, isFramework);
@@ -92,5 +95,14 @@ public final class StyleResourceValue extends ResourceValue implements IStyleRes
     @Deprecated
     public IResourceValue findItem(String name) {
         return mItems.get(name);
+    }
+
+    /** Returns the names available in this style, intended for diagnostic purposes */
+    public List<String> getNames() {
+        List<String> names = new ArrayList<String>();
+        for (Pair<String, Boolean> item : mItems.keySet()) {
+            names.add(item.getFirst());
+        }
+        return names;
     }
 }

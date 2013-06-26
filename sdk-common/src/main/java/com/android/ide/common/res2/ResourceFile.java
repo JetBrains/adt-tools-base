@@ -23,6 +23,7 @@ import org.w3c.dom.Node;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a file in a resource folders.
@@ -37,7 +38,7 @@ public class ResourceFile extends DataFile<ResourceItem> {
 
     static final String ATTR_QUALIFIER = "qualifiers";
 
-    private final String mQualifiers;
+    private String mQualifiers;
 
     /**
      * Creates a resource file with a single resource item.
@@ -50,7 +51,8 @@ public class ResourceFile extends DataFile<ResourceItem> {
      * @param item the resource item
      * @param qualifiers the qualifiers.
      */
-    ResourceFile(@NonNull File file, @NonNull ResourceItem item, @NonNull String qualifiers) {
+    public ResourceFile(@NonNull File file, @NonNull ResourceItem item,
+            @NonNull String qualifiers) {
         super(file, FileType.SINGLE);
         mQualifiers = qualifiers;
         init(item);
@@ -67,16 +69,20 @@ public class ResourceFile extends DataFile<ResourceItem> {
      * @param items the resource items
      * @param qualifiers the qualifiers.
      */
-    ResourceFile(@NonNull File file, @NonNull List<ResourceItem> items,
-                 @NonNull String qualifiers) {
+    public ResourceFile(@NonNull File file, @NonNull List<ResourceItem> items,
+            @NonNull String qualifiers) {
         super(file, FileType.MULTI);
         mQualifiers = qualifiers;
         init(items);
     }
 
     @NonNull
-    String getQualifiers() {
+    public String getQualifiers() {
         return mQualifiers;
+    }
+
+    public void setQualifiers(@NonNull String qualifiers) {
+        mQualifiers = qualifiers;
     }
 
     @Override

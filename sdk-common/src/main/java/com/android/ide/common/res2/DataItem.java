@@ -75,7 +75,7 @@ abstract class DataItem<F extends DataFile> {
      * Sets the DataFile
      * @param sourceFile the DataFile
      */
-    void setSource(F sourceFile) {
+    public void setSource(F sourceFile) {
         mSource = sourceFile;
     }
 
@@ -179,7 +179,7 @@ abstract class DataItem<F extends DataFile> {
      * @return the key for this item.
      *
      */
-    String getKey() {
+    public String getKey() {
         return mName;
     }
 
