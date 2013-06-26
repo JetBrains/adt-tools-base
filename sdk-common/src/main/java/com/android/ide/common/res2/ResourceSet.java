@@ -90,6 +90,10 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                 ResourceItem r = ValueResourceParser2.getResource(resNode);
                 if (r != null) {
                     resourceList.add(r);
+                    if (r.getType() == ResourceType.DECLARE_STYLEABLE) {
+                        // Need to also create ATTR items for its children
+                        ValueResourceParser2.addStyleableItems(resNode, resourceList);
+                    }
                 }
             }
 
