@@ -25,6 +25,7 @@ import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
 import static com.android.SdkConstants.TAG_ACTIVITY;
 import static com.android.SdkConstants.TAG_APPLICATION;
+import static com.android.SdkConstants.TAG_INTENT_FILTER;
 import static com.android.SdkConstants.TAG_PERMISSION;
 import static com.android.SdkConstants.TAG_PROVIDER;
 import static com.android.SdkConstants.TAG_RECEIVER;
@@ -33,6 +34,9 @@ import static com.android.SdkConstants.TAG_USES_LIBRARY;
 import static com.android.SdkConstants.TAG_USES_PERMISSION;
 import static com.android.SdkConstants.TAG_USES_SDK;
 import static com.android.SdkConstants.TAG_USES_FEATURE;
+import static com.android.xml.AndroidManifest.NODE_ACTION;
+import static com.android.xml.AndroidManifest.NODE_DATA;
+import static com.android.xml.AndroidManifest.NODE_METADATA;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -41,6 +45,7 @@ import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -57,15 +62,18 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Checks for issues in AndroidManifest files such as declaring elements in the
  * wrong order.
+ * <p>
+ * TOD: Rename this from {@link ManifestOrderDetector} to ManifestDetector.
  */
 public class ManifestOrderDetector extends Detector implements Detector.XmlScanner {
-    private static Implementation IMPLEMENTATION = new Implementation(
+    private static final Implementation IMPLEMENTATION = new Implementation(
             ManifestOrderDetector.class,
             Scope.MANIFEST_SCOPE
     );
@@ -296,6 +304,26 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
             IMPLEMENTATION).addMoreInfo(
             "http://developer.android.com/tools/publishing/preparing.html#publishing-configure"); //$NON-NLS-1$
 
+    /** Malformed Device Admin */
+    public static final Issue DEVICE_ADMIN = Issue.create(
+            "DeviceAdmin", //$NON-NLS-1$
+            "Malformed Device Admin",
+            "Ensures that device admins are properly registered",
+            "If you register a broadcast receiver which acts as a device admin, you must also " +
+            "register an `<intent-filter>` for the action " +
+            "`android.app.action.DEVICE_ADMIN_ENABLED`, without any `<data>`, such that the " +
+            "device admin can be activated/deactivated.\n" +
+            "\n" +
+            "To do this, add\n" +
+            "`<intent-filter>`\n" +
+            "    `<action android:name=\"android.app.action.DEVICE_ADMIN_ENABLED\" />`\n" +
+            "`</intent-filter>`\n" +
+            "to your `<receiver>`.",
+            Category.CORRECTNESS,
+            7,
+            Severity.WARNING,
+            IMPLEMENTATION);
+
     /** Constructs a new {@link ManifestOrderDetector} check */
     public ManifestOrderDetector() {
     }
@@ -402,8 +430,13 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
         String tag = element.getTagName();
         Node parentNode = element.getParentNode();
 
+        boolean isReceiver = tag.equals(TAG_RECEIVER);
+        if (isReceiver) {
+            checkDeviceAdmin(context, element);
+        }
+
         if (tag.equals(TAG_USES_LIBRARY) || tag.equals(TAG_ACTIVITY) || tag.equals(TAG_SERVICE)
-                || tag.equals(TAG_PROVIDER) || tag.equals(TAG_RECEIVER)) {
+                || tag.equals(TAG_PROVIDER) || isReceiver) {
             if (!TAG_APPLICATION.equals(parentNode.getNodeName())
                     && context.isEnabled(WRONG_PARENT)) {
                 context.report(WRONG_PARENT, element, context.getLocation(element),
@@ -605,6 +638,51 @@ public class ManifestOrderDetector extends Detector implements Detector.XmlScann
                 }
             }
         }
+    }
+
+    private void checkDeviceAdmin(XmlContext context, Element element) {
+        List<Element> children = LintUtils.getChildren(element);
+        boolean requiredIntentFilterFound = false;
+        boolean deviceAdmin = false;
+        Attr locationNode = null;
+        for (Element child : children) {
+            String tagName = child.getTagName();
+            if (tagName.equals(TAG_INTENT_FILTER) && !requiredIntentFilterFound) {
+                boolean dataFound = false;
+                boolean actionFound = false;
+                for (Element filterChild : LintUtils.getChildren(child)) {
+                    String filterTag = filterChild.getTagName();
+                    if (filterTag.equals(NODE_ACTION)) {
+                        String name = filterChild.getAttributeNS(ANDROID_URI, ATTR_NAME);
+                        if ("android.app.action.DEVICE_ADMIN_ENABLED".equals(name)) { //$NON-NLS-1$
+                            actionFound = true;
+                        }
+                    } else if (filterTag.equals(NODE_DATA)) {
+                        dataFound = true;
+                    }
+                }
+                if (actionFound && !dataFound) {
+                    requiredIntentFilterFound = true;
+                }
+            } else if (tagName.equals(NODE_METADATA)) {
+                Attr valueNode = child.getAttributeNodeNS(ANDROID_URI, ATTR_NAME);
+                if (valueNode != null) {
+                    String name = valueNode.getValue();
+                    if ("android.app.device_admin".equals(name)) { //$NON-NLS-1$
+                        deviceAdmin = true;
+                        locationNode = valueNode;
+                    }
+                }
+            }
+        }
+
+        if (deviceAdmin && !requiredIntentFilterFound && context.isEnabled(DEVICE_ADMIN)) {
+            context.report(DEVICE_ADMIN, locationNode, context.getLocation(locationNode),
+                "You must have an intent filter for action "
+                        + "android.app.action.DEVICE_ADMIN_ENABLED",
+                null);
+        }
+
     }
 
     private String getPackage(Element element) {

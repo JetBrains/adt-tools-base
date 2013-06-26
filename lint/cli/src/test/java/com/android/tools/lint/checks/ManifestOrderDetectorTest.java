@@ -362,4 +362,20 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
                 "AndroidManifest.xml",
                 "res/values/strings.xml"));
     }
+
+    public void testDeviceAdmin() throws Exception {
+        mEnabled = Collections.singleton(ManifestOrderDetector.DEVICE_ADMIN);
+        assertEquals(""
+                + "AndroidManifest.xml:31: Warning: You must have an intent filter for action android.app.action.DEVICE_ADMIN_ENABLED [DeviceAdmin]\n"
+                + "            <meta-data android:name=\"android.app.device_admin\"\n"
+                + "                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "AndroidManifest.xml:44: Warning: You must have an intent filter for action android.app.action.DEVICE_ADMIN_ENABLED [DeviceAdmin]\n"
+                + "            <meta-data android:name=\"android.app.device_admin\"\n"
+                + "                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "AndroidManifest.xml:56: Warning: You must have an intent filter for action android.app.action.DEVICE_ADMIN_ENABLED [DeviceAdmin]\n"
+                + "            <meta-data android:name=\"android.app.device_admin\"\n"
+                + "                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 3 warnings\n",
+                lintProject("deviceadmin.xml=>AndroidManifest.xml"));
+    }
 }
