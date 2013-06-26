@@ -113,6 +113,11 @@ class ValueResourceParser2 {
                 }
 
                 resources.add(resource);
+
+                if (resource.getType() == ResourceType.DECLARE_STYLEABLE) {
+                    // Need to also create ATTR items for its children
+                    ValueResourceParser2.addStyleableItems(node, resources);
+                }
             }
         }
 
@@ -198,6 +203,32 @@ class ValueResourceParser2 {
             throw new IOException(e);
         } finally {
             Closeables.closeQuietly(stream);
+        }
+    }
+
+    /**
+     * Adds any declare styleable attr items below the given declare styleable nodes
+     * into the given list
+     *
+     * @param styleableNode the declare styleable node
+     * @param list the list to add items into
+     */
+    static void addStyleableItems(@NonNull Node styleableNode, @NonNull List<ResourceItem> list) {
+        assert styleableNode.getNodeName().equals(ResourceType.DECLARE_STYLEABLE.getName());
+        NodeList nodes = styleableNode.getChildNodes();
+
+        for (int i = 0, n = nodes.getLength(); i < n; i++) {
+            Node node = nodes.item(i);
+
+            if (node.getNodeType() != Node.ELEMENT_NODE) {
+                continue;
+            }
+
+            ResourceItem resource = getResource(node);
+            if (resource != null) {
+                assert resource.getType() == ResourceType.ATTR;
+                list.add(resource);
+            }
         }
     }
 }
