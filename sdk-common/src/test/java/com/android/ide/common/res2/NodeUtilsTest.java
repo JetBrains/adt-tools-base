@@ -90,6 +90,8 @@ public class NodeUtilsTest extends TestCase {
         Node child1 = document.createElement("child1");
         Node child2 = document.createElement("child2");
         node.appendChild(child1).appendChild(child2);
+        Node cdata = document.createCDATASection("some <random> text");
+        child2.appendChild(cdata);
 
         // add some attributes
         NodeUtils.addAttribute(document, node, null, "foo", "bar");
