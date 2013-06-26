@@ -594,7 +594,9 @@ public final class SdkConstants {
     public static final String ANDROID_NS_NAME = "android";                  //$NON-NLS-1$
     /** The default prefix used for the {@link #ANDROID_URI} name space including the colon  */
     public static final String ANDROID_NS_NAME_PREFIX = "android:";          //$NON-NLS-1$
-    /** The default prefix used for the app */
+    public static final int ANDROID_NS_NAME_PREFIX_LEN = ANDROID_NS_NAME_PREFIX.length();
+
+  /** The default prefix used for the app */
     public static final String APP_PREFIX = "app";                          //$NON-NLS-1$
     /** The entity for the ampersand character */
     public static final String AMP_ENTITY = "&amp;";                         //$NON-NLS-1$
@@ -654,6 +656,10 @@ public final class SdkConstants {
     public static final String TAG_DIMEN = "dimen";                    //$NON-NLS-1$
     public static final String TAG_DRAWABLE = "drawable";              //$NON-NLS-1$
     public static final String TAG_MENU = "menu";                      //$NON-NLS-1$
+    public static final String TAG_ENUM = "enum";                      //$NON-NLS-1$
+    public static final String TAG_FLAG = "flag";                      //$NON-NLS-1$
+    public static final String TAG_ATTR = "attr";                      //$NON-NLS-1$
+    public static final String TAG_DECLARE_STYLEABLE = "declare-styleable"; //$NON-NLS-1$
 
     // Tags: XML
     public static final String TAG_HEADER = "header";                  //$NON-NLS-1$
@@ -738,6 +744,7 @@ public final class SdkConstants {
     public static final String ATTR_TRANSLATABLE = "translatable";     //$NON-NLS-1$
     public static final String ATTR_COLOR = "color";                   //$NON-NLS-1$
     public static final String ATTR_VALUE = "value";                   //$NON-NLS-1$
+    public static final String ATTR_QUANTITY = "quantity";             //$NON-NLS-1$
 
     // Attributes: Layout
     public static final String ATTR_LAYOUT_RESOURCE_PREFIX = "layout_";//$NON-NLS-1$
@@ -796,6 +803,7 @@ public final class SdkConstants {
             "textIsSelectable";                                        //$NON-NLS-1$
     public static final String ATTR_IMPORTANT_FOR_ACCESSIBILITY =
             "importantForAccessibility";                               //$NON-NLS-1$
+  public static final String ATTR_INDEX = "index";                     //$NON-NLS-1$
 
     // AbsoluteLayout layout params
     public static final String ATTR_LAYOUT_Y = "layout_y";             //$NON-NLS-1$

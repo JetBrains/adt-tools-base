@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ATTR_QUANTITY;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_PLURALS;
 import static com.android.tools.lint.checks.PluralsDetector.Quantity.few;
@@ -148,7 +149,7 @@ public class PluralsDetector extends ResourceXmlDetector {
             if (!TAG_ITEM.equals(child.getTagName())) {
                 continue;
             }
-            String quantityString = child.getAttribute("quantity"); //$NON-NLS-1$
+            String quantityString = child.getAttribute(ATTR_QUANTITY);
             if (quantityString == null || quantityString.isEmpty()) {
                 continue;
             }
