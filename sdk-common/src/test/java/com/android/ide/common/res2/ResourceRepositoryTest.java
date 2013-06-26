@@ -218,7 +218,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
 
         // write the content in a repo.
         ResourceRepository repo = new ResourceRepository(false);
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         // checks the initial state of the repo
         Map<ResourceType, ListMultimap<String, ResourceItem>> items = repo.getItems();
@@ -281,7 +281,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         resourceMerger.validateDataSets();
 
         // check the new content.
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         drawables = items.get(ResourceType.DRAWABLE);
         assertNotNull("Drawable null check", drawables);
@@ -307,7 +307,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
 
         // write the content in a repo.
         ResourceRepository repo = new ResourceRepository(false);
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         // checks the initial state of the repo
         Map<ResourceType, ListMultimap<String, ResourceItem>> items = repo.getItems();
@@ -361,7 +361,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         resourceMerger.validateDataSets();
 
         // check the new content.
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         strings = items.get(ResourceType.STRING);
         assertNotNull("String null check", strings);
@@ -386,7 +386,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
 
         // write the content in a repo.
         ResourceRepository repo = new ResourceRepository(false);
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         // checks the initial state of the repo
         Map<ResourceType, ListMultimap<String, ResourceItem>> items = repo.getItems();
@@ -418,7 +418,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         resourceMerger.validateDataSets();
 
         // check the new content.
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         strings = items.get(ResourceType.STRING);
         assertNotNull("String null check", strings);
@@ -441,7 +441,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
 
         // write the content in a repo.
         ResourceRepository repo = new ResourceRepository(false);
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         // checks the initial state of the repo
         Map<ResourceType, ListMultimap<String, ResourceItem>> items = repo.getItems();
@@ -482,7 +482,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         resourceMerger.validateDataSets();
 
         // check the new content.
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         layouts = items.get(ResourceType.LAYOUT);
         assertNotNull("String null check", layouts);
@@ -586,7 +586,8 @@ public class ResourceRepositoryTest extends BaseTestCase {
         ResourceMerger merger = getBaseResourceMerger();
 
         ResourceRepository repo = new ResourceRepository(false);
-        merger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+
+        merger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
         return repo;
     }
 
@@ -643,7 +644,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
     // so keeping it for future potential use, but in unit test code so no runtime overhead
     @SuppressWarnings({"deprecation", "ConstantConditions"})
     public static String dumpRepository(ResourceRepository repository) {
-        Map<ResourceType, ListMultimap<String, ResourceItem>> mItems = repository.mItems;
+        Map<ResourceType, ListMultimap<String, ResourceItem>> mItems = repository.getMap();
         Comparator<ResourceItem> comparator = new Comparator<ResourceItem>() {
             @Override
             public int compare(ResourceItem item1, ResourceItem item2) {

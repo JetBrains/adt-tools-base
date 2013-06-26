@@ -24,7 +24,6 @@ import static com.android.SdkConstants.FD_RES_VALUES;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.resources.configuration.LanguageQualifier;
-import com.android.ide.common.resources.configuration.RegionQualifier;
 import com.android.ide.common.resources.configuration.ScreenOrientationQualifier;
 import com.android.resources.ResourceType;
 import com.android.resources.ScreenOrientation;
@@ -108,7 +107,7 @@ public class ResourceRepositoryTest2 extends TestCase {
         mResourceMerger.addDataSet(resourceSet);
 
         mRepository = new ResourceRepository(false);
-        mResourceMerger.mergeData(mRepository.getMergeConsumer(), true /*doCleanUp*/);
+        mResourceMerger.mergeData(mRepository.createMergeConsumer(), true /*doCleanUp*/);
     }
 
     @Override
@@ -260,7 +259,7 @@ public class ResourceRepositoryTest2 extends TestCase {
         File graphicFile = new File(drawableFolder, "graphic.9.png");
 
         resourceSet.updateWith(mRes, graphicFile, FileStatus.REMOVED, mLogger);
-        mResourceMerger.mergeData(mRepository.getMergeConsumer(), true /*doCleanUp*/);
+        mResourceMerger.mergeData(mRepository.createMergeConsumer(), true /*doCleanUp*/);
 
         assertFalse(mRepository.hasResourceItem("@drawable/graphic"));
         assertFalse(mRepository.hasResourcesOfType(ResourceType.DRAWABLE));
@@ -276,7 +275,7 @@ public class ResourceRepositoryTest2 extends TestCase {
         File layoutFile = new File(layoutFolder, "layout1.xml");
 
         resourceSet.updateWith(mRes, layoutFile, FileStatus.REMOVED, mLogger);
-        mResourceMerger.mergeData(mRepository.getMergeConsumer(), true /*doCleanUp*/);
+        mResourceMerger.mergeData(mRepository.createMergeConsumer(), true /*doCleanUp*/);
 
         // We still have a layout1: only default now
         assertTrue(mRepository.hasResourceItem("@layout/layout1"));
@@ -299,7 +298,7 @@ public class ResourceRepositoryTest2 extends TestCase {
         Files.write(strings, stringFile, Charsets.UTF_8);
 
         resourceSet.updateWith(mRes, stringFile, FileStatus.CHANGED, mLogger);
-        mResourceMerger.mergeData(mRepository.getMergeConsumer(), true /*doCleanUp*/);
+        mResourceMerger.mergeData(mRepository.createMergeConsumer(), true /*doCleanUp*/);
 
         assertTrue(mRepository.hasResourceItem("@string/myDummy"));
         assertFalse(mRepository.hasResourceItem("@string/dummy"));
@@ -311,7 +310,7 @@ public class ResourceRepositoryTest2 extends TestCase {
         boolean created = newFile.createNewFile();
         assertTrue(created);
         resourceSet.updateWith(mRes, newFile, FileStatus.NEW, mLogger);
-        mResourceMerger.mergeData(mRepository.getMergeConsumer(), true /*doCleanUp*/);
+        mResourceMerger.mergeData(mRepository.createMergeConsumer(), true /*doCleanUp*/);
         assertTrue(mRepository.hasResourceItem("@layout/layout5"));
     }
 }
