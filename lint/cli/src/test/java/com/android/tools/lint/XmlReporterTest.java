@@ -18,7 +18,7 @@ package com.android.tools.lint;
 
 import com.android.tools.lint.checks.AbstractCheckTest;
 import com.android.tools.lint.checks.HardcodedValuesDetector;
-import com.android.tools.lint.checks.ManifestOrderDetector;
+import com.android.tools.lint.checks.ManifestDetector;
 import com.android.tools.lint.checks.TypographyDetector;
 import com.android.tools.lint.detector.api.DefaultPosition;
 import com.android.tools.lint.detector.api.Detector;
@@ -53,7 +53,7 @@ public class XmlReporterTest extends AbstractCheckTest {
             Project project = Project.create(client, new File("/foo/bar/Foo"),
                     new File("/foo/bar/Foo"));
 
-            Warning warning1 = new Warning(ManifestOrderDetector.USES_SDK,
+            Warning warning1 = new Warning(ManifestDetector.USES_SDK,
                     "<uses-sdk> tag should specify a target API level (the highest verified " +
                     "version; when running on later versions, compatibility behaviors may " +
                     "be enabled) with android:targetSdkVersion=\"?\"",
@@ -155,7 +155,7 @@ public class XmlReporterTest extends AbstractCheckTest {
             Project project = Project.create(client, new File("/foo/bar/Foo"),
                     new File("/foo/bar/Foo"));
 
-            Warning warning1 = new Warning(ManifestOrderDetector.USES_SDK,
+            Warning warning1 = new Warning(ManifestDetector.USES_SDK,
                     "<uses-sdk> tag should specify a target API level (the highest verified " +
                     "version; when running on later versions, compatibility behaviors may " +
                     "be enabled) with android:targetSdkVersion=\"?\"",
