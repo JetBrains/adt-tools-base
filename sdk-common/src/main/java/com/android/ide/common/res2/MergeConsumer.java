@@ -67,4 +67,6 @@ public interface MergeConsumer<I extends DataItem> {
      * @throws ConsumerException
      */
     void removeItem(@NonNull I removedItem, @Nullable I replacedBy) throws ConsumerException;
+
+    boolean ignoreItemInMerge(I item);
 }

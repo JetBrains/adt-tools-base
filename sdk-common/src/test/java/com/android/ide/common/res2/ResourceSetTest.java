@@ -25,7 +25,7 @@ public class ResourceSetTest extends BaseTestCase {
 
     public void testBaseResourceSetByCount() throws Exception {
         ResourceSet resourceSet = getBaseResourceSet();
-        assertEquals(25, resourceSet.size());
+        assertEquals(24, resourceSet.size());
     }
 
     public void testBaseResourceSetByName() throws Exception {
@@ -51,7 +51,6 @@ public class ResourceSetTest extends BaseTestCase {
                 "attr/string_attr",
                 "attr/enum_attr",
                 "attr/flag_attr",
-                "attr/android:colorForegroundInverse",
                 "attr/blah",
                 "declare-styleable/declare_styleable",
                 "dimen/dimen",
