@@ -29,10 +29,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 @SuppressWarnings("javadoc")
-public class ManifestOrderDetectorTest extends AbstractCheckTest {
+public class ManifestDetectorTest extends AbstractCheckTest {
     @Override
     protected Detector getDetector() {
-        return new ManifestOrderDetector();
+        return new ManifestDetector();
     }
 
     private Set<Issue> mEnabled = new HashSet<Issue>();
@@ -48,7 +48,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testOrderOk() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.ORDER);
+        mEnabled = Collections.singleton(ManifestDetector.ORDER);
         assertEquals(
                 "No warnings.",
                 lintProject(
@@ -57,7 +57,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testBrokenOrder() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.ORDER);
+        mEnabled = Collections.singleton(ManifestDetector.ORDER);
         assertEquals(
             "AndroidManifest.xml:16: Warning: <uses-sdk> tag appears after <application> tag [ManifestOrder]\n" +
             "   <uses-sdk android:minSdkVersion=\"Froyo\" />\n" +
@@ -71,7 +71,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testMissingUsesSdk() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.USES_SDK);
+        mEnabled = Collections.singleton(ManifestDetector.USES_SDK);
         assertEquals(
             "AndroidManifest.xml: Warning: Manifest should specify a minimum API level with <uses-sdk android:minSdkVersion=\"?\" />; if it really supports all versions of Android set it to 1. [UsesMinSdkAttributes]\n" +
             "0 errors, 1 warnings\n",
@@ -81,7 +81,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testMissingMinSdk() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.USES_SDK);
+        mEnabled = Collections.singleton(ManifestDetector.USES_SDK);
         assertEquals(
             "AndroidManifest.xml:7: Warning: <uses-sdk> tag should specify a minimum API level with android:minSdkVersion=\"?\" [UsesMinSdkAttributes]\n" +
             "    <uses-sdk android:targetSdkVersion=\"10\" />\n" +
@@ -94,7 +94,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testMissingTargetSdk() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.USES_SDK);
+        mEnabled = Collections.singleton(ManifestDetector.USES_SDK);
         assertEquals(
             "AndroidManifest.xml:7: Warning: <uses-sdk> tag should specify a target API level (the highest verified version; when running on later versions, compatibility behaviors may be enabled) with android:targetSdkVersion=\"?\" [UsesMinSdkAttributes]\n" +
             "    <uses-sdk android:minSdkVersion=\"10\" />\n" +
@@ -106,7 +106,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testOldTargetSdk() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.TARGET_NEWER);
+        mEnabled = Collections.singleton(ManifestDetector.TARGET_NEWER);
         assertEquals(
             "AndroidManifest.xml:7: Warning: Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details. [OldTargetApi]\n" +
             "    <uses-sdk android:minSdkVersion=\"10\" android:targetSdkVersion=\"14\" />\n" +
@@ -118,7 +118,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testMultipleSdk() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.MULTIPLE_USES_SDK);
+        mEnabled = Collections.singleton(ManifestDetector.MULTIPLE_USES_SDK);
         assertEquals(
             "AndroidManifest.xml:8: Error: There should only be a single <uses-sdk> element in the manifest: merge these together [MultipleUsesSdk]\n" +
             "    <uses-sdk android:targetSdkVersion=\"14\" />\n" +
@@ -133,7 +133,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testWrongLocation() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.WRONG_PARENT);
+        mEnabled = Collections.singleton(ManifestDetector.WRONG_PARENT);
         assertEquals(
             "AndroidManifest.xml:8: Error: The <uses-sdk> element must be a direct child of the <manifest> root element [WrongManifestParent]\n" +
             "       <uses-sdk android:minSdkVersion=\"Froyo\" />\n" +
@@ -181,7 +181,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testDuplicateActivity() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.DUPLICATE_ACTIVITY);
+        mEnabled = Collections.singleton(ManifestDetector.DUPLICATE_ACTIVITY);
         assertEquals(
             "AndroidManifest.xml:16: Error: Duplicate registration for activity com.example.helloworld.HelloWorld [DuplicateActivity]\n" +
             "       <activity android:name=\"com.example.helloworld.HelloWorld\"\n" +
@@ -195,7 +195,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testIgnoreDuplicateActivity() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.DUPLICATE_ACTIVITY);
+        mEnabled = Collections.singleton(ManifestDetector.DUPLICATE_ACTIVITY);
         assertEquals(
             "No warnings.",
 
@@ -205,7 +205,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testAllowBackup() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.ALLOW_BACKUP);
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
         assertEquals(
                 "AndroidManifest.xml:9: Warning: Should explicitly set android:allowBackup to " +
                 "true or false (it's true by default, and that can have some security " +
@@ -220,7 +220,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testAllowBackupOk() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.ALLOW_BACKUP);
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
         assertEquals(
                 "No warnings.",
                 lintProject(
@@ -230,7 +230,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
 
     public void testAllowBackupOk2() throws Exception {
         // Requires build api >= 4
-        mEnabled = Collections.singleton(ManifestOrderDetector.ALLOW_BACKUP);
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
         assertEquals(
                 "No warnings.",
                 lintProject(
@@ -241,7 +241,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
 
 
     public void testAllowIgnore() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.ALLOW_BACKUP);
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
         assertEquals(
                 "No warnings.",
                 lintProject(
@@ -250,7 +250,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testDuplicatePermissions() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.UNIQUE_PERMISSION);
+        mEnabled = Collections.singleton(ManifestDetector.UNIQUE_PERMISSION);
         assertEquals(
                 "AndroidManifest.xml:12: Error: Permission name SEND_SMS is not unique (appears in both foo.permission.SEND_SMS and bar.permission.SEND_SMS) [UniquePermission]\n" +
                 "    <permission android:name=\"bar.permission.SEND_SMS\"\n" +
@@ -264,7 +264,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testDuplicatePermissionsMultiProject() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.UNIQUE_PERMISSION);
+        mEnabled = Collections.singleton(ManifestDetector.UNIQUE_PERMISSION);
 
         File master = getProjectDir("MasterProject",
                 // Master project
@@ -289,7 +289,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testMissingVersion() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.SET_VERSION);
+        mEnabled = Collections.singleton(ManifestDetector.SET_VERSION);
         assertEquals(""
             + "AndroidManifest.xml:2: Warning: Should set android:versionCode to specify the application version [MissingVersion]\n"
             + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
@@ -302,7 +302,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testIllegalReference() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.ILLEGAL_REFERENCE);
+        mEnabled = Collections.singleton(ManifestDetector.ILLEGAL_REFERENCE);
         assertEquals(""
             + "AndroidManifest.xml:2: Warning: The android:versionCode cannot be a resource url, it must be a literal integer [IllegalResourceRef]\n"
             + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
@@ -322,7 +322,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testDuplicateUsesFeature() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.DUPLICATE_USES_FEATURE);
+        mEnabled = Collections.singleton(ManifestDetector.DUPLICATE_USES_FEATURE);
         assertEquals(
             "AndroidManifest.xml:11: Warning: Duplicate declaration of uses-feature android.hardware.camera [DuplicateUsesFeature]\n" +
             "    <uses-feature android:name=\"android.hardware.camera\"/>\n" +
@@ -334,7 +334,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testDuplicateUsesFeatureOk() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.DUPLICATE_USES_FEATURE);
+        mEnabled = Collections.singleton(ManifestDetector.DUPLICATE_USES_FEATURE);
         assertEquals(
             "No warnings.",
             lintProject(
@@ -343,7 +343,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testMissingApplicationIcon() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.APPLICATION_ICON);
+        mEnabled = Collections.singleton(ManifestDetector.APPLICATION_ICON);
         assertEquals(
             "AndroidManifest.xml:9: Warning: Should explicitly set android:icon, there is no default [MissingApplicationIcon]\n" +
             "    <application\n" +
@@ -355,7 +355,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testMissingApplicationIconOk() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.APPLICATION_ICON);
+        mEnabled = Collections.singleton(ManifestDetector.APPLICATION_ICON);
         assertEquals(
             "No warnings.",
             lintProject(
@@ -364,7 +364,7 @@ public class ManifestOrderDetectorTest extends AbstractCheckTest {
     }
 
     public void testDeviceAdmin() throws Exception {
-        mEnabled = Collections.singleton(ManifestOrderDetector.DEVICE_ADMIN);
+        mEnabled = Collections.singleton(ManifestDetector.DEVICE_ADMIN);
         assertEquals(""
                 + "AndroidManifest.xml:31: Warning: You must have an intent filter for action android.app.action.DEVICE_ADMIN_ENABLED [DeviceAdmin]\n"
                 + "            <meta-data android:name=\"android.app.device_admin\"\n"
