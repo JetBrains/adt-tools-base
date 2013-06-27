@@ -48,8 +48,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
  * A {@link MergeWriter} for assets, using {@link ResourceItem}.
  */
 public class MergedResourceWriter extends MergeWriter<ResourceItem> {
-
-    private static final String FN_VALUES_XML = "values.xml";
+    /** Filename to save the merged file as */
+    public static final String FN_VALUES_XML = "values.xml";
+    /** Prefix in comments which mark the source locations for merge results */
+    public static final String FILENAME_PREFIX = "From: ";
 
     @Nullable
     private final AaptRunner mAaptRunner;
@@ -210,7 +212,17 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
                     Collections.sort(items);
 
+                    ResourceFile currentFile = null;
                     for (ResourceItem item : items) {
+                        ResourceFile source = item.getSource();
+                        if (source != currentFile) {
+                          currentFile = source;
+                          rootNode.appendChild(document.createTextNode("\n"));
+                          File file = source.getFile();
+                          String path = file.isAbsolute() ? file.getPath() : file.getAbsolutePath();
+                          rootNode.appendChild(document.createComment(FILENAME_PREFIX + path));
+                          rootNode.appendChild(document.createTextNode("\n"));
+                        }
                         Node adoptedNode = NodeUtils.adoptNode(document, item.getValue());
                         rootNode.appendChild(adoptedNode);
                     }
