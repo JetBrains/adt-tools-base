@@ -67,4 +67,10 @@ public class MergedAssetWriter extends MergeWriter<AssetItem> {
             removedFile.delete();
         }
     }
+
+    @Override
+    public boolean ignoreItemInMerge(AssetItem item) {
+        // never ignore any item
+        return false;
+    }
 }

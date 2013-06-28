@@ -28,7 +28,6 @@ import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
 import com.google.common.base.Splitter;
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -68,6 +67,12 @@ public abstract class AbstractResourceRepository {
         public void removeItem(@NonNull ResourceItem removedItem, @Nullable ResourceItem replacedBy)
                 throws ConsumerException {
             AbstractResourceRepository.this.removeItem(removedItem);
+        }
+
+        @Override
+        public boolean ignoreItemInMerge(ResourceItem item) {
+            // we never ignore any item.
+            return false;
         }
     }
 

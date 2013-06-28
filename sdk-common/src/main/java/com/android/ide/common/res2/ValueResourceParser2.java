@@ -16,6 +16,7 @@
 
 package com.android.ide.common.res2;
 
+import static com.android.SdkConstants.ANDROID_NS_NAME_PREFIX;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_TYPE;
 import static com.android.SdkConstants.TAG_ITEM;
@@ -227,7 +228,12 @@ class ValueResourceParser2 {
             ResourceItem resource = getResource(node);
             if (resource != null) {
                 assert resource.getType() == ResourceType.ATTR;
-                list.add(resource);
+
+                // is the attribute in the android namespace?
+                if (!resource.getName().startsWith(ANDROID_NS_NAME_PREFIX)) {
+                    resource.setIgnoredFromDiskMerge(true);
+                    list.add(resource);
+                }
             }
         }
     }

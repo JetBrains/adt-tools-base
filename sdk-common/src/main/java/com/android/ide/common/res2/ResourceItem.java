@@ -519,4 +519,14 @@ public class ResourceItem extends DataItem<ResourceFile>
 
         return comp;
     }
+
+    private boolean mIgnoredFromDiskMerge = false;
+
+    public void setIgnoredFromDiskMerge(boolean ignored) {
+        mIgnoredFromDiskMerge = ignored;
+    }
+
+    public boolean getIgnoredFromDiskMerge() {
+        return mIgnoredFromDiskMerge;
+    }
 }
