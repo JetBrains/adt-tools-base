@@ -16,6 +16,8 @@
 
 package com.android.ide.common.res2;
 
+import static com.android.SdkConstants.ATTR_NAME;
+
 import com.android.SdkConstants;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
@@ -25,6 +27,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -42,7 +45,7 @@ public class ResourceMergerTest extends BaseTestCase {
     public void testMergeByCount() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
-        assertEquals(27, merger.size());
+        assertEquals(26, merger.size());
     }
 
     public void testMergedResourcesByName() throws Exception {
@@ -70,7 +73,6 @@ public class ResourceMergerTest extends BaseTestCase {
                 "attr/string_attr",
                 "attr/enum_attr",
                 "attr/flag_attr",
-                "attr/android:colorForegroundInverse",
                 "attr/blah",
                 "declare-styleable/declare_styleable",
                 "dimen/dimen",
@@ -78,7 +80,7 @@ public class ResourceMergerTest extends BaseTestCase {
                 "integer/integer"
         );
     }
-    
+
     private String getPlatformPath(String path) {
         return path.replaceAll("/", Matcher.quoteReplacement(File.separator));
     }
@@ -139,6 +141,72 @@ public class ResourceMergerTest extends BaseTestCase {
         // compare the two maps, but not using the full map as the set loaded from the output
         // won't contains all versions of each ResourceItem item.
         compareResourceMaps(merger, writtenSet, false /*full compare*/);
+        checkLogger(logger);
+    }
+
+    public void testNotMergedAttr() throws Exception {
+        RecordingLogger logger =  new RecordingLogger();
+
+        File folder = getWrittenResources();
+
+        ResourceSet writtenSet = new ResourceSet("unused");
+        writtenSet.addSource(folder);
+        writtenSet.loadFromFiles(logger);
+
+        List<ResourceItem> items = writtenSet.getDataMap().get("attr/blah");
+        assertEquals(1, items.size());
+        assertTrue(items.get(0).getIgnoredFromDiskMerge());
+
+        checkLogger(logger);
+    }
+
+    public void testWrittenDeclareStyleable() throws Exception {
+        RecordingLogger logger =  new RecordingLogger();
+
+        File folder = getWrittenResources();
+
+        ResourceSet writtenSet = new ResourceSet("unused");
+        writtenSet.addSource(folder);
+        writtenSet.loadFromFiles(logger);
+
+        List<ResourceItem> items = writtenSet.getDataMap().get("declare-styleable/declare_styleable");
+        assertEquals(1, items.size());
+
+        Node styleableNode = items.get(0).getValue();
+        assertNotNull(styleableNode);
+
+        // inspect the node
+        NodeList nodes = styleableNode.getChildNodes();
+
+        boolean foundBlah = false;
+        boolean foundAndroidColorForegroundInverse = false;
+
+        for (int i = 0, n = nodes.getLength(); i < n; i++) {
+            Node node = nodes.item(i);
+
+            if (node.getNodeType() != Node.ELEMENT_NODE) {
+                continue;
+            }
+
+            String nodeName = node.getLocalName();
+            if (ResourceType.ATTR.getName().equals(nodeName)) {
+                Attr attribute = (Attr) node.getAttributes().getNamedItemNS(null, ATTR_NAME);
+
+                if (attribute != null) {
+                    String name = attribute.getValue();
+                    if ("blah".equals(name)) {
+                        foundBlah = true;
+                    } else if ("android:colorForegroundInverse".equals(name)) {
+                        foundAndroidColorForegroundInverse = true;
+                    }
+                }
+
+            }
+        }
+
+        assertTrue(foundBlah);
+        assertTrue(foundAndroidColorForegroundInverse);
+
         checkLogger(logger);
     }
 

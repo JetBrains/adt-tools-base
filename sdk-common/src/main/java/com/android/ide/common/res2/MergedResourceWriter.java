@@ -89,6 +89,11 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     }
 
     @Override
+    public boolean ignoreItemInMerge(ResourceItem item) {
+        return item.getIgnoredFromDiskMerge();
+    }
+
+    @Override
     public void addItem(@NonNull final ResourceItem item) throws ConsumerException {
         ResourceFile.FileType type = item.getSource().getType();
 

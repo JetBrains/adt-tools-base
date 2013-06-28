@@ -175,6 +175,8 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                  * previously written one.
                  */
 
+                boolean foundIgnoredItem = false;
+
                 setLoop: for (int i = mDataSets.size() - 1 ; i >= 0 ; i--) {
                     S dataSet = mDataSets.get(i);
 
@@ -192,6 +194,11 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                     for (int ii = items.size() - 1 ; ii >= 0 ; ii--) {
                         I item = items.get(ii);
 
+                        if (consumer.ignoreItemInMerge(item)) {
+                            foundIgnoredItem = true;
+                            continue;
+                        }
+
                         if (item.isWritten()) {
                             assert previouslyWritten == null;
                             previouslyWritten = item;
@@ -207,8 +214,14 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                     }
                 }
 
-                // done searching, we should at least have something.
-                assert previouslyWritten != null || toWrite != null;
+                // done searching, we should at least have something, unless we only
+                // found items that are not meant to be written (attr inside declare styleable)
+                assert foundIgnoredItem || previouslyWritten != null || toWrite != null;
+
+                //noinspection ConstantConditions
+                if (previouslyWritten == null && toWrite == null) {
+                    continue;
+                }
 
                 // now need to handle, the type of each (single res file, multi res file), whether
                 // they are the same object or not, whether the previously written object was deleted.
