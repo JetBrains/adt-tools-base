@@ -45,7 +45,7 @@ public class ResourceMergerTest extends BaseTestCase {
     public void testMergeByCount() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
-        assertEquals(26, merger.size());
+        assertEquals(27, merger.size());
     }
 
     public void testMergedResourcesByName() throws Exception {
@@ -74,6 +74,7 @@ public class ResourceMergerTest extends BaseTestCase {
                 "attr/enum_attr",
                 "attr/flag_attr",
                 "attr/blah",
+                "attr/blah2",
                 "declare-styleable/declare_styleable",
                 "dimen/dimen",
                 "id/item_id",
@@ -160,6 +161,22 @@ public class ResourceMergerTest extends BaseTestCase {
         checkLogger(logger);
     }
 
+    public void testMergedAttr() throws Exception {
+        RecordingLogger logger =  new RecordingLogger();
+
+        File folder = getWrittenResources();
+
+        ResourceSet writtenSet = new ResourceSet("unused");
+        writtenSet.addSource(folder);
+        writtenSet.loadFromFiles(logger);
+
+        List<ResourceItem> items = writtenSet.getDataMap().get("attr/blah2");
+        assertEquals(1, items.size());
+        assertFalse(items.get(0).getIgnoredFromDiskMerge());
+
+        checkLogger(logger);
+    }
+
     public void testWrittenDeclareStyleable() throws Exception {
         RecordingLogger logger =  new RecordingLogger();
 
@@ -180,6 +197,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         boolean foundBlah = false;
         boolean foundAndroidColorForegroundInverse = false;
+        boolean foundBlah2 = false;
 
         for (int i = 0, n = nodes.getLength(); i < n; i++) {
             Node node = nodes.item(i);
@@ -198,6 +216,8 @@ public class ResourceMergerTest extends BaseTestCase {
                         foundBlah = true;
                     } else if ("android:colorForegroundInverse".equals(name)) {
                         foundAndroidColorForegroundInverse = true;
+                    } else if ("blah2".equals(name)) {
+                        foundBlah2 = true;
                     }
                 }
 
@@ -206,6 +226,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         assertTrue(foundBlah);
         assertTrue(foundAndroidColorForegroundInverse);
+        assertTrue(foundBlah2);
 
         checkLogger(logger);
     }

@@ -69,7 +69,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
     }
 
     @Override
-    protected ResourceFile createFileAndItems(File file, Node fileNode) {
+    protected ResourceFile createFileAndItems(@NonNull File file, @NonNull Node fileNode) {
         Attr qualifierAttr = (Attr) fileNode.getAttributes().getNamedItem(ATTR_QUALIFIER);
         String qualifier = qualifierAttr != null ? qualifierAttr.getValue() : "";
 
@@ -92,7 +92,11 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                     resourceList.add(r);
                     if (r.getType() == ResourceType.DECLARE_STYLEABLE) {
                         // Need to also create ATTR items for its children
-                        ValueResourceParser2.addStyleableItems(resNode, resourceList);
+                        try {
+                            ValueResourceParser2.addStyleableItems(resNode, resourceList, null);
+                        } catch (IOException ignored) {
+                            // since we are not passing a dup map, this will never bet thrown
+                        }
                     }
                 }
             }
