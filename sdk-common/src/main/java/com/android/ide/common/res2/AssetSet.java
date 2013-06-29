@@ -55,7 +55,7 @@ public class AssetSet extends DataSet<AssetItem, AssetFile> {
     }
 
     @Override
-    protected AssetFile createFileAndItems(File file, Node fileNode) {
+    protected AssetFile createFileAndItems(@NonNull File file, @NonNull Node fileNode) {
         Attr nameAttr = (Attr) fileNode.getAttributes().getNamedItem(ATTR_NAME);
         if (nameAttr == null) {
             return null;
