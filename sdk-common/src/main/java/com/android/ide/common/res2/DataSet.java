@@ -98,7 +98,15 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
 
     protected abstract DataSet<I, F> createSet(String name);
 
-    protected abstract F createFileAndItems(File file, Node fileNode);
+    /**
+     * Creates a DataFile and associated DataItems from an XML node from a file created with
+     * {@link DataSet##appendToXml(org.w3c.dom.Node, org.w3c.dom.Document)}
+     *
+     * @param file the file represented by the DataFile
+     * @param fileNode the XML node.
+     * @return a DataFile
+     */
+    protected abstract F createFileAndItems(@NonNull File file, @NonNull Node fileNode);
 
     /**
      * Reads the content of a data folders and loads the DataItem.
