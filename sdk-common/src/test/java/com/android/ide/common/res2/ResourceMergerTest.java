@@ -17,6 +17,8 @@
 package com.android.ide.common.res2;
 
 import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.FD_RES_DRAWABLE;
+import static com.android.SdkConstants.FD_RES_LAYOUT;
 
 import com.android.SdkConstants;
 import com.android.resources.ResourceFolderType;
@@ -34,6 +36,7 @@ import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -901,5 +904,34 @@ public class ResourceMergerTest extends BaseTestCase {
         }
 
         return result;
+    }
+
+    public void testAppendedSourceComment() throws Exception {
+        ResourceMerger merger = getResourceMerger();
+        RecordingLogger logger =  new RecordingLogger();
+        File folder = getWrittenResources();
+        ResourceSet writtenSet = new ResourceSet("unused");
+        writtenSet.addSource(folder);
+        writtenSet.loadFromFiles(logger);
+        compareResourceMaps(merger, writtenSet, false /*full compare*/);
+        checkLogger(logger);
+
+        File layout = new File(folder, FD_RES_LAYOUT + File.separator + "main.xml");
+        assertTrue(layout.exists());
+        String layoutXml = Files.toString(layout, Charsets.UTF_8);
+        assertTrue(layoutXml.contains("main.xml")); // in <!-- From: /full/path/to/main.xml -->
+        int index = layoutXml.indexOf("From: ");
+        assertTrue(index != -1);
+        String path = layoutXml.substring(index + 6, layoutXml.indexOf(' ', index + 6));
+        assertTrue(path, new File(path).exists());
+        assertFalse(Arrays.equals(Files.toByteArray(new File(path)), Files.toByteArray(layout)));
+
+        // Also make sure .png files were NOT modified
+        File root = TestUtils.getRoot("resources", "baseMerge");
+        assertNotNull(root);
+        File original = new File(root,
+                "overlay/drawable-ldpi/icon.png".replace('/', File.separatorChar));
+        File copied = new File(folder, FD_RES_DRAWABLE + File.separator + "icon.png");
+        assertTrue(Arrays.equals(Files.toByteArray(original), Files.toByteArray(copied)));
     }
 }
