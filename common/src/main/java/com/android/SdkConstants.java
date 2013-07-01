@@ -930,6 +930,8 @@ public final class SdkConstants {
     public static final String EXT_RES = "ap_"; //$NON-NLS-1$
     /** Extension for pre-processable images. Right now pngs */
     public static final String EXT_PNG = "png"; //$NON-NLS-1$
+    /** Extension for Android archive files */
+    public static final String EXT_AAR = "aar"; //$NON-NLS-1$
 
     private static final String DOT = "."; //$NON-NLS-1$
 
@@ -955,6 +957,8 @@ public final class SdkConstants {
     public static final String DOT_FTL = ".ftl"; //$NON-NLS-1$
     /** Dot-Extension of text files, i.e. ".txt" */
     public static final String DOT_TXT = ".txt"; //$NON-NLS-1$
+    /** Dot-Extension for Android archive files */
+    public static final String DOT_AAR = DOT + EXT_AAR; //$NON-NLS-1$
 
     /** Resource base name for java files and classes */
     public static final String FN_RESOURCE_BASE = "R"; //$NON-NLS-1$
