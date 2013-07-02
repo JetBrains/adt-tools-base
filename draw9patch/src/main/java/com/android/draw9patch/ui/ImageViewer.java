@@ -623,6 +623,7 @@ public class ImageViewer extends JComponent {
                 editPatchRegion = displayCoordinates(new Rectangle(min, imageHeight - 1, diff, 1));
                 editHighlightRegions.addAll(
                         getVerticalHighlightRegions(min, 0, diff, imageHeight));
+                break;
             default:
                 assert false : editRegion;
         }
