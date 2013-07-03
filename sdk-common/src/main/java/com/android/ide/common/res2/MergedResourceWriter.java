@@ -17,6 +17,7 @@
 package com.android.ide.common.res2;
 
 import static com.android.SdkConstants.DOT_PNG;
+import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.RES_QUALIFIER_SEP;
 import static com.android.SdkConstants.TAG_RESOURCES;
 
@@ -25,17 +26,23 @@ import com.android.annotations.Nullable;
 import com.android.ide.common.internal.AaptRunner;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.resources.ResourceFolderType;
+import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Sets;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -129,6 +136,9 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                             // run aapt in single crunch mode on the original file to write the
                             // destination file.
                             mAaptRunner.crunchPng(file, outFile);
+                        } else if (filename.endsWith(DOT_XML)) {
+                            String p = file.isAbsolute() ? file.getPath() : file.getAbsolutePath();
+                            copyXmlWithComment(file, outFile, FILENAME_PREFIX + p);
                         } else {
                             Files.copy(file, outFile);
                         }
@@ -136,6 +146,30 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     }
                 });
             }
+        }
+    }
+
+    /** Copies a given XML file, and appends a given comment to the end */
+    private static void copyXmlWithComment(@NonNull File from, @NonNull File to,
+            @Nullable String comment) throws IOException {
+        int successfulOps = 0;
+        InputStream in = new FileInputStream(from);
+        try {
+            FileOutputStream out = new FileOutputStream(to, false);
+            try {
+                ByteStreams.copy(in, out);
+                successfulOps++;
+                if (comment != null) {
+                    String commentText = "<!-- " + XmlUtils.toXmlTextValue(comment) + " -->";
+                    byte[] suffix = commentText.getBytes(Charsets.UTF_8);
+                    out.write(suffix);
+                }
+            } finally {
+                Closeables.close(out, successfulOps < 1);
+                successfulOps++;
+            }
+        } finally {
+            Closeables.close(in, successfulOps < 2);
         }
     }
 
