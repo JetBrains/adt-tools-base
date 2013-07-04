@@ -85,7 +85,7 @@ public class HtmlReporter extends Reporter {
      * @param output the output file
      * @throws IOException if an error occurs
      */
-    public HtmlReporter(Main client, File output) throws IOException {
+    public HtmlReporter(LintCliClient client, File output) throws IOException {
         super(client, output);
         mWriter = new BufferedWriter(Files.newWriter(output, Charsets.UTF_8));
     }
@@ -709,14 +709,14 @@ public class HtmlReporter extends Reporter {
         int min = lineno - 3;
         for (int l = min; l < max; l++) {
             if (l >= 0) {
-                int lineOffset = Main.getLineOffset(contents, l);
+                int lineOffset = LintCliClient.getLineOffset(contents, l);
                 if (lineOffset == -1) {
                     break;
                 }
 
                 mWriter.write(String.format("<span class=\"lineno\">%1$4d</span> ", (l + 1))); //$NON-NLS-1$
 
-                String line = Main.getLineOfOffset(contents, lineOffset);
+                String line = LintCliClient.getLineOfOffset(contents, lineOffset);
                 if (offset != -1 && lineOffset <= offset && lineOffset+line.length() >= offset) {
                     // Text nodes do not always have correct lines/offsets
                     //assert l == lineno;

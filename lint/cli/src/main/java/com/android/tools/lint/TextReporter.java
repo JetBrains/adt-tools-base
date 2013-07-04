@@ -43,7 +43,7 @@ public class TextReporter extends Reporter {
      * @param writer the writer to write into
      * @param close whether the writer should be closed when done
      */
-    public TextReporter(Main client, Writer writer, boolean close) {
+    public TextReporter(LintCliClient client, Writer writer, boolean close) {
         super(client, null);
         mWriter = writer;
         mClose = close;

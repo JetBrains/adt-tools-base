@@ -154,7 +154,7 @@ public class LintCliXmlParserTest extends TestCase {
         file.delete();
     }
 
-    private static class TestClient extends Main {
+    private static class TestClient extends LintCliClient {
         @Override
         public void report(
                 @NonNull Context context,
