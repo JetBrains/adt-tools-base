@@ -52,6 +52,9 @@ public final class SdkConstants {
      */
     public static final String INI_CHARSET = "UTF-8";                                 //$NON-NLS-1$
 
+    /** Path separator used by Gradle */
+    public static final String GRADLE_PATH_SEPARATOR = ":";                           //$NON-NLS-1$
+
     /** An SDK Project's AndroidManifest.xml file */
     public static final String FN_ANDROID_MANIFEST_XML= "AndroidManifest.xml";        //$NON-NLS-1$
     /** pre-dex jar filename. i.e. "classes.jar" */
@@ -63,6 +66,8 @@ public final class SdkConstants {
     public static final String FN_BUILD_XML = "build.xml";                            //$NON-NLS-1$
     /** An SDK Project's build.gradle file */
     public static final String FN_BUILD_GRADLE = "build.gradle";                      //$NON-NLS-1$
+    /** An SDK Project's settings.gradle file */
+    public static final String FN_SETTINGS_GRADLE = "settings.gradle";                //$NON-NLS-1$
 
     /** Name of the framework library, i.e. "android.jar" */
     public static final String FN_FRAMEWORK_LIBRARY = "android.jar";                  //$NON-NLS-1$
