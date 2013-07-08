@@ -19,9 +19,9 @@ package com.android.tools.lint.checks;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.testutils.SdkTestCase;
+import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.LintCliXmlParser;
 import com.android.tools.lint.LombokParser;
-import com.android.tools.lint.Main;
 import com.android.tools.lint.Reporter;
 import com.android.tools.lint.TextReporter;
 import com.android.tools.lint.client.api.Configuration;
@@ -262,11 +262,11 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         return true;
     }
 
-    public class TestLintClient extends Main {
+    public class TestLintClient extends LintCliClient {
         private StringWriter mWriter = new StringWriter();
 
         public TestLintClient() {
-            mReporters.add(new TextReporter(this, mWriter, false));
+            mFlags.getReporters().add(new TextReporter(this, mWriter, false));
         }
 
         @Override
@@ -286,7 +286,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
 
             Collections.sort(mWarnings);
 
-            for (Reporter reporter : mReporters) {
+            for (Reporter reporter : mFlags.getReporters()) {
                 reporter.write(mErrorCount, mWarningCount, mWarnings);
             }
 

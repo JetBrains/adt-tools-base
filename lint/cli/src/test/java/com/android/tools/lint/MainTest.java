@@ -377,37 +377,37 @@ public class MainTest extends AbstractCheckTest {
     }
 
     public void test_getCleanPath() throws Exception {
-        assertEquals("foo", Main.getCleanPath(new File("foo")));
+        assertEquals("foo", LintCliClient.getCleanPath(new File("foo")));
         String sep = File.separator;
         assertEquals("foo" + sep + "bar",
-                Main.getCleanPath(new File("foo" + sep + "bar")));
+                LintCliClient.getCleanPath(new File("foo" + sep + "bar")));
         assertEquals(sep,
-                Main.getCleanPath(new File(sep)));
+                LintCliClient.getCleanPath(new File(sep)));
         assertEquals("foo" + sep + "bar",
-                Main.getCleanPath(new File("foo" + sep + "." + sep + "bar")));
+                LintCliClient.getCleanPath(new File("foo" + sep + "." + sep + "bar")));
         assertEquals("bar",
-                Main.getCleanPath(new File("foo" + sep + ".." + sep + "bar")));
+                LintCliClient.getCleanPath(new File("foo" + sep + ".." + sep + "bar")));
         assertEquals("",
-                Main.getCleanPath(new File("foo" + sep + "..")));
+                LintCliClient.getCleanPath(new File("foo" + sep + "..")));
         assertEquals("foo",
-                Main.getCleanPath(new File("foo" + sep + "bar" + sep + "..")));
+                LintCliClient.getCleanPath(new File("foo" + sep + "bar" + sep + "..")));
         assertEquals("foo" + sep + ".foo" + sep + "bar",
-                Main.getCleanPath(new File("foo" + sep + ".foo" + sep + "bar")));
+                LintCliClient.getCleanPath(new File("foo" + sep + ".foo" + sep + "bar")));
         assertEquals("foo" + sep + "bar",
-                Main.getCleanPath(new File("foo" + sep + "bar" + sep + ".")));
+                LintCliClient.getCleanPath(new File("foo" + sep + "bar" + sep + ".")));
         assertEquals("foo" + sep + "...",
-                Main.getCleanPath(new File("foo" + sep + "...")));
+                LintCliClient.getCleanPath(new File("foo" + sep + "...")));
         assertEquals(".." + sep + "foo",
-                Main.getCleanPath(new File(".." + sep + "foo")));
+                LintCliClient.getCleanPath(new File(".." + sep + "foo")));
         assertEquals(sep + "foo",
-                Main.getCleanPath(new File(sep + "foo")));
+                LintCliClient.getCleanPath(new File(sep + "foo")));
         assertEquals(sep,
-                Main.getCleanPath(new File(sep + "foo" + sep + "..")));
+                LintCliClient.getCleanPath(new File(sep + "foo" + sep + "..")));
         assertEquals(sep + "foo",
-                Main.getCleanPath(new File(sep + "foo" + sep + "bar " + sep + "..")));
+                LintCliClient.getCleanPath(new File(sep + "foo" + sep + "bar " + sep + "..")));
         assertEquals(sep + "c:",
-                Main.getCleanPath(new File(sep + "c:")));
+                LintCliClient.getCleanPath(new File(sep + "c:")));
         assertEquals(sep + "c:" + sep + "foo",
-                Main.getCleanPath(new File(sep + "c:" + sep + "foo")));
+                LintCliClient.getCleanPath(new File(sep + "c:" + sep + "foo")));
     }
 }
