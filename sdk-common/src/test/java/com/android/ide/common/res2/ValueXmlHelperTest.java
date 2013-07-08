@@ -93,8 +93,12 @@ public class ValueXmlHelperTest extends TestCase {
 
     public void testUnescapeStringShouldUnescapeXmlSpecialCharacters() throws Exception {
         assertEquals("&lt;", unescapeResourceString("&lt;", false, true));
+        assertEquals("&gt;", unescapeResourceString("&gt;", false, true));
         assertEquals("<", unescapeResourceString("&lt;", true, true));
         assertEquals("<", unescapeResourceString("  &lt;  ", true, true));
+        assertEquals("\"", unescapeResourceString("  &quot;  ", true, true));
+        assertEquals("'", unescapeResourceString("  &apos;  ", true, true));
+        assertEquals(">", unescapeResourceString("  &gt;  ", true, true));
         assertEquals("&amp;", unescapeResourceString("&amp;", false, true));
         assertEquals("&", unescapeResourceString("&amp;", true, true));
         assertEquals("&", unescapeResourceString("  &amp;  ", true, true));
