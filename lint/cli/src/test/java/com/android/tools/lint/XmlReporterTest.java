@@ -42,7 +42,7 @@ public class XmlReporterTest extends AbstractCheckTest {
     public void test() throws Exception {
         File file = new File(getTargetDir(), "report");
         try {
-            Main client = new Main() {
+            LintCliClient client = new LintCliClient() {
                 @Override
                 String getRevision() {
                     return "unittest"; // Hardcode version to keep unit test output stable
@@ -142,13 +142,13 @@ public class XmlReporterTest extends AbstractCheckTest {
     public void testFullPaths() throws Exception {
         File file = new File(getTargetDir(), "report");
         try {
-            Main client = new Main() {
+            LintCliClient client = new LintCliClient() {
                 @Override
                 String getRevision() {
                     return "unittest"; // Hardcode version to keep unit test output stable
                 }
             };
-            client.mFullPath = true;
+            client.mFlags.setFullPath(true);
 
             file.getParentFile().mkdirs();
             XmlReporter reporter = new XmlReporter(client, file);
@@ -245,7 +245,7 @@ public class XmlReporterTest extends AbstractCheckTest {
         // See https://code.google.com/p/android/issues/detail?id=56205
         File file = new File(getTargetDir(), "report");
         try {
-            Main client = new Main() {
+            LintCliClient client = new LintCliClient() {
                 @Override
                 String getRevision() {
                     return "unittest"; // Hardcode version to keep unit test output stable

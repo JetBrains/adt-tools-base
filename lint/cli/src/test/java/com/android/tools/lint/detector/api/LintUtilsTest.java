@@ -21,8 +21,8 @@ import static com.android.tools.lint.detector.api.LintUtils.isImported;
 import static com.android.tools.lint.detector.api.LintUtils.splitPath;
 
 import com.android.annotations.Nullable;
+import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.LombokParser;
-import com.android.tools.lint.Main;
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.client.api.IJavaParser;
 import com.android.tools.lint.client.api.LintDriver;
@@ -248,7 +248,7 @@ public class LintUtilsTest extends TestCase {
         writer.write(sb.toString());
         writer.close();
 
-        String s = LintUtils.getEncodedString(new Main(), file);
+        String s = LintUtils.getEncodedString(new LintCliClient(), file);
         assertEquals(expected, s);
     }
 
@@ -344,7 +344,8 @@ public class LintUtilsTest extends TestCase {
         private final String mJavaSource;
         public TestContext(String javaSource, File file) {
             super(new LintDriver(new BuiltinIssueRegistry(),
-                    new Main()), new Main().getProject(new File("dummy"), new File("dummy")),
+                    new LintCliClient()), new LintCliClient().getProject(new File("dummy"),
+                    new File("dummy")),
                     null, file);
 
             mJavaSource = javaSource;

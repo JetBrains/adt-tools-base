@@ -43,7 +43,7 @@ import java.util.Map;
  */
 @Beta
 public abstract class Reporter {
-    protected final Main mClient;
+    protected final LintCliClient mClient;
     protected final File mOutput;
     protected String mTitle = "Lint Report";
     protected boolean mSimpleFormat;
@@ -64,7 +64,7 @@ public abstract class Reporter {
     public abstract void write(int errorCount, int warningCount, List<Warning> issues)
             throws IOException;
 
-    protected Reporter(Main client, File output) {
+    protected Reporter(LintCliClient client, File output) {
         mClient = client;
         mOutput = output;
     }

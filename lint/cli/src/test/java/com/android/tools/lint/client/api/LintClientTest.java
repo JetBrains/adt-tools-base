@@ -16,14 +16,14 @@
 
 package com.android.tools.lint.client.api;
 
-import com.android.tools.lint.Main;
+import com.android.tools.lint.LintCliClient;
 
 import junit.framework.TestCase;
 
 @SuppressWarnings("javadoc")
 public class LintClientTest extends TestCase {
     public void test() throws Exception {
-        Main client = new Main();
+        LintCliClient client = new LintCliClient();
         int max = client.getHighestKnownApiLevel();
         assertTrue(max >= 16);
     }
