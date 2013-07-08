@@ -17,7 +17,10 @@
 package com.android.ide.common.res2;
 
 import static com.android.SdkConstants.AMP_ENTITY;
+import static com.android.SdkConstants.APOS_ENTITY;
+import static com.android.SdkConstants.GT_ENTITY;
 import static com.android.SdkConstants.LT_ENTITY;
+import static com.android.SdkConstants.QUOT_ENTITY;
 
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -170,6 +173,18 @@ public class ValueXmlHelper {
                         sb.append('&');
                         i += AMP_ENTITY.length() - 1;
                         continue;
+                    } else if (s.regionMatches(true, i, QUOT_ENTITY, 0, QUOT_ENTITY.length())) {
+                      sb.append('"');
+                      i += QUOT_ENTITY.length() - 1;
+                      continue;
+                    } else if (s.regionMatches(true, i, APOS_ENTITY, 0, APOS_ENTITY.length())) {
+                      sb.append('\'');
+                      i += APOS_ENTITY.length() - 1;
+                      continue;
+                    } else if (s.regionMatches(true, i, GT_ENTITY, 0, GT_ENTITY.length())) {
+                      sb.append('>');
+                      i += GT_ENTITY.length() - 1;
+                      continue;
                     }
                 }
                 sb.append(c);
