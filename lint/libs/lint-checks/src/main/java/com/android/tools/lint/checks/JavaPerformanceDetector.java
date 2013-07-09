@@ -495,7 +495,8 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
             StrictListAccessor<TypeReference, TypeReference> types = reference.getTypeArguments();
             if (types != null && types.size() == 2) {
                 TypeReference first = types.first();
-                if (first.getTypeName().equals(INTEGER)) {
+                String typeName = first.getTypeName();
+                if (typeName.equals(INTEGER)) {
                     String valueType = types.last().getTypeName();
                     if (valueType.equals(INTEGER)) {
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
@@ -505,17 +506,18 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                                 "Use new SparseBooleanArray(...) instead for better performance",
                                 null);
-                    } else if (valueType.equals(LONG) && mContext.getProject().getMinSdk() >= 17) {
-                        mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
-                                "Use new SparseLongArray(...) instead for better performance",
-                                null);
                     } else {
+                        // Don't suggest SparseLongArray; it is marked @hide
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                             String.format(
                                 "Use new SparseArray<%1$s>(...) instead for better performance",
                               valueType),
                             null);
                     }
+                } else if (typeName.equals(LONG) && mContext.getProject().getMinSdk() >= 17) {
+                    mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
+                            "Use new LongSparseArray(...) instead for better performance",
+                            null);
                 }
             }
         }
@@ -533,10 +535,6 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                 } else if (valueType.equals(BOOLEAN)) {
                     mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                             "Use new SparseBooleanArray(...) instead for better performance",
-                            null);
-                } else if (valueType.equals(LONG) && mContext.getProject().getMinSdk() >= 17) {
-                    mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
-                            "Use new SparseLongArray(...) instead for better performance",
                             null);
                 }
             }

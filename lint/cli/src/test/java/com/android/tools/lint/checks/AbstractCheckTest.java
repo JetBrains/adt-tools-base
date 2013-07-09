@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.testutils.SdkTestCase;
 import com.android.tools.lint.LintCliClient;
+import com.android.tools.lint.LintCliFlags;
 import com.android.tools.lint.LintCliXmlParser;
 import com.android.tools.lint.LombokParser;
 import com.android.tools.lint.Reporter;
@@ -266,6 +267,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         private StringWriter mWriter = new StringWriter();
 
         public TestLintClient() {
+            super(new LintCliFlags());
             mFlags.getReporters().add(new TextReporter(this, mWriter, false));
         }
 

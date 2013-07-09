@@ -192,4 +192,8 @@ public class JavaPerformanceTest extends Button {
         new SparseArray<Boolean>(); // Use SparseBooleanArray instead
         new SparseArray<Object>();  // OK
     }
+
+    public void longSparseArray() { // but only minSdkVersion >= 17
+        Map<Long, String> myStringMap = new HashMap<Long, String>();
+    }
 }
