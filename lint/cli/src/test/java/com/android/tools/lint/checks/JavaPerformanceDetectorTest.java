@@ -103,4 +103,25 @@ public class JavaPerformanceDetectorTest extends AbstractCheckTest {
             lintProject("src/test/pkg/JavaPerformanceTest.java.txt=>" +
                     "src/test/pkg/JavaPerformanceTest.java"));
     }
+
+    public void testLongSparseArray() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/LongSparseArray.java:10: Warning: Use new LongSparseArray(...) instead for better performance [UseSparseArrays]\n"
+                + "        Map<Long, String> myStringMap = new HashMap<Long, String>();\n"
+                + "                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                    "apicheck/minsdk17.xml=>AndroidManifest.xml",
+                    "src/test/pkg/LongSparseArray.java.txt=>src/test/pkg/LongSparseArray.java"));
+    }
+
+    public void testNoLongSparseArray() throws Exception {
+        assertEquals(
+                "No warnings.",
+
+                lintProject(
+                    "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                    "src/test/pkg/LongSparseArray.java.txt=>src/test/pkg/LongSparseArray.java"));
+    }
 }
