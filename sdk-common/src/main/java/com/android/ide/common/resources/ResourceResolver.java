@@ -39,6 +39,12 @@ public class ResourceResolver extends RenderResources {
     public static final String THEME_NAME = "Theme";
     public static final String THEME_NAME_DOT = "Theme.";
 
+    /**
+     * Number of indirections we'll follow for resource resolution before assuming there
+     * is a cyclic dependency error in the input
+     */
+    public static final int MAX_RESOURCE_INDIRECTION = 50;
+
     private final Map<ResourceType, Map<String, ResourceValue>> mProjectResources;
     private final Map<ResourceType, Map<String, ResourceValue>> mFrameworkResources;
 
@@ -343,6 +349,10 @@ public class ResourceResolver extends RenderResources {
 
     @Override
     public ResourceValue resolveResValue(ResourceValue resValue) {
+        return resolveResValue(resValue, 0);
+    }
+
+    private ResourceValue resolveResValue(ResourceValue resValue, int depth) {
         if (resValue == null) {
             return null;
         }
@@ -362,17 +372,17 @@ public class ResourceResolver extends RenderResources {
         }
 
         // detect potential loop due to mishandled namespace in attributes
-        if (resValue == resolvedResValue) {
+        if (resValue == resolvedResValue || depth >= MAX_RESOURCE_INDIRECTION) {
             if (mLogger != null) {
                 mLogger.error(LayoutLog.TAG_BROKEN,
-                        String.format("Potential stackoverflow trying to resolve '%s'. Render may not be accurate.", value),
+                        String.format("Potential stack overflow trying to resolve '%s': cyclic resource definitions? Render may not be accurate.", value),
                         null);
             }
             return resValue;
         }
 
         // otherwise, we attempt to resolve this new value as well
-        return resolveResValue(resolvedResValue);
+        return resolveResValue(resolvedResValue, depth + 1);
     }
 
     // ---- Private helper methods.
