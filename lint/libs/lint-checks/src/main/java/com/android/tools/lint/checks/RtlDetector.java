@@ -17,8 +17,36 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.ATTR_DRAWABLE_END;
+import static com.android.SdkConstants.ATTR_DRAWABLE_LEFT;
+import static com.android.SdkConstants.ATTR_DRAWABLE_RIGHT;
+import static com.android.SdkConstants.ATTR_DRAWABLE_START;
 import static com.android.SdkConstants.ATTR_GRAVITY;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_END;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_LEFT;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_END;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_LEFT;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_RIGHT;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_START;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_RIGHT;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_START;
 import static com.android.SdkConstants.ATTR_LAYOUT_GRAVITY;
+import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN_END;
+import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN_LEFT;
+import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN_RIGHT;
+import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN_START;
+import static com.android.SdkConstants.ATTR_LAYOUT_TO_END_OF;
+import static com.android.SdkConstants.ATTR_LAYOUT_TO_LEFT_OF;
+import static com.android.SdkConstants.ATTR_LAYOUT_TO_RIGHT_OF;
+import static com.android.SdkConstants.ATTR_LAYOUT_TO_START_OF;
+import static com.android.SdkConstants.ATTR_LIST_PREFERRED_ITEM_PADDING_END;
+import static com.android.SdkConstants.ATTR_LIST_PREFERRED_ITEM_PADDING_LEFT;
+import static com.android.SdkConstants.ATTR_LIST_PREFERRED_ITEM_PADDING_RIGHT;
+import static com.android.SdkConstants.ATTR_LIST_PREFERRED_ITEM_PADDING_START;
+import static com.android.SdkConstants.ATTR_PADDING_END;
+import static com.android.SdkConstants.ATTR_PADDING_LEFT;
+import static com.android.SdkConstants.ATTR_PADDING_RIGHT;
+import static com.android.SdkConstants.ATTR_PADDING_START;
 import static com.android.SdkConstants.TAG_APPLICATION;
 import static com.android.SdkConstants.GRAVITY_VALUE_END;
 import static com.android.SdkConstants.GRAVITY_VALUE_LEFT;
@@ -208,22 +236,22 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
 
     private static final String[] ATTRIBUTES = new String[] {
             // Pairs, from left/right constants to corresponding start/end constants
-            "layout_alignParentLeft",           "layout_alignParentStart",
-            "layout_alignParentRight",          "layout_alignParentEnd",
-            "layout_marginLeft",                "layout_marginStart",
-            "layout_marginRight",               "layout_marginEnd",
-            "paddingLeft",                      "paddingStart",
-            "paddingRight",                     "paddingEnd",
-            "listPreferredItemPaddingLeft",     "listPreferredItemPaddingStart",
-            "listPreferredItemPaddingRight",    "listPreferredItemPaddingEnd",
-            "drawableLeft",                     "drawableStart",
-            "drawableRight",                    "drawableEnd",
+            ATTR_LAYOUT_ALIGN_PARENT_LEFT,          ATTR_LAYOUT_ALIGN_PARENT_START,
+            ATTR_LAYOUT_ALIGN_PARENT_RIGHT,         ATTR_LAYOUT_ALIGN_PARENT_END,
+            ATTR_LAYOUT_MARGIN_LEFT,                ATTR_LAYOUT_MARGIN_START,
+            ATTR_LAYOUT_MARGIN_RIGHT,               ATTR_LAYOUT_MARGIN_END,
+            ATTR_PADDING_LEFT,                      ATTR_PADDING_START,
+            ATTR_PADDING_RIGHT,                     ATTR_PADDING_END,
+            ATTR_DRAWABLE_LEFT,                     ATTR_DRAWABLE_START,
+            ATTR_DRAWABLE_RIGHT,                    ATTR_DRAWABLE_END,
+            ATTR_LIST_PREFERRED_ITEM_PADDING_LEFT,  ATTR_LIST_PREFERRED_ITEM_PADDING_START,
+            ATTR_LIST_PREFERRED_ITEM_PADDING_RIGHT, ATTR_LIST_PREFERRED_ITEM_PADDING_END,
 
             // RelativeLayout
-            "layout_toLeftOf",                  "layout_toStartOf",
-            "layout_toRightOf",                 "layout_toEndOf",
-            "layout_alignLeft",                 "layout_alignStart",
-            "layout_alignRight",                "layout_alignEnd",
+            ATTR_LAYOUT_TO_LEFT_OF,                 ATTR_LAYOUT_TO_START_OF,
+            ATTR_LAYOUT_TO_RIGHT_OF,                ATTR_LAYOUT_TO_END_OF,
+            ATTR_LAYOUT_ALIGN_LEFT,                 ATTR_LAYOUT_ALIGN_START,
+            ATTR_LAYOUT_ALIGN_RIGHT,                ATTR_LAYOUT_ALIGN_END,
     };
     static {
         if (LintUtils.assertionsEnabled()) {
