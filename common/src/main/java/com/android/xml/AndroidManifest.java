@@ -89,6 +89,7 @@ public final class AndroidManifest {
     public static final String ATTRIBUTE_THEME = "theme";
     public static final String ATTRIBUTE_BACKUP_AGENT = "backupAgent";
     public static final String ATTRIBUTE_PARENT_ACTIVITY_NAME = "parentActivityName";
+    public static final String ATTRIBUTE_SUPPORTS_RTL = "supportsRtl";
 
     /**
      * Returns an {@link IAbstractFile} object representing the manifest for the given project.
@@ -313,6 +314,32 @@ public final class AndroidManifest {
                 ":"  + ATTRIBUTE_LABEL,
                 new InputSource(manifestFile.getContents()));
     }
+
+  /**
+   * Returns whether the manifest is set to make the application RTL aware.
+   *
+   * If the give manifest does not contain the supportsRtl attribute then the application
+   * is considered to not be not supporting RTL (there will be no layout mirroring).
+   *
+   * @param manifestFile the manifest to parse.
+   * @return true if the application is supporting RTL.
+   * @throws XPathExpressionException
+   * @throws StreamException If any error happens when reading the manifest.
+   */
+  public static boolean getSupportsRtl(IAbstractFile manifestFile)
+    throws XPathExpressionException, StreamException {
+    XPath xPath = AndroidXPathFactory.newXPath();
+
+    String value = xPath.evaluate(
+      "/"  + NODE_MANIFEST +
+      "/"  + NODE_APPLICATION +
+      "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX +
+      ":"  + ATTRIBUTE_SUPPORTS_RTL,
+      new InputSource(manifestFile.getContents()));
+
+    // default is not debuggable, which is the same behavior as parseBoolean
+    return Boolean.parseBoolean(value);
+  }
 
     /**
      * Combines a java package, with a class value from the manifest to make a fully qualified
