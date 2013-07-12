@@ -811,7 +811,15 @@ public final class SdkConstants {
             "textIsSelectable";                                        //$NON-NLS-1$
     public static final String ATTR_IMPORTANT_FOR_ACCESSIBILITY =
             "importantForAccessibility";                               //$NON-NLS-1$
-  public static final String ATTR_INDEX = "index";                     //$NON-NLS-1$
+    public static final String ATTR_LIST_PREFERRED_ITEM_PADDING_LEFT =
+            "listPreferredItemPaddingLeft";                            //$NON-NLS-1$
+    public static final String ATTR_LIST_PREFERRED_ITEM_PADDING_RIGHT =
+            "listPreferredItemPaddingRight";                           //$NON-NLS-1$
+    public static final String ATTR_LIST_PREFERRED_ITEM_PADDING_START =
+            "listPreferredItemPaddingStart";                           //$NON-NLS-1$
+    public static final String ATTR_LIST_PREFERRED_ITEM_PADDING_END =
+            "listPreferredItemPaddingEnd";                             //$NON-NLS-1$
+    public static final String ATTR_INDEX = "index";                   //$NON-NLS-1$
 
     // AbsoluteLayout layout params
     public static final String ATTR_LAYOUT_Y = "layout_y";             //$NON-NLS-1$
