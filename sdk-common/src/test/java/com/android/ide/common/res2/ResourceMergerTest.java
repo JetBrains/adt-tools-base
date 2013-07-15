@@ -36,6 +36,7 @@ import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -944,8 +945,9 @@ public class ResourceMergerTest extends BaseTestCase {
         int index = layoutXml.indexOf("From: ");
         assertTrue(index != -1);
         String path = layoutXml.substring(index + 6, layoutXml.indexOf(' ', index + 6));
-        assertTrue(path, new File(path).exists());
-        assertFalse(Arrays.equals(Files.toByteArray(new File(path)), Files.toByteArray(layout)));
+        File file =  new File(new URL(path).toURI());
+        assertTrue(path, file.exists());
+        assertFalse(Arrays.equals(Files.toByteArray(file), Files.toByteArray(layout)));
 
         // Also make sure .png files were NOT modified
         File root = TestUtils.getRoot("resources", "baseMerge");
