@@ -137,7 +137,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                             // destination file.
                             mAaptRunner.crunchPng(file, outFile);
                         } else if (filename.endsWith(DOT_XML)) {
-                            String p = file.isAbsolute() ? file.getPath() : file.getAbsolutePath();
+                            String p = file.toURI().toURL().toString();
                             copyXmlWithComment(file, outFile, FILENAME_PREFIX + p);
                         } else {
                             Files.copy(file, outFile);
@@ -258,7 +258,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                           currentFile = source;
                           rootNode.appendChild(document.createTextNode("\n"));
                           File file = source.getFile();
-                          String path = file.isAbsolute() ? file.getPath() : file.getAbsolutePath();
+                          String path = file.toURI().toURL().toString();
                           rootNode.appendChild(document.createComment(FILENAME_PREFIX + path));
                           rootNode.appendChild(document.createTextNode("\n"));
                         }
