@@ -38,8 +38,10 @@ public class AaptRunner {
      * @param to the output file
      * @throws IOException
      * @throws InterruptedException
+     * @throws LoggedErrorException
      */
-    public void crunchPng(File from, File to) throws IOException, InterruptedException {
+    public void crunchPng(File from, File to)
+            throws IOException, InterruptedException, LoggedErrorException {
         String[] command = new String[] {
             mAaptLocation,
             "s",
