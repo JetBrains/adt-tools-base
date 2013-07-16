@@ -45,7 +45,7 @@ public class MajorRevisionTest extends TestCase {
         } catch (NumberFormatException e) {
             errorMsg = e.getMessage();
         }
-        assertEquals("For input string: \"5.0.0\"", errorMsg);
+        assertEquals("Invalid revision: 5.0.0 -- Micro number not supported", errorMsg);
     }
 
     public final void testCompareTo() {
