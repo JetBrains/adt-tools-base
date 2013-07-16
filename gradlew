@@ -162,9 +162,14 @@ eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS
 JVM_OPTS[${#JVM_OPTS[*]}]="-Dorg.gradle.appname=$APP_BASE_NAME"
 
 # Change the project's .gradle to the android out dir.
+ANDROID_GRADLE_ROOT="$APP_HOME/../../out/host/gradle/tools/base"
 if [[ -z "$ANDROID_CACHE_DIR" ]]; then
-  ANDROID_CACHE_DIR="$APP_HOME/../../out/host/gradle/tools/base/.gradle"
+  ANDROID_CACHE_DIR="$ANDROID_GRADLE_ROOT/.gradle"
 fi
+
+# Change the local user directories to be under the android out dir
+export GRADLE_USER_HOME="$ANDROID_GRADLE_ROOT/.gradle"
+export M2_HOME="$ANDROID_GRADLE_ROOT/.m2"
 
 exec "$JAVACMD" "${JVM_OPTS[@]}" \
     -classpath "$CLASSPATH" \
