@@ -100,7 +100,7 @@ public class FullRevisionTest extends TestCase {
         } catch (NumberFormatException e) {
             errorMsg = e.getMessage();
         }
-        assertEquals("Invalid full revision: not a number", errorMsg);
+        assertEquals("Invalid revision: not a number", errorMsg);
 
         errorMsg = null;
         try {
@@ -109,7 +109,7 @@ public class FullRevisionTest extends TestCase {
         } catch (NumberFormatException e) {
             errorMsg = e.getMessage();
         }
-        assertEquals("Invalid full revision: 5 .6 .7", errorMsg);
+        assertEquals("Invalid revision: 5 .6 .7", errorMsg);
 
         errorMsg = null;
         try {
@@ -118,7 +118,7 @@ public class FullRevisionTest extends TestCase {
         } catch (NumberFormatException e) {
             errorMsg = e.getMessage();
         }
-        assertEquals("Invalid full revision: 5.0.0 preview 1", errorMsg);
+        assertEquals("Invalid revision: 5.0.0 preview 1", errorMsg);
 
         errorMsg = null;
         try {
@@ -127,7 +127,7 @@ public class FullRevisionTest extends TestCase {
         } catch (NumberFormatException e) {
             errorMsg = e.getMessage();
         }
-        assertEquals("Invalid full revision:   5.1.2 rc 42  ", errorMsg);
+        assertEquals("Invalid revision:   5.1.2 rc 42  ", errorMsg);
     }
 
     public final void testCompareTo() {

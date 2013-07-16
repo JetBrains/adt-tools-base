@@ -47,7 +47,7 @@ public class FullRevision implements Comparable<FullRevision> {
     private final int mPreview;
 
     public FullRevision(int major) {
-        this(major, 0, 0);
+        this(major, IMPLICIT_MINOR_REV, IMPLICIT_MICRO_REV);
     }
 
     public FullRevision(int major, int minor, int micro) {
@@ -99,32 +99,71 @@ public class FullRevision implements Comparable<FullRevision> {
     @NonNull
     public static FullRevision parseRevision(@NonNull String revision)
             throws NumberFormatException {
+        return parseRevisionImpl(revision, true /*supportMinorMicro*/, true /*supportPreview*/);
+    }
 
+    @NonNull
+    protected static FullRevision parseRevisionImpl(@NonNull String revision,
+                                                    boolean supportMinorMicro,
+                                                    boolean supportPreview)
+                                  throws NumberFormatException {
         if (revision == null) {
             throw new NumberFormatException("revision is <null>"); //$NON-NLS-1$
         }
 
         Throwable cause = null;
+        String error = null;
         try {
             Matcher m = FULL_REVISION_PATTERN.matcher(revision);
             if (m != null && m.matches()) {
                 int major = Integer.parseInt(m.group(1));
-                String s = m.group(2);
-                int minor = s == null ? IMPLICIT_MINOR_REV : Integer.parseInt(s);
-                s = m.group(3);
-                int micro = s == null ? IMPLICIT_MICRO_REV : Integer.parseInt(s);
-                s = m.group(4);
-                int preview = s == null ? NOT_A_PREVIEW : Integer.parseInt(s);
 
-                return new FullRevision(major, minor, micro, preview);
+                int minor = IMPLICIT_MINOR_REV;
+                int micro = IMPLICIT_MICRO_REV;
+                int preview = NOT_A_PREVIEW;
+
+                String s = m.group(2);
+                if (s != null) {
+                    if (!supportMinorMicro) {
+                        error = " -- Minor number not supported";   //$NON-NLS-1$
+                    } else {
+                        minor = Integer.parseInt(s);
+                    }
+                }
+
+                s = m.group(3);
+                if (s != null) {
+                    if (!supportMinorMicro) {
+                        error = " -- Micro number not supported";   //$NON-NLS-1$
+                    } else {
+                        micro = Integer.parseInt(s);
+                    }
+                }
+
+                s = m.group(4);
+                if (s != null) {
+                    if (!supportPreview) {
+                        error = " -- Preview number not supported";   //$NON-NLS-1$
+                    } else {
+                        preview = Integer.parseInt(s);
+                    }
+                }
+
+                if (error == null) {
+                    return new FullRevision(major, minor, micro, preview);
+                }
             }
         } catch (Throwable t) {
             cause = t;
         }
 
         NumberFormatException n = new NumberFormatException(
-                "Invalid full revision: " + revision); //$NON-NLS-1$
-        n.initCause(cause);
+                "Invalid revision: "        //$NON-NLS-1$
+                + revision
+                + (error == null ? "" : error));
+        if (cause != null) {
+            n.initCause(cause);
+        }
         throw n;
     }
 
