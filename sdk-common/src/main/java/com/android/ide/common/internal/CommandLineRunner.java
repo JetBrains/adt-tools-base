@@ -20,6 +20,7 @@ import com.android.annotations.Nullable;
 import com.android.sdklib.util.GrabProcessOutput;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.util.List;
@@ -31,6 +32,7 @@ public class CommandLineRunner {
     private class OutputGrabber implements GrabProcessOutput.IProcessOutput {
 
         private boolean mFoundError = false;
+        private List<String> mErrors = Lists.newArrayList();
 
         @Override
         public void out(@Nullable String line) {
@@ -43,6 +45,7 @@ public class CommandLineRunner {
         public void err(@Nullable String line) {
             if (line != null) {
                 mLogger.error(null /*throwable*/, line);
+                mErrors.add(line);
                 mFoundError = true;
             }
         }
@@ -56,37 +59,33 @@ public class CommandLineRunner {
         mLogger = logger;
     }
 
-    public void runCmdLine(List<String> command) throws IOException, InterruptedException {
+    public void runCmdLine(List<String> command)
+            throws IOException, InterruptedException, LoggedErrorException {
         String[] cmdArray = command.toArray(new String[command.size()]);
         runCmdLine(cmdArray);
     }
 
-    public void runCmdLine(String[] command) throws IOException, InterruptedException {
+    public void runCmdLine(String[] command)
+            throws IOException, InterruptedException, LoggedErrorException {
         printCommand(command);
 
         // launch the command line process
         Process process = Runtime.getRuntime().exec(command);
 
         // get the output and return code from the process
-        if (grabProcessOutput(process) != 0) {
-            throw new RuntimeException(String.format("Running %s failed. See output", command[0]));
-        }
-    }
-
-    /**
-     * Get the stderr output of a process and return when the process is done.
-     * @param process The process to get the output from
-     * @return the process return code.
-     * @throws InterruptedException
-     */
-    private int grabProcessOutput(final Process process) throws InterruptedException {
-
         OutputGrabber grabber = new OutputGrabber();
 
-        return GrabProcessOutput.grabProcessOutput(
+        int returnCode = GrabProcessOutput.grabProcessOutput(
                 process,
                 GrabProcessOutput.Wait.WAIT_FOR_READERS, // we really want to make sure we get all the output!
                 grabber);
+
+        if (returnCode != 0) {
+            throw new LoggedErrorException(
+                    returnCode,
+                    grabber.mErrors,
+                    Joiner.on(' ').join(command));
+        }
     }
 
     private void printCommand(String[] command) {
