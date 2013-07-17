@@ -46,16 +46,9 @@ public abstract class MergeWriter<I extends DataItem> implements MergeConsumer<I
         try {
             postWriteAction();
 
-            getExecutor().waitForTasksWithQuickFail();
-        } catch (InterruptedException e) {
-            // if this thread was cancelled we need to cancel the rest of the executor tasks.
-            getExecutor().cancelAllTasks();
+            getExecutor().waitForTasksWithQuickFail(true);
+        } catch (Exception e) {
             throw new ConsumerException(e);
-        } catch (ExecutionException e) {
-            // if a task fail, we also want to cancel the rest of the tasks.
-            mExecutor.cancelAllTasks();
-            // and return the first error
-            throw new ConsumerException(e.getCause());
         }
     }
 

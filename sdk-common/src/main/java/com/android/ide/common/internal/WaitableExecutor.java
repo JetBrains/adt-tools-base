@@ -16,8 +16,10 @@
 package com.android.ide.common.internal;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
@@ -32,15 +34,14 @@ import java.util.concurrent.Future;
  * Tasks are submitted as {@link Callable} with {@link #execute(java.util.concurrent.Callable)}.
  *
  * After executing all tasks, it is possible to wait on them with
- * {@link #waitForTasksWithQuickFail()}, or {@link #waitForAllTasks()}.
+ * {@link #waitForTasksWithQuickFail(boolean)}, or {@link #waitForAllTasks()}.
  *
  * This class is not Thread safe!
  */
 public class WaitableExecutor<T> {
 
     private final CompletionService<T> mCompletionService;
-
-    private int mCount = 0;
+    private final Set<Future<T>> mFutureSet = Sets.newHashSet();
 
     public WaitableExecutor(int nThreads) {
         if (nThreads < 1) {
@@ -62,8 +63,7 @@ public class WaitableExecutor<T> {
      * @param runnable the callable to run.
      */
     public void execute(Callable<T> runnable) {
-        mCompletionService.submit(runnable);
-        mCount++;
+        mFutureSet.add(mCompletionService.submit(runnable));
     }
 
     /**
@@ -74,17 +74,38 @@ public class WaitableExecutor<T> {
      * If you want to get the results of all tasks (result and/or exception), use
      * {@link #waitForAllTasks()}
      *
+     * @param cancelRemaining if true, and a task fails, cancel all remaining tasks.
+     *
      * @return a list of all the return values from the tasks.
      *
      * @throws InterruptedException if this thread was interrupted. Not if the tasks were interrupted.
-     * @throws ExecutionException if a task fails with an interruption. The cause if the original exception.
      */
-    public List<T> waitForTasksWithQuickFail() throws InterruptedException, ExecutionException {
-        List<T> results = Lists.newArrayListWithCapacity(mCount);
-        for (int i = 0 ; i < mCount ; i++) {
-            Future<T> result = mCompletionService.take();
-            // Get the result from the task. If the task threw an exception just throw it too.
-            results.add(result.get());
+    public List<T> waitForTasksWithQuickFail(boolean cancelRemaining) throws InterruptedException,
+            LoggedErrorException {
+        List<T> results = Lists.newArrayListWithCapacity(mFutureSet.size());
+        try {
+            while (!mFutureSet.isEmpty()) {
+                Future<T> future = mCompletionService.take();
+
+                assert mFutureSet.contains(future);
+                mFutureSet.remove(future);
+
+                // Get the result from the task. If the task threw an exception,
+                // this will throw it, wrapped in an ExecutionException, caught below.
+                results.add(future.get());
+            }
+        } catch (ExecutionException e) {
+            if (cancelRemaining) {
+                cancelAllTasks();
+            }
+
+            // get the original exception adn throw that one.
+            Throwable cause = e.getCause();
+            if (cause instanceof LoggedErrorException) {
+                throw (LoggedErrorException) cause;
+            } else {
+                throw new RuntimeException(cause);
+            }
         }
 
         return results;
@@ -117,12 +138,16 @@ public class WaitableExecutor<T> {
      * @throws InterruptedException if this thread was interrupted. Not if the tasks were interrupted.
      */
     public List<TaskResult<T>> waitForAllTasks() throws InterruptedException {
-        List<TaskResult<T>> results = Lists.newArrayListWithCapacity(mCount);
-        for (int i = 0 ; i < mCount ; i++) {
-            Future<T> task = mCompletionService.take();
+        List<TaskResult<T>> results = Lists.newArrayListWithCapacity(mFutureSet.size());
+        while (!mFutureSet.isEmpty()) {
+            Future<T> future = mCompletionService.take();
+
+            assert mFutureSet.contains(future);
+            mFutureSet.remove(future);
+
             // Get the result from the task.
             try {
-                results.add(TaskResult.withValue(task.get()));
+                results.add(TaskResult.withValue(future.get()));
             } catch (ExecutionException e) {
                 // the original exception thrown by the task is the cause of this one.
                 Throwable cause = e.getCause();
@@ -144,13 +169,8 @@ public class WaitableExecutor<T> {
      * Cancel all remaining tasks.
      */
     public void cancelAllTasks() {
-        while (true) {
-            Future<T> task = mCompletionService.poll();
-            if (task != null) {
-                task.cancel(true /*mayInterruptIfRunning*/);
-            } else {
-                break;
-            }
+        for (Future<T> future : mFutureSet) {
+            future.cancel(true /*mayInterruptIfRunning*/);
         }
     }
 }
