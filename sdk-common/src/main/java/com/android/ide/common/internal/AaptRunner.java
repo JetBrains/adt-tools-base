@@ -16,6 +16,8 @@
 
 package com.android.ide.common.internal;
 
+import com.android.annotations.NonNull;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -27,7 +29,7 @@ public class AaptRunner {
     private final String mAaptLocation;
     private final CommandLineRunner mCommandLineRunner;
 
-    public AaptRunner(String aaptLocation, CommandLineRunner commandLineRunner) {
+    public AaptRunner(@NonNull String aaptLocation, @NonNull CommandLineRunner commandLineRunner) {
         mAaptLocation = aaptLocation;
         mCommandLineRunner = commandLineRunner;
     }
