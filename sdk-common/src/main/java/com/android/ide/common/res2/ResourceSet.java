@@ -168,6 +168,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                     getConfigName(), changedFile.getAbsolutePath()));
         }
 
+        //noinspection VariableNotUsedInsideIf
         if (folderData.type != null) {
             // single res file
             resourceFile.getItem().setTouched();
@@ -222,7 +223,6 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
        return true;
     }
-
 
     /**
      * Reads the content of a typed resource folder (sub folder to the root of res folder), and

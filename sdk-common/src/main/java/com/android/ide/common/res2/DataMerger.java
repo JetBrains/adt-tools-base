@@ -261,11 +261,14 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
      * Writes a single blob file to store all that the DataMerger knows about.
      *
      * @param blobRootFolder the root folder where blobs are store.
+     * @param consumer the merge consumer that was used by the merge.
+     *
      * @throws IOException
      *
      * @see #loadFromBlob(File, boolean)
      */
-    public void writeBlobTo(File blobRootFolder) throws IOException {
+    public void writeBlobTo(@NonNull File blobRootFolder, @NonNull MergeConsumer<I> consumer)
+            throws IOException {
         // write "compact" blob
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
@@ -284,7 +287,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                 Node dataSetNode = document.createElement(NODE_DATA_SET);
                 rootNode.appendChild(dataSetNode);
 
-                dataSet.appendToXml(dataSetNode, document);
+                dataSet.appendToXml(dataSetNode, document, consumer);
             }
 
             String content = XmlPrettyPrinter.prettyPrint(document);
