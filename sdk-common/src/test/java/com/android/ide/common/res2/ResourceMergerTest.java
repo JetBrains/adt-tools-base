@@ -181,6 +181,22 @@ public class ResourceMergerTest extends BaseTestCase {
         checkLogger(logger);
     }
 
+    public void testNotMergedAttrFromMerge() throws Exception {
+        ResourceMerger merger = getResourceMerger();
+
+        File folder = Files.createTempDir();
+        merger.writeBlobTo(folder,
+                new MergedResourceWriter(Files.createTempDir(), null /*aaptRunner*/));
+
+        ResourceMerger loadedMerger = new ResourceMerger();
+        loadedMerger.loadFromBlob(folder, true /*incrementalState*/);
+
+        // check that attr/blah is ignoredFromDiskMerge.
+        List<ResourceItem> items = loadedMerger.getDataSets().get(0).getDataMap().get("attr/blah");
+        assertEquals(1, items.size());
+        assertTrue(items.get(0).getIgnoredFromDiskMerge());
+    }
+
     public void testWrittenDeclareStyleable() throws Exception {
         RecordingLogger logger =  new RecordingLogger();
 
@@ -239,7 +255,8 @@ public class ResourceMergerTest extends BaseTestCase {
         ResourceMerger merger = getResourceMerger();
 
         File folder = Files.createTempDir();
-        merger.writeBlobTo(folder);
+        merger.writeBlobTo(folder,
+                new MergedResourceWriter(Files.createTempDir(), null /*aaptRunner*/));
 
         ResourceMerger loadedMerger = new ResourceMerger();
         loadedMerger.loadFromBlob(folder, true /*incrementalState*/);
@@ -697,7 +714,8 @@ public class ResourceMergerTest extends BaseTestCase {
 
         // write merger1 on disk to test writing empty ResourceSets.
         File folder = Files.createTempDir();
-        merger1.writeBlobTo(folder);
+        merger1.writeBlobTo(folder,
+                new MergedResourceWriter(Files.createTempDir(), null /*aaptRunner*/));
 
         // reload it
         ResourceMerger loadedMerger = new ResourceMerger();

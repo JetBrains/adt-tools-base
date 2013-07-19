@@ -126,7 +126,6 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
     protected abstract F createFileAndItems(File sourceFolder, File file, ILogger logger)
             throws IOException;
 
-
     /**
      * Adds a collection of source files.
      * @param files the source files to add.
@@ -248,7 +247,8 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      * @param setNode the root node for this set.
      * @param document The root XML document
      */
-    void appendToXml(Node setNode, Document document) {
+    void appendToXml(@NonNull Node setNode, @NonNull Document document,
+            @NonNull MergeConsumer<I> consumer) {
         // add the config name attribute
         NodeUtils.addAttribute(document, setNode, null, ATTR_CONFIG, mConfigName);
 
@@ -275,6 +275,9 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
 
                 if (dataFile.getType() == DataFile.FileType.MULTI) {
                     for (I item : dataFile.getItems()) {
+                        if (consumer.ignoreItemInMerge(item)) {
+                            continue;
+                        }
                         Node adoptedNode = item.getAdoptedNode(document);
                         if (adoptedNode != null) {
                             fileNode.appendChild(adoptedNode);
@@ -291,7 +294,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
 
     /**
      * Creates and returns a new DataSet from an XML node that was created with
-     * {@link #appendToXml(org.w3c.dom.Node, org.w3c.dom.Document)}
+     * {@link #appendToXml(org.w3c.dom.Node, org.w3c.dom.Document, MergeConsumer)}
      *
      * The object this method is called on is not modified. This should be static but can't be
      * due to children classes.
