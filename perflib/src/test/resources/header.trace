@@ -1,0 +1,18 @@
+*version
+3
+data-file-overflow=true
+clock=dual
+elapsed-time-usec=4713089
+clock-call-overhead-nsec=1974
+vm=dalvik
+*threads
+1	main
+11	AsyncTask #1
+*methods
+0x62830738	android/graphics/Bitmap	access$100	(I)V	BitmapF.java	29
+0x6282b408	FinalizerDaemon	access$100	()Ljava/lang/Daemons$FinalizerDaemon;	Daemons.java	160
+0x6282b440	java/lang/Daemons$FinalizerDaemon	access$400	(Ljava/lang/Daemons$FinalizerDaemon;)Ljava/lang/Object;	Daemons.java	160
+0x6282b4b0	java/lang/Daemons$FinalizerDaemon	doFinalize	(Ljava/lang/ref/FinalizerReference;)V	Daemons.java	-1
+*end
+SLOW
+data section follows..
