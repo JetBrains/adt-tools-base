@@ -812,6 +812,70 @@ public class ResourceMergerTest extends BaseTestCase {
         assertEquals(FileValidity.FileStatus.IGNORED_FILE, fileValidity.status);
     }
 
+    public void testIncDataForRemovedFile() throws Exception {
+        File root = TestUtils.getCanonicalRoot("resources", "removedFile");
+        File fakeBlobRoot = getMergedBlobFolder(root);
+
+        ResourceMerger resourceMerger = new ResourceMerger();
+        resourceMerger.loadFromBlob(fakeBlobRoot, true /*incrementalState*/);
+        checkSourceFolders(resourceMerger);
+
+        List<ResourceSet> sets = resourceMerger.getDataSets();
+        assertEquals(1, sets.size());
+
+        RecordingLogger logger = new RecordingLogger();
+
+        // ----------------
+        // Load the main set
+        ResourceSet mainSet = sets.get(0);
+        File resBase = new File(root, "res");
+        File resDrawable = new File(resBase, ResourceFolderType.DRAWABLE.getName());
+
+        // removed file
+        File resIconRemoved = new File(resDrawable, "removed.png");
+        mainSet.updateWith(resBase, resIconRemoved, FileStatus.REMOVED, logger);
+        checkLogger(logger);
+
+        // validate for duplicates
+        resourceMerger.validateDataSets();
+
+        // check the content.
+        ListMultimap<String, ResourceItem> mergedMap = resourceMerger.getDataMap();
+
+        // check layout/main is unchanged
+        List<ResourceItem> removedIcon = mergedMap.get("drawable/removed");
+        assertEquals(1, removedIcon.size());
+        assertTrue(removedIcon.get(0).isRemoved());
+        assertTrue(removedIcon.get(0).isWritten());
+        assertFalse(removedIcon.get(0).isTouched());
+
+        // write and check the result of writeResourceFolder
+        // copy the current resOut which serves as pre incremental update state.
+        File outFolder = getFolderCopy(new File(root, "out"));
+
+        // write the content of the resource merger.
+        MergedResourceWriter writer = new MergedResourceWriter(outFolder, null /*aaptRunner*/);
+        resourceMerger.mergeData(writer, false /*doCleanUp*/);
+
+        File outDrawableFolder = new File(outFolder, ResourceFolderType.DRAWABLE.getName());
+
+        // check the files are correct
+        assertFalse(new File(outDrawableFolder, "removed.png").isFile());
+        assertTrue(new File(outDrawableFolder, "icon.png").isFile());
+
+        // now write the blob
+        File outBlobFolder = Files.createTempDir();
+        resourceMerger.writeBlobTo(outBlobFolder, writer);
+
+        // check the removed icon is not present.
+        ResourceMerger resourceMerger2 = new ResourceMerger();
+        resourceMerger2.loadFromBlob(outBlobFolder, true /*incrementalState*/);
+
+        mergedMap = resourceMerger2.getDataMap();
+        removedIcon = mergedMap.get("drawable/removed");
+        assertTrue(removedIcon.isEmpty());
+    }
+
     /**
      * Creates a fake merge with given sets.
      *

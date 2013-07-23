@@ -91,6 +91,16 @@ public abstract class DataFile<I extends DataItem> {
         return mItems.values().iterator().next();
     }
 
+    boolean hasNotRemovedItems() {
+        for (I item : mItems.values()) {
+            if (!item.isRemoved()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     @NonNull
     public Collection<I> getItems() {
         return mItems.values();
