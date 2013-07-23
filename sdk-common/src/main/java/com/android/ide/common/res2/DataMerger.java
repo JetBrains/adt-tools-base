@@ -317,9 +317,10 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
      * @return true if the blob was loaded.
      * @throws IOException
      *
-     * @see #writeBlobTo(File)
+     * @see #writeBlobTo(File, MergeConsumer)
      */
-    public boolean loadFromBlob(File blobRootFolder, boolean incrementalState) throws IOException {
+    public boolean loadFromBlob(@NonNull File blobRootFolder, boolean incrementalState)
+            throws IOException {
         File file = new File(blobRootFolder, FN_MERGER_XML);
         if (!file.isFile()) {
             return false;
@@ -379,6 +380,13 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             } catch (IOException e) {
                 // ignore
             }
+        }
+    }
+
+    public void cleanBlob(@NonNull File blobRootFolder) {
+        File file = new File(blobRootFolder, FN_MERGER_XML);
+        if (file.isFile()) {
+            file.delete();
         }
     }
 

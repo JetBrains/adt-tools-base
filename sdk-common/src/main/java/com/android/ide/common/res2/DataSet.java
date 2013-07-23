@@ -266,6 +266,10 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
             Collection<F> dataFiles = mSourceFileToDataFilesMap.get(sourceFile);
 
             for (F dataFile : dataFiles) {
+                if (!dataFile.hasNotRemovedItems()) {
+                    continue;
+                }
+
                 // the node for the file and its path and qualifiers attribute
                 Node fileNode = document.createElement(NODE_FILE);
                 sourceNode.appendChild(fileNode);
@@ -275,7 +279,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
 
                 if (dataFile.getType() == DataFile.FileType.MULTI) {
                     for (I item : dataFile.getItems()) {
-                        if (consumer.ignoreItemInMerge(item)) {
+                        if (item.isRemoved()|| consumer.ignoreItemInMerge(item)) {
                             continue;
                         }
                         Node adoptedNode = item.getAdoptedNode(document);
@@ -284,6 +288,8 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
                         }
                     }
                 } else {
+                    // no need to check for isRemoved here since it's checked
+                    // at the file level and there's only one item.
                     I dataItem = dataFile.getItem();
                     NodeUtils.addAttribute(document, fileNode, null, ATTR_NAME, dataItem.getName());
                     dataItem.addExtraAttributes(document, fileNode, null);
