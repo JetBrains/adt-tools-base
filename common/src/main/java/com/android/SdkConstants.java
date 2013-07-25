@@ -143,6 +143,10 @@ public final class SdkConstants {
     public static final String FN_RENDERSCRIPT =
         "llvm-rs-cc" + ext(".exe", "");                   //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
+    /** renderscript support exe (with extension for the current OS) */
+    public static final String FN_BCC_COMPAT =
+            "bcc_compat" + ext(".exe", "");               //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
     /** adb executable (with extension for the current OS) */
     public static final String FN_ADB =
         "adb" + ext(".exe", "");                          //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$

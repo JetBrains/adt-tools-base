@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.ExecTask;
+import org.apache.tools.ant.types.Environment;
 import org.apache.tools.ant.types.Path;
 
 import java.io.File;
@@ -46,13 +47,13 @@ import java.util.Set;
  */
 public class RenderScriptTask extends MultiFilesTask {
 
-    private final static Set<String> EXTENSIONS = Sets.newHashSetWithExpectedSize(2);
+    private static final Set<String> EXTENSIONS = Sets.newHashSetWithExpectedSize(2);
     static {
         EXTENSIONS.add(SdkConstants.EXT_RS);
         EXTENSIONS.add(SdkConstants.EXT_FS);
     }
 
-    private String mExecutable;
+    private String mBuildToolsRoot;
     private Path mIncludePath;
     private String mGenFolder;
     private String mResFolder;
@@ -79,15 +80,25 @@ public class RenderScriptTask extends MultiFilesTask {
         @Override
         public void process(String filePath, String sourceFolder, List<String> sourceFolders,
                 Project taskProject) {
-            File exe = new File(mExecutable);
-            String execTaskName = exe.getName();
+
+            File exe = new File(mBuildToolsRoot, SdkConstants.FN_RENDERSCRIPT);
 
             ExecTask task = new ExecTask();
-            task.setTaskName(execTaskName);
+            task.setTaskName(SdkConstants.FN_RENDERSCRIPT);
             task.setProject(taskProject);
             task.setOwningTarget(getOwningTarget());
-            task.setExecutable(mExecutable);
+            task.setExecutable(exe.getAbsolutePath());
             task.setFailonerror(true);
+
+            // create the env var for the dynamic libraries
+            Environment.Variable var = new Environment.Variable();
+            var.setValue(mBuildToolsRoot);
+            if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_DARWIN) {
+                var.setKey("DYLD_LIBRARY_PATH");
+            } else if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_LINUX) {
+                var.setKey("LD_LIBRARY_PATH");
+            }
+            task.addEnv(var);
 
             for (String path : mIncludePath.list()) {
                 File res = new File(path);
@@ -166,11 +177,11 @@ public class RenderScriptTask extends MultiFilesTask {
 
 
     /**
-     * Sets the value of the "executable" attribute.
-     * @param executable the value.
+     * Sets the value of the "buildToolsRoot" attribute.
+     * @param buildToolsRoot the value.
      */
-    public void setExecutable(Path executable) {
-        mExecutable = TaskHelper.checkSinglePath("executable", executable);
+    public void setBuildToolsRoot(Path buildToolsRoot) {
+        mBuildToolsRoot = TaskHelper.checkSinglePath("buildToolsRoot", buildToolsRoot);
     }
 
     public void setIncludePathRefId(String refId) {
@@ -220,8 +231,8 @@ public class RenderScriptTask extends MultiFilesTask {
 
     @Override
     public void execute() throws BuildException {
-        if (mExecutable == null) {
-            throw new BuildException("RenderScriptTask's 'executable' is required.");
+        if (mBuildToolsRoot == null) {
+            throw new BuildException("RenderScriptTask's 'buildToolsRoot' is required.");
         }
         if (mIncludePath == null) {
             throw new BuildException("RenderScriptTask's 'includePath' is required.");
