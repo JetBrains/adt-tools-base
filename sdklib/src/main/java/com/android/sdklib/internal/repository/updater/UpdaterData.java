@@ -46,7 +46,7 @@ import com.android.sdklib.repository.ISdkChangeListener;
 import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.util.LineUtil;
-import com.android.sdklib.util.SparseIntArray;
+import com.android.utils.SparseIntArray;
 import com.android.utils.ILogger;
 import com.android.utils.IReaderLogger;
 import com.google.common.base.Charsets;
