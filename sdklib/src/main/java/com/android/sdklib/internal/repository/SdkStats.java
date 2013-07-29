@@ -21,7 +21,7 @@ import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.io.NonClosingInputStream;
 import com.android.sdklib.io.NonClosingInputStream.CloseBehavior;
 import com.android.sdklib.repository.SdkStatsConstants;
-import com.android.sdklib.util.SparseArray;
+import com.android.utils.SparseArray;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
