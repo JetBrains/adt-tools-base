@@ -19,6 +19,7 @@ package com.android.ant;
 import com.android.SdkConstants;
 import com.android.ant.DependencyHelper.JarProcessor;
 import com.android.io.FileWrapper;
+import com.android.sdklib.build.RenderScriptProcessor;
 import com.android.sdklib.internal.project.IPropertySource;
 import com.android.xml.AndroidManifest;
 
@@ -28,6 +29,7 @@ import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Path.PathElement;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -62,6 +64,9 @@ public class ComputeDependencyTask extends GetLibraryPathTask {
     private String mLibraryRFilePathOut;
     private int mTargetApi = -1;
     private boolean mVerbose = false;
+    private boolean mRenderscriptSupportMode;
+    private String mBuildToolsFolder;
+    private String mRenderscriptSupportLibsOut;
 
     public void setLibraryManifestFilePathOut(String libraryManifestFilePathOut) {
         mLibraryManifestFilePathOut = libraryManifestFilePathOut;
@@ -95,6 +100,18 @@ public class ComputeDependencyTask extends GetLibraryPathTask {
         mTargetApi = targetApi;
     }
 
+    public void setRenderscriptSupportMode(boolean renderscriptSupportMode) {
+        mRenderscriptSupportMode = renderscriptSupportMode;
+    }
+
+    public void setBuildToolsFolder(String folder) {
+        mBuildToolsFolder = folder;
+    }
+
+    public void setRenderscriptSupportLibsOut(String renderscriptSupportLibsOut) {
+        mRenderscriptSupportLibsOut = renderscriptSupportLibsOut;
+    }
+
     @Override
     public void execute() throws BuildException {
         if (mLibraryManifestFilePathOut == null) {
@@ -121,6 +138,13 @@ public class ComputeDependencyTask extends GetLibraryPathTask {
         if (mTargetApi == -1) {
             throw new BuildException("Missing attribute targetApi");
         }
+        if (mBuildToolsFolder == null) {
+            throw new BuildException("Missing attribute buildToolsFolder");
+        }
+        if (mRenderscriptSupportLibsOut == null) {
+            throw new BuildException("Missing attribute renderscriptSupportOutOut");
+        }
+
 
         final Project antProject = getProject();
 
@@ -214,10 +238,11 @@ public class ComputeDependencyTask extends GetLibraryPathTask {
             }
         }
 
-        boolean hasLibraries = jars.size() > 0;
+        boolean hasLibraries = !jars.isEmpty();
+
+        System.out.println("\n------------------");
 
         if (mTargetApi <= 15) {
-            System.out.println("\n------------------");
             System.out.println("API<=15: Adding annotations.jar to the classpath.");
 
             jars.add(new File(sdkDir, SdkConstants.FD_TOOLS +
@@ -225,6 +250,21 @@ public class ComputeDependencyTask extends GetLibraryPathTask {
                     '/' + SdkConstants.FN_ANNOTATIONS_JAR));
 
         }
+
+        Path rsSupportPath = new Path(antProject);
+
+        if (mRenderscriptSupportMode) {
+            File renderScriptSupportJar = RenderScriptProcessor.getSupportJar(mBuildToolsFolder);
+            System.out.println(
+                    "Renderscript support mode: Adding " +
+                            renderScriptSupportJar.getName() + " to the classpath.");
+            jars.add(renderScriptSupportJar);
+
+            PathElement element = rsSupportPath.createPathElement();
+            element.setPath(RenderScriptProcessor.getSupportNativeLibFolder(mBuildToolsFolder)
+                    .getAbsolutePath());
+        }
+        antProject.addReference(mRenderscriptSupportLibsOut, rsSupportPath);
 
         // even with no libraries, always setup these so that various tasks in Ant don't complain
         // (the task themselves can handle a ref to an empty Path)
@@ -245,9 +285,7 @@ public class ComputeDependencyTask extends GetLibraryPathTask {
         File libsFolder = new File(projectFolder, SdkConstants.FD_NATIVE_LIBS);
         File[] jarFiles = libsFolder.listFiles(processor.getFilter());
         if (jarFiles != null) {
-            for (File jarFile : jarFiles) {
-                jars.add(jarFile);
-            }
+            Collections.addAll(jars, jarFiles);
         }
 
         // now sanitize the path to remove dups

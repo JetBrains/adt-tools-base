@@ -46,7 +46,7 @@ public abstract class BuildTypedTask extends Task {
      * A build type is defined by having an empty previousBuildType.
      */
     protected boolean isNewBuild() {
-        return mBuildType == null || mPreviousBuildType.length() == 0;
+        return mBuildType == null || mPreviousBuildType.isEmpty();
     }
 
     /**
@@ -58,6 +58,6 @@ public abstract class BuildTypedTask extends Task {
             return false;
         }
 
-        return mBuildType.equals(mPreviousBuildType) == false;
+        return !(mBuildType != null && mBuildType.equals(mPreviousBuildType));
     }
 }

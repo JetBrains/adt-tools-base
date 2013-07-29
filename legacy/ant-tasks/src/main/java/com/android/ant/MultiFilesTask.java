@@ -16,6 +16,8 @@
 
 package com.android.ant;
 
+import com.android.annotations.NonNull;
+
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.Path;
@@ -39,10 +41,11 @@ class MultiFilesTask extends BuildTypedTask {
     }
 
     interface SourceProcessor {
-        Set<String> getSourceFileExtensions();
-        void process(String filePath, String sourceFolder,
-                List<String> sourceFolders, Project taskProject);
-        void displayMessage(DisplayType type, int count);
+        @NonNull Set<String> getSourceFileExtensions();
+        void process(@NonNull String filePath, @NonNull String sourceFolder,
+                @NonNull List<String> sourceFolders, @NonNull Project taskProject);
+        void displayMessage(@NonNull DisplayType type, int count);
+        void removedOutput(@NonNull File file);
     }
 
     protected void processFiles(SourceProcessor processor, List<Path> paths, String genFolder) {
@@ -68,7 +71,7 @@ class MultiFilesTask extends BuildTypedTask {
         // gather all the source files from all the source folders.
         Map<String, String> sourceFiles = getFilesByNameEntryFilter(sourceFolders,
                 includePatterns.toArray(new String[includePatterns.size()]));
-        if (sourceFiles.size() > 0) {
+        if (!sourceFiles.isEmpty()) {
             processor.displayMessage(DisplayType.FOUND, sourceFiles.size());
         }
 
@@ -123,29 +126,30 @@ class MultiFilesTask extends BuildTypedTask {
         toCompile.putAll(sourceFiles);
 
         processor.displayMessage(DisplayType.COMPILING, toCompile.size());
-        if (toCompile.size() > 0) {
+        if (!toCompile.isEmpty()) {
             for (Entry<String, String> toCompilePath : toCompile.entrySet()) {
                 processor.process(toCompilePath.getKey(), toCompilePath.getValue(),
                         sourceFolders, taskProject);
             }
         }
 
-        if (toRemove.size() > 0) {
+        if (!toRemove.isEmpty()) {
             processor.displayMessage(DisplayType.REMOVE_OUTPUT, toRemove.size());
 
             for (File toRemoveFile : toRemove) {
-                if (toRemoveFile.delete() == false) {
+                processor.removedOutput(toRemoveFile);
+                if (!toRemoveFile.delete()) {
                     System.err.println("Failed to remove " + toRemoveFile.getAbsolutePath());
                 }
             }
         }
 
         // remove the dependency files that are obsolete
-        if (depsToRemove.size() > 0) {
+        if (!depsToRemove.isEmpty()) {
             processor.displayMessage(DisplayType.REMOVE_DEP, toRemove.size());
 
             for (String path : depsToRemove) {
-                if (new File(path).delete() == false) {
+                if (!new File(path).delete()) {
                     System.err.println("Failed to remove " + path);
                 }
             }
@@ -156,7 +160,7 @@ class MultiFilesTask extends BuildTypedTask {
      * Returns a list of files found in given folders, all matching a given filter.
      * The result is a map of (file, folder).
      * @param folders the folders to search
-     * @param filter the filter for the files. Typically a glob.
+     * @param filters the filters for the files. Typically a glob.
      * @return a map of (file, folder)
      */
     private Map<String, String> getFilesByNameEntryFilter(List<String> folders, String[] filters) {
@@ -176,7 +180,7 @@ class MultiFilesTask extends BuildTypedTask {
     /**
      * Returns a list of files found in a given folder, matching a given filter.
      * @param folder the folder to search
-     * @param filter the filter for the files. Typically a glob.
+     * @param filters the filter for the files. Typically a glob.
      * @return an iterator.
      */
     private Iterator<?> getFilesByNameEntryFilter(String folder, String... filters) {

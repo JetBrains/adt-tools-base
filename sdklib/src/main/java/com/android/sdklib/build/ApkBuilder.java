@@ -106,7 +106,7 @@ public final class ApkBuilder implements IArchiveBuilder {
             // jar file, but we need to exclude some other folder (like /META-INF) so
             // we check anyway.
             for (int i = 0 ; i < segments.length - 1; i++) {
-                if (checkFolderForPackaging(segments[i]) == false) {
+                if (!checkFolderForPackaging(segments[i])) {
                     return false;
                 }
             }
@@ -618,8 +618,10 @@ public final class ApkBuilder implements IArchiveBuilder {
             try {
                 // file is a directory, process its content.
                 File[] files = sourceFolder.listFiles();
-                for (File file : files) {
-                    processFileForResource(builder, file, null);
+                if (files != null) {
+                    for (File file : files) {
+                        processFileForResource(builder, file, null);
+                    }
                 }
             } catch (DuplicateFileException e) {
                 throw e;
@@ -657,7 +659,7 @@ public final class ApkBuilder implements IArchiveBuilder {
             throw new SealedApkException("APK is already sealed");
         }
 
-        if (nativeFolder.isDirectory() == false) {
+        if (!nativeFolder.isDirectory()) {
             // not a directory? check if it's a file or doesn't exist
             if (nativeFolder.exists()) {
                 throw new ApkCreationException("%s is not a folder", nativeFolder);
@@ -732,7 +734,7 @@ public final class ApkBuilder implements IArchiveBuilder {
     public static List<FileEntry> getNativeFiles(File nativeFolder, boolean debugMode)
             throws ApkCreationException  {
 
-        if (nativeFolder.isDirectory() == false) {
+        if (!nativeFolder.isDirectory()) {
             // not a directory? check if it's a file or doesn't exist
             if (nativeFolder.exists()) {
                 throw new ApkCreationException("%s is not a folder", nativeFolder);
@@ -850,8 +852,10 @@ public final class ApkBuilder implements IArchiveBuilder {
 
                 // and process its content.
                 File[] files = file.listFiles();
-                for (File contentFile : files) {
-                    processFileForResource(builder, contentFile, path);
+                if (files != null) {
+                    for (File contentFile : files) {
+                        processFileForResource(builder, contentFile, path);
+                    }
                 }
             }
         } else {
@@ -896,12 +900,12 @@ public final class ApkBuilder implements IArchiveBuilder {
         }
 
         if (file.exists()) { // will be a file in this case.
-            if (file.canWrite() == false) {
+            if (!file.canWrite()) {
                 throw new ApkCreationException("Cannot write %s", file);
             }
         } else {
             try {
-                if (file.createNewFile() == false) {
+                if (!file.createNewFile()) {
                     throw new ApkCreationException("Failed to create %s", file);
                 }
             } catch (IOException e) {
@@ -927,7 +931,7 @@ public final class ApkBuilder implements IArchiveBuilder {
         }
 
         if (file.exists()) {
-            if (file.canRead() == false) {
+            if (!file.canRead()) {
                 throw new ApkCreationException("Cannot read %s", file);
             }
         } else {
@@ -949,11 +953,11 @@ public final class ApkBuilder implements IArchiveBuilder {
      * @param folderName the name of the folder.
      */
     public static boolean checkFolderForPackaging(String folderName) {
-        return folderName.equalsIgnoreCase("CVS") == false &&
-            folderName.equalsIgnoreCase(".svn") == false &&
-            folderName.equalsIgnoreCase("SCCS") == false &&
-            folderName.equalsIgnoreCase("META-INF") == false &&
-            folderName.startsWith("_") == false;
+        return !folderName.equalsIgnoreCase("CVS") &&
+                !folderName.equalsIgnoreCase(".svn") &&
+                !folderName.equalsIgnoreCase("SCCS") &&
+                !folderName.equalsIgnoreCase("META-INF") &&
+                !folderName.startsWith("_");
     }
 
     /**
@@ -983,18 +987,19 @@ public final class ApkBuilder implements IArchiveBuilder {
             return false;
         }
 
-        return "aidl".equalsIgnoreCase(extension) == false &&       // Aidl files
-            "rs".equalsIgnoreCase(extension) == false &&            // RenderScript files
-            "rsh".equalsIgnoreCase(extension) == false &&           // RenderScript header files
-            "d".equalsIgnoreCase(extension) == false &&             // Dependency files
-            "java".equalsIgnoreCase(extension) == false &&          // Java files
-            "scala".equalsIgnoreCase(extension) == false &&         // Scala files
-            "class".equalsIgnoreCase(extension) == false &&         // Java class files
-            "scc".equalsIgnoreCase(extension) == false &&           // VisualSourceSafe
-            "swp".equalsIgnoreCase(extension) == false &&           // vi swap file
-            "thumbs.db".equalsIgnoreCase(fileName) == false &&      // image index file
-            "picasa.ini".equalsIgnoreCase(fileName) == false &&     // image index file
-            "package.html".equalsIgnoreCase(fileName) == false &&   // Javadoc
-            "overview.html".equalsIgnoreCase(fileName) == false;    // Javadoc
+        return !"aidl".equalsIgnoreCase(extension) &&           // Aidl files
+                !"rs".equalsIgnoreCase(extension) &&            // RenderScript files
+                !"fs".equalsIgnoreCase(extension) &&            // FilterScript files
+                !"rsh".equalsIgnoreCase(extension) &&           // RenderScript header files
+                !"d".equalsIgnoreCase(extension) &&             // Dependency files
+                !"java".equalsIgnoreCase(extension) &&          // Java files
+                !"scala".equalsIgnoreCase(extension) &&         // Scala files
+                !"class".equalsIgnoreCase(extension) &&         // Java class files
+                !"scc".equalsIgnoreCase(extension) &&           // VisualSourceSafe
+                !"swp".equalsIgnoreCase(extension) &&           // vi swap file
+                !"thumbs.db".equalsIgnoreCase(fileName) &&      // image index file
+                !"picasa.ini".equalsIgnoreCase(fileName) &&     // image index file
+                !"package.html".equalsIgnoreCase(fileName) &&   // Javadoc
+                !"overview.html".equalsIgnoreCase(fileName);    // Javadoc
     }
 }
