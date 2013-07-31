@@ -1,0 +1,1 @@
+The trace files in this folder are generated using the TraceViewTestApp test application.
