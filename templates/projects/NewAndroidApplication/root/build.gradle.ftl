@@ -20,10 +20,6 @@ repositories {
 </#if>
 }
 
-dependencies {
-    compile 'com.android.support:support-v4:${v4SupportLibraryVersion}'
-}
-
 android {
     compileSdkVersion ${buildApi}
     buildToolsVersion "${buildToolsVersion}"
@@ -32,4 +28,8 @@ android {
         minSdkVersion ${minApi}
         targetSdkVersion ${targetApi}
     }
+}
+
+dependencies {
+    compile 'com.android.support:support-v4:${v4SupportLibraryVersion}'
 }
