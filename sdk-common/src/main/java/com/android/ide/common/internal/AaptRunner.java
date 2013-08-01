@@ -17,9 +17,11 @@
 package com.android.ide.common.internal;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Instances of this class are able to run aapt command.
@@ -43,6 +45,19 @@ public class AaptRunner {
      * @throws LoggedErrorException
      */
     public void crunchPng(File from, File to)
+            throws InterruptedException, LoggedErrorException, IOException {
+        crunchPng(from, to, null);
+    }
+
+    /**
+     * Runs the aapt crunch command on a single file
+     * @param from the file to crunch
+     * @param to the output file
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws LoggedErrorException
+     */
+    public void crunchPng(File from, File to, @Nullable Map<String, String> envVariableMap)
             throws IOException, InterruptedException, LoggedErrorException {
         String[] command = new String[] {
             mAaptLocation,
@@ -53,6 +68,6 @@ public class AaptRunner {
             to.getAbsolutePath()
         };
 
-        mCommandLineRunner.runCmdLine(command);
+        mCommandLineRunner.runCmdLine(command, envVariableMap);
     }
 }

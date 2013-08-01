@@ -16,6 +16,7 @@
 
 package com.android.ide.common.internal;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.util.GrabProcessOutput;
 import com.android.utils.ILogger;
@@ -24,6 +25,7 @@ import com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public class CommandLineRunner {
 
@@ -59,18 +61,30 @@ public class CommandLineRunner {
         mLogger = logger;
     }
 
-    public void runCmdLine(List<String> command)
+    public void runCmdLine(
+            @NonNull List<String> command,
+            @Nullable Map<String, String> envVariableMap)
             throws IOException, InterruptedException, LoggedErrorException {
         String[] cmdArray = command.toArray(new String[command.size()]);
-        runCmdLine(cmdArray);
+        runCmdLine(cmdArray, envVariableMap);
     }
 
-    public void runCmdLine(String[] command)
+    public void runCmdLine(
+            @NonNull String[] command,
+            @Nullable Map<String, String> envVariableMap)
             throws IOException, InterruptedException, LoggedErrorException {
         printCommand(command);
 
         // launch the command line process
-        Process process = Runtime.getRuntime().exec(command);
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        if (envVariableMap != null) {
+            Map<String, String> env = processBuilder.environment();
+            for (Map.Entry<String, String> entry : envVariableMap.entrySet()) {
+                env.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        Process process = processBuilder.start();
 
         // get the output and return code from the process
         OutputGrabber grabber = new OutputGrabber();
