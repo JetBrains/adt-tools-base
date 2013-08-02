@@ -1,11 +1,5 @@
 <?xml version="1.0"?>
 <recipe>
-<#if isGradle == "true">
-    <merge from="settings.gradle.ftl"
-             to="${escapeXmlAttribute(topOut)}/settings.gradle" />
-    <instantiate from="build.gradle.ftl"
-                   to="${escapeXmlAttribute(projectOut)}/build.gradle" />
-</#if>
     <instantiate from="AndroidManifest.xml.ftl"
                    to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
 
