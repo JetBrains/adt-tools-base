@@ -58,6 +58,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
@@ -66,7 +67,7 @@ public class ImageViewer extends JComponent {
     private final Color CORRUPTED_COLOR = new Color(1.0f, 0.0f, 0.0f, 0.7f);
     private final Color LOCK_COLOR = new Color(0.0f, 0.0f, 0.0f, 0.7f);
     private final Color STRIPES_COLOR = new Color(1.0f, 0.0f, 0.0f, 0.5f);
-    private final Color BACK_COLOR = new Color(0xc0c0c0);
+    private final Color BACK_COLOR = UIManager.getColor("Panel.background").darker();
     private final Color HELP_COLOR = new Color(0xffffe1);
     private final Color PATCH_COLOR = new Color(1.0f, 0.37f, 0.99f, 0.5f);
     private final Color PATCH_ONEWAY_COLOR = new Color(0.37f, 1.0f, 0.37f, 0.5f);

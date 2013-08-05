@@ -156,10 +156,8 @@ public class ImageEditorPanel extends JPanel {
 
     private void buildStatusPanel() {
         JPanel status = new JPanel(new GridBagLayout());
-        status.setOpaque(false);
 
         JLabel label = new JLabel();
-        label.setForeground(Color.WHITE);
         label.setText("Zoom: ");
         label.putClientProperty("JComponent.sizeVariant", "small");
         status.add(label, new GridBagConstraints(0, 0, 1, 1, 0.0f, 0.0f,
@@ -167,7 +165,6 @@ public class ImageEditorPanel extends JPanel {
                 new Insets(0, 6, 0, 0), 0, 0));
 
         label = new JLabel();
-        label.setForeground(Color.WHITE);
         label.setText("100%");
         label.putClientProperty("JComponent.sizeVariant", "small");
         status.add(label, new GridBagConstraints(1, 0, 1, 1, 0.0f, 0.0f,
@@ -189,7 +186,6 @@ public class ImageEditorPanel extends JPanel {
                 new Insets(0, 0, 0, 0), 0, 0));
 
         JLabel maxZoomLabel = new JLabel();
-        maxZoomLabel.setForeground(Color.WHITE);
         maxZoomLabel.putClientProperty("JComponent.sizeVariant", "small");
         maxZoomLabel.setText("800%");
         status.add(maxZoomLabel, new GridBagConstraints(3, 0, 1, 1, 0.0f, 0.0f,
@@ -197,7 +193,6 @@ public class ImageEditorPanel extends JPanel {
                 new Insets(0, 0, 0, 0), 0, 0));
 
         label = new JLabel();
-        label.setForeground(Color.WHITE);
         label.setText("Patch scale: ");
         label.putClientProperty("JComponent.sizeVariant", "small");
         status.add(label, new GridBagConstraints(0, 1, 1, 1, 0.0f, 0.0f,
@@ -205,7 +200,6 @@ public class ImageEditorPanel extends JPanel {
                 new Insets(0, 6, 0, 0), 0, 0));
 
         label = new JLabel();
-        label.setForeground(Color.WHITE);
         label.setText("2x");
         label.putClientProperty("JComponent.sizeVariant", "small");
         status.add(label, new GridBagConstraints(1, 1, 1, 1, 0.0f, 0.0f,
@@ -226,7 +220,6 @@ public class ImageEditorPanel extends JPanel {
                 new Insets(0, 0, 0, 0), 0, 0));
 
         maxZoomLabel = new JLabel();
-        maxZoomLabel.setForeground(Color.WHITE);
         maxZoomLabel.putClientProperty("JComponent.sizeVariant", "small");
         maxZoomLabel.setText("6x");
         status.add(maxZoomLabel, new GridBagConstraints(3, 1, 1, 1, 0.0f, 0.0f,
@@ -235,7 +228,6 @@ public class ImageEditorPanel extends JPanel {
 
         JCheckBox showLock = new JCheckBox("Show lock");
         showLock.setOpaque(false);
-        showLock.setForeground(Color.WHITE);
         showLock.setSelected(false);
         showLock.putClientProperty("JComponent.sizeVariant", "small");
         showLock.addActionListener(new ActionListener() {
@@ -250,7 +242,6 @@ public class ImageEditorPanel extends JPanel {
 
         JCheckBox showPatches = new JCheckBox("Show patches");
         showPatches.setOpaque(false);
-        showPatches.setForeground(Color.WHITE);
         showPatches.putClientProperty("JComponent.sizeVariant", "small");
         showPatches.addActionListener(new ActionListener() {
             @Override
@@ -264,7 +255,6 @@ public class ImageEditorPanel extends JPanel {
 
         JCheckBox showPadding = new JCheckBox("Show content");
         showPadding.setOpaque(false);
-        showPadding.setForeground(Color.WHITE);
         showPadding.putClientProperty("JComponent.sizeVariant", "small");
         showPadding.addActionListener(new ActionListener() {
             @Override
@@ -281,28 +271,24 @@ public class ImageEditorPanel extends JPanel {
                 new Insets(0, 0, 0, 0), 0, 0));
 
         label = new JLabel("X: ");
-        label.setForeground(Color.WHITE);
         label.putClientProperty("JComponent.sizeVariant", "small");
         status.add(label, new GridBagConstraints(7, 0, 1, 1, 0.0f, 0.0f,
                 GridBagConstraints.LINE_END, GridBagConstraints.NONE,
                 new Insets(0, 0, 0, 0), 0, 0));
 
         xLabel = new JLabel("0px");
-        xLabel.setForeground(Color.WHITE);
         xLabel.putClientProperty("JComponent.sizeVariant", "small");
         status.add(xLabel, new GridBagConstraints(8, 0, 1, 1, 0.0f, 0.0f,
                 GridBagConstraints.LINE_END, GridBagConstraints.NONE,
                 new Insets(0, 0, 0, 6), 0, 0));
 
         label = new JLabel("Y: ");
-        label.setForeground(Color.WHITE);
         label.putClientProperty("JComponent.sizeVariant", "small");
         status.add(label, new GridBagConstraints(7, 1, 1, 1, 0.0f, 0.0f,
                 GridBagConstraints.LINE_END, GridBagConstraints.NONE,
                 new Insets(0, 0, 0, 0), 0, 0));
 
         yLabel = new JLabel("0px");
-        yLabel.setForeground(Color.WHITE);
         yLabel.putClientProperty("JComponent.sizeVariant", "small");
         status.add(yLabel, new GridBagConstraints(8, 1, 1, 1, 0.0f, 0.0f,
                 GridBagConstraints.LINE_END, GridBagConstraints.NONE,
