@@ -18,42 +18,47 @@ package com.android.tools.perflib.vmtrace;
 
 import com.android.annotations.NonNull;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Call {
     private final long mMethodId;
 
-    private int mEntryThreadTime;
-    private int mEntryGlobalTime;
-    private int mExitGlobalTime;
-    private int mExitThreadTime;
+    private final int mEntryThreadTime;
+    private final int mEntryGlobalTime;
+    private final int mExitGlobalTime;
+    private final int mExitThreadTime;
 
-    private int mDepth = 0;
+    private final int mDepth;
 
-    private List<Call> mCallees = new ArrayList<Call>();
+    private final List<Call> mCallees;
 
-    public Call(long methodId) {
-        mMethodId = methodId;
+    private Call(Builder builder) {
+        mMethodId = builder.mMethodId;
+
+        mEntryThreadTime = builder.mEntryThreadTime;
+        mEntryGlobalTime = builder.mEntryGlobalTime;
+        mExitThreadTime = builder.mExitThreadTime;
+        mExitGlobalTime = builder.mExitGlobalTime;
+
+        mDepth = builder.mDepth;
+        if (builder.mCallees == null) {
+            mCallees = Collections.emptyList();
+        } else {
+            List<Call> callees = new ArrayList<Call>(builder.mCallees.size());
+            for (Builder b : builder.mCallees) {
+                b.setStackDepth(mDepth + 1);
+                callees.add(b.build());
+            }
+            mCallees = new ImmutableList.Builder<Call>().addAll(callees).build();
+        }
     }
 
     public long getMethodId() {
         return mMethodId;
-    }
-
-    public void setMethodEntryTime(int threadTime, int globalTime) {
-        mEntryThreadTime = threadTime;
-        mEntryGlobalTime = globalTime;
-    }
-
-    public void setMethodExitTime(int threadTime, int globalTime) {
-        mExitThreadTime = threadTime;
-        mExitGlobalTime = globalTime;
-    }
-
-    public void addCallee(Call c) {
-        mCallees.add(c);
     }
 
     @NonNull
@@ -65,8 +70,58 @@ public class Call {
         return mDepth;
     }
 
-    public void setDepth(int depth) {
-        mDepth = depth;
+    public int getEntryThreadTime() {
+        return mEntryThreadTime;
+    }
+
+    public int getExitThreadTime() {
+        return mExitThreadTime;
+    }
+
+    public static class Builder {
+        private final long mMethodId;
+
+        private int mEntryThreadTime;
+        private int mEntryGlobalTime;
+        private int mExitGlobalTime;
+        private int mExitThreadTime;
+
+        private int mDepth = 0;
+
+        private List<Builder> mCallees = null;
+
+        public Builder(long methodId) {
+            mMethodId = methodId;
+        }
+
+        public long getMethodId() {
+            return mMethodId;
+        }
+
+        public void setMethodEntryTime(int threadTime, int globalTime) {
+            mEntryThreadTime = threadTime;
+            mEntryGlobalTime = globalTime;
+        }
+
+        public void setMethodExitTime(int threadTime, int globalTime) {
+            mExitThreadTime = threadTime;
+            mExitGlobalTime = globalTime;
+        }
+
+        public void addCallee(Builder c) {
+            if (mCallees == null) {
+                mCallees = new ArrayList<Builder>();
+            }
+            mCallees.add(c);
+        }
+
+        public void setStackDepth(int depth) {
+            mDepth = depth;
+        }
+
+        public Call build() {
+            return new Call(this);
+        }
     }
 
     /**
@@ -100,9 +155,6 @@ public class Call {
         sb.append(formatter.format(this));
 
         List<Call> callees = getCallees();
-        if (callees == null) {
-            return;
-        }
 
         int lineStart = sb.lastIndexOf("\n");
         int depth = sb.length() - (lineStart + 1);
