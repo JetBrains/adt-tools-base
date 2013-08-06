@@ -17,10 +17,7 @@
 package com.android.tools.perflib.vmtrace;
 
 import com.android.utils.SparseArray;
-import com.google.common.base.Joiner;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
