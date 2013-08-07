@@ -16,26 +16,23 @@
 
 package com.android.tools.perflib.vmtrace;
 
-import com.google.common.base.Joiner;
-
 import junit.framework.TestCase;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class CallStackReconstructorTest extends TestCase {
     public void testBasicCallStack() {
-        CallStackReconstructor reconstructor = new CallStackReconstructor();
+        CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
         reconstructor.addTraceAction(0x1, TraceAction.METHOD_ENTER, 10, 10);
         reconstructor.addTraceAction(0x1, TraceAction.METHOD_EXIT, 15, 15);
 
-        List<Call> callees = reconstructor.getTopLevelCallees();
-        assertEquals(1, callees.size());
-        assertEquals(0x1, callees.get(0).getMethodId());
+        Call topLevel = reconstructor.getTopLevel();
+        assertEquals(1, topLevel.getCallees().size());
+        assertEquals(0x1, topLevel.getCallees().get(0).getMethodId());
     }
 
     public void testCallStack1() {
-        CallStackReconstructor reconstructor = new CallStackReconstructor();
+        CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
 
         reconstructor.addTraceAction(0x1, TraceAction.METHOD_ENTER, 10, 10);
         reconstructor.addTraceAction(0x2, TraceAction.METHOD_ENTER, 11, 11);
@@ -50,17 +47,17 @@ public class CallStackReconstructorTest extends TestCase {
         reconstructor.addTraceAction(0x6, TraceAction.METHOD_ENTER, 21, 21);
         reconstructor.addTraceAction(0x6, TraceAction.METHOD_EXIT, 22, 22);
 
-        String callStack = getCallStackInfo(reconstructor.getTopLevelCallees());
+        String callStack = reconstructor.getTopLevel().toString();
         String expectedCallStack =
-                  " -> 1 -> 2 -> 3\n"
-                + "           -> 3\n"
-                + "      -> 5\n"
-                + " -> 6";
+                  " -> 255 -> 1 -> 2 -> 3\n"
+                + "                  -> 3\n"
+                + "             -> 5\n"
+                + "        -> 6";
         assertEquals(expectedCallStack, callStack);
     }
 
     public void testInvalidTrace() {
-        CallStackReconstructor reconstructor = new CallStackReconstructor();
+        CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
 
         try {
             reconstructor.addTraceAction(0x1, TraceAction.METHOD_ENTER, 1, 1);
@@ -72,29 +69,18 @@ public class CallStackReconstructorTest extends TestCase {
     }
 
     public void testMisMatchedCallStack() {
-        CallStackReconstructor reconstructor = new CallStackReconstructor();
+        CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
 
         reconstructor.addTraceAction(0x3, TraceAction.METHOD_EXIT, 1, 1);
         reconstructor.addTraceAction(0x2, TraceAction.METHOD_EXIT, 2, 2);
         reconstructor.addTraceAction(0x1, TraceAction.METHOD_EXIT, 3, 3);
 
-        String callStack = getCallStackInfo(reconstructor.getTopLevelCallees());
-        assertEquals(" -> 1 -> 2 -> 3", callStack);
+        String callStack = reconstructor.getTopLevel().toString();
+        assertEquals(" -> 255 -> 1 -> 2 -> 3", callStack);
     }
-
-    private String getCallStackInfo(List<Call> calls) {
-        List<String> callStacks = new ArrayList<String>(calls.size());
-
-        for (Call c : calls) {
-            callStacks.add(c.toString());
-        }
-
-        return Joiner.on('\n').join(callStacks);
-    }
-
 
     public void testCallStackDepths() {
-        CallStackReconstructor reconstructor = new CallStackReconstructor();
+        CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
 
         reconstructor.addTraceAction(0x1, TraceAction.METHOD_ENTER, 10, 10);
         reconstructor.addTraceAction(0x2, TraceAction.METHOD_ENTER, 11, 11);
@@ -107,10 +93,10 @@ public class CallStackReconstructorTest extends TestCase {
         reconstructor.addTraceAction(0x5, TraceAction.METHOD_EXIT, 18, 18);
         reconstructor.addTraceAction(0x1, TraceAction.METHOD_EXIT, 20, 20);
 
-        List<Call> calls = reconstructor.getTopLevelCallees();
-        assertEquals(1, calls.size());
+        Call topLevel = reconstructor.getTopLevel();
+        assertEquals(1, topLevel.getCallees().size());
 
-        Call c = calls.get(0);
+        Call c = topLevel.getCallees().get(0);
         String actualDepths = c.format(new Call.Formatter() {
             @Override
             public String format(Call c) {
@@ -119,9 +105,59 @@ public class CallStackReconstructorTest extends TestCase {
         });
 
         String expected =
-                  " -> 0 -> 1 -> 2\n"
-                + "           -> 2\n"
-                + "      -> 1";
+                  " -> 1 -> 2 -> 3\n"
+                + "           -> 3\n"
+                + "      -> 2";
         assertEquals(expected, actualDepths);
+    }
+
+    public void testCallDurations() {
+        CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
+
+        reconstructor.addTraceAction(0x1, TraceAction.METHOD_ENTER, 10, 10);
+        reconstructor.addTraceAction(0x2, TraceAction.METHOD_ENTER, 11, 11);
+        reconstructor.addTraceAction(0x2, TraceAction.METHOD_EXIT, 14, 14);
+        reconstructor.addTraceAction(0x1, TraceAction.METHOD_EXIT, 15, 15);
+
+        List<Call> callees = reconstructor.getTopLevel().getCallees();
+        assertFalse(callees.isEmpty());
+        Call call = callees.get(0);
+        assertEquals(15 - 10, call.getInclusiveThreadTime());
+        assertEquals(15 - 10 - (14 - 11), call.getExclusiveThreadTime());
+    }
+
+    public void testMissingCallDurations() {
+        CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
+
+        // missing entry time for method 0x1, verify that it is computed as 1 less than
+        // the entry time for its callee (method 0x2)
+        reconstructor.addTraceAction(0x2, TraceAction.METHOD_ENTER, 11, 11);
+        reconstructor.addTraceAction(0x2, TraceAction.METHOD_EXIT, 14, 14);
+        reconstructor.addTraceAction(0x1, TraceAction.METHOD_EXIT, 15, 15);
+
+        List<Call> callees = reconstructor.getTopLevel().getCallees();
+        assertFalse(callees.isEmpty());
+        Call call = callees.get(0);
+        assertEquals(15 - (11 - 1), call.getInclusiveThreadTime());
+        assertEquals(15 - (11 - 1) - (14 - 11), call.getExclusiveThreadTime());
+    }
+
+    /**
+     * Verify that the model handles cases where the timings exceed {@link Integer#MAX_VALUE},
+     * but are still within the scope of an unsigned integer.
+     */
+    public void testCallDurationOverflow() {
+        CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
+
+        reconstructor.addTraceAction(0x1, TraceAction.METHOD_ENTER, 0xfffffff0, 0xfffffff0);
+        reconstructor.addTraceAction(0x2, TraceAction.METHOD_ENTER, 0xfffffff2, 0xfffffff2);
+        reconstructor.addTraceAction(0x2, TraceAction.METHOD_EXIT,  0xfffffff4, 0xfffffff4);
+        reconstructor.addTraceAction(0x1, TraceAction.METHOD_EXIT,  0xfffffff8, 0xfffffff8);
+
+        List<Call> callees = reconstructor.getTopLevel().getCallees();
+        assertFalse(callees.isEmpty());
+        Call call = callees.get(0);
+        assertEquals(8, call.getInclusiveThreadTime());
+        assertEquals(6, call.getExclusiveThreadTime());
     }
 }

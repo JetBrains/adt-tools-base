@@ -28,7 +28,7 @@ import java.util.Map;
  *  <ul>
  *      <li>A mapping from thread ids to thread names.</li>
  *      <li>A mapping from method ids to {@link MethodInfo}</li>
- *      <li>A mapping from each thread to the list of call stacks ({@link Call}) on that thread.</li>
+ *      <li>A mapping from each thread to the top level call on that thread.</li>
  *  </ul>
  */
 public class VmTraceData {
@@ -46,8 +46,8 @@ public class VmTraceData {
     /** Map from method id to method info. */
     private final Map<Long,MethodInfo> mMethods;
 
-    /** Map from thread id to list of call stacks invoked in that thread */
-    private final SparseArray<List<Call>> mCalls;
+    /** Map from thread id to the top level call in that thread */
+    private final SparseArray<Call> mCalls;
 
     private VmTraceData(Builder b) {
         mVersion = b.mVersion;
@@ -57,7 +57,7 @@ public class VmTraceData {
         mTraceProperties = b.mProperties;
         mThreads = b.mThreads;
         mMethods = b.mMethods;
-        mCalls = b.mCalls;
+        mCalls = b.mTopLevelCalls;
     }
 
     public int getVersion() {
@@ -92,7 +92,7 @@ public class VmTraceData {
         return mMethods.get(methodId);
     }
 
-    public List<Call> getCalls(int threadId) {
+    public Call getTopLevelCall(int threadId) {
         return mCalls.get(threadId);
     }
 
@@ -115,8 +115,8 @@ public class VmTraceData {
         private final SparseArray<CallStackReconstructor> mStackReconstructors
                 = new SparseArray<CallStackReconstructor>(10);
 
-        /** Map from thread id to list of call stacks invoked in that thread */
-        private final SparseArray<List<Call>> mCalls = new SparseArray<List<Call>>(10);
+        /** Map from thread id to the top level call for that thread. */
+        private final SparseArray<Call> mTopLevelCalls = new SparseArray<Call>(10);
 
         public void setVersion(int version) {
             mVersion = version;
@@ -180,18 +180,28 @@ public class VmTraceData {
 
             CallStackReconstructor reconstructor = mStackReconstructors.get(threadId);
             if (reconstructor == null) {
-                reconstructor = new CallStackReconstructor();
+                long topLevelCallId = createUniqueMethodIdForThread(threadId);
+                reconstructor = new CallStackReconstructor(topLevelCallId);
                 mStackReconstructors.put(threadId, reconstructor);
             }
 
             reconstructor.addTraceAction(methodId, methodAction, threadTime, globalTime);
         }
 
+        private long createUniqueMethodIdForThread(int threadId) {
+            long id = Long.MAX_VALUE - mThreads.indexOfKey(threadId);
+            assert mMethods.get(id) == null :
+                    "Unexpected error while attempting to create a unique key - key already exists";
+            MethodInfo info = new MethodInfo(id, mThreads.get(threadId), "", "", "", 0);
+            mMethods.put(id, info);
+            return id;
+        }
+
         public VmTraceData build() {
             for (int i = 0; i < mStackReconstructors.size(); i++) {
                 int threadId = mStackReconstructors.keyAt(i);
                 CallStackReconstructor reconstructor = mStackReconstructors.valueAt(i);
-                mCalls.put(threadId, reconstructor.getTopLevelCallees());
+                mTopLevelCalls.put(threadId, reconstructor.getTopLevel());
             }
 
             return new VmTraceData(this);
