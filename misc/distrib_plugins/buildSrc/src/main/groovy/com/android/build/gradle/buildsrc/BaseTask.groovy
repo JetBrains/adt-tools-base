@@ -21,7 +21,7 @@ import org.gradle.api.artifacts.ModuleVersionIdentifier
 
 abstract class BaseTask extends DefaultTask {
 
-    protected static boolean isLocalArtifact(ModuleVersionIdentifier id) {
+    public static boolean isLocalArtifact(ModuleVersionIdentifier id) {
         return id.group == "base" || id.group == "swt"
     }
 }

@@ -34,7 +34,7 @@ class CloneArtifactsPlugin implements Plugin<Project> {
 
         ShippingExtension shippingExtension = project.extensions.create('shipping', ShippingExtension)
 
-        Task setupTask = project.tasks.add("setupMaven")
+        Task setupTask = project.tasks.create("setupMaven")
         setupTask << {
             project.repositories {
                 mavenCentral()
@@ -52,7 +52,7 @@ class CloneArtifactsPlugin implements Plugin<Project> {
             // default shipping for root project is false
             shippingExtension.isShipping = false
 
-            DownloadArtifactsTask downloadArtifactsTask = project.tasks.add("downloadArtifacts",
+            DownloadArtifactsTask downloadArtifactsTask = project.tasks.create("downloadArtifacts",
                     DownloadArtifactsTask)
             downloadArtifactsTask.project = project
             downloadArtifactsTask.conventionMapping.mainRepo =  { project.file(extension.mainRepo) }
