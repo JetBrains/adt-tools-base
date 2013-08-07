@@ -82,33 +82,33 @@ public class VmTraceParserTest extends TestCase {
         int threadId = findThreadIdFromName(threadName, traceData.getThreads());
         assertTrue(String.format("Thread %s was not found in the trace", threadName), threadId > 0);
 
-        List<Call> calls = traceData.getCalls(threadId);
-        String actual = formatCallStacks(calls, new CallFormatter(traceData.getMethods()));
+        Call call = traceData.getTopLevelCall(threadId);
+        String actual = call.format(new CallFormatter(traceData.getMethods()));
         assertEquals(expectedCallSequence, actual);
     }
 
     public void testBasicTrace() throws IOException {
         String expected =
-                " -> android/os/Debug.startMethodTracing: (Ljava/lang/String;)V -> android/os/Debug.startMethodTracing: (Ljava/lang/String;II)V -> dalvik/system/VMDebug.startMethodTracing: (Ljava/lang/String;II)V\n"
-                        + " -> com/test/android/traceview/Basic.foo: ()V -> com/test/android/traceview/Basic.bar: ()I\n"
-                        + " -> android/os/Debug.stopMethodTracing: ()V -> dalvik/system/VMDebug.stopMethodTracing: ()V";
+                          " -> AsyncTask #1.:  -> android/os/Debug.startMethodTracing: (Ljava/lang/String;)V -> android/os/Debug.startMethodTracing: (Ljava/lang/String;II)V -> dalvik/system/VMDebug.startMethodTracing: (Ljava/lang/String;II)V\n"
+                        + "                    -> com/test/android/traceview/Basic.foo: ()V -> com/test/android/traceview/Basic.bar: ()I\n"
+                        + "                    -> android/os/Debug.stopMethodTracing: ()V -> dalvik/system/VMDebug.stopMethodTracing: ()V";
         testTrace("/basic.trace", "AsyncTask #1", expected);
     }
 
     public void testMisMatchedTrace() throws IOException {
         String expected =
-                " -> com/test/android/traceview/MisMatched.foo: ()V -> com/test/android/traceview/MisMatched.bar: ()V -> android/os/Debug.startMethodTracing: (Ljava/lang/String;)V -> android/os/Debug.startMethodTracing: (Ljava/lang/String;II)V -> dalvik/system/VMDebug.startMethodTracing: (Ljava/lang/String;II)V\n"
-                + "                                                                                                     -> com/test/android/traceview/MisMatched.baz: ()I\n"
-                + " -> android/os/Debug.stopMethodTracing: ()V -> dalvik/system/VMDebug.stopMethodTracing: ()V";
+                  " -> AsyncTask #1.:  -> com/test/android/traceview/MisMatched.foo: ()V -> com/test/android/traceview/MisMatched.bar: ()V -> android/os/Debug.startMethodTracing: (Ljava/lang/String;)V -> android/os/Debug.startMethodTracing: (Ljava/lang/String;II)V -> dalvik/system/VMDebug.startMethodTracing: (Ljava/lang/String;II)V\n"
+                + "                                                                                                                        -> com/test/android/traceview/MisMatched.baz: ()I\n"
+                + "                    -> android/os/Debug.stopMethodTracing: ()V -> dalvik/system/VMDebug.stopMethodTracing: ()V";
         testTrace("/mismatched.trace", "AsyncTask #1", expected);
     }
 
     public void testExceptionTrace() throws IOException {
         String expected =
-                " -> android/os/Debug.startMethodTracing: (Ljava/lang/String;)V -> android/os/Debug.startMethodTracing: (Ljava/lang/String;II)V -> dalvik/system/VMDebug.startMethodTracing: (Ljava/lang/String;II)V\n"
-                + " -> com/test/android/traceview/Exceptions.foo: ()V -> com/test/android/traceview/Exceptions.bar: ()V -> com/test/android/traceview/Exceptions.baz: ()V -> java/lang/RuntimeException.<init>: ()V -> java/lang/Exception.<init>: ()V -> java/lang/Throwable.<init>: ()V -> java/util/Collections.emptyList: ()Ljava/util/List;\n"
-                + "                                                                                                                                                                                                                                                                       -> java/lang/Throwable.fillInStackTrace: ()Ljava/lang/Throwable; -> java/lang/Throwable.nativeFillInStackTrace: ()Ljava/lang/Object;\n"
-                + " -> android/os/Debug.stopMethodTracing: ()V -> dalvik/system/VMDebug.stopMethodTracing: ()V";
+                  " -> AsyncTask #1.:  -> android/os/Debug.startMethodTracing: (Ljava/lang/String;)V -> android/os/Debug.startMethodTracing: (Ljava/lang/String;II)V -> dalvik/system/VMDebug.startMethodTracing: (Ljava/lang/String;II)V\n"
+                + "                    -> com/test/android/traceview/Exceptions.foo: ()V -> com/test/android/traceview/Exceptions.bar: ()V -> com/test/android/traceview/Exceptions.baz: ()V -> java/lang/RuntimeException.<init>: ()V -> java/lang/Exception.<init>: ()V -> java/lang/Throwable.<init>: ()V -> java/util/Collections.emptyList: ()Ljava/util/List;\n"
+                + "                                                                                                                                                                                                                                                                                          -> java/lang/Throwable.fillInStackTrace: ()Ljava/lang/Throwable; -> java/lang/Throwable.nativeFillInStackTrace: ()Ljava/lang/Object;\n"
+                + "                    -> android/os/Debug.stopMethodTracing: ()V -> dalvik/system/VMDebug.stopMethodTracing: ()V";
         testTrace("/exception.trace", "AsyncTask #1", expected);
     }
 
@@ -123,17 +123,6 @@ public class VmTraceParserTest extends TestCase {
         }
 
         return -1;
-    }
-
-    private String formatCallStacks(List<Call> calls, Call.Formatter formatter) {
-        if (calls == null) return "<none>";
-        List<String> callStacks = new ArrayList<String>(calls.size());
-
-        for (Call c : calls) {
-            callStacks.add(c.format(formatter));
-        }
-
-        return Joiner.on('\n').join(callStacks);
     }
 
     private VmTraceData getVmTraceData(String traceFilePath) throws IOException {

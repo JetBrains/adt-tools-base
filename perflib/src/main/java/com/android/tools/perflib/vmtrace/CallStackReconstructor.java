@@ -27,13 +27,25 @@ import java.util.Stack;
  * trace events (method entry/exit events).
  */
 public class CallStackReconstructor {
+    /** Method id corresponding to the top level call under which all calls are nested. */
+    private final long mTopLevelCallId;
+
     /** List of calls currently assumed to be at stack depth 0 (called from the top level) */
-    private List<Call.Builder> mTopLevelCalls = new ArrayList<Call.Builder>();
+    private final List<Call.Builder> mTopLevelCalls = new ArrayList<Call.Builder>();
 
     /** Current call stack based on the sequence of received trace events. */
-    private Stack<Call.Builder> mCallStack = new Stack<Call.Builder>();
+    private final Stack<Call.Builder> mCallStack = new Stack<Call.Builder>();
 
-    private List<Call> mTopLevelCallees;
+    /** The single top level call under which the entire reconstructed call stack nests. */
+    private Call mTopLevelCall;
+
+    /**
+     * Constructs a call stack reconstructor with the method id under which
+     * the entire call stack should nest.
+     * */
+    public CallStackReconstructor(long topLevelCallId) {
+        mTopLevelCallId = topLevelCallId;
+    }
 
     public void addTraceAction(long methodId, TraceAction action, int threadTime, int globalTime) {
         if (action == TraceAction.METHOD_ENTER) {
@@ -72,7 +84,6 @@ public class CallStackReconstructor {
             // We are exiting out of a method that was entered into before tracing was started.
             // In such a case, create this method
             Call.Builder c = new Call.Builder(methodId);
-            c.setMethodExitTime(threadTime, globalTime);
 
             // All the previous calls at the top level are now assumed to have been called from
             // this method. So mark this method as having called all of those methods, and reset
@@ -82,28 +93,59 @@ public class CallStackReconstructor {
             }
             mTopLevelCalls.clear();
             mTopLevelCalls.add(c);
+
+            c.setMethodExitTime(threadTime, globalTime);
+
+            // We don't know this method's entry times, so we try to guess:
+            // If it has atleast 1 callee, then we know it must've been atleast before that callee's
+            // start time. If there are no callees, then we just assume that it was just before its
+            // exit times.
+            int entryThreadTime = threadTime - 1;
+            int entryGlobalTime = globalTime - 1;
+
+            if (c.getCallees() != null && !c.getCallees().isEmpty()) {
+                Call.Builder callee = c.getCallees().get(0);
+                entryThreadTime = callee.getMethodEntryThreadTime() - 1;
+                entryGlobalTime = callee.getMethodEntryGlobalTime() - 1;
+            }
+            c.setMethodEntryTime(entryThreadTime, entryGlobalTime);
         }
     }
 
     private void fixupCallStacks() {
-        if (mTopLevelCallees != null) {
+        if (mTopLevelCall != null) {
             return;
         }
+
+        int lastExitThreadTime = 0;
+        int lastExitGlobalTime = 0;
+        if (!mTopLevelCalls.isEmpty()) {
+            Call.Builder last = mTopLevelCalls.get(mTopLevelCalls.size() - 1);
+            lastExitThreadTime = last.getMethodExitThreadTime() + 1;
+            lastExitGlobalTime = last.getMethodExitGlobalTime() + 1;
+        }
+
+        // If there are any methods still on the call stack, then the trace doesn't have
+        // exit trace action for them, so clean those up
+        while (!mCallStack.isEmpty()) {
+            Call.Builder builder = mCallStack.peek();
+            exitMethod(builder.getMethodId(), lastExitThreadTime, lastExitGlobalTime);
+        }
+
+        // Now that we have parsed the entire call stack, let us move all of it under a single
+        // top level call.
+        exitMethod(mTopLevelCallId, lastExitThreadTime, lastExitGlobalTime);
 
         // TODO: use global / thread times to infer context switches
 
         // Build calls from their respective builders
-        List<Call> topLevelCallees = new ArrayList<Call>(mTopLevelCalls.size());
-        for (Call.Builder b : mTopLevelCalls) {
-            b.setStackDepth(0);
-            topLevelCallees.add(b.build());
-        }
-
-        mTopLevelCallees = new ImmutableList.Builder<Call>().addAll(topLevelCallees).build();
+        // Now that we've added the top level call, there should be only 1 top level call
+        assert mTopLevelCalls.size() == 1;
+        mTopLevelCall = mTopLevelCalls.get(0).build();
     }
 
-    public List<Call> getTopLevelCallees() {
+    public Call getTopLevel() {
         fixupCallStacks();
-        return mTopLevelCallees;
+        return mTopLevelCall;
     }
 }

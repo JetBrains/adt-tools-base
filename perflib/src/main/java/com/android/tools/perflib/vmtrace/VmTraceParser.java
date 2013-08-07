@@ -252,8 +252,8 @@ public class VmTraceParser {
 
             switch (clockType) {
                 case WALL:
-                    threadTime = 0;
                     globalTime = buffer.getInt();
+                    threadTime = globalTime;
                     break;
                 case DUAL:
                     threadTime = buffer.getInt();
@@ -262,7 +262,7 @@ public class VmTraceParser {
                 case THREAD_CPU:
                 default:
                     threadTime = buffer.getInt();
-                    globalTime = 0;
+                    globalTime = threadTime;
                     break;
             }
 
