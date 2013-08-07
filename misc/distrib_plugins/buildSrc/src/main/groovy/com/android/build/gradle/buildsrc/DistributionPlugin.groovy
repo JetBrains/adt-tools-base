@@ -43,7 +43,7 @@ class DistributionPlugin implements org.gradle.api.Plugin<Project> {
                     DistributionExtension)
 
             // deal with NOTICE files from all the sub projects
-            GatherNoticesTask gatherNoticesTask = project.tasks.add(
+            GatherNoticesTask gatherNoticesTask = project.tasks.create(
                     "gatherNotices", GatherNoticesTask)
             gatherNoticesTask.project = project
             gatherNoticesTask.conventionMapping.distributionDir =  {
@@ -55,7 +55,7 @@ class DistributionPlugin implements org.gradle.api.Plugin<Project> {
 
             pushDistribution.dependsOn gatherNoticesTask
         } else {
-            Jar buildTask = project.tasks.add("buildDistributionJar", Jar)
+            Jar buildTask = project.tasks.create("buildDistributionJar", Jar)
             buildTask.from(project.sourceSets.main.output)
             buildTask.conventionMapping.destinationDir = {
                 project.file(project.rootProject.distribution.destinationPath + "/tools/lib")
@@ -73,7 +73,7 @@ class DistributionPlugin implements org.gradle.api.Plugin<Project> {
                 }
             }
 
-            Copy copyTask = project.tasks.add("copyLauncherScripts", Copy)
+            Copy copyTask = project.tasks.create("copyLauncherScripts", Copy)
             copyTask.from {
                 if (project.shipping.launcherScripts != null) {
                     return project.files(project.shipping.launcherScripts.toArray())
@@ -86,7 +86,7 @@ class DistributionPlugin implements org.gradle.api.Plugin<Project> {
             pushDistribution.dependsOn copyTask
 
             // also copy the dependencies
-            CopyDependenciesTask copyDependenciesTask = project.tasks.add(
+            CopyDependenciesTask copyDependenciesTask = project.tasks.create(
                     "copyDependencies", CopyDependenciesTask)
             copyDependenciesTask.project = project
             copyDependenciesTask.conventionMapping.distributionDir =  {
