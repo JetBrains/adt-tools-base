@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 public class VmTraceParserTest extends TestCase {
@@ -73,7 +72,7 @@ public class VmTraceParserTest extends TestCase {
         @Override
         public String format(Call c) {
             MethodInfo info = mMethodInfo.get(c.getMethodId());
-            return info == null ? Long.toString(c.getMethodId()) : info.getName();
+            return info == null ? Long.toString(c.getMethodId()) : info.getFullName();
         }
     }
 
