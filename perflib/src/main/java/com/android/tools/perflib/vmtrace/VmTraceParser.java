@@ -1,5 +1,6 @@
 package com.android.tools.perflib.vmtrace;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.io.Closeables;
@@ -8,11 +9,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Iterator;
 
 public class VmTraceParser {
     private static final int TRACE_MAGIC = 0x574f4c53; // 'SLOW'
@@ -44,6 +45,7 @@ public class VmTraceParser {
         long headerLength = parseHeader(mTraceFile);
         MappedByteBuffer buffer = mapFile(mTraceFile, headerLength);
         parseData(buffer);
+        computeTimingStatistics();
     }
 
     public VmTraceData getTraceData() {
@@ -158,8 +160,7 @@ public class VmTraceParser {
             int id = Integer.decode(line.substring(0, index));
             String name = line.substring(index).trim();
             mTraceDataBuilder.addThread(id, name);
-        } catch (NumberFormatException e) {
-            return;
+        } catch (NumberFormatException ignored) {
         }
     }
 
@@ -369,6 +370,34 @@ public class VmTraceParser {
             return buffer;
         } finally {
             dataFile.close(); // this *also* closes the associated channel, fc
+        }
+    }
+
+    private void computeTimingStatistics() {
+        VmTraceData data = getTraceData();
+
+        for (int i = 0; i < data.getThreads().size(); i++) {
+            int threadId = data.getThreads().keyAt(i);
+            Call c = data.getTopLevelCall(threadId);
+            if (c != null) {
+                computePerMethodStats(c, data);
+            }
+        }
+    }
+
+    private void computePerMethodStats(@NonNull Call top, @NonNull VmTraceData data) {
+        Iterator<Call> it = top.getCallHierarchyIterator();
+        while (it.hasNext()) {
+            Call c = it.next();
+
+            MethodInfo info = data.getMethod(c.getMethodId());
+            info.addExclusiveThreadTimes(c.getExclusiveThreadTime());
+
+            if (!c.isRecursive()) {
+                // In the case of a recursive call, the top level call's inclusive time
+                // already accounts for the entire inclusive time
+                info.addInclusiveThreadTimes(c.getInclusiveThreadTime());
+            }
         }
     }
 }

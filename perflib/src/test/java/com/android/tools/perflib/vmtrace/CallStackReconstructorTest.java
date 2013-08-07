@@ -18,6 +18,8 @@ package com.android.tools.perflib.vmtrace;
 
 import junit.framework.TestCase;
 
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 public class CallStackReconstructorTest extends TestCase {
@@ -31,7 +33,7 @@ public class CallStackReconstructorTest extends TestCase {
         assertEquals(0x1, topLevel.getCallees().get(0).getMethodId());
     }
 
-    public void testCallStack1() {
+    private Call reconstructSampleCallStack() {
         CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
 
         reconstructor.addTraceAction(0x1, TraceAction.METHOD_ENTER, 10, 10);
@@ -47,13 +49,31 @@ public class CallStackReconstructorTest extends TestCase {
         reconstructor.addTraceAction(0x6, TraceAction.METHOD_ENTER, 21, 21);
         reconstructor.addTraceAction(0x6, TraceAction.METHOD_EXIT, 22, 22);
 
-        String callStack = reconstructor.getTopLevel().toString();
+        return reconstructor.getTopLevel();
+    }
+
+    public void testCallStack() {
+        Call topLevel = reconstructSampleCallStack();
+        String callStack = topLevel.toString();
         String expectedCallStack =
-                  " -> 255 -> 1 -> 2 -> 3\n"
-                + "                  -> 3\n"
-                + "             -> 5\n"
-                + "        -> 6";
+                " -> 255 -> 1 -> 2 -> 3\n"
+                        + "                  -> 3\n"
+                        + "             -> 5\n"
+                        + "        -> 6";
         assertEquals(expectedCallStack, callStack);
+    }
+
+    public void testCallHierarchyIterator() {
+        Call topLevel = reconstructSampleCallStack();
+        List<Integer> expectedSequence = Arrays.asList(255, 1, 2, 3, 3, 5, 6);
+        int i = 0;
+        Iterator<Call> it = topLevel.getCallHierarchyIterator();
+        while (it.hasNext()) {
+            Call c = it.next();
+            long expectedMethodId = expectedSequence.get(i++);
+            long actualMethodId = c.getMethodId();
+            assertEquals(expectedMethodId, actualMethodId);
+        }
     }
 
     public void testInvalidTrace() {
@@ -159,5 +179,35 @@ public class CallStackReconstructorTest extends TestCase {
         Call call = callees.get(0);
         assertEquals(8, call.getInclusiveThreadTime());
         assertEquals(6, call.getExclusiveThreadTime());
+    }
+
+    public void testRecursiveCalls() {
+        CallStackReconstructor reconstructor = new CallStackReconstructor(0xff);
+
+        reconstructor.addTraceAction(0x1, TraceAction.METHOD_ENTER, 1, 1);
+        reconstructor.addTraceAction(0x2, TraceAction.METHOD_ENTER, 3, 3);
+        reconstructor.addTraceAction(0x1, TraceAction.METHOD_ENTER, 4, 4); // recursive call, method id 1
+        reconstructor.addTraceAction(0x1, TraceAction.METHOD_EXIT, 5, 5);
+        reconstructor.addTraceAction(0x2, TraceAction.METHOD_EXIT,  6, 6);
+        reconstructor.addTraceAction(0x1, TraceAction.METHOD_EXIT,  8, 8);
+
+        List<Call> callees = reconstructor.getTopLevel().getCallees();
+
+        assertEquals(1, callees.size());
+        Call call1 = callees.get(0);
+        assertEquals(0x1, call1.getMethodId());
+        assertFalse(call1.isRecursive());
+
+        callees = call1.getCallees();
+        assertEquals(1, callees.size());
+        Call call2 = callees.get(0);
+        assertEquals(0x2, call2.getMethodId());
+        assertFalse(call2.isRecursive());
+
+        callees = call2.getCallees();
+        assertEquals(1, callees.size());
+        Call call3 = callees.get(0);
+        assertEquals(0x1, call3.getMethodId());
+        assertTrue(call3.isRecursive());
     }
 }
