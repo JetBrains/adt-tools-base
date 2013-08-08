@@ -4,7 +4,7 @@
     revision="2"
     name="Android Application"
     description="Creates a new Android application.">
-    <dependency name="android-support-v4" revision="8" />
+    <dependency name="android-support" />
 
     <thumbs>
         <thumb>template_new_project.png</thumb>
