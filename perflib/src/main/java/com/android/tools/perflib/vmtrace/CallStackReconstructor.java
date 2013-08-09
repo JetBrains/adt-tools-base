@@ -16,7 +16,7 @@
 
 package com.android.tools.perflib.vmtrace;
 
-import com.google.common.collect.ImmutableList;
+import com.android.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -105,11 +105,38 @@ public class CallStackReconstructor {
 
             if (c.getCallees() != null && !c.getCallees().isEmpty()) {
                 Call.Builder callee = c.getCallees().get(0);
-                entryThreadTime = callee.getMethodEntryThreadTime() - 1;
-                entryGlobalTime = callee.getMethodEntryGlobalTime() - 1;
+                entryThreadTime = Math.max(callee.getMethodEntryThreadTime() - 1, 0);
+                entryGlobalTime = Math.max(callee.getMethodEntryGlobalTime() - 1, 0);
             }
             c.setMethodEntryTime(entryThreadTime, entryGlobalTime);
         }
+    }
+
+    /**
+     * Generates a trace action equivalent to exiting from the given method
+     * @param methoId id of the method from which we are exiting
+     * @param entryThreadTime method's thread entry time
+     * @param entryGlobalTime method's global entry time
+     * @param callees from the method that we are exiting
+     */
+    private void exitMethod(long methoId, int entryThreadTime, int entryGlobalTime,
+            @Nullable List<Call.Builder> callees) {
+        int lastExitThreadTime;
+        int lastExitGlobalTime;
+
+        if (callees == null || callees.isEmpty()) {
+            // if the call doesn't have any callees, we assume that it just ran for 1 unit of time
+            lastExitThreadTime = entryThreadTime + 1;
+            lastExitGlobalTime = entryGlobalTime + 1;
+        } else {
+            // if it did call other methods, we assume that this call exited 1 unit of time after
+            // its last callee exited
+            Call.Builder last = callees.get(callees.size() - 1);
+            lastExitThreadTime = last.getMethodExitThreadTime() + 1;
+            lastExitGlobalTime = last.getMethodExitGlobalTime() + 1;
+        }
+
+        exitMethod(methoId, lastExitThreadTime, lastExitGlobalTime);
     }
 
     private void fixupCallStacks() {
@@ -117,31 +144,24 @@ public class CallStackReconstructor {
             return;
         }
 
-        int lastExitThreadTime = 0;
-        int lastExitGlobalTime = 0;
-        if (!mTopLevelCalls.isEmpty()) {
-            Call.Builder last = mTopLevelCalls.get(mTopLevelCalls.size() - 1);
-            lastExitThreadTime = last.getMethodExitThreadTime() + 1;
-            lastExitGlobalTime = last.getMethodExitGlobalTime() + 1;
-        }
-
         // If there are any methods still on the call stack, then the trace doesn't have
         // exit trace action for them, so clean those up
         while (!mCallStack.isEmpty()) {
-            Call.Builder builder = mCallStack.peek();
-            exitMethod(builder.getMethodId(), lastExitThreadTime, lastExitGlobalTime);
+            Call.Builder cb = mCallStack.peek();
+            exitMethod(cb.getMethodId(), cb.getMethodEntryThreadTime(),
+                    cb.getMethodEntryGlobalTime(), cb.getCallees());
         }
 
         // Now that we have parsed the entire call stack, let us move all of it under a single
         // top level call.
-        exitMethod(mTopLevelCallId, lastExitThreadTime, lastExitGlobalTime);
+        exitMethod(mTopLevelCallId, 0, 0, mTopLevelCalls);
 
         // TODO: use global / thread times to infer context switches
 
         // Build calls from their respective builders
         // Now that we've added the top level call, there should be only 1 top level call
         assert mTopLevelCalls.size() == 1;
-        mTopLevelCall = mTopLevelCalls.get(0).build();
+        mTopLevelCall = mTopLevelCalls.get(0).build(new Stack<Long>());
     }
 
     public Call getTopLevel() {
