@@ -34,4 +34,7 @@ dependencies {
 <#if androidSupportLibraryUrl??>
     compile '${androidSupportLibraryUrl}'
 </#if>
+<#if appCompatLibraryUrl??>
+    compile '${appCompatLibraryUrl}'
+</#if>
 }
