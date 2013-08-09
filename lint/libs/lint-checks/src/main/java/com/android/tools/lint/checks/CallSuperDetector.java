@@ -23,6 +23,7 @@ import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
+import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
@@ -106,7 +107,8 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
                 if (!callsSuper(node, ON_DETACHED_FROM_WINDOW)) {
                     String message = "Overriding method should call super."
                             + ON_DETACHED_FROM_WINDOW;
-                    mContext.report(ISSUE, node, mContext.getLocation(node), message, null);
+                    Location location = mContext.getLocation(node.astMethodName());
+                    mContext.report(ISSUE, node, location, message, null);
                 }
             }
 
