@@ -540,7 +540,8 @@ public class Project {
                 try {
                     mMinSdk = Integer.valueOf(minSdk);
                 } catch (NumberFormatException e) {
-                    mMinSdk = 1;
+                    // Codename?
+                    mMinSdk = SdkVersionInfo.getApiByPreviewName(minSdk, true);
                 }
             }
 
@@ -554,8 +555,7 @@ public class Project {
                 try {
                     mTargetSdk = Integer.valueOf(targetSdk);
                 } catch (NumberFormatException e) {
-                    // TODO: Handle codenames?
-                    mTargetSdk = -1;
+                    mTargetSdk = SdkVersionInfo.getApiByPreviewName(minSdk, false);
                 }
             }
         } else if (isAospBuildEnvironment()) {

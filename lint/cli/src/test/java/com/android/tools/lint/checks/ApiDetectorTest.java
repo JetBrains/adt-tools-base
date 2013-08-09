@@ -85,6 +85,18 @@ public class ApiDetectorTest extends AbstractCheckTest {
                     ));
     }
 
+    public void testXmlApiIceCreamSandwich() throws Exception {
+        assertEquals(
+                "No warnings.",
+
+                lintProject(
+                        "apicheck/minics.xml=>AndroidManifest.xml",
+                        "apicheck/layout.xml=>res/layout/layout.xml",
+                        "apicheck/themes.xml=>res/values/themes.xml",
+                        "apicheck/themes.xml=>res/color/colors.xml"
+                ));
+    }
+
     public void testXmlApi1TargetApi() throws Exception {
         assertEquals(
             "No warnings.",
