@@ -158,6 +158,10 @@ public class NamespaceDetector extends LayoutDetector {
                                 "Suspicious namespace: should start with http://", null);
 
                         continue;
+                    } else if (!value.equals(AUTO_URI) && value.contains("auto") && //$NON-NLS-1$
+                            value.startsWith("http://schemas.android.com/")) { //$NON-NLS-1$
+                        context.report(TYPO, attribute, context.getLocation(attribute),
+                                "Suspicious namespace: Did you mean " + AUTO_URI, null);
                     }
 
                     String name = attribute.getName();
