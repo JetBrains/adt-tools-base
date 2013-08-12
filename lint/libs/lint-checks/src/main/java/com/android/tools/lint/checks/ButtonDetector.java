@@ -394,7 +394,7 @@ public class ButtonDetector extends ResourceXmlDetector {
 
     /** The Ok/Cancel detector only works with default and English locales currently.
       * TODO: Add in patterns for other languages. We can use the
-     * @android:string/ok and @android:string/cancel localizations to look
+     * {@code @android:string/ok} and {@code @android:string/cancel} localizations to look
      * up the canonical ones. */
     private static boolean isEnglishResource(XmlContext context) {
         String folder = context.file.getParentFile().getName();
@@ -636,12 +636,12 @@ public class ButtonDetector extends ResourceXmlDetector {
     }
 
     /** Is the cancel button in the wrong position? It has to be on the left. */
-    private boolean isWrongCancelPosition(Element element) {
+    private static boolean isWrongCancelPosition(Element element) {
         return isWrongPosition(element, true /*isCancel*/);
     }
 
     /** Is the OK button in the wrong position? It has to be on the right. */
-    private boolean isWrongOkPosition(Element element) {
+    private static boolean isWrongOkPosition(Element element) {
         return isWrongPosition(element, false /*isCancel*/);
     }
 

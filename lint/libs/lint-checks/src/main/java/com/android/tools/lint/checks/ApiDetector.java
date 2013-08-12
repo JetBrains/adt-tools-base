@@ -1091,7 +1091,7 @@ public class ApiDetector extends ResourceXmlDetector
      * @return true if the given usage is safe on older versions than the introduction
      *              level of the constant
      */
-    public boolean isBenignConstantUsage(
+    public static boolean isBenignConstantUsage(
             @Nullable lombok.ast.Node node,
             @NonNull String name,
             @NonNull String owner) {
