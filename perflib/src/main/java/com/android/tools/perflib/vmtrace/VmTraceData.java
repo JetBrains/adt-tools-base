@@ -16,6 +16,7 @@
 
 package com.android.tools.perflib.vmtrace;
 
+import com.android.annotations.Nullable;
 import com.android.utils.SparseArray;
 
 import java.util.HashMap;
@@ -92,6 +93,7 @@ public class VmTraceData {
         return mMethods.get(methodId);
     }
 
+    @Nullable
     public Call getTopLevelCall(int threadId) {
         return mCalls.get(threadId);
     }
@@ -156,8 +158,6 @@ public class VmTraceData {
 
         public void addMethodAction(int threadId, long methodId, TraceAction methodAction,
                 int threadTime, int globalTime) {
-            MethodInfo methodInfo = mMethods.get(methodId);
-
             // create thread info if it doesn't exist
             if (mThreads.get(threadId) == null) {
                 mThreads.put(threadId, String.format("Thread id: %1$d", threadId));
@@ -171,6 +171,7 @@ public class VmTraceData {
             }
 
             if (DEBUG) {
+                MethodInfo methodInfo = mMethods.get(methodId);
                 System.out.println(
                         methodId + ": " + methodAction + ": thread: " + mThreads.get(threadId)
                                 + ", method: "

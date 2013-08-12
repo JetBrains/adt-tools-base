@@ -19,6 +19,7 @@ package com.android.tools.perflib.vmtrace;
 import com.android.annotations.NonNull;
 import com.android.utils.SparseArray;
 import com.google.common.base.Joiner;
+import com.google.common.primitives.Ints;
 
 import junit.framework.TestCase;
 
@@ -26,8 +27,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class VmTraceParserTest extends TestCase {
     public void testParseHeader() throws IOException {
@@ -83,6 +88,7 @@ public class VmTraceParserTest extends TestCase {
         assertTrue(String.format("Thread %s was not found in the trace", threadName), threadId > 0);
 
         Call call = traceData.getTopLevelCall(threadId);
+        assertNotNull(call);
         String actual = call.format(new CallFormatter(traceData.getMethods()));
         assertEquals(expectedCallSequence, actual);
     }
@@ -110,6 +116,50 @@ public class VmTraceParserTest extends TestCase {
                 + "                                                                                                                                                                                                                                                                                          -> java/lang/Throwable.fillInStackTrace: ()Ljava/lang/Throwable; -> java/lang/Throwable.nativeFillInStackTrace: ()Ljava/lang/Object;\n"
                 + "                    -> android/os/Debug.stopMethodTracing: ()V -> dalvik/system/VMDebug.stopMethodTracing: ()V";
         testTrace("/exception.trace", "AsyncTask #1", expected);
+    }
+
+    public void testCallDurations() throws IOException {
+        validateCallDurations("/basic.trace", "AsyncTask #1");
+        validateCallDurations("/mismatched.trace", "AsyncTask #1");
+        validateCallDurations("/exception.trace", "AsyncTask #1");
+    }
+
+    private void validateCallDurations(String traceName, String threadName) throws IOException {
+        VmTraceData traceData = getVmTraceData(traceName);
+
+        int threadId = findThreadIdFromName(threadName, traceData.getThreads());
+        assertTrue(String.format("Thread %s was not found in the trace", threadName), threadId > 0);
+
+        Call topLevelCall = traceData.getTopLevelCall(threadId);
+        assertNotNull(topLevelCall);
+        Iterator<Call> it = topLevelCall.getCallHierarchyIterator();
+        while (it.hasNext()) {
+            Call c = it.next();
+
+            assertTrue(c.getEntryGlobalTime() <= c.getExitGlobalTime());
+            assertTrue(c.getEntryThreadTime() <= c.getExitThreadTime());
+        }
+    }
+
+    public void testMethodStats() throws IOException {
+        VmTraceData traceData = getVmTraceData("/basic.trace");
+        List<Map.Entry<Long, MethodInfo>> methods = new ArrayList<Map.Entry<Long, MethodInfo>>(
+                traceData.getMethods().entrySet());
+        Collections.sort(methods, new Comparator<Map.Entry<Long, MethodInfo>>() {
+            @Override
+            public int compare(Map.Entry<Long, MethodInfo> o1, Map.Entry<Long, MethodInfo> o2) {
+                long diff = o2.getValue().getInclusiveThreadTimes() - o1.getValue()
+                        .getInclusiveThreadTimes();
+                return Ints.saturatedCast(diff);
+            }
+        });
+
+        // verify that the top level actually comes out with the max time
+        // note that while this works for the simple traces currently being tested, this
+        // condition itself isn't valid in case some methods are being called from multiple
+        // threads, in which their inclusive time could be higher than any of the thread's
+        // toplevel time.
+        assertEquals("AsyncTask #1.: ", methods.get(0).getValue().getFullName());
     }
 
     private int findThreadIdFromName(@NonNull String threadName,

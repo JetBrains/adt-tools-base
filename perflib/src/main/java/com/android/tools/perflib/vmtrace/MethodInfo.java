@@ -26,6 +26,9 @@ public class MethodInfo {
     public final String srcPath;
     public final int srcLineNumber;
 
+    private long mInclusiveThreadTimes;
+    private long mExclusiveThreadTimes;
+
     private String mFullName;
     private String mShortName;
 
@@ -60,5 +63,21 @@ public class MethodInfo {
             cn = cn.substring(i + 1);
         }
         return cn;
+    }
+
+    public long getExclusiveThreadTimes() {
+        return mExclusiveThreadTimes;
+    }
+
+    public void addExclusiveThreadTimes(long time) {
+        mExclusiveThreadTimes += time;
+    }
+
+    public long getInclusiveThreadTimes() {
+        return mInclusiveThreadTimes;
+    }
+
+    public void addInclusiveThreadTimes(long time) {
+        mInclusiveThreadTimes += time;
     }
 }
