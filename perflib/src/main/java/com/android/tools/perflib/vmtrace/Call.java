@@ -17,8 +17,10 @@
 package com.android.tools.perflib.vmtrace;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.primitives.UnsignedInts;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,10 +29,17 @@ import java.util.List;
 public class Call {
     private final long mMethodId;
 
+    /**
+     * Note: The thread entry and exit times are stored as unsigned integers in the trace data.
+     * In this model, they are stored as integers, but the getters for all of these time values
+     * convert them into longs.
+     */
     private final int mEntryThreadTime;
     private final int mEntryGlobalTime;
     private final int mExitGlobalTime;
     private final int mExitThreadTime;
+
+    private final long mInclusiveThreadTimeInCallees;
 
     private final int mDepth;
 
@@ -55,6 +64,16 @@ public class Call {
             }
             mCallees = new ImmutableList.Builder<Call>().addAll(callees).build();
         }
+
+        mInclusiveThreadTimeInCallees = sumThreadTimes(mCallees);
+    }
+
+    private long sumThreadTimes(@NonNull List<Call> callees) {
+        long sum = 0;
+        for (Call c : callees) {
+            sum += c.getInclusiveThreadTime();
+        }
+        return sum;
     }
 
     public long getMethodId() {
@@ -70,12 +89,28 @@ public class Call {
         return mDepth;
     }
 
-    public int getEntryThreadTime() {
-        return mEntryThreadTime;
+    public long getEntryThreadTime() {
+        return UnsignedInts.toLong(mEntryThreadTime);
     }
 
-    public int getExitThreadTime() {
-        return mExitThreadTime;
+    public long getExitThreadTime() {
+        return UnsignedInts.toLong(mExitThreadTime);
+    }
+
+    public long getEntryGlobalTime() {
+        return UnsignedInts.toLong(mEntryGlobalTime);
+    }
+
+    public long getExitGlobalTime() {
+        return UnsignedInts.toLong(mExitGlobalTime);
+    }
+
+    public long getInclusiveThreadTime() {
+        return UnsignedInts.toLong(mExitThreadTime - mEntryThreadTime);
+    }
+
+    public long getExclusiveThreadTime() {
+        return getInclusiveThreadTime() - mInclusiveThreadTimeInCallees;
     }
 
     public static class Builder {
@@ -115,12 +150,34 @@ public class Call {
             mCallees.add(c);
         }
 
+
         public void setStackDepth(int depth) {
             mDepth = depth;
         }
 
+        @Nullable
+        public List<Builder> getCallees() {
+            return mCallees;
+        }
+
         public Call build() {
             return new Call(this);
+        }
+
+        public int getMethodEntryThreadTime() {
+            return mEntryThreadTime;
+        }
+
+        public int getMethodEntryGlobalTime() {
+            return mEntryGlobalTime;
+        }
+
+        public int getMethodExitThreadTime() {
+            return mExitThreadTime;
+        }
+
+        public int getMethodExitGlobalTime() {
+            return mExitGlobalTime;
         }
     }
 
