@@ -188,7 +188,7 @@ public class LayoutConsistencyDetector extends LayoutDetector implements Detecto
         }
     }
 
-    private void lookupLocations(
+    private static void lookupLocations(
             @NonNull XmlContext context,
             @NonNull Element element,
             @NonNull Map<String, List<Location>> map) {
@@ -339,7 +339,7 @@ public class LayoutConsistencyDetector extends LayoutDetector implements Detecto
         }
     }
 
-    private Set<String> getInconsistentIds(Map<File, Set<String>> idMap) {
+    private static Set<String> getInconsistentIds(Map<File, Set<String>> idMap) {
         Set<String> union = getAllIds(idMap);
         Set<String> inconsistent = new HashSet<String>();
         for (Map.Entry<File, Set<String>> entry : idMap.entrySet()) {
@@ -353,7 +353,7 @@ public class LayoutConsistencyDetector extends LayoutDetector implements Detecto
         return inconsistent;
     }
 
-    private Set<String> getAllIds(Map<File, Set<String>> idMap) {
+    private static Set<String> getAllIds(Map<File, Set<String>> idMap) {
         Iterator<Set<String>> iterator = idMap.values().iterator();
         assert iterator.hasNext();
         Set<String> union = new HashSet<String>(iterator.next());
@@ -390,15 +390,17 @@ public class LayoutConsistencyDetector extends LayoutDetector implements Detecto
             for (String id : ids) {
                 String message = messageMap.get(id);
                 List<Location> locations = locationMap.get(id);
-                Location location = chainLocations(locations);
+                if (locations != null) {
+                    Location location = chainLocations(locations);
 
-                context.report(INCONSISTENT_IDS, location, message, null);
+                    context.report(INCONSISTENT_IDS, location, message, null);
+                }
             }
         }
     }
 
     @NonNull
-    private Location chainLocations(@NonNull List<Location> locations) {
+    private static Location chainLocations(@NonNull List<Location> locations) {
         assert !locations.isEmpty();
 
         // Sort locations by the file parent folders

@@ -218,7 +218,7 @@ public class ApiClass {
         addToArray(mInterfaces, interfaceClass, since);
     }
 
-    void addToArray(List<Pair<String, Integer>> list, String name, int value) {
+    static void addToArray(List<Pair<String, Integer>> list, String name, int value) {
         // check if we already have that name (at a lower level)
         for (Pair<String, Integer> pair : list) {
             if (name.equals(pair.getFirst())) {

@@ -306,7 +306,7 @@ public class WakelockDetector extends Detector implements ClassScanner {
      * @return true if the target was reached
      *    XXX RETURN VALUES ARE WRONG AS OF RIGHT NOW
      */
-    protected int dfs(ControlFlowGraph.Node node) {
+    protected static int dfs(ControlFlowGraph.Node node) {
         AbstractInsnNode instruction = node.instruction;
         if (instruction.getType() == AbstractInsnNode.JUMP_INSN) {
             int opcode = instruction.getOpcode();

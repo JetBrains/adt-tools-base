@@ -378,7 +378,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
         }
     }
 
-    private void checkDocumentElement(XmlContext context, Element element) {
+    private static void checkDocumentElement(XmlContext context, Element element) {
         Attr codeNode = element.getAttributeNodeNS(ANDROID_URI, "versionCode");//$NON-NLS-1$
         if (codeNode != null && codeNode.getValue().startsWith(PREFIX_RESOURCE_REF)
                 && context.isEnabled(ILLEGAL_REFERENCE)) {
@@ -640,7 +640,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
         }
     }
 
-    private void checkDeviceAdmin(XmlContext context, Element element) {
+    private static void checkDeviceAdmin(XmlContext context, Element element) {
         List<Element> children = LintUtils.getChildren(element);
         boolean requiredIntentFilterFound = false;
         boolean deviceAdmin = false;
