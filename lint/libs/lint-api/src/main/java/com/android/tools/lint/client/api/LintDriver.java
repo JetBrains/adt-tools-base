@@ -1654,7 +1654,7 @@ public class LintDriver {
             @Nullable Project main,
             @NonNull File res,
             @NonNull List<ResourceXmlDetector> checks) {
-        assert res.isDirectory();
+        assert res.isDirectory() : res;
         File[] resourceDirs = res.listFiles();
         if (resourceDirs == null) {
             return;
