@@ -4,7 +4,7 @@
     revision="2"
     name="Android Library"
     description="Creates a new Android library.">
-    <dependency name="android-support" />
+    <dependency name="android-support" version="v4" />
 
     <thumbs>
         <thumb>template_new_project.png</thumb>
