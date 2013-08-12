@@ -16,18 +16,24 @@
 
 package com.android.tools.perflib.vmtrace;
 
-import com.android.annotations.NonNull;
+import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-/** Reconstructs call stacks from a sequence of trace events (method entry/exit events) */
+/**
+ * {@link CallStackReconstructor} helps in reconstructing per thread call stacks from a sequence of
+ * trace events (method entry/exit events).
+ */
 public class CallStackReconstructor {
-    private List<Call> mTopLevelCallees = new ArrayList<Call>();
-    private Stack<Call> mCallStack = new Stack<Call>();
+    /** List of calls currently assumed to be at stack depth 0 (called from the top level) */
+    private List<Call.Builder> mTopLevelCalls = new ArrayList<Call.Builder>();
 
-    private boolean mFixupComplete;
+    /** Current call stack based on the sequence of received trace events. */
+    private Stack<Call.Builder> mCallStack = new Stack<Call.Builder>();
+
+    private List<Call> mTopLevelCallees;
 
     public void addTraceAction(long methodId, TraceAction action, int threadTime, int globalTime) {
         if (action == TraceAction.METHOD_ENTER) {
@@ -38,22 +44,22 @@ public class CallStackReconstructor {
     }
 
     private void enterMethod(long methodId, int threadTime, int globalTime) {
-        Call c = new Call(methodId);
-        c.setMethodEntryTime(threadTime, globalTime);
+        Call.Builder cb = new Call.Builder(methodId);
+        cb.setMethodEntryTime(threadTime, globalTime);
 
         if (mCallStack.isEmpty()) {
-            mTopLevelCallees.add(c);
+            mTopLevelCalls.add(cb);
         } else {
-            Call caller = mCallStack.peek();
-            caller.addCallee(c);
+            Call.Builder caller = mCallStack.peek();
+            caller.addCallee(cb);
         }
 
-        mCallStack.push(c);
+        mCallStack.push(cb);
     }
 
     private void exitMethod(long methodId, int threadTime, int globalTime) {
         if (!mCallStack.isEmpty()) {
-            Call c = mCallStack.pop();
+            Call.Builder c = mCallStack.pop();
             if (c.getMethodId() != methodId) {
                 String msg = String
                         .format("Error during call stack reconstruction. Attempt to exit from method 0x%1$x while in method 0x%2$x",
@@ -65,42 +71,35 @@ public class CallStackReconstructor {
         } else {
             // We are exiting out of a method that was entered into before tracing was started.
             // In such a case, create this method
-            Call c = new Call(methodId);
+            Call.Builder c = new Call.Builder(methodId);
             c.setMethodExitTime(threadTime, globalTime);
 
             // All the previous calls at the top level are now assumed to have been called from
             // this method. So mark this method as having called all of those methods, and reset
             // the top level to only include this method
-            for (Call topLevelCallee : mTopLevelCallees) {
-                c.addCallee(topLevelCallee);
+            for (Call.Builder cb : mTopLevelCalls) {
+                c.addCallee(cb);
             }
-            mTopLevelCallees.clear();
-            mTopLevelCallees.add(c);
+            mTopLevelCalls.clear();
+            mTopLevelCalls.add(c);
         }
     }
 
     private void fixupCallStacks() {
-        if (mFixupComplete) {
+        if (mTopLevelCallees != null) {
             return;
         }
 
-        // fixup whatever needs fixing up
         // TODO: use global / thread times to infer context switches
 
-        // Fix call stack depths
-        for (Call c : mTopLevelCallees) {
-            setStackDepthRecursive(c, 0);
+        // Build calls from their respective builders
+        List<Call> topLevelCallees = new ArrayList<Call>(mTopLevelCalls.size());
+        for (Call.Builder b : mTopLevelCalls) {
+            b.setStackDepth(0);
+            topLevelCallees.add(b.build());
         }
 
-        mFixupComplete = true;
-    }
-
-    private void setStackDepthRecursive(@NonNull Call call, int i) {
-        call.setDepth(i);
-
-        for (Call c : call.getCallees()) {
-            setStackDepthRecursive(c, i+1);
-        }
+        mTopLevelCallees = new ImmutableList.Builder<Call>().addAll(topLevelCallees).build();
     }
 
     public List<Call> getTopLevelCallees() {
