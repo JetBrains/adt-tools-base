@@ -88,7 +88,8 @@ public class ParcelDetector extends Detector implements Detector.ClassScanner {
         }
     }
 
-    private boolean hasCreatorField(@NonNull ClassContext context, @NonNull ClassNode classNode) {
+    private static boolean hasCreatorField(@NonNull ClassContext context,
+            @NonNull ClassNode classNode) {
         List<FieldNode> fields = classNode.fields;
         if (fields != null) {
             for (FieldNode field : fields) {

@@ -217,8 +217,9 @@ public class PluralsDetector extends ResourceXmlDetector {
 
     private static Map<String, EnumSet<Quantity>> sPlurals;
 
+    @SuppressWarnings({"UnnecessaryLocalVariable", "UnusedDeclaration"})
     @Nullable
-    public EnumSet<Quantity> getRelevant(@NonNull String language) {
+    public static EnumSet<Quantity> getRelevant(@NonNull String language) {
         // Based on the plurals table in plurals.txt in icu4c
         if (sPlurals == null) {
             EnumSet<Quantity> empty = EnumSet.noneOf(Quantity.class);

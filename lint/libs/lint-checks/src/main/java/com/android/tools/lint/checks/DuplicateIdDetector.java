@@ -665,7 +665,7 @@ public class DuplicateIdDetector extends LayoutDetector {
         }
 
         @Override
-        public int compareTo(Occurrence other) {
+        public int compareTo(@NonNull Occurrence other) {
             // First sort by length, then sort by name
             int delta = toString().length() - other.toString().length();
             if (delta != 0) {
