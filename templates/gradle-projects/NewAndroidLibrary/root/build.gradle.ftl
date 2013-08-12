@@ -31,5 +31,7 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:support-v4:${v4SupportLibraryVersion}'
+<#if androidSupportLibraryUrl??>
+    compile '${androidSupportLibraryUrl}'
+</#if>
 }
