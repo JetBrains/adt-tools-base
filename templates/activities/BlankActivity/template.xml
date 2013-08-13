@@ -4,7 +4,8 @@
     revision="3"
     name="Blank Activity"
     description="Creates a new blank activity, with an action bar and optional navigational elements such as tabs or horizontal swipe.">
-    <dependency name="android-support-v4" revision="8" />
+
+    <dependency name="appcompat" version="v7" />
 
     <category value="Activities" />
 

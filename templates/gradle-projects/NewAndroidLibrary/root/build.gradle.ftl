@@ -31,10 +31,7 @@ android {
 }
 
 dependencies {
-<#if androidSupportLibraryUrl??>
-    compile '${androidSupportLibraryUrl}'
-</#if>
-<#if appCompatLibraryUrl??>
-    compile '${appCompatLibraryUrl}'
-</#if>
+<#list dependencyList as dependency>
+    compile '${dependency}'
+</#list>
 }
