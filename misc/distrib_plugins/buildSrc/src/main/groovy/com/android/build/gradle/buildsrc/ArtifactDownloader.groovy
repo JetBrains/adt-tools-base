@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.buildsrc
-
 import com.google.common.base.Charsets
 import com.google.common.collect.Sets
 import com.google.common.hash.HashCode
@@ -29,7 +28,6 @@ import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.ModuleVersionSelector
 import org.gradle.api.artifacts.result.*
 import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier
-import org.gradle.api.tasks.TaskAction
 
 class ArtifactDownloader {
 
@@ -136,7 +134,7 @@ class ArtifactDownloader {
             for (ModuleVersionIdentifier id : gradleRepoList) {
                 pullArtifact(repoUrls, id, secondaryRepo, downloadedSet)
             }
-        } catch (IOException e) {
+        } catch (Throwable e) {
             e.printStackTrace()
         }
     }
@@ -161,7 +159,8 @@ class ArtifactDownloader {
     private void pullArtifact(String[] repoUrls, ModuleVersionIdentifier artifact,
                               File rootDestination, Set<ModuleVersionIdentifier> downloadedSet) throws IOException {
         // ignore all android artifacts and already downloaded artifacts
-        if (artifact.group.startsWith("com.android") || BaseTask.isLocalArtifact(artifact)) {
+        if ((artifact.group.startsWith("com.android") && !artifact.group.startsWith("com.android.tools.external.")) ||
+                BaseTask.isLocalArtifact(artifact)) {
             return
         }
 
