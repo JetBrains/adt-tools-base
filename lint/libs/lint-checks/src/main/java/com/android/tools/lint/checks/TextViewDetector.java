@@ -161,7 +161,7 @@ public class TextViewDetector extends LayoutDetector {
         for (int i = 0, n = attributes.getLength(); i < n; i++) {
             Attr attribute = (Attr) attributes.item(i);
             String name = attribute.getLocalName();
-            if (name == null) {
+            if (name == null || name.isEmpty()) {
                 // Attribute not in a namespace; we only care about the android: ones
                 continue;
             }
