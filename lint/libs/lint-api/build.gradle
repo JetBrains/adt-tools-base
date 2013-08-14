@@ -4,7 +4,7 @@ archivesBaseName = 'lint-api'
 dependencies {
     compile project(':sdk-common')
 
-    compile files("$rootProject.ext.androidRootDir/prebuilts/tools/common/lombok-ast/lombok-ast-0.2.1.jar")
+    compile 'com.android.tools.external.lombok:lombok-ast:0.2.1'
     compile 'org.ow2.asm:asm:4.0'
     compile 'org.ow2.asm:asm-tree:4.0'
 }
