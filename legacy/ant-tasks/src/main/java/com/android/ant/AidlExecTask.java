@@ -17,6 +17,7 @@
 package com.android.ant;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.sdklib.io.FileOp;
 
 import org.apache.tools.ant.BuildException;
@@ -59,13 +60,17 @@ public class AidlExecTask extends MultiFilesTask {
     private class AidlProcessor implements SourceProcessor {
 
         @Override
+        @NonNull
         public Set<String> getSourceFileExtensions() {
             return Collections.singleton(SdkConstants.EXT_AIDL);
         }
 
         @Override
-        public void process(String filePath, String sourceFolder,
-                List<String> sourceFolders, Project taskProject) {
+        public void process(
+                @NonNull String filePath,
+                @NonNull String sourceFolder,
+                @NonNull List<String> sourceFolders,
+                @NonNull Project taskProject) {
             ExecTask task = new ExecTask();
             task.setProject(taskProject);
             task.setOwningTarget(getOwningTarget());
@@ -116,7 +121,7 @@ public class AidlExecTask extends MultiFilesTask {
         }
 
         @Override
-        public void displayMessage(DisplayType type, int count) {
+        public void displayMessage(@NonNull DisplayType type, int count) {
             switch (type) {
                 case FOUND:
                     System.out.println(String.format("Found %1$d AIDL files.", count));
@@ -139,6 +144,11 @@ public class AidlExecTask extends MultiFilesTask {
                                     count));
                     break;
             }
+        }
+
+        @Override
+        public void removedOutput(@NonNull File file) {
+            //  nothing to do.
         }
     }
 

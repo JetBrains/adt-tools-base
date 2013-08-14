@@ -18,20 +18,22 @@ package com.android.sdklib;
 
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.sdklib.internal.avd.AvdManager;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.mock.MockLog;
+import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.utils.ILogger;
 
+import junit.framework.TestCase;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-
-import junit.framework.TestCase;
 
 /**
  * Test case that allocates a temporary SDK, a temporary AVD base folder
@@ -278,24 +280,63 @@ public class SdkManagerTestCase extends TestCase {
 
     private void makeBuildTools(File buildToolsTopDir) throws IOException {
         buildToolsTopDir.mkdir();
-        for (String revision : new String[] { "3.0.0", "3.0.1", "12.3.4 rc5" }) {
+        for (String revision : new String[] { "3.0.0", "3.0.1", "18.3.4 rc5" }) {
 
             File buildToolsDir = new File(buildToolsTopDir, revision);
             createSourceProps(buildToolsDir, PkgProps.PKG_REVISION, revision);
 
-            createTextFile(buildToolsDir, SdkConstants.FN_AAPT);
-            createTextFile(buildToolsDir, SdkConstants.FN_AIDL);
-            createTextFile(buildToolsDir, SdkConstants.FN_DX);
-            createTextFile(buildToolsDir, SdkConstants.FD_LIB + File.separator +
-                                          SdkConstants.FN_DX_JAR);
-            createTextFile(buildToolsDir, SdkConstants.FN_RENDERSCRIPT);
-            createTextFile(buildToolsDir, SdkConstants.OS_FRAMEWORK_RS + File.separator +
-                                          "placeholder.txt");
-            createTextFile(buildToolsDir, SdkConstants.OS_FRAMEWORK_RS_CLANG + File.separator +
-                                          "placeholder.txt");
-        }
+            FullRevision fullRevision = FullRevision.parseRevision(revision);
 
+            createFakeBuildTools(
+                    buildToolsDir, fullRevision,
+                    BuildToolInfo.PathId.AAPT,             SdkConstants.FN_AAPT);
+            createFakeBuildTools(
+                    buildToolsDir, fullRevision,
+                    BuildToolInfo.PathId.AIDL,             SdkConstants.FN_AIDL);
+            createFakeBuildTools(
+                    buildToolsDir, fullRevision,
+                    BuildToolInfo.PathId.DX,               SdkConstants.FN_DX);
+            createFakeBuildTools(
+                    buildToolsDir, fullRevision,
+                    BuildToolInfo.PathId.DX_JAR,           SdkConstants.FD_LIB + File.separator +
+                    SdkConstants.FN_DX_JAR);
+            createFakeBuildTools(
+                    buildToolsDir, fullRevision,
+                    BuildToolInfo.PathId.LLVM_RS_CC,       SdkConstants.FN_RENDERSCRIPT);
+            createFakeBuildTools(
+                    buildToolsDir, fullRevision,
+                    BuildToolInfo.PathId.ANDROID_RS,       SdkConstants.OS_FRAMEWORK_RS + File.separator +
+                         "placeholder.txt");
+            createFakeBuildTools(
+                    buildToolsDir, fullRevision,
+                    BuildToolInfo.PathId.ANDROID_RS_CLANG, SdkConstants.OS_FRAMEWORK_RS_CLANG + File.separator +
+                        "placeholder.txt");
+            createFakeBuildTools(
+                    buildToolsDir, fullRevision,
+                    BuildToolInfo.PathId.BCC_COMPAT,       SdkConstants.FN_BCC_COMPAT);
+            createFakeBuildTools(
+                    buildToolsDir, fullRevision,
+                    BuildToolInfo.PathId.LD_ARM,       SdkConstants.FN_LD_ARM);
+            createFakeBuildTools(
+                    buildToolsDir, fullRevision,
+                    BuildToolInfo.PathId.LD_MIPS,       SdkConstants.FN_LD_MIPS);
+            createFakeBuildTools(
+                    buildToolsDir, fullRevision,
+                    BuildToolInfo.PathId.LD_X86,       SdkConstants.FN_LD_X86);
+        }
     }
+
+    private void createFakeBuildTools(@NonNull File dir,
+                                      @NonNull FullRevision buildToolsRevision,
+                                      @NonNull BuildToolInfo.PathId pathId,
+                                      @NonNull String filepath)
+            throws IOException {
+
+        if (pathId.isPresentIn(buildToolsRevision)) {
+            createTextFile(dir, filepath);
+        }
+    }
+
 
     private void createSourceProps(File parentDir, String...paramValuePairs) throws IOException {
         createFileProps(SdkConstants.FN_SOURCE_PROP, parentDir, paramValuePairs);

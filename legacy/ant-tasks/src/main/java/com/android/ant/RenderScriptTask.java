@@ -17,24 +17,33 @@
 package com.android.ant;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
+import com.android.sdklib.BuildToolInfo;
+import com.android.sdklib.build.RenderScriptChecker;
+import com.android.sdklib.build.RenderScriptProcessor;
+import com.android.sdklib.repository.FullRevision;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.ExecTask;
 import org.apache.tools.ant.types.Environment;
 import org.apache.tools.ant.types.Path;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * Task to execute renderscript.
  * <p>
  * It expects 7 attributes:<br>
- * 'executable' ({@link Path} with a single path) for the location of the llvm executable<br>
+ * 'buildToolsRoot' ({@link Path} with a single path) for the location of the build tools<br>
  * 'framework' ({@link Path} with 1 or more paths) for the include paths.<br>
  * 'genFolder' ({@link Path} with a single path) for the location of the gen folder.<br>
  * 'resFolder' ({@link Path} with a single path) for the location of the res folder.<br>
@@ -45,7 +54,7 @@ import java.util.Set;
  * It also expects one or more inner elements called "source" which are identical to {@link Path}
  * elements for where to find .rs files.
  */
-public class RenderScriptTask extends MultiFilesTask {
+public class RenderScriptTask extends BuildTypedTask {
 
     private static final Set<String> EXTENSIONS = Sets.newHashSetWithExpectedSize(2);
     static {
@@ -53,128 +62,20 @@ public class RenderScriptTask extends MultiFilesTask {
         EXTENSIONS.add(SdkConstants.EXT_FS);
     }
 
+
     private String mBuildToolsRoot;
-    private Path mIncludePath;
     private String mGenFolder;
     private String mResFolder;
+    private String mRsObjFolder;
+    private String mLibsFolder;
+    private String mBinFolder;
     private final List<Path> mPaths = new ArrayList<Path>();
     private int mTargetApi = 0;
+    private boolean mSupportMode = false;
+
     public enum OptLevel { O0, O1, O2, O3 };
     private OptLevel mOptLevel;
     private boolean mDebug = false;
-
-    private class RenderScriptProcessor implements SourceProcessor {
-
-        private final String mTargetApiStr;
-
-        public RenderScriptProcessor(int targetApi) {
-            // get the target api value. Must be 11+ or llvm-rs-cc complains.
-            mTargetApiStr = Integer.toString(mTargetApi < 11 ? 11 : mTargetApi);
-        }
-
-        @Override
-        public Set<String> getSourceFileExtensions() {
-            return EXTENSIONS;
-        }
-
-        @Override
-        public void process(String filePath, String sourceFolder, List<String> sourceFolders,
-                Project taskProject) {
-
-            File exe = new File(mBuildToolsRoot, SdkConstants.FN_RENDERSCRIPT);
-
-            ExecTask task = new ExecTask();
-            task.setTaskName(SdkConstants.FN_RENDERSCRIPT);
-            task.setProject(taskProject);
-            task.setOwningTarget(getOwningTarget());
-            task.setExecutable(exe.getAbsolutePath());
-            task.setFailonerror(true);
-
-            // create the env var for the dynamic libraries
-            Environment.Variable var = new Environment.Variable();
-            var.setValue(mBuildToolsRoot);
-            if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_DARWIN) {
-                var.setKey("DYLD_LIBRARY_PATH");
-            } else if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_LINUX) {
-                var.setKey("LD_LIBRARY_PATH");
-            }
-            task.addEnv(var);
-
-            for (String path : mIncludePath.list()) {
-                File res = new File(path);
-                if (res.isDirectory()) {
-                    task.createArg().setValue("-I");
-                    task.createArg().setValue(path);
-                } else {
-                    System.out.println(String.format(
-                            "WARNING: RenderScript include directory '%s' does not exist!",
-                            res.getAbsolutePath()));
-                }
-
-            }
-
-            if (mDebug) {
-                task.createArg().setValue("-g");
-            }
-
-            task.createArg().setValue("-O");
-            task.createArg().setValue(Integer.toString(mOptLevel.ordinal()));
-
-            task.createArg().setValue("-target-api");
-            task.createArg().setValue(mTargetApiStr);
-
-            task.createArg().setValue("-d");
-            task.createArg().setValue(getDependencyFolder(filePath, sourceFolder));
-            task.createArg().setValue("-MD");
-
-            task.createArg().setValue("-p");
-            task.createArg().setValue(mGenFolder);
-            task.createArg().setValue("-o");
-            task.createArg().setValue(mResFolder);
-            task.createArg().setValue(filePath);
-
-            // execute it.
-            task.execute();
-        }
-
-        @Override
-        public void displayMessage(DisplayType type, int count) {
-            switch (type) {
-                case FOUND:
-                    System.out.println(String.format("Found %1$d RenderScript files.", count));
-                    break;
-                case COMPILING:
-                    if (count > 0) {
-                        System.out.println(String.format(
-                                "Compiling %1$d RenderScript files with -target-api %2$d",
-                                count, mTargetApi));
-                        System.out.println(String.format("Optimization Level: %1$d", mOptLevel.ordinal()));
-                    } else {
-                        System.out.println("No RenderScript files to compile.");
-                    }
-                    break;
-                case REMOVE_OUTPUT:
-                    System.out.println(String.format("Found %1$d obsolete output files to remove.",
-                            count));
-                    break;
-                case REMOVE_DEP:
-                    System.out.println(
-                            String.format("Found %1$d obsolete dependency files to remove.",
-                                    count));
-                    break;
-            }
-        }
-
-        private String getDependencyFolder(String filePath, String sourceFolder) {
-            String relative = filePath.substring(sourceFolder.length());
-            if (relative.charAt(0) == '/') {
-                relative = relative.substring(1);
-            }
-
-            return new File(mGenFolder, relative).getParent();
-        }
-    }
-
 
     /**
      * Sets the value of the "buildToolsRoot" attribute.
@@ -184,21 +85,20 @@ public class RenderScriptTask extends MultiFilesTask {
         mBuildToolsRoot = TaskHelper.checkSinglePath("buildToolsRoot", buildToolsRoot);
     }
 
-    public void setIncludePathRefId(String refId) {
-        Object path = getProject().getReference(refId);
-        if (path instanceof Path) {
-            mIncludePath = (Path) path;
-        } else if (path != null) {
-            throw new BuildException(refId + " is expected to reference a Path object.");
-        }
-    }
-
     public void setGenFolder(Path value) {
         mGenFolder = TaskHelper.checkSinglePath("genFolder", value);
     }
 
     public void setResFolder(Path value) {
         mResFolder = TaskHelper.checkSinglePath("resFolder", value);
+    }
+
+    public void setRsObjFolder(Path value) {
+        mRsObjFolder = TaskHelper.checkSinglePath("rsObjFolder", value);
+    }
+
+    public void setLibsFolder(Path value) {
+        mLibsFolder = TaskHelper.checkSinglePath("libsFolder", value);
     }
 
     public void setTargetApi(String targetApi) {
@@ -214,6 +114,14 @@ public class RenderScriptTask extends MultiFilesTask {
 
     public void setOptLevel(OptLevel optLevel) {
         mOptLevel = optLevel;
+    }
+
+    public void setSupportMode(boolean supportMode) {
+        mSupportMode = supportMode;
+    }
+
+    public void setBinFolder(Path binFolder) {
+        mBinFolder = TaskHelper.checkSinglePath("binFolder", binFolder);
     }
 
     /** Sets the current build type. value is a boolean, true for debug build, false for release */
@@ -234,19 +142,105 @@ public class RenderScriptTask extends MultiFilesTask {
         if (mBuildToolsRoot == null) {
             throw new BuildException("RenderScriptTask's 'buildToolsRoot' is required.");
         }
-        if (mIncludePath == null) {
-            throw new BuildException("RenderScriptTask's 'includePath' is required.");
-        }
         if (mGenFolder == null) {
             throw new BuildException("RenderScriptTask's 'genFolder' is required.");
         }
         if (mResFolder == null) {
             throw new BuildException("RenderScriptTask's 'resFolder' is required.");
         }
+        if (mRsObjFolder == null) {
+            throw new BuildException("RenderScriptTask's 'rsObjFolder' is required.");
+        }
+        if (mLibsFolder == null) {
+            throw new BuildException("RenderScriptTask's 'libsFolder' is required.");
+        }
         if (mTargetApi == 0) {
             throw new BuildException("RenderScriptTask's 'targetApi' is required.");
         }
+        if (mBinFolder == null) {
+            throw new BuildException("RenderScriptTask's 'binFolder' is required.");
+        }
 
-        processFiles(new RenderScriptProcessor(mTargetApi), mPaths, mGenFolder);
+        // convert the Path to List<File>
+        List<File> sourceFolders = Lists.newArrayList();
+        for (Path path : mPaths) {
+            String[] values = path.list();
+            if (values != null) {
+                for (String p : values) {
+                    sourceFolders.add(new File(p));
+                }
+            }
+        }
+
+        try {
+            File binFile = new File(mBinFolder);
+
+            RenderScriptChecker checker = new RenderScriptChecker(sourceFolders, binFile);
+
+            if (checker.mustCompile() || isNewBuild() || hasBuildTypeChanged()) {
+
+                checker.cleanDependencies();
+
+                List<File> emptyFileList = Collections.emptyList();
+
+                RenderScriptProcessor processor = new RenderScriptProcessor(
+                        checker.getInputFiles(),
+                        emptyFileList,
+                        binFile,
+                        new File(mGenFolder),
+                        new File(mResFolder),
+                        new File(mRsObjFolder),
+                        new File(mLibsFolder),
+                        new File(mBinFolder),
+                        new BuildToolInfo(new FullRevision(0), new File(mBuildToolsRoot)),
+                        mTargetApi,
+                        mDebug,
+                        mOptLevel.ordinal(),
+                        mSupportMode);
+
+                // clean old files first
+                processor.cleanOldOutput(checker.getOldInputs());
+
+                // do the compilation(s).
+                processor.build(new RenderScriptProcessor.CommandLineLauncher() {
+                    @Override
+                    public void launch(
+                            @NonNull File executable,
+                            @NonNull List<String> arguments,
+                            @NonNull Map<String, String> envVariableMap)
+                            throws IOException, InterruptedException {
+
+                        ExecTask task = new ExecTask();
+                        task.setTaskName(executable.getName());
+                        task.setProject(getProject());
+                        task.setOwningTarget(getOwningTarget());
+                        task.setExecutable(executable.getAbsolutePath());
+                        task.setFailonerror(true);
+
+                        // create the env var for the dynamic libraries
+                        for (Map.Entry<String, String> entry : envVariableMap.entrySet()) {
+                            Environment.Variable var = new Environment.Variable();
+                            var.setKey(entry.getKey());
+                            var.setValue(entry.getValue());
+                            task.addEnv(var);
+                        }
+
+                        for (String arg : arguments) {
+                            task.createArg().setValue(arg);
+                        }
+
+                        System.out.println(String.format(
+                                "COMMAND: %s %s",
+                                executable.getAbsolutePath(), Joiner.on(' ').join(arguments)));
+
+                        task.execute();
+                    }
+                });
+            }
+        } catch (IOException e) {
+            throw new BuildException(e);
+        } catch (InterruptedException e) {
+            throw new BuildException(e);
+        }
     }
 }

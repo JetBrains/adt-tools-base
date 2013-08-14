@@ -147,6 +147,18 @@ public final class SdkConstants {
     public static final String FN_BCC_COMPAT =
             "bcc_compat" + ext(".exe", "");               //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
+    /** renderscript support linker for ARM (with extension for the current OS) */
+    public static final String FN_LD_ARM =
+            "arm-linux-androideabi-ld" + ext(".exe", ""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
+    /** renderscript support linker for X86 (with extension for the current OS) */
+    public static final String FN_LD_X86 =
+            "i686-linux-android-ld" + ext(".exe", "");   //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
+    /** renderscript support linker for MIPS (with extension for the current OS) */
+    public static final String FN_LD_MIPS =
+            "mipsel-linux-android-ld" + ext(".exe", ""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
     /** adb executable (with extension for the current OS) */
     public static final String FN_ADB =
         "adb" + ext(".exe", "");                          //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -177,6 +189,9 @@ public final class SdkConstants {
     public static final String FN_CONTENT_HASH_PROP = "content_hash.properties";      //$NON-NLS-1$
     /** properties file for the SDK */
     public static final String FN_SDK_PROP = "sdk.properties";                        //$NON-NLS-1$
+
+
+    public static final String FN_RENDERSCRIPT_V8_JAR = "renderscript-v8.jar"; //$NON-NLS-1$
 
     /**
      * filename for gdbserver.
@@ -945,8 +960,12 @@ public final class SdkConstants {
     public static final String EXT_AIDL = "aidl"; //$NON-NLS-1$
     /** Extension of Renderscript files, i.e. "rs" */
     public static final String EXT_RS = "rs"; //$NON-NLS-1$
+    /** Extension of Renderscript files, i.e. "rsh" */
+    public static final String EXT_RSH = "rsh"; //$NON-NLS-1$
     /** Extension of FilterScript files, i.e. "fs" */
     public static final String EXT_FS = "fs"; //$NON-NLS-1$
+    /** Extension of Renderscript bitcode files, i.e. "bc" */
+    public static final String EXT_BC = "bc"; //$NON-NLS-1$
     /** Extension of dependency files, i.e. "d" */
     public static final String EXT_DEP = "d"; //$NON-NLS-1$
     /** Extension of native libraries, i.e. "so" */
@@ -968,8 +987,12 @@ public final class SdkConstants {
     public static final String DOT_AIDL = DOT + EXT_AIDL;
     /** Dot-Extension of renderscript files, i.e. ".rs" */
     public static final String DOT_RS = DOT + EXT_RS;
+    /** Dot-Extension of renderscript header files, i.e. ".rsh" */
+    public static final String DOT_RSH = DOT + EXT_RSH;
     /** Dot-Extension of FilterScript files, i.e. ".fs" */
     public static final String DOT_FS = DOT + EXT_FS;
+    /** Dot-Extension of renderscript bitcode files, i.e. ".bc" */
+    public static final String DOT_BC = DOT + EXT_BC;
     /** Dot-Extension of dependency files, i.e. ".d" */
     public static final String DOT_DEP = DOT + EXT_DEP;
     /** Dot-Extension of dex files, i.e. ".dex" */

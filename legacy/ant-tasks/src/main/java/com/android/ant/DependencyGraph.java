@@ -35,7 +35,7 @@ import java.util.Set;
  */
 public class DependencyGraph {
 
-    private final static boolean DEBUG = false;
+    private static final boolean DEBUG = false;
 
     private static enum DependencyStatus {
         NONE, NEW_FILE, UPDATED_FILE, MISSING_FILE, ERROR;
@@ -136,7 +136,7 @@ public class DependencyGraph {
     private void parseDependencyFile(String dependencyFilePath) {
         // first check if the dependency file is here.
         File depFile = new File(dependencyFilePath);
-        if (depFile.isFile() == false) {
+        if (!depFile.isFile()) {
             mMissingDepFile = true;
             return;
         }
@@ -182,14 +182,14 @@ public class DependencyGraph {
 
         mTargets = new HashSet<File>(targets.length);
         for (String path : targets) {
-            if (path.length() > 0) {
+            if (!path.isEmpty()) {
                 mTargets.add(new File(path));
             }
         }
 
         mPrereqs = new HashSet<File>(prereqs.length);
         for (String path : prereqs) {
-            if (path.length() > 0) {
+            if (!path.isEmpty()) {
                 if (DEBUG) {
                     System.out.println("PREREQ: " + path);
                 }
@@ -292,7 +292,7 @@ public class DependencyGraph {
         // if it's a file, remove it from the list of prereqs.
         // This way if files in this folder don't trigger a build we'll have less
         // files to go through manually
-        if (mPrereqs.remove(file) == false) {
+        if (!mPrereqs.remove(file)) {
             // turns out this is a new file!
 
             if (DEBUG) {
@@ -329,7 +329,7 @@ public class DependencyGraph {
 
         // Loop through our prereq files and make sure they still exist
         for (File prereq : mPrereqs) {
-            if (prereq.exists() == false) {
+            if (!prereq.exists()) {
                 if (DEBUG) {
                     System.out.println("MISSING FILE: " + prereq.getAbsolutePath());
                 }
@@ -395,7 +395,7 @@ public class DependencyGraph {
     private boolean missingTargetFile() {
         // Loop through our target files and make sure they still exist
         for (File target : mTargets) {
-            if (target.exists() == false) {
+            if (!target.exists()) {
                 return true;
             }
         }
@@ -411,7 +411,7 @@ public class DependencyGraph {
         // Find the oldest target
         long oldestTarget = Long.MAX_VALUE;
         // if there's no output, then compare to the time of the dependency file.
-        if (mTargets.size() == 0) {
+        if (mTargets.isEmpty()) {
             oldestTarget = mDepFileLastModified;
         } else {
             for (File target : mTargets) {
