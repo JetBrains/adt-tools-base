@@ -56,9 +56,9 @@ public class SdkManagerTest extends SdkManagerTestCase {
         }
 
         assertEquals("[]", getLog().toString());  // no errors in the logger
-        assertEquals("[3.0.0, 3.0.1, 12.3.4 rc5]", Arrays.toString(v.toArray()));
+        assertEquals("[3.0.0, 3.0.1, 18.3.4 rc5]", Arrays.toString(v.toArray()));
 
-        assertEquals(new FullRevision(12, 3, 4, 5),
+        assertEquals(new FullRevision(18, 3, 4, 5),
                      sdkman.getLatestBuildTool().getRevision());
 
         // Get infos, first one that doesn't exist returns null.
@@ -79,18 +79,23 @@ public class SdkManagerTest extends SdkManagerTestCase {
                     "ANDROID_RS_CLANG=$SDK/build-tools/3.0.0/renderscript/clang-include/}>",
                 cleanPath(sdkman, i.toString()));
 
-        i = sdkman.getBuildTool(new FullRevision(12, 3, 4, 5));
+        i = sdkman.getBuildTool(new FullRevision(18, 3, 4, 5));
         assertEquals(
-                "<BuildToolInfo rev=12.3.4 rc5, " +
-                "mPath=$SDK/build-tools/12.3.4 rc5, " +
+                "<BuildToolInfo rev=18.3.4 rc5, " +
+                "mPath=$SDK/build-tools/18.3.4 rc5, " +
                 "mPaths={" +
-                    "AAPT=$SDK/build-tools/12.3.4 rc5/aapt, " +
-                    "AIDL=$SDK/build-tools/12.3.4 rc5/aidl, " +
-                    "DX=$SDK/build-tools/12.3.4 rc5/dx, " +
-                    "DX_JAR=$SDK/build-tools/12.3.4 rc5/lib/dx.jar, " +
-                    "LLVM_RS_CC=$SDK/build-tools/12.3.4 rc5/llvm-rs-cc, " +
-                    "ANDROID_RS=$SDK/build-tools/12.3.4 rc5/renderscript/include/, " +
-                    "ANDROID_RS_CLANG=$SDK/build-tools/12.3.4 rc5/renderscript/clang-include/}>",
+                    "AAPT=$SDK/build-tools/18.3.4 rc5/aapt, " +
+                    "AIDL=$SDK/build-tools/18.3.4 rc5/aidl, " +
+                    "DX=$SDK/build-tools/18.3.4 rc5/dx, " +
+                    "DX_JAR=$SDK/build-tools/18.3.4 rc5/lib/dx.jar, " +
+                    "LLVM_RS_CC=$SDK/build-tools/18.3.4 rc5/llvm-rs-cc, " +
+                    "ANDROID_RS=$SDK/build-tools/18.3.4 rc5/renderscript/include/, " +
+                    "ANDROID_RS_CLANG=$SDK/build-tools/18.3.4 rc5/renderscript/clang-include/, " +
+                    "BCC_COMPAT=$SDK/build-tools/18.3.4 rc5/bcc_compat, " +
+                    "LD_ARM=$SDK/build-tools/18.3.4 rc5/arm-linux-androideabi-ld, " +
+                    "LD_X86=$SDK/build-tools/18.3.4 rc5/i686-linux-android-ld, " +
+                    "LD_MIPS=$SDK/build-tools/18.3.4 rc5/mipsel-linux-android-ld" +
+                    "}>",
                 cleanPath(sdkman, i.toString()));
     }
 

@@ -20,7 +20,7 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.repository.FullRevision;
-import com.android.utils.NullLogger;
+import com.android.utils.StdLogger;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
@@ -29,9 +29,14 @@ import org.apache.tools.ant.Task;
 public class GetBuildToolsTask extends Task {
 
     private String mName;
+    private boolean mVerbose = false;
 
     public void setName(String name) {
         mName = name;
+    }
+
+    public void setVerbose(boolean verbose) {
+        mVerbose = verbose;
     }
 
     @Override
@@ -39,7 +44,8 @@ public class GetBuildToolsTask extends Task {
         Project antProject = getProject();
 
         SdkManager sdkManager = SdkManager.createManager(
-                antProject.getProperty(ProjectProperties.PROPERTY_SDK), NullLogger.getLogger());
+                antProject.getProperty(ProjectProperties.PROPERTY_SDK),
+                new StdLogger(mVerbose ?  StdLogger.Level.VERBOSE : StdLogger.Level.ERROR));
 
         if (sdkManager == null) {
             throw new BuildException("Unable to parse the SDK!");

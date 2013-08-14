@@ -53,7 +53,7 @@ public class BuildConfigTask extends BuildTypedTask {
 
         // first check if the file is missing.
         File buildConfigFile = generator.getBuildConfigFile();
-        boolean missingFile = buildConfigFile.exists() == false;
+        boolean missingFile = !buildConfigFile.exists();
 
         if (missingFile || hasBuildTypeChanged()) {
             if (isNewBuild()) {
