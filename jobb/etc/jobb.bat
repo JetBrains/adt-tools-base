@@ -33,19 +33,19 @@ call lib\find_java.bat
 if not defined java_exe goto :EOF
 
 set jarfile=jobb.jar
-set frameworkdir=
+set frameworkdir=.
 set libdir=
 
-if exist %frameworkdir%%jarfile% goto JarFileOk
-    set frameworkdir=lib\
+if exist %frameworkdir%\%jarfile% goto JarFileOk
+    set frameworkdir=lib
 
-if exist %frameworkdir%%jarfile% goto JarFileOk
-    set frameworkdir=..\framework\
+if exist %frameworkdir%\%jarfile% goto JarFileOk
+    set frameworkdir=..\framework
 
 :JarFileOk
 
-set jarpath=%frameworkdir%%jarfile%;%frameworkdir%libfat32.jar
+set jarpath=%frameworkdir%\%jarfile%;%frameworkdir%\libfat32.jar
 
-call %java_exe% %java_debug% -classpath "%jarpath%" com.android.jobb.Main %*
+call "%java_exe%" %java_debug% -classpath "%jarpath%" com.android.jobb.Main %*
 
 
