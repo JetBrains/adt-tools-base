@@ -158,23 +158,19 @@ public class RenderScriptProcessor {
 
     public void cleanOldOutput(@Nullable Collection<File> oldOutputs) {
         if (oldOutputs != null) {
+            // the old output collections contains the bc and .java files that could be
+            // in a folder shared with other output files, so it's useful to delete
+            // those only.
+
             for (File file : oldOutputs) {
                 file.delete();
-
-                // if the file is a .bc and support mode is on we need to delete the
-                // associated .o and .so
-                if (mSupportMode && file.getName().endsWith(SdkConstants.DOT_BC)) {
-                    String name = file.getName();
-                    String objName = name.replaceAll("\\.bc", ".o");
-                    String soName = "librs." + name.replaceAll("\\.bc", ".so");
-
-                    for (Abi abi : ABIS) {
-                        new File(new File(mObjOutputDir, abi.mDevice), objName).delete();
-                        new File(new File(mLibOutputDir, abi.mDevice), soName).delete();
-                    }
-                }
             }
         }
+
+        // however .o and .so from support mode are in their own folder so we delete the
+        // content of those folders directly.
+        deleteFolder(mObjOutputDir);
+        deleteFolder(mLibOutputDir);
     }
 
     public static File getSupportJar(String buildToolsFolder) {
@@ -309,7 +305,9 @@ public class RenderScriptProcessor {
 
         // make sure the dest folder exist
         File abiFolder = new File(mObjOutputDir, abi.mDevice);
-        abiFolder.mkdirs();
+        if (!abiFolder.mkdirs()) {
+            throw new IOException("Unable to create dir " + abiFolder.getAbsolutePath());
+        }
 
         File exe = new File(mBuildToolInfo.getPath(BuildToolInfo.PathId.BCC_COMPAT));
 
@@ -346,7 +344,9 @@ public class RenderScriptProcessor {
 
         // make sure the dest folder exist
         File abiFolder = new File(mLibOutputDir, abi.mDevice);
-        abiFolder.mkdirs();
+        if (!abiFolder.mkdirs()) {
+            throw new IOException("Unable to create dir " + abiFolder.getAbsolutePath());
+        }
 
         File intermediatesFolder = new File(mRsLib, "intermediates");
         File intermediatesAbiFolder = new File(intermediatesFolder, abi.mDevice);
@@ -386,5 +386,20 @@ public class RenderScriptProcessor {
         File exe = new File(mBuildToolInfo.getPath(abi.mLinker));
 
         launcher.launch(exe, args, env);
+    }
+
+    protected static void deleteFolder(File folder) {
+        File[] files = folder.listFiles();
+        if (files != null && files.length > 0) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteFolder(file);
+                } else {
+                    file.delete();
+                }
+            }
+        }
+
+        folder.delete();
     }
 }
