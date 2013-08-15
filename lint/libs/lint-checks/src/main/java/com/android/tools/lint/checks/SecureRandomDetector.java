@@ -66,7 +66,7 @@ public class SecureRandomDetector extends Detector implements ClassScanner {
             .addMoreInfo("http://developer.android.com/reference/java/security/SecureRandom.html");
 
     private static final String SET_SEED = "setSeed"; //$NON-NLS-1$
-    private static final String OWNER_SECURE_RANDOM = "java/security/SecureRandom"; //$NON-NLS-1$
+    static final String OWNER_SECURE_RANDOM = "java/security/SecureRandom"; //$NON-NLS-1$
     private static final String OWNER_RANDOM = "java/util/Random"; //$NON-NLS-1$
     private static final String VM_SECURE_RANDOM = 'L' + OWNER_SECURE_RANDOM + ';';
     /** Method description for a method that takes a long argument (no return type specified */
