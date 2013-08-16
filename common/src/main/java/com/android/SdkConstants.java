@@ -47,6 +47,12 @@ public final class SdkConstants {
      */
     public static final int CURRENT_PLATFORM = currentPlatform();
 
+    /** Environment variable that specifies the path of an Android SDK. */
+    public static final String ANDROID_HOME_ENV = "ANDROID_HOME";
+
+    /** Property in local.properties file that specifies the path of the Android SDK.  */
+    public static final String SDK_DIR_PROPERTY = "sdk.dir";
+
     /**
      * Charset for the ini file handled by the SDK.
      */
