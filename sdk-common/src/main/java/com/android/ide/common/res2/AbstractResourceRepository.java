@@ -23,7 +23,6 @@ import static com.android.SdkConstants.RESOURCE_CLZ_ATTR;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
@@ -102,7 +101,6 @@ public abstract class AbstractResourceRepository {
     }
 
     @NonNull
-    @VisibleForTesting
     public Map<ResourceType, ListMultimap<String, ResourceItem>> getItems() {
         return getMap();
     }
@@ -370,7 +368,6 @@ public abstract class AbstractResourceRepository {
 
     private void addItem(@NonNull ResourceItem item) {
         synchronized (ITEM_MAP_LOCK) {
-            Map<ResourceType, ListMultimap<String, ResourceItem>> itemMap = getMap();
             ListMultimap<String, ResourceItem> map = getMap(item.getType());
             if (!map.containsValue(item)) {
                 map.put(item.getName(), item);
