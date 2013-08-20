@@ -29,6 +29,8 @@ public class MethodInfo {
     private long mInclusiveThreadTimes;
     private long mExclusiveThreadTimes;
 
+    private float mInclusiveThreadPercent;
+
     private String mFullName;
     private String mShortName;
 
@@ -79,5 +81,13 @@ public class MethodInfo {
 
     public void addInclusiveThreadTimes(long time) {
         mInclusiveThreadTimes += time;
+    }
+
+    public void setInclusiveThreadPercent(float percent) {
+        mInclusiveThreadPercent = percent;
+    }
+
+    public float getInclusiveThreadPercent() {
+        return mInclusiveThreadPercent;
     }
 }

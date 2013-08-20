@@ -129,6 +129,10 @@ public class Call {
         return UnsignedInts.toLong(mExitThreadTime - mEntryThreadTime);
     }
 
+    public long getInclusiveGlobalTime() {
+        return UnsignedInts.toLong(mExitGlobalTime - mEntryGlobalTime);
+    }
+
     public long getExclusiveThreadTime() {
         return getInclusiveThreadTime() - mInclusiveThreadTimeInCallees;
     }
