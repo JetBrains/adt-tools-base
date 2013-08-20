@@ -149,4 +149,28 @@ public class ValueXmlHelperTest extends TestCase {
         assertTrue(isEscaped( "\\\\\\\\y ", 3));
         assertFalse(isEscaped("\\\\\\\\y ", 4));
     }
+
+    public void testRewriteSpaces() throws Exception {
+        // Ensure that \n's in the input are rewritten as spaces, and multiple spaces
+        // collapsed into a single one
+        assertEquals("This is a test",
+                unescapeResourceString("This is\na test", true, true));
+        assertEquals("This is a test",
+                unescapeResourceString("This is\n   a    test\n  ", true, true));
+        assertEquals("This is\na test",
+                unescapeResourceString("\"This is\na test\"", true, true));
+        assertEquals("Multiple words",
+                unescapeResourceString("Multiple    words", true, true));
+        assertEquals("Multiple    words",
+                unescapeResourceString("\"Multiple    words\"", true, true));
+        assertEquals("This is a\n test",
+                unescapeResourceString("This is a\\n test", true, true));
+        assertEquals("This is a\n test",
+                unescapeResourceString("This is\n a\\n test", true, true));
+    }
+
+    public void testHtmlEntities() throws Exception {
+        assertEquals("Entity \u00a9 \u00a9 Copyright",
+                unescapeResourceString("Entity &#169; &#xA9; Copyright", true, true));
+    }
 }

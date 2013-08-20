@@ -40,6 +40,7 @@ public class ValueXmlHelper {
      * @param trim whether surrounding space and quotes should be trimmed
      * @return the string with the escape characters removed and expanded
      */
+    @SuppressWarnings("UnnecessaryContinue")
     @Nullable
     public static String unescapeResourceString(
             @Nullable String s,
@@ -109,6 +110,7 @@ public class ValueXmlHelper {
                     i++;
                 }
             }
+
             // Only trim trailing spaces if we didn't already process a trailing quote:
             if (n == quoteEnd) {
                 while (n > i) {
@@ -128,17 +130,49 @@ public class ValueXmlHelper {
             }
         }
 
-        // If no surrounding whitespace and no escape characters, no need to do any
-        // more work
-        if (i == 0 && n == s.length() && s.indexOf('\\') == -1
-                && (!escapeEntities || s.indexOf('&') == -1)) {
-            return s;
+        // Perform a single pass over the string and see if it contains
+        // (1) spaces that should be converted (e.g. repeated spaces or a newline which
+        // should be converted to a space)
+        // (2) escape characters (\ and &) which will require expansions
+        // If we find neither of these, we can simply return the string
+        boolean rewriteWhitespace = false;
+        if (i == 0) {
+            // See if we need to fold adjacent spaces
+            boolean prevSpace = false;
+            boolean hasEscape = false;
+            for (int curr = i; curr < n; curr++) {
+                char c = s.charAt(curr);
+                if (c == '\\' || c == '&') {
+                    hasEscape = true;
+                }
+                boolean isSpace = Character.isWhitespace(c);
+                if (isSpace && prevSpace) {
+                    // fold adjacent spaces
+                    rewriteWhitespace = true;
+                } else if (c == '\n') {
+                    // rewrite newlines as spaces
+                    rewriteWhitespace = true;
+                }
+                prevSpace = isSpace;
+            }
+
+            if (!trim) {
+                rewriteWhitespace = false;
+            }
+
+            // If no surrounding whitespace and no escape characters, no need to do any
+            // more work
+            if (!rewriteWhitespace && !hasEscape) {
+                return s;
+            }
         }
 
         StringBuilder sb = new StringBuilder(n - i);
+        boolean prevSpace = false;
         for (; i < n; i++) {
             char c = s.charAt(i);
             if (c == '\\' && i < n - 1) {
+                prevSpace = false;
                 char next = s.charAt(i + 1);
                 // Unicode escapes
                 if (next == 'u' && i < n - 5) { // case sensitive
@@ -155,9 +189,11 @@ public class ValueXmlHelper {
                 } else if (next == 'n') {
                     sb.append('\n');
                     i++;
+                    continue;
                 } else if (next == 't') {
                     sb.append('\t');
                     i++;
+                    continue;
                 } else {
                     sb.append(next);
                     i++;
@@ -165,6 +201,7 @@ public class ValueXmlHelper {
                 }
             } else {
                 if (c == '&' && escapeEntities) {
+                    prevSpace = false;
                     if (s.regionMatches(true, i, LT_ENTITY, 0, LT_ENTITY.length())) {
                         sb.append('<');
                         i += LT_ENTITY.length() - 1;
@@ -185,9 +222,41 @@ public class ValueXmlHelper {
                       sb.append('>');
                       i += GT_ENTITY.length() - 1;
                       continue;
+                    } else if (i < n - 2 && s.charAt(i + 1) == '#') {
+                        int end = s.indexOf(';', i + 1);
+                        if (end != -1) {
+                            char first = s.charAt(i + 2);
+                            boolean hex = first == 'x' || first == 'X';
+                            String number = s.substring(i + (hex ? 3 : 2), end);
+                            try {
+                                int unicodeValue = Integer.parseInt(number, hex ? 16 : 10);
+                                sb.append((char) unicodeValue);
+                                i = end;
+                                continue;
+                            } catch (NumberFormatException e) {
+                                // Invalid escape: Just proceed to literally transcribe it
+                                sb.append(c);
+                            }
+                        } else {
+                            // Invalid escape: Just proceed to literally transcribe it
+                            sb.append(c);
+                        }
                     }
                 }
-                sb.append(c);
+
+                if (rewriteWhitespace) {
+                    boolean isSpace = Character.isWhitespace(c);
+                    if (isSpace) {
+                        if (!prevSpace) {
+                            sb.append(' '); // replace newlines etc with a plain space
+                        }
+                    } else {
+                        sb.append(c);
+                    }
+                    prevSpace = isSpace;
+                } else {
+                    sb.append(c);
+                }
             }
         }
         s = sb.toString();
