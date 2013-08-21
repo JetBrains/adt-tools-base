@@ -22,8 +22,9 @@ import com.android.tools.perflib.vmtrace.VmTraceData;
 import com.android.utils.SparseArray;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
-import java.util.concurrent.TimeUnit;
+import java.awt.geom.NoninvertibleTransformException;
 
 import javax.swing.*;
 
@@ -35,6 +36,8 @@ import javax.swing.*;
  */
 public class TraceViewCanvas extends JComponent {
     private static final Color BACKGROUND_COLOR = Color.LIGHT_GRAY;
+
+    private static final int TOOLTIP_OFFSET = 10;
 
     /**
      * Interactor that listens to mouse events, interprets them as zoom/pan events, and provides
@@ -51,10 +54,15 @@ public class TraceViewCanvas extends JComponent {
     /** Combined {@link #mViewPortTransform} * {@link #mScreenTransform}. */
     private AffineTransform mTransform;
 
+    /** Inverse of {@link #mViewPortTransform}. */
+    private AffineTransform mViewPortInverseTransform;
+
     private VmTraceData mTraceData;
 
     private TimeScaleRenderer mTimeScaleRenderer;
     private CallHierarchyRenderer mCallHierarchyRenderer;
+
+    private final Point mTmpPoint = new Point();
 
     public TraceViewCanvas() {
         mScreenTransform = new AffineTransform();
@@ -72,6 +80,8 @@ public class TraceViewCanvas extends JComponent {
                 updateViewPortTransform(transform);
             }
         });
+
+        addMouseMotionListener(ToolTipManager.sharedInstance());
     }
 
     public void setTrace(@NonNull VmTraceData traceData, @NonNull String threadName) {
@@ -168,15 +178,34 @@ public class TraceViewCanvas extends JComponent {
         updateTransform();
     }
 
+    @Override
+    public String getToolTipText(MouseEvent event) {
+        mTmpPoint.setLocation(event.getPoint());
+        mViewPortInverseTransform.transform(mTmpPoint, mTmpPoint);
+        return mCallHierarchyRenderer.getToolTipFor(mTmpPoint.x, mTmpPoint.y);
+    }
+
+    @Override
+    public Point getToolTipLocation(MouseEvent event) {
+        return new Point(event.getX() + TOOLTIP_OFFSET, event.getY() + TOOLTIP_OFFSET);
+    }
+
     private void updateViewPortTransform(AffineTransform tx) {
         mViewPortTransform = new AffineTransform(tx);
+
+        try {
+            mViewPortInverseTransform = mViewPortTransform.createInverse();
+        } catch (NoninvertibleTransformException e) {
+            // This can't occur since we just do scale or pan, both of which are invertible
+            mViewPortInverseTransform = new AffineTransform();
+        }
+
         updateTransform();
     }
 
     private void updateTransform() {
         mTransform = new AffineTransform(mScreenTransform);
         mTransform.concatenate(mViewPortTransform);
-
         repaint();
     }
 }
