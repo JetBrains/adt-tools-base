@@ -56,8 +56,10 @@ import com.google.common.annotations.Beta;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 
@@ -129,7 +131,7 @@ public class LintDriver {
 
     private final LintClient mClient;
     private LintRequest mRequest;
-    private final IssueRegistry mRegistry;
+    private IssueRegistry mRegistry;
     private volatile boolean mCanceled;
     private EnumSet<Scope> mScope;
     private List<? extends Detector> mApplicableDetectors;
@@ -389,6 +391,8 @@ public class LintDriver {
             return;
         }
 
+        registerCustomRules(projects);
+
         if (mScope == null) {
             // Infer the scope
             mScope = EnumSet.noneOf(Scope.class);
@@ -444,6 +448,34 @@ public class LintDriver {
         }
 
         fireEvent(mCanceled ? EventType.CANCELED : EventType.COMPLETED, null);
+    }
+
+    private void registerCustomRules(Collection<Project> projects) {
+        // Look at the various projects, and if any of them provide a custom
+        // lint jar, "add" them (this will replace the issue registry with
+        // a CompositeIssueRegistry containing the original issue registry
+        // plus JarFileIssueRegistry instances for each lint jar
+        Set<File> jarFiles = Sets.newHashSet();
+        for (Project project : projects) {
+            jarFiles.addAll(mClient.findRuleJars(project));
+        }
+
+        jarFiles.addAll(mClient.findGlobalRuleJars());
+
+        if (!jarFiles.isEmpty()) {
+            List<IssueRegistry> registries = Lists.newArrayListWithExpectedSize(jarFiles.size());
+            registries.add(mRegistry);
+            for (File jarFile : jarFiles) {
+                try {
+                    registries.add(JarFileIssueRegistry.get(jarFile));
+                } catch (Throwable e) {
+                    mClient.log(e, "Could not load custom rule jar file %1$s", jarFile);
+                }
+            }
+            if (registries.size() > 1) { // the first item is mRegistry itself
+                mRegistry = new CompositeIssueRegistry(registries);
+            }
+        }
     }
 
     private void runExtraPhases(Project project) {
@@ -1972,6 +2004,17 @@ public class LintDriver {
         @Override
         protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
             return mDelegate.createProject(dir, referenceDir);
+        }
+
+        @Override
+        public List<File> findGlobalRuleJars() {
+            return mDelegate.findGlobalRuleJars();
+        }
+
+        @NonNull
+        @Override
+        public List<File> findRuleJars(@NonNull Project project) {
+            return mDelegate.findRuleJars(project);
         }
     }
 
