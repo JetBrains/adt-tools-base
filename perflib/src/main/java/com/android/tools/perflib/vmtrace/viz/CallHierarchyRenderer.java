@@ -20,11 +20,14 @@ import com.android.annotations.NonNull;
 import com.android.tools.perflib.vmtrace.Call;
 import com.android.tools.perflib.vmtrace.MethodInfo;
 import com.android.tools.perflib.vmtrace.VmTraceData;
+import com.android.utils.HtmlBuilder;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.text.DecimalFormat;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 /** Renders the call hierarchy rooted at a given call that is part of the trace. */
 public class CallHierarchyRenderer {
@@ -122,11 +125,65 @@ public class CallHierarchyRenderer {
         layoutBounds.height = PER_LEVEL_HEIGHT_PX - 2 * PADDING;
     }
 
+    /** Get the tooltip corresponding to given location (in item coordinates). */
+    public String getToolTipFor(int x, int y) {
+        Iterator<Call> it = mTopCall.getCallHierarchyIterator();
+        while (it.hasNext()) {
+            Call c = it.next();
+
+            fillLayoutBounds(c, mLayout);
+            if (mLayout.contains(x, y)) {
+                return formatToolTip(c);
+            }
+        }
+        return null;
+    }
+
+    private static final DecimalFormat PERCENTAGE_FORMATTER = new DecimalFormat("#.##");
+
+    private String formatToolTip(Call c) {
+        HtmlBuilder htmlBuilder = new HtmlBuilder();
+        htmlBuilder.openHtmlBody();
+
+        htmlBuilder.addHeading(getName(c), "black");
+
+        long span = c.getExitGlobalTime() - c.getEntryGlobalTime();
+        TimeUnit unit = mTraceData.getTimeUnits();
+        String entryGlobal = TimeUtils.makeHumanReadable(c.getEntryGlobalTime(), span, unit);
+        String entryThread = TimeUtils.makeHumanReadable(c.getEntryThreadTime(), span, unit);
+        String exitGlobal = TimeUtils.makeHumanReadable(c.getExitGlobalTime(), span, unit);
+        String exitThread = TimeUtils.makeHumanReadable(c.getExitThreadTime(), span, unit);
+        String durationGlobal = TimeUtils.makeHumanReadable(
+                c.getExitGlobalTime() - c.getEntryGlobalTime(), span, unit);
+        String durationThread = TimeUtils.makeHumanReadable(
+                c.getExitThreadTime() - c.getEntryThreadTime(), span, unit);
+
+        htmlBuilder.beginTable();
+        htmlBuilder.addTableRow(true, "", "Wall Time", "Thread Time");
+        htmlBuilder.addTableRow("Entry", entryGlobal, entryThread);
+        htmlBuilder.addTableRow("Exit", exitGlobal, exitThread);
+        htmlBuilder.addTableRow("Duration", durationGlobal, durationThread);
+        htmlBuilder.endTable();
+
+        MethodInfo info = getMethodInfo(c);
+        htmlBuilder.add("Inclusive Time (across all invocations): ");
+        htmlBuilder.beginBold();
+        htmlBuilder.add(PERCENTAGE_FORMATTER.format(info.getInclusiveThreadPercent()));
+        htmlBuilder.add("%");
+        htmlBuilder.endBold();
+
+        htmlBuilder.closeHtmlBody();
+        return htmlBuilder.getHtml();
+    }
+
     @NonNull
     private String getName(@NonNull Call c) {
+        return getMethodInfo(c).getShortName();
+    }
+
+    private MethodInfo getMethodInfo(@NonNull Call c) {
         long methodId = c.getMethodId();
-        MethodInfo info = mTraceData.getMethod(methodId);
-        return info.getShortName();
+        return mTraceData.getMethod(methodId);
     }
 
     /**

@@ -19,7 +19,6 @@ package com.android.tools.perflib.vmtrace.viz;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
-import java.text.DecimalFormat;
 import java.util.concurrent.TimeUnit;
 
 public class TimeScaleRenderer {
@@ -85,40 +84,17 @@ public class TimeScaleRenderer {
         g2d.drawLine(0, TIMELINE_Y_OFFSET, screenWidth, TIMELINE_Y_OFFSET);
 
         // draw the time at the leftmost end of the screen corresponding to (0,y)
-        String time = humanizeTime(start, end - start, mTimeUnits);
+        String time = TimeUtils.makeHumanReadable(start, end - start, mTimeUnits);
         g2d.drawString(time,
                 0 + TIMELINE_UNIT_HORIZONTAL_PADDING,
                 TIMELINE_Y_OFFSET - TIMELINE_UNIT_VERTICAL_PADDING);
 
         // draw the time at the leftmost end of the screen corresponding to (screen width,y)
-        time = humanizeTime(end, end - start, mTimeUnits);
+        time = TimeUtils.makeHumanReadable(end, end - start, mTimeUnits);
         g2d.drawString(time,
                 screenWidth - g2d.getFontMetrics().stringWidth(time)
                         - TIMELINE_UNIT_HORIZONTAL_PADDING,
                 TIMELINE_Y_OFFSET - TIMELINE_UNIT_VERTICAL_PADDING);
-    }
-
-    private String humanizeTime(long time, long span, TimeUnit timeUnits) {
-        String units;
-        double scale;
-        if (timeUnits.toSeconds(span) > 0) {
-            units = "s";
-            scale = 1e-9;
-        } else if (timeUnits.toMillis(span) > 0) {
-            units = "ms";
-            scale = 1e-6;
-        } else {
-            units = "us";
-            scale = 1e-3;
-        }
-
-        return String.format("%1$s %2$s", formatTime(timeUnits.toNanos(time), scale), units);
-    }
-
-    private static final DecimalFormat TIME_FORMATTER = new DecimalFormat("#.###");
-
-    private String formatTime(long nsecs, double scale) {
-        return TIME_FORMATTER.format(nsecs * scale);
     }
 
     public int getLayoutHeight() {
