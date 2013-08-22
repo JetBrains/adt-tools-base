@@ -19,6 +19,7 @@ package com.android.tools.lint;
 import com.android.tools.lint.checks.AbstractCheckTest;
 import com.android.tools.lint.checks.AccessibilityDetector;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -409,5 +410,34 @@ public class MainTest extends AbstractCheckTest {
                 LintCliClient.getCleanPath(new File(sep + "c:")));
         assertEquals(sep + "c:" + sep + "foo",
                 LintCliClient.getCleanPath(new File(sep + "c:" + sep + "foo")));
+    }
+
+    public void testGradle() throws Exception {
+        File project = getProjectDir(null,
+                "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                "multiproject/library.properties=>build.gradle", // dummy; only name counts
+                "apicheck/ApiCallTest.class.data=>bin/classes/foo/bar/ApiCallTest.class"
+        );
+        checkDriver(""
+                + "\n"
+                + "Scanning MainTest_testGradle: \n"
+                + "MainTest_testGradle: Error: \"MainTest_testGradle\" is a Gradle project. "
+                + "To correctly analyze Gradle projects, you should run \"gradlew :lint\" "
+                + "instead. [LintError]\n"
+                + "1 errors, 0 warnings\n",
+
+                "",
+
+                // Args
+                new String[] {
+                        "--check",
+                        "HardcodedText",
+                        project.getPath()
+                });
+    }
+
+    @Override
+    protected boolean isEnabled(Issue issue) {
+        return true;
     }
 }
