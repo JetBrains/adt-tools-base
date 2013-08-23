@@ -21,12 +21,16 @@ import static com.android.SdkConstants.VALUE_NONE;
 import static com.android.tools.lint.detector.api.Issue.OutputFormat.TEXT;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
+import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
 import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
 
@@ -121,7 +125,29 @@ public class Main {
         }
 
         IssueRegistry registry = new BuiltinIssueRegistry();
-        LintCliClient client = new LintCliClient(mFlags);
+
+        // When running lint from the command line, warn if the project is a Gradle project
+        // since those projects may have custom project configuration that the command line
+        // runner won't know about.
+        LintCliClient client = new LintCliClient(mFlags) {
+            @NonNull
+            @Override
+            protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                Project project = super.createProject(dir, referenceDir);
+                if (project.isGradleProject()) {
+                    @SuppressWarnings("SpellCheckingInspection")
+                    String message = String.format("\"%1$s\" is a Gradle project. To correctly "
+                            + "analyze Gradle projects, you should run \"gradlew :lint\" instead.",
+                            project.getName());
+                    Location location = Location.create(project.getDir());
+                    report(new Context(mDriver, project, project, project.getDir()),
+                            IssueRegistry.LINT_ERROR,
+                            project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
+                            location, message, null);
+                }
+                return project;
+            }
+        };
 
         // Mapping from file path prefix to URL. Applies only to HTML reports
         String urlMap = null;
