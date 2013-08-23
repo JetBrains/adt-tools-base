@@ -22,17 +22,16 @@ import com.android.tools.perflib.vmtrace.VmTraceData;
 import com.android.utils.SparseArray;
 
 import java.awt.*;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 
 import javax.swing.*;
 
 /**
- * A canvas that displays the call hierarchy for a single thread.
- * The trace and the the thread to be displayed are specified using
- * {@link #setTrace(com.android.tools.perflib.vmtrace.VmTraceData, String)} and
- * {@link #displayThread(String)} methods.
+ * A canvas that displays the call hierarchy for a single thread. The trace and the the thread to be
+ * displayed are specified using {@link #setTrace(com.android.tools.perflib.vmtrace.VmTraceData,
+ * String)} and {@link #displayThread(String)} methods.
  */
 public class TraceViewCanvas extends JComponent {
     private static final Color BACKGROUND_COLOR = Color.LIGHT_GRAY;
@@ -40,24 +39,19 @@ public class TraceViewCanvas extends JComponent {
     private static final int TOOLTIP_OFFSET = 10;
 
     /**
-     * Interactor that listens to mouse events, interprets them as zoom/pan events, and provides
-     * the resultant viewport transform.
-     * */
+     * Interactor that listens to mouse events, interprets them as zoom/pan events, and provides the
+     * resultant viewport transform.
+     */
     private final ZoomPanInteractor mZoomPanInteractor;
 
     /** The viewport transform takes into account the current zoom and translation/pan values. */
     private AffineTransform mViewPortTransform;
 
-    /** The screen transform accounts for the location of the canvas within the JFrame. */
-    private AffineTransform mScreenTransform;
-
-    /** Combined {@link #mViewPortTransform} * {@link #mScreenTransform}. */
-    private AffineTransform mTransform;
-
     /** Inverse of {@link #mViewPortTransform}. */
     private AffineTransform mViewPortInverseTransform;
 
     private VmTraceData mTraceData;
+    private Call mTopLevelCall;
 
     private TimeScaleRenderer mTimeScaleRenderer;
     private CallHierarchyRenderer mCallHierarchyRenderer;
@@ -65,9 +59,8 @@ public class TraceViewCanvas extends JComponent {
     private final Point mTmpPoint = new Point();
 
     public TraceViewCanvas() {
-        mScreenTransform = new AffineTransform();
         mViewPortTransform = new AffineTransform();
-        mTransform = new AffineTransform();
+        mViewPortInverseTransform = new AffineTransform();
 
         mZoomPanInteractor = new ZoomPanInteractor();
         addMouseListener(mZoomPanInteractor);
@@ -82,6 +75,20 @@ public class TraceViewCanvas extends JComponent {
         });
 
         addMouseMotionListener(ToolTipManager.sharedInstance());
+
+        // Listen for the first hierarchy bounds change so as to get the initial width.
+        // Zoom fit if possible once we know the width.
+        addHierarchyBoundsListener(new HierarchyBoundsAdapter() {
+            @Override
+            public void ancestorMoved(HierarchyEvent e) {
+            }
+
+            @Override
+            public void ancestorResized(HierarchyEvent e) {
+                removeHierarchyBoundsListener(this);
+                zoomFit();
+            }
+        });
     }
 
     public void setTrace(@NonNull VmTraceData traceData, @NonNull String threadName) {
@@ -97,21 +104,36 @@ public class TraceViewCanvas extends JComponent {
         if (threadId < 0) {
             return;
         }
-        Call topLevelCall = mTraceData.getTopLevelCall(threadId);
-        if (topLevelCall == null) {
+        mTopLevelCall = mTraceData.getTopLevelCall(threadId);
+        if (mTopLevelCall == null) {
             return;
         }
 
-        long start = topLevelCall.getEntryGlobalTime();
-        long end = topLevelCall.getExitGlobalTime();
-
-        mTimeScaleRenderer = new TimeScaleRenderer(start, mTraceData.getTimeUnits());
+        mTimeScaleRenderer = new TimeScaleRenderer(mTopLevelCall.getEntryGlobalTime(),
+                mTraceData.getTimeUnits());
         int yOffset = mTimeScaleRenderer.getLayoutHeight();
-        mCallHierarchyRenderer = new CallHierarchyRenderer(mTraceData, topLevelCall, yOffset);
+        mCallHierarchyRenderer = new CallHierarchyRenderer(mTraceData, mTopLevelCall, yOffset);
+
+        zoomFit();
+    }
+
+    private void zoomFit() {
+        if (mTopLevelCall == null) {
+            return;
+        }
+
+        long start = mTopLevelCall.getEntryGlobalTime();
+        long end = mTopLevelCall.getExitGlobalTime();
 
         // Scale so that the full trace occupies 90% of the screen width.
         double width = getWidth();
-        double sx = (width - width/10.0f) / (end - start);
+        double sx = width * .9f / (end - start);
+
+        // Guard against trying to zoom when the component doesn't know its width yet. Width is
+        // usually 0 in such cases, but we just make it slightly general and check for width < 10.
+        if (width < 10) {
+            sx = Math.max(sx, 0.2);
+        }
 
         // Initialize display so that the full trace is visible and takes up most of the view.
         mZoomPanInteractor.setToScaleX(sx, 1); // make everything visible
@@ -131,11 +153,6 @@ public class TraceViewCanvas extends JComponent {
     }
 
     @Override
-    public Dimension getPreferredSize() {
-        return new Dimension(1000, 800);
-    }
-
-    @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
         setRenderingHints(g2d);
@@ -148,8 +165,15 @@ public class TraceViewCanvas extends JComponent {
             return;
         }
 
+        // Obtain the current screen transformation for this component. This transformation
+        // could be changed without any events being generated (e.g. screen transformation is
+        // changed when a tooltip is displayed inside a container
+        AffineTransform screenTransform = g2d.getTransform();
+
         // set the viewport * screen space transform
-        g2d.setTransform(mTransform);
+        AffineTransform transform = new AffineTransform(screenTransform);
+        transform.concatenate(mViewPortTransform);
+        g2d.setTransform(transform);
 
         // paint stack layout view
         if (mCallHierarchyRenderer != null) {
@@ -158,7 +182,7 @@ public class TraceViewCanvas extends JComponent {
 
         // paint timeline at top
         if (mTimeScaleRenderer != null) {
-            mTimeScaleRenderer.paint(g2d, mScreenTransform, mViewPortTransform, getWidth());
+            mTimeScaleRenderer.paint(g2d, screenTransform, mViewPortTransform, getWidth());
         }
     }
 
@@ -169,13 +193,6 @@ public class TraceViewCanvas extends JComponent {
         g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
                 RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-    }
-
-    @Override
-    public void setBounds(int x, int y, int width, int height) {
-        super.setBounds(x, y, width, height);
-        mScreenTransform.setToTranslation(x, y);
-        updateTransform();
     }
 
     @Override
@@ -200,12 +217,6 @@ public class TraceViewCanvas extends JComponent {
             mViewPortInverseTransform = new AffineTransform();
         }
 
-        updateTransform();
-    }
-
-    private void updateTransform() {
-        mTransform = new AffineTransform(mScreenTransform);
-        mTransform.concatenate(mViewPortTransform);
         repaint();
     }
 }
