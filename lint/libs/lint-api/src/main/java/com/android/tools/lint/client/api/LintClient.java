@@ -17,15 +17,19 @@
 package com.android.tools.lint.client.api;
 
 import static com.android.SdkConstants.CLASS_FOLDER;
+import static com.android.SdkConstants.DOT_AAR;
 import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.GEN_FOLDER;
 import static com.android.SdkConstants.LIBS_FOLDER;
 import static com.android.SdkConstants.RES_FOLDER;
 import static com.android.SdkConstants.SRC_FOLDER;
+import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.sdk.SdkVersionInfo;
+import com.android.prefs.AndroidLocation;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
 import com.android.tools.lint.detector.api.Context;
@@ -634,7 +638,11 @@ public abstract class LintClient {
             if (sdkHome != null) {
                 StdLogger log = new StdLogger(Level.WARNING);
                 SdkManager manager = SdkManager.createManager(sdkHome.getPath(), log);
-                mTargets = manager.getTargets();
+                if (manager != null) {
+                    mTargets = manager.getTargets();
+                } else {
+                    mTargets = new IAndroidTarget[0];
+                }
             } else {
                 mTargets = new IAndroidTarget[0];
             }
@@ -697,11 +705,87 @@ public abstract class LintClient {
      * @param superClassName the name of the super class to compare to
      * @return true if the class of the given name extends the given super class
      */
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     @Nullable
     public Boolean isSubclassOf(
             @NonNull Project project,
             @NonNull String name, @NonNull
             String superClassName) {
         return null;
+    }
+
+    /**
+     * Finds any custom lint rule jars that should be included for analysis,
+     * regardless of project.
+     * <p>
+     * The default implementation locates custom lint jars in ~/.android/lint/ and
+     * in $ANDROID_LINT_JARS
+     *
+     * @return a list of rule jars (possibly empty).
+     */
+    @SuppressWarnings("MethodMayBeStatic") // Intentionally instance method so it can be overridden
+    @NonNull
+    public List<File> findGlobalRuleJars() {
+        // Look for additional detectors registered by the user, via
+        // (1) an environment variable (useful for build servers etc), and
+        // (2) via jar files in the .android/lint directory
+        List<File> files = null;
+        try {
+            String androidHome = AndroidLocation.getFolder();
+            File lint = new File(androidHome + File.separator + "lint"); //$NON-NLS-1$
+            if (lint.exists()) {
+                File[] list = lint.listFiles();
+                if (list != null) {
+                    for (File jarFile : list) {
+                        if (endsWith(jarFile.getName(), DOT_JAR)) {
+                            if (files == null) {
+                                files = new ArrayList<File>();
+                            }
+                            files.add(jarFile);
+                        }
+                    }
+                }
+            }
+        } catch (AndroidLocation.AndroidLocationException e) {
+            // Ignore -- no android dir, so no rules to load.
+        }
+
+        String lintClassPath = System.getenv("ANDROID_LINT_JARS"); //$NON-NLS-1$
+        if (lintClassPath != null && !lintClassPath.isEmpty()) {
+            String[] paths = lintClassPath.split(File.pathSeparator);
+            for (String path : paths) {
+                File jarFile = new File(path);
+                if (jarFile.exists()) {
+                    if (files == null) {
+                        files = new ArrayList<File>();
+                    } else if (files.contains(jarFile)) {
+                        continue;
+                    }
+                    files.add(jarFile);
+                }
+            }
+        }
+
+        return files;
+    }
+
+    /**
+     * Finds any custom lint rule jars that should be included for analysis
+     * in the given project
+     *
+     * @param project the project to look up rule jars from
+     * @return a list of rule jars (possibly empty).
+     */
+    @SuppressWarnings("MethodMayBeStatic") // Intentionally instance method so it can be overridden
+    @NonNull
+    public List<File> findRuleJars(@NonNull Project project) {
+        if (project.getDir().getPath().endsWith(DOT_AAR)) {
+            File lintJar = new File(project.getDir(), "lint.jar"); //$NON-NLS-1$
+            if (lintJar.exists()) {
+                return Collections.singletonList(lintJar);
+            }
+        }
+
+        return Collections.emptyList();
     }
 }
