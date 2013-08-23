@@ -766,7 +766,7 @@ public abstract class LintClient {
             }
         }
 
-        return files;
+        return files != null ? files : Collections.<File>emptyList();
     }
 
     /**
