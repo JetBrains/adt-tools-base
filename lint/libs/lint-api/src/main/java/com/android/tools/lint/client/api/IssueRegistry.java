@@ -37,7 +37,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** Registry which provides a list of checks to be performed on an Android project
+/**
+ * Registry which provides a list of checks to be performed on an Android project
  * <p>
  * <b>NOTE: This is not a public or final API; if you rely on this be prepared
  * to adjust your code for the next tools release.</b>

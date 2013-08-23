@@ -94,6 +94,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
     }
 
     private class CustomIssueRegistry extends IssueRegistry {
+        @NonNull
         @Override
         public List<Issue> getIssues() {
             return AbstractCheckTest.this.getIssues();
@@ -185,7 +186,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         return projectDir;
     }
 
-    private void addManifestFile(File projectDir) throws IOException {
+    private static void addManifestFile(File projectDir) throws IOException {
         // Ensure that there is at least a manifest file there to make it a valid project
         // as far as Lint is concerned:
         if (!new File(projectDir, "AndroidManifest.xml").exists()) {
@@ -272,7 +273,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         }
 
         @Override
-        public String getSuperClass(Project project, String name) {
+        public String getSuperClass(@NonNull Project project, @NonNull String name) {
             String superClass = AbstractCheckTest.this.getSuperClass(project, name);
             if (superClass != null) {
                 return superClass;
@@ -379,7 +380,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         }
 
         @Override
-        public File findResource(String relativePath) {
+        public File findResource(@NonNull String relativePath) {
             if (relativePath.equals("platform-tools/api/api-versions.xml")) {
                 // Look in the current Git repository and try to find it there
                 File rootDir = getRootDir();
@@ -419,6 +420,13 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             }
 
             return super.findResource(relativePath);
+        }
+
+        @NonNull
+        @Override
+        public List<File> findGlobalRuleJars() {
+            // Don't pick up random custom rules in ~/.android/lint when running unit tests
+            return Collections.emptyList();
         }
     }
 
