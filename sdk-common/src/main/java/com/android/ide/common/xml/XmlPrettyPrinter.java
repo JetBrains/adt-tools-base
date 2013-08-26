@@ -47,7 +47,6 @@ import static com.android.utils.XmlUtils.XML_PROLOG;
  * Visitor which walks over the subtree of the DOM to be formatted and pretty prints
  * the DOM into the given {@link StringBuilder}
  */
-@SuppressWarnings("restriction")
 public class XmlPrettyPrinter {
 
     /** The style to print the XML in */
@@ -62,6 +61,7 @@ public class XmlPrettyPrinter {
     /** Whether the visitor is currently in range */
     private boolean mInRange;
     /** Output builder */
+    @SuppressWarnings("StringBufferField")
     private StringBuilder mOut;
     /** String to insert for a single indentation level */
     private String mIndentString;
@@ -316,7 +316,7 @@ public class XmlPrettyPrinter {
             }
 
             case Node.CDATA_SECTION_NODE:
-                printCharacterData(depth, node);
+                printCharacterData(node);
                 break;
 
             case Node.PROCESSING_INSTRUCTION_NODE:
@@ -361,6 +361,7 @@ public class XmlPrettyPrinter {
     }
 
     @Nullable
+    @SuppressWarnings("MethodMayBeStatic") // Intentionally instance method so it can be overridden
     protected String getSource(@NonNull Node node) {
         return null;
     }
@@ -373,7 +374,7 @@ public class XmlPrettyPrinter {
         }
     }
 
-    private void printCharacterData(int depth, Node node) {
+    private void printCharacterData(Node node) {
         String nodeValue = node.getNodeValue();
         boolean separateLine = nodeValue.indexOf('\n') != -1;
         if (separateLine && !endsWithLineSeparator()) {
@@ -404,7 +405,7 @@ public class XmlPrettyPrinter {
         // Most text nodes are just whitespace for formatting (which we're replacing)
         // so look for actual text content and extract that part out
         String trimmed = text.trim();
-        if (trimmed.length() > 0) {
+        if (!trimmed.isEmpty()) {
             // TODO: Reformat the contents if it is too wide?
 
             // Note that we append the actual text content, NOT the trimmed content,
@@ -436,7 +437,10 @@ public class XmlPrettyPrinter {
                 if (firstSuffixNewline == -1) {
                     firstSuffixNewline = text.length();
                 }
-                text = text.substring(lastPrefixNewline + 1, firstSuffixNewline);
+                int stripFrom = lastPrefixNewline + 1;
+                if (firstSuffixNewline >= stripFrom) {
+                    text = text.substring(stripFrom, firstSuffixNewline);
+                }
             }
 
             if (escape) {
@@ -521,7 +525,7 @@ public class XmlPrettyPrinter {
                 }
                 if (newLines >= 2) {
                     mOut.append(mLineSeparator);
-                } else if (text.trim().length() == 0 && curr.getPreviousSibling() == null) {
+                } else if (text.trim().isEmpty() && curr.getPreviousSibling() == null) {
                     // Comment before first child in node
                     mOut.append(mLineSeparator);
                 }
@@ -774,7 +778,7 @@ public class XmlPrettyPrinter {
         if (attributeCount > 0) {
             // Sort the attributes
             List<Attr> attributeList = new ArrayList<Attr>();
-            for (int i = 0, n = attributeCount; i < n; i++) {
+            for (int i = 0; i < attributeCount; i++) {
                 attributeList.add((Attr) attributes.item(i));
             }
             Comparator<Attr> comparator = mPrefs.getAttributeComparator();
@@ -898,7 +902,7 @@ public class XmlPrettyPrinter {
                 if (curr == null
                         || curr.getNodeType() == Node.ELEMENT_NODE
                         || (curr.getNodeType() == Node.TEXT_NODE
-                        && curr.getNodeValue().trim().length() == 0
+                        && curr.getNodeValue().trim().isEmpty()
                         && (curr.getPreviousSibling() == null
                         || curr.getPreviousSibling().getNodeType()
                         == Node.ELEMENT_NODE))) {
@@ -918,7 +922,7 @@ public class XmlPrettyPrinter {
                     break;
                 } else if (nodeType == Node.TEXT_NODE) {
                     String text = curr.getNodeValue();
-                    if (text.trim().length() > 0) {
+                    if (!text.trim().isEmpty()) {
                         break;
                     }
                     // If there is just whitespace, continue looking for a previous sibling
@@ -1086,6 +1090,7 @@ public class XmlPrettyPrinter {
      * @param element the element to test
      * @return true if this element should be an empty tag
      */
+    @SuppressWarnings("MethodMayBeStatic") // Intentionally instance method so it can be overridden
     protected boolean isEmptyTag(Element element) {
         if (element.getFirstChild() != null) {
             return false;
