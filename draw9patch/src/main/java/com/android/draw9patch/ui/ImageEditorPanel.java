@@ -375,4 +375,10 @@ public class ImageEditorPanel extends JPanel {
     RenderedImage getImage() {
         return image;
     }
+
+    public void dispose() {
+        if (viewer != null) {
+            viewer.dispose();
+        }
+    }
 }
