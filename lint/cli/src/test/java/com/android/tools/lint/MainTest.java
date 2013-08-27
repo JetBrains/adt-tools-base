@@ -443,8 +443,25 @@ public class MainTest extends AbstractCheckTest {
         );
 
         File outputDir = new File(project, "build");
+        outputDir.mkdirs();
+
+        checkDriver(
+                "\n"
+                        + "Scanning MainTest_testValidateOutput: .\n"
+                        + "Scanning MainTest_testValidateOutput (Phase 2): \n", // Expected output
+
+                "",
+
+                // Args
+                new String[]{
+                        "--text",
+                        new File(outputDir, "foo2.text").getPath(),
+                        project.getPath(),
+                });
+
         //noinspection ResultOfMethodCallIgnored
-        outputDir.setWritable(false);
+        boolean disabledWrite = outputDir.setWritable(false);
+        assertTrue(disabledWrite);
 
         checkDriver(
                 "", // Expected output
