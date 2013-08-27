@@ -20,6 +20,7 @@ import com.android.tools.lint.checks.AbstractCheckTest;
 import com.android.tools.lint.checks.AccessibilityDetector;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
+import com.google.common.io.Files;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -433,6 +434,52 @@ public class MainTest extends AbstractCheckTest {
                         "--check",
                         "HardcodedText",
                         project.getPath()
+                });
+    }
+
+    public void testValidateOutput() throws Exception {
+        File project = getProjectDir(null,
+                "res/layout/accessibility.xml=>myres1/layout/accessibility1.xml"
+        );
+
+        File outputDir = new File(project, "build");
+        //noinspection ResultOfMethodCallIgnored
+        outputDir.setWritable(false);
+
+        checkDriver(
+                "", // Expected output
+
+                "Cannot write XML output file /TESTROOT/build/foo.xml\n", // Expected error
+
+                // Args
+                new String[] {
+                        "--xml",
+                        new File(outputDir, "foo.xml").getPath(),
+                        project.getPath(),
+                });
+
+        checkDriver(
+                "", // Expected output
+
+                "Cannot write HTML output file /TESTROOT/build/foo.html\n", // Expected error
+
+                // Args
+                new String[] {
+                        "--html",
+                        new File(outputDir, "foo.html").getPath(),
+                        project.getPath(),
+                });
+
+        checkDriver(
+                "", // Expected output
+
+                "Cannot write text output file /TESTROOT/build/foo.text\n", // Expected error
+
+                // Args
+                new String[] {
+                        "--text",
+                        new File(outputDir, "foo.text").getPath(),
+                        project.getPath(),
                 });
     }
 
