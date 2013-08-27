@@ -16,6 +16,7 @@
       <entry name="?*.ftl" />
       <entry name="?*.xsd" />
       <entry name="?*.css" />
+      <entry name="?*.trace" />
     </wildcardResourcePatterns>
     <annotationProcessing>
       <profile default="true" name="Default" enabled="false">
