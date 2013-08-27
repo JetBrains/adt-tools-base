@@ -197,6 +197,10 @@ public class TraceViewCanvas extends JComponent {
 
     @Override
     public String getToolTipText(MouseEvent event) {
+        if (mTraceData == null || mCallHierarchyRenderer == null) {
+            return null;
+        }
+
         mTmpPoint.setLocation(event.getPoint());
         mViewPortInverseTransform.transform(mTmpPoint, mTmpPoint);
         return mCallHierarchyRenderer.getToolTipFor(mTmpPoint.x, mTmpPoint.y);
