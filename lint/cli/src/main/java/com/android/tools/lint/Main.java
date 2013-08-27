@@ -321,6 +321,10 @@ public class Main {
                     System.exit(ERRNO_INVALID_ARGS);
                 }
                 File output = getOutArgumentPath(args[++index]);
+                // Get an absolute path such that we can ask its parent directory for
+                // write permission etc.
+                output = output.getAbsoluteFile();
+
                 if (output.exists()) {
                     boolean delete = output.delete();
                     if (!delete) {
@@ -328,7 +332,7 @@ public class Main {
                         System.exit(ERRNO_EXISTS);
                     }
                 }
-                if (output.canWrite()) {
+                if (output.getParentFile() != null && !output.getParentFile().canWrite()) {
                     System.err.println("Cannot write XML output file " + output);
                     System.exit(ERRNO_EXISTS);
                 }
@@ -352,6 +356,11 @@ public class Main {
                     closeWriter = false;
                 } else {
                     File output = getOutArgumentPath(outputName);
+
+                    // Get an absolute path such that we can ask its parent directory for
+                    // write permission etc.
+                    output = output.getAbsoluteFile();
+
                     if (output.exists()) {
                         boolean delete = output.delete();
                         if (!delete) {
@@ -359,8 +368,8 @@ public class Main {
                             System.exit(ERRNO_EXISTS);
                         }
                     }
-                    if (output.canWrite()) {
-                        System.err.println("Cannot write XML output file " + output);
+                    if (output.getParentFile() != null && !output.getParentFile().canWrite()) {
+                        System.err.println("Cannot write text output file " + output);
                         System.exit(ERRNO_EXISTS);
                     }
                     try {
