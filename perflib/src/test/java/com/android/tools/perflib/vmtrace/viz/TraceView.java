@@ -43,22 +43,27 @@ public class TraceView {
     private static final String DEFAULT_THREAD_NAME = "main";
 
     public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                createAndShowUI();
+            }
+        });
+    }
+
+    private static void createAndShowUI() {
         final TraceViewPanel traceViewPanel = new TraceViewPanel();
         final VmTraceData traceData = getVmTraceData(TRACE_FILE_NAME);
 
         JFrame frame = new JFrame("TraceViewTestApplication");
         frame.setLayout(new BorderLayout());
-        frame.getContentPane().add(traceViewPanel, BorderLayout.CENTER);
+        frame.add(traceViewPanel, BorderLayout.CENTER);
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         frame.pack();
+        frame.setSize(800, 600);
         frame.setVisible(true);
 
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                traceViewPanel.setTrace(traceData);
-            }
-        });
+        traceViewPanel.setTrace(traceData);
     }
 
     private static VmTraceData getVmTraceData(String tracePath) {
@@ -83,15 +88,23 @@ public class TraceView {
 
     public static class TraceViewPanel extends JPanel {
         private final TraceViewCanvas mTraceViewCanvas;
-        private final JComboBox mThreadCombo;
+        private JComboBox mThreadCombo;
 
         public TraceViewPanel() {
-            super(new GridBagLayout());
+            setLayout(new BorderLayout());
 
-            GridBagConstraints c = new GridBagConstraints();
+            add(createControlPanel(), BorderLayout.NORTH);
 
-            c.gridx = 0;
-            c.gridy = 0;
+            mTraceViewCanvas = new TraceViewCanvas();
+            add(mTraceViewCanvas, BorderLayout.CENTER);
+        }
+
+        private JPanel createControlPanel() {
+            JPanel p = new JPanel();
+
+            JLabel l = new JLabel("Thread: ");
+            p.add(l);
+
             mThreadCombo = new JComboBox();
             mThreadCombo.addActionListener(new ActionListener() {
                 @Override
@@ -100,19 +113,9 @@ public class TraceView {
                     mTraceViewCanvas.displayThread((String)mThreadCombo.getSelectedItem());
                 }
             });
-            add(mThreadCombo, c);
+            p.add(mThreadCombo);
 
-            c.gridx = 1;
-            c.gridy = 0;
-            c.fill = GridBagConstraints.HORIZONTAL;
-            add(new JLabel());
-
-            mTraceViewCanvas = new TraceViewCanvas();
-            c.gridx = 0;
-            c.gridy = 1;
-            c.gridwidth = 2;
-            c.fill = GridBagConstraints.HORIZONTAL;
-            add(mTraceViewCanvas, c);
+            return p;
         }
 
         public void setTrace(VmTraceData traceData) {
