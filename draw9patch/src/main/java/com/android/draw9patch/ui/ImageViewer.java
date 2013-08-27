@@ -89,6 +89,8 @@ public class ImageViewer extends JComponent {
     /** Maximum zoom level for the 9patch image. */
     public static final int MAX_ZOOM = 16;
 
+    private final AWTEventListener mAwtKeyEventListener;
+
     /** Current 9patch zoom level, {@link #MIN_ZOOM} <= zoom <= {@link #MAX_ZOOM} */
     private int zoom = DEFAULT_ZOOM;
     private boolean showPatches;
@@ -277,11 +279,14 @@ public class ImageViewer extends JComponent {
             }
         });
 
-        Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
+        mAwtKeyEventListener = new AWTEventListener() {
+            @Override
             public void eventDispatched(AWTEvent event) {
                 enableEraseMode((KeyEvent) event);
             }
-        }, AWTEvent.KEY_EVENT_MASK);
+        };
+        Toolkit.getDefaultToolkit()
+                .addAWTEventListener(mAwtKeyEventListener, AWTEvent.KEY_EVENT_MASK);
 
         checkButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
@@ -1188,5 +1193,9 @@ public class ImageViewer extends JComponent {
         for (PatchUpdateListener p: listeners) {
             p.patchesUpdated();
         }
+    }
+
+    public void dispose() {
+        Toolkit.getDefaultToolkit().removeAWTEventListener(mAwtKeyEventListener);
     }
 }
