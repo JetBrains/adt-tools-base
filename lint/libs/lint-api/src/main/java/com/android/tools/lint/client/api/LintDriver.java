@@ -2006,6 +2006,7 @@ public class LintDriver {
             return mDelegate.createProject(dir, referenceDir);
         }
 
+        @NonNull
         @Override
         public List<File> findGlobalRuleJars() {
             return mDelegate.findGlobalRuleJars();

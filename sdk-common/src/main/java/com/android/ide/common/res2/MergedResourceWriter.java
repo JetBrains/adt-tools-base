@@ -266,7 +266,12 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         rootNode.appendChild(adoptedNode);
                     }
 
-                    String content = XmlPrettyPrinter.prettyPrint(document, true);
+                    String content;
+                    try {
+                        content = XmlPrettyPrinter.prettyPrint(document, true);
+                    } catch (Throwable t) {
+                        content = XmlUtils.toXml(document, false);
+                    }
 
                     Files.write(content, outFile, Charsets.UTF_8);
                 } catch (Throwable t) {
