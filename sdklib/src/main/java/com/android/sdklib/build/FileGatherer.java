@@ -27,6 +27,7 @@ import java.util.List;
  * Source Searcher processor, gathering a list of all the files found by the SourceSearcher.
  */
 public class FileGatherer implements SourceSearcher.SourceFileProcessor {
+    @NonNull
     private final List<File> mFiles = Lists.newArrayList();
 
     @Override
@@ -34,6 +35,7 @@ public class FileGatherer implements SourceSearcher.SourceFileProcessor {
         mFiles.add(sourceFile);
     }
 
+    @NonNull
     public List<File> getFiles() {
         return mFiles;
     }
