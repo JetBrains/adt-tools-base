@@ -15,6 +15,12 @@
     <copy from="res/drawable-xhdpi"
             to="${escapeXmlAttribute(resOut)}/drawable-xhdpi" />
 </#if>
+<#if makeIgnore>
+    <copy from="project_ignore"
+            to="${escapeXmlAttribute(topOut)}/.gitignore" />
+    <copy from="module_ignore"
+            to="${escapeXmlAttribute(projectOut)}/.gitignore" />
+</#if>
     <instantiate from="res/values/styles.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/styles.xml" />
 <#if buildApi gte 11 && baseTheme != "none">
