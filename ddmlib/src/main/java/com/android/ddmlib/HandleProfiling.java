@@ -21,6 +21,7 @@ import com.android.ddmlib.ClientData.MethodProfilingStatus;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Handle heap status updates.
@@ -31,6 +32,8 @@ final class HandleProfiling extends ChunkHandler {
     public static final int CHUNK_MPRE = type("MPRE");
     public static final int CHUNK_MPSS = type("MPSS");
     public static final int CHUNK_MPSE = type("MPSE");
+    public static final int CHUNK_SPSS = type("SPSS");
+    public static final int CHUNK_SPSE = type("SPSE");
     public static final int CHUNK_MPRQ = type("MPRQ");
     public static final int CHUNK_FAIL = type("FAIL");
 
@@ -194,6 +197,35 @@ final class HandleProfiling extends ChunkHandler {
     }
 
     /**
+     * Send a SPSS (Sampling Profiling Streaming Start) request to the client.
+     *
+     * @param bufferSize is the desired buffer size in bytes (8MB is good)
+     * @param samplingInterval sampling interval
+     * @param samplingIntervalTimeUnits units for sampling interval
+     */
+    public static void sendSPSS(Client client, int bufferSize, int samplingInterval,
+            TimeUnit samplingIntervalTimeUnits) throws IOException {
+        int interval = (int) samplingIntervalTimeUnits.toMicros(samplingInterval);
+
+        ByteBuffer rawBuf = allocBuffer(3*4);
+        JdwpPacket packet = new JdwpPacket(rawBuf);
+        ByteBuffer buf = getChunkDataBuf(rawBuf);
+
+        buf.putInt(bufferSize);
+        buf.putInt(0); // flags
+        buf.putInt(interval);
+
+        finishChunkPacket(packet, CHUNK_SPSS, buf.position());
+        Log.d("ddm-prof", "Sending " + name(CHUNK_SPSS)
+                + "', size=" + bufferSize + ", flags=0, samplingInterval=" + interval);
+        client.sendAndConsume(packet, mInst);
+
+        // send a status query. this ensure that the status is properly updated if for some
+        // reason starting the tracing failed.
+        sendMPRQ(client);
+    }
+
+    /**
      * Send a MPSE (Method Profiling Streaming End) request to the client.
      */
     public static void sendMPSE(Client client) throws IOException {
@@ -205,6 +237,21 @@ final class HandleProfiling extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_MPSE, buf.position());
         Log.d("ddm-prof", "Sending " + name(CHUNK_MPSE));
+        client.sendAndConsume(packet, mInst);
+    }
+
+    /**
+     * Send a SPSE (Sampling Profiling Streaming End) request to the client.
+     */
+    public static void sendSPSE(Client client) throws IOException {
+        ByteBuffer rawBuf = allocBuffer(0);
+        JdwpPacket packet = new JdwpPacket(rawBuf);
+        ByteBuffer buf = getChunkDataBuf(rawBuf);
+
+        // no data
+
+        finishChunkPacket(packet, CHUNK_SPSE, buf.position());
+        Log.d("ddm-prof", "Sending " + name(CHUNK_SPSE));
         client.sendAndConsume(packet, mInst);
     }
 
@@ -253,9 +300,12 @@ final class HandleProfiling extends ChunkHandler {
         if (result == 0) {
             client.getClientData().setMethodProfilingStatus(MethodProfilingStatus.OFF);
             Log.d("ddm-prof", "Method profiling is not running");
-        } else {
-            client.getClientData().setMethodProfilingStatus(MethodProfilingStatus.ON);
-            Log.d("ddm-prof", "Method profiling is running");
+        } else if (result == 1) {
+            client.getClientData().setMethodProfilingStatus(MethodProfilingStatus.TRACER_ON);
+            Log.d("ddm-prof", "Method tracing is active");
+        } else if (result == 2) {
+            client.getClientData().setMethodProfilingStatus(MethodProfilingStatus.SAMPLER_ON);
+            Log.d("ddm-prof", "Sampler based profiling is active");
         }
         client.update(Client.CHANGE_METHOD_PROFILING_STATUS);
     }
