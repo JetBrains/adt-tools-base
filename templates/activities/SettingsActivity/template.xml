@@ -6,6 +6,7 @@
     description="Creates a new application settings activity that presents alternative layouts on handset and tablet-size screens."
     minApi="4"
     minBuildApi="11">
+    <dependency name="support" version="v4" />
     <dependency name="android-support-v4" revision="8" />
 
     <category value="Activities" />

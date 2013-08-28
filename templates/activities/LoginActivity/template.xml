@@ -6,6 +6,7 @@
     description="Creates a new login activity, allowing users to enter an email address and password to log in to or register with your application."
     minApi="3"
     minBuildApi="13">
+    <dependency name="support" version="v4" />
     <dependency name="android-support-v4" revision="8" />
 
     <category value="Activities" />
