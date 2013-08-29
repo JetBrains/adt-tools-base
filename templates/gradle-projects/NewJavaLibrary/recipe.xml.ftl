@@ -6,4 +6,8 @@
                    to="${escapeXmlAttribute(projectOut)}/build.gradle" />
     <instantiate from="/src/library_package/Placeholder.java.ftl"
                    to="${escapeXmlAttribute(srcOut)}/${className}.java" />
+<#if makeIgnore>
+    <copy from="gitignore"
+            to="${escapeXmlAttribute(projectOut)}/.gitignore" />
+</#if>
 </recipe>

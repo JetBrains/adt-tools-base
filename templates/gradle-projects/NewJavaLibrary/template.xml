@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
     format="1"
-    revision="2"
+    revision="3"
     name="Java Library"
     description="Creates a new Java library.">
 
@@ -31,6 +31,12 @@
         type="string"
         constraints="nonempty"
         default="MyClass"/>
+
+    <parameter
+        id="makeIgnore"
+        name="Create .gitignore file"
+        type="boolean"
+        default="true" />
 
     <globals file="globals.xml.ftl" />
     <execute file="recipe.xml.ftl" />
