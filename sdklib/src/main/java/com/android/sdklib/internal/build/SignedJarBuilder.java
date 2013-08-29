@@ -402,8 +402,5 @@ public class SignedJarBuilder {
         ASN1InputStream asn1 = new ASN1InputStream(sigData.getEncoded());
         DEROutputStream dos = new DEROutputStream(mOutputJar);
         dos.writeObject(asn1.readObject());
-        dos.flush();
-        dos.close();
-        asn1.close();
     }
 }
