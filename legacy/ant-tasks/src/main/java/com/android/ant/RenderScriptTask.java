@@ -19,7 +19,7 @@ package com.android.ant;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.build.RenderScriptChecker;
+import com.android.sdklib.build.ManualRenderScriptChecker;
 import com.android.sdklib.build.RenderScriptProcessor;
 import com.android.sdklib.repository.FullRevision;
 import com.google.common.base.Joiner;
@@ -175,7 +175,8 @@ public class RenderScriptTask extends BuildTypedTask {
         try {
             File binFile = new File(mBinFolder);
 
-            RenderScriptChecker checker = new RenderScriptChecker(sourceFolders, binFile);
+            ManualRenderScriptChecker checker = new ManualRenderScriptChecker(
+                    sourceFolders, binFile);
 
             if (checker.mustCompile() || isNewBuild() || hasBuildTypeChanged()) {
 
@@ -191,7 +192,6 @@ public class RenderScriptTask extends BuildTypedTask {
                         new File(mResFolder),
                         new File(mRsObjFolder),
                         new File(mLibsFolder),
-                        new File(mBinFolder),
                         new BuildToolInfo(new FullRevision(0), new File(mBuildToolsRoot)),
                         mTargetApi,
                         mDebug,
@@ -199,7 +199,7 @@ public class RenderScriptTask extends BuildTypedTask {
                         mSupportMode);
 
                 // clean old files first
-                processor.cleanOldOutput(checker.getOldInputs());
+                processor.cleanOldOutput(checker.getOldOutputs());
 
                 // do the compilation(s).
                 processor.build(new RenderScriptProcessor.CommandLineLauncher() {

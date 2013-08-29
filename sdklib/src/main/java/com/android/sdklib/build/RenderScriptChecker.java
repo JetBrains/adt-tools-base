@@ -19,7 +19,6 @@ package com.android.sdklib.build;
 import static com.android.SdkConstants.DOT_DEP;
 import static com.android.SdkConstants.EXT_FS;
 import static com.android.SdkConstants.EXT_RS;
-import static com.android.SdkConstants.EXT_RSH;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -33,27 +32,18 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Checks whether Renderscript compilation is needed. This is entirely based
- * on using dependency files and manually looking up the list of current inputs, and old
- * outputs timestamp.
- *
- * TODO: add checks on input/output checksum to detect true changes.
- * TODO: (better) delete Ant and use Gradle.
- *
- * This should be only needed in Ant.
+ * Loads dependencies for Renderscript.
  */
 public class RenderScriptChecker {
 
     @NonNull
-    private final List<File> mSourceFolders;
-
-    private List<File> mInputFiles;
-    private Set<File> mOldOutputs;
-
+    protected final List<File> mSourceFolders;
     @NonNull
     private final File mBinFolder;
 
-    private List<DependencyFile> mDependencyFiles;
+    protected Set<File> mOldOutputs;
+    protected Set<File> mOldInputs;
+    protected List<DependencyFile> mDependencyFiles;
 
     public RenderScriptChecker(
             @NonNull List<File> sourceFolders,
@@ -62,7 +52,7 @@ public class RenderScriptChecker {
         mBinFolder = binFolder;
     }
 
-    public boolean mustCompile() throws IOException {
+    public void loadDependencies() throws IOException {
         // get the dependency data from all files under bin/rsDeps/
         File renderscriptDeps = new File(mBinFolder, RenderScriptProcessor.RS_DEPS);
 
@@ -77,78 +67,40 @@ public class RenderScriptChecker {
             });
         }
 
-        if (depsFiles == null || depsFiles.length == 0) {
-            // gather source files.
-            SourceSearcher searcher = new SourceSearcher(mSourceFolders, EXT_RS, EXT_FS);
-            FileGatherer fileGatherer = new FileGatherer();
-            searcher.search(fileGatherer);
-            mInputFiles = fileGatherer.getFiles();
-            // only return true if there are input files
-            return !mInputFiles.isEmpty();
-        }
-
-        mDependencyFiles = Lists.newArrayListWithCapacity(depsFiles.length);
+        int count = depsFiles != null ? depsFiles.length : 0;
+        mDependencyFiles = Lists.newArrayListWithCapacity(0);
         mOldOutputs = Sets.newHashSet();
-        Set<File> oldInputs = Sets.newHashSet();
-        for (File file : depsFiles) {
-            DependencyFile depFile = new DependencyFile(file, mSourceFolders);
-            depFile.parse();
-            mDependencyFiles.add(depFile);
-            // record old inputs
-            mOldOutputs.addAll(depFile.getOutputFiles());
-            // record old inputs
-            oldInputs.addAll(depFile.getInputFiles());
-        }
-
-        // get the current files to compile.
-        SourceSearcher searcher = new SourceSearcher(mSourceFolders, EXT_RS, EXT_FS, EXT_RSH);
-        InputProcessor inputProcessor = new InputProcessor(oldInputs);
-        searcher.search(inputProcessor);
-
-        // at this point we have gathered the input files, so we can record them in case we have to
-        // compile later.
-        mInputFiles = inputProcessor.sourceFiles;
-
-        if (inputProcessor.mustCompile) {
-            System.out.println("INPUT PROCESSOR: COMPILE TRUE");
-            return true;
-        }
-
-        // no new files? check if we have less input files.
-        if (oldInputs.size() !=
-                inputProcessor.sourceFiles.size() + inputProcessor.headerFiles.size()) {
-            System.out.println("INPUT COUNT CHANGE: COMPILE TRUE");
-            return true;
-        }
-
-        // since there's no change in the input, look for change in the output.
-        for (File file : mOldOutputs) {
-            if (!file.isFile()) {
-                // deleted output file?
-                System.out.println("DELETED OUTPUT: COMPILE TRUE");
-                return true;
+        mOldInputs = Sets.newHashSet();
+        if (count > 0) {
+            for (File file : depsFiles) {
+                DependencyFile depFile = new DependencyFile(file, mSourceFolders);
+                depFile.parse();
+                mDependencyFiles.add(depFile);
+                // record old inputs
+                mOldOutputs.addAll(depFile.getOutputFiles());
+                // record old inputs
+                mOldInputs.addAll(depFile.getInputFiles());
             }
         }
+    }
 
-        // finally look at file changes.
-        for (DependencyFile depFile : mDependencyFiles) {
-            if (depFile.needCompilation()) {
-                System.out.println("INPUT CHANGE: COMPILE TRUE");
-                return true;
-            }
-        }
-
-        return false;
+    @NonNull
+    public List<File> findInputFiles() throws IOException {
+        // gather source files.
+        SourceSearcher searcher = new SourceSearcher(mSourceFolders, EXT_RS, EXT_FS);
+        FileGatherer fileGatherer = new FileGatherer();
+        searcher.search(fileGatherer);
+        return fileGatherer.getFiles();
     }
 
     @Nullable
-    public List<File> getInputFiles() {
-        return mInputFiles;
+    public Set<File> getOldOutputs() {
+        return mOldOutputs;
     }
 
     @Nullable
     public Set<File> getOldInputs() {
-        return mOldOutputs;
+        return mOldInputs;
     }
 
     public void cleanDependencies() {
@@ -159,32 +111,8 @@ public class RenderScriptChecker {
         }
     }
 
-    private static class InputProcessor implements SourceSearcher.SourceFileProcessor {
-
-        @NonNull
-        private final Set<File> mOldInputs;
-
-        List<File> sourceFiles = Lists.newArrayList();
-        List<File> headerFiles = Lists.newArrayList();
-        boolean mustCompile = false;
-
-        InputProcessor(@NonNull Set<File> oldInputs) {
-            mOldInputs = oldInputs;
-        }
-
-        @Override
-        public void processFile(@NonNull File sourceFile, @NonNull String extension)
-                throws IOException {
-            if (EXT_RSH.equals(extension)) {
-                headerFiles.add(sourceFile);
-            } else {
-                sourceFiles.add(sourceFile);
-            }
-
-            // detect new inputs.
-            if (!mOldInputs.contains(sourceFile)) {
-                mustCompile = true;
-            }
-        }
+    @NonNull
+    public List<File> getSourceFolders() {
+        return mSourceFolders;
     }
 }
