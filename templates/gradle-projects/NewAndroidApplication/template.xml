@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
     format="1"
-    revision="2"
+    revision="3"
     name="Android Application"
     description="Creates a new Android application.">
 
@@ -72,6 +72,12 @@
     <parameter
         id="copyIcons"
         name="Include launcher icons"
+        type="boolean"
+        default="true" />
+
+    <parameter
+        id="makeIgnore"
+        name="Create .gitignore file"
         type="boolean"
         default="true" />
 
