@@ -14,7 +14,6 @@ import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Iterator;
-import java.util.Map;
 
 public class VmTraceParser {
     private static final int TRACE_MAGIC = 0x574f4c53; // 'SLOW'
@@ -377,43 +376,34 @@ public class VmTraceParser {
     private void computeTimingStatistics() {
         VmTraceData data = getTraceData();
 
-        long max = 0;
-        for (int i = 0; i < data.getThreads().size(); i++) {
-            int threadId = data.getThreads().keyAt(i);
-            Call c = data.getTopLevelCall(threadId);
-            if (c != null) {
-                computePerMethodStats(c, data);
-
-                if (max < c.getInclusiveThreadTime()) {
-                    max = c.getInclusiveThreadTime();
-                }
-            }
-        }
-
-        computePercentages(max, data);
-    }
-
-    private void computePercentages(long max, VmTraceData data) {
-        for (MethodInfo info : data.getMethods().values()) {
-            long threadTime = Math.min(info.getInclusiveThreadTimes(), max);
-            float percent = threadTime * 100.0f / max;
-            info.setInclusiveThreadPercent(percent);
+        for (ThreadInfo thread : data.getThreads()) {
+            computePerThreadStats(thread, data);
         }
     }
 
-    private void computePerMethodStats(@NonNull Call top, @NonNull VmTraceData data) {
-        Iterator<Call> it = top.getCallHierarchyIterator();
+    private void computePerThreadStats(@NonNull ThreadInfo thread, VmTraceData data) {
+        Call c = thread.getTopLevelCall();
+        if (c == null) {
+            return;
+        }
+
+        Iterator<Call> it = c.getCallHierarchyIterator();
         while (it.hasNext()) {
-            Call c = it.next();
+            c = it.next();
 
             MethodInfo info = data.getMethod(c.getMethodId());
-            info.addExclusiveThreadTimes(c.getExclusiveThreadTime());
+            for (ClockType type : ClockType.values()) {
+                info.addExclusiveTime(c.getExclusiveTime(type), thread.getName(), type);
+            }
 
             if (!c.isRecursive()) {
                 // In the case of a recursive call, the top level call's inclusive time
                 // already accounts for the entire inclusive time
-                info.addInclusiveThreadTimes(c.getInclusiveThreadTime());
+                for (ClockType type : ClockType.values()) {
+                    info.addInclusiveTime(c.getInclusiveTime(type), thread.getName(), type);
+                }
             }
         }
+
     }
 }

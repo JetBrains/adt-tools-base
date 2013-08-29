@@ -16,7 +16,10 @@
 
 package com.android.tools.perflib.vmtrace;
 
+import com.google.common.collect.Maps;
+
 import java.util.Locale;
+import java.util.Map;
 
 public class MethodInfo {
     public final long id;
@@ -26,22 +29,26 @@ public class MethodInfo {
     public final String srcPath;
     public final int srcLineNumber;
 
-    private long mInclusiveThreadTimes;
-    private long mExclusiveThreadTimes;
+    /** Method stats across all threads. */
+    private final MethodStats mAllThreadsStats;
 
-    private float mInclusiveThreadPercent;
+    /** Method stats per thread. */
+    private final Map<String,MethodStats> mPerThreadStats;
 
     private String mFullName;
     private String mShortName;
 
-    public MethodInfo(long id, String className, String methodName, String signature, String srcPath,
-            int srcLineNumber) {
+    public MethodInfo(long id, String className, String methodName, String signature,
+            String srcPath, int srcLineNumber) {
         this.id = id;
         this.className = className;
         this.methodName = methodName;
         this.signature = signature;
         this.srcPath = srcPath;
         this.srcLineNumber = srcLineNumber;
+
+        mAllThreadsStats = new MethodStats();
+        mPerThreadStats = Maps.newHashMapWithExpectedSize(20);
     }
 
     public String getFullName() {
@@ -67,27 +74,68 @@ public class MethodInfo {
         return cn;
     }
 
-    public long getExclusiveThreadTimes() {
-        return mExclusiveThreadTimes;
+    public long getExclusiveTime(String thread, ClockType clockType) {
+        MethodStats stats = mPerThreadStats.get(thread);
+        return stats != null ? stats.getExclusiveTime(clockType) : 0;
     }
 
-    public void addExclusiveThreadTimes(long time) {
-        mExclusiveThreadTimes += time;
+    public long getInclusiveTime(String thread, ClockType clockType) {
+        MethodStats stats = mPerThreadStats.get(thread);
+        return stats != null ? stats.getInclusiveTime(clockType) : 0;
     }
 
-    public long getInclusiveThreadTimes() {
-        return mInclusiveThreadTimes;
+    public void addExclusiveTime(long time, String thread, ClockType clockType) {
+        mAllThreadsStats.addExclusiveTime(time, clockType);
+
+        MethodStats stats = getMethodStats(thread, true);
+        stats.addExclusiveTime(time, clockType);
     }
 
-    public void addInclusiveThreadTimes(long time) {
-        mInclusiveThreadTimes += time;
+    public void addInclusiveTime(long time, String thread, ClockType clockType) {
+        mAllThreadsStats.addInclusiveTime(time, clockType);
+
+        MethodStats stats = getMethodStats(thread, true);
+        stats.addInclusiveTime(time, clockType);
     }
 
-    public void setInclusiveThreadPercent(float percent) {
-        mInclusiveThreadPercent = percent;
+    private MethodStats getMethodStats(String thread, boolean createIfAbsent) {
+        MethodStats stats = mPerThreadStats.get(thread);
+        if (stats == null && createIfAbsent) {
+            stats = new MethodStats();
+            mPerThreadStats.put(thread, stats);
+        }
+        return stats;
     }
 
-    public float getInclusiveThreadPercent() {
-        return mInclusiveThreadPercent;
+    private static class MethodStats {
+        private long mInclusiveThreadTime;
+        private long mExclusiveThreadTime;
+
+        private long mInclusiveGlobalTime;
+        private long mExclusiveGlobalTime;
+
+        public long getInclusiveTime(ClockType clockType) {
+            return clockType == ClockType.THREAD ? mInclusiveThreadTime : mInclusiveGlobalTime;
+        }
+
+        public long getExclusiveTime(ClockType clockType) {
+            return clockType == ClockType.THREAD ? mExclusiveThreadTime : mExclusiveGlobalTime;
+        }
+
+        public void addInclusiveTime(long time, ClockType clockType) {
+            if (clockType == ClockType.THREAD) {
+                mInclusiveThreadTime += time;
+            } else {
+                mInclusiveGlobalTime += time;
+            }
+        }
+
+        public void addExclusiveTime(long time, ClockType clockType) {
+            if (clockType == ClockType.THREAD) {
+                mExclusiveThreadTime += time;
+            } else {
+                mExclusiveGlobalTime += time;
+            }
+        }
     }
 }
