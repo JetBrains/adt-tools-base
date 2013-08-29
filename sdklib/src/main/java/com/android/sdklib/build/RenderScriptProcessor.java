@@ -94,9 +94,6 @@ public class RenderScriptProcessor {
     private final File mLibOutputDir;
 
     @NonNull
-    private final File mBinFolder;
-
-    @NonNull
     private final BuildToolInfo mBuildToolInfo;
 
     private final int mTargetApi;
@@ -126,7 +123,6 @@ public class RenderScriptProcessor {
             @NonNull File resOutputDir,
             @NonNull File objOutputDir,
             @NonNull File libOutputDir,
-            @NonNull File binFolder,
             @NonNull BuildToolInfo buildToolInfo,
             int targetApi,
             boolean debugBuild,
@@ -139,7 +135,6 @@ public class RenderScriptProcessor {
         mResOutputDir = resOutputDir;
         mObjOutputDir = objOutputDir;
         mLibOutputDir = libOutputDir;
-        mBinFolder = binFolder;
         mBuildToolInfo = buildToolInfo;
         mTargetApi = targetApi;
         mDebugBuild = debugBuild;
@@ -182,7 +177,6 @@ public class RenderScriptProcessor {
         File lib = new File(rs, "lib");
         return new File(lib, "packaged");
     }
-
 
     public void build(@NonNull CommandLineLauncher launcher)
             throws IOException, InterruptedException {
@@ -246,7 +240,7 @@ public class RenderScriptProcessor {
         }
 
         command.add("-d");
-        command.add(new File(mBinFolder, RS_DEPS).getAbsolutePath());
+        command.add(new File(mBuildFolder, RS_DEPS).getAbsolutePath());
         command.add("-MD");
 
         if (mSupportMode) {
@@ -305,7 +299,7 @@ public class RenderScriptProcessor {
 
         // make sure the dest folder exist
         File abiFolder = new File(mObjOutputDir, abi.mDevice);
-        if (!abiFolder.mkdirs()) {
+        if (!abiFolder.isDirectory() && !abiFolder.mkdirs()) {
             throw new IOException("Unable to create dir " + abiFolder.getAbsolutePath());
         }
 
@@ -344,7 +338,7 @@ public class RenderScriptProcessor {
 
         // make sure the dest folder exist
         File abiFolder = new File(mLibOutputDir, abi.mDevice);
-        if (!abiFolder.mkdirs()) {
+        if (!abiFolder.isDirectory() && !abiFolder.mkdirs()) {
             throw new IOException("Unable to create dir " + abiFolder.getAbsolutePath());
         }
 
