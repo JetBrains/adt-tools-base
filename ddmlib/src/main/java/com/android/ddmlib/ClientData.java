@@ -92,8 +92,10 @@ public class ClientData {
         UNKNOWN,
         /** Method profiling status: the {@link Client} is not profiling method calls. */
         OFF,
-        /** Method profiling status: the {@link Client} is profiling method calls. */
-        ON
+        /** Method profiling status: the {@link Client} is tracing method calls. */
+        TRACER_ON,
+        /** Method profiling status: the {@link Client} is being profiled via sampling. */
+        SAMPLER_ON
     }
 
     /**
@@ -128,6 +130,12 @@ public class ClientData {
      * @see #hasFeature(String)
      */
     public static final String FEATURE_PROFILING_STREAMING = "method-trace-profiling-streaming"; //$NON-NLS-1$
+
+    /**
+     * String for feature enabling sampling profiler.
+     * @see #hasFeature(String)
+     */
+    public static final String FEATURE_SAMPLING_PROFILER = "method-sample-profiling"; //$NON-NLS-1$
 
     /**
      * String for feature indicating support for tracing OpenGL calls.
