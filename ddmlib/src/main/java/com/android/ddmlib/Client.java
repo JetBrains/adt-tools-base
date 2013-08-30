@@ -17,7 +17,6 @@
 package com.android.ddmlib;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.ClientData.MethodProfilingStatus;
 import com.android.ddmlib.DebugPortManager.IDebugPortProvider;
 import com.android.ddmlib.AndroidDebugBridge.IClientChangeListener;
 
@@ -28,6 +27,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This represents a single client, usually a Dalvik VM process.
@@ -247,30 +247,65 @@ public class Client {
         }
     }
 
+    /**
+     * Toggles method profiling state.
+     * @deprecated Use {@link #startMethodTracer()}, {@link #stopMethodTracer()},
+     * {@link #startSamplingProfiler(int, java.util.concurrent.TimeUnit)} or
+     * {@link #stopSamplingProfiler()} instead.
+     */
     public void toggleMethodProfiling() {
-        boolean canStream = mClientData.hasFeature(ClientData.FEATURE_PROFILING_STREAMING);
         try {
-            if (mClientData.getMethodProfilingStatus() == MethodProfilingStatus.ON) {
-                if (canStream) {
-                    HandleProfiling.sendMPSE(this);
-                } else {
-                    HandleProfiling.sendMPRE(this);
-                }
-            } else {
-                int bufferSize = DdmPreferences.getProfilerBufferSizeMb() * 1024 * 1024;
-                if (canStream) {
-                    HandleProfiling.sendMPSS(this, bufferSize, 0 /*flags*/);
-                } else {
-                    String file = "/sdcard/" +
-                        mClientData.getClientDescription().replaceAll("\\:.*", "") +
-                        DdmConstants.DOT_TRACE;
-                    HandleProfiling.sendMPRS(this, file, bufferSize, 0 /*flags*/);
-                }
+            switch (mClientData.getMethodProfilingStatus()) {
+                case TRACER_ON:
+                    stopMethodTracer();
+                    break;
+                case SAMPLER_ON:
+                    stopSamplingProfiler();
+                    break;
+                case OFF:
+                    startMethodTracer();
+                    break;
             }
         } catch (IOException e) {
             Log.w("ddms", "Toggle method profiling failed");
             // ignore
         }
+    }
+
+    private int getProfileBufferSize() {
+        return DdmPreferences.getProfilerBufferSizeMb() * 1024 * 1024;
+    }
+
+    public void startMethodTracer() throws IOException {
+        boolean canStream = mClientData.hasFeature(ClientData.FEATURE_PROFILING_STREAMING);
+        int bufferSize = getProfileBufferSize();
+        if (canStream) {
+            HandleProfiling.sendMPSS(this, bufferSize, 0 /*flags*/);
+        } else {
+            String file = "/sdcard/" +
+                    mClientData.getClientDescription().replaceAll("\\:.*", "") +
+                    DdmConstants.DOT_TRACE;
+            HandleProfiling.sendMPRS(this, file, bufferSize, 0 /*flags*/);
+        }
+    }
+
+    public void stopMethodTracer() throws IOException {
+        boolean canStream = mClientData.hasFeature(ClientData.FEATURE_PROFILING_STREAMING);
+
+        if (canStream) {
+            HandleProfiling.sendMPSE(this);
+        } else {
+            HandleProfiling.sendMPRE(this);
+        }
+    }
+
+    public void startSamplingProfiler(int samplingInterval, TimeUnit timeUnit) throws IOException {
+        int bufferSize = getProfileBufferSize();
+        HandleProfiling.sendSPSS(this, bufferSize, samplingInterval, timeUnit);
+    }
+
+    public void stopSamplingProfiler() throws IOException {
+        HandleProfiling.sendSPSE(this);
     }
 
     public boolean startOpenGlTracing() {
