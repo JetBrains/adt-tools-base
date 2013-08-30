@@ -154,14 +154,20 @@ public class NamespaceDetector extends LayoutDetector {
                         mUnusedNamespaces.put(item.getNodeName().substring(XMLNS_PREFIX.length()),
                                 attribute);
                     } else if (!value.startsWith("http://")) { //$NON-NLS-1$
-                        context.report(TYPO, attribute, context.getLocation(attribute),
-                                "Suspicious namespace: should start with http://", null);
+                        if (context.isEnabled(TYPO)) {
+                            context.report(TYPO, attribute, context.getLocation(attribute),
+                                    "Suspicious namespace: should start with http://", null);
+                        }
 
                         continue;
                     } else if (!value.equals(AUTO_URI) && value.contains("auto") && //$NON-NLS-1$
                             value.startsWith("http://schemas.android.com/")) { //$NON-NLS-1$
-                        context.report(TYPO, attribute, context.getLocation(attribute),
+                        context.report(RES_AUTO, attribute, context.getLocation(attribute),
                                 "Suspicious namespace: Did you mean " + AUTO_URI, null);
+                    }
+
+                    if (!context.isEnabled(TYPO)) {
+                        continue;
                     }
 
                     String name = attribute.getName();
@@ -181,10 +187,6 @@ public class NamespaceDetector extends LayoutDetector {
                                             null);
                             }
                         }
-                        continue;
-                    }
-
-                    if (!context.isEnabled(TYPO)) {
                         continue;
                     }
 
