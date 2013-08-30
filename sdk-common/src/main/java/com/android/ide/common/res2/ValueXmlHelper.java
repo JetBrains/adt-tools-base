@@ -52,6 +52,7 @@ public class ValueXmlHelper {
         // Trim space surrounding optional quotes
         int i = 0;
         int n = s.length();
+        boolean quoted = false;
         if (trim) {
             while (i < n) {
                 char c = s.charAt(i);
@@ -82,41 +83,15 @@ public class ValueXmlHelper {
                 if (c != '"') {
                     break;
                 }
+                quoted = true;
                 i++;
             }
             // Searching backwards is slightly more complicated; make sure we don't trim
             // quotes that have been escaped.
-            while (n > i) {
-                char c = s.charAt(n - 1);
-                if (c != '"') {
-                    if (n < s.length() && isEscaped(s, n)) {
-                        n++;
-                    }
-                    break;
-                }
-                n--;
-            }
-            if (n == i) {
-                return ""; //$NON-NLS-1$
-            }
-
-            // Only trim leading spaces if we didn't already process a leading quote:
-            if (i == quoteStart) {
-                while (i < n) {
-                    char c = s.charAt(i);
-                    if (!Character.isWhitespace(c)) {
-                        break;
-                    }
-                    i++;
-                }
-            }
-
-            // Only trim trailing spaces if we didn't already process a trailing quote:
-            if (n == quoteEnd) {
+            if (quoted) {
                 while (n > i) {
                     char c = s.charAt(n - 1);
-                    if (!Character.isWhitespace(c)) {
-                        //See if this was a \, and if so, see whether it was escaped
+                    if (c != '"') {
                         if (n < s.length() && isEscaped(s, n)) {
                             n++;
                         }
@@ -128,6 +103,35 @@ public class ValueXmlHelper {
             if (n == i) {
                 return ""; //$NON-NLS-1$
             }
+
+            // Only trim leading spaces if we didn't already process a leading quote:
+            if (!quoted) {
+                while (i < n) {
+                    char c = s.charAt(i);
+                    if (!Character.isWhitespace(c)) {
+                        break;
+                    }
+                    i++;
+                }
+
+                // Only trim trailing spaces if we didn't already process a trailing quote:
+                if (n == quoteEnd) {
+                    while (n > i) {
+                        char c = s.charAt(n - 1);
+                        if (!Character.isWhitespace(c)) {
+                            //See if this was a \, and if so, see whether it was escaped
+                            if (n < s.length() && isEscaped(s, n)) {
+                                n++;
+                            }
+                            break;
+                        }
+                        n--;
+                    }
+                }
+                if (n == i) {
+                    return ""; //$NON-NLS-1$
+                }
+            }
         }
 
         // Perform a single pass over the string and see if it contains
@@ -136,7 +140,7 @@ public class ValueXmlHelper {
         // (2) escape characters (\ and &) which will require expansions
         // If we find neither of these, we can simply return the string
         boolean rewriteWhitespace = false;
-        if (i == 0) {
+        if (!quoted) {
             // See if we need to fold adjacent spaces
             boolean prevSpace = false;
             boolean hasEscape = false;
@@ -162,7 +166,7 @@ public class ValueXmlHelper {
 
             // If no surrounding whitespace and no escape characters, no need to do any
             // more work
-            if (!rewriteWhitespace && !hasEscape) {
+            if (!rewriteWhitespace && !hasEscape && i == 0 && n == s.length()) {
                 return s;
             }
         }

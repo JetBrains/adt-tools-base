@@ -173,4 +173,9 @@ public class ValueXmlHelperTest extends TestCase {
         assertEquals("Entity \u00a9 \u00a9 Copyright",
                 unescapeResourceString("Entity &#169; &#xA9; Copyright", true, true));
     }
+
+    public void testMarkupConcatenation() throws Exception {
+        assertEquals("<b>Sign in</b> or register",
+                unescapeResourceString("\n   <b>Sign in</b>\n      or register\n", true, true));
+    }
 }
