@@ -196,13 +196,13 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
 
     public void testWrongResAutoUrl() throws Exception {
         assertEquals(
-                "res/layout/namespace5.xml:3: Warning: Suspicious namespace: Did you mean http://schemas.android.com/apk/res-auto [NamespaceTypo]\n" +
-                "    xmlns:app=\"http://schemas.android.com/apk/auto-res/\"\n" +
-                "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-                "0 errors, 1 warnings\n",
+            "res/layout/namespace5.xml:3: Error: Suspicious namespace: Did you mean http://schemas.android.com/apk/res-auto [ResAuto]\n" +
+            "    xmlns:app=\"http://schemas.android.com/apk/auto-res/\"\n" +
+            "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "1 errors, 0 warnings\n",
 
-                lintFiles("res/layout/namespace5.xml",
-                        "multiproject/library-manifest.xml=>AndroidManifest.xml",
-                        "multiproject/library.properties=>project.properties"));
+            lintFiles("res/layout/namespace5.xml",
+                    "multiproject/library-manifest.xml=>AndroidManifest.xml",
+                    "multiproject/library.properties=>project.properties"));
     }
 }
