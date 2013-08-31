@@ -18,18 +18,15 @@ package com.android.ide.common.resources;
 import static com.android.SdkConstants.FD_RES;
 import static com.android.SdkConstants.FD_RES_DRAWABLE;
 import static com.android.SdkConstants.FD_RES_LAYOUT;
-import static com.android.SdkConstants.FD_RES_VALUES;
 import static com.android.resources.ResourceType.ATTR;
 import static com.android.resources.ResourceType.DIMEN;
 import static com.android.resources.ResourceType.LAYOUT;
 
-import com.android.annotations.NonNull;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.resources.configuration.LanguageQualifier;
 import com.android.ide.common.resources.configuration.ScreenOrientationQualifier;
 import com.android.io.FileWrapper;
-import com.android.io.FolderWrapper;
 import com.android.io.IAbstractFile;
 import com.android.io.IAbstractFolder;
 import com.android.resources.ResourceFolderType;
@@ -48,76 +45,44 @@ import java.util.SortedSet;
 
 @SuppressWarnings("javadoc")
 public class ResourceRepositoryTest extends TestCase {
-    private File mTempDir;
-    private ResourceRepository mRepository;
+    private TestResourceRepository mRepository;
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
     protected void setUp() throws Exception {
         super.setUp();
 
-        mTempDir = Files.createTempDir();
-        File res = new File(mTempDir, FD_RES);
-        res.mkdirs();
-        File layout = new File(res, FD_RES_LAYOUT);
-        File layoutLand = new File(res, FD_RES_LAYOUT + "-land");
-        File values = new File(res, FD_RES_VALUES);
-        File valuesEs = new File(res, FD_RES_VALUES + "-es");
-        File drawable = new File(res, FD_RES_DRAWABLE);
-        layout.mkdirs();
-        layoutLand.mkdirs();
-        values.mkdirs();
-        valuesEs.mkdirs();
-        drawable.mkdirs();
-        new File(layout, "layout1.xml").createNewFile();
-        new File(layoutLand, "layout1.xml").createNewFile();
-        new File(layoutLand, "onlyLand.xml").createNewFile();
-        new File(layout, "layout2.xml").createNewFile();
-        new File(drawable, "graphic.9.png").createNewFile();
-        File strings = new File(values, "strings.xml");
-        Files.write(""
-                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                + "<resources>\n"
-                + "    <item type=\"id\" name=\"action_bar_refresh\" />\n"
-                + "    <item type=\"dimen\" name=\"dialog_min_width_major\">45%</item>\n"
-                + "    <string name=\"home_title\">Home Sample</string>\n"
-                + "    <string name=\"show_all_apps\">All</string>\n"
-                + "    <string name=\"menu_wallpaper\">Wallpaper</string>\n"
-                + "    <string name=\"menu_search\">Search</string>\n"
-                + "    <string name=\"menu_settings\">Settings</string>\n"
-                + "    <string name=\"dummy\" translatable=\"false\">Ignore Me</string>\n"
-                + "    <string name=\"wallpaper_instructions\">Tap picture to set portrait wallpaper</string>\n"
-                + "</resources>\n", strings, Charsets.UTF_8);
-
-        Files.write(""
-                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                + "<resources>\n"
-                + "    <string name=\"show_all_apps\">Todo</string>\n"
-                + "</resources>\n", new File(valuesEs, "strings.xml"), Charsets.UTF_8);
-
-        IAbstractFolder resFolder = new FolderWrapper(new File(mTempDir, FD_RES));
-        mRepository = new TestResourceRepository(resFolder, false);
+        mRepository = TestResourceRepository.create(false, new Object[]{
+                "layout/layout1.xml", "<!--contents doesn't matter-->",
+                "layout/layout2.xml", "<!--contents doesn't matter-->",
+                "layout-land/layout1.xml", "<!--contents doesn't matter-->",
+                "layout-land/onlyLand.xml", "<!--contents doesn't matter-->",
+                "drawable/graphic.9.png", new byte[0],
+                "values/strings.xml", ""
+                    + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    + "<resources>\n"
+                    + "    <item type=\"id\" name=\"action_bar_refresh\" />\n"
+                    + "    <item type=\"dimen\" name=\"dialog_min_width_major\">45%</item>\n"
+                    + "    <string name=\"home_title\">Home Sample</string>\n"
+                    + "    <string name=\"show_all_apps\">All</string>\n"
+                    + "    <string name=\"menu_wallpaper\">Wallpaper</string>\n"
+                    + "    <string name=\"menu_search\">Search</string>\n"
+                    + "    <string name=\"menu_settings\">Settings</string>\n"
+                    + "    <string name=\"dummy\" translatable=\"false\">Ignore Me</string>\n"
+                    + "    <string name=\"wallpaper_instructions\">Tap picture to set portrait wallpaper</string>\n"
+                    + "</resources>\n",
+                "values-es/strings.xml", ""
+                    + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    + "<resources>\n"
+                    + "    <string name=\"show_all_apps\">Todo</string>\n"
+                    + "</resources>\n",
+        });
         assertFalse(mRepository.isFrameworkRepository());
     }
 
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
-
-        deleteFile(mTempDir);
-    }
-
-    private static void deleteFile(File dir) {
-        if (dir.isDirectory()) {
-            File[] files = dir.listFiles();
-            if (files != null) {
-                for (File f : files) {
-                    deleteFile(f);
-                }
-            }
-        } else if (dir.isFile()) {
-            assertTrue(dir.getPath(), dir.delete());
-        }
+        mRepository.dispose();
     }
 
     public void testParseResource() {
@@ -338,7 +303,7 @@ public class ResourceRepositoryTest extends TestCase {
 
         // add files
         assertFalse(mRepository.hasResourceItem("@layout/layout5"));
-        File res = new File(mTempDir, FD_RES);
+        File res = new File(mRepository.getDir(), FD_RES);
         File layout = new File(res, FD_RES_LAYOUT);
         File newFile = new File(layout, "layout5.xml");
         boolean created = newFile.createNewFile();
@@ -384,24 +349,5 @@ public class ResourceRepositoryTest extends TestCase {
         assertNull(mRepository.findResourceFile(file.getParentFile().getParentFile().
                 getParentFile()));
         assertNull(mRepository.findResourceFile(new File("/tmp")));
-    }
-
-    private static class TestResourceRepository extends ResourceRepository {
-        private TestResourceRepository(@NonNull IAbstractFolder resFolder,
-                boolean isFrameworkRepository) {
-            super(resFolder, isFrameworkRepository);
-        }
-
-        @NonNull
-        @Override
-        protected ResourceItem createResourceItem(@NonNull String name) {
-            return new TestResourceItem(name);
-        }
-    }
-
-    private static class TestResourceItem extends ResourceItem {
-        TestResourceItem(String name) {
-            super(name);
-        }
     }
 }
