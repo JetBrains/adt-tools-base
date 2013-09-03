@@ -140,10 +140,13 @@ public class Main {
                             + "analyze Gradle projects, you should run \"gradlew :lint\" instead.",
                             project.getName());
                     Location location = Location.create(project.getDir());
-                    report(new Context(mDriver, project, project, project.getDir()),
-                            IssueRegistry.LINT_ERROR,
-                            project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
-                            location, message, null);
+                    Context context = new Context(mDriver, project, project, project.getDir());
+                    if (context.isEnabled(IssueRegistry.LINT_ERROR)) {
+                        report(context,
+                               IssueRegistry.LINT_ERROR,
+                               project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
+                               location, message, null);
+                    }
                 }
                 return project;
             }
