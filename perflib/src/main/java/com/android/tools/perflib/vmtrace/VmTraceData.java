@@ -16,11 +16,11 @@
 
 package com.android.tools.perflib.vmtrace;
 
-import com.android.annotations.Nullable;
 import com.android.utils.SparseArray;
+import com.google.common.collect.Maps;
 
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -42,14 +42,11 @@ public class VmTraceData {
     private final String mVm;
     private final Map<String, String> mTraceProperties;
 
-    /** Map from thread ids to thread names. */
-    private final SparseArray<String> mThreads;
-
     /** Map from method id to method info. */
     private final Map<Long,MethodInfo> mMethods;
 
-    /** Map from thread id to the top level call in that thread */
-    private final SparseArray<Call> mCalls;
+    /** Map from thread name to thread info. */
+    private final Map<String, ThreadInfo> mThreadInfo;
 
     private VmTraceData(Builder b) {
         mVersion = b.mVersion;
@@ -57,9 +54,22 @@ public class VmTraceData {
         mClockType = b.mClockType;
         mVm = b.mVm;
         mTraceProperties = b.mProperties;
-        mThreads = b.mThreads;
         mMethods = b.mMethods;
-        mCalls = b.mTopLevelCalls;
+
+        mThreadInfo = Maps.newHashMapWithExpectedSize(b.mThreads.size());
+        for (int i = 0; i < b.mThreads.size(); i++) {
+            int id = b.mThreads.keyAt(i);
+            String name = b.mThreads.valueAt(i);
+
+            ThreadInfo info = mThreadInfo.get(name);
+            if (info != null) {
+                // there is alread a thread with the same name
+                name = String.format("%1$s-%2$d", name, id);
+            }
+
+            info = new ThreadInfo(id, name, b.mTopLevelCalls.get(id));
+            mThreadInfo.put(name, info);
+        }
     }
 
     public int getVersion() {
@@ -88,8 +98,12 @@ public class VmTraceData {
         return TimeUnit.MICROSECONDS;
     }
 
-    public SparseArray<String> getThreads() {
-        return mThreads;
+    public Collection<ThreadInfo> getThreads() {
+        return mThreadInfo.values();
+    }
+
+    public ThreadInfo getThread(String name) {
+        return mThreadInfo.get(name);
     }
 
     public Map<Long,MethodInfo> getMethods() {
@@ -98,11 +112,6 @@ public class VmTraceData {
 
     public MethodInfo getMethod(long methodId) {
         return mMethods.get(methodId);
-    }
-
-    @Nullable
-    public Call getTopLevelCall(int threadId) {
-        return mCalls.get(threadId);
     }
 
     public static class Builder {
