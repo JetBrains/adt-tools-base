@@ -221,9 +221,9 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
     @Override
     public void afterCheckProject(@NonNull Context context) {
         if (mUsesRtlAttributes && mEnabledRtlSupport == null && rtlApplies(context)) {
-            File manifestFile = context.getMainProject().getManifestFile();
-            if (manifestFile != null) {
-                Location location = Location.create(manifestFile);
+            List<File> manifestFile = context.getMainProject().getManifestFiles();
+            if (!manifestFile.isEmpty()) {
+                Location location = Location.create(manifestFile.get(0));
                 context.report(ENABLED, location,
                         "The project references RTL attributes, but does not explicitly enable " +
                                 "or disable RTL support with android:supportsRtl in the manifest",

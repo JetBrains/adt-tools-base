@@ -18,12 +18,15 @@ package com.android.tools.lint.client.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.google.common.annotations.Beta;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Information about a request to run lint
@@ -34,16 +37,19 @@ import java.util.List;
 @Beta
 public class LintRequest {
     @NonNull
-    private final LintClient mClient;
+    protected final LintClient mClient;
 
     @NonNull
-    private final List<File> mFiles;
+    protected final List<File> mFiles;
 
     @Nullable
-    private EnumSet<Scope> mScope;
+    protected EnumSet<Scope> mScope;
 
     @Nullable
-    private Boolean mReleaseMode;
+    protected Boolean mReleaseMode;
+
+    @Nullable
+    protected Collection<Project> mProjects;
 
     /**
      * Creates a new {@linkplain LintRequest}, to be passed to a {@link LintDriver}
@@ -131,5 +137,34 @@ public class LintRequest {
     public LintRequest setReleaseMode(@Nullable Boolean releaseMode) {
         mReleaseMode = releaseMode;
         return this;
+    }
+
+    /**
+     * Gets the projects for the lint requests. This is optional; if not provided lint will search
+     * the {@link #getFiles()} directories and look for projects via {@link
+     * LintClient#isProjectDirectory(java.io.File)}. However, this method allows a lint client to
+     * set up all the projects ahead of time, and associate those projects with native resources
+     * (in an IDE for example, each lint project can be associated with the corresponding IDE
+     * project).
+     *
+     * @return a collection of projects, or null
+     */
+    @Nullable
+    public Collection<Project> getProjects() {
+        return mProjects;
+    }
+
+    /**
+     * Sets the projects for the lint requests. This is optional; if not provided lint will search
+     * the {@link #getFiles()} directories and look for projects via {@link
+     * LintClient#isProjectDirectory(java.io.File)}. However, this method allows a lint client to
+     * set up all the projects ahead of time, and associate those projects with native resources
+     * (in an IDE for example, each lint project can be associated with the corresponding IDE
+     * project).
+     *
+     * @param projects a collection of projects, or null
+     */
+    public void setProjects(@Nullable Collection<Project> projects) {
+        mProjects = projects;
     }
 }

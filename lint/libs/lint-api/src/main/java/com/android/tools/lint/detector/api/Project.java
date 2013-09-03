@@ -23,6 +23,8 @@ import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
+import static com.android.SdkConstants.FN_PROJECT_PROGUARD_FILE;
+import static com.android.SdkConstants.OLD_PROGUARD_FILE;
 import static com.android.SdkConstants.PROGUARD_CONFIG;
 import static com.android.SdkConstants.PROJECT_PROPERTIES;
 import static com.android.SdkConstants.RES_FOLDER;
@@ -37,7 +39,9 @@ import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.SdkInfo;
 import com.google.common.annotations.Beta;
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Charsets;
+import com.google.common.base.Splitter;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
@@ -66,34 +70,37 @@ import java.util.regex.Pattern;
  */
 @Beta
 public class Project {
-    private final LintClient mClient;
-    private final File mDir;
-    private final File mReferenceDir;
-    private Configuration mConfiguration;
-    private String mPackage;
-    private int mMinSdk = 1;
-    private int mTargetSdk = -1;
-    private int mBuildSdk = -1;
-    private boolean mLibrary;
-    private String mName;
-    private String mProguardPath;
-    private boolean mMergeManifests;
+    protected final LintClient mClient;
+    protected final File mDir;
+    protected final File mReferenceDir;
+    protected Configuration mConfiguration;
+    protected String mPackage;
+    protected int mMinSdk = 1;
+    protected int mTargetSdk = -1;
+    protected int mBuildSdk = -1;
+    protected boolean mLibrary;
+    protected String mName;
+    protected String mProguardPath;
+    protected boolean mMergeManifests;
 
     /** The SDK info, if any */
-    private SdkInfo mSdkInfo;
+    protected SdkInfo mSdkInfo;
 
     /**
      * If non null, specifies a non-empty list of specific files under this
      * project which should be checked.
      */
-    private List<File> mFiles;
-    private List<File> mJavaSourceFolders;
-    private List<File> mJavaClassFolders;
-    private List<File> mJavaLibraries;
-    private List<Project> mDirectLibraries;
-    private List<Project> mAllLibraries;
-    private boolean mReportIssues = true;
-    private Boolean mGradleProject;
+    protected List<File> mFiles;
+    protected List<File> mProguardFiles;
+    protected List<File> mManifestFiles;
+    protected List<File> mJavaSourceFolders;
+    protected List<File> mJavaClassFolders;
+    protected List<File> mJavaLibraries;
+    protected List<File> mResourceFolders;
+    protected List<Project> mDirectLibraries;
+    protected List<Project> mAllLibraries;
+    protected boolean mReportIssues = true;
+    protected Boolean mGradleProject;
 
     /**
      * Creates a new {@link Project} for the given directory.
@@ -125,18 +132,22 @@ public class Project {
     }
 
     /** Creates a new Project. Use one of the factory methods to create. */
-    private Project(
+    protected Project(
             @NonNull LintClient client,
             @NonNull File dir,
             @NonNull File referenceDir) {
         mClient = client;
         mDir = dir;
         mReferenceDir = referenceDir;
+        initialize();
+    }
 
+    protected void initialize() {
+        // Default initialization: Use ADT/ant style project.properties file
         try {
             // Read properties file and initialize library state
             Properties properties = new Properties();
-            File propFile = new File(dir, PROJECT_PROPERTIES);
+            File propFile = new File(mDir, PROJECT_PROPERTIES);
             if (propFile.exists()) {
                 @SuppressWarnings("resource") // Eclipse doesn't know about Closeables.closeQuietly
                 BufferedInputStream is = new BufferedInputStream(new FileInputStream(propFile));
@@ -144,7 +155,10 @@ public class Project {
                     properties.load(is);
                     String value = properties.getProperty(ANDROID_LIBRARY);
                     mLibrary = VALUE_TRUE.equals(value);
-                    mProguardPath = properties.getProperty(PROGUARD_CONFIG);
+                    String proguardPath = properties.getProperty(PROGUARD_CONFIG);
+                    if (proguardPath != null) {
+                        mProguardPath = proguardPath;
+                    }
                     mMergeManifests = VALUE_TRUE.equals(properties.getProperty(
                             "manifestmerger.enabled")); //$NON-NLS-1$
                     String target = properties.getProperty("target"); //$NON-NLS-1$
@@ -172,7 +186,7 @@ public class Project {
                             break;
                         }
 
-                        File libraryDir = new File(dir, library).getCanonicalFile();
+                        File libraryDir = new File(mDir, library).getCanonicalFile();
 
                         if (mDirectLibraries == null) {
                             mDirectLibraries = new ArrayList<Project>();
@@ -180,12 +194,12 @@ public class Project {
 
                         // Adjust the reference dir to be a proper prefix path of the
                         // library dir
-                        File libraryReferenceDir = referenceDir;
-                        if (!libraryDir.getPath().startsWith(referenceDir.getPath())) {
+                        File libraryReferenceDir = mReferenceDir;
+                        if (!libraryDir.getPath().startsWith(mReferenceDir.getPath())) {
                             // Symlinks etc might have been resolved, so do those to
                             // the reference dir as well
                             libraryReferenceDir = libraryReferenceDir.getCanonicalFile();
-                            if (!libraryDir.getPath().startsWith(referenceDir.getPath())) {
+                            if (!libraryDir.getPath().startsWith(mReferenceDir.getPath())) {
                                 File file = libraryReferenceDir;
                                 while (file != null && !file.getPath().isEmpty()) {
                                     if (libraryDir.getPath().startsWith(file.getPath())) {
@@ -198,7 +212,8 @@ public class Project {
                         }
 
                         try {
-                            Project libraryPrj = client.getProject(libraryDir, libraryReferenceDir);
+                            Project libraryPrj = mClient.getProject(libraryDir,
+                                    libraryReferenceDir);
                             mDirectLibraries.add(libraryPrj);
                             // By default, we don't report issues in inferred library projects.
                             // The driver will set report = true for those library explicitly
@@ -215,7 +230,7 @@ public class Project {
                 }
             }
         } catch (IOException ioe) {
-            client.log(ioe, "Initializing project state");
+            mClient.log(ioe, "Initializing project state");
         }
 
         if (mDirectLibraries != null) {
@@ -232,10 +247,7 @@ public class Project {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((mDir == null) ? 0 : mDir.hashCode());
-        return result;
+        return mDir.hashCode();
     }
 
     @Override
@@ -247,12 +259,7 @@ public class Project {
         if (getClass() != obj.getClass())
             return false;
         Project other = (Project) obj;
-        if (mDir == null) {
-            if (other.mDir != null)
-                return false;
-        } else if (!mDir.equals(other.mDir))
-            return false;
-        return true;
+        return mDir.equals(other.mDir);
     }
 
     /**
@@ -369,18 +376,23 @@ public class Project {
      */
     @NonNull
     public List<File> getResourceFolders() {
-        List<File> folders = mClient.getResourceFolders(this);
+        if (mResourceFolders == null) {
+            List<File> folders = mClient.getResourceFolders(this);
 
-        if (folders.size() == 1 && isAospFrameworksProject(mDir)) {
-            // No manifest file for this project: just init the manifest values here
-            mMinSdk = mTargetSdk = SdkVersionInfo.HIGHEST_KNOWN_API;
-            File folder = new File(folders.get(0), RES_FOLDER);
-            if (!folder.exists()) {
-                folders = Collections.emptyList();
+            if (folders.size() == 1 && isAospFrameworksProject(mDir)) {
+                // No manifest file for this project: just init the manifest values here
+                mMinSdk = mTargetSdk = SdkVersionInfo.HIGHEST_KNOWN_API;
+                File folder = new File(folders.get(0), RES_FOLDER);
+                if (!folder.exists()) {
+                    folders = Collections.emptyList();
+                }
             }
+
+            mResourceFolders = folders;
         }
 
-        return folders;
+        return mResourceFolders;
+
     }
 
     /**
@@ -580,7 +592,7 @@ public class Project {
      */
     @NonNull
     public List<Project> getDirectLibraries() {
-        return mDirectLibraries;
+        return mDirectLibraries != null ? mDirectLibraries : Collections.<Project>emptyList();
     }
 
     /**
@@ -632,29 +644,64 @@ public class Project {
     }
 
     /**
-     * Gets the path to the manifest file in this project, if it exists
+     * Gets the paths to the manifest files in this project, if any exists. The manifests
+     * should be provided such that the main manifest comes first, then any flavor versions,
+     * then any build types.
      *
      * @return the path to the manifest file, or null if it does not exist
      */
-    @Nullable
-    public File getManifestFile() {
-        File manifestFile = new File(mDir, ANDROID_MANIFEST_XML);
-        if (manifestFile.exists()) {
-            return manifestFile;
+    @NonNull
+    public List<File> getManifestFiles() {
+        if (mManifestFiles == null) {
+            File manifestFile = new File(mDir, ANDROID_MANIFEST_XML);
+            if (manifestFile.exists()) {
+                mManifestFiles = Collections.singletonList(manifestFile);
+            } else {
+                mManifestFiles = Collections.emptyList();
+            }
         }
 
-        return null;
+        return mManifestFiles;
     }
 
     /**
-     * Returns the proguard path configured for this project, or null if ProGuard is
-     * not configured.
+     * Returns the proguard files configured for this project, if any
      *
-     * @return the proguard path, or null
+     * @return the proguard files, if any
      */
-    @Nullable
-    public String getProguardPath() {
-        return mProguardPath;
+    @NonNull
+    public List<File> getProguardFiles() {
+        if (mProguardFiles == null) {
+            List<File> files = new ArrayList<File>();
+            if (mProguardPath != null) {
+                Splitter splitter = Splitter.on(CharMatcher.anyOf(":;")); //$NON-NLS-1$
+                for (String path : splitter.split(mProguardPath)) {
+                    if (path.contains("${")) { //$NON-NLS-1$
+                        // Don't analyze the global/user proguard files
+                        continue;
+                    }
+                    File file = new File(path);
+                    if (!file.isAbsolute()) {
+                        file = new File(getDir(), path);
+                    }
+                    if (file.exists()) {
+                        files.add(file);
+                    }
+                }
+            }
+            if (files.isEmpty()) {
+                File file = new File(getDir(), OLD_PROGUARD_FILE);
+                if (file.exists()) {
+                    files.add(file);
+                }
+                file = new File(getDir(), FN_PROJECT_PROGUARD_FILE);
+                if (file.exists()) {
+                    files.add(file);
+                }
+            }
+            mProguardFiles = files;
+        }
+        return mProguardFiles;
     }
 
     /**
@@ -749,7 +796,7 @@ public class Project {
      * @param dir the project directory to check
      * @return true if this looks like the frameworks/base/core project
      */
-    static boolean isAospFrameworksProject(@NonNull File dir) {
+    public static boolean isAospFrameworksProject(@NonNull File dir) {
         if (!dir.getPath().endsWith("core")) { //$NON-NLS-1$
             return false;
         }
