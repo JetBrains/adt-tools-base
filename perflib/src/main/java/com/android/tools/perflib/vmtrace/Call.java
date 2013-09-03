@@ -42,6 +42,7 @@ public class Call {
     private final int mExitThreadTime;
 
     private final long mInclusiveThreadTimeInCallees;
+    private final long mInclusiveGlobalTimeInCallees;
 
     private final int mDepth;
 
@@ -77,13 +78,14 @@ public class Call {
             mCallees = new ImmutableList.Builder<Call>().addAll(callees).build();
         }
 
-        mInclusiveThreadTimeInCallees = sumThreadTimes(mCallees);
+        mInclusiveThreadTimeInCallees = sumInclusiveTimes(mCallees, ClockType.THREAD);
+        mInclusiveGlobalTimeInCallees = sumInclusiveTimes(mCallees, ClockType.GLOBAL);
     }
 
-    private long sumThreadTimes(@NonNull List<Call> callees) {
+    private long sumInclusiveTimes(@NonNull List<Call> callees, ClockType clockType) {
         long sum = 0;
         for (Call c : callees) {
-            sum += c.getInclusiveThreadTime();
+            sum += c.getInclusiveTime(clockType);
         }
         return sum;
     }
@@ -109,32 +111,26 @@ public class Call {
         return mIsRecursive;
     }
 
-    public long getEntryThreadTime() {
-        return UnsignedInts.toLong(mEntryThreadTime);
+    public long getEntryTime(ClockType clockType) {
+        return clockType == ClockType.THREAD ? UnsignedInts.toLong(mEntryThreadTime) :
+                UnsignedInts.toLong(mEntryGlobalTime);
     }
 
-    public long getExitThreadTime() {
-        return UnsignedInts.toLong(mExitThreadTime);
+    public long getExitTime(ClockType clockType) {
+        return clockType == ClockType.THREAD ? UnsignedInts.toLong(mExitThreadTime) :
+                UnsignedInts.toLong(mExitGlobalTime);
     }
 
-    public long getEntryGlobalTime() {
-        return UnsignedInts.toLong(mEntryGlobalTime);
+    public long getInclusiveTime(ClockType clockType) {
+        return clockType == ClockType.THREAD ?
+                UnsignedInts.toLong(mExitThreadTime - mEntryThreadTime) :
+                UnsignedInts.toLong(mExitGlobalTime - mEntryGlobalTime);
     }
 
-    public long getExitGlobalTime() {
-        return UnsignedInts.toLong(mExitGlobalTime);
-    }
-
-    public long getInclusiveThreadTime() {
-        return UnsignedInts.toLong(mExitThreadTime - mEntryThreadTime);
-    }
-
-    public long getInclusiveGlobalTime() {
-        return UnsignedInts.toLong(mExitGlobalTime - mEntryGlobalTime);
-    }
-
-    public long getExclusiveThreadTime() {
-        return getInclusiveThreadTime() - mInclusiveThreadTimeInCallees;
+    public long getExclusiveTime(ClockType clockType) {
+        long inclusiveTimeInCallees = clockType == ClockType.THREAD ?
+                mInclusiveThreadTimeInCallees : mInclusiveGlobalTimeInCallees;
+        return getInclusiveTime(clockType) - inclusiveTimeInCallees;
     }
 
     public static class Builder {

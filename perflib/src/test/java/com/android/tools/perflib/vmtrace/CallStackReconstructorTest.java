@@ -142,8 +142,8 @@ public class CallStackReconstructorTest extends TestCase {
         List<Call> callees = reconstructor.getTopLevel().getCallees();
         assertFalse(callees.isEmpty());
         Call call = callees.get(0);
-        assertEquals(15 - 10, call.getInclusiveThreadTime());
-        assertEquals(15 - 10 - (14 - 11), call.getExclusiveThreadTime());
+        assertEquals(15 - 10, call.getInclusiveTime(ClockType.THREAD));
+        assertEquals(15 - 10 - (14 - 11), call.getExclusiveTime(ClockType.THREAD));
     }
 
     public void testMissingCallDurations() {
@@ -158,8 +158,8 @@ public class CallStackReconstructorTest extends TestCase {
         List<Call> callees = reconstructor.getTopLevel().getCallees();
         assertFalse(callees.isEmpty());
         Call call = callees.get(0);
-        assertEquals(15 - (11 - 1), call.getInclusiveThreadTime());
-        assertEquals(15 - (11 - 1) - (14 - 11), call.getExclusiveThreadTime());
+        assertEquals(15 - (11 - 1), call.getInclusiveTime(ClockType.THREAD));
+        assertEquals(15 - (11 - 1) - (14 - 11), call.getExclusiveTime(ClockType.THREAD));
     }
 
     /**
@@ -177,8 +177,8 @@ public class CallStackReconstructorTest extends TestCase {
         List<Call> callees = reconstructor.getTopLevel().getCallees();
         assertFalse(callees.isEmpty());
         Call call = callees.get(0);
-        assertEquals(8, call.getInclusiveThreadTime());
-        assertEquals(6, call.getExclusiveThreadTime());
+        assertEquals(8, call.getInclusiveTime(ClockType.THREAD));
+        assertEquals(6, call.getExclusiveTime(ClockType.THREAD));
     }
 
     public void testRecursiveCalls() {
