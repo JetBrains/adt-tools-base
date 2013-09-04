@@ -30,6 +30,6 @@
     <instantiate from="src/app_package/dummy/DummyContent.java.ftl"
                    to="${escapeXmlAttribute(srcOut)}/dummy/DummyContent.java" />
 
-    <open file="${escapeXmlAttribute(resOut)}/layout/fragment_${detail_name}.xml" />
     <open file="${escapeXmlAttribute(srcOut)}/${DetailName}Fragment.java" />
+    <open file="${escapeXmlAttribute(resOut)}/layout/fragment_${detail_name}.xml" />
 </recipe>
