@@ -188,7 +188,7 @@ public class PluralsDetector extends ResourceXmlDetector {
             String message = String.format(
                     "For language \"%1$s\" the following quantities are not relevant: %2$s",
                     language, formatSet(extra));
-            context.report(MISSING, element, context.getLocation(element), message, null);
+            context.report(EXTRA, element, context.getLocation(element), message, null);
         }
     }
 
