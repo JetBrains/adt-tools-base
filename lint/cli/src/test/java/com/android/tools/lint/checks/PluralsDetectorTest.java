@@ -40,16 +40,16 @@ public class PluralsDetectorTest extends AbstractCheckTest {
 
     public void test2() throws Exception {
         assertEquals(""
-                + "res/values-zh-rCN/plurals3.xml:3: Warning: For language \"zh\" the following quantities are not relevant: one [MissingQuantity]\n"
-                + "  <plurals name=\"draft\">\n"
-                + "  ^\n"
-                + "res/values-cs/plurals3.xml:3: Warning: For locale \"cs\" the following quantities should also be defined: few [MissingQuantity]\n"
-                + "  <plurals name=\"draft\">\n"
-                + "  ^\n"
-                + "res/values-zh-rCN/plurals3.xml:7: Warning: For language \"zh\" the following quantities are not relevant: one [MissingQuantity]\n"
-                + "  <plurals name=\"title_day_dialog_content\">\n"
-                + "  ^\n"
-                + "0 errors, 3 warnings\n",
+                + "res/values-cs/plurals3.xml:3: Warning: For locale \"cs\" the following quantities should also be defined: few [MissingQuantity]\n" +
+                "  <plurals name=\"draft\">\n" +
+                "  ^\n" +
+                "res/values-zh-rCN/plurals3.xml:3: Warning: For language \"zh\" the following quantities are not relevant: one [UnusedQuantity]\n" +
+                "  <plurals name=\"draft\">\n" +
+                "  ^\n" +
+                "res/values-zh-rCN/plurals3.xml:7: Warning: For language \"zh\" the following quantities are not relevant: one [UnusedQuantity]\n" +
+                "  <plurals name=\"title_day_dialog_content\">\n" +
+                "  ^\n" +
+                "0 errors, 3 warnings\n",
 
                 lintProject(
                         "res/values-zh-rCN/plurals3.xml",
