@@ -49,7 +49,6 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -79,6 +78,7 @@ import java.util.Map.Entry;
 public class LayoutLibrary {
 
     public static final String CLASS_BRIDGE = "com.android.layoutlib.bridge.Bridge"; //$NON-NLS-1$
+    public static final String FN_ICU_JAR = "icu4j.jar"; //$NON-NLS-1$
 
     /** Link to the layout bridge */
     private final Bridge mBridge;
@@ -151,14 +151,22 @@ public class LayoutLibrary {
                     log.error(null, "layoutlib.jar is missing!"); //$NON-NLS-1$
                 }
             } else {
-                URI uri = f.toURI();
-                URL url = uri.toURL();
+                URL[] urls;
+                // TODO: The icu jar has to be in the same location as layoutlib.jar. Get rid of
+                // this dependency.
+                File icu4j = new File(f.getParent(), FN_ICU_JAR);
+                if (icu4j.isFile()) {
+                    urls = new URL[2];
+                    urls[1] = icu4j.toURI().toURL();
+                } else {
+                    urls = new URL[1];
+                }
+                urls[0] = f.toURI().toURL();
 
                 // create a class loader. Because this jar reference interfaces
                 // that are in the editors plugin, it's important to provide
                 // a parent class loader.
-                classLoader = new URLClassLoader(
-                        new URL[] { url },
+                classLoader = new URLClassLoader(urls,
                         LayoutLibrary.class.getClassLoader());
 
                 // load the class
@@ -411,6 +419,15 @@ public class LayoutLibrary {
         }
 
         return getViewIndexReflection(viewObject);
+    }
+
+    /**
+     * Returns true if the character orientation of the locale is right to left.
+     * @param locale The locale formatted as language-region
+     * @return true if the locale is right to left.
+     */
+    public boolean isRtl(String locale) {
+        return supports(Capability.RTL) ? mBridge.isRtl(locale) : false;
     }
 
     // ------ Implementation
