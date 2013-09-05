@@ -71,6 +71,7 @@ public class DeviceConfigHelper {
         config.setNightModeQualifier(new NightModeQualifier(NightMode.NOTNIGHT));
         config.setCountryCodeQualifier(new CountryCodeQualifier());
         config.setLanguageQualifier(new LanguageQualifier());
+        config.setLayoutDirectionQualifier(new LayoutDirectionQualifier());
         config.setNetworkCodeQualifier(new NetworkCodeQualifier());
         config.setRegionQualifier(new RegionQualifier());
         config.setVersionQualifier(new VersionQualifier());
