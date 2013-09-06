@@ -206,7 +206,8 @@ public class CallHierarchyRenderer {
         long methodTime = selector.get(info, mThreadName);
 
         // Always use inclusive time of top level to compute percentages.
-        long topLevelTime = getMethodInfo(mTopCall).getInclusiveTime(mThreadName, THREAD);
+        MethodInfo topMethod = mTraceData.getMethod(mTopCall.getMethodId());
+        long topLevelTime = INCLUSIVE_TIME_SELECTOR.get(topMethod, mThreadName);
 
         return (double)methodTime/topLevelTime * 100;
     }
