@@ -44,14 +44,8 @@ public class TimeScaleRenderer {
         mTimeUnits = unit;
     }
 
-    public void paint(Graphics2D g2d, AffineTransform screenTransform,
-            AffineTransform viewPortTransform, int screenWidth) {
+    public void paint(Graphics2D g2d, AffineTransform viewPortTransform, int screenWidth) {
         AffineTransform originalTransform = g2d.getTransform();
-
-        // Remove viewport transformation and just use screen transformation.
-        // The viewport transformation should be used to actually change the timeline units/scales
-        // being displayed
-        g2d.setTransform(screenTransform);
 
         // draw the custom timeline for the current viewport transformation
         drawTimeLine(g2d, viewPortTransform, screenWidth);
