@@ -27,9 +27,9 @@ import java.util.Properties;
 
 /**
  * Tests {@link ExtraPackage} using anddon-3.xsd: it has a {@code <path>} and {@code <vendor>}.
- * (it lacks name-display, vendor-id and vendor-display with are in addon-4.xsd)
+ * (it lacks name-display, vendor-id and vendor-display which are in addon-4.xsd)
  */
-public class ExtraPackageTest_v3 extends MinToolsPackageTest {
+public class ExtraPackageTest_v3 extends ExtraPackageTest_Base {
 
     private static final char PS = File.pathSeparatorChar;
 
@@ -72,8 +72,8 @@ public class ExtraPackageTest_v3 extends MinToolsPackageTest {
         // ExtraPackage properties
         props.setProperty(PkgProps.EXTRA_VENDOR_ID, "vendor");
         props.setProperty(PkgProps.EXTRA_VENDOR_DISPLAY, "vendor");
-        props.setProperty(PkgProps.EXTRA_NAME_DISPLAY, "Vendor The Path");
         props.setProperty(PkgProps.EXTRA_PATH, "the_path");
+        props.setProperty(PkgProps.EXTRA_NAME_DISPLAY, "Vendor The Path");
         props.setProperty(PkgProps.EXTRA_OLD_PATHS, "old_path1;oldpath2");
         props.setProperty(PkgProps.EXTRA_MIN_API_LEVEL, "11");
         props.setProperty(PkgProps.EXTRA_PROJECT_FILES,
@@ -127,6 +127,9 @@ public class ExtraPackageTest_v3 extends MinToolsPackageTest {
 
         // different vendor, same path
         Properties props2 = new Properties(props1);
+        props2.setProperty(PkgProps.EXTRA_VENDOR_ID, "");
+        props2.setProperty(PkgProps.EXTRA_VENDOR_DISPLAY, "");
+        props2.setProperty(PkgProps.EXTRA_NAME_DISPLAY, "");
         props2.setProperty(PkgProps.EXTRA_VENDOR, "vendor2");
         ExtraPackage p2 = createExtraPackage(props2);
         assertFalse(p1.sameItemAs(p2));
