@@ -385,7 +385,10 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
                     "The android:versionCode cannot be a resource url, it must be "
                             + "a literal integer", null);
-        } else if (codeNode == null && context.isEnabled(SET_VERSION)) {
+        } else if (codeNode == null && context.isEnabled(SET_VERSION)
+                // Not required in Gradle projects; typically defined in build.gradle instead
+                // and inserted at build time
+                && !context.getMainProject().isGradleProject()) {
             context.report(SET_VERSION, element, context.getLocation(element),
                     "Should set android:versionCode to specify the application version", null);
         }
@@ -395,7 +398,10 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
                     "The android:versionName cannot be a resource url, it must be "
                             + "a literal string", null);
-        } else if (nameNode == null && context.isEnabled(SET_VERSION)) {
+        } else if (nameNode == null && context.isEnabled(SET_VERSION)
+                // Not required in Gradle projects; typically defined in build.gradle instead
+                // and inserted at build time
+                && !context.getMainProject().isGradleProject()) {
             context.report(SET_VERSION, element, context.getLocation(element),
                     "Should set android:versionName to specify the application version", null);
         }
