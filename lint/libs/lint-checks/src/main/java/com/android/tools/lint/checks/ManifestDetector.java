@@ -370,7 +370,10 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             checkDocumentElement(xmlContext, element);
         }
 
-        if (mSeenUsesSdk == 0 && context.isEnabled(USES_SDK)) {
+        if (mSeenUsesSdk == 0 && context.isEnabled(USES_SDK)
+                // Not required in Gradle projects; typically defined in build.gradle instead
+                // and inserted at build time
+                && !context.getMainProject().isGradleProject()) {
             context.report(USES_SDK, Location.create(context.file),
                     "Manifest should specify a minimum API level with " +
                     "<uses-sdk android:minSdkVersion=\"?\" />; if it really supports " +
