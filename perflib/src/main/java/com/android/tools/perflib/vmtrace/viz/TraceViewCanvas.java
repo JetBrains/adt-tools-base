@@ -33,11 +33,11 @@ import javax.swing.*;
 /**
  * A canvas that displays the call hierarchy for a single thread. The trace and the the thread to be
  * displayed are specified using {@link #setTrace(com.android.tools.perflib.vmtrace.VmTraceData,
- * String)} and {@link #displayThread(String)} methods.
+ * String, ClockType)} and {@link #displayThread(String)} methods.
  */
 public class TraceViewCanvas extends JComponent {
-    private static final Color BACKGROUND_COLOR = Color.LIGHT_GRAY;
-
+    private static final Color BACKGROUND_COLOR =
+            UIManager.getLookAndFeelDefaults().getColor("EditorPane.background");
     private static final int TOOLTIP_OFFSET = 10;
 
     /**
@@ -96,9 +96,10 @@ public class TraceViewCanvas extends JComponent {
     }
 
     public void setTrace(@NonNull VmTraceData traceData, @NonNull String threadName,
-            ClockType renderClockType) {
+            ClockType renderClock) {
         mTraceData = traceData;
         displayThread(threadName);
+        setRenderClock(renderClock);
     }
 
     public void displayThread(@NonNull String threadName) {

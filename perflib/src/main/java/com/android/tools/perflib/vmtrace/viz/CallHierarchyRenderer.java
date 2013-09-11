@@ -241,16 +241,20 @@ public class CallHierarchyRenderer {
         return getFontColor(percent);
     }
 
+    // Sequential color palette that works across both light and dark backgrounds
     private static final Color[] QUANTIZED_COLORS = {
-            new Color(247,251,255),
-            new Color(222,235,247),
-            new Color(198,219,239),
-            new Color(158,202,225),
-            new Color(107,174,214),
-            new Color(66,146,198),
-            new Color(33,113,181),
-            new Color(8,81,156),
-            new Color(8,48,107),
+            new Color(226, 230, 189),
+            new Color(235, 228, 139),
+            new Color(242, 221, 128),
+            new Color(246, 210, 119),
+            new Color(246, 197, 111),
+            new Color(242, 180, 104),
+            new Color(234, 161, 98),
+            new Color(223, 139, 91),
+            new Color(207, 115, 85),
+            new Color(188, 88, 77),
+            new Color(166, 57, 69),
+            new Color(142, 6, 59),
     };
 
     private Color getFill(int percent) {
