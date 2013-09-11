@@ -60,10 +60,10 @@ import java.util.Map.Entry;
 /**
  * Class to use the Layout library.
  * <p/>
- * Use {@link #load(String, ILogger)} to load the jar file.
+ * Use {@link #load(String, ILogger, String)} to load the jar file.
  * <p/>
  * Use the layout library with:
- * {@link #init(String, Map)}, {@link #supports(Capability)}, {@link #createSession(SessionParams)},
+ * {@link #init}, {@link #supports(Capability)}, {@link #createSession(SessionParams)},
  * {@link #dispose()}, {@link #clearCaches(Object)}.
  *
  * <p/>
@@ -128,8 +128,8 @@ public class LayoutLibrary {
      * Loads the layoutlib.jar file located at the given path and returns a {@link LayoutLibrary}
      * object representing the result.
      * <p/>
-     * If loading failed {@link #getStatus()} will reflect this, and {@link #getBridge()} will
-     * return null.
+     * If loading failed {@link #getStatus()} will reflect this, and {@link #mBridge} will
+     * be null.
      *
      * @param layoutLibJarOsPath the path of the jar file
      * @param log an optional log file.
@@ -287,8 +287,6 @@ public class LayoutLibrary {
      *          read from attrs.xml in the SDK target.
      * @param log a {@link LayoutLog} object. Can be null.
      * @return true if success.
-     *
-     * @see Bridge#init(String, Map)
      */
     public boolean init(Map<String, String> platformProperties,
             File fontLocation,
@@ -323,7 +321,7 @@ public class LayoutLibrary {
      * Before taking further actions on the scene, it is recommended to use
      * {@link #supports(Capability)} to check what the scene can do.
      *
-     * @return a new {@link ILayoutScene} object that contains the result of the scene creation and
+     * @return a new {@link RenderSession} object that contains the result of the scene creation and
      * first rendering or null if {@link #getStatus()} doesn't return {@link LoadStatus#LOADED}.
      *
      * @see Bridge#createSession(SessionParams)

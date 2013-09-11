@@ -58,9 +58,6 @@ public class LintRequest {
      * @param files the set of files to check with lint. This can reference Android projects,
      *          or directories containing Android projects, or individual XML or Java files
      *          (typically for incremental IDE analysis).
-     *
-     * @return the set of files to check, should not be empty
-     *
      */
     public LintRequest(@NonNull LintClient client, @NonNull List<File> files) {
         mClient = client;

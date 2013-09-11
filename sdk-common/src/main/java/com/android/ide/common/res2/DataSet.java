@@ -100,7 +100,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
 
     /**
      * Creates a DataFile and associated DataItems from an XML node from a file created with
-     * {@link DataSet##appendToXml(org.w3c.dom.Node, org.w3c.dom.Document)}
+     * {@link DataSet#appendToXml(org.w3c.dom.Node, org.w3c.dom.Document, MergeConsumer)}
      *
      * @param file the file represented by the DataFile
      * @param fileNode the XML node.

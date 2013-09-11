@@ -450,7 +450,7 @@ public final class Issue implements Comparable<Issue> {
     /**
      * The format of output from the description methods
      * @see #getDescription(OutputFormat)
-     * @see Issue#getExplanation(OutputFormat)}
+     * @see Issue#getExplanation(OutputFormat)
      * @see Issue#getBriefDescription(OutputFormat)
      * */
     public enum OutputFormat {
