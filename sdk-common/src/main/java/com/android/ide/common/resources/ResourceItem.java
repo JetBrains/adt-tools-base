@@ -135,7 +135,7 @@ public class ResourceItem implements Comparable<ResourceItem> {
 
     /**
      * Returns {@code true} if the item has no source file.
-     * @return
+     * @return true if the item has no source file.
      */
     protected boolean hasNoSourceFile() {
         return mFiles.isEmpty();

@@ -34,7 +34,7 @@ import java.util.Collection;
 /**
  * Check which looks for missing wrong case usage for certain layout tags.
  *
- * @todo Generalize this to handling spelling errors in general.
+ * TODO: Generalize this to handling spelling errors in general.
  */
 public class WrongCaseDetector extends LayoutDetector {
     /** Using the wrong case for layout tags */

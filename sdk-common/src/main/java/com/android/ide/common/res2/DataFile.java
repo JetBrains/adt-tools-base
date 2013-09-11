@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * Represents a data file.
  *
- * It contains a link to its {@link java.io.File}, and the {@DataItem}s it generates.
+ * It contains a link to its {@link java.io.File}, and the {@link DataItem}s it generates.
  *
  */
 public abstract class DataFile<I extends DataItem> {

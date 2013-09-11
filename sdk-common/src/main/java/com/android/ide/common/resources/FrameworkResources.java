@@ -45,10 +45,10 @@ import java.util.Map;
  *
  * This behaves the same as {@link ResourceRepository} except that it differentiates between
  * resources that are public and non public.
- * {@link #getResources(ResourceType)} and {@link #hasResourcesOfType(ResourceType)} only return
+ * {@link #getResourceItemsOfType(ResourceType)} and {@link #hasResourcesOfType(ResourceType)} only return
  * public resources. This is typically used to display resource lists in the UI.
  *
- * {@link #getConfiguredResources(com.android.ide.eclipse.adt.internal.resources.configurations.FolderConfiguration)}
+ * {@link #getConfiguredResources(com.android.ide.common.resources.configuration.FolderConfiguration)}
  * returns all resources, even the non public ones so that this can be used for rendering.
  */
 public class FrameworkResources extends ResourceRepository {
@@ -100,7 +100,6 @@ public class FrameworkResources extends ResourceRepository {
      * This map is a subset of the full resource map that only contains framework resources
      * that are public.
      *
-     * @param resFolder The root folder of the resources
      * @param logger a logger to report issues to
      */
     public void loadPublicResources(@Nullable ILogger logger) {
