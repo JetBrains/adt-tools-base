@@ -670,15 +670,12 @@ public class LintUtils {
     }
 
     /**
-     * Returns true if the given directory represents an Android project
-     * directory. Note: This doesn't necessarily mean it's an Eclipse directory,
-     * only that it looks like it contains a logical Android project -- one
-     * including a manifest file, a resource folder, etc.
+     * Returns true if the given directory is a lint manifest file directory.
      *
      * @param dir the directory to check
-     * @return true if the directory looks like an Android project
+     * @return true if the directory contains a manifest file
      */
-    public static boolean isProjectDir(@NonNull File dir) {
+    public static boolean isManifestFolder(File dir) {
         boolean hasManifest = new File(dir, ANDROID_MANIFEST_XML).exists();
         if (hasManifest) {
             // Special case: the bin/ folder can also contain a copy of the
@@ -687,14 +684,12 @@ public class LintUtils {
                 // ...unless of course it just *happens* to be a project named bin, in
                 // which case we peek at its parent to see if this is the case
                 dir = dir.getParentFile();
-                if (dir != null && isProjectDir(dir)) {
+                //noinspection ConstantConditions
+                if (dir != null && isManifestFolder(dir)) {
                     // Yes, it's a bin/ directory inside a real project: ignore this dir
                     return false;
                 }
             }
-        } else if (Project.isAospFrameworksProject(dir)) {
-            // Hardcoded AOSP support for the frameworks project
-            return true;
         }
 
         return hasManifest;

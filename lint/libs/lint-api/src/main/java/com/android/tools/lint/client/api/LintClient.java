@@ -16,6 +16,8 @@
 
 package com.android.tools.lint.client.api;
 
+import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static com.android.SdkConstants.BIN_FOLDER;
 import static com.android.SdkConstants.CLASS_FOLDER;
 import static com.android.SdkConstants.DOT_AAR;
 import static com.android.SdkConstants.DOT_JAR;
@@ -25,7 +27,6 @@ import static com.android.SdkConstants.RES_FOLDER;
 import static com.android.SdkConstants.SRC_FOLDER;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.sdk.SdkVersionInfo;
@@ -594,6 +595,35 @@ public abstract class LintClient {
         return project;
     }
 
+    /**
+     * Registers the given project for the given directory. This can
+     * be used when projects are initialized outside of the client itself.
+     *
+     * @param dir the directory of the project, which must be unique
+     * @param project the project
+     */
+    public void registerProject(@NonNull File dir, @NonNull Project project) {
+        File canonicalDir = dir;
+        try {
+            // Attempt to use the canonical handle for the file, in case there
+            // are symlinks etc present (since when handling library projects,
+            // we also call getCanonicalFile to compute the result of appending
+            // relative paths, which can then resolve symlinks and end up with
+            // a different prefix)
+            canonicalDir = dir.getCanonicalFile();
+        } catch (IOException ioe) {
+            // pass
+        }
+
+
+        if (mDirToProject == null) {
+            mDirToProject = new HashMap<File, Project>();
+        } else {
+            assert !mDirToProject.containsKey(dir) : dir;
+        }
+        mDirToProject.put(canonicalDir, project);
+    }
+
     private Set<File> mProjectDirs = Sets.newHashSet();
 
     /**
@@ -787,5 +817,18 @@ public abstract class LintClient {
         }
 
         return Collections.emptyList();
+    }
+
+    /**
+     * Returns true if the given directory is a lint project directory.
+     * By default, a project directory is the directory containing a manifest file,
+     * but in Gradle projects for example it's the root gradle directory.
+     *
+     * @param dir the directory to check
+     * @return true if the directory represents a lint project
+     */
+    @SuppressWarnings("MethodMayBeStatic") // Intentionally instance method so it can be overridden
+    public boolean isProjectDirectory(@NonNull File dir) {
+        return LintUtils.isManifestFolder(dir) || Project.isAospFrameworksProject(dir);
     }
 }

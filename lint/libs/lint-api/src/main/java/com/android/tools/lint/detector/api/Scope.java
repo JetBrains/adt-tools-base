@@ -16,10 +16,21 @@
 
 package com.android.tools.lint.detector.api;
 
+import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static com.android.SdkConstants.DOT_CLASS;
+import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.DOT_XML;
+import static com.android.SdkConstants.FN_PROJECT_PROGUARD_FILE;
+import static com.android.SdkConstants.OLD_PROGUARD_FILE;
+import static com.android.SdkConstants.RES_FOLDER;
+
 import com.android.annotations.NonNull;
 import com.google.common.annotations.Beta;
 
+import java.io.File;
+import java.util.Collection;
 import java.util.EnumSet;
+import java.util.List;
 
 /**
  * The scope of a detector is the set of files a detector must consider when
@@ -135,6 +146,47 @@ public enum Scope {
         return scope;
     }
 
+    /**
+     * Infers a suitable scope to use from the given projects to be analyzed
+     * @param projects the projects to find a suitable scope for
+     * @return the scope to use
+     */
+    @NonNull
+    public static EnumSet<Scope> infer(@NonNull Collection<Project> projects) {
+        // Infer the scope
+        EnumSet<Scope> scope = EnumSet.noneOf(Scope.class);
+        for (Project project : projects) {
+            List<File> subset = project.getSubset();
+            if (subset != null) {
+                for (File file : subset) {
+                    String name = file.getName();
+                    if (name.equals(ANDROID_MANIFEST_XML)) {
+                        scope.add(MANIFEST);
+                    } else if (name.endsWith(DOT_XML)) {
+                        scope.add(RESOURCE_FILE);
+                    } else if (name.equals(RES_FOLDER)
+                            || file.getParent().equals(RES_FOLDER)) {
+                        scope.add(ALL_RESOURCE_FILES);
+                        scope.add(RESOURCE_FILE);
+                    } else if (name.endsWith(DOT_JAVA)) {
+                        scope.add(JAVA_FILE);
+                    } else if (name.endsWith(DOT_CLASS)) {
+                        scope.add(CLASS_FILE);
+                    } else if (name.equals(OLD_PROGUARD_FILE)
+                            || name.equals(FN_PROJECT_PROGUARD_FILE)) {
+                        scope.add(PROGUARD_FILE);
+                    }
+                }
+            } else {
+                // Specified a full project: just use the full project scope
+                scope = Scope.ALL;
+                break;
+            }
+        }
+
+        return scope;
+    }
+
     /** All scopes: running lint on a project will check these scopes */
     public static final EnumSet<Scope> ALL = EnumSet.allOf(Scope.class);
     /** Scope-set used for detectors which are affected by a single resource file */
@@ -156,7 +208,7 @@ public enum Scope {
             EnumSet.of(RESOURCE_FILE, JAVA_FILE);
     /** Scope-set used for analyzing individual class files and all resource files */
     public static final EnumSet<Scope> CLASS_AND_ALL_RESOURCE_FILES =
-            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.CLASS_FILE);
+            EnumSet.of(ALL_RESOURCE_FILES, CLASS_FILE);
     /** Scope-set used for detectors which are affected by Java libraries */
-    public static final EnumSet<Scope> JAVA_LIBRARY_SCOPE = EnumSet.of(Scope.JAVA_LIBRARIES);
+    public static final EnumSet<Scope> JAVA_LIBRARY_SCOPE = EnumSet.of(JAVA_LIBRARIES);
 }
