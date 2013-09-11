@@ -27,6 +27,12 @@ import java.io.InputStream;
 public class SdkAddonConstants extends RepoConstants {
 
     /**
+     * The latest version of the sdk-addon XML Schema.
+     * Valid version numbers are between 1 and this number, included.
+     */
+    public static final int NS_LATEST_VERSION = 6;
+
+    /**
      * The default name looked for by {@link SdkSource} when trying to load an
      * sdk-addon XML if the URL doesn't match an existing resource.
      */
@@ -41,12 +47,6 @@ public class SdkAddonConstants extends RepoConstants {
      * Matcher's group(1) is the schema version (integer).
      */
     public static final String NS_PATTERN = NS_BASE + "([1-9][0-9]*)";     //$NON-NLS-1$
-
-    /**
-     * The latest version of the sdk-addon XML Schema.
-     * Valid version numbers are between 1 and this number, included.
-     */
-    public static final int NS_LATEST_VERSION = 5;
 
     /** The XML namespace of the latest sdk-addon XML. */
     public static final String NS_URI = getSchemaUri(NS_LATEST_VERSION);

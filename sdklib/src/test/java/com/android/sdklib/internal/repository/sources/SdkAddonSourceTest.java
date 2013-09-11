@@ -713,6 +713,154 @@ public class SdkAddonSourceTest extends TestCase {
     }
 
     /**
+     * Validate we can load a valid add-on schema version 6
+     */
+    public void testLoadAddonXml_6() throws Exception {
+        InputStream xmlStream = getTestResource("/com/android/sdklib/testdata/addon_sample_6.xml");
+
+        // guess the version from the XML document
+        int version = mSource._getXmlSchemaVersion(xmlStream);
+        assertEquals(6, version);
+
+        Boolean[] validatorFound = new Boolean[] { Boolean.FALSE };
+        String[] validationError = new String[] { null };
+        String url = "not-a-valid-url://" + SdkAddonConstants.URL_DEFAULT_FILENAME;
+
+        String uri = mSource._validateXml(xmlStream, url, version, validationError, validatorFound);
+        assertEquals(Boolean.TRUE, validatorFound[0]);
+        assertEquals(null, validationError[0]);
+        assertEquals(SdkAddonConstants.getSchemaUri(6), uri);
+
+        // Validation was successful, load the document
+        MockMonitor monitor = new MockMonitor();
+        Document doc = mSource._getDocument(xmlStream, monitor);
+        assertNotNull(doc);
+
+        // Get the packages
+        assertTrue(mSource._parsePackages(doc, uri, monitor));
+
+        assertEquals("Found My First add-on, Android API 1, revision 1\n" +
+                     "Found My Second add-on, Android API 2, revision 42\n" +
+                     "Found This add-on has no libraries, Android API 4, revision 3\n" +
+                     "Found Random name, not an id!, revision 43.42.41 (Obsolete)\n" +
+                     "Found Yet another extra, by Android, revision 2.0.1\n" +
+                     "Found . -..- - .-. .-, revision 2 (Obsolete)\n",
+                monitor.getCapturedVerboseLog());
+        assertEquals("", monitor.getCapturedLog());
+        assertEquals("", monitor.getCapturedErrorLog());
+
+        // check the packages we found... we expected to find 6 packages with each at least
+        // one archive.
+        // Note the order doesn't necessary match the one from the
+        // assertEquald(getCapturedVerboseLog) because packages are sorted using the
+        // Packages' sorting order, e.g. all platforms are sorted by descending API level, etc.
+        Package[] pkgs = mSource.getPackages();
+
+        assertEquals(6, pkgs.length);
+        for (Package p : pkgs) {
+            assertTrue(p.getArchives().length >= 1);
+        }
+
+        // Check the addon packages: vendor/name id vs display
+        ArrayList<String> addonNames   = new ArrayList<String>();
+        ArrayList<String> addonVendors = new ArrayList<String>();
+        for (Package p : pkgs) {
+            if (p instanceof AddonPackage) {
+                AddonPackage ap = (AddonPackage) p;
+                addonNames.add(ap.getNameId() + "/" + ap.getDisplayName());
+                addonVendors.add(ap.getVendorId() + "/" + ap.getDisplayVendor());
+            }
+        }
+        // Addons are sorted by addon/vendor id and thus their order differs from the
+        // XML or the parsed package list.
+        assertEquals(
+                "[no_libs/This add-on has no libraries, " +
+                 "My_Second_add-on/My Second add-on, " +
+                 "My_First_add-on/My First add-on]",
+                Arrays.toString(addonNames.toArray()));
+        assertEquals(
+                "[Joe_Bar/Joe Bar, " +
+                 "John_Deer/John Deer, " +
+                 "John_Doe/John Doe]",
+                Arrays.toString(addonVendors.toArray()));
+
+        // Check the layoutlib of the platform packages.
+        ArrayList<Pair<Integer, Integer>> layoutlibVers = new ArrayList<Pair<Integer,Integer>>();
+        for (Package p : pkgs) {
+            if (p instanceof AddonPackage) {
+                layoutlibVers.add(((AddonPackage) p).getLayoutlibVersion());
+            }
+        }
+        assertEquals(
+                 "[Pair [first=3, second=42], " +         // for #3 "This add-on has no libraries"
+                  "Pair [first=0, second=0], " +          // for #2 "My Second add-on"
+                  "Pair [first=5, second=0]]",            // for #1 "My First add-on"
+                Arrays.toString(layoutlibVers.toArray()));
+
+
+        // Check the extra packages: path, vendor, install folder, old-paths
+        final String osSdkPath = "SDK";
+        final SdkManager sdkManager = new MockEmptySdkManager(osSdkPath);
+
+        ArrayList<String> extraPaths   = new ArrayList<String>();
+        ArrayList<String> extraVendors = new ArrayList<String>();
+        ArrayList<File>   extraInstall = new ArrayList<File>();
+        ArrayList<ArrayList<String>> extraFilePaths = new ArrayList<ArrayList<String>>();
+        for (Package p : pkgs) {
+            if (p instanceof ExtraPackage) {
+                ExtraPackage ep = (ExtraPackage) p;
+                // combine path and old-paths in the form "path [old_path1, old_path2]"
+                extraPaths.add(ep.getPath() + " " + Arrays.toString(ep.getOldPaths()));
+                extraVendors.add(ep.getVendorId() + "/" + ep.getVendorDisplay());
+                extraInstall.add(ep.getInstallFolder(osSdkPath, sdkManager));
+
+                ArrayList<String> filePaths = new ArrayList<String>();
+                for (String filePath : ep.getProjectFiles()) {
+                    filePaths.add(filePath);
+                }
+                extraFilePaths.add(filePaths);
+            }
+        }
+        // Extras are sorted by vendor-id/path and thus their order differs from the
+        // XML or the parsed package list.
+        assertEquals(
+                "[extra0000005f [], " +                             // for extra #3
+                 "extra_api_dep [path1, old_path2, oldPath3], " +   // for extra #2
+                 "usb_driver []]",                                  // for extra #1
+                Arrays.toString(extraPaths.toArray()));
+        assertEquals(
+                "[____/____, " +
+                 "android_vendor/Android Vendor, " +
+                 "cyclop/The big bus]",
+                Arrays.toString(extraVendors.toArray()));
+        assertEquals(
+                ("[SDK/extras/____/extra0000005f, " +
+                  "SDK/extras/android_vendor/extra_api_dep, " +
+                  "SDK/extras/cyclop/usb_driver]").replace('/', File.separatorChar),
+                Arrays.toString(extraInstall.toArray()));
+        assertEquals(
+                "[[], " +
+                 "[v8/veggies_8.jar, root.jar, dir1/dir 2 with space/mylib.jar], " +
+                 "[]]",
+                Arrays.toString(extraFilePaths.toArray()));
+
+
+        // Check the min-tools-rev
+        ArrayList<String> minToolsRevs = new ArrayList<String>();
+        for (Package p : pkgs) {
+            if (p instanceof IMinToolsDependency) {
+                minToolsRevs.add(p.getListDescription() + ": " +
+                        ((IMinToolsDependency) p).getMinToolsRevision().toShortString());
+            }
+        }
+        assertEquals(
+                "[. -..- - .-. .- (Obsolete): 3.0.1, " +
+                 "Yet another extra, by Android: 3, " +
+                 "Random name, not an id! (Obsolete): 3.2.1 rc42]",
+                Arrays.toString(minToolsRevs.toArray()));
+    }
+
+    /**
      * Returns an SdkLib file resource as a {@link ByteArrayInputStream},
      * which has the advantage that we can use {@link InputStream#reset()} on it
      * at any time to read it multiple times.

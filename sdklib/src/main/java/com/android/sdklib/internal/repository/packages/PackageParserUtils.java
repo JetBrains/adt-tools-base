@@ -17,6 +17,7 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.sdklib.repository.SdkRepoConstants;
 
 import org.w3c.dom.Node;
@@ -67,6 +68,46 @@ public class PackageParserUtils {
         }
 
         return new FullRevision(major, minor, micro, preview);
+    }
+
+    /**
+     * Parses a no-preview revision element such as <revision>>.
+     * This supports both the single-integer format as well as the full revision
+     * format with major/minor/micro sub-elements.
+     *
+     * @param revisionNode The node to parse.
+     * @return A new {@link NoPreviewRevision}. If parsing failed, major is set to
+     *  {@link FullRevision#MISSING_MAJOR_REV}.
+     */
+    public static NoPreviewRevision parseNoPreviewRevisionElement(Node revisionNode) {
+        // This needs to support two modes:
+        // - For addon XSD >= 6, <revision> contains sub-elements such as <major> or <minor>.
+        // - Otherwise for addon XSD < 6, <revision> contains an integer.
+        // The <major> element is mandatory, so it's easy to distinguish between both cases.
+        int major = FullRevision.MISSING_MAJOR_REV,
+            minor = FullRevision.IMPLICIT_MINOR_REV,
+            micro = FullRevision.IMPLICIT_MICRO_REV;
+
+        if (revisionNode != null) {
+            if (PackageParserUtils.findChildElement(revisionNode,
+                                                    SdkRepoConstants.NODE_MAJOR_REV) != null) {
+                // <revision> has a <major> sub-element, so it's a repository XSD >= 7.
+                major = PackageParserUtils.getXmlInt(revisionNode,
+                        SdkRepoConstants.NODE_MAJOR_REV, FullRevision.MISSING_MAJOR_REV);
+                minor = PackageParserUtils.getXmlInt(revisionNode,
+                        SdkRepoConstants.NODE_MINOR_REV, FullRevision.IMPLICIT_MINOR_REV);
+                micro = PackageParserUtils.getXmlInt(revisionNode,
+                        SdkRepoConstants.NODE_MICRO_REV, FullRevision.IMPLICIT_MICRO_REV);
+            } else {
+                try {
+                    String majorStr = revisionNode.getTextContent().trim();
+                    major = Integer.parseInt(majorStr);
+                } catch (Exception e) {
+                }
+            }
+        }
+
+        return new NoPreviewRevision(major, minor, micro);
     }
 
     /**

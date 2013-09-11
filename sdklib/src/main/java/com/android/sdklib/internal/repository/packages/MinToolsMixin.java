@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 The Android Open Source Project
+ * Copyright (C) 2013 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,37 +20,38 @@ import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.PkgProps;
+import com.android.sdklib.repository.SdkRepoConstants;
 
 import org.w3c.dom.Node;
 
-import java.util.Map;
 import java.util.Properties;
 
 /**
  * Represents an XML node in an SDK repository that has a min-tools-rev requirement.
  */
-public abstract class MinToolsPackage extends MajorRevisionPackage implements IMinToolsDependency {
-
-    private final MinToolsMixin mMinToolsMixin;
+class MinToolsMixin implements IMinToolsDependency {
 
     /**
-     * Creates a new package from the attributes and elements of the given XML node.
+     * The minimal revision of the tools package required by this extra package, if > 0,
+     * or {@link #MIN_TOOLS_REV_NOT_SPECIFIED} if there is no such requirement.
+     */
+    private final FullRevision mMinToolsRevision;
+
+    /**
+     * Creates a new mixin from the attributes and elements of the given XML node.
      * This constructor should throw an exception if the package cannot be created.
      *
-     * @param source The {@link SdkSource} where this is loaded from.
      * @param packageNode The XML element being parsed.
-     * @param nsUri The namespace URI of the originating XML document, to be able to deal with
-     *          parameters that vary according to the originating XML schema.
-     * @param licenses The licenses loaded from the XML originating document.
      */
-    MinToolsPackage(SdkSource source, Node packageNode, String nsUri, Map<String,String> licenses) {
-        super(source, packageNode, nsUri, licenses);
+    MinToolsMixin(Node packageNode) {
 
-        mMinToolsMixin = new MinToolsMixin(packageNode);
+        mMinToolsRevision = PackageParserUtils.parseFullRevisionElement(
+            PackageParserUtils.findChildElement(packageNode, SdkRepoConstants.NODE_MIN_TOOLS_REV));
     }
 
     /**
-     * Manually create a new package with one archive and the given attributes.
+     * Manually create a new mixin with one archive and the given attributes.
      * This is used to create packages from local directories in which case there must be
      * one archive which URL is the actual target location.
      * <p/>
@@ -58,7 +59,7 @@ public abstract class MinToolsPackage extends MajorRevisionPackage implements IM
      * <p/>
      * By design, this creates a package with one and only one archive.
      */
-    public MinToolsPackage(
+    public MinToolsMixin(
             SdkSource source,
             Properties props,
             int revision,
@@ -68,19 +69,17 @@ public abstract class MinToolsPackage extends MajorRevisionPackage implements IM
             Os archiveOs,
             Arch archiveArch,
             String archiveOsPath) {
-        super(source, props, revision, license, description, descUrl,
-                archiveOs, archiveArch, archiveOsPath);
 
-        mMinToolsMixin = new MinToolsMixin(
-                source,
-                props,
-                revision,
-                license,
-                description,
-                descUrl,
-                archiveOs,
-                archiveArch,
-                archiveOsPath);
+        String revStr = Package.getProperty(props, PkgProps.MIN_TOOLS_REV, null);
+
+        FullRevision rev = MIN_TOOLS_REV_NOT_SPECIFIED;
+        if (revStr != null) {
+            try {
+                rev = FullRevision.parseRevision(revStr);
+            } catch (NumberFormatException ignore) {}
+        }
+
+        mMinToolsRevision = rev;
     }
 
     /**
@@ -89,18 +88,25 @@ public abstract class MinToolsPackage extends MajorRevisionPackage implements IM
      */
     @Override
     public FullRevision getMinToolsRevision() {
-        return mMinToolsMixin.getMinToolsRevision();
+        return mMinToolsRevision;
     }
 
-    @Override
     public void saveProperties(Properties props) {
-        super.saveProperties(props);
-        mMinToolsMixin.saveProperties(props);
+        if (!getMinToolsRevision().equals(MIN_TOOLS_REV_NOT_SPECIFIED)) {
+            props.setProperty(PkgProps.MIN_TOOLS_REV, getMinToolsRevision().toShortString());
+        }
     }
 
     @Override
     public int hashCode() {
-        return mMinToolsMixin.hashCode(super.hashCode());
+        return hashCode(super.hashCode());
+    }
+
+    int hashCode(int superHashCode) {
+        final int prime = 31;
+        int result = superHashCode;
+        result = prime * result + ((mMinToolsRevision == null) ? 0 : mMinToolsRevision.hashCode());
+        return result;
     }
 
     @Override
@@ -111,9 +117,17 @@ public abstract class MinToolsPackage extends MajorRevisionPackage implements IM
         if (!super.equals(obj)) {
             return false;
         }
-        if (!(obj instanceof MinToolsPackage)) {
+        if (!(obj instanceof IMinToolsDependency)) {
             return false;
         }
-        return mMinToolsMixin.equals(obj);
+        IMinToolsDependency other = (IMinToolsDependency) obj;
+        if (mMinToolsRevision == null) {
+            if (other.getMinToolsRevision() != null) {
+                return false;
+            }
+        } else if (!mMinToolsRevision.equals(other.getMinToolsRevision())) {
+            return false;
+        }
+        return true;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 The Android Open Source Project
+ * Copyright (C) 2013 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ package com.android.sdklib.internal.repository.packages;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.sdklib.repository.PkgProps;
+import com.android.sdklib.repository.SdkRepoConstants;
 
 import org.w3c.dom.Node;
 
@@ -27,11 +29,12 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * Represents an XML node in an SDK repository that has a min-tools-rev requirement.
+ * Represents a package in an SDK repository that has a {@link NoPreviewRevision},
+ * which is a single major.minor.micro revision number and no preview.
  */
-public abstract class MinToolsPackage extends MajorRevisionPackage implements IMinToolsDependency {
+public abstract class NoPreviewRevisionPackage extends Package {
 
-    private final MinToolsMixin mMinToolsMixin;
+    private final NoPreviewRevision mRevision;
 
     /**
      * Creates a new package from the attributes and elements of the given XML node.
@@ -43,10 +46,14 @@ public abstract class MinToolsPackage extends MajorRevisionPackage implements IM
      *          parameters that vary according to the originating XML schema.
      * @param licenses The licenses loaded from the XML originating document.
      */
-    MinToolsPackage(SdkSource source, Node packageNode, String nsUri, Map<String,String> licenses) {
+    NoPreviewRevisionPackage(SdkSource source,
+            Node packageNode,
+            String nsUri,
+            Map<String,String> licenses) {
         super(source, packageNode, nsUri, licenses);
 
-        mMinToolsMixin = new MinToolsMixin(packageNode);
+        mRevision = PackageParserUtils.parseNoPreviewRevisionElement(
+                PackageParserUtils.findChildElement(packageNode, SdkRepoConstants.NODE_REVISION));
     }
 
     /**
@@ -58,7 +65,7 @@ public abstract class MinToolsPackage extends MajorRevisionPackage implements IM
      * <p/>
      * By design, this creates a package with one and only one archive.
      */
-    public MinToolsPackage(
+    public NoPreviewRevisionPackage(
             SdkSource source,
             Properties props,
             int revision,
@@ -71,36 +78,43 @@ public abstract class MinToolsPackage extends MajorRevisionPackage implements IM
         super(source, props, revision, license, description, descUrl,
                 archiveOs, archiveArch, archiveOsPath);
 
-        mMinToolsMixin = new MinToolsMixin(
-                source,
-                props,
-                revision,
-                license,
-                description,
-                descUrl,
-                archiveOs,
-                archiveArch,
-                archiveOsPath);
+        String revStr = getProperty(props, PkgProps.PKG_REVISION, null);
+
+        NoPreviewRevision rev = null;
+        if (revStr != null) {
+            try {
+                rev = NoPreviewRevision.parseRevision(revStr);
+            } catch (NumberFormatException ignore) {}
+        }
+        if (rev == null) {
+            rev = new NoPreviewRevision(revision);
+        }
+
+        mRevision = rev;
     }
 
     /**
-     * The minimal revision of the tools package required by this extra package, if > 0,
-     * or {@link #MIN_TOOLS_REV_NOT_SPECIFIED} if there is no such requirement.
+     * Returns the revision, an int > 0, for all packages (platform, add-on, tool, doc).
+     * Can be 0 if this is a local package of unknown revision.
      */
     @Override
-    public FullRevision getMinToolsRevision() {
-        return mMinToolsMixin.getMinToolsRevision();
+    public NoPreviewRevision getRevision() {
+        return mRevision;
     }
+
 
     @Override
     public void saveProperties(Properties props) {
         super.saveProperties(props);
-        mMinToolsMixin.saveProperties(props);
+        props.setProperty(PkgProps.PKG_REVISION, mRevision.toString());
     }
 
     @Override
     public int hashCode() {
-        return mMinToolsMixin.hashCode(super.hashCode());
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + ((mRevision == null) ? 0 : mRevision.hashCode());
+        return result;
     }
 
     @Override
@@ -111,9 +125,39 @@ public abstract class MinToolsPackage extends MajorRevisionPackage implements IM
         if (!super.equals(obj)) {
             return false;
         }
-        if (!(obj instanceof MinToolsPackage)) {
+        if (!(obj instanceof NoPreviewRevisionPackage)) {
             return false;
         }
-        return mMinToolsMixin.equals(obj);
+        NoPreviewRevisionPackage other = (NoPreviewRevisionPackage) obj;
+        if (mRevision == null) {
+            if (other.mRevision != null) {
+                return false;
+            }
+        } else if (!mRevision.equals(other.mRevision)) {
+            return false;
+        }
+        return true;
     }
+
+    @Override
+    public UpdateInfo canBeUpdatedBy(Package replacementPackage) {
+        if (replacementPackage == null) {
+            return UpdateInfo.INCOMPATIBLE;
+        }
+
+        // check they are the same item.
+        if (!sameItemAs(replacementPackage)) {
+            return UpdateInfo.INCOMPATIBLE;
+        }
+
+        // check revision number
+        if (replacementPackage.getRevision().compareTo(this.getRevision()) > 0) {
+            return UpdateInfo.UPDATE;
+        }
+
+        // not an upgrade but not incompatible either.
+        return UpdateInfo.NOT_UPDATE;
+    }
+
+
 }
