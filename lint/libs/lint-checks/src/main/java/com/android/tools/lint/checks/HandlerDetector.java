@@ -16,6 +16,9 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.CONSTRUCTOR_NAME;
+
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
@@ -30,6 +33,7 @@ import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
 
 /**
  * Checks that Handler implementations are top level classes or static.
@@ -43,11 +47,14 @@ public class HandlerDetector extends Detector implements ClassScanner {
             "Handler reference leaks",
             "Ensures that Handler classes do not hold on to a reference to an outer class",
 
-            "In Android, Handler classes should be static or leaks might occur. " +
-            "Messages enqueued on the application thread's MessageQueue also retain their " +
-            "target Handler. If the Handler is an inner class, its outer class will be " +
-            "retained as well. To avoid leaking the outer class, declare the Handler as a " +
-            "static nested class with a WeakReference to its outer class.",
+            "Since this Handler is declared as an inner class, it may prevent the outer " +
+            "class from being garbage collected. If the Handler is using a Looper or " +
+            "MessageQueue for a thread other than the main thread, then there is no issue. " +
+            "If the Handler is using the Looper or MessageQueue of the main thread, you " +
+            "need to fix your Handler declaration, as follows: Declare the Handler as a " +
+            "static class; In the outer class, instantiate a WeakReference to the outer " +
+            "class and pass this object to your Handler when you instantiate the Handler; " +
+            "Make all references to members of the outer class using the WeakReference object.",
 
             Category.PERFORMANCE,
             4,
@@ -76,6 +83,15 @@ public class HandlerDetector extends Detector implements ClassScanner {
 
         if (context.getDriver().isSubclassOf(classNode, "android/os/Handler") //$NON-NLS-1$
                 && !LintUtils.isStaticInnerClass(classNode)) {
+            // Only flag handlers using the default looper
+            for (Object m : classNode.methods) {
+                MethodNode method = (MethodNode) m;
+                if (CONSTRUCTOR_NAME.equals(method.name) &&
+                        method.desc.contains("Landroid/os/Looper;")) {
+                    return;
+                }
+            }
+
             Location location = context.getLocation(classNode);
             context.report(ISSUE, location, String.format(
                     "This Handler class should be static or leaks might occur (%1$s)",
