@@ -301,6 +301,14 @@ public class ManifestDetectorTest extends AbstractCheckTest {
             lintProject("no_version.xml=>AndroidManifest.xml"));
     }
 
+    public void testVersionNotMissingInGradleProjects() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.SET_VERSION);
+        assertEquals(""
+            + "No warnings.",
+            lintProject("no_version.xml=>AndroidManifest.xml",
+                    "multiproject/library.properties=>build.gradle")); // dummy; only name counts
+    }
+
     public void testIllegalReference() throws Exception {
         mEnabled = Collections.singleton(ManifestDetector.ILLEGAL_REFERENCE);
         assertEquals(""
