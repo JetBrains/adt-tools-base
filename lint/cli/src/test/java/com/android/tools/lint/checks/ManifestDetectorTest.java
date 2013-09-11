@@ -80,6 +80,14 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                     "res/values/strings.xml"));
     }
 
+    public void testMissingUsesSdkInGradle() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.SET_VERSION);
+        assertEquals(""
+                + "No warnings.",
+                lintProject("missingusessdk.xml=>AndroidManifest.xml",
+                        "multiproject/library.properties=>build.gradle")); // dummy; only name counts
+    }
+
     public void testMissingMinSdk() throws Exception {
         mEnabled = Collections.singleton(ManifestDetector.USES_SDK);
         assertEquals(
