@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
+import java.util.concurrent.TimeUnit;
 
 public class Call {
     private final long mMethodId;
@@ -85,7 +86,7 @@ public class Call {
     private long sumInclusiveTimes(@NonNull List<Call> callees, ClockType clockType) {
         long sum = 0;
         for (Call c : callees) {
-            sum += c.getInclusiveTime(clockType);
+            sum += c.getInclusiveTime(clockType, TimeUnit.MICROSECONDS);
         }
         return sum;
     }
@@ -111,26 +112,31 @@ public class Call {
         return mIsRecursive;
     }
 
-    public long getEntryTime(ClockType clockType) {
-        return clockType == ClockType.THREAD ? UnsignedInts.toLong(mEntryThreadTime) :
-                UnsignedInts.toLong(mEntryGlobalTime);
+    public long getEntryTime(ClockType clockType, TimeUnit units) {
+        long entryTime = clockType == ClockType.THREAD ?
+                UnsignedInts.toLong(mEntryThreadTime) : UnsignedInts.toLong(mEntryGlobalTime);
+        return units.convert(entryTime, VmTraceData.getDefaultTimeUnits());
     }
 
-    public long getExitTime(ClockType clockType) {
-        return clockType == ClockType.THREAD ? UnsignedInts.toLong(mExitThreadTime) :
-                UnsignedInts.toLong(mExitGlobalTime);
+    public long getExitTime(ClockType clockType, TimeUnit units) {
+        long exitTime = clockType == ClockType.THREAD ?
+                UnsignedInts.toLong(mExitThreadTime) : UnsignedInts.toLong(mExitGlobalTime);
+        return units.convert(exitTime, VmTraceData.getDefaultTimeUnits());
     }
 
-    public long getInclusiveTime(ClockType clockType) {
-        return clockType == ClockType.THREAD ?
+    public long getInclusiveTime(ClockType clockType, TimeUnit units) {
+        long inclusiveTime = clockType == ClockType.THREAD ?
                 UnsignedInts.toLong(mExitThreadTime - mEntryThreadTime) :
                 UnsignedInts.toLong(mExitGlobalTime - mEntryGlobalTime);
+        return units.convert(inclusiveTime, VmTraceData.getDefaultTimeUnits());
     }
 
-    public long getExclusiveTime(ClockType clockType) {
+    public long getExclusiveTime(ClockType clockType, TimeUnit units) {
         long inclusiveTimeInCallees = clockType == ClockType.THREAD ?
                 mInclusiveThreadTimeInCallees : mInclusiveGlobalTimeInCallees;
-        return getInclusiveTime(clockType) - inclusiveTimeInCallees;
+        long exclusiveTime = getInclusiveTime(clockType, VmTraceData.getDefaultTimeUnits()) -
+                inclusiveTimeInCallees;
+        return units.convert(exclusiveTime, VmTraceData.getDefaultTimeUnits());
     }
 
     public static class Builder {
