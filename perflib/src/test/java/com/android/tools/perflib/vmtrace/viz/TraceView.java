@@ -91,6 +91,7 @@ public class TraceView {
         private final TraceViewCanvas mTraceViewCanvas;
         private JComboBox mThreadCombo;
         private JCheckBox mClockSelector;
+        private JCheckBox mUseInclusiveTimeForColor;
 
         public TraceViewPanel() {
             setLayout(new BorderLayout());
@@ -114,6 +115,9 @@ public class TraceView {
             mClockSelector.setSelected(true);
             p.add(mClockSelector);
 
+            mUseInclusiveTimeForColor = new JCheckBox("Color by inclusive time");
+            p.add(mUseInclusiveTimeForColor);
+
             ActionListener listener = new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -124,11 +128,15 @@ public class TraceView {
                     } else if (e.getSource() == mClockSelector) {
                         mTraceViewCanvas.setRenderClock(mClockSelector.isSelected() ?
                                 ClockType.GLOBAL : ClockType.THREAD);
+                    } else if (e.getSource() == mUseInclusiveTimeForColor) {
+                        mTraceViewCanvas.setUseInclusiveTimeForColorAssignment(
+                                mUseInclusiveTimeForColor.isSelected());
                     }
                 }
             };
             mThreadCombo.addActionListener(listener);
             mClockSelector.addActionListener(listener);
+            mUseInclusiveTimeForColor.addActionListener(listener);
 
             return p;
         }

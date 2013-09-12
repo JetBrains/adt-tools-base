@@ -43,7 +43,7 @@ public class VmTraceParserTest extends TestCase {
 
         assertEquals(3, traceData.getVersion());
         assertTrue(traceData.isDataFileOverflow());
-        assertEquals(VmTraceData.ClockType.DUAL, traceData.getClockType());
+        assertEquals(VmTraceData.VmClockType.DUAL, traceData.getVmClockType());
         assertEquals("dalvik", traceData.getVm());
 
         Collection<ThreadInfo> threads = traceData.getThreads();

@@ -34,11 +34,11 @@ import java.util.concurrent.TimeUnit;
  *  </ul>
  */
 public class VmTraceData {
-    public static enum ClockType { THREAD_CPU, WALL, DUAL }
+    public static enum VmClockType { THREAD_CPU, WALL, DUAL }
 
     private final int mVersion;
     private final boolean mDataFileOverflow;
-    private final ClockType mClockType;
+    private final VmClockType mVmClockType;
     private final String mVm;
     private final Map<String, String> mTraceProperties;
 
@@ -51,7 +51,7 @@ public class VmTraceData {
     private VmTraceData(Builder b) {
         mVersion = b.mVersion;
         mDataFileOverflow = b.mDataFileOverflow;
-        mClockType = b.mClockType;
+        mVmClockType = b.mVmClockType;
         mVm = b.mVm;
         mTraceProperties = b.mProperties;
         mMethods = b.mMethods;
@@ -80,8 +80,8 @@ public class VmTraceData {
         return mDataFileOverflow;
     }
 
-    public ClockType getClockType() {
-        return mClockType;
+    public VmClockType getVmClockType() {
+        return mVmClockType;
     }
 
     public String getVm() {
@@ -114,12 +114,33 @@ public class VmTraceData {
         return mMethods.get(methodId);
     }
 
+    /** Returns the duration of this call as a percentage of the duration of the top level call. */
+    public double getDurationPercentage(Call call, String threadName, ClockType clockType,
+            boolean inclusiveTime) {
+        Call topCall = getThread(threadName).getTopLevelCall();
+        if (topCall == null) {
+            return 100.;
+        }
+
+        MethodInfo methodInfo = getMethod(call.getMethodId());
+        MethodInfo topInfo = getMethod(topCall.getMethodId());
+
+        TimeSelector selector = TimeSelector.create(clockType, inclusiveTime);
+        long methodTime = selector.get(methodInfo, threadName);
+
+        // always use inclusive time to obtain the top level's time when computing percentages
+        selector = TimeSelector.create(clockType, true);
+        long topLevelTime = selector.get(topInfo, threadName);
+
+        return (double) methodTime/topLevelTime * 100;
+    }
+
     public static class Builder {
         private static final boolean DEBUG = false;
 
         private int mVersion;
         private boolean mDataFileOverflow;
-        private ClockType mClockType = ClockType.THREAD_CPU;
+        private VmClockType mVmClockType = VmClockType.THREAD_CPU;
         private String mVm = "";
         private final Map<String, String> mProperties = new HashMap<String, String>(10);
 
@@ -148,12 +169,12 @@ public class VmTraceData {
             mDataFileOverflow = dataFileOverflow;
         }
 
-        public void setClockType(ClockType clockType) {
-            mClockType = clockType;
+        public void setVmClockType(VmClockType vmClockType) {
+            mVmClockType = vmClockType;
         }
 
-        public ClockType getClockType() {
-            return mClockType;
+        public VmClockType getVmClockType() {
+            return mVmClockType;
         }
 
         public void setProperty(String key, String value) {

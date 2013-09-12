@@ -69,13 +69,12 @@ public class TraceViewCanvas extends JComponent {
 
     private VmTraceData mTraceData;
     private Call mTopLevelCall;
+    private RenderContext mRenderContext;
 
     private TimeScaleRenderer mTimeScaleRenderer;
     private CallHierarchyRenderer mCallHierarchyRenderer;
 
     private final Point2D mTmpPoint = new Point2D.Double();
-
-    private ClockType mRenderClock;
 
     public TraceViewCanvas() {
         mViewPortTransform = new AffineTransform();
@@ -113,8 +112,8 @@ public class TraceViewCanvas extends JComponent {
     public void setTrace(@NonNull VmTraceData traceData, @NonNull String threadName,
             ClockType renderClock) {
         mTraceData = traceData;
+        mRenderContext = new RenderContext(traceData, renderClock);
         displayThread(threadName);
-        setRenderClock(renderClock);
     }
 
     public void displayThread(@NonNull String threadName) {
@@ -140,17 +139,19 @@ public class TraceViewCanvas extends JComponent {
                 DEFAULT_TIME_UNITS);
         int yOffset = mTimeScaleRenderer.getLayoutHeight();
         mCallHierarchyRenderer = new CallHierarchyRenderer(mTraceData, threadName, yOffset,
-                mRenderClock, DEFAULT_TIME_UNITS);
+                DEFAULT_TIME_UNITS, mRenderContext);
 
         zoomFit();
     }
 
     public void setRenderClock(ClockType clock) {
-        mRenderClock = clock;
-        if (mCallHierarchyRenderer != null) {
-            mCallHierarchyRenderer.setRenderClock(clock);
-            repaint();
-        }
+        mRenderContext.setRenderClock(clock);
+        repaint();
+    }
+
+    public void setUseInclusiveTimeForColorAssignment(boolean en) {
+        mRenderContext.setUseInclusiveTimeForColorAssignment(en);
+        repaint();
     }
 
     private void zoomFit() {
