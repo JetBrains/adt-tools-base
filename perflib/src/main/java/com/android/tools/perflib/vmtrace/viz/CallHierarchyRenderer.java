@@ -26,6 +26,7 @@ import com.android.utils.HtmlBuilder;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.text.DecimalFormat;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
@@ -46,22 +47,24 @@ public class CallHierarchyRenderer {
     private final String mThreadName;
     private final Call mTopCall;
     private final int mYOffset;
+    private final TimeUnit mLayoutTimeUnits;
 
-    private final Rectangle mLayout = new Rectangle();
-    private final Point2D.Float mSrc = new Point2D.Float();
-    private final Point2D.Float mDst = new Point2D.Float();
+    private final Rectangle2D mLayout = new Rectangle2D.Double();
+    private final Point2D mTmpPoint1 = new Point2D.Double();
+    private final Point2D mTmpPoint2 = new Point2D.Double();
 
     private Font mFont;
 
     private ClockType mRenderClock;
 
     public CallHierarchyRenderer(@NonNull VmTraceData vmTraceData, @NonNull String threadName,
-            int yOffset, ClockType renderClock) {
+            int yOffset, ClockType renderClock, TimeUnit defaultTimeUnits) {
         mTraceData = vmTraceData;
         mThreadName = threadName;
         mTopCall = vmTraceData.getThread(threadName).getTopLevelCall();
         mYOffset = yOffset;
         mRenderClock = renderClock;
+        mLayoutTimeUnits = defaultTimeUnits;
     }
 
     public void setRenderClock(ClockType clockType) {
@@ -73,14 +76,18 @@ public class CallHierarchyRenderer {
      * This essentially iterates through every single call in the hierarchy and renders it if it is
      * visible in the current viewport.
      */
-    public void render(Graphics2D g) {
+    public void render(Graphics2D g, AffineTransform viewPortTransform) {
         Rectangle clip = g.getClipBounds();
 
         Iterator<Call> it = mTopCall.getCallHierarchyIterator();
         while (it.hasNext()) {
             Call c = it.next();
 
+            // obtain layout in item space
             fillLayoutBounds(c, mLayout);
+
+            // transform based on the current viewport (scale + translate)
+            transformRect(viewPortTransform, mLayout);
 
             // no need to render if it is is not in the current viewport.
             if (!clip.intersects(mLayout)) {
@@ -88,15 +95,15 @@ public class CallHierarchyRenderer {
             }
 
             // no need to render if it is too small (arbitrarily assumed to be < 1 px wide)
-            double widthOnScreen = g.getTransform().getScaleX() * mLayout.width;
-            if (widthOnScreen < 1) {
+            if (mLayout.getWidth() < 1) {
                 continue;
             }
 
             // obtain the fill color based on its importance
             Color fillColor = getFillColor(c);
             g.setColor(fillColor);
-            g.fillRect(mLayout.x, mLayout.y, mLayout.width, mLayout.height);
+            g.fillRect((int) mLayout.getX(), (int) mLayout.getY(), (int) mLayout.getWidth(),
+                    (int) mLayout.getHeight());
 
             // paint its name within the rectangle if possible
             String name = getName(c);
@@ -104,7 +111,21 @@ public class CallHierarchyRenderer {
         }
     }
 
-    private void drawString(Graphics2D g, String name, Rectangle bounds, Color fontColor) {
+    private Rectangle2D transformRect(AffineTransform viewPortTransform, Rectangle2D rect) {
+        mTmpPoint1.setLocation(rect.getX(), rect.getY());
+        mTmpPoint2.setLocation(rect.getWidth(), rect.getHeight());
+
+        viewPortTransform.transform(mTmpPoint1, mTmpPoint1);
+        viewPortTransform.deltaTransform(mTmpPoint2, mTmpPoint2);
+
+        rect.setRect(mTmpPoint1.getX(),
+                mTmpPoint1.getY(),
+                mTmpPoint2.getX(),
+                mTmpPoint2.getY());
+        return rect;
+    }
+
+    private void drawString(Graphics2D g, String name, Rectangle2D bounds, Color fontColor) {
         if (mFont == null) {
             mFont = g.getFont().deriveFont(8.0f);
         }
@@ -113,35 +134,36 @@ public class CallHierarchyRenderer {
 
         AffineTransform origTx = g.getTransform();
 
-        mSrc.x = bounds.x + TEXT_LEFT_PADDING;
-        mSrc.y = bounds.y + TEXT_HEIGHT;
+        mTmpPoint1.setLocation(bounds.getX() + TEXT_LEFT_PADDING, bounds.getY() + TEXT_HEIGHT);
 
-        double availableWidth = g.getTransform().getScaleX() * bounds.width;
+        double availableWidth = g.getTransform().getScaleX() * bounds.getWidth();
 
         // When drawing a string, we want its location to be transformed by the current viewport
         // transform, but not the text itself (we don't want it zoomed out or in).
-        origTx.transform(mSrc, mDst);
+        origTx.transform(mTmpPoint1, mTmpPoint1);
         g.setTransform(new AffineTransform());
 
         double stringWidth = g.getFontMetrics().stringWidth(name);
         if (availableWidth > stringWidth) {
-            g.drawString(name, mDst.x, mDst.y);
+            g.drawString(name, (float) mTmpPoint1.getX(), (float) mTmpPoint1.getY());
         }
 
         g.setTransform(origTx);
     }
 
     /** Fills the layout bounds corresponding to a given call in the given Rectangle object. */
-    private void fillLayoutBounds(Call c, Rectangle layoutBounds) {
-        layoutBounds.x = (int) (c.getEntryTime(mRenderClock) - mTopCall.getEntryTime(mRenderClock)
-                + PADDING);
-        layoutBounds.y = c.getDepth() * PER_LEVEL_HEIGHT_PX + mYOffset + PADDING;
-        layoutBounds.width  = (int) c.getInclusiveTime(mRenderClock) - 2 * PADDING;
-        layoutBounds.height = PER_LEVEL_HEIGHT_PX - 2 * PADDING;
+    private void fillLayoutBounds(Call c, Rectangle2D layoutBounds) {
+        double x = c.getEntryTime(mRenderClock, mLayoutTimeUnits)
+                - mTopCall.getEntryTime(mRenderClock, mLayoutTimeUnits)
+                + PADDING;
+        double y = c.getDepth() * PER_LEVEL_HEIGHT_PX + mYOffset + PADDING;
+        double width  = c.getInclusiveTime(mRenderClock, mLayoutTimeUnits) - 2 * PADDING;
+        double height = PER_LEVEL_HEIGHT_PX - 2 * PADDING;
+        layoutBounds.setRect(x, y, width, height);
     }
 
     /** Get the tooltip corresponding to given location (in item coordinates). */
-    public String getToolTipFor(int x, int y) {
+    public String getToolTipFor(double x, double y) {
         Iterator<Call> it = mTopCall.getCallHierarchyIterator();
         while (it.hasNext()) {
             Call c = it.next();
@@ -151,6 +173,7 @@ public class CallHierarchyRenderer {
                 return formatToolTip(c);
             }
         }
+
         return null;
     }
 
@@ -162,16 +185,17 @@ public class CallHierarchyRenderer {
 
         htmlBuilder.addHeading(getName(c), "black");
 
-        long span = c.getExitTime(GLOBAL) - c.getEntryTime(GLOBAL);
-        TimeUnit unit = mTraceData.getTimeUnits();
-        String entryGlobal = TimeUtils.makeHumanReadable(c.getEntryTime(GLOBAL), span, unit);
-        String entryThread = TimeUtils.makeHumanReadable(c.getEntryTime(THREAD), span, unit);
-        String exitGlobal = TimeUtils.makeHumanReadable(c.getExitTime(GLOBAL), span, unit);
-        String exitThread = TimeUtils.makeHumanReadable(c.getExitTime(THREAD), span, unit);
+        long span = c.getExitTime(GLOBAL, TimeUnit.NANOSECONDS) -
+                c.getEntryTime(GLOBAL, TimeUnit.NANOSECONDS);
+        TimeUnit unit = TimeUnit.NANOSECONDS;
+        String entryGlobal = TimeUtils.makeHumanReadable(c.getEntryTime(GLOBAL, unit), span, unit);
+        String entryThread = TimeUtils.makeHumanReadable(c.getEntryTime(THREAD, unit), span, unit);
+        String exitGlobal = TimeUtils.makeHumanReadable(c.getExitTime(GLOBAL, unit), span, unit);
+        String exitThread = TimeUtils.makeHumanReadable(c.getExitTime(THREAD, unit), span, unit);
         String durationGlobal = TimeUtils.makeHumanReadable(
-                c.getExitTime(GLOBAL) - c.getEntryTime(GLOBAL), span, unit);
+                c.getExitTime(GLOBAL, unit) - c.getEntryTime(GLOBAL, unit), span, unit);
         String durationThread = TimeUtils.makeHumanReadable(
-                c.getExitTime(THREAD) - c.getEntryTime(THREAD), span, unit);
+                c.getExitTime(THREAD, unit) - c.getEntryTime(THREAD, unit), span, unit);
 
         htmlBuilder.beginTable();
         htmlBuilder.addTableRow("Wallclock Time:", durationGlobal,

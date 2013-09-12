@@ -14,6 +14,7 @@ import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 public class VmTraceParser {
     private static final int TRACE_MAGIC = 0x574f4c53; // 'SLOW'
@@ -393,14 +394,16 @@ public class VmTraceParser {
 
             MethodInfo info = data.getMethod(c.getMethodId());
             for (ClockType type : ClockType.values()) {
-                info.addExclusiveTime(c.getExclusiveTime(type), thread.getName(), type);
+                info.addExclusiveTime(c.getExclusiveTime(type, TimeUnit.NANOSECONDS),
+                        thread.getName(), type);
             }
 
             if (!c.isRecursive()) {
                 // In the case of a recursive call, the top level call's inclusive time
                 // already accounts for the entire inclusive time
                 for (ClockType type : ClockType.values()) {
-                    info.addInclusiveTime(c.getInclusiveTime(type), thread.getName(), type);
+                    info.addInclusiveTime(c.getInclusiveTime(type, TimeUnit.NANOSECONDS),
+                            thread.getName(), type);
                 }
             }
         }

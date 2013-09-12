@@ -32,6 +32,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class VmTraceParserTest extends TestCase {
     public void testParseHeader() throws IOException {
@@ -80,7 +81,8 @@ public class VmTraceParserTest extends TestCase {
         }
     }
 
-    private void testTrace(String traceName, String threadName, String expectedCallSequence) throws IOException {
+    private void testTrace(String traceName, String threadName, String expectedCallSequence)
+            throws IOException {
         VmTraceData traceData = getVmTraceData(traceName);
 
         ThreadInfo thread = traceData.getThread(threadName);
@@ -135,8 +137,10 @@ public class VmTraceParserTest extends TestCase {
         while (it.hasNext()) {
             Call c = it.next();
 
-            assertTrue(c.getEntryTime(ClockType.GLOBAL) <= c.getExitTime(ClockType.GLOBAL));
-            assertTrue(c.getEntryTime(ClockType.THREAD) <= c.getExitTime(ClockType.THREAD));
+            assertTrue(c.getEntryTime(ClockType.GLOBAL, TimeUnit.NANOSECONDS) <=
+                    c.getExitTime(ClockType.GLOBAL, TimeUnit.NANOSECONDS));
+            assertTrue(c.getEntryTime(ClockType.THREAD, TimeUnit.NANOSECONDS) <=
+                    c.getExitTime(ClockType.THREAD, TimeUnit.NANOSECONDS));
         }
     }
 
@@ -148,8 +152,8 @@ public class VmTraceParserTest extends TestCase {
         Collections.sort(methods, new Comparator<Map.Entry<Long, MethodInfo>>() {
             @Override
             public int compare(Map.Entry<Long, MethodInfo> o1, Map.Entry<Long, MethodInfo> o2) {
-                long diff = o2.getValue().getInclusiveTime(threadName, ClockType.THREAD) - o1.getValue()
-                        .getInclusiveTime(threadName, ClockType.THREAD);
+                long diff = o2.getValue().getInclusiveTime(threadName, ClockType.THREAD) -
+                        o1.getValue().getInclusiveTime(threadName, ClockType.THREAD);
                 return Ints.saturatedCast(diff);
             }
         });
@@ -171,7 +175,7 @@ public class VmTraceParserTest extends TestCase {
 
         assertNotNull(top);
 
-        long topThreadTime = top.getInclusiveTime(ClockType.THREAD);
+        long topThreadTime = top.getInclusiveTime(ClockType.THREAD, TimeUnit.NANOSECONDS);
 
         Collection<MethodInfo> methods = traceData.getMethods().values();
         Iterator<MethodInfo> it = methods.iterator();
