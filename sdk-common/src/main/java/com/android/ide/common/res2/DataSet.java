@@ -17,6 +17,7 @@
 package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.utils.ILogger;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
@@ -97,7 +98,15 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
 
     protected abstract DataSet<I, F> createSet(String name);
 
-    protected abstract F createFileAndItems(File file, Node fileNode);
+    /**
+     * Creates a DataFile and associated DataItems from an XML node from a file created with
+     * {@link DataSet#appendToXml(org.w3c.dom.Node, org.w3c.dom.Document, MergeConsumer)}
+     *
+     * @param file the file represented by the DataFile
+     * @param fileNode the XML node.
+     * @return a DataFile
+     */
+    protected abstract F createFileAndItems(@NonNull File file, @NonNull Node fileNode);
 
     /**
      * Reads the content of a data folders and loads the DataItem.
@@ -113,9 +122,9 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
     protected abstract void readSourceFolder(File sourceFolder, ILogger logger)
             throws DuplicateDataException, IOException;
 
+    @Nullable
     protected abstract F createFileAndItems(File sourceFolder, File file, ILogger logger)
             throws IOException;
-
 
     /**
      * Adds a collection of source files.
@@ -238,7 +247,8 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      * @param setNode the root node for this set.
      * @param document The root XML document
      */
-    void appendToXml(Node setNode, Document document) {
+    void appendToXml(@NonNull Node setNode, @NonNull Document document,
+            @NonNull MergeConsumer<I> consumer) {
         // add the config name attribute
         NodeUtils.addAttribute(document, setNode, null, ATTR_CONFIG, mConfigName);
 
@@ -256,6 +266,10 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
             Collection<F> dataFiles = mSourceFileToDataFilesMap.get(sourceFile);
 
             for (F dataFile : dataFiles) {
+                if (!dataFile.hasNotRemovedItems()) {
+                    continue;
+                }
+
                 // the node for the file and its path and qualifiers attribute
                 Node fileNode = document.createElement(NODE_FILE);
                 sourceNode.appendChild(fileNode);
@@ -265,12 +279,17 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
 
                 if (dataFile.getType() == DataFile.FileType.MULTI) {
                     for (I item : dataFile.getItems()) {
+                        if (item.isRemoved()|| consumer.ignoreItemInMerge(item)) {
+                            continue;
+                        }
                         Node adoptedNode = item.getAdoptedNode(document);
                         if (adoptedNode != null) {
                             fileNode.appendChild(adoptedNode);
                         }
                     }
                 } else {
+                    // no need to check for isRemoved here since it's checked
+                    // at the file level and there's only one item.
                     I dataItem = dataFile.getItem();
                     NodeUtils.addAttribute(document, fileNode, null, ATTR_NAME, dataItem.getName());
                     dataItem.addExtraAttributes(document, fileNode, null);
@@ -281,7 +300,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
 
     /**
      * Creates and returns a new DataSet from an XML node that was created with
-     * {@link #appendToXml(org.w3c.dom.Node, org.w3c.dom.Document)}
+     * {@link #appendToXml(org.w3c.dom.Node, org.w3c.dom.Document, MergeConsumer)}
      *
      * The object this method is called on is not modified. This should be static but can't be
      * due to children classes.
@@ -380,10 +399,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
             throws IOException {
         switch (fileStatus) {
             case NEW:
-                if (isValidSourceFile(sourceFolder, changedFile)) {
-                    return handleNewFile(sourceFolder, changedFile, logger);
-                }
-                return true;
+                return handleNewFile(sourceFolder, changedFile, logger);
             case CHANGED:
                 return handleChangedFile(sourceFolder, changedFile);
             case REMOVED:
@@ -399,16 +415,22 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
         return false;
     }
 
-    protected abstract boolean isValidSourceFile(File sourceFolder, File changedFile);
+    protected boolean isValidSourceFile(@NonNull File sourceFolder, @NonNull File file) {
+        return checkFileForAndroidRes(file);
+    }
 
     protected boolean handleNewFile(File sourceFolder, File file, ILogger logger)
             throws IOException {
         F dataFile = createFileAndItems(sourceFolder, file, logger);
-        processNewDataFile(sourceFolder, dataFile, true /*setTouched*/);
+        if (dataFile != null) {
+            processNewDataFile(sourceFolder, dataFile, true /*setTouched*/);
+        }
         return true;
     }
 
-    protected void processNewDataFile(File sourceFolder, F dataFile, boolean setTouched) {
+    protected void processNewDataFile(@NonNull File sourceFolder,
+                                      @NonNull F dataFile,
+                                      boolean setTouched) {
         Collection<I> dataItems = dataFile.getItems();
 
         addDataFile(sourceFolder, dataFile);
@@ -421,7 +443,8 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
         }
     }
 
-    protected boolean handleChangedFile(File sourceFolder, File changedFile) throws IOException {
+    protected boolean handleChangedFile(@NonNull File sourceFolder,
+                                        @NonNull File changedFile) throws IOException {
         F dataFile = mDataFileMap.get(changedFile);
         dataFile.getItem().setTouched();
         return true;
@@ -445,7 +468,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      * @param sourceFile the parent source file.
      * @param dataFile the DataFile
      */
-    private void addDataFile(File sourceFile, F dataFile) {
+    private void addDataFile(@NonNull File sourceFile, @NonNull F dataFile) {
         mSourceFileToDataFilesMap.put(sourceFile, dataFile);
         mDataFileMap.put(dataFile.getFile(), dataFile);
     }
@@ -462,6 +485,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      */
     protected boolean checkFileForAndroidRes(File file) {
         // TODO: use the aapt ignore pattern value.
+        // We should move this somewhere else when introduce aapt pattern
 
         String name = file.getName();
         int pos = name.lastIndexOf('.');

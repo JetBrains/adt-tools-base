@@ -33,7 +33,7 @@ public class ValueResourceParser2Test extends BaseTestCase {
     public void testParsedResourcesByCount() throws Exception {
         List<ResourceItem> resources = getParsedResources();
 
-        assertEquals(18, resources.size());
+        assertEquals(20, resources.size());
     }
 
     public void testParsedResourcesByName() throws Exception {
@@ -56,6 +56,8 @@ public class ValueResourceParser2Test extends BaseTestCase {
                 "attr/string_attr",
                 "attr/enum_attr",
                 "attr/flag_attr",
+                "attr/blah",
+                "attr/blah2",
                 "declare-styleable/declare_styleable",
                 "dimen/dimen",
                 "id/item_id",
@@ -78,6 +80,7 @@ public class ValueResourceParser2Test extends BaseTestCase {
             sResources = parser.parseFile();
 
             // create a fake resource file to allow calling ResourceItem.getKey()
+            //noinspection ResultOfObjectAllocationIgnored
             new ResourceFile(valuesXml, sResources, "");
         }
 

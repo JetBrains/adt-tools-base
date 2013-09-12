@@ -17,9 +17,9 @@
 package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.xml.XmlPrettyPrinter;
-import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
@@ -175,6 +175,8 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                  * previously written one.
                  */
 
+                boolean foundIgnoredItem = false;
+
                 setLoop: for (int i = mDataSets.size() - 1 ; i >= 0 ; i--) {
                     S dataSet = mDataSets.get(i);
 
@@ -192,6 +194,11 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                     for (int ii = items.size() - 1 ; ii >= 0 ; ii--) {
                         I item = items.get(ii);
 
+                        if (consumer.ignoreItemInMerge(item)) {
+                            foundIgnoredItem = true;
+                            continue;
+                        }
+
                         if (item.isWritten()) {
                             assert previouslyWritten == null;
                             previouslyWritten = item;
@@ -207,8 +214,14 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                     }
                 }
 
-                // done searching, we should at least have something.
-                assert previouslyWritten != null || toWrite != null;
+                // done searching, we should at least have something, unless we only
+                // found items that are not meant to be written (attr inside declare styleable)
+                assert foundIgnoredItem || previouslyWritten != null || toWrite != null;
+
+                //noinspection ConstantConditions
+                if (previouslyWritten == null && toWrite == null) {
+                    continue;
+                }
 
                 // now need to handle, the type of each (single res file, multi res file), whether
                 // they are the same object or not, whether the previously written object was deleted.
@@ -248,11 +261,14 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
      * Writes a single blob file to store all that the DataMerger knows about.
      *
      * @param blobRootFolder the root folder where blobs are store.
+     * @param consumer the merge consumer that was used by the merge.
+     *
      * @throws IOException
      *
      * @see #loadFromBlob(File, boolean)
      */
-    public void writeBlobTo(File blobRootFolder) throws IOException {
+    public void writeBlobTo(@NonNull File blobRootFolder, @NonNull MergeConsumer<I> consumer)
+            throws IOException {
         // write "compact" blob
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
@@ -271,7 +287,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                 Node dataSetNode = document.createElement(NODE_DATA_SET);
                 rootNode.appendChild(dataSetNode);
 
-                dataSet.appendToXml(dataSetNode, document);
+                dataSet.appendToXml(dataSetNode, document, consumer);
             }
 
             String content = XmlPrettyPrinter.prettyPrint(document);
@@ -301,9 +317,10 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
      * @return true if the blob was loaded.
      * @throws IOException
      *
-     * @see #writeBlobTo(File)
+     * @see #writeBlobTo(File, MergeConsumer)
      */
-    public boolean loadFromBlob(File blobRootFolder, boolean incrementalState) throws IOException {
+    public boolean loadFromBlob(@NonNull File blobRootFolder, boolean incrementalState)
+            throws IOException {
         File file = new File(blobRootFolder, FN_MERGER_XML);
         if (!file.isFile()) {
             return false;
@@ -363,6 +380,13 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             } catch (IOException e) {
                 // ignore
             }
+        }
+    }
+
+    public void cleanBlob(@NonNull File blobRootFolder) {
+        File file = new File(blobRootFolder, FN_MERGER_XML);
+        if (file.isFile()) {
+            file.delete();
         }
     }
 
@@ -513,23 +537,82 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     }
 
     /**
-     * Returns a DataSet that contains a given file.
+     * Finds the {@link DataSet} that contains the given file.
+     * This methods will also performs some checks to make sure the given file is a valid file
+     * in the data set.
      *
-     * "contains" means that the DataSet has a source file/folder that is the root folder
+     * All the information is set in a {@link FileValidity} object that is returned.
+     *
+     * {@link FileValidity} contains information about the changed file including:
+     * - is it from an known set, is it an ignored file, or is it unknown?
+     * - what data set does it belong to
+     * - what source folder in the data set does it belong to.
+     *
+     * "belong" means that the DataSet has a source file/folder that is the root folder
      * of this file. The folder and/or file doesn't have to exist.
      *
      * @param file the file to check
-     * @return a pair containing the ResourceSet and its source file that contains the file.
+     *
+     * @return a new FileValidity.
      */
-    public Pair<S, File> getDataSetContaining(File file) {
+    public FileValidity<S> findDataSetContaining(@NonNull File file) {
+        return findDataSetContaining(file, null);
+    }
+
+    /**
+     * Finds the {@link DataSet} that contains the given file.
+     * This methods will also performs some checks to make sure the given file is a valid file
+     * in the data set.
+     *
+     * All the information is set in a {@link FileValidity} object that is returned. If an instance
+     * is passed, then this object is filled instead, and returned.
+     *
+     * {@link FileValidity} contains information about the changed file including:
+     * - is it from an known set, is it an ignored file, or is it unknown?
+     * - what data set does it belong to
+     * - what source folder in the data set does it belong to.
+     *
+     * "belong" means that the DataSet has a source file/folder that is the root folder
+     * of this file. The folder and/or file doesn't have to exist.
+     *
+     * @param file the file to check
+     * @param fileValidity an optional FileValidity to fill. If null a new one is returned.
+     *
+     * @return a new FileValidity or the one given as a parameter.
+     */
+    public FileValidity<S> findDataSetContaining(@NonNull File file,
+                                                 @Nullable FileValidity<S> fileValidity) {
+        if (fileValidity == null) {
+            fileValidity = new FileValidity<S>();
+        }
+
+        if (mDataSets.isEmpty()) {
+            fileValidity.status = FileValidity.FileStatus.UNKNOWN_FILE;
+            return fileValidity;
+        }
+
+        // get the first dataset to check on the file if it's part of a IGNORED_FILE.
+        // This is mostly a work-around for the fact that the method is on data sets.
+        S tempDataSet = mDataSets.get(0);
+        if (!tempDataSet.checkFileForAndroidRes(file)) {
+            fileValidity.status = FileValidity.FileStatus.IGNORED_FILE;
+            return fileValidity;
+        }
+
         for (S dataSet : mDataSets) {
             File sourceFile = dataSet.findMatchingSourceFile(file);
+
             if (sourceFile != null) {
-                return Pair.of(dataSet, sourceFile);
+                fileValidity.dataSet = dataSet;
+                fileValidity.sourceFile = sourceFile;
+                fileValidity.status = dataSet.isValidSourceFile(sourceFile, file) ?
+                        FileValidity.FileStatus.VALID_FILE : FileValidity.FileStatus.IGNORED_FILE;
+                return fileValidity;
             }
         }
 
-        return null;
+        fileValidity.status = FileValidity.FileStatus.UNKNOWN_FILE;
+        return fileValidity;
     }
 
     protected synchronized void createDir(File folder) throws IOException {

@@ -24,13 +24,12 @@ import org.w3c.dom.Node;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 /**
  * Represents a data file.
  *
- * It contains a link to its {@link java.io.File}, and the {@DataItem}s it generates.
+ * It contains a link to its {@link java.io.File}, and the {@link DataItem}s it generates.
  *
  */
 public abstract class DataFile<I extends DataItem> {
@@ -40,7 +39,7 @@ public abstract class DataFile<I extends DataItem> {
     }
 
     private final FileType mType;
-    private final File mFile;
+    protected File mFile;
     private final Map<String, I> mItems = Maps.newHashMap();
 
     /**
@@ -70,7 +69,7 @@ public abstract class DataFile<I extends DataItem> {
      * This must be called from the constructor of the children classes.
      * @param items the items
      */
-    protected void init(@NonNull List<I> items) {
+    protected void init(@NonNull Iterable<I> items) {
         for (I item : items) {
             item.setSource(this);
             mItems.put(item.getKey(), item);
@@ -92,25 +91,54 @@ public abstract class DataFile<I extends DataItem> {
         return mItems.values().iterator().next();
     }
 
+    boolean hasNotRemovedItems() {
+        for (I item : mItems.values()) {
+            if (!item.isRemoved()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     @NonNull
-    Collection<I> getItems() {
+    public Collection<I> getItems() {
         return mItems.values();
     }
 
     @NonNull
-    Map<String, I> getItemMap() {
+    public Map<String, I> getItemMap() {
         return mItems;
     }
 
-    void addItems(Collection<I> items) {
+    public void addItems(@NonNull Collection<I> items) {
         for (I item : items) {
-            mItems.put(item.getKey(), item);
             item.setSource(this);
+            mItems.put(item.getKey(), item);
         }
+    }
+
+    public void removeItems(@NonNull Collection<I> items) {
+        for (I item : items) {
+            mItems.remove(item.getKey());
+            item.setSource(null);
+        }
+    }
+
+    public void removeItem(ResourceItem item) {
+        mItems.remove(item.getKey());
+        item.setSource(null);
     }
 
     void addExtraAttributes(Document document, Node node, String namespaceUri) {
         // nothing
+    }
+
+    public void replace(@NonNull I oldItem, @NonNull I newItem) {
+        mItems.remove(oldItem.getKey());
+        oldItem.setSource(null);
+        newItem.setSource(this);
+        mItems.put(newItem.getKey(), newItem);
     }
 
     @Override

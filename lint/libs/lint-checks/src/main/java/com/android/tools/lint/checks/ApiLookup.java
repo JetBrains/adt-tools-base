@@ -630,7 +630,7 @@ public class ApiLookup {
      * @param name the class name in VM format (e.g. using / instead of .)
      * @return true if the owner is <b>possibly</b> relevant
      */
-    public boolean isRelevantClass(String name) {
+    public static boolean isRelevantClass(String name) {
         // TODO: Add quick switching here. This is tied to the database file so if
         // we end up with unexpected prefixes there, this could break. For that reason,
         // for now we consider everything relevant.

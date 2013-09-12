@@ -59,7 +59,6 @@ public class SdkAddonSource extends SdkSource {
         return false;
     }
 
-
     @Override
     protected String[] getDefaultXmlFileUrls() {
         return new String[] { SdkAddonConstants.URL_DEFAULT_FILENAME };

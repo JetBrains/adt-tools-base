@@ -47,10 +47,19 @@ public final class SdkConstants {
      */
     public static final int CURRENT_PLATFORM = currentPlatform();
 
+    /** Environment variable that specifies the path of an Android SDK. */
+    public static final String ANDROID_HOME_ENV = "ANDROID_HOME";
+
+    /** Property in local.properties file that specifies the path of the Android SDK.  */
+    public static final String SDK_DIR_PROPERTY = "sdk.dir";
+
     /**
      * Charset for the ini file handled by the SDK.
      */
     public static final String INI_CHARSET = "UTF-8";                                 //$NON-NLS-1$
+
+    /** Path separator used by Gradle */
+    public static final String GRADLE_PATH_SEPARATOR = ":";                           //$NON-NLS-1$
 
     /** An SDK Project's AndroidManifest.xml file */
     public static final String FN_ANDROID_MANIFEST_XML= "AndroidManifest.xml";        //$NON-NLS-1$
@@ -63,6 +72,8 @@ public final class SdkConstants {
     public static final String FN_BUILD_XML = "build.xml";                            //$NON-NLS-1$
     /** An SDK Project's build.gradle file */
     public static final String FN_BUILD_GRADLE = "build.gradle";                      //$NON-NLS-1$
+    /** An SDK Project's settings.gradle file */
+    public static final String FN_SETTINGS_GRADLE = "settings.gradle";                //$NON-NLS-1$
 
     /** Name of the framework library, i.e. "android.jar" */
     public static final String FN_FRAMEWORK_LIBRARY = "android.jar";                  //$NON-NLS-1$
@@ -138,6 +149,22 @@ public final class SdkConstants {
     public static final String FN_RENDERSCRIPT =
         "llvm-rs-cc" + ext(".exe", "");                   //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
+    /** renderscript support exe (with extension for the current OS) */
+    public static final String FN_BCC_COMPAT =
+            "bcc_compat" + ext(".exe", "");               //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
+    /** renderscript support linker for ARM (with extension for the current OS) */
+    public static final String FN_LD_ARM =
+            "arm-linux-androideabi-ld" + ext(".exe", ""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
+    /** renderscript support linker for X86 (with extension for the current OS) */
+    public static final String FN_LD_X86 =
+            "i686-linux-android-ld" + ext(".exe", "");   //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
+    /** renderscript support linker for MIPS (with extension for the current OS) */
+    public static final String FN_LD_MIPS =
+            "mipsel-linux-android-ld" + ext(".exe", ""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
     /** adb executable (with extension for the current OS) */
     public static final String FN_ADB =
         "adb" + ext(".exe", "");                          //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -168,6 +195,9 @@ public final class SdkConstants {
     public static final String FN_CONTENT_HASH_PROP = "content_hash.properties";      //$NON-NLS-1$
     /** properties file for the SDK */
     public static final String FN_SDK_PROP = "sdk.properties";                        //$NON-NLS-1$
+
+
+    public static final String FN_RENDERSCRIPT_V8_JAR = "renderscript-v8.jar"; //$NON-NLS-1$
 
     /**
      * filename for gdbserver.
@@ -215,6 +245,11 @@ public final class SdkConstants {
     public static final String FD_PROGUARD = "proguard";                //$NON-NLS-1$
     /** aidl output folder for copied aidl files */
     public static final String FD_AIDL = "aidl";                        //$NON-NLS-1$
+
+    /** rs Libs output folder for support mode */
+    public static final String FD_RS_LIBS = "rsLibs";                   //$NON-NLS-1$
+    /** rs Libs output folder for support mode */
+    public static final String FD_RS_OBJ = "rsObj";                     //$NON-NLS-1$
 
     /* Folder Names for the Android SDK */
 
@@ -594,7 +629,9 @@ public final class SdkConstants {
     public static final String ANDROID_NS_NAME = "android";                  //$NON-NLS-1$
     /** The default prefix used for the {@link #ANDROID_URI} name space including the colon  */
     public static final String ANDROID_NS_NAME_PREFIX = "android:";          //$NON-NLS-1$
-    /** The default prefix used for the app */
+    public static final int ANDROID_NS_NAME_PREFIX_LEN = ANDROID_NS_NAME_PREFIX.length();
+
+  /** The default prefix used for the app */
     public static final String APP_PREFIX = "app";                          //$NON-NLS-1$
     /** The entity for the ampersand character */
     public static final String AMP_ENTITY = "&amp;";                         //$NON-NLS-1$
@@ -654,6 +691,10 @@ public final class SdkConstants {
     public static final String TAG_DIMEN = "dimen";                    //$NON-NLS-1$
     public static final String TAG_DRAWABLE = "drawable";              //$NON-NLS-1$
     public static final String TAG_MENU = "menu";                      //$NON-NLS-1$
+    public static final String TAG_ENUM = "enum";                      //$NON-NLS-1$
+    public static final String TAG_FLAG = "flag";                      //$NON-NLS-1$
+    public static final String TAG_ATTR = "attr";                      //$NON-NLS-1$
+    public static final String TAG_DECLARE_STYLEABLE = "declare-styleable"; //$NON-NLS-1$
 
     // Tags: XML
     public static final String TAG_HEADER = "header";                  //$NON-NLS-1$
@@ -738,6 +779,8 @@ public final class SdkConstants {
     public static final String ATTR_TRANSLATABLE = "translatable";     //$NON-NLS-1$
     public static final String ATTR_COLOR = "color";                   //$NON-NLS-1$
     public static final String ATTR_VALUE = "value";                   //$NON-NLS-1$
+    public static final String ATTR_QUANTITY = "quantity";             //$NON-NLS-1$
+    public static final String ATTR_FORMAT = "format";                 //$NON-NLS-1$
 
     // Attributes: Layout
     public static final String ATTR_LAYOUT_RESOURCE_PREFIX = "layout_";//$NON-NLS-1$
@@ -762,6 +805,8 @@ public final class SdkConstants {
     public static final String ATTR_PADDING_TOP = "paddingTop";        //$NON-NLS-1$
     public static final String ATTR_PADDING_RIGHT = "paddingRight";    //$NON-NLS-1$
     public static final String ATTR_PADDING_LEFT = "paddingLeft";      //$NON-NLS-1$
+    public static final String ATTR_PADDING_START = "paddingStart";    //$NON-NLS-1$
+    public static final String ATTR_PADDING_END = "paddingEnd";        //$NON-NLS-1$
     public static final String ATTR_FOREGROUND = "foreground";         //$NON-NLS-1$
     public static final String ATTR_BACKGROUND = "background";         //$NON-NLS-1$
     public static final String ATTR_ORIENTATION = "orientation";       //$NON-NLS-1$
@@ -796,6 +841,15 @@ public final class SdkConstants {
             "textIsSelectable";                                        //$NON-NLS-1$
     public static final String ATTR_IMPORTANT_FOR_ACCESSIBILITY =
             "importantForAccessibility";                               //$NON-NLS-1$
+    public static final String ATTR_LIST_PREFERRED_ITEM_PADDING_LEFT =
+            "listPreferredItemPaddingLeft";                            //$NON-NLS-1$
+    public static final String ATTR_LIST_PREFERRED_ITEM_PADDING_RIGHT =
+            "listPreferredItemPaddingRight";                           //$NON-NLS-1$
+    public static final String ATTR_LIST_PREFERRED_ITEM_PADDING_START =
+            "listPreferredItemPaddingStart";                           //$NON-NLS-1$
+    public static final String ATTR_LIST_PREFERRED_ITEM_PADDING_END =
+            "listPreferredItemPaddingEnd";                             //$NON-NLS-1$
+    public static final String ATTR_INDEX = "index";                   //$NON-NLS-1$
 
     // AbsoluteLayout layout params
     public static final String ATTR_LAYOUT_Y = "layout_y";             //$NON-NLS-1$
@@ -813,26 +867,34 @@ public final class SdkConstants {
     // RelativeLayout layout params:
     public static final String ATTR_LAYOUT_ALIGN_LEFT = "layout_alignLeft";        //$NON-NLS-1$
     public static final String ATTR_LAYOUT_ALIGN_RIGHT = "layout_alignRight";      //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_START = "layout_alignStart";      //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_END = "layout_alignEnd";          //$NON-NLS-1$
     public static final String ATTR_LAYOUT_ALIGN_TOP = "layout_alignTop";          //$NON-NLS-1$
     public static final String ATTR_LAYOUT_ALIGN_BOTTOM = "layout_alignBottom";    //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_ALIGN_PARENT_TOP = "layout_alignParentTop"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_ALIGN_PARENT_BOTTOM = "layout_alignParentBottom"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_ALIGN_PARENT_LEFT = "layout_alignParentLeft";//$NON-NLS-1$
-    public static final String ATTR_LAYOUT_ALIGN_PARENT_RIGHT = "layout_alignParentRight";   //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_ALIGN_WITH_PARENT_MISSING = "layout_alignWithParentIfMissing"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_ALIGN_BASELINE = "layout_alignBaseline"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_CENTER_IN_PARENT = "layout_centerInParent"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_CENTER_VERTICAL = "layout_centerVertical"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_CENTER_HORIZONTAL = "layout_centerHorizontal"; //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_TO_RIGHT_OF = "layout_toRightOf";    //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_TO_LEFT_OF = "layout_toLeftOf";      //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_BELOW = "layout_below";              //$NON-NLS-1$
-    public static final String ATTR_LAYOUT_ABOVE = "layout_above";              //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_PARENT_LEFT = "layout_alignParentLeft";        //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_PARENT_RIGHT = "layout_alignParentRight";      //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_PARENT_START = "layout_alignParentStart";      //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_PARENT_END = "layout_alignParentEnd";          //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_PARENT_TOP = "layout_alignParentTop";          //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_PARENT_BOTTOM = "layout_alignParentBottom";    //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_WITH_PARENT_MISSING = "layout_alignWithParentIfMissing";   //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ALIGN_BASELINE = "layout_alignBaseline";             //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_CENTER_IN_PARENT = "layout_centerInParent";          //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_CENTER_VERTICAL = "layout_centerVertical";           //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_CENTER_HORIZONTAL = "layout_centerHorizontal";       //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_TO_RIGHT_OF = "layout_toRightOf";        //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_TO_LEFT_OF = "layout_toLeftOf";          //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_TO_START_OF = "layout_toStartOf";        //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_TO_END_OF = "layout_toEndOf";            //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_BELOW = "layout_below";                  //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ABOVE = "layout_above";                  //$NON-NLS-1$
 
     // Margins
     public static final String ATTR_LAYOUT_MARGIN = "layout_margin";               //$NON-NLS-1$
     public static final String ATTR_LAYOUT_MARGIN_LEFT = "layout_marginLeft";      //$NON-NLS-1$
     public static final String ATTR_LAYOUT_MARGIN_RIGHT = "layout_marginRight";    //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_MARGIN_START = "layout_marginStart";    //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_MARGIN_END = "layout_marginEnd";        //$NON-NLS-1$
     public static final String ATTR_LAYOUT_MARGIN_TOP = "layout_marginTop";        //$NON-NLS-1$
     public static final String ATTR_LAYOUT_MARGIN_BOTTOM = "layout_marginBottom";  //$NON-NLS-1$
 
@@ -909,8 +971,12 @@ public final class SdkConstants {
     public static final String EXT_AIDL = "aidl"; //$NON-NLS-1$
     /** Extension of Renderscript files, i.e. "rs" */
     public static final String EXT_RS = "rs"; //$NON-NLS-1$
+    /** Extension of Renderscript files, i.e. "rsh" */
+    public static final String EXT_RSH = "rsh"; //$NON-NLS-1$
     /** Extension of FilterScript files, i.e. "fs" */
     public static final String EXT_FS = "fs"; //$NON-NLS-1$
+    /** Extension of Renderscript bitcode files, i.e. "bc" */
+    public static final String EXT_BC = "bc"; //$NON-NLS-1$
     /** Extension of dependency files, i.e. "d" */
     public static final String EXT_DEP = "d"; //$NON-NLS-1$
     /** Extension of native libraries, i.e. "so" */
@@ -921,6 +987,8 @@ public final class SdkConstants {
     public static final String EXT_RES = "ap_"; //$NON-NLS-1$
     /** Extension for pre-processable images. Right now pngs */
     public static final String EXT_PNG = "png"; //$NON-NLS-1$
+    /** Extension for Android archive files */
+    public static final String EXT_AAR = "aar"; //$NON-NLS-1$
 
     private static final String DOT = "."; //$NON-NLS-1$
 
@@ -930,8 +998,12 @@ public final class SdkConstants {
     public static final String DOT_AIDL = DOT + EXT_AIDL;
     /** Dot-Extension of renderscript files, i.e. ".rs" */
     public static final String DOT_RS = DOT + EXT_RS;
+    /** Dot-Extension of renderscript header files, i.e. ".rsh" */
+    public static final String DOT_RSH = DOT + EXT_RSH;
     /** Dot-Extension of FilterScript files, i.e. ".fs" */
     public static final String DOT_FS = DOT + EXT_FS;
+    /** Dot-Extension of renderscript bitcode files, i.e. ".bc" */
+    public static final String DOT_BC = DOT + EXT_BC;
     /** Dot-Extension of dependency files, i.e. ".d" */
     public static final String DOT_DEP = DOT + EXT_DEP;
     /** Dot-Extension of dex files, i.e. ".dex" */
@@ -946,6 +1018,8 @@ public final class SdkConstants {
     public static final String DOT_FTL = ".ftl"; //$NON-NLS-1$
     /** Dot-Extension of text files, i.e. ".txt" */
     public static final String DOT_TXT = ".txt"; //$NON-NLS-1$
+    /** Dot-Extension for Android archive files */
+    public static final String DOT_AAR = DOT + EXT_AAR; //$NON-NLS-1$
 
     /** Resource base name for java files and classes */
     public static final String FN_RESOURCE_BASE = "R"; //$NON-NLS-1$
@@ -1068,6 +1142,8 @@ public final class SdkConstants {
     // TextView
     public static final String ATTR_DRAWABLE_RIGHT = "drawableRight";              //$NON-NLS-1$
     public static final String ATTR_DRAWABLE_LEFT = "drawableLeft";                //$NON-NLS-1$
+    public static final String ATTR_DRAWABLE_START = "drawableStart";              //$NON-NLS-1$
+    public static final String ATTR_DRAWABLE_END = "drawableEnd";                  //$NON-NLS-1$
     public static final String ATTR_DRAWABLE_BOTTOM = "drawableBottom";            //$NON-NLS-1$
     public static final String ATTR_DRAWABLE_TOP = "drawableTop";                  //$NON-NLS-1$
     public static final String ATTR_DRAWABLE_PADDING = "drawablePadding";          //$NON-NLS-1$
@@ -1196,7 +1272,8 @@ public final class SdkConstants {
 
     public static final String ATTR_SRC = "src"; //$NON-NLS-1$
 
-    public static final String ATTR_GRAVITY = "gravity"; //$NON-NLS-1$
+    public static final String ATTR_GRAVITY = "gravity";        //$NON-NLS-1$
+
     public static final String ATTR_WEIGHT_SUM = "weightSum"; //$NON-NLS-1$
     public static final String ATTR_EMS = "ems"; //$NON-NLS-1$
 

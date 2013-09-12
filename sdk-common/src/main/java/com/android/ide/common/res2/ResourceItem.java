@@ -18,9 +18,11 @@ package com.android.ide.common.res2;
 
 import static com.android.SdkConstants.ANDROID_NEW_ID_PREFIX;
 import static com.android.SdkConstants.ANDROID_NS_NAME_PREFIX;
+import static com.android.SdkConstants.ANDROID_NS_NAME_PREFIX_LEN;
 import static com.android.SdkConstants.ANDROID_PREFIX;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PARENT;
+import static com.android.SdkConstants.ATTR_QUANTITY;
 import static com.android.SdkConstants.ATTR_TYPE;
 import static com.android.SdkConstants.ATTR_VALUE;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
@@ -29,12 +31,17 @@ import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.rendering.api.ArrayResourceValue;
 import com.android.ide.common.rendering.api.AttrResourceValue;
 import com.android.ide.common.rendering.api.DeclareStyleableResourceValue;
+import com.android.ide.common.rendering.api.DensityBasedResourceValue;
+import com.android.ide.common.rendering.api.PluralsResourceValue;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.resources.configuration.Configurable;
+import com.android.ide.common.resources.configuration.DensityQualifier;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
+import com.android.resources.Density;
 import com.android.resources.ResourceType;
 import com.google.common.base.Splitter;
 
@@ -49,27 +56,26 @@ import org.w3c.dom.NodeList;
  *
  * This includes the name, type, source file as a {@link ResourceFile} and an optional {@link Node}
  * in case of a resource coming from a value file.
- *
  */
-public class ResourceItem extends DataItem<ResourceFile> implements Configurable, Comparable<ResourceItem>  {
-
-    private static final int DEFAULT_NS_PREFIX_LEN = ANDROID_NS_NAME_PREFIX.length();
+public class ResourceItem extends DataItem<ResourceFile>
+        implements Configurable, Comparable<ResourceItem> {
 
     private final ResourceType mType;
+
     private Node mValue;
 
-    private ResourceValue mResourceValue;
+    protected ResourceValue mResourceValue;
 
     /**
      * Constructs the object with a name, type and optional value.
      *
      * Note that the object is not fully usable as-is. It must be added to a ResourceFile first.
      *
-     * @param name the name of the resource
-     * @param type the type of the resource
+     * @param name  the name of the resource
+     * @param type  the type of the resource
      * @param value an optional Node that represents the resource value.
      */
-    ResourceItem(@NonNull String name, @NonNull ResourceType type, Node value) {
+    public ResourceItem(@NonNull String name, @NonNull ResourceType type, Node value) {
         super(name);
         mType = type;
         mValue = value;
@@ -77,6 +83,7 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
 
     /**
      * Returns the type of the resource.
+     *
      * @return the type.
      */
     @NonNull
@@ -86,6 +93,7 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
 
     /**
      * Returns the optional value of the resource. Can be null
+     *
      * @return the value or null.
      */
     @Nullable
@@ -93,10 +101,11 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
         return mValue;
     }
 
-  /**
-   * Returns the optional string value of the resource. Can be null
-   * @return the value or null.
-   */
+    /**
+     * Returns the optional string value of the resource. Can be null
+     *
+     * @return the value or null.
+     */
     @Nullable
     public String getValueText() {
         return mValue != null ? mValue.getTextContent() : null;
@@ -104,6 +113,7 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
 
     /**
      * Sets the value of the resource and set its state to TOUCHED.
+     *
      * @param from the resource to copy the value from.
      */
     void setValue(ResourceItem from) {
@@ -113,7 +123,7 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
 
     @Override
     public FolderConfiguration getConfiguration() {
-        assert getSource() != null;
+        assert getSource() != null : this;
 
         String qualifier = getSource().getQualifiers();
         if (qualifier.isEmpty()) {
@@ -127,15 +137,14 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
      * Returns a key for this resource. They key uniquely identifies this resource by combining
      * resource type, qualifiers, and name.
      *
-     * If the resource has not been added to a {@link ResourceFile}, this will throw an
-     * {@link IllegalStateException}.
+     * If the resource has not been added to a {@link ResourceFile}, this will throw an {@link
+     * IllegalStateException}.
      *
      * @return the key for this resource.
-     *
      * @throws IllegalStateException if the resource is not added to a ResourceFile
      */
     @Override
-    String getKey() {
+    public String getKey() {
         if (getSource() == null) {
             throw new IllegalStateException(
                     "ResourceItem.getKey called on object with no ResourceFile: " + this);
@@ -168,8 +177,15 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
         if (mResourceValue == null) {
             //noinspection VariableNotUsedInsideIf
             if (mValue == null) {
-                mResourceValue = new ResourceValue(mType, getName(),
-                        getSource().getFile().getAbsolutePath(), isFrameworks);
+                // Density based resource value?
+                Density density = mType == ResourceType.DRAWABLE ? getFolderDensity() : null;
+                if (density != null) {
+                    mResourceValue = new DensityBasedResourceValue(mType, getName(),
+                            getSource().getFile().getAbsolutePath(), density, isFrameworks);
+                } else {
+                    mResourceValue = new ResourceValue(mType, getName(),
+                            getSource().getFile().getAbsolutePath(), isFrameworks);
+                }
             } else {
                 mResourceValue = parseXmlToResourceValue(isFrameworks);
             }
@@ -178,8 +194,27 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
         return mResourceValue;
     }
 
+    // TODO: We should be storing shared FolderConfiguration instances on the ResourceFiles
+    // instead. This is a temporary fix to make rendering work properly again.
+    @Nullable
+    private Density getFolderDensity() {
+        String qualifiers = getSource().getQualifiers();
+        if (!qualifiers.isEmpty() && qualifiers.contains("dpi")) {
+            Iterable<String> segments = Splitter.on('-').split(qualifiers);
+            FolderConfiguration config = FolderConfiguration.getConfigFromQualifiers(segments);
+            if (config != null) {
+                DensityQualifier densityQualifier = config.getDensityQualifier();
+                if (densityQualifier != null) {
+                    return densityQualifier.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * Returns a formatted string usable in an XML to use for the {@link ResourceItem}.
+     *
      * @param system Whether this is a system resource or a project resource.
      * @return a string in the format @[type]/[name]
      */
@@ -192,7 +227,9 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
     }
 
     /**
-     * Compares the ResourceItem {@link #getValue()} together and returns true if they are the same.
+     * Compares the ResourceItem {@link #getValue()} together and returns true if they are the
+     * same.
+     *
      * @param resource The ResourceItem object to compare to.
      * @return true if equal
      */
@@ -215,13 +252,21 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
 
         ResourceItem that = (ResourceItem) o;
 
-        if (mType != that.mType) return false;
+        if (mType != that.mType) {
+            return false;
+        }
 
         return true;
     }
@@ -250,7 +295,8 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
             case STYLE:
                 String parent = getAttributeValue(attributes, ATTR_PARENT);
                 try {
-                    value = parseStyleValue(new StyleResourceValue(type, name, parent, isFrameworks));
+                    value = parseStyleValue(
+                            new StyleResourceValue(type, name, parent, isFrameworks));
                 } catch (Throwable t) {
                     // TEMPORARY DIAGNOSTICS
                     System.err.println("Problem parsing attribute " + name + " of type " + type
@@ -259,8 +305,15 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
                 }
                 break;
             case DECLARE_STYLEABLE:
-                value = new DeclareStyleableResourceValue(
-                        type, name, isFrameworks);
+                //noinspection deprecation
+                value = parseDeclareStyleable(new DeclareStyleableResourceValue(type, name,
+                        isFrameworks));
+                break;
+            case ARRAY:
+                value = parseArrayValue(new ArrayResourceValue(name, isFrameworks));
+                break;
+            case PLURALS:
+                value = parsePluralsValue(new PluralsResourceValue(name, isFrameworks));
                 break;
             case ATTR:
                 value = parseAttrValue(new AttrResourceValue(type, name, isFrameworks));
@@ -312,7 +365,7 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
                     // is the attribute in the android namespace?
                     boolean isFrameworkAttr = styleValue.isFramework();
                     if (name.startsWith(ANDROID_NS_NAME_PREFIX)) {
-                        name = name.substring(DEFAULT_NS_PREFIX_LEN);
+                        name = name.substring(ANDROID_NS_NAME_PREFIX_LEN);
                         isFrameworkAttr = true;
                     }
 
@@ -329,8 +382,14 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
     }
 
     @NonNull
-    private ResourceValue parseAttrValue(@NonNull AttrResourceValue attrValue) {
-        NodeList children = mValue.getChildNodes();
+    private AttrResourceValue parseAttrValue(@NonNull AttrResourceValue attrValue) {
+        return parseAttrValue(mValue, attrValue);
+    }
+
+    @NonNull
+    private static AttrResourceValue parseAttrValue(@NonNull Node valueNode,
+            @NonNull AttrResourceValue attrValue) {
+        NodeList children = valueNode.getChildNodes();
         for (int i = 0, n = children.getLength(); i < n; i++) {
             Node child = children.item(i);
 
@@ -343,7 +402,7 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
                         try {
                             // Integer.decode/parseInt can't deal with hex value > 0x7FFFFFFF so we
                             // use Long.decode instead.
-                            attrValue.addValue(name, (int)(long)Long.decode(value));
+                            attrValue.addValue(name, (int) (long) Long.decode(value));
                         } catch (NumberFormatException e) {
                             // pass, we'll just ignore this value
                         }
@@ -353,6 +412,69 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
         }
 
         return attrValue;
+    }
+
+    private ResourceValue parseArrayValue(ArrayResourceValue arrayValue) {
+        NodeList children = mValue.getChildNodes();
+        for (int i = 0, n = children.getLength(); i < n; i++) {
+            Node child = children.item(i);
+
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                String text = getTextNode(child);
+                text = ValueXmlHelper.unescapeResourceString(text, false, true);
+                arrayValue.addElement(text);
+            }
+        }
+
+        return arrayValue;
+    }
+
+    private ResourceValue parsePluralsValue(PluralsResourceValue value) {
+        NodeList children = mValue.getChildNodes();
+        for (int i = 0, n = children.getLength(); i < n; i++) {
+            Node child = children.item(i);
+
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                NamedNodeMap attributes = child.getAttributes();
+                String quantity = getAttributeValue(attributes, ATTR_QUANTITY);
+                if (quantity != null) {
+                    String text = getTextNode(child);
+                    text = ValueXmlHelper.unescapeResourceString(text, false, true);
+                    value.addPlural(quantity, text);
+                }
+            }
+        }
+
+        return value;
+    }
+
+    @SuppressWarnings("deprecation") // support for deprecated (but supported) API
+    @NonNull
+    private ResourceValue parseDeclareStyleable(
+            @NonNull DeclareStyleableResourceValue declareStyleable) {
+        NodeList children = mValue.getChildNodes();
+        for (int i = 0, n = children.getLength(); i < n; i++) {
+            Node child = children.item(i);
+
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                NamedNodeMap attributes = child.getAttributes();
+                String name = getAttributeValue(attributes, ATTR_NAME);
+                if (name != null) {
+                    // is the attribute in the android namespace?
+                    boolean isFrameworkAttr = declareStyleable.isFramework();
+                    if (name.startsWith(ANDROID_NS_NAME_PREFIX)) {
+                        name = name.substring(ANDROID_NS_NAME_PREFIX_LEN);
+                        isFrameworkAttr = true;
+                    }
+
+                    AttrResourceValue attr = parseAttrValue(child,
+                            new AttrResourceValue(ResourceType.ATTR, name, isFrameworkAttr));
+                    declareStyleable.addValue(attr);
+                }
+            }
+        }
+
+        return declareStyleable;
     }
 
     @NonNull
@@ -379,6 +501,9 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
                 case Node.TEXT_NODE:
                     sb.append(child.getNodeValue());
                     break;
+                case Node.CDATA_SECTION_NODE:
+                    sb.append(child.getNodeValue());
+                    break;
             }
         }
 
@@ -393,5 +518,15 @@ public class ResourceItem extends DataItem<ResourceFile> implements Configurable
         }
 
         return comp;
+    }
+
+    private boolean mIgnoredFromDiskMerge = false;
+
+    public void setIgnoredFromDiskMerge(boolean ignored) {
+        mIgnoredFromDiskMerge = ignored;
+    }
+
+    public boolean getIgnoredFromDiskMerge() {
+        return mIgnoredFromDiskMerge;
     }
 }

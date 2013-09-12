@@ -41,6 +41,8 @@ public class HandlerDetectorTest extends AbstractCheckTest {
                 "bytecode/HandlerTest.class.data=>bin/classes/test/pkg/HandlerTest.class",
                 "bytecode/HandlerTest$Inner.class.data=>bin/classes/test/pkg/HandlerTest$Inner.class",
                 "bytecode/HandlerTest$StaticInner.class.data=>bin/classes/test/pkg/HandlerTest$StaticInner.class",
-                "bytecode/HandlerTest$1.class.data=>bin/classes/test/pkg/HandlerTest$1.class"));
+                "bytecode/HandlerTest$WithArbitraryLooper.class.data=>bin/classes/test/pkg/HandlerTest$WithArbitraryLooper.class",
+                "bytecode/HandlerTest$1.class.data=>bin/classes/test/pkg/HandlerTest$1.class",
+                "bytecode/HandlerTest$2.class.data=>bin/classes/test/pkg/HandlerTest$2.class"));
     }
 }

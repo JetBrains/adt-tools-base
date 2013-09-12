@@ -27,16 +27,7 @@ import java.util.Set;
 
 /**
  * The {@linkplain LocaleManager} provides access to locale information such as
- * language names and flag icons for the various locales.
- * <p>
- * All the flag images came from the WindowBuilder subversion repository
- * http://dev.eclipse.org/svnroot/tools/org.eclipse.windowbuilder/trunk (and in
- * particular, a snapshot of revision 424). However, it appears that the icons
- * are from http://www.famfamfam.com/lab/icons/flags/ which states that "these
- * flag icons are available for free use for any purpose with no requirement for
- * attribution." Adding the URL here such that we can check back occasionally
- * and see if there are corrections or updates. Also note that the flag names
- * are in ISO 3166-1 alpha-2 country codes.
+ * language names and language to region name mappings for the various locales.
  */
 public class LocaleManager {
     @SuppressWarnings("InstantiationOfUtilityClass")

@@ -61,11 +61,15 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         // get the type.
         FolderData folderData = getFolderData(file.getParentFile());
 
+        if (folderData.folderType == null) {
+            return null;
+        }
+
         return createResourceFile(file, folderData, logger);
     }
 
     @Override
-    protected ResourceFile createFileAndItems(File file, Node fileNode) {
+    protected ResourceFile createFileAndItems(@NonNull File file, @NonNull Node fileNode) {
         Attr qualifierAttr = (Attr) fileNode.getAttributes().getNamedItem(ATTR_QUALIFIER);
         String qualifier = qualifierAttr != null ? qualifierAttr.getValue() : "";
 
@@ -86,6 +90,14 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                 ResourceItem r = ValueResourceParser2.getResource(resNode);
                 if (r != null) {
                     resourceList.add(r);
+                    if (r.getType() == ResourceType.DECLARE_STYLEABLE) {
+                        // Need to also create ATTR items for its children
+                        try {
+                            ValueResourceParser2.addStyleableItems(resNode, resourceList, null);
+                        } catch (IOException ignored) {
+                            // since we are not passing a dup map, this will never bet thrown
+                        }
+                    }
                 }
             }
 
@@ -127,17 +139,27 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
     }
 
     @Override
-    protected boolean isValidSourceFile(File sourceFolder, File file) {
+    protected boolean isValidSourceFile(@NonNull File sourceFolder, @NonNull File file) {
+        if (!super.isValidSourceFile(sourceFolder, file)) {
+            return false;
+        }
+
         File resFolder = file.getParentFile();
         // valid files are right under a resource folder under the source folder
         return resFolder.getParentFile().equals(sourceFolder) &&
+                PackagingUtils.checkFolderForPackaging(resFolder.getName()) &&
                 ResourceFolderType.getFolderType(resFolder.getName()) != null;
     }
 
     @Override
-    protected boolean handleChangedFile(File sourceFolder, File changedFile) throws IOException {
+    protected boolean handleChangedFile(@NonNull File sourceFolder, @NonNull File changedFile)
+            throws IOException {
 
         FolderData folderData = getFolderData(changedFile.getParentFile());
+        if (folderData.folderType == null) {
+            return true;
+        }
+
         ResourceFile resourceFile = getDataFile(changedFile);
 
         if (resourceFile == null) {
@@ -146,6 +168,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                     getConfigName(), changedFile.getAbsolutePath()));
         }
 
+        //noinspection VariableNotUsedInsideIf
         if (folderData.type != null) {
             // single res file
             resourceFile.getItem().setTouched();
@@ -200,7 +223,6 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
        return true;
     }
-
 
     /**
      * Reads the content of a typed resource folder (sub folder to the root of res folder), and
@@ -278,7 +300,6 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
         String folderName = folder.getName();
         int pos = folderName.indexOf(ResourceConstants.RES_QUALIFIER_SEP);
-        ResourceFolderType folderType;
         if (pos != -1) {
             fd.folderType = ResourceFolderType.getTypeByName(folderName.substring(0, pos));
             fd.qualifiers = folderName.substring(pos + 1);
@@ -286,7 +307,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
             fd.folderType = ResourceFolderType.getTypeByName(folderName);
         }
 
-        if (fd.folderType != ResourceFolderType.VALUES) {
+        if (fd.folderType != null && fd.folderType != ResourceFolderType.VALUES) {
             fd.type = FolderTypeRelationship.getRelatedResourceTypes(fd.folderType).get(0);
         }
 

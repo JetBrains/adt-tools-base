@@ -18,7 +18,7 @@ package com.android.sdklib.internal.repository;
 
 import com.android.sdklib.internal.repository.SdkStats.PlatformStat;
 import com.android.sdklib.repository.SdkStatsConstants;
-import com.android.sdklib.util.SparseArray;
+import com.android.utils.SparseArray;
 
 import org.w3c.dom.Document;
 

@@ -150,7 +150,8 @@ public class TextViewDetector extends LayoutDetector {
                     && !element.hasAttributeNS(ANDROID_URI, ATTR_TEXT_IS_SELECTABLE)
                     && !element.hasAttributeNS(ANDROID_URI, ATTR_VISIBILITY)
                     && !element.hasAttributeNS(ANDROID_URI, ATTR_ON_CLICK)
-                    && context.getMainProject().getTargetSdk() >= 11) {
+                    && context.getMainProject().getTargetSdk() >= 11
+                    && context.isEnabled(SELECTABLE)) {
                 context.report(SELECTABLE, element, context.getLocation(element),
                         "Consider making the text value selectable by specifying " +
                         "android:textIsSelectable=\"true\"", null);
@@ -161,7 +162,7 @@ public class TextViewDetector extends LayoutDetector {
         for (int i = 0, n = attributes.getLength(); i < n; i++) {
             Attr attribute = (Attr) attributes.item(i);
             String name = attribute.getLocalName();
-            if (name == null) {
+            if (name == null || name.isEmpty()) {
                 // Attribute not in a namespace; we only care about the android: ones
                 continue;
             }
@@ -219,7 +220,7 @@ public class TextViewDetector extends LayoutDetector {
                 }
             }
 
-            if (isEditAttribute && ANDROID_URI.equals(attribute.getNamespaceURI())) {
+            if (isEditAttribute && ANDROID_URI.equals(attribute.getNamespaceURI()) && context.isEnabled(ISSUE)) {
                 Location location = context.getLocation(attribute);
                 String message;
                 String view = element.getTagName();

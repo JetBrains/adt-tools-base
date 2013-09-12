@@ -600,8 +600,8 @@ final class AdbHelper {
             adbChan.configureBlocking(false);
 
             byte[] request = formAdbRequest(String.format(
-                    "host-serial:%1$s:killforward:%2$s;%3$s", //$NON-NLS-1$
-                    device.getSerialNumber(), localPortSpec, remotePortSpec));
+                    "host-serial:%1$s:killforward:%2$s", //$NON-NLS-1$
+                    device.getSerialNumber(), localPortSpec));
 
             write(adbChan, request);
 

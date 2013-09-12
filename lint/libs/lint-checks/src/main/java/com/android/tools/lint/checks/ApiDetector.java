@@ -998,13 +998,8 @@ public class ApiDetector extends ResourceXmlDetector
                     } catch (NumberFormatException nufe) {
                         break;
                     }
-                }
-
-                for (int api = 1; api <= SdkVersionInfo.HIGHEST_KNOWN_API; api++) {
-                    String code = SdkVersionInfo.getBuildCode(api);
-                    if (code != null && code.equalsIgnoreCase(targetApi)) {
-                        return api;
-                    }
+                } else {
+                    return SdkVersionInfo.getApiByBuildCode(targetApi, true);
                 }
             }
 
@@ -1096,7 +1091,7 @@ public class ApiDetector extends ResourceXmlDetector
      * @return true if the given usage is safe on older versions than the introduction
      *              level of the constant
      */
-    public boolean isBenignConstantUsage(
+    public static boolean isBenignConstantUsage(
             @Nullable lombok.ast.Node node,
             @NonNull String name,
             @NonNull String owner) {
@@ -1571,15 +1566,15 @@ public class ApiDetector extends ResourceXmlDetector
                                 return literal.astIntValue();
                             } else if (valueNode instanceof StringLiteral) {
                                 String value = ((StringLiteral) valueNode).astValue();
-                                return codeNameToApi(value);
+                                return SdkVersionInfo.getApiByBuildCode(value, true);
                             } else if (valueNode instanceof Select) {
                                 Select select = (Select) valueNode;
                                 String codename = select.astIdentifier().astValue();
-                                return codeNameToApi(codename);
+                                return SdkVersionInfo.getApiByBuildCode(codename, true);
                             } else if (valueNode instanceof VariableReference) {
                                 VariableReference reference = (VariableReference) valueNode;
                                 String codename = reference.astIdentifier().astValue();
-                                return codeNameToApi(codename);
+                                return SdkVersionInfo.getApiByBuildCode(codename, true);
                             }
                         }
                     }
@@ -1588,16 +1583,5 @@ public class ApiDetector extends ResourceXmlDetector
 
             return -1;
         }
-    }
-
-    private static int codeNameToApi(String codename) {
-        for (int api = 1; api <= SdkVersionInfo.HIGHEST_KNOWN_API; api++) {
-            String code = SdkVersionInfo.getBuildCode(api);
-            if (code != null && code.equalsIgnoreCase(codename)) {
-                return api;
-            }
-        }
-
-        return -1;
     }
 }

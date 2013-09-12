@@ -74,6 +74,10 @@ public class ParcelDetector extends Detector implements Detector.ClassScanner {
 
     @Override
     public void checkClass(@NonNull ClassContext context, @NonNull ClassNode classNode) {
+      // Only applies to concrete classes
+        if ((classNode.access & (Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT)) != 0) {
+            return;
+        }
         List interfaces = classNode.interfaces;
         if (interfaces != null) {
             for (Object o : interfaces) {
@@ -88,7 +92,8 @@ public class ParcelDetector extends Detector implements Detector.ClassScanner {
         }
     }
 
-    private boolean hasCreatorField(@NonNull ClassContext context, @NonNull ClassNode classNode) {
+    private static boolean hasCreatorField(@NonNull ClassContext context,
+            @NonNull ClassNode classNode) {
         List<FieldNode> fields = classNode.fields;
         if (fields != null) {
             for (FieldNode field : fields) {

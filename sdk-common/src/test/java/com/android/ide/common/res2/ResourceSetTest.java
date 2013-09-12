@@ -25,7 +25,7 @@ public class ResourceSetTest extends BaseTestCase {
 
     public void testBaseResourceSetByCount() throws Exception {
         ResourceSet resourceSet = getBaseResourceSet();
-        assertEquals(23, resourceSet.size());
+        assertEquals(25, resourceSet.size());
     }
 
     public void testBaseResourceSetByName() throws Exception {
@@ -51,6 +51,8 @@ public class ResourceSetTest extends BaseTestCase {
                 "attr/string_attr",
                 "attr/enum_attr",
                 "attr/flag_attr",
+                "attr/blah",
+                "attr/blah2",
                 "declare-styleable/declare_styleable",
                 "dimen/dimen",
                 "id/item_id",
@@ -90,7 +92,43 @@ public class ResourceSetTest extends BaseTestCase {
             gotException = true;
         }
 
-        assertTrue(gotException);
+        assertTrue("ResourceSet processing should have failed, but didn't", gotException);
+        assertFalse(logger.getErrorMsgs().isEmpty());
+    }
+
+    public void testBrokenSet2() throws Exception {
+        File root = TestUtils.getRoot("resources", "brokenSet2");
+
+        ResourceSet set = new ResourceSet("main");
+        set.addSource(root);
+
+        boolean gotException = false;
+        RecordingLogger logger =  new RecordingLogger();
+        try {
+            set.loadFromFiles(logger);
+        } catch (IOException e) {
+            gotException = true;
+        }
+
+        assertTrue("ResourceSet processing should have failed, but didn't", gotException);
+        assertFalse(logger.getErrorMsgs().isEmpty());
+    }
+
+    public void testBrokenSet3() throws Exception {
+        File root = TestUtils.getRoot("resources", "brokenSet3");
+
+        ResourceSet set = new ResourceSet("main");
+        set.addSource(root);
+
+        boolean gotException = false;
+        RecordingLogger logger =  new RecordingLogger();
+        try {
+            set.loadFromFiles(logger);
+        } catch (IOException e) {
+            gotException = true;
+        }
+
+        assertTrue("ResourceSet processing should have failed, but didn't", gotException);
         assertFalse(logger.getErrorMsgs().isEmpty());
     }
 

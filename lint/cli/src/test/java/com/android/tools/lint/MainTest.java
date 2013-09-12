@@ -19,6 +19,8 @@ package com.android.tools.lint;
 import com.android.tools.lint.checks.AbstractCheckTest;
 import com.android.tools.lint.checks.AccessibilityDetector;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
+import com.google.common.io.Files;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -377,37 +379,129 @@ public class MainTest extends AbstractCheckTest {
     }
 
     public void test_getCleanPath() throws Exception {
-        assertEquals("foo", Main.getCleanPath(new File("foo")));
+        assertEquals("foo", LintCliClient.getCleanPath(new File("foo")));
         String sep = File.separator;
         assertEquals("foo" + sep + "bar",
-                Main.getCleanPath(new File("foo" + sep + "bar")));
+                LintCliClient.getCleanPath(new File("foo" + sep + "bar")));
         assertEquals(sep,
-                Main.getCleanPath(new File(sep)));
+                LintCliClient.getCleanPath(new File(sep)));
         assertEquals("foo" + sep + "bar",
-                Main.getCleanPath(new File("foo" + sep + "." + sep + "bar")));
+                LintCliClient.getCleanPath(new File("foo" + sep + "." + sep + "bar")));
         assertEquals("bar",
-                Main.getCleanPath(new File("foo" + sep + ".." + sep + "bar")));
+                LintCliClient.getCleanPath(new File("foo" + sep + ".." + sep + "bar")));
         assertEquals("",
-                Main.getCleanPath(new File("foo" + sep + "..")));
+                LintCliClient.getCleanPath(new File("foo" + sep + "..")));
         assertEquals("foo",
-                Main.getCleanPath(new File("foo" + sep + "bar" + sep + "..")));
+                LintCliClient.getCleanPath(new File("foo" + sep + "bar" + sep + "..")));
         assertEquals("foo" + sep + ".foo" + sep + "bar",
-                Main.getCleanPath(new File("foo" + sep + ".foo" + sep + "bar")));
+                LintCliClient.getCleanPath(new File("foo" + sep + ".foo" + sep + "bar")));
         assertEquals("foo" + sep + "bar",
-                Main.getCleanPath(new File("foo" + sep + "bar" + sep + ".")));
+                LintCliClient.getCleanPath(new File("foo" + sep + "bar" + sep + ".")));
         assertEquals("foo" + sep + "...",
-                Main.getCleanPath(new File("foo" + sep + "...")));
+                LintCliClient.getCleanPath(new File("foo" + sep + "...")));
         assertEquals(".." + sep + "foo",
-                Main.getCleanPath(new File(".." + sep + "foo")));
+                LintCliClient.getCleanPath(new File(".." + sep + "foo")));
         assertEquals(sep + "foo",
-                Main.getCleanPath(new File(sep + "foo")));
+                LintCliClient.getCleanPath(new File(sep + "foo")));
         assertEquals(sep,
-                Main.getCleanPath(new File(sep + "foo" + sep + "..")));
+                LintCliClient.getCleanPath(new File(sep + "foo" + sep + "..")));
         assertEquals(sep + "foo",
-                Main.getCleanPath(new File(sep + "foo" + sep + "bar " + sep + "..")));
+                LintCliClient.getCleanPath(new File(sep + "foo" + sep + "bar " + sep + "..")));
         assertEquals(sep + "c:",
-                Main.getCleanPath(new File(sep + "c:")));
+                LintCliClient.getCleanPath(new File(sep + "c:")));
         assertEquals(sep + "c:" + sep + "foo",
-                Main.getCleanPath(new File(sep + "c:" + sep + "foo")));
+                LintCliClient.getCleanPath(new File(sep + "c:" + sep + "foo")));
+    }
+
+    public void testGradle() throws Exception {
+        File project = getProjectDir(null,
+                "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                "multiproject/library.properties=>build.gradle", // dummy; only name counts
+                "apicheck/ApiCallTest.class.data=>bin/classes/foo/bar/ApiCallTest.class"
+        );
+        checkDriver(""
+                + "\n"
+                + "Scanning MainTest_testGradle: \n"
+                + "MainTest_testGradle: Error: \"MainTest_testGradle\" is a Gradle project. "
+                + "To correctly analyze Gradle projects, you should run \"gradlew :lint\" "
+                + "instead. [LintError]\n"
+                + "1 errors, 0 warnings\n",
+
+                "",
+
+                // Args
+                new String[] {
+                        "--check",
+                        "HardcodedText",
+                        project.getPath()
+                });
+    }
+
+    public void testValidateOutput() throws Exception {
+        File project = getProjectDir(null,
+                "res/layout/accessibility.xml=>myres1/layout/accessibility1.xml"
+        );
+
+        File outputDir = new File(project, "build");
+        outputDir.mkdirs();
+
+        checkDriver(
+                "\n"
+                        + "Scanning MainTest_testValidateOutput: .\n"
+                        + "Scanning MainTest_testValidateOutput (Phase 2): \n", // Expected output
+
+                "",
+
+                // Args
+                new String[]{
+                        "--text",
+                        new File(outputDir, "foo2.text").getPath(),
+                        project.getPath(),
+                });
+
+        //noinspection ResultOfMethodCallIgnored
+        boolean disabledWrite = outputDir.setWritable(false);
+        assertTrue(disabledWrite);
+
+        checkDriver(
+                "", // Expected output
+
+                "Cannot write XML output file /TESTROOT/build/foo.xml\n", // Expected error
+
+                // Args
+                new String[] {
+                        "--xml",
+                        new File(outputDir, "foo.xml").getPath(),
+                        project.getPath(),
+                });
+
+        checkDriver(
+                "", // Expected output
+
+                "Cannot write HTML output file /TESTROOT/build/foo.html\n", // Expected error
+
+                // Args
+                new String[] {
+                        "--html",
+                        new File(outputDir, "foo.html").getPath(),
+                        project.getPath(),
+                });
+
+        checkDriver(
+                "", // Expected output
+
+                "Cannot write text output file /TESTROOT/build/foo.text\n", // Expected error
+
+                // Args
+                new String[] {
+                        "--text",
+                        new File(outputDir, "foo.text").getPath(),
+                        project.getPath(),
+                });
+    }
+
+    @Override
+    protected boolean isEnabled(Issue issue) {
+        return true;
     }
 }

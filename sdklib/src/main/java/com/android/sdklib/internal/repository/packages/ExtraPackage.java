@@ -28,6 +28,7 @@ import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
+import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.RepoConstants;
 import com.android.utils.NullLogger;
@@ -44,8 +45,11 @@ import java.util.regex.Pattern;
 /**
  * Represents a extra XML node in an SDK repository.
  */
-public class ExtraPackage extends MinToolsPackage
-    implements IMinApiLevelDependency {
+public class ExtraPackage extends NoPreviewRevisionPackage
+    implements IMinApiLevelDependency, IMinToolsDependency {
+
+    /** Mixin handling the min-tools dependency. */
+    private final MinToolsMixin mMinToolsMixin;
 
     /**
      * The extra display name. Used in the UI to represent the package. It can be anything.
@@ -101,6 +105,8 @@ public class ExtraPackage extends MinToolsPackage
             String nsUri,
             Map<String,String> licenses) {
         super(source, packageNode, nsUri, licenses);
+
+        mMinToolsMixin = new MinToolsMixin(packageNode);
 
         mPath   = PackageParserUtils.getXmlString(packageNode, RepoConstants.NODE_PATH);
 
@@ -224,6 +230,17 @@ public class ExtraPackage extends MinToolsPackage
                 archiveArch,
                 archiveOsPath);
 
+        mMinToolsMixin = new MinToolsMixin(
+                source,
+                props,
+                revision,
+                license,
+                description,
+                descUrl,
+                archiveOs,
+                archiveArch,
+                archiveOsPath);
+
         // The path argument comes before whatever could be in the properties
         mPath   = path != null ? path : getProperty(props, PkgProps.EXTRA_PATH, path);
 
@@ -232,23 +249,23 @@ public class ExtraPackage extends MinToolsPackage
         String vid   = vendorId != null ? vendorId :
                               getProperty(props, PkgProps.EXTRA_VENDOR_ID, ""); //$NON-NLS-1$
 
-        if (vid.length() == 0) {
+        if (vid == null || vid.length() == 0) {
             // If vid is missing, use the old <vendor> attribute.
             // <vendor> did not exist prior to schema repo-v3 and tools r8.
             String vendor = getProperty(props, PkgProps.EXTRA_VENDOR, "");      //$NON-NLS-1$
             vid = sanitizeLegacyVendor(vendor);
-            if (vname.length() == 0) {
+            if (vname == null || vname.length() == 0) {
                 vname = vendor;
             }
         }
-        if (vname.length() == 0) {
+        if (vname == null || vname.length() == 0) {
             // The vendor-display name can be empty, in which case we use the vendor-id.
             vname = vid;
         }
         mVendorDisplay = vname.trim();
         mVendorId      = vid.trim();
 
-        if (name.length() == 0) {
+        if (name == null || name.length() == 0) {
             // If name is missing, use the <path> attribute as done in an addon-3 schema.
             name = getPrettyName();
         }
@@ -279,6 +296,7 @@ public class ExtraPackage extends MinToolsPackage
     @Override
     public void saveProperties(Properties props) {
         super.saveProperties(props);
+        mMinToolsMixin.saveProperties(props);
 
         props.setProperty(PkgProps.EXTRA_PATH, mPath);
         props.setProperty(PkgProps.EXTRA_NAME_DISPLAY, mDisplayName);
@@ -303,6 +321,15 @@ public class ExtraPackage extends MinToolsPackage
         if (mOldPaths != null && mOldPaths.length() > 0) {
             props.setProperty(PkgProps.EXTRA_OLD_PATHS, mOldPaths);
         }
+    }
+
+    /**
+     * The minimal revision of the tools package required by this extra package, if > 0,
+     * or {@link #MIN_TOOLS_REV_NOT_SPECIFIED} if there is no such requirement.
+     */
+    @Override
+    public FullRevision getMinToolsRevision() {
+        return mMinToolsMixin.getMinToolsRevision();
     }
 
     /**
@@ -706,7 +733,7 @@ public class ExtraPackage extends MinToolsPackage
     @Override
     public int hashCode() {
         final int prime = 31;
-        int result = super.hashCode();
+        int result = mMinToolsMixin.hashCode(super.hashCode());
         result = prime * result + mMinApiLevel;
         result = prime * result + ((mPath == null) ? 0 : mPath.hashCode());
         result = prime * result + Arrays.hashCode(mProjectFiles);
@@ -746,6 +773,6 @@ public class ExtraPackage extends MinToolsPackage
         } else if (!mVendorDisplay.equals(other.mVendorDisplay)) {
             return false;
         }
-        return true;
+        return mMinToolsMixin.equals(obj);
     }
 }

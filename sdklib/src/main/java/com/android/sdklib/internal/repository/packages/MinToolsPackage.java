@@ -20,8 +20,6 @@ import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.PkgProps;
-import com.android.sdklib.repository.SdkRepoConstants;
 
 import org.w3c.dom.Node;
 
@@ -33,11 +31,7 @@ import java.util.Properties;
  */
 public abstract class MinToolsPackage extends MajorRevisionPackage implements IMinToolsDependency {
 
-    /**
-     * The minimal revision of the tools package required by this extra package, if > 0,
-     * or {@link #MIN_TOOLS_REV_NOT_SPECIFIED} if there is no such requirement.
-     */
-    private final FullRevision mMinToolsRevision;
+    private final MinToolsMixin mMinToolsMixin;
 
     /**
      * Creates a new package from the attributes and elements of the given XML node.
@@ -52,8 +46,7 @@ public abstract class MinToolsPackage extends MajorRevisionPackage implements IM
     MinToolsPackage(SdkSource source, Node packageNode, String nsUri, Map<String,String> licenses) {
         super(source, packageNode, nsUri, licenses);
 
-        mMinToolsRevision = PackageParserUtils.parseFullRevisionElement(
-            PackageParserUtils.findChildElement(packageNode, SdkRepoConstants.NODE_MIN_TOOLS_REV));
+        mMinToolsMixin = new MinToolsMixin(packageNode);
     }
 
     /**
@@ -78,16 +71,16 @@ public abstract class MinToolsPackage extends MajorRevisionPackage implements IM
         super(source, props, revision, license, description, descUrl,
                 archiveOs, archiveArch, archiveOsPath);
 
-        String revStr = getProperty(props, PkgProps.MIN_TOOLS_REV, null);
-
-        FullRevision rev = MIN_TOOLS_REV_NOT_SPECIFIED;
-        if (revStr != null) {
-            try {
-                rev = FullRevision.parseRevision(revStr);
-            } catch (NumberFormatException ignore) {}
-        }
-
-        mMinToolsRevision = rev;
+        mMinToolsMixin = new MinToolsMixin(
+                source,
+                props,
+                revision,
+                license,
+                description,
+                descUrl,
+                archiveOs,
+                archiveArch,
+                archiveOsPath);
     }
 
     /**
@@ -96,24 +89,18 @@ public abstract class MinToolsPackage extends MajorRevisionPackage implements IM
      */
     @Override
     public FullRevision getMinToolsRevision() {
-        return mMinToolsRevision;
+        return mMinToolsMixin.getMinToolsRevision();
     }
 
     @Override
     public void saveProperties(Properties props) {
         super.saveProperties(props);
-
-        if (!getMinToolsRevision().equals(MIN_TOOLS_REV_NOT_SPECIFIED)) {
-            props.setProperty(PkgProps.MIN_TOOLS_REV, getMinToolsRevision().toShortString());
-        }
+        mMinToolsMixin.saveProperties(props);
     }
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = super.hashCode();
-        result = prime * result + ((mMinToolsRevision == null) ? 0 : mMinToolsRevision.hashCode());
-        return result;
+        return mMinToolsMixin.hashCode(super.hashCode());
     }
 
     @Override
@@ -127,14 +114,6 @@ public abstract class MinToolsPackage extends MajorRevisionPackage implements IM
         if (!(obj instanceof MinToolsPackage)) {
             return false;
         }
-        MinToolsPackage other = (MinToolsPackage) obj;
-        if (mMinToolsRevision == null) {
-            if (other.mMinToolsRevision != null) {
-                return false;
-            }
-        } else if (!mMinToolsRevision.equals(other.mMinToolsRevision)) {
-            return false;
-        }
-        return true;
+        return mMinToolsMixin.equals(obj);
     }
 }

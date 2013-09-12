@@ -17,7 +17,10 @@
 package com.android.ide.common.res2;
 
 import static com.android.SdkConstants.AMP_ENTITY;
+import static com.android.SdkConstants.APOS_ENTITY;
+import static com.android.SdkConstants.GT_ENTITY;
 import static com.android.SdkConstants.LT_ENTITY;
+import static com.android.SdkConstants.QUOT_ENTITY;
 
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -37,6 +40,7 @@ public class ValueXmlHelper {
      * @param trim whether surrounding space and quotes should be trimmed
      * @return the string with the escape characters removed and expanded
      */
+    @SuppressWarnings("UnnecessaryContinue")
     @Nullable
     public static String unescapeResourceString(
             @Nullable String s,
@@ -48,6 +52,7 @@ public class ValueXmlHelper {
         // Trim space surrounding optional quotes
         int i = 0;
         int n = s.length();
+        boolean quoted = false;
         if (trim) {
             while (i < n) {
                 char c = s.charAt(i);
@@ -71,47 +76,21 @@ public class ValueXmlHelper {
             // Trim surrounding quotes. Note that there can be *any* number of these, and
             // the left side and right side do not have to match; e.g. you can have
             //    """"f"" => f
-            int quoteStart = i;
             int quoteEnd = n;
             while (i < n) {
                 char c = s.charAt(i);
                 if (c != '"') {
                     break;
                 }
+                quoted = true;
                 i++;
             }
             // Searching backwards is slightly more complicated; make sure we don't trim
             // quotes that have been escaped.
-            while (n > i) {
-                char c = s.charAt(n - 1);
-                if (c != '"') {
-                    if (n < s.length() && isEscaped(s, n)) {
-                        n++;
-                    }
-                    break;
-                }
-                n--;
-            }
-            if (n == i) {
-                return ""; //$NON-NLS-1$
-            }
-
-            // Only trim leading spaces if we didn't already process a leading quote:
-            if (i == quoteStart) {
-                while (i < n) {
-                    char c = s.charAt(i);
-                    if (!Character.isWhitespace(c)) {
-                        break;
-                    }
-                    i++;
-                }
-            }
-            // Only trim trailing spaces if we didn't already process a trailing quote:
-            if (n == quoteEnd) {
+            if (quoted) {
                 while (n > i) {
                     char c = s.charAt(n - 1);
-                    if (!Character.isWhitespace(c)) {
-                        //See if this was a \, and if so, see whether it was escaped
+                    if (c != '"') {
                         if (n < s.length() && isEscaped(s, n)) {
                             n++;
                         }
@@ -123,19 +102,80 @@ public class ValueXmlHelper {
             if (n == i) {
                 return ""; //$NON-NLS-1$
             }
+
+            // Only trim leading spaces if we didn't already process a leading quote:
+            if (!quoted) {
+                while (i < n) {
+                    char c = s.charAt(i);
+                    if (!Character.isWhitespace(c)) {
+                        break;
+                    }
+                    i++;
+                }
+
+                // Only trim trailing spaces if we didn't already process a trailing quote:
+                if (n == quoteEnd) {
+                    while (n > i) {
+                        char c = s.charAt(n - 1);
+                        if (!Character.isWhitespace(c)) {
+                            //See if this was a \, and if so, see whether it was escaped
+                            if (n < s.length() && isEscaped(s, n)) {
+                                n++;
+                            }
+                            break;
+                        }
+                        n--;
+                    }
+                }
+                if (n == i) {
+                    return ""; //$NON-NLS-1$
+                }
+            }
         }
 
-        // If no surrounding whitespace and no escape characters, no need to do any
-        // more work
-        if (i == 0 && n == s.length() && s.indexOf('\\') == -1
-                && (!escapeEntities || s.indexOf('&') == -1)) {
-            return s;
+        // Perform a single pass over the string and see if it contains
+        // (1) spaces that should be converted (e.g. repeated spaces or a newline which
+        // should be converted to a space)
+        // (2) escape characters (\ and &) which will require expansions
+        // If we find neither of these, we can simply return the string
+        boolean rewriteWhitespace = false;
+        if (!quoted) {
+            // See if we need to fold adjacent spaces
+            boolean prevSpace = false;
+            boolean hasEscape = false;
+            for (int curr = i; curr < n; curr++) {
+                char c = s.charAt(curr);
+                if (c == '\\' || c == '&') {
+                    hasEscape = true;
+                }
+                boolean isSpace = Character.isWhitespace(c);
+                if (isSpace && prevSpace) {
+                    // fold adjacent spaces
+                    rewriteWhitespace = true;
+                } else if (c == '\n') {
+                    // rewrite newlines as spaces
+                    rewriteWhitespace = true;
+                }
+                prevSpace = isSpace;
+            }
+
+            if (!trim) {
+                rewriteWhitespace = false;
+            }
+
+            // If no surrounding whitespace and no escape characters, no need to do any
+            // more work
+            if (!rewriteWhitespace && !hasEscape && i == 0 && n == s.length()) {
+                return s;
+            }
         }
 
         StringBuilder sb = new StringBuilder(n - i);
+        boolean prevSpace = false;
         for (; i < n; i++) {
             char c = s.charAt(i);
             if (c == '\\' && i < n - 1) {
+                prevSpace = false;
                 char next = s.charAt(i + 1);
                 // Unicode escapes
                 if (next == 'u' && i < n - 5) { // case sensitive
@@ -152,9 +192,11 @@ public class ValueXmlHelper {
                 } else if (next == 'n') {
                     sb.append('\n');
                     i++;
+                    continue;
                 } else if (next == 't') {
                     sb.append('\t');
                     i++;
+                    continue;
                 } else {
                     sb.append(next);
                     i++;
@@ -162,6 +204,7 @@ public class ValueXmlHelper {
                 }
             } else {
                 if (c == '&' && escapeEntities) {
+                    prevSpace = false;
                     if (s.regionMatches(true, i, LT_ENTITY, 0, LT_ENTITY.length())) {
                         sb.append('<');
                         i += LT_ENTITY.length() - 1;
@@ -170,9 +213,53 @@ public class ValueXmlHelper {
                         sb.append('&');
                         i += AMP_ENTITY.length() - 1;
                         continue;
+                    } else if (s.regionMatches(true, i, QUOT_ENTITY, 0, QUOT_ENTITY.length())) {
+                      sb.append('"');
+                      i += QUOT_ENTITY.length() - 1;
+                      continue;
+                    } else if (s.regionMatches(true, i, APOS_ENTITY, 0, APOS_ENTITY.length())) {
+                      sb.append('\'');
+                      i += APOS_ENTITY.length() - 1;
+                      continue;
+                    } else if (s.regionMatches(true, i, GT_ENTITY, 0, GT_ENTITY.length())) {
+                      sb.append('>');
+                      i += GT_ENTITY.length() - 1;
+                      continue;
+                    } else if (i < n - 2 && s.charAt(i + 1) == '#') {
+                        int end = s.indexOf(';', i + 1);
+                        if (end != -1) {
+                            char first = s.charAt(i + 2);
+                            boolean hex = first == 'x' || first == 'X';
+                            String number = s.substring(i + (hex ? 3 : 2), end);
+                            try {
+                                int unicodeValue = Integer.parseInt(number, hex ? 16 : 10);
+                                sb.append((char) unicodeValue);
+                                i = end;
+                                continue;
+                            } catch (NumberFormatException e) {
+                                // Invalid escape: Just proceed to literally transcribe it
+                                sb.append(c);
+                            }
+                        } else {
+                            // Invalid escape: Just proceed to literally transcribe it
+                            sb.append(c);
+                        }
                     }
                 }
-                sb.append(c);
+
+                if (rewriteWhitespace) {
+                    boolean isSpace = Character.isWhitespace(c);
+                    if (isSpace) {
+                        if (!prevSpace) {
+                            sb.append(' '); // replace newlines etc with a plain space
+                        }
+                    } else {
+                        sb.append(c);
+                    }
+                    prevSpace = isSpace;
+                } else {
+                    sb.append(c);
+                }
             }
         }
         s = sb.toString();

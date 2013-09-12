@@ -37,10 +37,14 @@ public class ParcelDetectorTest extends AbstractCheckTest {
                 "bytecode/MyParcelable1.java.txt=>src/test/bytecode/MyParcelable1.java",
                 "bytecode/MyParcelable2.java.txt=>src/test/bytecode/MyParcelable2.java",
                 "bytecode/MyParcelable3.java.txt=>src/test/bytecode/MyParcelable3.java",
+                "bytecode/MyParcelable4.java.txt=>src/test/bytecode/MyParcelable4.java",
+                "bytecode/MyParcelable5.java.txt=>src/test/bytecode/MyParcelable5.java",
                 "bytecode/MyParcelable1.class.data=>bin/classes/test/bytecode/MyParcelable1.class",
                 "bytecode/MyParcelable2.class.data=>bin/classes/test/bytecode/MyParcelable2.class",
                 "bytecode/MyParcelable2$1.class.data=>bin/classes/test/bytecode/MyParcelable2$1.class",
-                "bytecode/MyParcelable3.class.data=>bin/classes/test/bytecode/MyParcelable3.class"
+                "bytecode/MyParcelable3.class.data=>bin/classes/test/bytecode/MyParcelable3.class",
+                "bytecode/MyParcelable4.class.data=>bin/classes/test/bytecode/MyParcelable4.class",
+                "bytecode/MyParcelable5.class.data=>bin/classes/test/bytecode/MyParcelable5.class"
                 ));
     }
 }

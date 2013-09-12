@@ -70,7 +70,7 @@ public class AssetMergerTest extends BaseTestCase {
         AssetMerger merger = getAssetMerger();
 
         File folder = Files.createTempDir();
-        merger.writeBlobTo(folder);
+        merger.writeBlobTo(folder, new MergedAssetWriter(Files.createTempDir()));
 
         AssetMerger loadedMerger = new AssetMerger();
         loadedMerger.loadFromBlob(folder, true /*incrementalState*/);
@@ -231,7 +231,7 @@ public class AssetMergerTest extends BaseTestCase {
 
         // write merger1 on disk to test writing empty AssetSets.
         File folder = Files.createTempDir();
-        merger1.writeBlobTo(folder);
+        merger1.writeBlobTo(folder, new MergedAssetWriter(Files.createTempDir()));
 
         // reload it
         AssetMerger loadedMerger = new AssetMerger();
@@ -313,6 +313,19 @@ public class AssetMergerTest extends BaseTestCase {
         });
 
         assertFalse(merger1.checkValidUpdate(merger2.getDataSets()));
+    }
+
+    public void testChangedIgnoredFile() throws Exception {
+        AssetSet assetSet = AssetSetTest.getBaseAssetSet();
+
+        AssetMerger assetMerger = new AssetMerger();
+        assetMerger.addDataSet(assetSet);
+
+        File root = TestUtils.getRoot("assets", "baseSet");
+        File changedCVSFoo = new File(root, "CVS/foo.txt");
+        FileValidity<AssetSet> fileValidity = assetMerger.findDataSetContaining(changedCVSFoo);
+
+        assertEquals(FileValidity.FileStatus.IGNORED_FILE, fileValidity.status);
     }
 
     /**

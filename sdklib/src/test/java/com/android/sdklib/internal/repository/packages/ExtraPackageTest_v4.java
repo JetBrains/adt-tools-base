@@ -29,7 +29,7 @@ import java.util.Properties;
  * Tests {@link ExtraPackage} using anddon-4.xsd:
  * it has name-display, vendor-id and vendor-display.
  */
-public class ExtraPackageTest_v4 extends MinToolsPackageTest {
+public class ExtraPackageTest_v4 extends ExtraPackageTest_Base {
 
     private static final char PS = File.pathSeparatorChar;
 

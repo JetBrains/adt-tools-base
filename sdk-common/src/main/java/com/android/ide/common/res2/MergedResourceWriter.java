@@ -16,7 +16,8 @@
 
 package com.android.ide.common.res2;
 
-import static com.android.SdkConstants.DOT_9PNG;
+import static com.android.SdkConstants.DOT_PNG;
+import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.RES_QUALIFIER_SEP;
 import static com.android.SdkConstants.TAG_RESOURCES;
 
@@ -25,17 +26,23 @@ import com.android.annotations.Nullable;
 import com.android.ide.common.internal.AaptRunner;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.resources.ResourceFolderType;
+import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Sets;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -48,8 +55,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
  * A {@link MergeWriter} for assets, using {@link ResourceItem}.
  */
 public class MergedResourceWriter extends MergeWriter<ResourceItem> {
-
-    private static final String FN_VALUES_XML = "values.xml";
+    /** Filename to save the merged file as */
+    public static final String FN_VALUES_XML = "values.xml";
+    /** Prefix in comments which mark the source locations for merge results */
+    public static final String FILENAME_PREFIX = "From: ";
 
     @Nullable
     private final AaptRunner mAaptRunner;
@@ -87,6 +96,11 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     }
 
     @Override
+    public boolean ignoreItemInMerge(ResourceItem item) {
+        return item.getIgnoredFromDiskMerge();
+    }
+
+    @Override
     public void addItem(@NonNull final ResourceItem item) throws ConsumerException {
         ResourceFile.FileType type = item.getSource().getType();
 
@@ -118,10 +132,13 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
                         File outFile = new File(typeFolder, filename);
 
-                        if (mAaptRunner != null && filename.endsWith(DOT_9PNG)) {
+                        if (mAaptRunner != null && filename.endsWith(DOT_PNG)) {
                             // run aapt in single crunch mode on the original file to write the
                             // destination file.
                             mAaptRunner.crunchPng(file, outFile);
+                        } else if (filename.endsWith(DOT_XML)) {
+                            String p = file.toURI().toURL().toString();
+                            copyXmlWithComment(file, outFile, FILENAME_PREFIX + p);
                         } else {
                             Files.copy(file, outFile);
                         }
@@ -129,6 +146,30 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     }
                 });
             }
+        }
+    }
+
+    /** Copies a given XML file, and appends a given comment to the end */
+    private static void copyXmlWithComment(@NonNull File from, @NonNull File to,
+            @Nullable String comment) throws IOException {
+        int successfulOps = 0;
+        InputStream in = new FileInputStream(from);
+        try {
+            FileOutputStream out = new FileOutputStream(to, false);
+            try {
+                ByteStreams.copy(in, out);
+                successfulOps++;
+                if (comment != null) {
+                    String commentText = "<!-- " + XmlUtils.toXmlTextValue(comment) + " -->";
+                    byte[] suffix = commentText.getBytes(Charsets.UTF_8);
+                    out.write(suffix);
+                }
+            } finally {
+                Closeables.close(out, successfulOps < 1);
+                successfulOps++;
+            }
+        } finally {
+            Closeables.close(in, successfulOps < 2);
         }
     }
 
@@ -210,12 +251,27 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
                     Collections.sort(items);
 
+                    ResourceFile currentFile = null;
                     for (ResourceItem item : items) {
+                        ResourceFile source = item.getSource();
+                        if (source != currentFile) {
+                          currentFile = source;
+                          rootNode.appendChild(document.createTextNode("\n"));
+                          File file = source.getFile();
+                          String path = file.toURI().toURL().toString();
+                          rootNode.appendChild(document.createComment(FILENAME_PREFIX + path));
+                          rootNode.appendChild(document.createTextNode("\n"));
+                        }
                         Node adoptedNode = NodeUtils.adoptNode(document, item.getValue());
                         rootNode.appendChild(adoptedNode);
                     }
 
-                    String content = XmlPrettyPrinter.prettyPrint(document, true);
+                    String content;
+                    try {
+                        content = XmlPrettyPrinter.prettyPrint(document, true);
+                    } catch (Throwable t) {
+                        content = XmlUtils.toXml(document, false);
+                    }
 
                     Files.write(content, outFile, Charsets.UTF_8);
                 } catch (Throwable t) {

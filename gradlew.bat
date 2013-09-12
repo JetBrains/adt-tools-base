@@ -71,8 +71,14 @@ set CMD_LINE_ARGS=%$
 
 set CLASSPATH=%APP_HOME%\gradle\wrapper\gradle-wrapper.jar
 
+@rem Change the project's .gradle to the android out dir.
+set ANDROID_GRADLE_ROOT=%APP_HOME%\..\..\out\host\gradle\tools\base
+set ANDROID_CACHE_DIR=%ANDROID_GRADLE_ROOT%\.gradle
+set GRADLE_USER_HOME=%ANDROID_GRADLE_ROOT%\.gradle
+set M2_HOME=%ANDROID_GRADLE_ROOT%\.m2
+
 @rem Execute Gradle
-"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -classpath "%CLASSPATH%" org.gradle.wrapper.GradleWrapperMain %CMD_LINE_ARGS% --project-cache-dir=%APP_HOME%\..\..\out\host\common\tools\base\.gradle
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -classpath "%CLASSPATH%" org.gradle.wrapper.GradleWrapperMain %CMD_LINE_ARGS% --project-cache-dir=%ANDROID_CACHE_DIR%
 
 :end
 @rem End local scope for the variables with windows NT shell

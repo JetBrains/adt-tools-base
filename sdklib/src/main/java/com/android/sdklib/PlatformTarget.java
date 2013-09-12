@@ -19,7 +19,7 @@ package com.android.sdklib;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.sdklib.SdkManager.LayoutlibVersion;
-import com.android.sdklib.util.SparseArray;
+import com.android.utils.SparseArray;
 
 import java.io.File;
 import java.util.Arrays;

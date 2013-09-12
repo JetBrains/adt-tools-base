@@ -203,7 +203,7 @@ public class ArchiveInstallerTest extends TestCase {
                 "Extra.NameDisplay=Vendor1 OldPath\n" +
                 "Archive.Os=ANY\n" +
                 "Pkg.SourceUrl=http\\://repo.example.com/url\n" +
-                "Pkg.Revision=2\n" +
+                "Pkg.Revision=2.0.0\n" +
                 "Extra.VendorId=vendor1\n" +
                 "'>]"),
                 stripDate(Arrays.toString(mFile.getOutputStreams())));
@@ -280,7 +280,7 @@ public class ArchiveInstallerTest extends TestCase {
                 "Extra.NameDisplay=Vendor1 NewPath\n" +
                 "Archive.Os=ANY\n" +
                 "Pkg.SourceUrl=http\\://repo.example.com/url\n" +
-                "Pkg.Revision=2\n" +
+                "Pkg.Revision=2.0.0\n" +
                 "Extra.VendorId=vendor1\n" +
                 "'>]"),
                 stripDate(Arrays.toString(mFile.getOutputStreams())));

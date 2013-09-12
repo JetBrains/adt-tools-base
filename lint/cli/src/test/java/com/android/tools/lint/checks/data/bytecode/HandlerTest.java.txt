@@ -1,5 +1,5 @@
 package test.pkg;
-
+import android.os.Looper;
 import android.os.Handler;
 import android.os.Message;
 
@@ -19,6 +19,23 @@ public class HandlerTest extends Handler { // OK
             public void dispatchMessage(Message msg) {
                 super.dispatchMessage(msg);
             };
+        };
+
+        Looper looper = null;
+        Handler anonymous2 = new Handler(looper) { // OK
+            public void dispatchMessage(Message msg) {
+                super.dispatchMessage(msg);
+            };
+        };
+    }
+
+    public class WithArbitraryLooper extends Handler {
+        public WithArbitraryLooper(String unused, Looper looper) { // OK
+            super(looper, null);
+        }
+
+        public void dispatchMessage(Message msg) {
+            super.dispatchMessage(msg);
         };
     }
 }

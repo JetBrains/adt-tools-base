@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ATTR_QUANTITY;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_PLURALS;
 import static com.android.tools.lint.checks.PluralsDetector.Quantity.few;
@@ -148,7 +149,7 @@ public class PluralsDetector extends ResourceXmlDetector {
             if (!TAG_ITEM.equals(child.getTagName())) {
                 continue;
             }
-            String quantityString = child.getAttribute("quantity"); //$NON-NLS-1$
+            String quantityString = child.getAttribute(ATTR_QUANTITY);
             if (quantityString == null || quantityString.isEmpty()) {
                 continue;
             }
@@ -187,7 +188,7 @@ public class PluralsDetector extends ResourceXmlDetector {
             String message = String.format(
                     "For language \"%1$s\" the following quantities are not relevant: %2$s",
                     language, formatSet(extra));
-            context.report(MISSING, element, context.getLocation(element), message, null);
+            context.report(EXTRA, element, context.getLocation(element), message, null);
         }
     }
 
@@ -216,8 +217,9 @@ public class PluralsDetector extends ResourceXmlDetector {
 
     private static Map<String, EnumSet<Quantity>> sPlurals;
 
+    @SuppressWarnings({"UnnecessaryLocalVariable", "UnusedDeclaration"})
     @Nullable
-    public EnumSet<Quantity> getRelevant(@NonNull String language) {
+    public static EnumSet<Quantity> getRelevant(@NonNull String language) {
         // Based on the plurals table in plurals.txt in icu4c
         if (sPlurals == null) {
             EnumSet<Quantity> empty = EnumSet.noneOf(Quantity.class);

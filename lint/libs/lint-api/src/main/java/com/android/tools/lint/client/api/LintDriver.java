@@ -56,8 +56,10 @@ import com.google.common.annotations.Beta;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 
@@ -129,7 +131,7 @@ public class LintDriver {
 
     private final LintClient mClient;
     private LintRequest mRequest;
-    private final IssueRegistry mRegistry;
+    private IssueRegistry mRegistry;
     private volatile boolean mCanceled;
     private EnumSet<Scope> mScope;
     private List<? extends Detector> mApplicableDetectors;
@@ -370,7 +372,10 @@ public class LintDriver {
         mScope = mRequest.getScope();
         Collection<Project> projects;
         try {
-            projects = computeProjects(mRequest.getFiles());
+            projects = mRequest.getProjects();
+            if (projects == null) {
+                projects = computeProjects(mRequest.getFiles());
+            }
         } catch (CircularDependencyException e) {
             mCurrentProject = e.getProject();
             if (mCurrentProject != null) {
@@ -389,37 +394,10 @@ public class LintDriver {
             return;
         }
 
+        registerCustomRules(projects);
+
         if (mScope == null) {
-            // Infer the scope
-            mScope = EnumSet.noneOf(Scope.class);
-            for (Project project : projects) {
-                List<File> subset = project.getSubset();
-                if (subset != null) {
-                    for (File file : subset) {
-                        String name = file.getName();
-                        if (name.equals(ANDROID_MANIFEST_XML)) {
-                            mScope.add(Scope.MANIFEST);
-                        } else if (name.endsWith(DOT_XML)) {
-                            mScope.add(Scope.RESOURCE_FILE);
-                        } else if (name.equals(RES_FOLDER)
-                                || file.getParent().equals(RES_FOLDER)) {
-                            mScope.add(Scope.ALL_RESOURCE_FILES);
-                            mScope.add(Scope.RESOURCE_FILE);
-                        } else if (name.endsWith(DOT_JAVA)) {
-                            mScope.add(Scope.JAVA_FILE);
-                        } else if (name.endsWith(DOT_CLASS)) {
-                            mScope.add(Scope.CLASS_FILE);
-                        } else if (name.equals(OLD_PROGUARD_FILE)
-                                || name.equals(FN_PROJECT_PROGUARD_FILE)) {
-                            mScope.add(Scope.PROGUARD_FILE);
-                        }
-                    }
-                } else {
-                    // Specified a full project: just use the full project scope
-                    mScope = Scope.ALL;
-                    break;
-                }
-            }
+            mScope = Scope.infer(projects);
         }
 
         fireEvent(EventType.STARTING, null);
@@ -444,6 +422,34 @@ public class LintDriver {
         }
 
         fireEvent(mCanceled ? EventType.CANCELED : EventType.COMPLETED, null);
+    }
+
+    private void registerCustomRules(Collection<Project> projects) {
+        // Look at the various projects, and if any of them provide a custom
+        // lint jar, "add" them (this will replace the issue registry with
+        // a CompositeIssueRegistry containing the original issue registry
+        // plus JarFileIssueRegistry instances for each lint jar
+        Set<File> jarFiles = Sets.newHashSet();
+        for (Project project : projects) {
+            jarFiles.addAll(mClient.findRuleJars(project));
+        }
+
+        jarFiles.addAll(mClient.findGlobalRuleJars());
+
+        if (!jarFiles.isEmpty()) {
+            List<IssueRegistry> registries = Lists.newArrayListWithExpectedSize(jarFiles.size());
+            registries.add(mRegistry);
+            for (File jarFile : jarFiles) {
+                try {
+                    registries.add(JarFileIssueRegistry.get(jarFile));
+                } catch (Throwable e) {
+                    mClient.log(e, "Could not load custom rule jar file %1$s", jarFile);
+                }
+            }
+            if (registries.size() > 1) { // the first item is mRegistry itself
+                mRegistry = new CompositeIssueRegistry(registries);
+            }
+        }
     }
 
     private void runExtraPhases(Project project) {
@@ -669,7 +675,6 @@ public class LintDriver {
             }
         }
 
-
         for (File file : files) {
             if (file.isDirectory()) {
                 File rootDir = sharedRoot;
@@ -692,18 +697,18 @@ public class LintDriver {
                 // right thing, which is to see if you're pointing right at a project or
                 // right within it (say at the src/ or res/) folder, and if not, you're
                 // hopefully pointing at a project tree that you want to scan recursively.
-                if (LintUtils.isProjectDir(file)) {
+                if (mClient.isProjectDirectory(file)) {
                     registerProjectFile(fileToProject, file, file, rootDir);
                     continue;
                 } else {
                     File parent = file.getParentFile();
                     if (parent != null) {
-                        if (LintUtils.isProjectDir(parent)) {
+                        if (mClient.isProjectDirectory(parent)) {
                             registerProjectFile(fileToProject, file, parent, parent);
                             continue;
                         } else {
                             parent = parent.getParentFile();
-                            if (parent != null && LintUtils.isProjectDir(parent)) {
+                            if (parent != null && mClient.isProjectDirectory(parent)) {
                                 registerProjectFile(fileToProject, file, parent, parent);
                                 continue;
                             }
@@ -717,7 +722,7 @@ public class LintDriver {
                 // Pointed at a file: Search upwards for the containing project
                 File parent = file.getParentFile();
                 while (parent != null) {
-                    if (LintUtils.isProjectDir(parent)) {
+                    if (mClient.isProjectDirectory(parent)) {
                         registerProjectFile(fileToProject, file, parent, parent);
                         break;
                     }
@@ -798,7 +803,7 @@ public class LintDriver {
             return;
         }
 
-        if (LintUtils.isProjectDir(dir)) {
+        if (mClient.isProjectDirectory(dir)) {
             registerProjectFile(fileToProject, dir, dir, rootDir);
         } else {
             File[] files = dir.listFiles();
@@ -891,8 +896,7 @@ public class LintDriver {
 
     private void runFileDetectors(@NonNull Project project, @Nullable Project main) {
         // Look up manifest information (but not for library projects)
-        File manifestFile = project.getManifestFile();
-        if (manifestFile != null) {
+        for (File manifestFile : project.getManifestFiles()) {
             XmlContext context = new XmlContext(this, project, main, manifestFile, null);
             IDomParser parser = mClient.getDomParser();
             if (parser != null) {
@@ -996,35 +1000,7 @@ public class LintDriver {
     private void checkProGuard(Project project, Project main) {
         List<Detector> detectors = mScopeDetectors.get(Scope.PROGUARD_FILE);
         if (detectors != null) {
-            Project p = main != null ? main : project;
-            List<File> files = new ArrayList<File>();
-            String paths = p.getProguardPath();
-            if (paths != null) {
-                Splitter splitter = Splitter.on(CharMatcher.anyOf(":;")); //$NON-NLS-1$
-                for (String path : splitter.split(paths)) {
-                    if (path.contains("${")) { //$NON-NLS-1$
-                        // Don't analyze the global/user proguard files
-                        continue;
-                    }
-                    File file = new File(path);
-                    if (!file.isAbsolute()) {
-                        file = new File(project.getDir(), path);
-                    }
-                    if (file.exists()) {
-                        files.add(file);
-                    }
-                }
-            }
-            if (files.isEmpty()) {
-                File file = new File(project.getDir(), OLD_PROGUARD_FILE);
-                if (file.exists()) {
-                    files.add(file);
-                }
-                file = new File(project.getDir(), FN_PROJECT_PROGUARD_FILE);
-                if (file.exists()) {
-                    files.add(file);
-                }
-            }
+            List<File> files = project.getProguardFiles();
             for (File file : files) {
                 Context context = new Context(this, project, main, file);
                 fireEvent(EventType.SCANNING_FILE, context);
@@ -1654,7 +1630,7 @@ public class LintDriver {
             @Nullable Project main,
             @NonNull File res,
             @NonNull List<ResourceXmlDetector> checks) {
-        assert res.isDirectory();
+        assert res.isDirectory() : res;
         File[] resourceDirs = res.listFiles();
         if (resourceDirs == null) {
             return;
@@ -1972,6 +1948,29 @@ public class LintDriver {
         @Override
         protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
             return mDelegate.createProject(dir, referenceDir);
+        }
+
+        @NonNull
+        @Override
+        public List<File> findGlobalRuleJars() {
+            return mDelegate.findGlobalRuleJars();
+        }
+
+        @NonNull
+        @Override
+        public List<File> findRuleJars(@NonNull Project project) {
+            return mDelegate.findRuleJars(project);
+        }
+
+        @Override
+        public boolean isProjectDirectory(@NonNull File dir) {
+            return mDelegate.isProjectDirectory(dir);
+        }
+
+        @Override
+        public void registerProject(@NonNull File dir, @NonNull Project project) {
+            log(Severity.WARNING, null, "Too late to register projects");
+            mDelegate.registerProject(dir, project);
         }
     }
 

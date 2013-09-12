@@ -49,7 +49,6 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -61,10 +60,10 @@ import java.util.Map.Entry;
 /**
  * Class to use the Layout library.
  * <p/>
- * Use {@link #load(String, ILogger)} to load the jar file.
+ * Use {@link #load(String, ILogger, String)} to load the jar file.
  * <p/>
  * Use the layout library with:
- * {@link #init(String, Map)}, {@link #supports(Capability)}, {@link #createSession(SessionParams)},
+ * {@link #init}, {@link #supports(Capability)}, {@link #createSession(SessionParams)},
  * {@link #dispose()}, {@link #clearCaches(Object)}.
  *
  * <p/>
@@ -79,6 +78,7 @@ import java.util.Map.Entry;
 public class LayoutLibrary {
 
     public static final String CLASS_BRIDGE = "com.android.layoutlib.bridge.Bridge"; //$NON-NLS-1$
+    public static final String FN_ICU_JAR = "icu4j.jar"; //$NON-NLS-1$
 
     /** Link to the layout bridge */
     private final Bridge mBridge;
@@ -128,8 +128,8 @@ public class LayoutLibrary {
      * Loads the layoutlib.jar file located at the given path and returns a {@link LayoutLibrary}
      * object representing the result.
      * <p/>
-     * If loading failed {@link #getStatus()} will reflect this, and {@link #getBridge()} will
-     * return null.
+     * If loading failed {@link #getStatus()} will reflect this, and {@link #mBridge} will
+     * be null.
      *
      * @param layoutLibJarOsPath the path of the jar file
      * @param log an optional log file.
@@ -151,14 +151,22 @@ public class LayoutLibrary {
                     log.error(null, "layoutlib.jar is missing!"); //$NON-NLS-1$
                 }
             } else {
-                URI uri = f.toURI();
-                URL url = uri.toURL();
+                URL[] urls;
+                // TODO: The icu jar has to be in the same location as layoutlib.jar. Get rid of
+                // this dependency.
+                File icu4j = new File(f.getParent(), FN_ICU_JAR);
+                if (icu4j.isFile()) {
+                    urls = new URL[2];
+                    urls[1] = icu4j.toURI().toURL();
+                } else {
+                    urls = new URL[1];
+                }
+                urls[0] = f.toURI().toURL();
 
                 // create a class loader. Because this jar reference interfaces
                 // that are in the editors plugin, it's important to provide
                 // a parent class loader.
-                classLoader = new URLClassLoader(
-                        new URL[] { url },
+                classLoader = new URLClassLoader(urls,
                         LayoutLibrary.class.getClassLoader());
 
                 // load the class
@@ -279,8 +287,6 @@ public class LayoutLibrary {
      *          read from attrs.xml in the SDK target.
      * @param log a {@link LayoutLog} object. Can be null.
      * @return true if success.
-     *
-     * @see Bridge#init(String, Map)
      */
     public boolean init(Map<String, String> platformProperties,
             File fontLocation,
@@ -315,7 +321,7 @@ public class LayoutLibrary {
      * Before taking further actions on the scene, it is recommended to use
      * {@link #supports(Capability)} to check what the scene can do.
      *
-     * @return a new {@link ILayoutScene} object that contains the result of the scene creation and
+     * @return a new {@link RenderSession} object that contains the result of the scene creation and
      * first rendering or null if {@link #getStatus()} doesn't return {@link LoadStatus#LOADED}.
      *
      * @see Bridge#createSession(SessionParams)
@@ -411,6 +417,15 @@ public class LayoutLibrary {
         }
 
         return getViewIndexReflection(viewObject);
+    }
+
+    /**
+     * Returns true if the character orientation of the locale is right to left.
+     * @param locale The locale formatted as language-region
+     * @return true if the locale is right to left.
+     */
+    public boolean isRtl(String locale) {
+        return supports(Capability.RTL) ? mBridge.isRtl(locale) : false;
     }
 
     // ------ Implementation

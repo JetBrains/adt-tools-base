@@ -67,8 +67,8 @@ public abstract class BaseTestCase extends TestCase {
             if (fullCompare) {
                 assertEquals("Wrong size for " + key, items1.size(), items2.size());
             } else {
-                boolean map1HasItem = items1.size() > 0;
-                boolean map2HasItem = items2.size() > 0;
+                boolean map1HasItem = !items1.isEmpty();
+                boolean map2HasItem = !items2.isEmpty();
                 assertEquals("resource " + key + " missing from one map", map1HasItem, map2HasItem);
             }
         }
@@ -98,7 +98,7 @@ public abstract class BaseTestCase extends TestCase {
      * @throws java.io.IOException
      */
     protected static File getMergedBlobFolder(File folder) throws IOException {
-        File originalMerger = new File(folder, AssetMerger.FN_MERGER_XML);
+        File originalMerger = new File(folder, DataMerger.FN_MERGER_XML);
 
         String content = Files.toString(originalMerger, Charsets.UTF_8);
 
@@ -108,7 +108,7 @@ public abstract class BaseTestCase extends TestCase {
                 replaceAll("\\$SEP\\$", Matcher.quoteReplacement(File.separator));
 
         File tempFolder = Files.createTempDir();
-        Files.write(content, new File(tempFolder, AssetMerger.FN_MERGER_XML), Charsets.UTF_8);
+        Files.write(content, new File(tempFolder, DataMerger.FN_MERGER_XML), Charsets.UTF_8);
 
         return tempFolder;
     }

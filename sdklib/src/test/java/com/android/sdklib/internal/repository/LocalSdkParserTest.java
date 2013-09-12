@@ -38,7 +38,7 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
         assertEquals(
                 "[Android SDK Tools, revision 1.0.1, " +
                  "Android SDK Platform-tools, revision 17.1.2, " +
-                 "Android SDK Build-tools, revision 12.3.4 rc5, " +
+                 "Android SDK Build-tools, revision 18.3.4 rc5, " +
                  "Android SDK Build-tools, revision 3.0.1, " +
                  "Android SDK Build-tools, revision 3, " +
                  "SDK Platform Android 0.0, API 0, revision 1, " +
@@ -82,7 +82,7 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
                         monitor)));
 
         assertEquals(
-                "[Android SDK Build-tools, revision 12.3.4 rc5, " +
+                "[Android SDK Build-tools, revision 18.3.4 rc5, " +
                  "Android SDK Build-tools, revision 3.0.1, " +
                  "Android SDK Build-tools, revision 3]",
                 Arrays.toString(parser.parseSdk(sdkman.getLocation(),
@@ -105,7 +105,7 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
         assertEquals(
                 "[Android SDK Tools, revision 1.0.1, " +
                  "Android SDK Platform-tools, revision 17.1.2, " +
-                 "Android SDK Build-tools, revision 12.3.4 rc5, " +
+                 "Android SDK Build-tools, revision 18.3.4 rc5, " +
                  "Android SDK Build-tools, revision 3.0.1, " +
                  "Android SDK Build-tools, revision 3, " +
                  "SDK Platform Android 0.0, API 0, revision 1, " +
@@ -126,7 +126,7 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
         assertEquals(
                 "[Android SDK Tools, revision 1.0.1, " +
                  "Android SDK Platform-tools, revision 17.1.2, " +
-                 "Android SDK Build-tools, revision 12.3.4 rc5, " +
+                 "Android SDK Build-tools, revision 18.3.4 rc5, " +
                  "Android SDK Build-tools, revision 3.0.1, " +
                  "Android SDK Build-tools, revision 3, " +
                  "SDK Platform Android 0.0, API 0, revision 1, " +
@@ -145,7 +145,7 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
         assertEquals(
                 "[Android SDK Tools, revision 1.0.1, " +
                  "Android SDK Platform-tools, revision 17.1.2, " +
-                 "Android SDK Build-tools, revision 12.3.4 rc5, " +
+                 "Android SDK Build-tools, revision 18.3.4 rc5, " +
                  "Android SDK Build-tools, revision 3.0.1, " +
                  "Android SDK Build-tools, revision 3, " +
                  "SDK Platform Android 0.0, API 0, revision 1, " +
@@ -158,7 +158,7 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
         assertEquals(
                 "[Android SDK Tools, revision 1.0.1, " +
                  "Android SDK Platform-tools, revision 17.1.2, " +
-                 "Android SDK Build-tools, revision 12.3.4 rc5, " +
+                 "Android SDK Build-tools, revision 18.3.4 rc5, " +
                  "Android SDK Build-tools, revision 3.0.1, " +
                  "Android SDK Build-tools, revision 3, " +
                  "SDK Platform Android 0.0, API 0, revision 1, " +

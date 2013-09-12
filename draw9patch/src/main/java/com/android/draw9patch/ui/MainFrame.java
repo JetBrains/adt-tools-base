@@ -119,6 +119,9 @@ public class MainFrame extends JFrame {
     }
 
     void showImageEditor(BufferedImage image, String name) {
+        if (imageEditor != null) {
+            imageEditor.dispose();
+        }
         getContentPane().removeAll();
         imageEditor = new ImageEditorPanel(this, image, name);
         add(imageEditor);

@@ -50,7 +50,7 @@ public class XmlReporter extends Reporter {
      * @param output the output file
      * @throws IOException if an error occurs
      */
-    public XmlReporter(Main client, File output) throws IOException {
+    public XmlReporter(LintCliClient client, File output) throws IOException {
         super(client, output);
         mWriter = new BufferedWriter(Files.newWriter(output, Charsets.UTF_8));
     }

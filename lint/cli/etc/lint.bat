@@ -21,7 +21,7 @@ rem and set up progdir to be the fully-qualified pathname of its directory.
 set prog=%~f0
 
 rem Grab current directory before we change it
-set work_dir="%cd%"
+set work_dir=%cd%
 
 rem Change current directory and drive to where the script is, to avoid
 rem issues with directories containing whitespaces.
@@ -36,13 +36,13 @@ call lib\find_java.bat
 if not defined java_exe goto :EOF
 
 set jarfile=lint.jar
-set frameworkdir=
+set frameworkdir=.
 
-if exist %frameworkdir%%jarfile% goto JarFileOk
-    set frameworkdir=lib\
+if exist %frameworkdir%\%jarfile% goto JarFileOk
+    set frameworkdir=lib
 
-if exist %frameworkdir%%jarfile% goto JarFileOk
-    set frameworkdir=..\framework\
+if exist %frameworkdir%\%jarfile% goto JarFileOk
+    set frameworkdir=..\framework
 
 :JarFileOk
 
@@ -51,8 +51,8 @@ if debug NEQ "%1" goto NoDebug
     shift 1
 :NoDebug
 
-set jarpath=%frameworkdir%%jarfile%
+set jarpath=%frameworkdir%\%jarfile%
 set javaextdirs=%frameworkdir%
 
-call %java_exe% %java_debug% -Xmx512m -Dcom.android.tools.lint.bindir=%prog_dir% -Dcom.android.tools.lint.workdir=%work_dir% -Djava.awt.headless=true -classpath "%jarpath%" com.android.tools.lint.Main %*
+call "%java_exe%" %java_debug% -Xmx512m "-Dcom.android.tools.lint.bindir=%prog_dir%" "-Dcom.android.tools.lint.workdir=%work_dir%" -Djava.awt.headless=true -classpath "%jarpath%" com.android.tools.lint.Main %*
 

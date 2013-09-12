@@ -41,7 +41,7 @@ public class MultiProjectHtmlReporter extends HtmlReporter {
     private static final String INDEX_NAME = "index.html"; //$NON-NLS-1$
     private final File mDir;
 
-    public MultiProjectHtmlReporter(Main client, File dir) throws IOException {
+    public MultiProjectHtmlReporter(LintCliClient client, File dir) throws IOException {
         super(client, new File(dir, INDEX_NAME));
         mDir = dir;
     }

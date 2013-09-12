@@ -62,6 +62,8 @@ public class ProjectProperties implements IPropertySource {
     public static final String PROPERTY_TARGET = "target";
     /** The property name for the renderscript build target */
     public static final String PROPERTY_RS_TARGET = "renderscript.target";
+    /** The property name for the renderscript support mode */
+    public static final String PROPERTY_RS_SUPPORT = "renderscript.support.mode";
     /** The version of the build tools to use to compile */
     public static final String PROPERTY_BUILD_TOOLS = "sdk.buildtools";
 

@@ -17,46 +17,26 @@
 package com.android.tools.lint.checks;
 
 import static com.android.tools.lint.detector.api.LintUtils.assertionsEnabled;
-import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
-import com.android.prefs.AndroidLocation;
-import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.detector.api.Issue;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.Sets;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.jar.Attributes;
-import java.util.jar.JarFile;
-import java.util.jar.Manifest;
 
 /** Registry which provides a list of checks to be performed on an Android project */
 public class BuiltinIssueRegistry extends IssueRegistry {
-    /** Folder name in the .android dir where additional detector jars are found */
-    private static final String LINT_FOLDER = "lint"; //$NON-NLS-1$
-
-    /**
-     * Manifest constant for declaring an issue provider. Example:
-     * Lint-Registry: foo.bar.CustomIssueRegistry
-     */
-    private static final String MF_LINT_REGISTRY = "Lint-Registry"; //$NON-NLS-1$
-
     private static final List<Issue> sIssues;
 
     static {
-        final int initialCapacity = 156;
+        final int initialCapacity = 158;
         List<Issue> issues = new ArrayList<Issue>(initialCapacity);
 
         issues.add(AccessibilityDetector.ISSUE);
@@ -97,6 +77,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(TooManyViewsDetector.TOO_DEEP);
         issues.add(GridLayoutDetector.ISSUE);
         issues.add(OverrideDetector.ISSUE);
+        issues.add(CallSuperDetector.ISSUE);
         issues.add(OnClickDetector.ISSUE);
         issues.add(ViewTagDetector.ISSUE);
         issues.add(LocaleDetector.STRING_LOCALE);
@@ -133,18 +114,19 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(PrivateResourceDetector.ISSUE);
         issues.add(ArraySizeDetector.INCONSISTENT);
         issues.add(HardcodedDebugModeDetector.ISSUE);
-        issues.add(ManifestOrderDetector.ORDER);
-        issues.add(ManifestOrderDetector.USES_SDK);
-        issues.add(ManifestOrderDetector.MULTIPLE_USES_SDK);
-        issues.add(ManifestOrderDetector.WRONG_PARENT);
-        issues.add(ManifestOrderDetector.DUPLICATE_ACTIVITY);
-        issues.add(ManifestOrderDetector.TARGET_NEWER);
-        issues.add(ManifestOrderDetector.ALLOW_BACKUP);
-        issues.add(ManifestOrderDetector.UNIQUE_PERMISSION);
-        issues.add(ManifestOrderDetector.SET_VERSION);
-        issues.add(ManifestOrderDetector.ILLEGAL_REFERENCE);
-        issues.add(ManifestOrderDetector.DUPLICATE_USES_FEATURE);
-        issues.add(ManifestOrderDetector.APPLICATION_ICON);
+        issues.add(ManifestDetector.ORDER);
+        issues.add(ManifestDetector.USES_SDK);
+        issues.add(ManifestDetector.MULTIPLE_USES_SDK);
+        issues.add(ManifestDetector.WRONG_PARENT);
+        issues.add(ManifestDetector.DUPLICATE_ACTIVITY);
+        issues.add(ManifestDetector.TARGET_NEWER);
+        issues.add(ManifestDetector.ALLOW_BACKUP);
+        issues.add(ManifestDetector.UNIQUE_PERMISSION);
+        issues.add(ManifestDetector.SET_VERSION);
+        issues.add(ManifestDetector.ILLEGAL_REFERENCE);
+        issues.add(ManifestDetector.DUPLICATE_USES_FEATURE);
+        issues.add(ManifestDetector.APPLICATION_ICON);
+        issues.add(ManifestDetector.DEVICE_ADMIN);
         issues.add(ManifestTypoDetector.ISSUE);
         issues.add(SecurityDetector.EXPORTED_PROVIDER);
         issues.add(SecurityDetector.EXPORTED_SERVICE);
@@ -218,8 +200,6 @@ public class BuiltinIssueRegistry extends IssueRegistry {
 
         assert initialCapacity >= issues.size() : issues.size();
 
-        addCustomIssues(issues);
-
         sIssues = Collections.unmodifiableList(issues);
 
         // Check that ids are unique
@@ -245,96 +225,6 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         return sIssues;
     }
 
-    /**
-     * Add in custom issues registered by the user - via an environment variable
-     * or in the .android/lint directory.
-     */
-    private static void addCustomIssues(List<Issue> issues) {
-        // Look for additional detectors registered by the user, via
-        // (1) an environment variable (useful for build servers etc), and
-        // (2) via jar files in the .android/lint directory
-        Set<File> files = null;
-        try {
-            File lint = new File(AndroidLocation.getFolder() + File.separator + LINT_FOLDER);
-            if (lint.exists()) {
-                File[] list = lint.listFiles();
-                if (list != null) {
-                    for (File jarFile : list) {
-                        if (endsWith(jarFile.getName(), ".jar")) { //$NON-NLS-1$
-                            if (files == null) {
-                                files = new HashSet<File>();
-                            }
-                            files.add(jarFile);
-                            addIssuesFromJar(jarFile, issues);
-                        }
-                    }
-                }
-            }
-        } catch (AndroidLocationException e) {
-            // Ignore -- no android dir, so no rules to load.
-        }
-
-        String lintClassPath = System.getenv("ANDROID_LINT_JARS"); //$NON-NLS-1$
-        if (lintClassPath != null && !lintClassPath.isEmpty()) {
-            String[] paths = lintClassPath.split(File.pathSeparator);
-            for (String path : paths) {
-                File jarFile = new File(path);
-                if (jarFile.exists() && (files == null || !files.contains(jarFile))) {
-                    addIssuesFromJar(jarFile, issues);
-                }
-            }
-        }
-    }
-
-    /** Add the issues found in the given jar file into the given list of issues */
-    private static void addIssuesFromJar(File jarFile, List<Issue> issues) {
-        JarFile jarfile = null;
-        try {
-            jarfile = new JarFile(jarFile);
-            Manifest manifest = jarfile.getManifest();
-            Attributes attrs = manifest.getMainAttributes();
-            Object object = attrs.get(new Attributes.Name(MF_LINT_REGISTRY));
-            if (object instanceof String) {
-                String className = (String) object;
-
-                // Make a class loader for this jar
-                try {
-                    URL url = jarFile.toURI().toURL();
-                    URLClassLoader loader = new URLClassLoader(new URL[] { url },
-                            BuiltinIssueRegistry.class.getClassLoader());
-                    try {
-                        Class<?> registryClass = Class.forName(className, true, loader);
-                        IssueRegistry registry = (IssueRegistry) registryClass.newInstance();
-                        for (Issue issue : registry.getIssues()) {
-                            issues.add(issue);
-                        }
-                    } catch (Throwable e) {
-                        log(e);
-                    }
-                } catch (MalformedURLException e) {
-                    log(e);
-                }
-            }
-        } catch (IOException e) {
-            log(e);
-        } finally {
-            if (jarfile != null) {
-                try {
-                    jarfile.close();
-                } catch (IOException e) {
-                    // Nothing to be done
-                }
-            }
-        }
-    }
-
-    private static void log(Throwable e) {
-        // TODO: Where do we log this? There's no embedding tool context here. For now,
-        // just dump to the console so detector developers get some feedback on what went
-        // wrong.
-        e.printStackTrace();
-    }
-
     private static Set<Issue> sAdtFixes;
 
     /**
@@ -346,6 +236,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
      *         given issue
      */
     @Beta
+    @SuppressWarnings("MethodMayBeStatic") // Intentionally instance method so it can be overridden
     public boolean hasAutoFix(String tool, Issue issue) {
         assert tool.equals("adt"); // This is not yet a generic facility;
         // the primary purpose right now is to allow for example the HTML report
@@ -378,7 +269,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
             sAdtFixes.add(ApiDetector.UNSUPPORTED);
             sAdtFixes.add(ApiDetector.INLINED);
             sAdtFixes.add(TypoDetector.ISSUE);
-            sAdtFixes.add(ManifestOrderDetector.ALLOW_BACKUP);
+            sAdtFixes.add(ManifestDetector.ALLOW_BACKUP);
             sAdtFixes.add(MissingIdDetector.ISSUE);
             sAdtFixes.add(TranslationDetector.MISSING);
             sAdtFixes.add(DosLineEndingDetector.ISSUE);

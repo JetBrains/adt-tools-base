@@ -149,7 +149,7 @@ public class JavaScriptInterfaceDetector extends Detector implements Detector.Cl
         }
     }
 
-    private boolean containsJavaScriptAnnotation(@NonNull ClassNode classNode) {
+    private static boolean containsJavaScriptAnnotation(@NonNull ClassNode classNode) {
         List methodList = classNode.methods;
         for (Object om : methodList) {
             MethodNode m = (MethodNode) om;
@@ -168,8 +168,8 @@ public class JavaScriptInterfaceDetector extends Detector implements Detector.Cl
     }
 
     @Nullable
-    private String findFirstArgType(ClassContext context, ClassNode classNode, MethodNode method,
-            MethodInsnNode call) {
+    private static String findFirstArgType(ClassContext context, ClassNode classNode,
+            MethodNode method, MethodInsnNode call) {
         // Find object being passed in as the first argument
         Analyzer analyzer = new Analyzer(new SourceInterpreter() {
             @Override

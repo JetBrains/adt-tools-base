@@ -46,6 +46,7 @@ public abstract class RenderParams {
     private String mAppLabel = null;
     private String mLocale = null;
     private boolean mForceNoDecor;
+    private boolean mSupportsRtl;
 
     /**
      *
@@ -95,6 +96,7 @@ public abstract class RenderParams {
         mAppLabel = params.mAppLabel;
         mLocale = params.mLocale;
         mForceNoDecor = params.mForceNoDecor;
+        mSupportsRtl = params.mSupportsRtl;
     }
 
     public void setOverrideBgColor(int color) {
@@ -124,6 +126,10 @@ public abstract class RenderParams {
 
     public void setForceNoDecor() {
         mForceNoDecor = true;
+    }
+
+    public void setRtlSupport(boolean supportsRtl) {
+        mSupportsRtl = supportsRtl;
     }
 
     public Object getProjectKey() {
@@ -232,5 +238,9 @@ public abstract class RenderParams {
 
     public boolean isForceNoDecor() {
         return mForceNoDecor;
+    }
+
+    public boolean isRtlSupported() {
+        return mSupportsRtl;
     }
 }

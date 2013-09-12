@@ -24,10 +24,8 @@ import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
-import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.utils.SdkUtils;
 import com.google.common.collect.Maps;
 
 import java.io.File;
@@ -37,19 +35,9 @@ import java.util.Map;
 
 import lombok.ast.AstVisitor;
 import lombok.ast.Cast;
-import lombok.ast.ConstructorDeclaration;
 import lombok.ast.Expression;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.MethodDeclaration;
 import lombok.ast.MethodInvocation;
-import lombok.ast.Node;
-import lombok.ast.NormalTypeBody;
-import lombok.ast.Return;
-import lombok.ast.Select;
 import lombok.ast.StrictListAccessor;
-import lombok.ast.VariableDeclaration;
-import lombok.ast.VariableDefinition;
-import lombok.ast.VariableReference;
 
 /**
  * Detector looking for casts on th result of context.getSystemService which are suspect
@@ -109,7 +97,8 @@ public class ServiceCastDetector extends Detector implements Detector.JavaScanne
                             return;
                         }
 
-                        String message = String.format("Suspicious cast to %1$s for a %2$s: expected %3$s",
+                        String message = String.format(
+                                "Suspicious cast to %1$s for a %2$s: expected %3$s",
                                 stripPackage(castType), name, stripPackage(expectedClass));
                         context.report(ISSUE, node, context.getLocation(cast), message, null);
                     }
@@ -134,7 +123,7 @@ public class ServiceCastDetector extends Detector implements Detector.JavaScanne
     }
 
     @Nullable
-    private String getExpectedType(@NonNull String value) {
+    private static String getExpectedType(@NonNull String value) {
         return getServiceMap().get(value);
     }
 
@@ -175,7 +164,7 @@ public class ServiceCastDetector extends Detector implements Detector.JavaScanne
                     "android.view.textservice.TextServicesManager");
             sServiceMap.put("UI_MODE_SERVICE", "android.app.UiModeManager");
             sServiceMap.put("UI_MODE_SERVICE", "android.app.UiModeManager");
-            sServiceMap.put("USB_SERVICE", "android.harware.usb.UsbManager");
+            sServiceMap.put("USB_SERVICE", "android.hardware.usb.UsbManager");
             sServiceMap.put("USER_SERVICE", "android.os.UserManager");
             sServiceMap.put("VIBRATOR_SERVICE", "android.os.Vibrator");
             sServiceMap.put("WALLPAPER_SERVICE", "com.android.server.WallpaperService");

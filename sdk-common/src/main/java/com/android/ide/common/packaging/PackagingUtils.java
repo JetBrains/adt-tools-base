@@ -62,6 +62,7 @@ public class PackagingUtils {
         return !(fileName.charAt(0) == '.' || fileName.charAt(fileName.length() - 1) == '~') &&
                 !"aidl".equalsIgnoreCase(extension) &&        // Aidl files
                 !"rs".equalsIgnoreCase(extension) &&          // RenderScript files
+                !"fs".equalsIgnoreCase(extension) &&          // FilterScript files
                 !"rsh".equalsIgnoreCase(extension) &&         // RenderScript header files
                 !"d".equalsIgnoreCase(extension) &&           // Dependency files
                 !"java".equalsIgnoreCase(extension) &&        // Java files

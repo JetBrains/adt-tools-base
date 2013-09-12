@@ -93,8 +93,12 @@ public class ValueXmlHelperTest extends TestCase {
 
     public void testUnescapeStringShouldUnescapeXmlSpecialCharacters() throws Exception {
         assertEquals("&lt;", unescapeResourceString("&lt;", false, true));
+        assertEquals("&gt;", unescapeResourceString("&gt;", false, true));
         assertEquals("<", unescapeResourceString("&lt;", true, true));
         assertEquals("<", unescapeResourceString("  &lt;  ", true, true));
+        assertEquals("\"", unescapeResourceString("  &quot;  ", true, true));
+        assertEquals("'", unescapeResourceString("  &apos;  ", true, true));
+        assertEquals(">", unescapeResourceString("  &gt;  ", true, true));
         assertEquals("&amp;", unescapeResourceString("&amp;", false, true));
         assertEquals("&", unescapeResourceString("&amp;", true, true));
         assertEquals("&", unescapeResourceString("  &amp;  ", true, true));
@@ -144,5 +148,34 @@ public class ValueXmlHelperTest extends TestCase {
         assertFalse(isEscaped("\\\\\\\\y ", 2));
         assertTrue(isEscaped( "\\\\\\\\y ", 3));
         assertFalse(isEscaped("\\\\\\\\y ", 4));
+    }
+
+    public void testRewriteSpaces() throws Exception {
+        // Ensure that \n's in the input are rewritten as spaces, and multiple spaces
+        // collapsed into a single one
+        assertEquals("This is a test",
+                unescapeResourceString("This is\na test", true, true));
+        assertEquals("This is a test",
+                unescapeResourceString("This is\n   a    test\n  ", true, true));
+        assertEquals("This is\na test",
+                unescapeResourceString("\"This is\na test\"", true, true));
+        assertEquals("Multiple words",
+                unescapeResourceString("Multiple    words", true, true));
+        assertEquals("Multiple    words",
+                unescapeResourceString("\"Multiple    words\"", true, true));
+        assertEquals("This is a\n test",
+                unescapeResourceString("This is a\\n test", true, true));
+        assertEquals("This is a\n test",
+                unescapeResourceString("This is\n a\\n test", true, true));
+    }
+
+    public void testHtmlEntities() throws Exception {
+        assertEquals("Entity \u00a9 \u00a9 Copyright",
+                unescapeResourceString("Entity &#169; &#xA9; Copyright", true, true));
+    }
+
+    public void testMarkupConcatenation() throws Exception {
+        assertEquals("<b>Sign in</b> or register",
+                unescapeResourceString("\n   <b>Sign in</b>\n      or register\n", true, true));
     }
 }

@@ -16,13 +16,18 @@
 
 package com.android.ide.common.res2;
 
+import static com.android.SdkConstants.ANDROID_NS_NAME_PREFIX;
+import static com.android.SdkConstants.ATTR_FORMAT;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_TYPE;
 import static com.android.SdkConstants.TAG_ITEM;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
 
 import org.w3c.dom.Attr;
@@ -38,6 +43,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -77,7 +84,11 @@ class ValueResourceParser2 {
         }
         NodeList nodes = rootNode.getChildNodes();
 
-        List<ResourceItem> resources = Lists.newArrayListWithExpectedSize(nodes.getLength());
+        final int count = nodes.getLength();
+        // list containing the result
+        List<ResourceItem> resources = Lists.newArrayListWithExpectedSize(count);
+        // Multimap to detect dups
+        Map<ResourceType, Set<String>> map = Maps.newEnumMap(ResourceType.class);
 
         for (int i = 0, n = nodes.getLength(); i < n; i++) {
             Node node = nodes.item(i);
@@ -88,7 +99,15 @@ class ValueResourceParser2 {
 
             ResourceItem resource = getResource(node);
             if (resource != null) {
+                // check this is not a dup
+                checkDuplicate(resource, map);
+
                 resources.add(resource);
+
+                if (resource.getType() == ResourceType.DECLARE_STYLEABLE) {
+                    // Need to also create ATTR items for its children
+                    ValueResourceParser2.addStyleableItems(node, resources, map);
+                }
             }
         }
 
@@ -175,5 +194,68 @@ class ValueResourceParser2 {
         } finally {
             Closeables.closeQuietly(stream);
         }
+    }
+
+    /**
+     * Adds any declare styleable attr items below the given declare styleable nodes
+     * into the given list
+     *
+     * @param styleableNode the declare styleable node
+     * @param list the list to add items into
+     * @param map map of existing items to detect dups.
+     */
+    static void addStyleableItems(@NonNull Node styleableNode,
+                                  @NonNull List<ResourceItem> list,
+                                  @Nullable Map<ResourceType, Set<String>> map) throws IOException {
+        assert styleableNode.getNodeName().equals(ResourceType.DECLARE_STYLEABLE.getName());
+        NodeList nodes = styleableNode.getChildNodes();
+
+        for (int i = 0, n = nodes.getLength(); i < n; i++) {
+            Node node = nodes.item(i);
+
+            if (node.getNodeType() != Node.ELEMENT_NODE) {
+                continue;
+            }
+
+            ResourceItem resource = getResource(node);
+            if (resource != null) {
+                assert resource.getType() == ResourceType.ATTR;
+
+                // is the attribute in the android namespace?
+                if (!resource.getName().startsWith(ANDROID_NS_NAME_PREFIX)) {
+                    if (hasFormatAttribute(node)) {
+                        checkDuplicate(resource, map);
+                        resource.setIgnoredFromDiskMerge(true);
+                        list.add(resource);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void checkDuplicate(@NonNull ResourceItem resource,
+                                       @Nullable Map<ResourceType, Set<String>> map) throws IOException {
+        if (map == null) {
+            return;
+        }
+
+        String name = resource.getName();
+        Set<String> set = map.get(resource.getType());
+        if (set == null) {
+            set = Sets.newHashSet(name);
+            map.put(resource.getType(), set);
+        } else {
+            if (set.contains(name)) {
+                throw new IOException(String.format(
+                        "Found item %s/%s more than one time",
+                        resource.getType().getDisplayName(), name));
+            }
+
+            set.add(name);
+        }
+    }
+
+    private static boolean hasFormatAttribute(Node node) {
+        return node.getAttributes().getNamedItemNS(null, ATTR_FORMAT) != null;
     }
 }

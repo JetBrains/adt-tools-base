@@ -58,6 +58,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
@@ -66,7 +67,7 @@ public class ImageViewer extends JComponent {
     private final Color CORRUPTED_COLOR = new Color(1.0f, 0.0f, 0.0f, 0.7f);
     private final Color LOCK_COLOR = new Color(0.0f, 0.0f, 0.0f, 0.7f);
     private final Color STRIPES_COLOR = new Color(1.0f, 0.0f, 0.0f, 0.5f);
-    private final Color BACK_COLOR = new Color(0xc0c0c0);
+    private final Color BACK_COLOR = UIManager.getColor("Panel.background").darker();
     private final Color HELP_COLOR = new Color(0xffffe1);
     private final Color PATCH_COLOR = new Color(1.0f, 0.37f, 0.99f, 0.5f);
     private final Color PATCH_ONEWAY_COLOR = new Color(0.37f, 1.0f, 0.37f, 0.5f);
@@ -87,6 +88,8 @@ public class ImageViewer extends JComponent {
 
     /** Maximum zoom level for the 9patch image. */
     public static final int MAX_ZOOM = 16;
+
+    private final AWTEventListener mAwtKeyEventListener;
 
     /** Current 9patch zoom level, {@link #MIN_ZOOM} <= zoom <= {@link #MAX_ZOOM} */
     private int zoom = DEFAULT_ZOOM;
@@ -276,11 +279,14 @@ public class ImageViewer extends JComponent {
             }
         });
 
-        Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
+        mAwtKeyEventListener = new AWTEventListener() {
+            @Override
             public void eventDispatched(AWTEvent event) {
                 enableEraseMode((KeyEvent) event);
             }
-        }, AWTEvent.KEY_EVENT_MASK);
+        };
+        Toolkit.getDefaultToolkit()
+                .addAWTEventListener(mAwtKeyEventListener, AWTEvent.KEY_EVENT_MASK);
 
         checkButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
@@ -623,6 +629,7 @@ public class ImageViewer extends JComponent {
                 editPatchRegion = displayCoordinates(new Rectangle(min, imageHeight - 1, diff, 1));
                 editHighlightRegions.addAll(
                         getVerticalHighlightRegions(min, 0, diff, imageHeight));
+                break;
             default:
                 assert false : editRegion;
         }
@@ -1186,5 +1193,9 @@ public class ImageViewer extends JComponent {
         for (PatchUpdateListener p: listeners) {
             p.patchesUpdated();
         }
+    }
+
+    public void dispose() {
+        Toolkit.getDefaultToolkit().removeAWTEventListener(mAwtKeyEventListener);
     }
 }

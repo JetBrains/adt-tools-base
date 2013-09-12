@@ -27,7 +27,10 @@ import com.google.common.collect.Multimap;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -45,7 +48,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals(3, items.get(ResourceType.STRING).size());
         assertEquals(1, items.get(ResourceType.STYLE).size());
         assertEquals(1, items.get(ResourceType.ARRAY).size());
-        assertEquals(4, items.get(ResourceType.ATTR).size());
+        assertEquals(6, items.get(ResourceType.ATTR).size());
         assertEquals(1, items.get(ResourceType.DECLARE_STYLEABLE).size());
         assertEquals(1, items.get(ResourceType.DIMEN).size());
         assertEquals(1, items.get(ResourceType.ID).size());
@@ -77,6 +80,8 @@ public class ResourceRepositoryTest extends BaseTestCase {
                 "attr/string_attr",
                 "attr/enum_attr",
                 "attr/flag_attr",
+                "attr/blah",
+                "attr/blah2",
                 "declare-styleable/declare_styleable",
                 "dimen/dimen",
                 "id/item_id",
@@ -213,7 +218,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
 
         // write the content in a repo.
         ResourceRepository repo = new ResourceRepository(false);
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         // checks the initial state of the repo
         Map<ResourceType, ListMultimap<String, ResourceItem>> items = repo.getItems();
@@ -276,7 +281,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         resourceMerger.validateDataSets();
 
         // check the new content.
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         drawables = items.get(ResourceType.DRAWABLE);
         assertNotNull("Drawable null check", drawables);
@@ -302,7 +307,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
 
         // write the content in a repo.
         ResourceRepository repo = new ResourceRepository(false);
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         // checks the initial state of the repo
         Map<ResourceType, ListMultimap<String, ResourceItem>> items = repo.getItems();
@@ -356,7 +361,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         resourceMerger.validateDataSets();
 
         // check the new content.
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         strings = items.get(ResourceType.STRING);
         assertNotNull("String null check", strings);
@@ -381,7 +386,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
 
         // write the content in a repo.
         ResourceRepository repo = new ResourceRepository(false);
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         // checks the initial state of the repo
         Map<ResourceType, ListMultimap<String, ResourceItem>> items = repo.getItems();
@@ -413,7 +418,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         resourceMerger.validateDataSets();
 
         // check the new content.
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         strings = items.get(ResourceType.STRING);
         assertNotNull("String null check", strings);
@@ -436,7 +441,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
 
         // write the content in a repo.
         ResourceRepository repo = new ResourceRepository(false);
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         // checks the initial state of the repo
         Map<ResourceType, ListMultimap<String, ResourceItem>> items = repo.getItems();
@@ -477,7 +482,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         resourceMerger.validateDataSets();
 
         // check the new content.
-        resourceMerger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+        resourceMerger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
 
         layouts = items.get(ResourceType.LAYOUT);
         assertNotNull("String null check", layouts);
@@ -581,7 +586,8 @@ public class ResourceRepositoryTest extends BaseTestCase {
         ResourceMerger merger = getBaseResourceMerger();
 
         ResourceRepository repo = new ResourceRepository(false);
-        merger.mergeData(repo.getMergeConsumer(), true /*doCleanUp*/);
+
+        merger.mergeData(repo.createMergeConsumer(), true /*doCleanUp*/);
         return repo;
     }
 
@@ -632,5 +638,117 @@ public class ResourceRepositoryTest extends BaseTestCase {
 
             assertEquals("Match for " + resKey, 1, found);
         }
+    }
+
+    // This utility method has been pretty handy in tracking down resource repository bugs
+    // so keeping it for future potential use, but in unit test code so no runtime overhead
+    @SuppressWarnings({"deprecation", "ConstantConditions"})
+    public static String dumpRepository(ResourceRepository repository) {
+        Map<ResourceType, ListMultimap<String, ResourceItem>> mItems = repository.getMap();
+        Comparator<ResourceItem> comparator = new Comparator<ResourceItem>() {
+            @Override
+            public int compare(ResourceItem item1, ResourceItem item2) {
+                assert item1.getType() == item2.getType();
+                String qualifiers = item2.getSource().getQualifiers();
+                return item1.getSource().getQualifiers().compareTo(qualifiers);
+            }
+        };
+
+        StringBuilder sb = new StringBuilder(5000);
+        sb.append("Resource Map Dump For Repository ").append(repository)
+                .append("\n------------------------------------------------\n");
+        for (ResourceType type : ResourceType.values()) {
+            ListMultimap<String, ResourceItem> map = mItems.get(type);
+            if (map == null) {
+                continue;
+            }
+            sb.append(type.getName()).append(':').append('\n');
+
+            List<String> keys = new ArrayList<String>(map.keySet());
+            Collections.sort(keys);
+            for (String key : keys) {
+                List<ResourceItem> items = map.get(key);
+                List<ResourceItem> sorted = new ArrayList<ResourceItem>(items);
+                Collections.sort(sorted, comparator);
+                sb.append("  ").append(type.getName()).append(" ").append(key).append(": ");
+                boolean first = true;
+                for (ResourceItem item : sorted) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        sb.append(", ");
+                    }
+                    String qualifiers = item.getSource().getQualifiers();
+                    if (qualifiers.isEmpty()) {
+                        qualifiers = "default";
+                    }
+                    sb.append(qualifiers);
+                }
+
+                if (!sorted.isEmpty()) {
+                    ResourceItem item = sorted.get(0);
+                    ResourceValue resourceValue = item.getResourceValue(repository.isFramework());
+                    if (resourceValue == null) {
+                        sb.append(" <no value found>");
+                    } else {
+                        String value = resourceValue.getValue();
+                        if (value == null || value.isEmpty()) {
+                            if (resourceValue instanceof StyleResourceValue) {
+                                StyleResourceValue srv = (StyleResourceValue) resourceValue;
+                                sb.append("  parentStyle=").append(srv.getParentStyle())
+                                        .append("\n");
+                                for (String name : srv.getNames()) {
+                                    ResourceValue value1 = srv.findValue(name, false);
+                                    ResourceValue value2 = srv.findValue(name, true);
+                                    if (value1 != null) {
+                                        Boolean framework = false;
+                                        ResourceValue v = value1;
+                                        sb.append("    ");
+                                        sb.append(name).append(" ").append(framework).append(" ");
+                                        sb.append(" = ");
+                                        sb.append('"');
+                                        String strValue = v.getValue();
+                                        if (strValue != null) {
+                                            sb.append(strValue.replace("\n", "\\n"));
+                                        } else {
+                                            sb.append("???");
+                                        }
+                                        sb.append('"');
+                                    }
+                                    if (value2 != null) {
+                                        Boolean framework = true;
+                                        ResourceValue v = value2;
+                                        sb.append("    ");
+                                        sb.append(name).append(" ").append(framework).append(" ");
+                                        sb.append(" = ");
+                                        sb.append('"');
+                                        String strValue = v.getValue();
+                                        if (strValue != null) {
+                                            sb.append(strValue.replace("\n", "\\n"));
+                                        } else {
+                                            sb.append("???");
+                                        }
+                                        sb.append('"');
+                                    }
+                                }
+                            } else {
+                                sb.append(" = \"\"");
+                            }
+                        } else {
+                            sb.append(" = ");
+                            sb.append('"');
+                            sb.append(value.replace("\n", "\\n"));
+                            sb.append('"');
+                        }
+                    }
+                }
+
+                sb.append("\n");
+            }
+
+            sb.append("\n\n");
+        }
+
+        return sb.toString();
     }
 }

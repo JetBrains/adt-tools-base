@@ -33,7 +33,6 @@ import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
@@ -159,9 +158,9 @@ class OtherFileVisitor {
                     mFiles.put(Scope.MANIFEST, files);
                 }
             } else {
-                File manifestFile = project.getManifestFile();
-                if (manifestFile != null) {
-                    mFiles.put(Scope.MANIFEST, Collections.<File>singletonList(manifestFile));
+                List<File> manifestFiles = project.getManifestFiles();
+                if (manifestFiles != null) {
+                    mFiles.put(Scope.MANIFEST, manifestFiles);
                 }
             }
         }
