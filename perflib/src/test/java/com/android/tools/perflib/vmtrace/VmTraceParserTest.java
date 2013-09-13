@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -189,17 +190,38 @@ public class VmTraceParserTest extends TestCase {
         assertEquals(topThreadTime, sum);
     }
 
-    private int findThreadIdFromName(@NonNull String threadName,
-            @NonNull SparseArray<String> threads) {
-        for (int i = 0; i < threads.size(); i++) {
-            int id = threads.keyAt(i);
-            String name = threads.valueAt(i);
-            if (threadName.equals(name)) {
-                return id;
-            }
+    public void testSearch() throws IOException {
+        VmTraceData traceData = getVmTraceData("/basic.trace");
+        String thread = "AsyncTask #1";
+
+        SearchResult results = traceData.searchFor("startMethodTracing", thread);
+
+        // 3 different methods (varying in parameter list) of name startMethodTracing are called
+        assertEquals(3, results.getMethods().size());
+        assertEquals(3, results.getInstances().size());
+    }
+
+    // Validates that search is not impacted by current locale
+    public void testSearchLocale() throws IOException {
+        VmTraceData traceData = getVmTraceData("/basic.trace");
+        String thread = "AsyncTask #1";
+
+        String pattern = "ii)v";
+        SearchResult results = traceData.searchFor(pattern, thread);
+
+        Locale originalDefaultLocale = Locale.getDefault();
+
+        try {
+            // Turkish has two different variants for lowercase i
+            Locale.setDefault(new Locale("tr", "TR"));
+            SearchResult turkish = traceData.searchFor(pattern, thread);
+
+            assertEquals(results.getInstances().size(), turkish.getInstances().size());
+            assertEquals(results.getMethods().size(), turkish.getMethods().size());
+        } finally {
+            Locale.setDefault(originalDefaultLocale);
         }
 
-        return -1;
     }
 
     private VmTraceData getVmTraceData(String traceFilePath) throws IOException {

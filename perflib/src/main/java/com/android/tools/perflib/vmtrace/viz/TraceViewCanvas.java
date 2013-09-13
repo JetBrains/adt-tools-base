@@ -17,8 +17,10 @@
 package com.android.tools.perflib.vmtrace.viz;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.perflib.vmtrace.Call;
 import com.android.tools.perflib.vmtrace.ClockType;
+import com.android.tools.perflib.vmtrace.MethodInfo;
 import com.android.tools.perflib.vmtrace.ThreadInfo;
 import com.android.tools.perflib.vmtrace.VmTraceData;
 
@@ -33,6 +35,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JComponent;
@@ -151,6 +154,11 @@ public class TraceViewCanvas extends JComponent {
 
     public void setUseInclusiveTimeForColorAssignment(boolean en) {
         mRenderContext.setUseInclusiveTimeForColorAssignment(en);
+        repaint();
+    }
+
+    public void setHighlightMethods(@Nullable Set<MethodInfo> methods) {
+        mRenderContext.setHighlightedMethods(methods);
         repaint();
     }
 
