@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.perflib.vmtrace.Call;
 import com.android.tools.perflib.vmtrace.ClockType;
 import com.android.tools.perflib.vmtrace.MethodInfo;
+import com.android.tools.perflib.vmtrace.TimeSelector;
 import com.android.tools.perflib.vmtrace.VmTraceData;
 import com.android.utils.HtmlBuilder;
 
@@ -48,6 +49,7 @@ public class CallHierarchyRenderer {
     private final Call mTopCall;
     private final int mYOffset;
     private final TimeUnit mLayoutTimeUnits;
+    private final RenderContext mRenderContext;
 
     private final Rectangle2D mLayout = new Rectangle2D.Double();
     private final Point2D mTmpPoint1 = new Point2D.Double();
@@ -55,20 +57,14 @@ public class CallHierarchyRenderer {
 
     private Font mFont;
 
-    private ClockType mRenderClock;
-
     public CallHierarchyRenderer(@NonNull VmTraceData vmTraceData, @NonNull String threadName,
-            int yOffset, ClockType renderClock, TimeUnit defaultTimeUnits) {
+            int yOffset, TimeUnit defaultTimeUnits, RenderContext renderContext) {
         mTraceData = vmTraceData;
         mThreadName = threadName;
         mTopCall = vmTraceData.getThread(threadName).getTopLevelCall();
         mYOffset = yOffset;
-        mRenderClock = renderClock;
         mLayoutTimeUnits = defaultTimeUnits;
-    }
-
-    public void setRenderClock(ClockType clockType) {
-        mRenderClock = clockType;
+        mRenderContext = renderContext;
     }
 
     /**
@@ -100,14 +96,14 @@ public class CallHierarchyRenderer {
             }
 
             // obtain the fill color based on its importance
-            Color fillColor = getFillColor(c);
+            Color fillColor = mRenderContext.getFillColor(c, mThreadName);
             g.setColor(fillColor);
             g.fillRect((int) mLayout.getX(), (int) mLayout.getY(), (int) mLayout.getWidth(),
                     (int) mLayout.getHeight());
 
             // paint its name within the rectangle if possible
             String name = getName(c);
-            drawString(g, name, mLayout, getFontColor(c));
+            drawString(g, name, mLayout, mRenderContext.getFontColor(c, mThreadName));
         }
     }
 
@@ -153,11 +149,12 @@ public class CallHierarchyRenderer {
 
     /** Fills the layout bounds corresponding to a given call in the given Rectangle object. */
     private void fillLayoutBounds(Call c, Rectangle2D layoutBounds) {
-        double x = c.getEntryTime(mRenderClock, mLayoutTimeUnits)
-                - mTopCall.getEntryTime(mRenderClock, mLayoutTimeUnits)
+        ClockType renderClock = mRenderContext.getRenderClock();
+        double x = c.getEntryTime(renderClock, mLayoutTimeUnits)
+                - mTopCall.getEntryTime(renderClock, mLayoutTimeUnits)
                 + PADDING;
         double y = c.getDepth() * PER_LEVEL_HEIGHT_PX + mYOffset + PADDING;
-        double width  = c.getInclusiveTime(mRenderClock, mLayoutTimeUnits) - 2 * PADDING;
+        double width  = c.getInclusiveTime(renderClock, mLayoutTimeUnits) - 2 * PADDING;
         double height = PER_LEVEL_HEIGHT_PX - 2 * PADDING;
         layoutBounds.setRect(x, y, width, height);
     }
@@ -207,33 +204,23 @@ public class CallHierarchyRenderer {
         htmlBuilder.newline();
         htmlBuilder.add("Inclusive Time: ");
         htmlBuilder.beginBold();
-        htmlBuilder.add(PERCENTAGE_FORMATTER.format(
-                getDurationPercentage(c, INCLUSIVE_TIME_SELECTOR)));
+        double inclusivePercentage = mTraceData.getDurationPercentage(c, mThreadName,
+                mRenderContext.getRenderClock(), true /* use inclusive time */);
+        htmlBuilder.add(PERCENTAGE_FORMATTER.format(inclusivePercentage));
         htmlBuilder.add("%");
         htmlBuilder.endBold();
 
         htmlBuilder.newline();
         htmlBuilder.add("Exclusive Time: ");
         htmlBuilder.beginBold();
-        htmlBuilder.add(PERCENTAGE_FORMATTER.format(
-                getDurationPercentage(c, EXCLUSIVE_TIME_SELECTOR)));
+        double exclusivePercentage = mTraceData.getDurationPercentage(c, mThreadName,
+                mRenderContext.getRenderClock(), false /* don't use inclusive time */);
+        htmlBuilder.add(PERCENTAGE_FORMATTER.format(exclusivePercentage));
         htmlBuilder.add("%");
         htmlBuilder.endBold();
 
         htmlBuilder.closeHtmlBody();
         return htmlBuilder.getHtml();
-    }
-
-    /** Returns the duration of this call as a percentage of the duration of the top level call. */
-    private double getDurationPercentage(Call call, TimeSelector selector) {
-        MethodInfo info = mTraceData.getMethod(call.getMethodId());
-        long methodTime = selector.get(info, mThreadName);
-
-        // Always use inclusive time of top level to compute percentages.
-        MethodInfo topMethod = mTraceData.getMethod(mTopCall.getMethodId());
-        long topLevelTime = INCLUSIVE_TIME_SELECTOR.get(topMethod, mThreadName);
-
-        return (double)methodTime/topLevelTime * 100;
     }
 
     @NonNull
@@ -245,78 +232,4 @@ public class CallHierarchyRenderer {
         long methodId = c.getMethodId();
         return mTraceData.getMethod(methodId);
     }
-
-    /**
-     * Returns the fill color for a particular call. The fill color is dependent on its
-     * inclusive thread percentage time.
-     */
-    private Color getFillColor(Call c) {
-        int percent = quantize(getDurationPercentage(c, EXCLUSIVE_TIME_SELECTOR));
-        return getFill(percent);
-    }
-
-    /**
-     * Returns the font color for a particular call. This returns a color complementary to
-     * {@link #getFillColor(com.android.tools.perflib.vmtrace.Call)}, so that text rendered
-     * on top of that color is distinguishable from the background.
-     */
-    private Color getFontColor(Call c) {
-        int percent = quantize(getDurationPercentage(c, EXCLUSIVE_TIME_SELECTOR));
-        return getFontColor(percent);
-    }
-
-    // Sequential color palette that works across both light and dark backgrounds
-    private static final Color[] QUANTIZED_COLORS = {
-            new Color(226, 230, 189),
-            new Color(235, 228, 139),
-            new Color(242, 221, 128),
-            new Color(246, 210, 119),
-            new Color(246, 197, 111),
-            new Color(242, 180, 104),
-            new Color(234, 161, 98),
-            new Color(223, 139, 91),
-            new Color(207, 115, 85),
-            new Color(188, 88, 77),
-            new Color(166, 57, 69),
-            new Color(142, 6, 59),
-    };
-
-    private Color getFill(int percent) {
-        int i = percent * QUANTIZED_COLORS.length / 100;
-        if (i >= QUANTIZED_COLORS.length) {
-            i = QUANTIZED_COLORS.length - 1;
-        }
-        return QUANTIZED_COLORS[i];
-    }
-
-    private Color getFontColor(int percent) {
-        int i = percent / 10;
-        if (i >= QUANTIZED_COLORS.length) {
-            i = QUANTIZED_COLORS.length - 1;
-        }
-
-        return  i > 6 ? Color.WHITE : Color.BLACK;
-    }
-
-    private int quantize(double inclusiveThreadPercent) {
-        return ((int)(inclusiveThreadPercent + 9) / 10) * 10;
-    }
-
-    private interface TimeSelector {
-        public long get(MethodInfo info, String thread);
-    }
-
-    private TimeSelector INCLUSIVE_TIME_SELECTOR = new TimeSelector() {
-        @Override
-        public long get(MethodInfo info, String thread) {
-            return info.getInclusiveTime(thread, mRenderClock);
-        }
-    };
-
-    private TimeSelector EXCLUSIVE_TIME_SELECTOR = new TimeSelector() {
-        @Override
-        public long get(MethodInfo info, String thread) {
-            return info.getExclusiveTime(thread, mRenderClock);
-        }
-    };
 }
