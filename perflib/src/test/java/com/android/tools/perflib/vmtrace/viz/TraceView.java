@@ -21,6 +21,8 @@ import static junit.framework.Assert.fail;
 
 import com.android.tools.perflib.vmtrace.Call;
 import com.android.tools.perflib.vmtrace.ClockType;
+import com.android.tools.perflib.vmtrace.MethodInfo;
+import com.android.tools.perflib.vmtrace.SearchResult;
 import com.android.tools.perflib.vmtrace.ThreadInfo;
 import com.android.tools.perflib.vmtrace.VmTraceData;
 import com.android.tools.perflib.vmtrace.VmTraceParser;
@@ -34,6 +36,10 @@ import java.net.URL;
 import java.util.*;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
 
 /**
  * This is just a simple test application that loads a particular trace file,
@@ -88,10 +94,14 @@ public class TraceView {
     }
 
     public static class TraceViewPanel extends JPanel {
+        private VmTraceData mTraceData;
+
         private final TraceViewCanvas mTraceViewCanvas;
         private JComboBox mThreadCombo;
         private JCheckBox mClockSelector;
         private JCheckBox mUseInclusiveTimeForColor;
+        private JTextField mSearchField;
+        private JLabel mSearchResults;
 
         public TraceViewPanel() {
             setLayout(new BorderLayout());
@@ -138,10 +148,67 @@ public class TraceView {
             mClockSelector.addActionListener(listener);
             mUseInclusiveTimeForColor.addActionListener(listener);
 
+            l = new JLabel("Find: ");
+            p.add(l);
+
+            mSearchField = new JTextField(20);
+            p.add(mSearchField);
+            mSearchField.setEnabled(false);
+            mSearchField.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    searchTextUpdated();
+                }
+
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    searchTextUpdated();
+                }
+
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    searchTextUpdated();
+                }
+
+                private void searchTextUpdated() {
+                    if (mTraceData == null) {
+                        return;
+                    }
+
+                    String pattern = getText(mSearchField.getDocument());
+                    if (pattern.length() < 3) {
+                        mTraceViewCanvas.setHighlightMethods(null);
+                        mSearchResults.setText("");
+                        return;
+                    }
+
+                    SearchResult results = mTraceData.searchFor(pattern,
+                            (String) mThreadCombo.getSelectedItem());
+                    mTraceViewCanvas.setHighlightMethods(results.getMethods());
+
+                    String result = String.format("%1$d methods, %2$d instances",
+                            results.getMethods().size(), results.getInstances().size());
+                    mSearchResults.setText(result);
+                }
+
+                private String getText(Document document) {
+                    try {
+                        return document.getText(0, document.getLength());
+                    } catch (BadLocationException e) {
+                        return "";
+                    }
+                }
+            });
+
+            mSearchResults = new JLabel();
+            p.add(mSearchResults);
+
             return p;
         }
 
         public void setTrace(VmTraceData traceData) {
+            mTraceData = traceData;
+
             Collection<ThreadInfo> threads = traceData.getThreads();
             java.util.List<String> threadNames = new ArrayList<String>(threads.size());
             for (ThreadInfo thread : threads) {
@@ -160,6 +227,7 @@ public class TraceView {
 
             mThreadCombo.setModel(new DefaultComboBoxModel(threadNames.toArray()));
             mThreadCombo.setEnabled(true);
+            mSearchField.setEnabled(true);
 
             mTraceViewCanvas.setTrace(traceData, thread, ClockType.GLOBAL);
             mThreadCombo.setSelectedIndex(index);
