@@ -98,8 +98,7 @@ public class CallHierarchyRenderer {
             // obtain the fill color based on its importance
             Color fillColor = mRenderContext.getFillColor(c, mThreadName);
             g.setColor(fillColor);
-            g.fillRect((int) mLayout.getX(), (int) mLayout.getY(), (int) mLayout.getWidth(),
-                    (int) mLayout.getHeight());
+            g.fill(mLayout);
 
             // paint its name within the rectangle if possible
             String name = getName(c);
