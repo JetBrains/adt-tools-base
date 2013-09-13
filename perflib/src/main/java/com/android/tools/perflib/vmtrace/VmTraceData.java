@@ -20,8 +20,13 @@ import com.android.utils.SparseArray;
 import com.google.common.collect.Maps;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -133,6 +138,41 @@ public class VmTraceData {
         long topLevelTime = selector.get(topInfo, threadName);
 
         return (double) methodTime/topLevelTime * 100;
+    }
+
+    public SearchResult searchFor(String pattern, String threadName) {
+        pattern = pattern.toLowerCase(Locale.US);
+
+        Set<MethodInfo> methods = new HashSet<MethodInfo>();
+        Set<Call> calls = new HashSet<Call>();
+
+        Call topLevelCall = getThread(threadName).getTopLevelCall();
+        if (topLevelCall == null) {
+            // no matches
+            return new SearchResult(methods, calls);
+        }
+
+        // Find all methods matching given pattern called on given thread
+        for (MethodInfo method: getMethods().values()) {
+            String fullName = method.getFullName().toLowerCase(Locale.US);
+            if (fullName.contains(pattern)) { // method name matches
+                if (method.getInclusiveTime(threadName, ClockType.GLOBAL) > 0) { // method was called in this thread
+                    methods.add(method);
+                }
+            }
+        }
+
+        // Find all invocations of the matched methods
+        Iterator<Call> iterator = topLevelCall.getCallHierarchyIterator();
+        while (iterator.hasNext()) {
+            Call c = iterator.next();
+            MethodInfo method = getMethod(c.getMethodId());
+            if (methods.contains(method)) {
+                calls.add(c);
+            }
+        }
+
+        return new SearchResult(methods, calls);
     }
 
     public static class Builder {

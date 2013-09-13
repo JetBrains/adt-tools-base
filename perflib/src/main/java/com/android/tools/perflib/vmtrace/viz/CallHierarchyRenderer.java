@@ -179,7 +179,7 @@ public class CallHierarchyRenderer {
         HtmlBuilder htmlBuilder = new HtmlBuilder();
         htmlBuilder.openHtmlBody();
 
-        htmlBuilder.addHeading(getName(c), "black");
+        htmlBuilder.addHeading(getMethodInfo(c).getFullName(), "black");
 
         long span = c.getExitTime(GLOBAL, TimeUnit.NANOSECONDS) -
                 c.getEntryTime(GLOBAL, TimeUnit.NANOSECONDS);

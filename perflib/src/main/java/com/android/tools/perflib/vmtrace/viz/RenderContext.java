@@ -17,16 +17,25 @@
 package com.android.tools.perflib.vmtrace.viz;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.perflib.vmtrace.Call;
 import com.android.tools.perflib.vmtrace.ClockType;
+import com.android.tools.perflib.vmtrace.MethodInfo;
 import com.android.tools.perflib.vmtrace.VmTraceData;
 
 import java.awt.Color;
+import java.util.Collections;
+import java.util.Set;
 
 public class RenderContext {
+    /** Fill color for methods that are highlighted, (as the result of a search, for instance) */
+    private static final Color HIGHLIGHTED_METHOD_COLOR = new Color(0x4863A0);
+
     private final VmTraceData mTraceData;
     private ClockType mRenderClock;
     private boolean mUseInclusiveTimeForColorAssignment;
+
+    private Set<MethodInfo> mHighlightedMethods = Collections.emptySet();
 
     public RenderContext(VmTraceData traceData, ClockType renderClock) {
         mTraceData = traceData;
@@ -76,9 +85,23 @@ public class RenderContext {
      */
     @NonNull
     public Color getFillColor(Call c, String threadName) {
+        if (isHighlightedMethod(c)) {
+            return HIGHLIGHTED_METHOD_COLOR;
+        }
+
         double percent = mTraceData.getDurationPercentage(c, threadName, mRenderClock,
                 mUseInclusiveTimeForColorAssignment);
         return QUANTIZED_COLORS[getColorIndex(percent)];
+    }
+
+    /** Denote the set of method ids as corresponding to the results of a search. */
+    public void setHighlightedMethods(@Nullable Set<MethodInfo> highlightedMethods) {
+        mHighlightedMethods = highlightedMethods;
+    }
+
+    private boolean isHighlightedMethod(Call c) {
+        MethodInfo method = mTraceData.getMethod(c.getMethodId());
+        return mHighlightedMethods != null && mHighlightedMethods.contains(method);
     }
 
     /**
