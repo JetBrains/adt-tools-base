@@ -123,6 +123,8 @@ public class DeviceParser {
                 mDevices.add(mBuilder.build());
             } else if (DeviceSchema.NODE_NAME.equals(localName)) {
                 mBuilder.setName(getString(mStringAccumulator));
+            } else if (DeviceSchema.NODE_ID.equals(localName)) {
+                mBuilder.setId(getString(mStringAccumulator));
             } else if (DeviceSchema.NODE_MANUFACTURER.equals(localName)) {
                 mBuilder.setManufacturer(getString(mStringAccumulator));
             } else if (DeviceSchema.NODE_META.equals(localName)) {
