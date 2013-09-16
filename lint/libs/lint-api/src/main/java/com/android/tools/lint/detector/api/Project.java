@@ -42,6 +42,7 @@ import com.google.common.annotations.Beta;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
@@ -58,6 +59,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -608,7 +610,11 @@ public class Project {
             }
 
             List<Project> all = new ArrayList<Project>();
-            addLibraryProjects(all);
+            Set<Project> seen = Sets.newHashSet();
+            Set<Project> path = Sets.newHashSet();
+            seen.add(this);
+            path.add(this);
+            addLibraryProjects(all, seen, path);
             mAllLibraries = all;
         }
 
@@ -620,12 +626,25 @@ public class Project {
      * recursively into the given collection of projects
      *
      * @param collection the collection to add the projects into
+     * @param seen full set of projects we've processed
+     * @param path the current path of library dependencies followed
      */
-    private void addLibraryProjects(@NonNull Collection<Project> collection) {
+    private void addLibraryProjects(@NonNull Collection<Project> collection,
+            @NonNull Set<Project> seen, @NonNull Set<Project> path) {
         for (Project library : mDirectLibraries) {
+            if (seen.contains(library)) {
+                if (path.contains(library)) {
+                    mClient.log(Severity.WARNING, null,
+                            "Internal lint error: cyclic library dependency for %1$s", library);
+                }
+                continue;
+            }
             collection.add(library);
+            seen.add(library);
+            path.add(library);
             // Recurse
-            library.addLibraryProjects(collection);
+            library.addLibraryProjects(collection, seen, path);
+            path.remove(library);
         }
     }
 
