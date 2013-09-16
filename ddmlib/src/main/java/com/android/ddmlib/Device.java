@@ -106,6 +106,8 @@ final class Device implements IDevice {
                         Matcher m = FAILURE_PATTERN.matcher(line);
                         if (m.matches()) {
                             mErrorMessage = m.group(1);
+                        } else {
+                            mErrorMessage = "Unknown failure";
                         }
                     }
                 }
