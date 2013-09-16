@@ -16,12 +16,18 @@
 
 package com.android.tools.lint.client.api;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.lint.checks.AbstractCheckTest;
 import com.android.tools.lint.checks.UnusedResourceDetector;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.Severity;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class ProjectTest extends AbstractCheckTest {
     @Override
@@ -51,6 +57,94 @@ public class ProjectTest extends AbstractCheckTest {
                 + "1 errors, 0 warnings\n",
 
                 checkLint(Arrays.asList(master, library)));
+    }
+
+    public void testInvalidLibraryReferences1() throws Exception {
+        TestClient client = new TestClient();
+        File dir = new File("project");
+        TestProject project1 = new TestProject(client, dir);
+        client.registerProject(dir, project1);
+        project1.setDirectLibraries(Collections.<Project>singletonList(project1));
+        List<Project> libraries = project1.getAllLibraries();
+        assertNotNull(libraries);
+        assertEquals(
+                "Warning: Internal lint error: cyclic library dependency for Project [dir=project]",
+                client.getLoggedOutput());
+    }
+
+    public void testInvalidLibraryReferences2() throws Exception {
+        TestClient client = new TestClient();
+        File dir1 = new File("project1");
+        File dir2 = new File("project2");
+        TestProject project1 = new TestProject(client, dir1);
+        client.registerProject(dir1, project1);
+        TestProject project2 = new TestProject(client, dir2);
+        client.registerProject(dir2, project2);
+        project2.setDirectLibraries(Collections.<Project>singletonList(project1));
+        project1.setDirectLibraries(Collections.<Project>singletonList(project2));
+        List<Project> libraries = project1.getAllLibraries();
+        assertNotNull(libraries);
+        assertEquals(
+                "Warning: Internal lint error: cyclic library dependency for Project [dir=project1]",
+                client.getLoggedOutput());
+        assertEquals(1, libraries.size());
+        assertSame(project2, libraries.get(0));
+        assertEquals(1, project2.getAllLibraries().size());
+        assertSame(project1, project2.getAllLibraries().get(0));
+    }
+
+    public void testOkLibraryReferences() throws Exception {
+        TestClient client = new TestClient();
+        File dir1 = new File("project1");
+        File dir2 = new File("project2");
+        File dir3 = new File("project3");
+        TestProject project1 = new TestProject(client, dir1);
+        client.registerProject(dir1, project1);
+        TestProject project2 = new TestProject(client, dir2);
+        client.registerProject(dir2, project2);
+        TestProject project3 = new TestProject(client, dir3);
+        client.registerProject(dir3, project3);
+        project1.setDirectLibraries(Arrays.<Project>asList(project2, project3));
+        project2.setDirectLibraries(Collections.<Project>singletonList(project3));
+        project3.setDirectLibraries(Collections.<Project>emptyList());
+        List<Project> libraries = project1.getAllLibraries();
+        assertNotNull(libraries);
+        assertEquals(
+                "",
+                client.getLoggedOutput());
+        assertEquals(2, libraries.size());
+        assertTrue(libraries.contains(project2));
+        assertTrue(libraries.contains(project3));
+        assertEquals(1, project2.getAllLibraries().size());
+        assertSame(project3, project2.getAllLibraries().get(0));
+        assertTrue(project3.getAllLibraries().isEmpty());
+    }
+
+    private class TestClient extends TestLintClient {
+        @SuppressWarnings("StringBufferField")
+        private StringBuilder mLog = new StringBuilder();
+
+        @Override
+        public void log(@NonNull Severity severity, @Nullable Throwable exception,
+                @Nullable String format, @Nullable Object... args) {
+            assertNotNull(format);
+            mLog.append(severity.getDescription()).append(": ");
+            mLog.append(String.format(format, args));
+        }
+
+        public String getLoggedOutput() {
+            return mLog.toString();
+        }
+    }
+
+    private static class TestProject extends Project {
+        protected TestProject(@NonNull LintClient client, @NonNull File dir) {
+            super(client, dir, dir);
+        }
+
+        public void setDirectLibraries(List<Project> libraries) {
+            mDirectLibraries = libraries;
+        }
     }
 
     @Override
