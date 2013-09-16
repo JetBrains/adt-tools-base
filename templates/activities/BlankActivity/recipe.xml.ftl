@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <recipe>
-    <dependency name="appcompat" version="v7" />
+    <dependency mavenUrl="com.android.support:appcompat-v7:18.0.0"/>
 
     <merge from="AndroidManifest.xml.ftl"
              to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
