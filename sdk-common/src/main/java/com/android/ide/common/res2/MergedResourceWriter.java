@@ -23,6 +23,7 @@ import static com.android.SdkConstants.TAG_RESOURCES;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.internal.AaptRunner;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.resources.ResourceFolderType;
@@ -43,6 +44,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -137,8 +139,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                             // destination file.
                             mAaptRunner.crunchPng(file, outFile);
                         } else if (filename.endsWith(DOT_XML)) {
-                            String p = file.toURI().toURL().toString();
-                            copyXmlWithComment(file, outFile, FILENAME_PREFIX + p);
+                            copyXmlWithComment(file, outFile, createPathComment(file));
                         } else {
                             Files.copy(file, outFile);
                         }
@@ -258,8 +259,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                           currentFile = source;
                           rootNode.appendChild(document.createTextNode("\n"));
                           File file = source.getFile();
-                          String path = file.toURI().toURL().toString();
-                          rootNode.appendChild(document.createComment(FILENAME_PREFIX + path));
+                          rootNode.appendChild(document.createComment(createPathComment(file)));
                           rootNode.appendChild(document.createTextNode("\n"));
                         }
                         Node adoptedNode = NodeUtils.adoptNode(document, item.getValue());
@@ -326,5 +326,25 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
         if (!folder.isDirectory() && !folder.mkdirs()) {
             throw new IOException("Failed to create directory: " + folder);
         }
+    }
+
+    /**
+     * Creates the path comment XML string. Note that it does not escape characters
+     * such as &amp; and &lt;; those are expected to be escaped by the caller (typically
+     * handled by the {@link com.android.ide.common.res2.MergedResourceWriter}'s call
+     * to {@link Document#createComment(String)})
+     *
+     * @param file the file to create a path comment for
+     * @return the corresponding XML contents of the string
+     */
+    @VisibleForTesting
+    public static String createPathComment(File file) throws MalformedURLException {
+        String url = file.toURI().toURL().toString();
+        int dashes = url.indexOf("--");
+        if (dashes != -1) { // Not allowed inside XML comments - for SGML compatibility. Sigh.
+            url = url.replace("--", "%2D%2D");
+        }
+
+        return FILENAME_PREFIX + url;
     }
 }
