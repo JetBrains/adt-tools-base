@@ -27,6 +27,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.internal.AaptRunner;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.resources.ResourceFolderType;
+import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
@@ -339,7 +340,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
      */
     @VisibleForTesting
     public static String createPathComment(File file) throws MalformedURLException {
-        String url = file.toURI().toURL().toString();
+        String url = SdkUtils.fileToUrlString(file);
         int dashes = url.indexOf("--");
         if (dashes != -1) { // Not allowed inside XML comments - for SGML compatibility. Sigh.
             url = url.replace("--", "%2D%2D");

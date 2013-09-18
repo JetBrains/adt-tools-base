@@ -17,6 +17,7 @@ package com.android.tools.lint.client.api;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.utils.SdkUtils;
 import com.google.common.collect.Lists;
 
 import java.io.File;
@@ -82,7 +83,7 @@ class JarFileIssueRegistry extends IssueRegistry {
             if (object instanceof String) {
                 String className = (String) object;
                 // Make a class loader for this jar
-                URL url = file.toURI().toURL();
+                URL url = SdkUtils.fileToUrl(file);
                 URLClassLoader loader = new URLClassLoader(new URL[]{url},
                         JarFileIssueRegistry.class.getClassLoader());
                 Class<?> registryClass = Class.forName(className, true, loader);
