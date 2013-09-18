@@ -49,6 +49,7 @@
                 <xsd:complexType>
                     <xsd:sequence>
                         <xsd:element name="name"         type= "xsd:token" />
+                        <xsd:element name="id"           type= "xsd:token"      minOccurs="0" />
                         <xsd:element name="manufacturer" type= "xsd:token" />
                         <xsd:element name="meta"         type= "c:metaType"     minOccurs="0" />
                         <xsd:element name="hardware"     type= "c:hardwareType" />
