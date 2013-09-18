@@ -19,6 +19,10 @@ package com.android.utils;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
 
@@ -288,5 +292,54 @@ public class SdkUtils {
         } catch (ParseException e) {
             return defaultValue;
         }
+    }
+
+    /**
+     * Returns the corresponding {@link File} for the given file:// url
+     *
+     * @param url the URL string, e.g. file://foo/bar
+     * @return the corresponding {@link File} (which may or may not exist)
+     * @throws MalformedURLException if the URL string is malformed or is not a file: URL
+     */
+    @NonNull
+    public static File urlToFile(@NonNull String url) throws MalformedURLException {
+        return urlToFile(new URL(url));
+    }
+
+    @NonNull
+    public static File urlToFile(@NonNull URL url) throws MalformedURLException {
+        try {
+            return new File(url.toURI());
+        }
+        catch (IllegalArgumentException e) {
+            MalformedURLException ex = new MalformedURLException(e.getLocalizedMessage());
+            ex.initCause(e);
+            throw ex;
+        }
+        catch (URISyntaxException e) {
+            return new File(url.getPath());
+        }
+    }
+
+    /**
+     * Returns the corresponding URL string for the given {@link File}
+     *
+     * @param file the file to look up the URL for
+     * @return the corresponding URL
+     * @throws MalformedURLException in very unexpected cases
+     */
+    public static String fileToUrlString(@NonNull File file) throws MalformedURLException {
+        return fileToUrl(file).toExternalForm();
+    }
+
+    /**
+     * Returns the corresponding URL for the given {@link File}
+     *
+     * @param file the file to look up the URL for
+     * @return the corresponding URL
+     * @throws MalformedURLException in very unexpected cases
+     */
+    public static URL fileToUrl(@NonNull File file) throws MalformedURLException {
+        return file.toURI().toURL();
     }
 }
