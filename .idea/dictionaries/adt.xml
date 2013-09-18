@@ -307,6 +307,8 @@
       <w>xmlns</w>
       <w>xxhdpi</w>
       <w>xxhigh</w>
+      <w>xxxhdpi</w>
+      <w>xxxhigh</w>
       <w>ydpi</w>
       <w>yyyy</w>
       <w>zipalign</w>

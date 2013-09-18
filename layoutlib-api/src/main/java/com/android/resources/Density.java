@@ -23,6 +23,7 @@ package com.android.resources;
  * as well as other places needing to know the density values.
  */
 public enum Density implements ResourceEnum {
+    XXXHIGH("xxxhdpi", "XXX-High Density", 640, 18), //$NON-NLS-1$
     XXHIGH("xxhdpi", "XX-High Density", 480, 16), //$NON-NLS-1$
     XHIGH("xhdpi", "X-High Density", 320, 8), //$NON-NLS-1$
     HIGH("hdpi", "High Density", 240, 4), //$NON-NLS-1$
