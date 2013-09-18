@@ -17,8 +17,10 @@ package com.android.ide.common.res2;
 
 import static com.android.ide.common.res2.MergedResourceWriter.FILENAME_PREFIX;
 import static com.android.ide.common.res2.MergedResourceWriter.createPathComment;
+import static com.android.utils.SdkUtils.urlToFile;
 
 import com.android.ide.common.xml.XmlPrettyPrinter;
+import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
 
 import junit.framework.TestCase;
@@ -39,15 +41,15 @@ public class MergedResourceWriterTest extends TestCase {
 
         String path = "/tmp/foo";
         String urlString = createPathComment(new File(path)).substring(5); // 5: "From:".length()
-        assertEquals(path, getFile(new URL(urlString)).getPath());
+        assertEquals(path, urlToFile(new URL(urlString)).getPath());
 
         path = "/tmp-/--/a--a/foo";
         urlString = createPathComment(new File(path)).substring(5);
-        assertEquals(path, getFile(new URL(urlString)).getPath());
+        assertEquals(path, urlToFile(new URL(urlString)).getPath());
 
         // Make sure we handle file://path too, not just file:path
         urlString = "file:///tmp-/%2D%2D/a%2D%2Da/foo";
-        assertEquals(path, getFile(new URL(urlString)).getPath());
+        assertEquals(path, urlToFile(new URL(urlString)).getPath());
     }
 
     public void testFormattedComment() throws Exception {
@@ -70,14 +72,6 @@ public class MergedResourceWriterTest extends TestCase {
         assertTrue(index != -1);
         String urlString = xml.substring(index + FILENAME_PREFIX.length(),
                 xml.indexOf("-->")).trim();
-        assertEquals(path, getFile(new URL(urlString)).getPath());
-    }
-
-    private static File getFile(URL url) {
-        try {
-            return new File(url.toURI());
-        } catch(URISyntaxException e) {
-            return new File(url.getPath());
-        }
+        assertEquals(path, urlToFile(new URL(urlString)).getPath());
     }
 }

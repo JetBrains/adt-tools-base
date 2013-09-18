@@ -108,7 +108,7 @@ public class HtmlBuilderTest extends TestCase {
         File f = File.createTempFile("img", "png");
         f.deleteOnExit();
 
-        String actual = new HtmlBuilder().addImage(f.toURI().toURL(), "preview").getHtml();
+        String actual = new HtmlBuilder().addImage(SdkUtils.fileToUrl(f), "preview").getHtml();
         String path = f.getAbsolutePath();
 
         if (!path.startsWith("/")) {

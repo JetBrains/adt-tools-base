@@ -43,6 +43,7 @@ import com.android.layoutlib.api.IResourceValue;
 import com.android.layoutlib.api.IXmlPullParser;
 import com.android.resources.ResourceType;
 import com.android.utils.ILogger;
+import com.android.utils.SdkUtils;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -157,11 +158,11 @@ public class LayoutLibrary {
                 File icu4j = new File(f.getParent(), FN_ICU_JAR);
                 if (icu4j.isFile()) {
                     urls = new URL[2];
-                    urls[1] = icu4j.toURI().toURL();
+                    urls[1] = SdkUtils.fileToUrl(icu4j);
                 } else {
                     urls = new URL[1];
                 }
-                urls[0] = f.toURI().toURL();
+                urls[0] = SdkUtils.fileToUrl(f);
 
                 // create a class loader. Because this jar reference interfaces
                 // that are in the editors plugin, it's important to provide

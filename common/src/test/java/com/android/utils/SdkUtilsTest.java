@@ -16,8 +16,13 @@
 
 package com.android.utils;
 
+import static com.android.utils.SdkUtils.fileToUrlString;
+import static com.android.utils.SdkUtils.urlToFile;
+
 import junit.framework.TestCase;
 
+import java.io.File;
+import java.net.URL;
 import java.text.ParseException;
 import java.util.Locale;
 
@@ -215,5 +220,23 @@ public class SdkUtilsTest extends TestCase {
         Locale.setDefault(Locale.FRANCE);
         assertEquals(1000.0, SdkUtils.parseLocalizedDouble("1000", -1)); // Valid
         assertEquals(0.0, SdkUtils.parseLocalizedDouble("", 8));
+    }
+
+    public void testFileToUrl() throws Exception {
+        assertEquals("file:/tmp/foo/bar",
+                fileToUrlString(new File("/tmp/foo/bar")));
+        assertEquals("file:/tmp/$&+,:;=%3F@/foo%20bar%25",
+                fileToUrlString(new File("/tmp/$&+,:;=?@/foo bar%")));
+    }
+
+    public void testUrlToFile() throws Exception {
+        assertEquals(new File("/tmp/foo/bar"), urlToFile("file:/tmp/foo/bar"));
+        assertEquals(new File("/tmp/$&+,:;=?@/foo bar%"),
+                urlToFile("file:/tmp/$&+,:;=%3F@/foo%20bar%25"));
+
+        assertEquals(new File("/tmp/foo/bar"),
+                urlToFile(new URL("file:/tmp/foo/bar")));
+        assertEquals(new File("/tmp/$&+,:;=?@/foo bar%"),
+                urlToFile(new URL("file:/tmp/$&+,:;=%3F@/foo%20bar%25")));
     }
 }

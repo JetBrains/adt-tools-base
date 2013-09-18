@@ -17,6 +17,7 @@
 package com.android.assetstudiolib;
 
 import com.android.resources.Density;
+import com.android.utils.SdkUtils;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
 
@@ -267,12 +268,7 @@ public abstract class GraphicGenerator {
             ProtectionDomain protectionDomain = GraphicGenerator.class.getProtectionDomain();
             URL url = protectionDomain.getCodeSource().getLocation();
             if (url != null) {
-                File file;
-                try {
-                    file = new File(url.toURI());
-                } catch (URISyntaxException e) {
-                    file = new File(url.getPath());
-                }
+                File file = SdkUtils.urlToFile(url);
                 zipFile = new JarFile(file);
             } else {
                 Enumeration<URL> en =

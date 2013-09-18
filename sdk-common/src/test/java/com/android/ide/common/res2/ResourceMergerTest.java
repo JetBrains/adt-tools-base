@@ -24,6 +24,7 @@ import com.android.SdkConstants;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.testutils.TestUtils;
+import com.android.utils.SdkUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
@@ -1027,37 +1028,7 @@ public class ResourceMergerTest extends BaseTestCase {
         int index = layoutXml.indexOf("From: ");
         assertTrue(index != -1);
         String path = layoutXml.substring(index + 6, layoutXml.indexOf(' ', index + 6));
-        File file =  new File(new URL(path).toURI());
-        assertTrue(path, file.exists());
-        assertFalse(Arrays.equals(Files.toByteArray(file), Files.toByteArray(layout)));
-
-        // Also make sure .png files were NOT modified
-        File root = TestUtils.getRoot("resources", "baseMerge");
-        assertNotNull(root);
-        File original = new File(root,
-                "overlay/drawable-ldpi/icon.png".replace('/', File.separatorChar));
-        File copied = new File(folder, FD_RES_DRAWABLE + File.separator + "icon.png");
-        assertTrue(Arrays.equals(Files.toByteArray(original), Files.toByteArray(copied)));
-    }
-
-    public void testDoubleDashes() throws Exception {
-        ResourceMerger merger = getResourceMerger();
-        RecordingLogger logger =  new RecordingLogger();
-        File folder = getWrittenResources();
-        ResourceSet writtenSet = new ResourceSet("unused");
-        writtenSet.addSource(folder);
-        writtenSet.loadFromFiles(logger);
-        compareResourceMaps(merger, writtenSet, false /*full compare*/);
-        checkLogger(logger);
-
-        File layout = new File(folder, FD_RES_LAYOUT + File.separator + "main.xml");
-        assertTrue(layout.exists());
-        String layoutXml = Files.toString(layout, Charsets.UTF_8);
-        assertTrue(layoutXml.contains("main.xml")); // in <!-- From: /full/path/to/main.xml -->
-        int index = layoutXml.indexOf("From: ");
-        assertTrue(index != -1);
-        String path = layoutXml.substring(index + 6, layoutXml.indexOf(' ', index + 6));
-        File file =  new File(new URL(path).toURI());
+        File file = SdkUtils.urlToFile(path);
         assertTrue(path, file.exists());
         assertFalse(Arrays.equals(Files.toByteArray(file), Files.toByteArray(layout)));
 
