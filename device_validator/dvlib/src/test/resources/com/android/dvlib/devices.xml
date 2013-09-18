@@ -7,6 +7,9 @@
         <d:name>
             Galaxy Nexus
         </d:name>
+        <d:id>
+            galaxy_nexus
+        </d:id>
         <d:manufacturer>
             Samsung
         </d:manufacturer>

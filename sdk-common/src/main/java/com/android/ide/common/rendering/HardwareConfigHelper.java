@@ -26,6 +26,7 @@ import com.android.sdklib.devices.Screen;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -171,7 +172,7 @@ public class HardwareConfigHelper {
     public static final String MANUFACTURER_GENERIC = "Generic";          //$NON-NLS-1$
     private static final String NEXUS = "Nexus";                          //$NON-NLS-1$
     private static final Pattern GENERIC_PATTERN =
-            Pattern.compile("(\\d+\\.?\\d*)in (.+?)( \\(.*Nexus.*\\))?"); //$NON-NLS-1$
+            Pattern.compile("(\\d+\\.?\\d*)\" (.+?)( \\(.*Nexus.*\\))?"); //$NON-NLS-1$
 
     /**
      * Returns a user-displayable description of the given Nexus device
@@ -181,12 +182,12 @@ public class HardwareConfigHelper {
      */
     @NonNull
     public static String getNexusLabel(@NonNull Device device) {
-        String name = device.getName();
+        String name = device.getDisplayName();
         Screen screen = device.getDefaultHardware().getScreen();
         float length = (float) screen.getDiagonalLength();
         // Round dimensions to the nearest tenth
         length = Math.round(10 * length) / 10.0f;
-        return String.format(java.util.Locale.US, "%1$s (%3$s\", %2$s)",
+        return String.format(Locale.US, "%1$s (%3$s\", %2$s)",
                 name, getResolutionString(device), Float.toString(length));
     }
 
@@ -198,24 +199,18 @@ public class HardwareConfigHelper {
      */
     @NonNull
     public static String getGenericLabel(@NonNull Device device) {
-        // * Replace "'in'" with '"' (e.g. 2.7" QVGA instead of 2.7in QVGA)
         // * Use the same precision for all devices (all but one specify decimals)
         // * Add some leading space such that the dot ends up roughly in the
         //   same space
         // * Add in screen resolution and density
-        String name = device.getName();
-        if (name.equals("3.7 FWVGA slider")) {                        //$NON-NLS-1$
-            // Fix metadata: this one entry doesn't have "in" like the rest of them
-            name = "3.7in FWVGA slider";                              //$NON-NLS-1$
-        }
-
+        String name = device.getDisplayName();
         Matcher matcher = GENERIC_PATTERN.matcher(name);
         if (matcher.matches()) {
             String size = matcher.group(1);
             String n = matcher.group(2);
             int dot = size.indexOf('.');
             if (dot == -1) {
-                size = size + ".0";
+                size += ".0";
                 dot = size.length() - 2;
             }
             for (int i = 0; i < 2 - dot; i++) {
@@ -224,7 +219,7 @@ public class HardwareConfigHelper {
             name = size + "\" " + n;
         }
 
-        return String.format(java.util.Locale.US, "%1$s (%2$s)", name,
+        return String.format(Locale.US, "%1$s (%2$s)", name,
                 getResolutionString(device));
     }
 
@@ -236,7 +231,7 @@ public class HardwareConfigHelper {
     @NonNull
     public static String getResolutionString(@NonNull Device device) {
         Screen screen = device.getDefaultHardware().getScreen();
-        return String.format(java.util.Locale.US,
+        return String.format(Locale.US,
                 "%1$d \u00D7 %2$d: %3$s", // U+00D7: Unicode multiplication sign
                 screen.getXDimension(),
                 screen.getYDimension(),
@@ -258,7 +253,7 @@ public class HardwareConfigHelper {
      * @return true if the device is a Nexus
      */
     public static boolean isNexus(@NonNull Device device) {
-        return device.getName().contains(NEXUS);
+        return device.getId().contains(NEXUS);
     }
 
     /**
@@ -269,27 +264,30 @@ public class HardwareConfigHelper {
      * @return the rank of the device
      */
     public static int nexusRank(Device device) {
-        String name = device.getName();
-        if (name.endsWith(" One")) {     //$NON-NLS-1$
+        String id = device.getId();
+        if (id.equals("Nexus One")) {      //$NON-NLS-1$
             return 1;
         }
-        if (name.endsWith(" S")) {       //$NON-NLS-1$
+        if (id.equals("Nexus S")) {        //$NON-NLS-1$
             return 2;
         }
-        if (name.startsWith("Galaxy")) { //$NON-NLS-1$
+        if (id.equals("Galaxy Nexus")) {  //$NON-NLS-1$
             return 3;
         }
-        if (name.endsWith(" 7")) {       //$NON-NLS-1$
-            return 4;
+        if (id.equals("Nexus 7")) { //$NON-NLS-1$
+            return 4; // 2012 version
         }
-        if (name.endsWith(" 10")) {       //$NON-NLS-1$
+        if (id.equals("Nexus 10")) {       //$NON-NLS-1$
             return 5;
         }
-        if (name.endsWith(" 4")) {       //$NON-NLS-1$
+        if (id.equals("Nexus 4")) {        //$NON-NLS-1$
             return 6;
         }
+        if (id.equals("Nexus 7 2013")) {        //$NON-NLS-1$
+            return 7;
+        }
 
-        return 7;
+        return 8; // devices released in the future?
     }
 
     /**

@@ -180,6 +180,8 @@ public class DeviceSchema {
 
     public static final String NODE_NAME = "name";
 
+    public static final String NODE_ID = "id";
+
     public static final String NODE_API_LEVEL = "api-level";
 
     public static final String NODE_MANUFACTURER = "manufacturer";

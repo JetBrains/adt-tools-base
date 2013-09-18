@@ -37,6 +37,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -163,14 +164,14 @@ public class DeviceManager {
     }
 
     @Nullable
-    public Device getDevice(@NonNull String name, @NonNull String manufacturer) {
+    public Device getDevice(@NonNull String id, @NonNull String manufacturer) {
         initDevicesLists();
         for (List<?> devices :
                 new List<?>[] { mUserDevices, mDefaultDevices, mVendorDevices } ) {
             if (devices != null) {
                 @SuppressWarnings("unchecked") List<Device> devicesList = (List<Device>) devices;
                 for (Device d : devicesList) {
-                    if (d.getName().equals(name) && d.getManufacturer().equals(manufacturer)) {
+                    if (d.getId().equals(id) && d.getManufacturer().equals(manufacturer)) {
                         return d;
                     }
                 }
@@ -245,16 +246,15 @@ public class DeviceManager {
             if (mVendorDevices == null) {
                 mVendorDevices = new ArrayList<Device>();
 
-                if (mOsSdkPath != null) {
-                    // Load devices from tools folder
-                    File toolsDevices = new File(mOsSdkPath,
-                            SdkConstants.OS_SDK_TOOLS_LIB_FOLDER +
-                            File.separator +
-                            SdkConstants.FN_DEVICES_XML);
-                    if (toolsDevices.isFile()) {
-                        mVendorDevices.addAll(loadDevices(toolsDevices));
-                    }
+                // Load builtin devices
+                try {
+                    InputStream stream = DeviceManager.class.getResourceAsStream("nexus.xml");
+                    mVendorDevices.addAll(DeviceParser.parse(stream));
+                } catch (Exception e) {
+                    mLog.error(e, null, "Could not load devices");
+                }
 
+                if (mOsSdkPath != null) {
                     // Load devices from vendor extras
                     File extrasFolder = new File(mOsSdkPath, SdkConstants.FD_EXTRAS);
                     List<File> deviceDirs = getExtraDirs(extrasFolder);
@@ -345,7 +345,7 @@ public class DeviceManager {
                 Iterator<Device> it = mUserDevices.iterator();
                 while (it.hasNext()) {
                     Device userDevice = it.next();
-                    if (userDevice.getName().equals(d.getName())
+                    if (userDevice.getId().equals(d.getId())
                             && userDevice.getManufacturer().equals(d.getManufacturer())) {
                         it.remove();
                         notifyListeners();
@@ -459,7 +459,7 @@ public class DeviceManager {
             }
         }
         props.put(AvdManager.AVD_INI_DEVICE_HASH, Integer.toString(d.hashCode()));
-        props.put(AvdManager.AVD_INI_DEVICE_NAME, d.getName());
+        props.put(AvdManager.AVD_INI_DEVICE_NAME, d.getId());
         props.put(AvdManager.AVD_INI_DEVICE_MANUFACTURER, d.getManufacturer());
         return props;
     }

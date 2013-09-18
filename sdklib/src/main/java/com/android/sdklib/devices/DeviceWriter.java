@@ -75,8 +75,16 @@ public class DeviceWriter {
             root.appendChild(deviceNode);
 
             Element name = doc.createElement(PREFIX + DeviceSchema.NODE_NAME);
-            name.appendChild(doc.createTextNode(device.getName()));
+            String displayName = device.getDisplayName();
+            name.appendChild(doc.createTextNode(displayName));
             deviceNode.appendChild(name);
+
+            String deviceId = device.getId();
+            if (!deviceId.equals(displayName)) {
+                Element id = doc.createElement(PREFIX + DeviceSchema.NODE_ID);
+                id.appendChild(doc.createTextNode(deviceId));
+                deviceNode.appendChild(id);
+            }
 
             Element manufacturer = doc.createElement(PREFIX + DeviceSchema.NODE_MANUFACTURER);
             manufacturer.appendChild(doc.createTextNode(device.getManufacturer()));
