@@ -23,6 +23,8 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
+import com.android.sdklib.internal.androidTarget.AddOnTarget;
+import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.local.LocalExtraPkgInfo;
 import com.android.sdklib.local.LocalPkgInfo;
 import com.android.sdklib.local.LocalPlatformPkgInfo;

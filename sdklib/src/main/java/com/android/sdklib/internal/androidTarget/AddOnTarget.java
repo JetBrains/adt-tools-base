@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.sdklib;
+package com.android.sdklib.internal.androidTarget;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.sdklib.AndroidTargetHash;
+import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.BuildToolInfo;
+import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.ISystemImage;
 
 import java.io.File;
 import java.io.FileFilter;
