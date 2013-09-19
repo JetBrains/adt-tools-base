@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.perflib.vmtrace.Call;
 import com.android.tools.perflib.vmtrace.ClockType;
 import com.android.tools.perflib.vmtrace.MethodInfo;
+import com.android.tools.perflib.vmtrace.ThreadInfo;
 import com.android.tools.perflib.vmtrace.TimeSelector;
 import com.android.tools.perflib.vmtrace.VmTraceData;
 import com.android.utils.HtmlBuilder;
@@ -45,7 +46,7 @@ public class CallHierarchyRenderer {
     private static final int TEXT_LEFT_PADDING = 5;
 
     private final VmTraceData mTraceData;
-    private final String mThreadName;
+    private final ThreadInfo mThread;
     private final Call mTopCall;
     private final int mYOffset;
     private final TimeUnit mLayoutTimeUnits;
@@ -57,11 +58,11 @@ public class CallHierarchyRenderer {
 
     private Font mFont;
 
-    public CallHierarchyRenderer(@NonNull VmTraceData vmTraceData, @NonNull String threadName,
+    public CallHierarchyRenderer(@NonNull VmTraceData vmTraceData, @NonNull ThreadInfo thread,
             int yOffset, TimeUnit defaultTimeUnits, RenderContext renderContext) {
         mTraceData = vmTraceData;
-        mThreadName = threadName;
-        mTopCall = vmTraceData.getThread(threadName).getTopLevelCall();
+        mThread = thread;
+        mTopCall = thread.getTopLevelCall();
         mYOffset = yOffset;
         mLayoutTimeUnits = defaultTimeUnits;
         mRenderContext = renderContext;
@@ -96,13 +97,13 @@ public class CallHierarchyRenderer {
             }
 
             // obtain the fill color based on its importance
-            Color fillColor = mRenderContext.getFillColor(c, mThreadName);
+            Color fillColor = mRenderContext.getFillColor(c, mThread);
             g.setColor(fillColor);
             g.fill(mLayout);
 
             // paint its name within the rectangle if possible
             String name = getName(c);
-            drawString(g, name, mLayout, mRenderContext.getFontColor(c, mThreadName));
+            drawString(g, name, mLayout, mRenderContext.getFontColor(c, mThread));
         }
     }
 
@@ -203,7 +204,7 @@ public class CallHierarchyRenderer {
         htmlBuilder.newline();
         htmlBuilder.add("Inclusive Time: ");
         htmlBuilder.beginBold();
-        double inclusivePercentage = mTraceData.getDurationPercentage(c, mThreadName,
+        double inclusivePercentage = mTraceData.getDurationPercentage(c, mThread,
                 mRenderContext.getRenderClock(), true /* use inclusive time */);
         htmlBuilder.add(PERCENTAGE_FORMATTER.format(inclusivePercentage));
         htmlBuilder.add("%");
@@ -212,7 +213,7 @@ public class CallHierarchyRenderer {
         htmlBuilder.newline();
         htmlBuilder.add("Exclusive Time: ");
         htmlBuilder.beginBold();
-        double exclusivePercentage = mTraceData.getDurationPercentage(c, mThreadName,
+        double exclusivePercentage = mTraceData.getDurationPercentage(c, mThread,
                 mRenderContext.getRenderClock(), false /* don't use inclusive time */);
         htmlBuilder.add(PERCENTAGE_FORMATTER.format(exclusivePercentage));
         htmlBuilder.add("%");
