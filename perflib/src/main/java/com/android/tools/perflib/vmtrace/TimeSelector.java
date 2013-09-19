@@ -17,33 +17,33 @@
 package com.android.tools.perflib.vmtrace;
 
 public abstract class TimeSelector {
-    public abstract long get(MethodInfo info, String threadName);
+    public abstract long get(MethodInfo info, ThreadInfo thread);
 
     private static final TimeSelector sInclusiveThreadTimeSelector = new TimeSelector() {
         @Override
-        public long get(MethodInfo info, String threadName) {
-            return info.getInclusiveTime(threadName, ClockType.THREAD);
+        public long get(MethodInfo info, ThreadInfo thread) {
+            return info.getInclusiveTime(thread, ClockType.THREAD);
         }
     };
 
     private static final TimeSelector sInclusiveGlobalTimeSelector = new TimeSelector() {
         @Override
-        public long get(MethodInfo info, String threadName) {
-            return info.getInclusiveTime(threadName, ClockType.GLOBAL);
+        public long get(MethodInfo info, ThreadInfo thread) {
+            return info.getInclusiveTime(thread, ClockType.GLOBAL);
         }
     };
 
     private static final TimeSelector sExclusiveThreadTimeSelector = new TimeSelector() {
         @Override
-        public long get(MethodInfo info, String threadName) {
-            return info.getExclusiveTime(threadName, ClockType.THREAD);
+        public long get(MethodInfo info, ThreadInfo thread) {
+            return info.getExclusiveTime(thread, ClockType.THREAD);
         }
     };
 
     private static final TimeSelector sExclusiveGlobalTimeSelector = new TimeSelector() {
         @Override
-        public long get(MethodInfo info, String threadName) {
-            return info.getExclusiveTime(threadName, ClockType.GLOBAL);
+        public long get(MethodInfo info, ThreadInfo thread) {
+            return info.getExclusiveTime(thread, ClockType.GLOBAL);
         }
     };
 

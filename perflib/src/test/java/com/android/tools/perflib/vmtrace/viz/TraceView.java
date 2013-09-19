@@ -19,13 +19,13 @@ package com.android.tools.perflib.vmtrace.viz;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.fail;
 
-import com.android.tools.perflib.vmtrace.Call;
 import com.android.tools.perflib.vmtrace.ClockType;
-import com.android.tools.perflib.vmtrace.MethodInfo;
 import com.android.tools.perflib.vmtrace.SearchResult;
 import com.android.tools.perflib.vmtrace.ThreadInfo;
 import com.android.tools.perflib.vmtrace.VmTraceData;
 import com.android.tools.perflib.vmtrace.VmTraceParser;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -33,7 +33,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
+import java.util.List;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -120,6 +120,15 @@ public class TraceView {
 
             mThreadCombo = new JComboBox();
             p.add(mThreadCombo);
+            mThreadCombo.setRenderer(new DefaultListCellRenderer() {
+                @Override
+                public Component getListCellRendererComponent(JList list, Object value, int index,
+                        boolean isSelected, boolean cellHasFocus) {
+                    Object v = value instanceof ThreadInfo ? ((ThreadInfo) value).getName() : value;
+                    return super.getListCellRendererComponent(list, v, index, isSelected,
+                            cellHasFocus);
+                }
+            });
 
             mClockSelector = new JCheckBox("Use Wallclock Time");
             mClockSelector.setSelected(true);
@@ -134,7 +143,7 @@ public class TraceView {
                     assert mTraceViewCanvas != null;
 
                     if (e.getSource() == mThreadCombo) {
-                        mTraceViewCanvas.displayThread((String) mThreadCombo.getSelectedItem());
+                        mTraceViewCanvas.displayThread((ThreadInfo) mThreadCombo.getSelectedItem());
                     } else if (e.getSource() == mClockSelector) {
                         mTraceViewCanvas.setRenderClock(mClockSelector.isSelected() ?
                                 ClockType.GLOBAL : ClockType.THREAD);
@@ -182,8 +191,8 @@ public class TraceView {
                         return;
                     }
 
-                    SearchResult results = mTraceData.searchFor(pattern,
-                            (String) mThreadCombo.getSelectedItem());
+                    ThreadInfo thread = (ThreadInfo) mThreadCombo.getSelectedItem();
+                    SearchResult results = mTraceData.searchFor(pattern, thread);
                     mTraceViewCanvas.setHighlightMethods(results.getMethods());
 
                     String result = String.format("%1$d methods, %2$d instances",
@@ -209,28 +218,20 @@ public class TraceView {
         public void setTrace(VmTraceData traceData) {
             mTraceData = traceData;
 
-            Collection<ThreadInfo> threads = traceData.getThreads();
-            java.util.List<String> threadNames = new ArrayList<String>(threads.size());
-            for (ThreadInfo thread : threads) {
-                Call topLevelCall = thread.getTopLevelCall();
-                if (topLevelCall != null) {
-                    threadNames.add(thread.getName());
+            List<ThreadInfo> threads = traceData.getThreads(true);
+            ThreadInfo defaultThread = Iterables.find(threads, new Predicate<ThreadInfo>() {
+                @Override
+                public boolean apply(ThreadInfo input) {
+                    return DEFAULT_THREAD_NAME.equals(input.getName());
                 }
-            }
+            }, threads.get(0));
 
-            String thread = DEFAULT_THREAD_NAME;
-            int index = threadNames.indexOf(thread);
-            if (index == -1) {
-                index = 0;
-                thread = threadNames.get(0);
-            }
-
-            mThreadCombo.setModel(new DefaultComboBoxModel(threadNames.toArray()));
+            mThreadCombo.setModel(new DefaultComboBoxModel(threads.toArray()));
             mThreadCombo.setEnabled(true);
             mSearchField.setEnabled(true);
 
-            mTraceViewCanvas.setTrace(traceData, thread, ClockType.GLOBAL);
-            mThreadCombo.setSelectedIndex(index);
+            mTraceViewCanvas.setTrace(traceData, defaultThread, ClockType.GLOBAL);
+            mThreadCombo.setSelectedItem(defaultThread);
         }
     }
 }

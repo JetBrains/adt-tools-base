@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.tools.perflib.vmtrace.Call;
 import com.android.tools.perflib.vmtrace.ClockType;
 import com.android.tools.perflib.vmtrace.MethodInfo;
+import com.android.tools.perflib.vmtrace.ThreadInfo;
 import com.android.tools.perflib.vmtrace.VmTraceData;
 
 import java.awt.Color;
@@ -84,12 +85,12 @@ public class RenderContext {
      * inclusive thread percentage time.
      */
     @NonNull
-    public Color getFillColor(Call c, String threadName) {
+    public Color getFillColor(Call c, ThreadInfo thread) {
         if (isHighlightedMethod(c)) {
             return HIGHLIGHTED_METHOD_COLOR;
         }
 
-        double percent = mTraceData.getDurationPercentage(c, threadName, mRenderClock,
+        double percent = mTraceData.getDurationPercentage(c, thread, mRenderClock,
                 mUseInclusiveTimeForColorAssignment);
         return QUANTIZED_COLORS[getColorIndex(percent)];
     }
@@ -110,8 +111,8 @@ public class RenderContext {
      * from the background.
      */
     @NonNull
-    public Color getFontColor(Call c, String threadName) {
-        double percent = mTraceData.getDurationPercentage(c, threadName, mRenderClock,
+    public Color getFontColor(Call c, ThreadInfo thread) {
+        double percent = mTraceData.getDurationPercentage(c, thread, mRenderClock,
                 mUseInclusiveTimeForColorAssignment);
         return getColorIndex(percent) < BRIGHT_TO_DARK_CROSSOVER_INDEX ? Color.BLACK : Color.WHITE;
     }

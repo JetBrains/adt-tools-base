@@ -33,7 +33,7 @@ public class MethodInfo {
     private final MethodStats mAllThreadsStats;
 
     /** Method stats per thread. */
-    private final Map<String,MethodStats> mPerThreadStats;
+    private final Map<Integer,MethodStats> mPerThreadStats;
 
     private String mFullName;
     private String mShortName;
@@ -74,35 +74,35 @@ public class MethodInfo {
         return cn;
     }
 
-    public long getExclusiveTime(String thread, ClockType clockType) {
-        MethodStats stats = mPerThreadStats.get(thread);
+    public long getExclusiveTime(ThreadInfo thread, ClockType clockType) {
+        MethodStats stats = mPerThreadStats.get(thread.getId());
         return stats != null ? stats.getExclusiveTime(clockType) : 0;
     }
 
-    public long getInclusiveTime(String thread, ClockType clockType) {
-        MethodStats stats = mPerThreadStats.get(thread);
+    public long getInclusiveTime(ThreadInfo thread, ClockType clockType) {
+        MethodStats stats = mPerThreadStats.get(thread.getId());
         return stats != null ? stats.getInclusiveTime(clockType) : 0;
     }
 
-    public void addExclusiveTime(long time, String thread, ClockType clockType) {
+    public void addExclusiveTime(long time, ThreadInfo thread, ClockType clockType) {
         mAllThreadsStats.addExclusiveTime(time, clockType);
 
         MethodStats stats = getMethodStats(thread, true);
         stats.addExclusiveTime(time, clockType);
     }
 
-    public void addInclusiveTime(long time, String thread, ClockType clockType) {
+    public void addInclusiveTime(long time, ThreadInfo thread, ClockType clockType) {
         mAllThreadsStats.addInclusiveTime(time, clockType);
 
         MethodStats stats = getMethodStats(thread, true);
         stats.addInclusiveTime(time, clockType);
     }
 
-    private MethodStats getMethodStats(String thread, boolean createIfAbsent) {
-        MethodStats stats = mPerThreadStats.get(thread);
+    private MethodStats getMethodStats(ThreadInfo thread, boolean createIfAbsent) {
+        MethodStats stats = mPerThreadStats.get(thread.getId());
         if (stats == null && createIfAbsent) {
             stats = new MethodStats();
-            mPerThreadStats.put(thread, stats);
+            mPerThreadStats.put(thread.getId(), stats);
         }
         return stats;
     }

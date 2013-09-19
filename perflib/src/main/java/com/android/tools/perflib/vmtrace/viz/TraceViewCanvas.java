@@ -44,8 +44,7 @@ import javax.swing.UIManager;
 
 /**
  * A canvas that displays the call hierarchy for a single thread. The trace and the the thread to be
- * displayed are specified using {@link #setTrace(com.android.tools.perflib.vmtrace.VmTraceData,
- * String, ClockType)} and {@link #displayThread(String)} methods.
+ * displayed are specified using {@link #setTrace} and {@link #displayThread} methods.
  */
 public class TraceViewCanvas extends JComponent {
     private static final Color BACKGROUND_COLOR =
@@ -112,23 +111,18 @@ public class TraceViewCanvas extends JComponent {
         });
     }
 
-    public void setTrace(@NonNull VmTraceData traceData, @NonNull String threadName,
+    public void setTrace(@NonNull VmTraceData traceData, @NonNull ThreadInfo thread,
             ClockType renderClock) {
         mTraceData = traceData;
         mRenderContext = new RenderContext(traceData, renderClock);
-        displayThread(threadName);
+        displayThread(thread);
     }
 
-    public void displayThread(@NonNull String threadName) {
+    public void displayThread(@NonNull ThreadInfo thread) {
         mCallHierarchyRenderer = null;
         mTimeScaleRenderer = null;
 
         if (mTraceData == null) {
-            return;
-        }
-
-        ThreadInfo thread = mTraceData.getThread(threadName);
-        if (thread == null) {
             return;
         }
 
@@ -141,7 +135,7 @@ public class TraceViewCanvas extends JComponent {
                 mTopLevelCall.getEntryTime(ClockType.GLOBAL, DEFAULT_TIME_UNITS),
                 DEFAULT_TIME_UNITS);
         int yOffset = mTimeScaleRenderer.getLayoutHeight();
-        mCallHierarchyRenderer = new CallHierarchyRenderer(mTraceData, threadName, yOffset,
+        mCallHierarchyRenderer = new CallHierarchyRenderer(mTraceData, thread, yOffset,
                 DEFAULT_TIME_UNITS, mRenderContext);
 
         zoomFit();
