@@ -19,6 +19,7 @@ package com.android.tools.perflib.vmtrace;
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
+import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
 
 import java.io.BufferedReader;
@@ -30,6 +31,8 @@ import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class VmTraceParser {
@@ -393,36 +396,56 @@ public class VmTraceParser {
     private void computeTimingStatistics() {
         VmTraceData data = getTraceData();
 
+        ProfileDataBuilder builder = new ProfileDataBuilder();
         for (ThreadInfo thread : data.getThreads()) {
-            computePerThreadStats(thread, data);
+            Call c = thread.getTopLevelCall();
+            if (c == null) {
+                continue;
+            }
+
+            builder.computeCallStats(c, null, thread);
+        }
+
+        for (Long methodId : builder.getMethodsWithProfileData()) {
+            MethodInfo method = data.getMethod(methodId);
+            method.setProfileData(builder.getProfileData(methodId));
         }
     }
 
-    private void computePerThreadStats(@NonNull ThreadInfo thread, VmTraceData data) {
-        Call c = thread.getTopLevelCall();
-        if (c == null) {
-            return;
-        }
+    private static class ProfileDataBuilder {
+        /** Maps method ids to their corresponding method data builders */
+        private final Map<Long, MethodProfileData.Builder> mBuilderMap = Maps.newHashMap();
 
-        Iterator<Call> it = c.getCallHierarchyIterator();
-        while (it.hasNext()) {
-            c = it.next();
-
-            MethodInfo info = data.getMethod(c.getMethodId());
-            for (ClockType type : ClockType.values()) {
-                info.addExclusiveTime(c.getExclusiveTime(type, TimeUnit.NANOSECONDS),
-                        thread, type);
+        public void computeCallStats(Call c, Call parent, ThreadInfo thread) {
+            long methodId = c.getMethodId();
+            MethodProfileData.Builder builder = getProfileDataBuilder(methodId);
+            builder.addCallTime(c, parent, thread);
+            builder.incrementInvocationCount(c, parent, thread);
+            if (c.isRecursive()) {
+                builder.setRecursive();
             }
 
-            if (!c.isRecursive()) {
-                // In the case of a recursive call, the top level call's inclusive time
-                // already accounts for the entire inclusive time
-                for (ClockType type : ClockType.values()) {
-                    info.addInclusiveTime(c.getInclusiveTime(type, TimeUnit.NANOSECONDS),
-                            thread, type);
-                }
+            for (Call callee: c.getCallees()) {
+                computeCallStats(callee, c, thread);
             }
         }
 
+        @NonNull
+        private MethodProfileData.Builder getProfileDataBuilder(long methodId) {
+            MethodProfileData.Builder builder = mBuilderMap.get(methodId);
+            if (builder == null) {
+                builder = new MethodProfileData.Builder();
+                mBuilderMap.put(methodId, builder);
+            }
+            return builder;
+        }
+
+        public Set<Long> getMethodsWithProfileData() {
+            return mBuilderMap.keySet();
+        }
+
+        public MethodProfileData getProfileData(Long methodId) {
+            return mBuilderMap.get(methodId).build();
+        }
     }
 }
