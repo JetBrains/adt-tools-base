@@ -17,6 +17,10 @@
 package com.android.tools.perflib.vmtrace;
 
 import com.android.utils.SparseArray;
+import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.util.Collection;
@@ -24,6 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -107,6 +112,21 @@ public class VmTraceData {
         return mThreadInfo.values();
     }
 
+    public List<ThreadInfo> getThreads(boolean excludeThreadsWithNoActivity) {
+        Collection<ThreadInfo> allThreads = getThreads();
+        if (!excludeThreadsWithNoActivity) {
+            return ImmutableList.copyOf(allThreads);
+        }
+
+        return Lists.newArrayList(Iterables.filter(allThreads, new Predicate<ThreadInfo>() {
+            @Override
+            public boolean apply(
+                    com.android.tools.perflib.vmtrace.ThreadInfo input) {
+                return input.getTopLevelCall() != null;
+            }
+        }));
+    }
+
     public ThreadInfo getThread(String name) {
         return mThreadInfo.get(name);
     }
@@ -120,9 +140,9 @@ public class VmTraceData {
     }
 
     /** Returns the duration of this call as a percentage of the duration of the top level call. */
-    public double getDurationPercentage(Call call, String threadName, ClockType clockType,
+    public double getDurationPercentage(Call call, ThreadInfo thread, ClockType clockType,
             boolean inclusiveTime) {
-        Call topCall = getThread(threadName).getTopLevelCall();
+        Call topCall = getThread(thread.getName()).getTopLevelCall();
         if (topCall == null) {
             return 100.;
         }
@@ -131,22 +151,22 @@ public class VmTraceData {
         MethodInfo topInfo = getMethod(topCall.getMethodId());
 
         TimeSelector selector = TimeSelector.create(clockType, inclusiveTime);
-        long methodTime = selector.get(methodInfo, threadName);
+        long methodTime = selector.get(methodInfo, thread);
 
         // always use inclusive time to obtain the top level's time when computing percentages
         selector = TimeSelector.create(clockType, true);
-        long topLevelTime = selector.get(topInfo, threadName);
+        long topLevelTime = selector.get(topInfo, thread);
 
         return (double) methodTime/topLevelTime * 100;
     }
 
-    public SearchResult searchFor(String pattern, String threadName) {
+    public SearchResult searchFor(String pattern, ThreadInfo thread) {
         pattern = pattern.toLowerCase(Locale.US);
 
         Set<MethodInfo> methods = new HashSet<MethodInfo>();
         Set<Call> calls = new HashSet<Call>();
 
-        Call topLevelCall = getThread(threadName).getTopLevelCall();
+        Call topLevelCall = getThread(thread.getName()).getTopLevelCall();
         if (topLevelCall == null) {
             // no matches
             return new SearchResult(methods, calls);
@@ -156,7 +176,7 @@ public class VmTraceData {
         for (MethodInfo method: getMethods().values()) {
             String fullName = method.getFullName().toLowerCase(Locale.US);
             if (fullName.contains(pattern)) { // method name matches
-                if (method.getInclusiveTime(threadName, ClockType.GLOBAL) > 0) { // method was called in this thread
+                if (method.getInclusiveTime(thread, ClockType.GLOBAL) > 0) { // method was called in this thread
                     methods.add(method);
                 }
             }

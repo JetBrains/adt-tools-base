@@ -411,7 +411,7 @@ public class VmTraceParser {
             MethodInfo info = data.getMethod(c.getMethodId());
             for (ClockType type : ClockType.values()) {
                 info.addExclusiveTime(c.getExclusiveTime(type, TimeUnit.NANOSECONDS),
-                        thread.getName(), type);
+                        thread, type);
             }
 
             if (!c.isRecursive()) {
@@ -419,7 +419,7 @@ public class VmTraceParser {
                 // already accounts for the entire inclusive time
                 for (ClockType type : ClockType.values()) {
                     info.addInclusiveTime(c.getInclusiveTime(type, TimeUnit.NANOSECONDS),
-                            thread.getName(), type);
+                            thread, type);
                 }
             }
         }
