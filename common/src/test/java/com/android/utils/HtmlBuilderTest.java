@@ -115,6 +115,11 @@ public class HtmlBuilderTest extends TestCase {
             path = '/' + path;
         }
         String expected = String.format("<img src='file:%1$s' alt=\"preview\" />", path);
+        if (File.separatorChar != '/') {
+            // SdkUtil.fileToUrl always returns / as a separator so adjust
+            // Windows path accordingly.
+            expected = expected.replace(File.separatorChar, '/');
+        }
         assertEquals(expected, actual);
     }
 }
