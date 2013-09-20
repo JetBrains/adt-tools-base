@@ -16,34 +16,36 @@
 
 package com.android.tools.perflib.vmtrace;
 
+import java.util.concurrent.TimeUnit;
+
 public abstract class TimeSelector {
-    public abstract long get(MethodInfo info, ThreadInfo thread);
+    public abstract long get(MethodInfo info, ThreadInfo thread, TimeUnit unit);
 
     private static final TimeSelector sInclusiveThreadTimeSelector = new TimeSelector() {
         @Override
-        public long get(MethodInfo info, ThreadInfo thread) {
-            return info.getInclusiveTime(thread, ClockType.THREAD);
+        public long get(MethodInfo info, ThreadInfo thread, TimeUnit unit) {
+            return info.getProfileData().getInclusiveTime(thread, ClockType.THREAD, unit);
         }
     };
 
     private static final TimeSelector sInclusiveGlobalTimeSelector = new TimeSelector() {
         @Override
-        public long get(MethodInfo info, ThreadInfo thread) {
-            return info.getInclusiveTime(thread, ClockType.GLOBAL);
+        public long get(MethodInfo info, ThreadInfo thread, TimeUnit unit) {
+            return info.getProfileData().getInclusiveTime(thread, ClockType.GLOBAL, unit);
         }
     };
 
     private static final TimeSelector sExclusiveThreadTimeSelector = new TimeSelector() {
         @Override
-        public long get(MethodInfo info, ThreadInfo thread) {
-            return info.getExclusiveTime(thread, ClockType.THREAD);
+        public long get(MethodInfo info, ThreadInfo thread, TimeUnit unit) {
+            return info.getProfileData().getExclusiveTime(thread, ClockType.THREAD, unit);
         }
     };
 
     private static final TimeSelector sExclusiveGlobalTimeSelector = new TimeSelector() {
         @Override
-        public long get(MethodInfo info, ThreadInfo thread) {
-            return info.getExclusiveTime(thread, ClockType.GLOBAL);
+        public long get(MethodInfo info, ThreadInfo thread, TimeUnit unit) {
+            return info.getProfileData().getExclusiveTime(thread, ClockType.GLOBAL, unit);
         }
     };
 

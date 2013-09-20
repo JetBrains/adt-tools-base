@@ -151,11 +151,11 @@ public class VmTraceData {
         MethodInfo topInfo = getMethod(topCall.getMethodId());
 
         TimeSelector selector = TimeSelector.create(clockType, inclusiveTime);
-        long methodTime = selector.get(methodInfo, thread);
+        long methodTime = selector.get(methodInfo, thread, TimeUnit.NANOSECONDS);
 
         // always use inclusive time to obtain the top level's time when computing percentages
         selector = TimeSelector.create(clockType, true);
-        long topLevelTime = selector.get(topInfo, thread);
+        long topLevelTime = selector.get(topInfo, thread, TimeUnit.NANOSECONDS);
 
         return (double) methodTime/topLevelTime * 100;
     }
@@ -176,7 +176,10 @@ public class VmTraceData {
         for (MethodInfo method: getMethods().values()) {
             String fullName = method.getFullName().toLowerCase(Locale.US);
             if (fullName.contains(pattern)) { // method name matches
-                if (method.getInclusiveTime(thread, ClockType.GLOBAL) > 0) { // method was called in this thread
+                long inclusiveTime = method.getProfileData()
+                        .getInclusiveTime(thread, ClockType.GLOBAL, TimeUnit.NANOSECONDS);
+                if (inclusiveTime > 0) {
+                    // method was called in this thread
                     methods.add(method);
                 }
             }
