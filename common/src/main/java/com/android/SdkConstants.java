@@ -778,6 +778,7 @@ public final class SdkConstants {
     public static final String ATTR_PARENT = "parent";                 //$NON-NLS-1$
     public static final String ATTR_TRANSLATABLE = "translatable";     //$NON-NLS-1$
     public static final String ATTR_COLOR = "color";                   //$NON-NLS-1$
+    public static final String ATTR_DRAWABLE = "drawable";             //$NON-NLS-1$
     public static final String ATTR_VALUE = "value";                   //$NON-NLS-1$
     public static final String ATTR_QUANTITY = "quantity";             //$NON-NLS-1$
     public static final String ATTR_FORMAT = "format";                 //$NON-NLS-1$

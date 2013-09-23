@@ -16,11 +16,8 @@
 
 package com.android.ide.common.resources;
 
-import static com.android.SdkConstants.ANDROID_PREFIX;
-import static com.android.SdkConstants.ANDROID_THEME_PREFIX;
 import static com.android.SdkConstants.PREFIX_ANDROID;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
-import static com.android.SdkConstants.PREFIX_THEME_REF;
 import static com.android.SdkConstants.REFERENCE_STYLE;
 
 import com.android.annotations.NonNull;
@@ -199,127 +196,35 @@ public class ResourceResolver extends RenderResources {
         if (reference == null) {
             return null;
         }
-        if (reference.startsWith(PREFIX_THEME_REF)
-                && reference.length() > PREFIX_THEME_REF.length()) {
-            // no theme? no need to go further!
-            if (mTheme == null) {
-                return null;
-            }
 
-            boolean frameworkOnly = false;
+        ResourceUrl resource = ResourceUrl.parse(reference);
+        if (resource != null && resource.hasValidName()) {
+            if (resource.theme) {
+                // no theme? no need to go further!
+                if (mTheme == null) {
+                    return null;
+                }
 
-            // eliminate the prefix from the string
-            String originalReference = reference;
-            if (reference.startsWith(ANDROID_THEME_PREFIX)) {
-                frameworkOnly = true;
-                reference = reference.substring(ANDROID_THEME_PREFIX.length());
-            } else {
-                reference = reference.substring(PREFIX_THEME_REF.length());
-            }
-
-            // at this point, value can contain type/name (drawable/foo for instance).
-            // split it to make sure.
-            String[] segments = reference.split("/");
-
-            // we look for the referenced item name.
-            String referenceName = null;
-
-            if (segments.length == 2) {
-                // there was a resType in the reference. If it's attr, we ignore it
-                // else, we assert for now.
-                if (ResourceType.ATTR.getName().equals(segments[0])) {
-                    referenceName = segments[1];
-                } else {
+                if (resource.type != ResourceType.ATTR) {
                     // At this time, no support for ?type/name where type is not "attr"
                     return null;
                 }
+
+                // Now look for the item in the theme, starting with the current one.
+                ResourceValue item = findItemInStyle(mTheme, resource.name,
+                        forceFrameworkOnly || resource.framework);
+                if (item == null && mLogger != null) {
+                    mLogger.warning(LayoutLog.TAG_RESOURCES_RESOLVE_THEME_ATTR,
+                            String.format("Couldn't find theme resource %1$s for the current theme",
+                                    reference),
+                            new ResourceValue(ResourceType.ATTR, reference, resource.framework));
+                }
+
+                return item;
             } else {
-                // it's just an item name.
-                referenceName = segments[0];
-
-                // Make sure it looks like a resource name; if not, it could just be a string
-                // which starts with a ?
-                if (!Character.isJavaIdentifierStart(referenceName.charAt(0))) {
-                    return null;
-                }
-                for (int i = 1, n = referenceName.length(); i < n; i++) {
-                    char c = referenceName.charAt(i);
-                    if (!Character.isJavaIdentifierPart(c) && c != '.') {
-                        return null;
-                    }
-                }
+                return findResValue(resource.type, resource.name,
+                        forceFrameworkOnly || resource.framework);
             }
-
-            // now we look for android: in the referenceName in order to support format
-            // such as: ?attr/android:name
-            if (referenceName.startsWith(PREFIX_ANDROID)) {
-                frameworkOnly = true;
-                referenceName = referenceName.substring(PREFIX_ANDROID.length());
-            }
-
-            // Now look for the item in the theme, starting with the current one.
-            ResourceValue item = findItemInStyle(mTheme, referenceName,
-                    forceFrameworkOnly || frameworkOnly);
-
-            if (item == null && mLogger != null) {
-                mLogger.warning(LayoutLog.TAG_RESOURCES_RESOLVE_THEME_ATTR,
-                        String.format("Couldn't find theme resource %1$s for the current theme",
-                                reference),
-                        new ResourceValue(ResourceType.ATTR, originalReference, frameworkOnly));
-            }
-
-            return item;
-        } else if (reference.startsWith(PREFIX_RESOURCE_REF)) {
-            boolean frameworkOnly = false;
-
-            // check for the specific null reference value.
-            if (REFERENCE_NULL.equals(reference)) {
-                return null;
-            }
-
-            // Eliminate the prefix from the string.
-            if (reference.startsWith(ANDROID_PREFIX)) {
-                frameworkOnly = true;
-                reference = reference.substring(ANDROID_PREFIX.length());
-            } else {
-                reference = reference.substring(PREFIX_RESOURCE_REF.length());
-            }
-
-            // at this point, value contains type/[android:]name (drawable/foo for instance)
-            String[] segments = reference.split("/");
-            if (segments.length != 2) {
-                return null;
-            }
-
-            // now we look for android: in the resource name in order to support format
-            // such as: @drawable/android:name
-            String referenceName = segments[1];
-            if (referenceName.startsWith(PREFIX_ANDROID)) {
-                frameworkOnly = true;
-                referenceName = referenceName.substring(PREFIX_ANDROID.length());
-            }
-
-            ResourceType type = ResourceType.getEnum(segments[0]);
-
-            // unknown type?
-            if (type == null) {
-                return null;
-            }
-
-            // Make sure it looks like a resource name; if not, it could just be a string
-            // which starts with a ?
-            if (!Character.isJavaIdentifierStart(referenceName.charAt(0))) {
-                return null;
-            }
-            for (int i = 1, n = referenceName.length(); i < n; i++) {
-                char c = referenceName.charAt(i);
-                if (!Character.isJavaIdentifierPart(c) && c != '.') {
-                    return null;
-                }
-            }
-
-            return findResValue(type, referenceName,
-                    forceFrameworkOnly ? true :frameworkOnly);
         }
 
         // Looks like the value didn't reference anything. Return null.
