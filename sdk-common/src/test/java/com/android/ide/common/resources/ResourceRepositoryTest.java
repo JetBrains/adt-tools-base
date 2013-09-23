@@ -18,9 +18,6 @@ package com.android.ide.common.resources;
 import static com.android.SdkConstants.FD_RES;
 import static com.android.SdkConstants.FD_RES_DRAWABLE;
 import static com.android.SdkConstants.FD_RES_LAYOUT;
-import static com.android.resources.ResourceType.ATTR;
-import static com.android.resources.ResourceType.DIMEN;
-import static com.android.resources.ResourceType.LAYOUT;
 
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
@@ -83,27 +80,6 @@ public class ResourceRepositoryTest extends TestCase {
     protected void tearDown() throws Exception {
         super.tearDown();
         mRepository.dispose();
-    }
-
-    public void testParseResource() {
-        assertNull(ResourceRepository.parseResource(""));
-        assertNull(ResourceRepository.parseResource("not_a_resource"));
-
-        assertEquals(LAYOUT, ResourceRepository.parseResource("@layout/foo").getFirst());
-        assertEquals(DIMEN, ResourceRepository.parseResource("@dimen/foo").getFirst());
-        assertEquals(DIMEN, ResourceRepository.parseResource("@android:dimen/foo").getFirst());
-        assertEquals("foo", ResourceRepository.parseResource("@layout/foo").getSecond());
-        assertEquals("foo", ResourceRepository.parseResource("@dimen/foo").getSecond());
-        assertEquals("foo", ResourceRepository.parseResource("@android:dimen/foo").getSecond());
-
-        assertEquals(ATTR, ResourceRepository.parseResource("?attr/foo").getFirst());
-        assertEquals("foo", ResourceRepository.parseResource("?attr/foo").getSecond());
-
-        assertEquals(ATTR, ResourceRepository.parseResource("?foo").getFirst());
-        assertEquals("foo", ResourceRepository.parseResource("?foo").getSecond());
-
-        assertEquals(ATTR, ResourceRepository.parseResource("?android:foo").getFirst());
-        assertEquals("foo", ResourceRepository.parseResource("?android:foo").getSecond());
     }
 
     public void testBasic() throws Exception {
