@@ -142,19 +142,26 @@ public class VmTraceData {
     /** Returns the duration of this call as a percentage of the duration of the top level call. */
     public double getDurationPercentage(Call call, ThreadInfo thread, ClockType clockType,
             boolean inclusiveTime) {
+        MethodInfo methodInfo = getMethod(call.getMethodId());
+        TimeSelector selector = TimeSelector.create(clockType, inclusiveTime);
+        long methodTime = selector.get(methodInfo, thread, TimeUnit.NANOSECONDS);
+        return getDurationPercentage(methodTime, thread, clockType);
+    }
+
+    /**
+     * Returns the given duration as a percentage of the duration of the top level call
+     * in given thread.
+     */
+    public double getDurationPercentage(long methodTime, ThreadInfo thread, ClockType clockType) {
         Call topCall = getThread(thread.getName()).getTopLevelCall();
         if (topCall == null) {
             return 100.;
         }
 
-        MethodInfo methodInfo = getMethod(call.getMethodId());
         MethodInfo topInfo = getMethod(topCall.getMethodId());
 
-        TimeSelector selector = TimeSelector.create(clockType, inclusiveTime);
-        long methodTime = selector.get(methodInfo, thread, TimeUnit.NANOSECONDS);
-
         // always use inclusive time to obtain the top level's time when computing percentages
-        selector = TimeSelector.create(clockType, true);
+        TimeSelector selector = TimeSelector.create(clockType, true);
         long topLevelTime = selector.get(topInfo, thread, TimeUnit.NANOSECONDS);
 
         return (double) methodTime/topLevelTime * 100;
