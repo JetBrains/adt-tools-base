@@ -27,6 +27,7 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,7 +49,7 @@ public class ZoomPanInteractor implements MouseListener, MouseMotionListener, Mo
     private final AffineTransform mTransform = new AffineTransform();
     private AffineTransform mInverseTransform;
 
-    private final Point mTmpPoint = new Point();
+    private final Point2D mTmpPoint = new Point2D.Double();
 
     private int mLastX;
     private int mLastY;
@@ -130,12 +131,12 @@ public class ZoomPanInteractor implements MouseListener, MouseMotionListener, Mo
     }
 
     @VisibleForTesting
-    void zoomBy(double scaleX, double scaleY, Point location) {
+    void zoomBy(double scaleX, double scaleY, Point2D location) {
         // When zooming, we want to zoom by the location the mouse currently points to.
         // So we translate the current location to the origin, apply the scale, and translate back
-        mTransform.translate(location.x, location.y);
+        mTransform.translate(location.getX(), location.getY());
         mTransform.scale(scaleX, scaleY);
-        mTransform.translate(-location.x, -location.y);
+        mTransform.translate(-location.getX(), -location.getY());
     }
 
     private void notifyTransformChange() {
