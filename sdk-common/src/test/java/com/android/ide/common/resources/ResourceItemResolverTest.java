@@ -222,8 +222,11 @@ public class ResourceItemResolverTest extends TestCase {
                 resolver.findResValue("@string/show_all_apps", false)).getValue());
 
         chain.clear();
-        assertEquals("#ffffffff", resolver.resolveResValue(
-                resolver.findResValue("@android:color/bright_foreground_dark", false)).getValue());
+        ResourceValue v = resolver.findResValue("@android:color/bright_foreground_dark", false);
+        assertEquals("[ResourceValue [color/bright_foreground_dark = @android:color/"
+                + "background_light (framework:true)]]", chain.toString());
+        chain.clear();
+        assertEquals("#ffffffff", resolver.resolveResValue(v).getValue());
         assertEquals("[ResourceValue [color/bright_foreground_dark = @android:color/"
                 + "background_light (framework:true)], ResourceValue [color/background_light"
                 + " = #ffffffff (framework:true)]]", chain.toString());
