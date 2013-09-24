@@ -21,6 +21,7 @@ import com.android.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
+import com.google.common.primitives.UnsignedInts;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -268,7 +269,7 @@ public class VmTraceParser {
 
             int positionStart = buffer.position();
 
-            threadId = version == 1 ? buffer.getInt() : buffer.getShort();
+            threadId = version == 1 ? buffer.get() : buffer.getShort();
             methodId = buffer.getInt();
 
             switch (vmClockType) {
@@ -311,7 +312,8 @@ public class VmTraceParser {
             }
             methodId = methodId & ~0x03;
 
-            mTraceDataBuilder.addMethodAction(threadId, methodId, methodAction, threadTime, globalTime);
+            mTraceDataBuilder.addMethodAction(threadId, UnsignedInts.toLong(methodId), methodAction,
+                    threadTime, globalTime);
         }
     }
 

@@ -156,7 +156,7 @@ public class TraceViewCanvas extends JComponent {
         repaint();
     }
 
-    private void zoomFit() {
+    public void zoomFit() {
         if (mTopLevelCall == null) {
             return;
         }
