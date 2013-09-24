@@ -5,9 +5,11 @@ import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
+import com.google.common.collect.Lists;
 
 import junit.framework.TestCase;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -61,6 +63,7 @@ public class ResourceResolverTest extends TestCase {
                         + "<resources>\n"
                         + "    <style name=\"MyTheme\" parent=\"android:Theme.Light\">\n"
                         + "        <item name=\"android:textColor\">#999999</item>\n"
+                        + "        <item name=\"foo\">?android:colorForeground</item>\n"
                         + "    </style>\n"
                         + "    <style name=\"MyTheme.Dotted1\" parent=\"\">\n"
                         + "    </style>"
@@ -193,6 +196,11 @@ public class ResourceResolverTest extends TestCase {
         assertNotNull(resolver.findItemInTheme("colorForeground", true));
         assertEquals("@color/bright_foreground_light",
                 resolver.findItemInTheme("colorForeground", true).getValue());
+        assertEquals("@color/bright_foreground_light",
+                resolver.findResValue("?colorForeground", true).getValue());
+        ResourceValue target = new ResourceValue(ResourceType.STRING, "dummy", false);
+        target.setValue("?foo");
+        assertEquals("#ff000000", resolver.resolveResValue(target).getValue());
 
         // getFrameworkResource
         assertNull(resolver.getFrameworkResource(ResourceType.STRING, "show_all_apps"));
@@ -236,6 +244,19 @@ public class ResourceResolverTest extends TestCase {
         assertEquals("MyTheme.Dotted2", resolver.getThemeName());
         assertTrue(resolver.isProjectTheme());
         assertNotNull(resolver.findItemInTheme("colorForeground", true));
+
+        // Test recording resolver
+        List<ResourceValue> chain = Lists.newArrayList();
+        resolver = ResourceResolver.create(projectResources, frameworkResources, "MyTheme", true);
+        resolver = resolver.createRecorder(chain);
+        assertNotNull(resolver.findResValue("@android:color/bright_foreground_dark", true));
+        ResourceValue v = resolver.findResValue("@android:color/bright_foreground_dark", false);
+        chain.clear();
+        assertEquals("#ffffffff", resolver.resolveResValue(v).getValue());
+        assertEquals("@android:color/bright_foreground_dark => "
+                + "@android:color/background_light => #ffffffff",
+                ResourceItemResolver.getDisplayString("@android:color/bright_foreground_dark",
+                        chain));
 
         frameworkRepository.dispose();
         projectRepository.dispose();

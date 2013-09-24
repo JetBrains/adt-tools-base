@@ -16,6 +16,7 @@
 package com.android.ide.common.resources;
 
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
+import static com.android.SdkConstants.PREFIX_THEME_REF;
 import static com.android.ide.common.resources.ResourceResolver.MAX_RESOURCE_INDIRECTION;
 
 import com.android.annotations.NonNull;
@@ -142,9 +143,15 @@ public class ResourceItemResolver extends RenderResources {
             if (resource.theme) {
                 // Do theme lookup? We can't do that here; requires full global analysis, so just use
                 // a real resource resolver
-                ResourceResolver resolver = mResourceProvider.getResolver(true);
-                if (resolver != null) {
-                    return resolver.findResValue(reference, inFramework);
+                if (mResourceProvider == null) {
+                    return null;
+                }
+                mResolver = mResourceProvider.getResolver(true);
+                if (mResolver != null) {
+                    if (mLookupChain != null) {
+                        mResolver = mResolver.createRecorder(mLookupChain);
+                    }
+                    return mResolver.findResValue(reference, inFramework);
                 } else {
                     return null;
                 }
@@ -218,6 +225,70 @@ public class ResourceItemResolver extends RenderResources {
      */
     public void setLookupChainList(@Nullable List<ResourceValue> lookupChain) {
         mLookupChain = lookupChain;
+    }
+
+    /** Returns the lookup chain being used by this resolver */
+    @Nullable
+    public List<ResourceValue> getLookupChain() {
+        return mLookupChain;
+    }
+
+    /**
+     * Returns a display string for a resource lookup
+     * @param type the resource type
+     * @param name the resource name
+     * @return the display string
+     */
+    /** Returns a display string for a resource lookup */
+    public static String getDisplayString(
+            @NonNull ResourceType type,
+            @NonNull String name,
+            @NonNull boolean isFramework,
+            @NonNull List<ResourceValue> lookupChain) {
+        String url = ResourceUrl.create(type, name, isFramework, false).toString();
+        return getDisplayString(url, lookupChain);
+    }
+
+    /**
+     * Returns a display string for a resource lookup
+     * @param url the resource url, such as {@code @string/foo}
+     * @return the display string
+     */
+    @NonNull
+    public static String getDisplayString(
+            @NonNull String url,
+            @NonNull List<ResourceValue> lookupChain) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(url);
+        String prev = url;
+        for (ResourceValue element : lookupChain) {
+            if (element == null) {
+                continue;
+            }
+            String value = element.getValue();
+            if (value == null) {
+                continue;
+            }
+            String text = value;
+            if (text.equals(prev)) {
+                continue;
+            }
+
+            sb.append(" => ");
+
+            // Strip paths
+            if (!(text.startsWith(PREFIX_THEME_REF) || text.startsWith(PREFIX_RESOURCE_REF))) {
+                int end = Math.max(text.lastIndexOf('/'), text.lastIndexOf('\\'));
+                if (end != -1) {
+                    text = text.substring(end + 1);
+                }
+            }
+            sb.append(text);
+
+            prev = value;
+        }
+
+        return sb.toString();
     }
 
     /**
