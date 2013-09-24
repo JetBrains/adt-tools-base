@@ -73,6 +73,9 @@ public class ResourceItemResolver extends RenderResources {
         if (mResolver != null) {
             return mResolver.resolveResValue(resValue);
         }
+        if (mLookupChain != null) {
+            mLookupChain.add(resValue);
+        }
         return resolveResValue(resValue, 0);
     }
 
@@ -121,6 +124,17 @@ public class ResourceItemResolver extends RenderResources {
 
         if (reference == null) {
             return null;
+        }
+
+        if (mLookupChain != null && !mLookupChain.isEmpty() &&
+                reference.startsWith(PREFIX_RESOURCE_REF)) {
+            ResourceValue prev = mLookupChain.get(mLookupChain.size() - 1);
+            if (!reference.equals(prev.getValue())) {
+                ResourceValue next = new ResourceValue(prev.getResourceType(), prev.getName(),
+                        prev.isFramework());
+                next.setValue(reference);
+                mLookupChain.add(next);
+            }
         }
 
         ResourceUrl resource = ResourceUrl.parse(reference);
