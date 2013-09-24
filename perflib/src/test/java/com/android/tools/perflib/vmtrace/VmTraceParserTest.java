@@ -99,6 +99,9 @@ public class VmTraceParserTest extends TestCase {
                         + "                    -> com/test/android/traceview/Basic.foo: ()V -> com/test/android/traceview/Basic.bar: ()I\n"
                         + "                    -> android/os/Debug.stopMethodTracing: ()V -> dalvik/system/VMDebug.stopMethodTracing: ()V";
         testTrace("/basic.trace", "AsyncTask #1", expected);
+
+        // verify that the same results show up when trace is generated from an older device
+        testTrace("/basic-api10.trace", "AsyncTask #1", expected);
     }
 
     public void testMisMatchedTrace() throws IOException {

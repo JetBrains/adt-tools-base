@@ -279,11 +279,8 @@ public class VmTraceData {
 
             if (DEBUG) {
                 MethodInfo methodInfo = mMethods.get(methodId);
-                System.out.println(
-                        methodId + ": " + methodAction + ": thread: " + mThreads.get(threadId)
-                                + ", method: "
-                                + methodInfo.className + "/" + methodInfo.methodName + ":"
-                                + methodInfo.signature);
+                System.out.printf("Thread %1$30s: (%2$8x) %3$-40s %4$20s\n",
+                        mThreads.get(threadId), methodId, methodInfo.getShortName(), methodAction);
             }
 
             CallStackReconstructor reconstructor = mStackReconstructors.get(threadId);
