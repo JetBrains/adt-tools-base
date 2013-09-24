@@ -80,6 +80,7 @@ public class ResourceItemResolverTest extends TestCase {
                         + "<resources>\n"
                         + "    <style name=\"MyTheme\" parent=\"android:Theme.Light\">\n"
                         + "        <item name=\"android:textColor\">#999999</item>\n"
+                        + "        <item name=\"foo\">?android:colorForeground</item>\n"
                         + "    </style>\n"
                         + "    <style name=\"MyTheme.Dotted1\" parent=\"\">\n"
                         + "    </style>"
@@ -197,7 +198,6 @@ public class ResourceItemResolverTest extends TestCase {
                 resolver.findResValue("@android:color/bright_foreground_dark", false)).getValue());
 
 
-
         // Now do everything over again, but this time without a resource resolver.
         // Also set a lookup chain.
         resolver = new ResourceItemResolver(config, frameworkResources, appResources,
@@ -223,12 +223,29 @@ public class ResourceItemResolverTest extends TestCase {
 
         chain.clear();
         ResourceValue v = resolver.findResValue("@android:color/bright_foreground_dark", false);
-        assertEquals("[ResourceValue [color/bright_foreground_dark = @android:color/"
-                + "background_light (framework:true)]]", chain.toString());
+        assertEquals("@android:color/bright_foreground_dark => @android:color/background_light",
+                ResourceItemResolver.getDisplayString(ResourceType.COLOR, "bright_foreground_dark",
+                        true, chain));
         chain.clear();
         assertEquals("#ffffffff", resolver.resolveResValue(v).getValue());
-        assertEquals("[ResourceValue [color/bright_foreground_dark = @android:color/"
-                + "background_light (framework:true)], ResourceValue [color/background_light"
-                + " = #ffffffff (framework:true)]]", chain.toString());
+        assertEquals("@android:color/bright_foreground_dark => @android:color/background_light "
+                + "=> #ffffffff",
+                ResourceItemResolver.getDisplayString("@android:color/bright_foreground_dark",
+                        chain));
+
+        // Try to resolve style attributes
+        resolver = new ResourceItemResolver(config, provider, logger);
+        resolver.setLookupChainList(chain);
+        chain.clear();
+        ResourceValue target = new ResourceValue(ResourceType.STRING, "dummy", false);
+        target.setValue("?foo");
+        assertEquals("#ff000000", resolver.resolveResValue(target).getValue());
+        assertEquals("?foo => ?android:colorForeground => @color/bright_foreground_light => " 
+                + "@android:color/background_dark => #ff000000",
+                ResourceItemResolver.getDisplayString("?foo", chain));
+
+        assertEquals("?foo => ?android:colorForeground => @color/bright_foreground_light => "
+                + "@android:color/background_dark => #ff000000",
+                ResourceItemResolver.getDisplayString("?foo", chain));
     }
 }
