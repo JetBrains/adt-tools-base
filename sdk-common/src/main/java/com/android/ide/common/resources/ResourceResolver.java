@@ -600,5 +600,34 @@ public class ResourceResolver extends RenderResources {
 
             return resValue;
         }
+
+        @Override
+        public ResourceValue findItemInStyle(StyleResourceValue style, String itemName,
+                boolean isFrameworkAttr) {
+            ResourceValue value = super.findItemInStyle(style, itemName, isFrameworkAttr);
+            if (value != null) {
+                mLookupChain.add(value);
+            }
+            return value;
+        }
+
+        @Override
+        public ResourceValue findItemInTheme(String attrName, boolean isFrameworkAttr) {
+            ResourceValue value = super.findItemInTheme(attrName, isFrameworkAttr);
+            if (value != null) {
+                mLookupChain.add(value);
+            }
+            return value;
+        }
+
+        @Override
+        public ResourceValue resolveValue(ResourceType type, String name, String value,
+                boolean isFrameworkValue) {
+            ResourceValue resourceValue = super.resolveValue(type, name, value, isFrameworkValue);
+            if (resourceValue != null) {
+                mLookupChain.add(resourceValue);
+            }
+            return resourceValue;
+        }
     }
 }
