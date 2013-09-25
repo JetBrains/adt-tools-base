@@ -214,7 +214,7 @@ public class PatchInfo {
             fixed.add(new Pair<Integer>(lastIndex, pixels.length - 1));
         }
 
-        if (patches.size() == 0) {
+        if (patches.isEmpty()) {
             patches.add(new Pair<Integer>(1, pixels.length - 1));
             startWithPatch = true;
             fixed.clear();
