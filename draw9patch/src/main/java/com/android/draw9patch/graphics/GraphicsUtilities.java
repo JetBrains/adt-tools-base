@@ -16,8 +16,6 @@
 
 package com.android.draw9patch.graphics;
 
-import com.sun.istack.internal.Nullable;
-
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
@@ -30,7 +28,6 @@ import java.net.URL;
 import java.io.IOException;
 
 public class GraphicsUtilities {
-    @Nullable
     public static BufferedImage loadCompatibleImage(URL resource) throws IOException {
         BufferedImage image = ImageIO.read(resource);
         if (image == null) {
