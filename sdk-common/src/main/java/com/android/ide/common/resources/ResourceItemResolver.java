@@ -24,6 +24,7 @@ import com.android.annotations.Nullable;
 import com.android.ide.common.rendering.api.LayoutLog;
 import com.android.ide.common.rendering.api.RenderResources;
 import com.android.ide.common.rendering.api.ResourceValue;
+import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
@@ -143,15 +144,9 @@ public class ResourceItemResolver extends RenderResources {
             if (resource.theme) {
                 // Do theme lookup? We can't do that here; requires full global analysis, so just use
                 // a real resource resolver
-                if (mResourceProvider == null) {
-                    return null;
-                }
-                mResolver = mResourceProvider.getResolver(true);
-                if (mResolver != null) {
-                    if (mLookupChain != null) {
-                        mResolver = mResolver.createRecorder(mLookupChain);
-                    }
-                    return mResolver.findResValue(reference, inFramework);
+                ResourceResolver resolver = getFullResolver();
+                if (resolver != null) {
+                    return resolver.findResValue(reference, inFramework);
                 } else {
                     return null;
                 }
@@ -210,6 +205,94 @@ public class ResourceItemResolver extends RenderResources {
                     new ResourceValue(resType, resName, framework));
         }
         return null;
+    }
+
+    @Override
+    public StyleResourceValue getCurrentTheme() {
+        ResourceResolver resolver = getFullResolver();
+        if (resolver != null) {
+            return resolver.getCurrentTheme();
+        }
+
+        return null;
+    }
+
+    @Override
+    public ResourceValue resolveValue(ResourceType type, String name, String value,
+            boolean isFrameworkValue) {
+        if (value == null) {
+            return null;
+        }
+
+        // get the ResourceValue referenced by this value
+        ResourceValue resValue = findResValue(value, isFrameworkValue);
+
+        // if resValue is null, but value is not null, this means it was not a reference.
+        // we return the name/value wrapper in a ResourceValue. the isFramework flag doesn't
+        // matter.
+        if (resValue == null) {
+            return new ResourceValue(type, name, value, isFrameworkValue);
+        }
+
+        // we resolved a first reference, but we need to make sure this isn't a reference also.
+        return resolveResValue(resValue);
+    }
+
+    // For theme lookup, we need to delegate to a full resource resolver
+
+    @Override
+    public StyleResourceValue getTheme(String name, boolean frameworkTheme) {
+        assert false; // This method shouldn't be called on this resolver
+        return super.getTheme(name, frameworkTheme);
+    }
+
+    @Override
+    public boolean themeIsParentOf(StyleResourceValue parentTheme, StyleResourceValue childTheme) {
+        assert false; // This method shouldn't be called on this resolver
+        return super.themeIsParentOf(parentTheme, childTheme);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public ResourceValue findItemInTheme(String itemName) {
+        ResourceResolver resolver = getFullResolver();
+        return resolver != null ? resolver.findItemInTheme(itemName) : null;
+    }
+
+    @Override
+    public ResourceValue findItemInTheme(String attrName, boolean isFrameworkAttr) {
+        ResourceResolver resolver = getFullResolver();
+        return resolver != null ? resolver.findItemInTheme(attrName, isFrameworkAttr) : null;
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public ResourceValue findItemInStyle(StyleResourceValue style, String attrName) {
+        ResourceResolver resolver = getFullResolver();
+        return resolver != null ? resolver.findItemInStyle(style, attrName) : null;
+    }
+
+    @Override
+    public ResourceValue findItemInStyle(StyleResourceValue style, String attrName,
+            boolean isFrameworkAttr) {
+        ResourceResolver resolver = getFullResolver();
+        return resolver != null ? resolver.findItemInStyle(style, attrName, isFrameworkAttr) : null;
+    }
+
+    private ResourceResolver getFullResolver() {
+        if (mResolver == null) {
+            if (mResourceProvider == null) {
+                return null;
+            }
+            mResolver = mResourceProvider.getResolver(true);
+            if (mResolver != null) {
+                if (mLookupChain != null) {
+                    mResolver = mResolver.createRecorder(mLookupChain);
+                }
+            }
+
+        }
+        return mResolver;
     }
 
     /**
