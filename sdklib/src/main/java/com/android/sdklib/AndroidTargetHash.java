@@ -53,7 +53,6 @@ public abstract class AndroidTargetHash {
         return String.format(AndroidTargetHash.PLATFORM_HASH, version.getApiString());
     }
 
-
     /**
      * Returns the hash string for a given add-on.
      *
@@ -87,6 +86,17 @@ public abstract class AndroidTargetHash {
                     target.getName(),
                     target.getVersion());
         }
+    }
+
+    /**
+     * Given a hash string, indicates whether this is a platform hash string.
+     * If not, it's an addon hash string.
+     *
+     * @param hashString The hash string to test.
+     * @return True if this hash string starts by the platform prefix.
+     */
+    public static boolean isPlatform(@NonNull String hashString) {
+        return hashString.startsWith(PLATFORM_HASH_PREFIX);
     }
 
 }
