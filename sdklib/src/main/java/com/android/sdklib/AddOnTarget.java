@@ -32,7 +32,7 @@ import java.util.Map.Entry;
  * Represents an add-on target in the SDK.
  * An add-on extends a standard {@link PlatformTarget}.
  */
-final class AddOnTarget implements IAndroidTarget {
+public final class AddOnTarget implements IAndroidTarget {
 
     private static final class OptionalLibrary implements IOptionalLibrary {
         private final String mJarName;
@@ -97,7 +97,7 @@ final class AddOnTarget implements IAndroidTarget {
      * @param hasRenderingResources whether the add has custom framework resources.
      * @param basePlatform the platform the add-on is extending.
      */
-    AddOnTarget(
+    public AddOnTarget(
             String location,
             String name,
             String vendor,
@@ -446,7 +446,7 @@ final class AddOnTarget implements IAndroidTarget {
 
     // ---- local methods.
 
-    void setSkins(String[] skins, String defaultSkin) {
+    public void setSkins(String[] skins, String defaultSkin) {
         mDefaultSkin = defaultSkin;
 
         // we mix the add-on and base platform skins
@@ -460,7 +460,7 @@ final class AddOnTarget implements IAndroidTarget {
     /**
      * Sets the USB vendor id in the add-on.
      */
-    void setUsbVendorId(int vendorId) {
+    public void setUsbVendorId(int vendorId) {
         if (vendorId == 0) {
             throw new IllegalArgumentException( "VendorId must be > 0");
         }

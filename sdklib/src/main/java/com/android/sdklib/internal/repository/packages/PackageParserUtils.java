@@ -16,11 +16,17 @@
 
 package com.android.sdklib.internal.repository.packages;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.sdklib.repository.MajorRevision;
+import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 
 import org.w3c.dom.Node;
+
+import java.util.Properties;
 
 /**
  * Misc utilities to help extracting elements and attributes out of an XML document.
@@ -217,6 +223,118 @@ public class PackageParserUtils {
         }
 
         return defaultValue;
+    }
+
+    /**
+     * Utility method that returns a property from a {@link Properties} object.
+     * Returns the default value if props is null or if the property is not defined.
+     *
+     * @param props The {@link Properties} to search into.
+     *   If null, the default value is returned.
+     * @param propKey The name of the property. Must not be null.
+     * @param defaultValue The default value to return if {@code props} is null or if the
+     *   key is not found. Can be null.
+     * @return The string value of the given key in the properties, or null if the key
+     *   isn't found or if {@code props} is null.
+     */
+    @Nullable
+    public static String getProperty(
+            @Nullable Properties props,
+            @NonNull String propKey,
+            @Nullable String defaultValue) {
+        if (props == null) {
+            return defaultValue;
+        }
+        return props.getProperty(propKey, defaultValue);
+    }
+
+    /**
+     * Utility method that returns an integer property from a {@link Properties} object.
+     * Returns the default value if props is null or if the property is not defined or
+     * cannot be parsed to an integer.
+     *
+     * @param props The {@link Properties} to search into.
+     *   If null, the default value is returned.
+     * @param propKey The name of the property. Must not be null.
+     * @param defaultValue The default value to return if {@code props} is null or if the
+     *   key is not found. Can be null.
+     * @return The integer value of the given key in the properties, or the {@code defaultValue}.
+     */
+    public static int getPropertyInt(
+            @Nullable Properties props,
+            @NonNull String propKey,
+            int defaultValue) {
+        String s = props != null ? props.getProperty(propKey, null) : null;
+        if (s != null) {
+            try {
+                return Integer.parseInt(s);
+            } catch (Exception ignore) {}
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Utility method to parse the {@link PkgProps#PKG_REVISION} property as a full
+     * revision (major.minor.micro.preview).
+     *
+     * @param props The properties to parse.
+     * @return A {@link FullRevision} or null if there is no such property or it couldn't be parsed.
+     */
+    @Nullable
+    public static FullRevision getPropertyFullRevision(@Nullable Properties props) {
+        String revStr = getProperty(props, PkgProps.PKG_REVISION, null);
+
+        FullRevision rev = null;
+        if (revStr != null) {
+            try {
+                rev = FullRevision.parseRevision(revStr);
+            } catch (NumberFormatException ignore) {}
+        }
+
+        return rev;
+    }
+
+    /**
+     * Utility method to parse the {@link PkgProps#PKG_REVISION} property as a major
+     * revision (major integer, no minor/micro/preview parts.)
+     *
+     * @param props The properties to parse.
+     * @return A {@link MajorRevision} or null if there is no such property or it couldn't be parsed.
+     */
+    @Nullable
+    public static MajorRevision getPropertyMajorRevision(@Nullable Properties props) {
+        String revStr = getProperty(props, PkgProps.PKG_REVISION, null);
+
+        MajorRevision rev = null;
+        if (revStr != null) {
+            try {
+                rev = MajorRevision.parseRevision(revStr);
+            } catch (NumberFormatException ignore) {}
+        }
+
+        return rev;
+    }
+
+    /**
+     * Utility method to parse the {@link PkgProps#PKG_REVISION} property as a no-preview
+     * revision (major.minor.micro integers but no preview part.)
+     *
+     * @param props The properties to parse.
+     * @return A {@link NoPreviewRevision} or
+     *         null if there is no such property or it couldn't be parsed.
+     */
+    @Nullable
+    public static NoPreviewRevision getPropertyNoPreviewRevision(@Nullable Properties props) {
+        String revStr = getProperty(props, PkgProps.PKG_REVISION, null);
+
+        NoPreviewRevision rev = null;
+        if (revStr != null) {
+            try {
+                rev = NoPreviewRevision.parseRevision(revStr);
+            } catch (NumberFormatException ignore) {}
+        }
+
+        return rev;
     }
 
 }

@@ -30,7 +30,7 @@ import java.util.Map;
 /**
  * Represents a platform target in the SDK.
  */
-final class PlatformTarget implements IAndroidTarget {
+public final class PlatformTarget implements IAndroidTarget {
 
     private static final String PLATFORM_VENDOR = "Android Open Source Project";
 
@@ -63,7 +63,7 @@ final class PlatformTarget implements IAndroidTarget {
      * @param properties the platform properties
      */
     @SuppressWarnings("deprecation")
-    PlatformTarget(
+    public PlatformTarget(
             String sdkOsPath,
             String platformOSPath,
             AndroidVersion apiVersion,
@@ -416,11 +416,11 @@ final class PlatformTarget implements IAndroidTarget {
 
     // ---- platform only methods.
 
-    void setSkins(String[] skins) {
+    public void setSkins(String[] skins) {
         mSkins = skins;
     }
 
-    void setSamplesPath(String osLocation) {
+    public void setSamplesPath(String osLocation) {
         mPaths.put(SAMPLES, osLocation);
     }
 }

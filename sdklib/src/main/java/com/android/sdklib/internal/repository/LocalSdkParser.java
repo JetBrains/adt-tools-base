@@ -18,10 +18,13 @@ package com.android.sdklib.internal.repository;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.io.FileWrapper;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.ISystemImage.LocationType;
+import com.android.sdklib.PlatformTarget;
 import com.android.sdklib.SdkManager;
+import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.packages.AddonPackage;
@@ -35,6 +38,8 @@ import com.android.sdklib.internal.repository.packages.SamplePackage;
 import com.android.sdklib.internal.repository.packages.SourcePackage;
 import com.android.sdklib.internal.repository.packages.SystemImagePackage;
 import com.android.sdklib.internal.repository.packages.ToolPackage;
+import com.android.sdklib.local.LocalAddonPkgInfo;
+import com.android.sdklib.local.LocalSdk;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 
@@ -55,33 +60,33 @@ public class LocalSdkParser {
     private Package[] mPackages;
 
     /** Parse all SDK folders. */
-    public static final int PARSE_ALL            = 0xFFFF;
+    public static final int PARSE_ALL            = LocalSdk.PKG_ALL;
     /** Parse the SDK/tools folder. */
-    public static final int PARSE_TOOLS          = 0x0001;
+    public static final int PARSE_TOOLS          = LocalSdk.PKG_TOOLS;
     /** Parse the SDK/platform-tools folder */
-    public static final int PARSE_PLATFORM_TOOLS = 0x0002;
+    public static final int PARSE_PLATFORM_TOOLS = LocalSdk.PKG_PLATFORM_TOOLS;
     /** Parse the SDK/docs folder. */
-    public static final int PARSE_DOCS           = 0x0004;
+    public static final int PARSE_DOCS           = LocalSdk.PKG_DOCS;
     /**
      * Equivalent to parsing the SDK/platforms folder but does so
      * by using the <em>valid</em> targets loaded by the {@link SdkManager}.
      * Parsing the platforms also parses the SDK/system-images folder.
      */
-    public static final int PARSE_PLATFORMS      = 0x0010;
+    public static final int PARSE_PLATFORMS      = LocalSdk.PKG_PLATFORMS;
     /**
      * Equivalent to parsing the SDK/addons folder but does so
      * by using the <em>valid</em> targets loaded by the {@link SdkManager}.
      */
-    public static final int PARSE_ADDONS         = 0x0020;
+    public static final int PARSE_ADDONS         = LocalSdk.PKG_ADDONS;
     /** Parse the SDK/samples folder.
      * Note: this will not detect samples located in the SDK/extras packages. */
-    public static final int PARSE_SAMPLES        = 0x0100;
+    public static final int PARSE_SAMPLES        = LocalSdk.PKG_SAMPLES;
     /** Parse the SDK/sources folder. */
-    public static final int PARSE_SOURCES        = 0x0200;
+    public static final int PARSE_SOURCES        = LocalSdk.PKG_SOURCES;
     /** Parse the SDK/extras folder. */
-    public static final int PARSE_EXTRAS         = 0x0400;
+    public static final int PARSE_EXTRAS         = LocalSdk.PKG_EXTRAS;
     /** Parse the SDK/build-tools folder. */
-    public static final int PARSE_BUILD_TOOLS    = 0x0800;
+    public static final int PARSE_BUILD_TOOLS    = LocalSdk.PKG_BUILD_TOOLS;
 
     public LocalSdkParser() {
         // pass
@@ -405,7 +410,7 @@ public class LocalSdkParser {
         for (File dir : files) {
             if (dir.isDirectory() && !visited.contains(dir)) {
                 Pair<Map<String, String>, String> infos =
-                    SdkManager.parseAddonProperties(dir, sdkManager.getTargets(), log);
+                    parseAddonProperties(dir, sdkManager.getTargets(), log);
                 Properties sourceProps =
                     parseProperties(new File(dir, SdkConstants.FN_SOURCE_PROP));
 
@@ -424,6 +429,112 @@ public class LocalSdkParser {
             }
         }
     }
+
+    /**
+     * Parses the add-on properties and decodes any error that occurs when
+     * loading an addon.
+     *
+     * @param addonDir the location of the addon directory.
+     * @param targetList The list of Android target that were already loaded
+     *        from the SDK.
+     * @param log the ILogger object receiving warning/error from the parsing.
+     * @return A pair with the property map and an error string. Both can be
+     *         null but not at the same time. If a non-null error is present
+     *         then the property map must be ignored. The error should be
+     *         translatable as it might show up in the SdkManager UI.
+     */
+    @Deprecated // Copied from SdkManager.java, dup of LocalAddonPkgInfo.parseAddonProperties.
+    @NonNull
+    public static Pair<Map<String, String>, String> parseAddonProperties(
+            @NonNull File addonDir, @NonNull IAndroidTarget[] targetList,
+            @NonNull ILogger log) {
+        Map<String, String> propertyMap = null;
+        String error = null;
+
+        FileWrapper addOnManifest = new FileWrapper(addonDir,
+                SdkConstants.FN_MANIFEST_INI);
+
+        do {
+            if (!addOnManifest.isFile()) {
+                error = String.format("File not found: %1$s",
+                        SdkConstants.FN_MANIFEST_INI);
+                break;
+            }
+
+            propertyMap = ProjectProperties.parsePropertyFile(addOnManifest,
+                    log);
+            if (propertyMap == null) {
+                error = String.format("Failed to parse properties from %1$s",
+                        SdkConstants.FN_MANIFEST_INI);
+                break;
+            }
+
+            // look for some specific values in the map.
+            // we require name, vendor, and api
+            String name = propertyMap.get(LocalAddonPkgInfo.ADDON_NAME);
+            if (name == null) {
+                error = String.format("'%1$s' is missing from %2$s.",
+                        LocalAddonPkgInfo.ADDON_NAME,
+                        SdkConstants.FN_MANIFEST_INI);
+                break;
+            }
+
+            String vendor = propertyMap.get(LocalAddonPkgInfo.ADDON_VENDOR);
+            if (vendor == null) {
+                error = String.format("'%1$s' is missing from %2$s.",
+                        LocalAddonPkgInfo.ADDON_VENDOR,
+                        SdkConstants.FN_MANIFEST_INI);
+                break;
+            }
+
+            String api = propertyMap.get(LocalAddonPkgInfo.ADDON_API);
+            PlatformTarget plat = null;
+            if (api == null) {
+                error = String.format("'%1$s' is missing from %2$s.",
+                        LocalAddonPkgInfo.ADDON_API,
+                        SdkConstants.FN_MANIFEST_INI);
+                break;
+            }
+
+            // Look for a platform that has a matching api level or codename.
+            PlatformTarget baseTarget = null;
+            for (IAndroidTarget target : targetList) {
+                if (target.isPlatform() && target.getVersion().equals(api)) {
+                    baseTarget = (PlatformTarget) target;
+                    break;
+                }
+            }
+
+            if (baseTarget == null) {
+                error = String.format(
+                        "Unable to find base platform with API level '%1$s'",
+                        api);
+                break;
+            }
+
+            // get the add-on revision
+            String revision = propertyMap.get(LocalAddonPkgInfo.ADDON_REVISION);
+            if (revision == null) {
+                revision = propertyMap.get(LocalAddonPkgInfo.ADDON_REVISION_OLD);
+            }
+            if (revision != null) {
+                try {
+                    Integer.parseInt(revision);
+                } catch (NumberFormatException e) {
+                    // looks like revision does not parse to a number.
+                    error = String.format(
+                            "%1$s is not a valid number in %2$s.",
+                            LocalAddonPkgInfo.ADDON_REVISION,
+                            SdkConstants.FN_BUILD_PROP);
+                    break;
+                }
+            }
+
+        } while (false);
+
+        return Pair.of(propertyMap, error);
+    }
+
 
     /**
      * The sdk manager only lists valid system image via its addons or platform targets.

@@ -319,7 +319,7 @@ public final class SdkConstants {
     public static final String FD_RES = "res";                          //$NON-NLS-1$
     /** Name of the SDK font folder, i.e. "fonts" */
     public static final String FD_FONTS = "fonts";                      //$NON-NLS-1$
-    /** Name of the android sources directory */
+    /** Name of the android sources directory and the root of the SDK sources package folder. */
     public static final String FD_ANDROID_SOURCES = "sources";          //$NON-NLS-1$
     /** Name of the addon libs folder. */
     public static final String FD_ADDON_LIBS = "libs";                  //$NON-NLS-1$
