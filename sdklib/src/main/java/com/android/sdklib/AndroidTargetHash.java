@@ -35,7 +35,7 @@ public abstract class AndroidTargetHash {
      * String to compute hash for add-on targets.
      * Format is vendor:name:apiVersion
      * */
-    static final String ADD_ON_FORMAT = "%s:%s:%s"; //$NON-NLS-1$
+    public static final String ADD_ON_FORMAT = "%s:%s:%s"; //$NON-NLS-1$
 
     /**
      * String used to get a hash to the platform target.
