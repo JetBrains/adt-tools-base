@@ -16,8 +16,11 @@
 
 package com.android.draw9patch.graphics;
 
+import com.sun.istack.internal.Nullable;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
 import java.awt.image.Raster;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
@@ -27,8 +30,12 @@ import java.net.URL;
 import java.io.IOException;
 
 public class GraphicsUtilities {
+    @Nullable
     public static BufferedImage loadCompatibleImage(URL resource) throws IOException {
         BufferedImage image = ImageIO.read(resource);
+        if (image == null) {
+            return null;
+        }
         return toCompatibleImage(image);
     }
 
@@ -41,7 +48,8 @@ public class GraphicsUtilities {
             return image;
         }
 
-        if (image.getColorModel().equals(getGraphicsConfiguration().getColorModel())) {
+        ColorModel colorModel = image.getColorModel();
+        if (colorModel != null && colorModel.equals(getGraphicsConfiguration().getColorModel())) {
             return image;
         }
 
