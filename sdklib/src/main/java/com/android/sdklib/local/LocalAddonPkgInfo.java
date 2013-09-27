@@ -131,7 +131,8 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
     @Override
     @Nullable
     protected IAndroidTarget createAndroidTarget() {
-        IFileOp fileOp = getLocalSdk().getFileOp();
+        LocalSdk sdk = getLocalSdk();
+        IFileOp fileOp = sdk.getFileOp();
 
         // Parse the addon properties to ensure we can load it.
         Pair<Map<String, String>, String> infos = parseAddonProperties();
@@ -159,8 +160,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             PlatformTarget baseTarget = null;
 
             // Look for a platform that has a matching api level or codename.
-            LocalPkgInfo plat = getLocalSdk().getPkgInfo(LocalSdk.PKG_PLATFORMS,
-                                                         getAndroidVersion());
+            LocalPkgInfo plat = sdk.getPkgInfo(LocalSdk.PKG_PLATFORMS, getAndroidVersion());
             if (plat instanceof LocalPlatformPkgInfo) {
                 baseTarget = (PlatformTarget) ((LocalPlatformPkgInfo) plat).getAndroidTarget();
             }

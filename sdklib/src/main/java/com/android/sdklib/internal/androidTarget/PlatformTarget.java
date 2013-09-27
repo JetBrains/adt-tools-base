@@ -428,4 +428,8 @@ public final class PlatformTarget implements IAndroidTarget {
     public void setSamplesPath(String osLocation) {
         mPaths.put(SAMPLES, osLocation);
     }
+
+    public void setSourcesPath(String osLocation) {
+        mPaths.put(SOURCES, osLocation);
+    }
 }
