@@ -142,7 +142,8 @@ public class LocalPlatformPkgInfo extends LocalAndroidVersionPkgInfo {
     @SuppressWarnings("ConstantConditions")
     @Nullable
     protected IAndroidTarget createAndroidTarget() {
-        IFileOp fileOp = getLocalSdk().getFileOp();
+        LocalSdk sdk = getLocalSdk();
+        IFileOp fileOp = sdk.getFileOp();
         File platformFolder = getLocalDir();
         File buildProp = new File(platformFolder, SdkConstants.FN_BUILD_PROP);
         File sourcePropFile = new File(platformFolder, SdkConstants.FN_SOURCE_PROP);
@@ -271,7 +272,7 @@ public class LocalPlatformPkgInfo extends LocalAndroidVersionPkgInfo {
 
         // create the target.
         PlatformTarget pt = new PlatformTarget(
-                getLocalSdk().getLocation().getPath(),
+                sdk.getLocation().getPath(),
                 platformFolder.getAbsolutePath(),
                 apiVersion,
                 apiName,
@@ -279,16 +280,22 @@ public class LocalPlatformPkgInfo extends LocalAndroidVersionPkgInfo {
                 layoutlibVersion,
                 systemImages,
                 platformProp,
-                getLocalSdk().getLatestBuildTool());
+                sdk.getLatestBuildTool());
 
         // add the skins.
         String[] skins = parseSkinFolder(pt.getPath(IAndroidTarget.SKINS));
         pt.setSkins(skins);
 
-        // add the samples
-        LocalPkgInfo samples = getLocalSdk().getPkgInfo(LocalSdk.PKG_SAMPLES, getAndroidVersion());
+        // add path to the non-legacy samples package if it exists
+        LocalPkgInfo samples = sdk.getPkgInfo(LocalSdk.PKG_SAMPLES, getAndroidVersion());
         if (samples != null) {
             pt.setSamplesPath(samples.getLocalDir().getAbsolutePath());
+        }
+
+        // add path to the non-legacy sources package if it exists
+        LocalPkgInfo sources = sdk.getPkgInfo(LocalSdk.PKG_SOURCES, getAndroidVersion());
+        if (sources != null) {
+            pt.setSourcesPath(sources.getLocalDir().getAbsolutePath());
         }
 
         return pt;
