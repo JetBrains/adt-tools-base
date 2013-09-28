@@ -22,4 +22,6 @@
     <string name="issue39599">"Please take a moment\nto rate ^1"</string>
     <!-- escaped separator 2 -->
     <string name="issue39599_2">"\nto</string>
+    <!-- not translatable -->
+    <string name="translatable" translatable="false">"Andriod</string>
 </resources>

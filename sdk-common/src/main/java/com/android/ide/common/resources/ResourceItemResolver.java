@@ -318,15 +318,17 @@ public class ResourceItemResolver extends RenderResources {
 
     /**
      * Returns a display string for a resource lookup
+     *
      * @param type the resource type
      * @param name the resource name
+     * @param isFramework whether the item is in the framework
+     * @param lookupChain the list of resolved items to display
      * @return the display string
      */
-    /** Returns a display string for a resource lookup */
     public static String getDisplayString(
             @NonNull ResourceType type,
             @NonNull String name,
-            @NonNull boolean isFramework,
+            boolean isFramework,
             @NonNull List<ResourceValue> lookupChain) {
         String url = ResourceUrl.create(type, name, isFramework, false).toString();
         return getDisplayString(url, lookupChain);
@@ -335,6 +337,7 @@ public class ResourceItemResolver extends RenderResources {
     /**
      * Returns a display string for a resource lookup
      * @param url the resource url, such as {@code @string/foo}
+     * @param lookupChain the list of resolved items to display
      * @return the display string
      */
     @NonNull
