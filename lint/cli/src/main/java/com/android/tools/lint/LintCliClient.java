@@ -176,7 +176,7 @@ public class LintCliClient extends LintClient {
             @Nullable Location location,
             @NonNull String message,
             @Nullable Object data) {
-        assert context.isEnabled(issue);
+        assert context.isEnabled(issue) || issue == LINT_ERROR;
 
         if (severity == Severity.IGNORE) {
             return;
