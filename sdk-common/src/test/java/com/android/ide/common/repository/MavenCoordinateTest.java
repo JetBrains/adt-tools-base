@@ -79,11 +79,6 @@ public class MavenCoordinateTest extends BaseTestCase {
     a = new MavenCoordinate("a.b.c", "package", 5, 4, 2);
     b = new MavenCoordinate("a.b.c", "feature", 5, 4, 2);
 
-    try {
-      a.compareTo(b); // Should throw exception
-      fail("Expected assertion failure.");
-    } catch (AssertionError e) {
-
-    }
+    assertTrue( (a.compareTo(b) < 0) == ("package".compareTo("feature") < 0));
   }
 }
