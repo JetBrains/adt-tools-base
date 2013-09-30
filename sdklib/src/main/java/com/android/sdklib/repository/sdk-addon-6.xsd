@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- * Copyright (C) 2011 The Android Open Source Project
+ * Copyright (C) 2013 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@
               a "full revision" element with <major>, <minor>, <micro> and <preview> sub-elements.
             - <min-tools-rev> for <extra> becomes a full revision element.
 
-         - v5 is used by the SDK Manager in Tools r22.1:
+         - v6 is used by the SDK Manager in Tools r22.3:
             - <extra> revision is now a "full revision" element with <major>, <minor>, <micro>.
               It does not support the <revision><preview> sub-element though.
     -->
