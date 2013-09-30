@@ -24,7 +24,6 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Node;
 
 import java.io.File;
-import java.io.IOException;
 
 /**
  * Represents a set of Assets.
@@ -86,11 +85,12 @@ public class AssetSet extends DataSet<AssetItem, AssetFile> {
 
     @Override
     protected void readSourceFolder(File sourceFolder, ILogger logger)
-            throws DuplicateDataException, IOException {
+            throws MergingException {
         readFiles(sourceFolder, sourceFolder, logger);
     }
 
-    private void readFiles(File sourceFolder, File folder, ILogger logger) throws IOException {
+    private void readFiles(File sourceFolder, File folder, ILogger logger)
+            throws MergingException {
         File[] files = folder.listFiles();
         if (files != null && files.length > 0) {
             for (File file : files) {

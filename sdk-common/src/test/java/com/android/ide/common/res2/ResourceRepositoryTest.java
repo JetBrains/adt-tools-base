@@ -527,12 +527,9 @@ public class ResourceRepositoryTest extends BaseTestCase {
 
     /**
      * Returns a merger with the baseSet and baseMerge content.
-     * @return
-     * @throws DuplicateDataException
-     * @throws IOException
      */
     private static ResourceMerger getBaseResourceMerger()
-            throws DuplicateDataException, IOException {
+            throws MergingException, IOException {
         File root = TestUtils.getRoot("resources", "baseMerge");
 
         ResourceSet res = ResourceSetTest.getBaseResourceSet();
@@ -555,14 +552,9 @@ public class ResourceRepositoryTest extends BaseTestCase {
     /**
      * Returns a merger from incMergeData initialized from the files, not from the merger
      * state blog.
-     *
-     * @param rootName
-     * @return
-     * @throws DuplicateDataException
-     * @throws IOException
      */
     private static ResourceMerger getIncResourceMerger(String rootName, String... sets)
-            throws DuplicateDataException, IOException {
+            throws MergingException, IOException {
 
         File root = getIncMergeRoot(rootName);
         RecordingLogger logger = new RecordingLogger();
@@ -582,7 +574,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
     }
 
     private ResourceRepository getResourceRepository()
-            throws DuplicateDataException, IOException, MergeConsumer.ConsumerException {
+            throws MergingException, IOException {
         ResourceMerger merger = getBaseResourceMerger();
 
         ResourceRepository repo = new ResourceRepository(false);

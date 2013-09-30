@@ -59,7 +59,7 @@ public class AssetSetTest extends BaseTestCase {
         checkLogger(logger);
     }
 
-    static AssetSet getBaseAssetSet() throws DuplicateDataException, IOException {
+    static AssetSet getBaseAssetSet() throws MergingException, IOException {
         if (sBaseResourceSet == null) {
             File root = TestUtils.getRoot("assets", "baseSet");
 

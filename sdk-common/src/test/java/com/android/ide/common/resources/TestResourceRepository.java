@@ -5,8 +5,7 @@ import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 
 import com.android.annotations.NonNull;
-import com.android.ide.common.res2.DuplicateDataException;
-import com.android.ide.common.res2.MergeConsumer;
+import com.android.ide.common.res2.MergingException;
 import com.android.ide.common.res2.RecordingLogger;
 import com.android.ide.common.res2.ResourceMerger;
 import com.android.ide.common.res2.ResourceSet;
@@ -102,7 +101,7 @@ public class TestResourceRepository extends ResourceRepository {
     @NonNull
     public static com.android.ide.common.res2.ResourceRepository createRes2(
             boolean isFramework, Object[] data)
-            throws IOException, DuplicateDataException, MergeConsumer.ConsumerException {
+            throws IOException, MergingException {
         File dir = Files.createTempDir();
         File res = new File(dir, FD_RES);
         res.mkdirs();

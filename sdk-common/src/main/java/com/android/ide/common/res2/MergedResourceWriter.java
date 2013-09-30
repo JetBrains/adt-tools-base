@@ -126,6 +126,26 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         File file = resourceFile.getFile();
 
                         String filename = file.getName();
+
+                        // Validate the filename here. Waiting for aapt isn't good
+                        // because the error messages don't point back to the original
+                        // file (if it's not an XML file) and besides, aapt prints
+                        // the wrong path (it hard-codes "res" into the path for example,
+                        // even if the file is not in a folder named res.
+                        for (int i = 0, n = filename.length(); i < n; i++) {
+                            // This is a direct port of the aapt file check in aapt's
+                            // Resource.cpp#makeFileResources validation
+                            char c = filename.charAt(i);
+                            if (!((c >= 'a' && c <= 'z')
+                                    || (c >= '0' && c <= '9')
+                                    || c == '_' || c == '.')) {
+                                String message =
+                                        "Invalid file name: must contain only lowercase "
+                                        + "letters and digits ([a-z0-9_.])";
+                                throw new MergingException(message).setFile(file);
+                            }
+                        }
+
                         String folderName = item.getType().getName();
                         String qualifiers = resourceFile.getQualifiers();
                         if (!qualifiers.isEmpty()) {
@@ -133,18 +153,26 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         }
 
                         File typeFolder = new File(getRootFolder(), folderName);
-                        createDir(typeFolder);
+                        try {
+                            createDir(typeFolder);
+                        } catch (IOException ioe) {
+                            throw new MergingException(ioe).setFile(typeFolder);
+                        }
 
                         File outFile = new File(typeFolder, filename);
 
-                        if (mAaptRunner != null && filename.endsWith(DOT_PNG)) {
-                            // run aapt in single crunch mode on the original file to write the
-                            // destination file.
-                            mAaptRunner.crunchPng(file, outFile);
-                        } else if (filename.endsWith(DOT_XML)) {
-                            copyXmlWithComment(file, outFile, createPathComment(file));
-                        } else {
-                            Files.copy(file, outFile);
+                        try {
+                            if (mAaptRunner != null && filename.endsWith(DOT_PNG)) {
+                                // run aapt in single crunch mode on the original file to write the
+                                // destination file.
+                                mAaptRunner.crunchPng(file, outFile);
+                            } else if (filename.endsWith(DOT_XML)) {
+                                copyXmlWithComment(file, outFile, createPathComment(file));
+                            } else {
+                                Files.copy(file, outFile);
+                            }
+                        } catch (IOException ioe) {
+                            throw new MergingException(ioe).setFile(file);
                         }
                         return null;
                     }
@@ -236,10 +264,11 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         ResourceFolderType.VALUES.getName() :
                         ResourceFolderType.VALUES.getName() + RES_QUALIFIER_SEP + key;
 
+                File valuesFolder = new File(getRootFolder(), folderName);
+                File outFile = new File(valuesFolder, FN_VALUES_XML);
+                ResourceFile currentFile = null;
                 try {
-                    File valuesFolder = new File(getRootFolder(), folderName);
                     createDir(valuesFolder);
-                    File outFile = new File(valuesFolder, FN_VALUES_XML);
 
                     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                     factory.setNamespaceAware(true);
@@ -255,7 +284,6 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
                     Collections.sort(items);
 
-                    ResourceFile currentFile = null;
                     for (ResourceItem item : items) {
                         ResourceFile source = item.getSource();
                         if (source != currentFile) {
@@ -274,6 +302,8 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         rootNode.appendChild(adoptedNode);
                     }
 
+                    currentFile = null;
+
                     String content;
                     try {
                         content = XmlPrettyPrinter.prettyPrint(document, true);
@@ -283,7 +313,9 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
                     Files.write(content, outFile, Charsets.UTF_8);
                 } catch (Throwable t) {
-                    throw new ConsumerException(t);
+                    ConsumerException exception = new ConsumerException(t);
+                    exception.setFile(currentFile != null ? currentFile.getFile() : outFile);
+                    throw exception;
                 }
             }
         }
