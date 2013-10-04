@@ -576,7 +576,7 @@ public class LintCliClient extends LintClient {
         return mFlags.getSuppressedIds().contains(issue.getId());
     }
 
-    Configuration createConfigurationFromFile(File file) {
+    public Configuration createConfigurationFromFile(File file) {
         return new CliConfiguration(file);
     }
 

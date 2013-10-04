@@ -164,7 +164,9 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
         if (resourceFile == null) {
             throw new RuntimeException(String.format(
-                    "In DataSet '%s', no data file for changedFile '%s'",
+                    "In DataSet '%s', no data file for changedFile '%s'. "
+                            + "This is an internal error in the incremental builds code; "
+                            + "to work around it, try doing a full clean build.",
                     getConfigName(), changedFile.getAbsolutePath()));
         }
 
