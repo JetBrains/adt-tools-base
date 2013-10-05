@@ -19,8 +19,10 @@ package com.android.ide.common.res2;
 import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.RES_QUALIFIER_SEP;
+import static com.android.SdkConstants.TAG_EAT_COMMENT;
 import static com.android.SdkConstants.TAG_RESOURCES;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -257,11 +259,16 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     for (ResourceItem item : items) {
                         ResourceFile source = item.getSource();
                         if (source != currentFile) {
-                          currentFile = source;
-                          rootNode.appendChild(document.createTextNode("\n"));
-                          File file = source.getFile();
-                          rootNode.appendChild(document.createComment(createPathComment(file)));
-                          rootNode.appendChild(document.createTextNode("\n"));
+                            currentFile = source;
+                            rootNode.appendChild(document.createTextNode("\n"));
+                            File file = source.getFile();
+                            rootNode.appendChild(document.createComment(createPathComment(file)));
+                            rootNode.appendChild(document.createTextNode("\n"));
+                            // Add an <eat-comment> element to ensure that this comment won't
+                            // get merged into a potential comment from the next child (or
+                            // even added as the sole comment in the R class)
+                            rootNode.appendChild(document.createElement(TAG_EAT_COMMENT));
+                            rootNode.appendChild(document.createTextNode("\n"));
                         }
                         Node adoptedNode = NodeUtils.adoptNode(document, item.getValue());
                         rootNode.appendChild(adoptedNode);

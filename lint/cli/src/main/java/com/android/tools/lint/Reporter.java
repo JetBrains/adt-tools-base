@@ -159,7 +159,7 @@ public abstract class Reporter {
     }
 
     /** Set mapping of path prefixes to corresponding URLs in the HTML report */
-    void setUrlMap(Map<String, String> urlMap) {
+    public void setUrlMap(Map<String, String> urlMap) {
         mUrlMap = urlMap;
     }
 
