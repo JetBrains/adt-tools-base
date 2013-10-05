@@ -981,6 +981,9 @@ public class ResourceMergerTest extends BaseTestCase {
             if (node.getNodeType() != Node.ELEMENT_NODE) {
                 continue;
             }
+            if (node.getNodeName().equals(SdkConstants.TAG_EAT_COMMENT)) {
+                continue;
+            }
 
             ResourceType type = ValueResourceParser2.getType(node);
             if (type != ResourceType.STRING) {
