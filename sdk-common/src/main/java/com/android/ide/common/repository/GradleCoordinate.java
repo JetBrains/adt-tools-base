@@ -18,14 +18,14 @@ package com.android.ide.common.repository;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
-import java.util.Locale;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * This class represents a maven coordinate and allows for comparison at any level.
  */
-public class MavenCoordinate implements Comparable<MavenCoordinate> {
+public class GradleCoordinate implements Comparable<GradleCoordinate> {
 
   /**
    * Maven coordinates take the following form: groupId:artifactId:packaging:classifier:version
@@ -36,43 +36,53 @@ public class MavenCoordinate implements Comparable<MavenCoordinate> {
    *   classifier is optional and provides filtering context
    *   version uniquely identifies a version.
    *
-   * We only care about coordinates of the following form: groupId:artifactId:MajorRevision.MinorRevision.(MicroRevision|+)
+   * We only care about coordinates of the following form: groupId:artifactId:revision
+   * where revision is a series of '.' separated numbers optionally terminated by a '+' character.
    */
 
-  public static final int PLUS_REV           = Integer.MAX_VALUE;
+  public static final int PLUS_REV = -1;
 
   private final String myGroupId;
   private final String myArtifactId;
 
-  private final int myMajorRevision;
-  private final int myMinorRevision;
-  private final int myMicroRevision;
+  private final List<Integer> myRevisions = new ArrayList<Integer>(3);
+  private final boolean myIsAnyRevision;
 
-  private static final Pattern MAVEN_PATTERN = Pattern.compile("([\\w\\d\\.-]+):([\\w\\d\\.-]+):(\\d+)\\.(\\d+)\\.(\\d+|\\+)");
+  private static final Pattern MAVEN_PATTERN = Pattern.compile("([\\w\\d\\.-]+):([\\w\\d\\.-]+):([\\d+\\.\\+]+)");
+  private static final Pattern REVISION_PATTERN = Pattern.compile("(\\d+|\\+)");
 
   /**
    * Constructor
    * @param groupId
    * @param artifactId
-   * @param majorRevision
-   * @param minorRevision
-   * @param microRevision
+   * @param revisions
    */
-  public MavenCoordinate(String groupId, String artifactId, int majorRevision, int minorRevision, int microRevision) {
-    myGroupId = groupId;
-    myArtifactId = artifactId;
-    myMajorRevision = majorRevision;
-    myMinorRevision = minorRevision;
-    myMicroRevision = microRevision;
+  public GradleCoordinate(@NonNull String groupId, @NonNull String artifactId, @NonNull Integer... revisions) {
+    this(groupId, artifactId, Arrays.asList(revisions));
   }
 
   /**
-   * Create a MavenCoordinate from a string of the form groupId:artifactId:MajorRevision.MinorRevision.(MicroRevision|+)
+   * Constructor
+   * @param groupId
+   * @param artifactId
+   * @param revisions
+   */
+  public GradleCoordinate(@NonNull String groupId, @NonNull String artifactId, @NonNull List<Integer> revisions) {
+    myGroupId = groupId;
+    myArtifactId = artifactId;
+    myRevisions.addAll(revisions);
+
+    // If the major revision is "+" then we'll accept any revision
+    myIsAnyRevision = (!myRevisions.isEmpty() && myRevisions.get(0) == PLUS_REV);
+  }
+
+  /**
+   * Create a GradleCoordinate from a string of the form groupId:artifactId:MajorRevision.MinorRevision.(MicroRevision|+)
    * @param coordinateString the string to parse
    * @return a coordinate object or null if the given string was malformed.
    */
   @Nullable
-  public static MavenCoordinate parseCoordinateString(@NonNull String coordinateString) {
+  public static GradleCoordinate parseCoordinateString(@NonNull String coordinateString) {
     if (coordinateString == null) {
       return null;
     }
@@ -84,27 +94,27 @@ public class MavenCoordinate implements Comparable<MavenCoordinate> {
 
     String groupId = matcher.group(1);
     String artifactId = matcher.group(2);
+    String revision = matcher.group(3);
 
-    try {
-      int majorRevision = Integer.parseInt(matcher.group(3));
-      int minorRevision = Integer.parseInt(matcher.group(4));
-      String microRevisionString = matcher.group(5);
-      int microRevision;
-      if (microRevisionString.equals("+")) {
-        microRevision = PLUS_REV;
-      } else {
-        microRevision = Integer.parseInt(microRevisionString);
+    matcher = REVISION_PATTERN.matcher(revision);
+
+    List<Integer> revisions = new ArrayList<Integer>(matcher.groupCount());
+
+    while (matcher.find()) {
+      String group = matcher.group();
+      revisions.add(group.equals("+") ? PLUS_REV : Integer.parseInt(group));
+      // A plus revision terminates the revision string
+      if (group.equals("+")) {
+        break;
       }
-      return new MavenCoordinate(groupId, artifactId, majorRevision, minorRevision, microRevision);
-    } catch (Exception e) {
-      return null;
     }
+
+    return new GradleCoordinate(groupId, artifactId, revisions);
   }
 
   @Override
   public String toString() {
-    String micro = (myMicroRevision == PLUS_REV) ? "+" : Integer.toString(myMicroRevision);
-    return String.format(Locale.US, "%s:%s:%d.%d.%s", myGroupId, myArtifactId, myMajorRevision, myMinorRevision, micro);
+    return String.format(Locale.US, "%s:%s:%s", myGroupId, myArtifactId, getFullRevision());
   }
 
   @Nullable
@@ -126,21 +136,20 @@ public class MavenCoordinate implements Comparable<MavenCoordinate> {
     return String.format("%s:%s", myGroupId, myArtifactId);
   }
 
-  public int getMajorRevision() {
-    return myMajorRevision;
-  }
-
-  public int getMinorRevision() {
-    return myMinorRevision;
-  }
-
-  public int getMicroRevision() {
-    return myMicroRevision;
+  public boolean acceptsGreaterRevisions() {
+    return myRevisions.get(myRevisions.size() - 1) == PLUS_REV;
   }
 
   public String getFullRevision() {
-    String micro = (myMicroRevision == PLUS_REV) ? "+" : Integer.toString(myMicroRevision);
-    return String.format(Locale.US, "%d.%d.%s", myMajorRevision, myMinorRevision, micro);
+    StringBuilder revision = new StringBuilder();
+    for (int i : myRevisions) {
+      if (revision.length() > 0) {
+        revision.append('.');
+      }
+      revision.append((i == PLUS_REV) ? "+" : i);
+    }
+
+    return revision.toString();
   }
 
   /**
@@ -148,7 +157,7 @@ public class MavenCoordinate implements Comparable<MavenCoordinate> {
    * @param o the coordinate to compare with
    * @return true iff the other group and artifact match the group and artifact of this coordinate.
    */
-  public boolean isSameArtifact(@NonNull MavenCoordinate o) {
+  public boolean isSameArtifact(@NonNull GradleCoordinate o) {
     return o.myGroupId.equals(myGroupId) && o.myArtifactId.equals(myArtifactId);
   }
 
@@ -157,11 +166,9 @@ public class MavenCoordinate implements Comparable<MavenCoordinate> {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    MavenCoordinate that = (MavenCoordinate)o;
+    GradleCoordinate that = (GradleCoordinate)o;
 
-    if (myMajorRevision != that.myMajorRevision) return false;
-    if (myMicroRevision != that.myMicroRevision) return false;
-    if (myMinorRevision != that.myMinorRevision) return false;
+    if (!myRevisions.equals(that.myRevisions)) return false;
     if (!myArtifactId.equals(that.myArtifactId)) return false;
     if (!myGroupId.equals(that.myGroupId)) return false;
 
@@ -172,25 +179,31 @@ public class MavenCoordinate implements Comparable<MavenCoordinate> {
   public int hashCode() {
     int result = myGroupId.hashCode();
     result = 31 * result + myArtifactId.hashCode();
-    result = 31 * result + myMajorRevision;
-    result = 31 * result + myMinorRevision;
-    result = 31 * result + myMicroRevision;
+    for (Integer i : myRevisions) {
+      result = 31 * result + i;
+    }
     return result;
   }
 
   @Override
-  public int compareTo(@NonNull MavenCoordinate that) {
+  public int compareTo(@NonNull GradleCoordinate that) {
     // Make sure we're comparing apples to apples. If not, compare artifactIds
     if (!this.isSameArtifact(that)) {
       return this.myArtifactId.compareTo(that.myArtifactId);
     }
 
-    if (this.myMajorRevision != that.myMajorRevision) {
-      return this.myMajorRevision - that.myMajorRevision;
-    } else if (this.myMinorRevision != that.myMinorRevision) {
-      return this.myMinorRevision - that.myMinorRevision;
-    } else if (this.myMicroRevision != that.myMicroRevision) {
-      return this.myMicroRevision - that.myMicroRevision;
+    // Specific version should beat "any version"
+    if (myIsAnyRevision) {
+      return -1;
+    } else if (that.myIsAnyRevision) {
+      return 1;
+    }
+
+    for (int i = 0; i < myRevisions.size(); ++i) {
+      int delta = myRevisions.get(i) - that.myRevisions.get(i);
+      if (delta != 0) {
+        return delta;
+      }
     }
     return 0;
   }
