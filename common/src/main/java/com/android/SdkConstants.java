@@ -957,6 +957,7 @@ public final class SdkConstants {
     public static final String DOT_JAVA = ".java";                     //$NON-NLS-1$
     public static final String DOT_CLASS = ".class";                   //$NON-NLS-1$
     public static final String DOT_JAR = ".jar";                       //$NON-NLS-1$
+    public static final String DOT_GRADLE = ".gradle";                 //$NON-NLS-1$
 
 
     /** Extension of the Application package Files, i.e. "apk". */
@@ -967,6 +968,8 @@ public final class SdkConstants {
     public static final String EXT_CLASS = "class"; //$NON-NLS-1$
     /** Extension of xml files, i.e. "xml" */
     public static final String EXT_XML = "xml"; //$NON-NLS-1$
+    /** Extension of gradle files, i.e. "gradle" */
+    public static final String EXT_GRADLE = "gradle"; //$NON-NLS-1$
     /** Extension of jar files, i.e. "jar" */
     public static final String EXT_JAR = "jar"; //$NON-NLS-1$
     /** Extension of aidl files, i.e. "aidl" */
