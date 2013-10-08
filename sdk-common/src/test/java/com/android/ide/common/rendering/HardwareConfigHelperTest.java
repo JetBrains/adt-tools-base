@@ -50,7 +50,7 @@ public class HardwareConfigHelperTest extends TestCase {
         assertTrue(isNexus(n7b));
         assertTrue(nexusRank(n7b) > nexusRank(n7));
 
-        assertEquals("Nexus 7 (2012) (7.3\", 800 × 1280: tvdpi)", getNexusLabel(n7));
+        assertEquals("Nexus 7 (2012) (7.0\", 800 × 1280: tvdpi)", getNexusLabel(n7));
         assertEquals("Nexus 7 (7.0\", 1200 × 1920: xhdpi)", getNexusLabel(n7b));
         assertFalse(isGeneric(n7));
         assertFalse(isGeneric(n7));

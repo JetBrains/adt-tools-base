@@ -330,7 +330,7 @@
         <d:hardware>
             <d:screen>
                 <d:screen-size>large</d:screen-size>
-                <d:diagonal-length>7.27</d:diagonal-length>
+                <d:diagonal-length>7.0</d:diagonal-length>
                 <d:pixel-density>tvdpi</d:pixel-density>
                 <d:screen-ratio>notlong</d:screen-ratio>
                 <d:dimensions>
