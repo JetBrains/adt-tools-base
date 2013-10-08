@@ -20,7 +20,6 @@ import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_NAME;
-import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
 import static com.android.SdkConstants.TAG_ACTIVITY;
@@ -30,10 +29,10 @@ import static com.android.SdkConstants.TAG_PERMISSION;
 import static com.android.SdkConstants.TAG_PROVIDER;
 import static com.android.SdkConstants.TAG_RECEIVER;
 import static com.android.SdkConstants.TAG_SERVICE;
+import static com.android.SdkConstants.TAG_USES_FEATURE;
 import static com.android.SdkConstants.TAG_USES_LIBRARY;
 import static com.android.SdkConstants.TAG_USES_PERMISSION;
 import static com.android.SdkConstants.TAG_USES_SDK;
-import static com.android.SdkConstants.TAG_USES_FEATURE;
 import static com.android.xml.AndroidManifest.NODE_ACTION;
 import static com.android.xml.AndroidManifest.NODE_DATA;
 import static com.android.xml.AndroidManifest.NODE_METADATA;
@@ -342,9 +341,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     /** Permission basenames */
     private Map<String, String> mPermissionNames;
 
-    /** Package declared in the manifest */
-    private String mPackage;
-
     @NonNull
     @Override
     public Speed getSpeed() {
@@ -459,10 +455,11 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 if (nameNode != null) {
                     String name = nameNode.getValue();
                     if (!name.isEmpty()) {
+                        String pkg = context.getMainProject().getPackage();
                         if (name.charAt(0) == '.') {
-                            name = getPackage(element) + name;
+                            name = pkg + name;
                         } else if (name.indexOf('.') == -1) {
-                            name = getPackage(element) + '.' + name;
+                            name = pkg + '.' + name;
                         }
                         if (mActivities.contains(name)) {
                             String message = String.format(
@@ -516,7 +513,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             }
 
             if (!element.hasAttributeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION)) {
-                if (context.isEnabled(USES_SDK)) {
+                if (context.isEnabled(USES_SDK) && !context.getMainProject().isGradleProject()) {
                     context.report(USES_SDK, element, context.getLocation(element),
                         "<uses-sdk> tag should specify a minimum API level with " +
                         "android:minSdkVersion=\"?\"", null);
@@ -535,7 +532,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 // Warn if not setting target SDK -- but only if the min SDK is somewhat
                 // old so there's some compatibility stuff kicking in (such as the menu
                 // button etc)
-                if (context.isEnabled(USES_SDK)) {
+                if (context.isEnabled(USES_SDK) && !context.getMainProject().isGradleProject()) {
                     context.report(USES_SDK, element, context.getLocation(element),
                         "<uses-sdk> tag should specify a target API level (the " +
                         "highest verified version; when running on later versions, " +
@@ -611,6 +608,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             if (!element.hasAttributeNS(ANDROID_URI, SdkConstants.ATTR_ALLOW_BACKUP)
                     && context.isEnabled(ALLOW_BACKUP)
                     && context.getMainProject().getMinSdk() >= 4) {
+                // TODO: For gradle, just needs to be set SOMEWHERE
                 context.report(ALLOW_BACKUP, element, context.getLocation(element),
                             "Should explicitly set android:allowBackup to true or " +
                             "false (it's true by default, and that can have some security " +
@@ -691,14 +689,5 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                         + "android.app.action.DEVICE_ADMIN_ENABLED",
                 null);
         }
-
-    }
-
-    private String getPackage(Element element) {
-        if (mPackage == null) {
-            mPackage = element.getOwnerDocument().getDocumentElement().getAttribute(ATTR_PACKAGE);
-        }
-
-        return mPackage;
     }
 }

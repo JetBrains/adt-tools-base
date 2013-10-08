@@ -21,7 +21,6 @@ import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_CLASS;
 import static com.android.SdkConstants.ATTR_FRAGMENT;
 import static com.android.SdkConstants.ATTR_NAME;
-import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
 import static com.android.SdkConstants.TAG_ACTIVITY;
 import static com.android.SdkConstants.TAG_APPLICATION;
@@ -212,14 +211,13 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                     || TAG_SERVICE.equals(tag)
                     || TAG_RECEIVER.equals(tag)
                     || TAG_PROVIDER.equals(tag)) {
-                Element root = element.getOwnerDocument().getDocumentElement();
-                pkg = root.getAttribute(ATTR_PACKAGE);
                 Attr attr = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME);
                 if (attr == null) {
                     return;
                 }
                 className = attr.getValue();
                 classNameNode = attr;
+                pkg = context.getMainProject().getPackage();
             } else {
                 return;
             }
