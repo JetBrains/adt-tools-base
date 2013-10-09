@@ -17,6 +17,7 @@
 package com.android.assetstudiolib;
 
 import com.android.resources.Density;
+import com.android.utils.SdkUtils;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
 
@@ -164,7 +165,8 @@ public abstract class GraphicGenerator {
                 continue;
             }
             if (density == Density.LOW || density == Density.TV ||
-                    (density == Density.XXHIGH && !(this instanceof LauncherIconGenerator))) {
+                density == Density.XXXHIGH ||
+                (density == Density.XXHIGH && !(this instanceof LauncherIconGenerator))) {
                 // TODO don't manually check and instead gracefully handle missing stencils.
                 // Not yet supported -- missing stencil image
                 continue;
@@ -267,12 +269,7 @@ public abstract class GraphicGenerator {
             ProtectionDomain protectionDomain = GraphicGenerator.class.getProtectionDomain();
             URL url = protectionDomain.getCodeSource().getLocation();
             if (url != null) {
-                File file;
-                try {
-                    file = new File(url.toURI());
-                } catch (URISyntaxException e) {
-                    file = new File(url.getPath());
-                }
+                File file = SdkUtils.urlToFile(url);
                 zipFile = new JarFile(file);
             } else {
                 Enumeration<URL> en =

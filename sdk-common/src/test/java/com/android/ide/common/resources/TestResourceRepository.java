@@ -5,6 +5,11 @@ import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 
 import com.android.annotations.NonNull;
+import com.android.ide.common.res2.DuplicateDataException;
+import com.android.ide.common.res2.MergeConsumer;
+import com.android.ide.common.res2.RecordingLogger;
+import com.android.ide.common.res2.ResourceMerger;
+import com.android.ide.common.res2.ResourceSet;
 import com.android.io.FolderWrapper;
 import com.android.io.IAbstractFolder;
 import com.google.common.base.Charsets;
@@ -84,6 +89,58 @@ class TestResourceRepository extends ResourceRepository {
 
         IAbstractFolder resFolder = new FolderWrapper(dir, FD_RES);
         return new TestResourceRepository(resFolder, isFramework, dir);
+    }
+
+    /**
+     * Creates a res2 resource repository for a resource folder whose contents is identified
+     * by the pairs of relative paths and file contents
+     *
+     * @see #create(boolean, Object[])
+     */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @NonNull
+    static com.android.ide.common.res2.ResourceRepository createRes2(
+            boolean isFramework, Object[] data)
+            throws IOException, DuplicateDataException, MergeConsumer.ConsumerException {
+        File dir = Files.createTempDir();
+        File res = new File(dir, FD_RES);
+        res.mkdirs();
+
+        assertTrue("Expected even number of items (path,contents)", data.length % 2 == 0);
+        for (int i = 0; i < data.length; i += 2) {
+            Object relativePathObject = data[i];
+            assertTrue(relativePathObject instanceof String);
+            String relativePath = (String) relativePathObject;
+            relativePath = relativePath.replace('/', File.separatorChar);
+            File file = new File(res, relativePath);
+            File parent = file.getParentFile();
+            parent.mkdirs();
+
+            Object fileContents = data[i + 1];
+            if (fileContents instanceof String) {
+                String text = (String) fileContents;
+                Files.write(text, file, Charsets.UTF_8);
+            } else if (fileContents instanceof byte[]) {
+                byte[] bytes = (byte[]) fileContents;
+                Files.write(bytes, file);
+            } else {
+                fail("File contents must be Strings or byte[]'s");
+            }
+        }
+
+        File resFolder = new File(dir, FD_RES);
+
+        ResourceMerger merger = new ResourceMerger();
+        ResourceSet resourceSet = new ResourceSet("main");
+        resourceSet.addSource(resFolder);
+        resourceSet.loadFromFiles(new RecordingLogger());
+        merger.addDataSet(resourceSet);
+
+        com.android.ide.common.res2.ResourceRepository repository;
+        repository = new com.android.ide.common.res2.ResourceRepository(isFramework);
+        merger.mergeData(repository.createMergeConsumer(), true /*doCleanUp*/);
+
+        return repository;
     }
 
     private static class TestResourceItem extends ResourceItem {

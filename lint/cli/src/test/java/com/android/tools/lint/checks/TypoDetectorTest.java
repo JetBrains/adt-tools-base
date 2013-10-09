@@ -55,6 +55,18 @@ public class TypoDetectorTest extends AbstractCheckTest {
             lintProject("res/values/typos.xml=>res/values/strings.xml"));
     }
 
+    public void testRepeatedWords() throws Exception {
+        assertEquals(
+            "res/values/strings.xml:5: Warning: Repeated word \"to\" in message: possible typo [Typos]\n" +
+            "     extra location provider commands.  This may allow the app to to interfere\n" +
+            "                                                               ^\n" +
+            "res/values/strings.xml:7: Warning: Repeated word \"zü\" in message: possible typo [Typos]\n" +
+            "    <string name=\"other\">\"ü test\\n zü zü\"</string>\n" +
+            "                                   ^\n" +
+            "0 errors, 2 warnings\n",
+            lintProject("res/values/repeated_words.xml=>res/values/strings.xml"));
+    }
+
     public void testEnLanguage() throws Exception {
         assertEquals(
             "res/values-en-rUS/strings-en.xml:6: Warning: \"Andriod\" is a common misspelling; did you mean \"Android\" ? [Typos]\n" +

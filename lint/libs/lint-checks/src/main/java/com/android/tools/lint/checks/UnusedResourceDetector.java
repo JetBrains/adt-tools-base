@@ -32,6 +32,7 @@ import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.R_ID_PREFIX;
 import static com.android.SdkConstants.R_PREFIX;
 import static com.android.SdkConstants.TAG_ARRAY;
+import static com.android.SdkConstants.TAG_INTEGER_ARRAY;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_PLURALS;
 import static com.android.SdkConstants.TAG_RESOURCES;
@@ -372,6 +373,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                 TAG_RESOURCES,
                 TAG_ARRAY,
                 TAG_STRING_ARRAY,
+                TAG_INTEGER_ARRAY,
                 TAG_PLURALS
         );
     }
@@ -428,6 +430,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
             assert TAG_STYLE.equals(element.getTagName())
                 || TAG_ARRAY.equals(element.getTagName())
                 || TAG_PLURALS.equals(element.getTagName())
+                || TAG_INTEGER_ARRAY.equals(element.getTagName())
                 || TAG_STRING_ARRAY.equals(element.getTagName());
             for (Element item : LintUtils.getChildren(element)) {
                 checkChildRefs(item);

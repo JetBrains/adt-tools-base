@@ -28,6 +28,10 @@ import com.android.annotations.NonNull;
  */
 public class MajorRevision extends FullRevision {
 
+    public MajorRevision(FullRevision fullRevision) {
+        super(fullRevision.getMajor(), IMPLICIT_MINOR_REV, IMPLICIT_MICRO_REV);
+    }
+
     public MajorRevision(int major) {
         super(major, IMPLICIT_MINOR_REV, IMPLICIT_MICRO_REV);
     }

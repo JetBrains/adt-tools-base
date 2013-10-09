@@ -40,6 +40,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.utils.SdkUtils;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -49,6 +50,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.CodeSource;
@@ -439,7 +441,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         if (source != null) {
             URL location = source.getLocation();
             try {
-                File dir = new File(location.toURI());
+                File dir = SdkUtils.urlToFile(location);
                 assertTrue(dir.getPath(), dir.exists());
                 while (dir != null) {
                     File settingsGradle = new File(dir, "settings.gradle"); //$NON-NLS-1$
@@ -454,7 +456,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
                 }
 
                 return null;
-            } catch (URISyntaxException e) {
+            } catch (MalformedURLException e) {
                 fail(e.getLocalizedMessage());
             }
         }

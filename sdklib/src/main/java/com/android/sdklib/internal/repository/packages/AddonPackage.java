@@ -28,6 +28,7 @@ import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
+import com.android.sdklib.local.LocalAddonPkgInfo;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.sdklib.repository.SdkRepoConstants;
@@ -317,14 +318,14 @@ public class AddonPackage extends MajorRevisionPackage
                                       PkgProps.ADDON_NAME_DISPLAY,
                                       getProperty(sourceProps,
                                                   PkgProps.ADDON_NAME,
-                                                  addonProps.get(SdkManager.ADDON_NAME)));
+                                                  addonProps.get(LocalAddonPkgInfo.ADDON_NAME)));
         String vendor   = getProperty(sourceProps,
                                       PkgProps.ADDON_VENDOR_DISPLAY,
                                       getProperty(sourceProps,
                                                   PkgProps.ADDON_VENDOR,
-                                                  addonProps.get(SdkManager.ADDON_VENDOR)));
-        String api      = addonProps.get(SdkManager.ADDON_API);
-        String revision = addonProps.get(SdkManager.ADDON_REVISION);
+                                                  addonProps.get(LocalAddonPkgInfo.ADDON_VENDOR)));
+        String api      = addonProps.get(LocalAddonPkgInfo.ADDON_API);
+        String revision = addonProps.get(LocalAddonPkgInfo.ADDON_REVISION);
 
         String shortDesc = String.format("%1$s by %2$s, Android API %3$s, revision %4$s [*]",
                 name,

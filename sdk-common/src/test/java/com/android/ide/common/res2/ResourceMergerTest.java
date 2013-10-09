@@ -24,6 +24,7 @@ import com.android.SdkConstants;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.testutils.TestUtils;
+import com.android.utils.SdkUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
@@ -980,6 +981,9 @@ public class ResourceMergerTest extends BaseTestCase {
             if (node.getNodeType() != Node.ELEMENT_NODE) {
                 continue;
             }
+            if (node.getNodeName().equals(SdkConstants.TAG_EAT_COMMENT)) {
+                continue;
+            }
 
             ResourceType type = ValueResourceParser2.getType(node);
             if (type != ResourceType.STRING) {
@@ -1027,7 +1031,7 @@ public class ResourceMergerTest extends BaseTestCase {
         int index = layoutXml.indexOf("From: ");
         assertTrue(index != -1);
         String path = layoutXml.substring(index + 6, layoutXml.indexOf(' ', index + 6));
-        File file =  new File(new URL(path).toURI());
+        File file = SdkUtils.urlToFile(path);
         assertTrue(path, file.exists());
         assertFalse(Arrays.equals(Files.toByteArray(file), Files.toByteArray(layout)));
 

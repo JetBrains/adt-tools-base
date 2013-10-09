@@ -108,13 +108,18 @@ public class HtmlBuilderTest extends TestCase {
         File f = File.createTempFile("img", "png");
         f.deleteOnExit();
 
-        String actual = new HtmlBuilder().addImage(f.toURI().toURL(), "preview").getHtml();
+        String actual = new HtmlBuilder().addImage(SdkUtils.fileToUrl(f), "preview").getHtml();
         String path = f.getAbsolutePath();
 
         if (!path.startsWith("/")) {
             path = '/' + path;
         }
         String expected = String.format("<img src='file:%1$s' alt=\"preview\" />", path);
+        if (File.separatorChar != '/') {
+            // SdkUtil.fileToUrl always returns / as a separator so adjust
+            // Windows path accordingly.
+            expected = expected.replace(File.separatorChar, '/');
+        }
         assertEquals(expected, actual);
     }
 }

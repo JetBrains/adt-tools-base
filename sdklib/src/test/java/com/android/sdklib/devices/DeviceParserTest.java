@@ -48,7 +48,7 @@ public class DeviceParserTest extends TestCase {
                 devices.size());
 
         Device device = devices.get(0);
-        assertEquals("Galaxy Nexus", device.getName());
+        assertEquals("Galaxy Nexus", device.getDisplayName());
         assertEquals("Samsung", device.getManufacturer());
 
         // Test Meta information
@@ -190,7 +190,7 @@ public class DeviceParserTest extends TestCase {
                 devices.size());
 
         Device device = devices.get(0);
-        assertEquals("Galaxy Nexus", device.getName());
+        assertEquals("Galaxy Nexus", device.getDisplayName());
 
         assertEquals(new Dimension(1280, 720), device.getScreenSize(ScreenOrientation.LANDSCAPE));
         assertEquals(new Dimension(720, 1280), device.getScreenSize(ScreenOrientation.PORTRAIT));

@@ -1,9 +1,27 @@
+/*
+ * Copyright (C) 2013 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.android.tools.perflib.vmtrace;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
+import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
+import com.google.common.primitives.UnsignedInts;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -14,6 +32,9 @@ import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class VmTraceParser {
     private static final int TRACE_MAGIC = 0x574f4c53; // 'SLOW'
@@ -133,11 +154,11 @@ public class VmTraceParser {
 
             if (key.equals(KEY_CLOCK)) {
                 if (value.equals("thread-cpu")) {
-                    mTraceDataBuilder.setClockType(VmTraceData.ClockType.THREAD_CPU);
+                    mTraceDataBuilder.setVmClockType(VmTraceData.VmClockType.THREAD_CPU);
                 } else if (value.equals("wall")) {
-                    mTraceDataBuilder.setClockType(VmTraceData.ClockType.WALL);
+                    mTraceDataBuilder.setVmClockType(VmTraceData.VmClockType.WALL);
                 } else if (value.equals("dual")) {
-                    mTraceDataBuilder.setClockType(VmTraceData.ClockType.DUAL);
+                    mTraceDataBuilder.setVmClockType(VmTraceData.VmClockType.DUAL);
                 }
             } else if (key.equals(KEY_DATA_OVERFLOW)) {
                 mTraceDataBuilder.setDataFileOverflow(Boolean.parseBoolean(value));
@@ -241,17 +262,17 @@ public class VmTraceParser {
         int methodId;
         int threadId;
         int version = mTraceDataBuilder.getVersion();
-        VmTraceData.ClockType clockType = mTraceDataBuilder.getClockType();
+        VmTraceData.VmClockType vmClockType = mTraceDataBuilder.getVmClockType();
         while (buffer.hasRemaining()) {
             int threadTime;
             int globalTime;
 
             int positionStart = buffer.position();
 
-            threadId = version == 1 ? buffer.getInt() : buffer.getShort();
+            threadId = version == 1 ? buffer.get() : buffer.getShort();
             methodId = buffer.getInt();
 
-            switch (clockType) {
+            switch (vmClockType) {
                 case WALL:
                     globalTime = buffer.getInt();
                     threadTime = globalTime;
@@ -291,7 +312,8 @@ public class VmTraceParser {
             }
             methodId = methodId & ~0x03;
 
-            mTraceDataBuilder.addMethodAction(threadId, methodId, methodAction, threadTime, globalTime);
+            mTraceDataBuilder.addMethodAction(threadId, UnsignedInts.toLong(methodId), methodAction,
+                    threadTime, globalTime);
         }
     }
 
@@ -376,34 +398,56 @@ public class VmTraceParser {
     private void computeTimingStatistics() {
         VmTraceData data = getTraceData();
 
+        ProfileDataBuilder builder = new ProfileDataBuilder();
         for (ThreadInfo thread : data.getThreads()) {
-            computePerThreadStats(thread, data);
+            Call c = thread.getTopLevelCall();
+            if (c == null) {
+                continue;
+            }
+
+            builder.computeCallStats(c, null, thread);
+        }
+
+        for (Long methodId : builder.getMethodsWithProfileData()) {
+            MethodInfo method = data.getMethod(methodId);
+            method.setProfileData(builder.getProfileData(methodId));
         }
     }
 
-    private void computePerThreadStats(@NonNull ThreadInfo thread, VmTraceData data) {
-        Call c = thread.getTopLevelCall();
-        if (c == null) {
-            return;
-        }
+    private static class ProfileDataBuilder {
+        /** Maps method ids to their corresponding method data builders */
+        private final Map<Long, MethodProfileData.Builder> mBuilderMap = Maps.newHashMap();
 
-        Iterator<Call> it = c.getCallHierarchyIterator();
-        while (it.hasNext()) {
-            c = it.next();
-
-            MethodInfo info = data.getMethod(c.getMethodId());
-            for (ClockType type : ClockType.values()) {
-                info.addExclusiveTime(c.getExclusiveTime(type), thread.getName(), type);
+        public void computeCallStats(Call c, Call parent, ThreadInfo thread) {
+            long methodId = c.getMethodId();
+            MethodProfileData.Builder builder = getProfileDataBuilder(methodId);
+            builder.addCallTime(c, parent, thread);
+            builder.incrementInvocationCount(c, parent, thread);
+            if (c.isRecursive()) {
+                builder.setRecursive();
             }
 
-            if (!c.isRecursive()) {
-                // In the case of a recursive call, the top level call's inclusive time
-                // already accounts for the entire inclusive time
-                for (ClockType type : ClockType.values()) {
-                    info.addInclusiveTime(c.getInclusiveTime(type), thread.getName(), type);
-                }
+            for (Call callee: c.getCallees()) {
+                computeCallStats(callee, c, thread);
             }
         }
 
+        @NonNull
+        private MethodProfileData.Builder getProfileDataBuilder(long methodId) {
+            MethodProfileData.Builder builder = mBuilderMap.get(methodId);
+            if (builder == null) {
+                builder = new MethodProfileData.Builder();
+                mBuilderMap.put(methodId, builder);
+            }
+            return builder;
+        }
+
+        public Set<Long> getMethodsWithProfileData() {
+            return mBuilderMap.keySet();
+        }
+
+        public MethodProfileData getProfileData(Long methodId) {
+            return mBuilderMap.get(methodId).build();
+        }
     }
 }

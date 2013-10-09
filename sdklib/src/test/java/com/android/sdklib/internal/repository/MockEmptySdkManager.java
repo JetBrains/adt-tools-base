@@ -16,7 +16,6 @@
 
 package com.android.sdklib.internal.repository;
 
-import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
 
 /**
@@ -25,6 +24,5 @@ import com.android.sdklib.SdkManager;
 public class MockEmptySdkManager extends SdkManager {
     public MockEmptySdkManager(String osSdkPath) {
         super(osSdkPath);
-        setTargets(new IAndroidTarget[0]);
     }
 }

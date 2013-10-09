@@ -286,4 +286,12 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                         "res/anim/slide_in_out.xml"
                 ));
     }
+
+    public void testIntegerArrays() throws Exception {
+        // See http://code.google.com/p/android/issues/detail?id=59761
+        mEnableIds = false;
+        assertEquals(
+                "No warnings.",
+                lintProject("res/values/integer_arrays.xml=>res/values/integer_arrays.xml"));
+    }
 }

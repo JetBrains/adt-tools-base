@@ -49,6 +49,16 @@ public class TestUtils {
                 root = new File(root, name);
             }
 
+            // Hack: The sdk-common tests are not configured properly; running tests
+            // works correctly from Gradle but not from within the IDE. The following
+            // hack works around this quirk:
+            if (!root.isDirectory() && !root.getPath().contains("sdk-common")) {
+                File r = new File("sdk-common", root.getPath()).getAbsoluteFile();
+                if (r.isDirectory()) {
+                    root = r;
+                }
+            }
+
             TestCase.assertTrue("Test folder '" + name + "' does not exist! "
                     + "(Tip: Check unit test launch config pwd)",
                     root.isDirectory());

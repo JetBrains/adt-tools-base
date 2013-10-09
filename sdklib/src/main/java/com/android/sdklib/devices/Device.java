@@ -38,6 +38,10 @@ public final class Device {
     @NonNull
     private final String mName;
 
+    /** ID of the device */
+    @NonNull
+    private final String mId;
+
     /** Manufacturer of the device */
     @NonNull
     private final String mManufacturer;
@@ -59,13 +63,39 @@ public final class Device {
     private final State mDefaultState;
 
     /**
-     * Returns the name of the {@link Device}.
+     * Returns the name of the {@link Device}. This is intended to be displayed by the user and
+     * can vary over time. For a stable internal name of the device, use {@link #getId} instead.
+     *
+     * @deprecated Use {@link #getId()} or {@link #getDisplayName()} instead based on whether
+     *     a stable identifier or a user visible name is needed
+     * @return The name of the {@link Device}.
+     */
+    @NonNull
+    @Deprecated
+    public String getName() {
+        return mName;
+    }
+
+    /**
+     * Returns the user visible name of the {@link Device}. This is intended to be displayed by the
+     * user and can vary over time. For a stable internal name of the device, use {@link #getId}
+     * instead.
      *
      * @return The name of the {@link Device}.
      */
     @NonNull
-    public String getName() {
+    public String getDisplayName() {
         return mName;
+    }
+
+    /**
+     * Returns the id of the {@link Device}.
+     *
+     * @return The id of the {@link Device}.
+     */
+    @NonNull
+    public String getId() {
+        return mId;
     }
 
     /**
@@ -206,6 +236,7 @@ public final class Device {
 
     public static class Builder {
         private String mName;
+        private String mId;
         private String mManufacturer;
         private final List<Software> mSoftware = new ArrayList<Software>();
         private final List<State> mState = new ArrayList<State>();
@@ -215,7 +246,8 @@ public final class Device {
         public Builder() { }
 
         public Builder(Device d) {
-            mName = d.getName();
+            mName = d.getDisplayName();
+            mId = d.getId();
             mManufacturer = d.getManufacturer();
             for (Software s : d.getAllSoftware()) {
                 mSoftware.add(s.deepCopy());
@@ -231,6 +263,10 @@ public final class Device {
 
         public void setName(@NonNull String name) {
             mName = name;
+        }
+
+        public void setId(@NonNull String id) {
+            mId = id;
         }
 
         public void setManufacturer(@NonNull String manufacturer) {
@@ -283,6 +319,10 @@ public final class Device {
                 throw generateBuildException("Device states not configured");
             }
 
+            if (mId == null) {
+                mId = mName;
+            }
+
             if (mMeta == null) {
                 mMeta = new Meta();
             }
@@ -315,6 +355,7 @@ public final class Device {
 
     private Device(Builder b) {
         mName = b.mName;
+        mId = b.mId;
         mManufacturer = b.mManufacturer;
         mSoftware = Collections.unmodifiableList(b.mSoftware);
         mState = Collections.unmodifiableList(b.mState);
@@ -331,7 +372,7 @@ public final class Device {
             return false;
         }
         Device d = (Device) o;
-        return mName.equals(d.getName())
+        return mName.equals(d.getDisplayName())
                 && mManufacturer.equals(d.getManufacturer())
                 && mSoftware.equals(d.getAllSoftware())
                 && mState.equals(d.getAllStates())

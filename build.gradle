@@ -27,6 +27,8 @@ ext.androidRootDir = file(new File(ext.androidHostOut, "../../../"))
 // rootProject.buildDir is specific to this gradle build.
 buildDir = new File(file(ext.androidHostOut), "tools/base/build")
 
+ext.localRepo = project.hasProperty('localRepo') ? localRepo : "$ext.androidHostOut/repo"
+
 def getVersion(Project p, String baseVersion) {
     if (p.has("release")) {
         return baseVersion
@@ -100,7 +102,7 @@ subprojects { Project project ->
         configuration = configurations.archives
         repositories {
             mavenDeployer {
-                repository(url: uri("$rootProject.ext.androidHostOut/repo"))
+                repository(url: uri(rootProject.ext.localRepo))
             }
         }
     }

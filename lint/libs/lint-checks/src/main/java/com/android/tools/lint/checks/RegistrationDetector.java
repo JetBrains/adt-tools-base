@@ -22,7 +22,6 @@ import static com.android.SdkConstants.ANDROID_CONTENT_BROADCAST_RECEIVER;
 import static com.android.SdkConstants.ANDROID_CONTENT_CONTENT_PROVIDER;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
-import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.TAG_ACTIVITY;
 import static com.android.SdkConstants.TAG_PROVIDER;
 import static com.android.SdkConstants.TAG_RECEIVER;
@@ -100,7 +99,7 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
 
     @Override
     public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
-        String fqcn = getFqcn(element);
+        String fqcn = getFqcn(context, element);
         String tag = element.getTagName();
         String frameworkClass = tagToClass(tag);
         if (frameworkClass != null) {
@@ -127,22 +126,21 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
      * Returns the fully qualified class name for a manifest entry element that
      * specifies a name attribute
      *
+     * @param context the query context providing the project
      * @param element the element
      * @return the fully qualified class name
      */
     @NonNull
-    private static String getFqcn(@NonNull Element element) {
-        Element root = element.getOwnerDocument().getDocumentElement();
-        String pkg = root.getAttribute(ATTR_PACKAGE);
+    private static String getFqcn(@NonNull XmlContext context, @NonNull Element element) {
         String className = element.getAttributeNS(ANDROID_URI, ATTR_NAME);
         if (className.startsWith(".")) { //$NON-NLS-1$
-            return pkg + className;
+            return context.getMainProject().getPackage() + className;
         } else if (className.indexOf('.') == -1) {
             // According to the <activity> manifest element documentation, this is not
             // valid ( http://developer.android.com/guide/topics/manifest/activity-element.html )
             // but it appears in manifest files and appears to be supported by the runtime
             // so handle this in code as well:
-            return pkg + '.' + className;
+            return context.getMainProject().getPackage() + '.' + className;
         } // else: the class name is already a fully qualified class name
 
         return className;

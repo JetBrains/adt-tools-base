@@ -319,7 +319,7 @@ public final class SdkConstants {
     public static final String FD_RES = "res";                          //$NON-NLS-1$
     /** Name of the SDK font folder, i.e. "fonts" */
     public static final String FD_FONTS = "fonts";                      //$NON-NLS-1$
-    /** Name of the android sources directory */
+    /** Name of the android sources directory and the root of the SDK sources package folder. */
     public static final String FD_ANDROID_SOURCES = "sources";          //$NON-NLS-1$
     /** Name of the addon libs folder. */
     public static final String FD_ADDON_LIBS = "libs";                  //$NON-NLS-1$
@@ -695,6 +695,7 @@ public final class SdkConstants {
     public static final String TAG_FLAG = "flag";                      //$NON-NLS-1$
     public static final String TAG_ATTR = "attr";                      //$NON-NLS-1$
     public static final String TAG_DECLARE_STYLEABLE = "declare-styleable"; //$NON-NLS-1$
+    public static final String TAG_EAT_COMMENT = "eat-comment";        //$NON-NLS-1$
 
     // Tags: XML
     public static final String TAG_HEADER = "header";                  //$NON-NLS-1$
@@ -778,6 +779,7 @@ public final class SdkConstants {
     public static final String ATTR_PARENT = "parent";                 //$NON-NLS-1$
     public static final String ATTR_TRANSLATABLE = "translatable";     //$NON-NLS-1$
     public static final String ATTR_COLOR = "color";                   //$NON-NLS-1$
+    public static final String ATTR_DRAWABLE = "drawable";             //$NON-NLS-1$
     public static final String ATTR_VALUE = "value";                   //$NON-NLS-1$
     public static final String ATTR_QUANTITY = "quantity";             //$NON-NLS-1$
     public static final String ATTR_FORMAT = "format";                 //$NON-NLS-1$
@@ -955,6 +957,7 @@ public final class SdkConstants {
     public static final String DOT_JAVA = ".java";                     //$NON-NLS-1$
     public static final String DOT_CLASS = ".class";                   //$NON-NLS-1$
     public static final String DOT_JAR = ".jar";                       //$NON-NLS-1$
+    public static final String DOT_GRADLE = ".gradle";                 //$NON-NLS-1$
 
 
     /** Extension of the Application package Files, i.e. "apk". */
@@ -965,6 +968,8 @@ public final class SdkConstants {
     public static final String EXT_CLASS = "class"; //$NON-NLS-1$
     /** Extension of xml files, i.e. "xml" */
     public static final String EXT_XML = "xml"; //$NON-NLS-1$
+    /** Extension of gradle files, i.e. "gradle" */
+    public static final String EXT_GRADLE = "gradle"; //$NON-NLS-1$
     /** Extension of jar files, i.e. "jar" */
     public static final String EXT_JAR = "jar"; //$NON-NLS-1$
     /** Extension of aidl files, i.e. "aidl" */

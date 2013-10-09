@@ -35,7 +35,6 @@ import com.android.io.IAbstractResource;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
-import com.android.utils.Pair;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -611,10 +610,9 @@ public abstract class ResourceRepository {
                         if (value != null) {
                             String v = value.getValue();
                             if (v != null) {
-                                Pair<ResourceType, String> pair = parseResource(v);
-                                if (pair != null) {
-                                    return getMatchingFile(pair.getSecond(), pair.getFirst(),
-                                            config);
+                                ResourceUrl url = ResourceUrl.parse(v);
+                                if (url != null) {
+                                    return getMatchingFile(url.name, url.type, config);
                                 } else {
                                     // Looks like the resource value is pointing to a file
                                     // It's most likely one of the source files for this
@@ -922,64 +920,6 @@ public abstract class ResourceRepository {
         }
 
         return null;
-    }
-
-    /**
-     * Return the resource type of the given url, and the resource name
-     *
-     * @param url the resource url to be parsed
-     * @return a pair of the resource type and the resource name
-     */
-    public static Pair<ResourceType,String> parseResource(String url) {
-        // Handle theme references
-        if (url.startsWith(PREFIX_THEME_REF)) {
-            String remainder = url.substring(PREFIX_THEME_REF.length());
-            if (url.startsWith(ATTR_REF_PREFIX)) {
-                url = PREFIX_RESOURCE_REF + url.substring(PREFIX_THEME_REF.length());
-                return parseResource(url);
-            }
-            int colon = url.indexOf(':');
-            if (colon != -1) {
-                // Convert from ?android:progressBarStyleBig to ?android:attr/progressBarStyleBig
-                if (remainder.indexOf('/', colon) == -1) {
-                    remainder = remainder.substring(0, colon) + RESOURCE_CLZ_ATTR + '/'
-                            + remainder.substring(colon);
-                }
-                url = PREFIX_RESOURCE_REF + remainder;
-                return parseResource(url);
-            } else {
-                int slash = url.indexOf('/');
-                if (slash == -1) {
-                    url = PREFIX_RESOURCE_REF + RESOURCE_CLZ_ATTR + '/' + remainder;
-                    return parseResource(url);
-                }
-            }
-        }
-
-        if (!url.startsWith(PREFIX_RESOURCE_REF)) {
-            return null;
-        }
-        int typeEnd = url.indexOf('/', 1);
-        if (typeEnd == -1) {
-            return null;
-        }
-        int nameBegin = typeEnd + 1;
-
-        // Skip @ and @+
-        int typeBegin = url.startsWith("@+") ? 2 : 1; //$NON-NLS-1$
-
-        int colon = url.lastIndexOf(':', typeEnd);
-        if (colon != -1) {
-            typeBegin = colon + 1;
-        }
-        String typeName = url.substring(typeBegin, typeEnd);
-        ResourceType type = ResourceType.getEnum(typeName);
-        if (type == null) {
-            return null;
-        }
-        String name = url.substring(nameBegin);
-
-        return Pair.of(type, name);
     }
 }
 

@@ -21,6 +21,7 @@ import junit.framework.TestCase;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class CallStackReconstructorTest extends TestCase {
     public void testBasicCallStack() {
@@ -142,8 +143,9 @@ public class CallStackReconstructorTest extends TestCase {
         List<Call> callees = reconstructor.getTopLevel().getCallees();
         assertFalse(callees.isEmpty());
         Call call = callees.get(0);
-        assertEquals(15 - 10, call.getInclusiveTime(ClockType.THREAD));
-        assertEquals(15 - 10 - (14 - 11), call.getExclusiveTime(ClockType.THREAD));
+        assertEquals(15 - 10, call.getInclusiveTime(ClockType.THREAD, TimeUnit.MICROSECONDS));
+        assertEquals(15 - 10 - (14 - 11), call.getExclusiveTime(ClockType.THREAD,
+                TimeUnit.MICROSECONDS));
     }
 
     public void testMissingCallDurations() {
@@ -158,8 +160,9 @@ public class CallStackReconstructorTest extends TestCase {
         List<Call> callees = reconstructor.getTopLevel().getCallees();
         assertFalse(callees.isEmpty());
         Call call = callees.get(0);
-        assertEquals(15 - (11 - 1), call.getInclusiveTime(ClockType.THREAD));
-        assertEquals(15 - (11 - 1) - (14 - 11), call.getExclusiveTime(ClockType.THREAD));
+        assertEquals(15 - (11 - 1), call.getInclusiveTime(ClockType.THREAD, TimeUnit.MICROSECONDS));
+        assertEquals(15 - (11 - 1) - (14 - 11), call.getExclusiveTime(ClockType.THREAD,
+                TimeUnit.MICROSECONDS));
     }
 
     /**
@@ -177,8 +180,8 @@ public class CallStackReconstructorTest extends TestCase {
         List<Call> callees = reconstructor.getTopLevel().getCallees();
         assertFalse(callees.isEmpty());
         Call call = callees.get(0);
-        assertEquals(8, call.getInclusiveTime(ClockType.THREAD));
-        assertEquals(6, call.getExclusiveTime(ClockType.THREAD));
+        assertEquals(8, call.getInclusiveTime(ClockType.THREAD, TimeUnit.MICROSECONDS));
+        assertEquals(6, call.getExclusiveTime(ClockType.THREAD, TimeUnit.MICROSECONDS));
     }
 
     public void testRecursiveCalls() {

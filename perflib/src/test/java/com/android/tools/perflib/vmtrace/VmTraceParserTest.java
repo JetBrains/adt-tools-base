@@ -16,8 +16,6 @@
 
 package com.android.tools.perflib.vmtrace;
 
-import com.android.annotations.NonNull;
-import com.android.utils.SparseArray;
 import com.google.common.primitives.Ints;
 
 import junit.framework.TestCase;
@@ -31,7 +29,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class VmTraceParserTest extends TestCase {
     public void testParseHeader() throws IOException {
@@ -42,7 +42,7 @@ public class VmTraceParserTest extends TestCase {
 
         assertEquals(3, traceData.getVersion());
         assertTrue(traceData.isDataFileOverflow());
-        assertEquals(VmTraceData.ClockType.DUAL, traceData.getClockType());
+        assertEquals(VmTraceData.VmClockType.DUAL, traceData.getVmClockType());
         assertEquals("dalvik", traceData.getVm());
 
         Collection<ThreadInfo> threads = traceData.getThreads();
@@ -80,7 +80,8 @@ public class VmTraceParserTest extends TestCase {
         }
     }
 
-    private void testTrace(String traceName, String threadName, String expectedCallSequence) throws IOException {
+    private void testTrace(String traceName, String threadName, String expectedCallSequence)
+            throws IOException {
         VmTraceData traceData = getVmTraceData(traceName);
 
         ThreadInfo thread = traceData.getThread(threadName);
@@ -98,6 +99,9 @@ public class VmTraceParserTest extends TestCase {
                         + "                    -> com/test/android/traceview/Basic.foo: ()V -> com/test/android/traceview/Basic.bar: ()I\n"
                         + "                    -> android/os/Debug.stopMethodTracing: ()V -> dalvik/system/VMDebug.stopMethodTracing: ()V";
         testTrace("/basic.trace", "AsyncTask #1", expected);
+
+        // verify that the same results show up when trace is generated from an older device
+        testTrace("/basic-api10.trace", "AsyncTask #1", expected);
     }
 
     public void testMisMatchedTrace() throws IOException {
@@ -135,21 +139,26 @@ public class VmTraceParserTest extends TestCase {
         while (it.hasNext()) {
             Call c = it.next();
 
-            assertTrue(c.getEntryTime(ClockType.GLOBAL) <= c.getExitTime(ClockType.GLOBAL));
-            assertTrue(c.getEntryTime(ClockType.THREAD) <= c.getExitTime(ClockType.THREAD));
+            assertTrue(c.getEntryTime(ClockType.GLOBAL, TimeUnit.NANOSECONDS) <=
+                    c.getExitTime(ClockType.GLOBAL, TimeUnit.NANOSECONDS));
+            assertTrue(c.getEntryTime(ClockType.THREAD, TimeUnit.NANOSECONDS) <=
+                    c.getExitTime(ClockType.THREAD, TimeUnit.NANOSECONDS));
         }
     }
 
     public void testMethodStats() throws IOException {
         VmTraceData traceData = getVmTraceData("/basic.trace");
-        final String threadName = "AsyncTask #1";
+        final ThreadInfo thread = traceData.getThread("AsyncTask #1");
         List<Map.Entry<Long, MethodInfo>> methods = new ArrayList<Map.Entry<Long, MethodInfo>>(
                 traceData.getMethods().entrySet());
         Collections.sort(methods, new Comparator<Map.Entry<Long, MethodInfo>>() {
             @Override
             public int compare(Map.Entry<Long, MethodInfo> o1, Map.Entry<Long, MethodInfo> o2) {
-                long diff = o2.getValue().getInclusiveTime(threadName, ClockType.THREAD) - o1.getValue()
-                        .getInclusiveTime(threadName, ClockType.THREAD);
+                long diff =
+                        o2.getValue().getProfileData().getInclusiveTime(
+                                thread, ClockType.THREAD, TimeUnit.NANOSECONDS) -
+                        o1.getValue().getProfileData().getInclusiveTime(
+                                thread, ClockType.THREAD, TimeUnit.NANOSECONDS);
                 return Ints.saturatedCast(diff);
             }
         });
@@ -162,16 +171,16 @@ public class VmTraceParserTest extends TestCase {
         assertEquals("AsyncTask #1.: ", methods.get(0).getValue().getFullName());
     }
 
-    // Validate that the exclusive time of the top level call = sum of all inclusive times of
+    // Validate that the inclusive time of the top level call = sum of all inclusive times of
     // all methods called from that top level
     public void testMethodStats2() throws IOException {
         VmTraceData traceData = getVmTraceData("/basic.trace");
-        String thread = "AsyncTask #1";
-        Call top = traceData.getThread(thread).getTopLevelCall();
+        ThreadInfo thread = traceData.getThread("AsyncTask #1");
+        Call top = thread.getTopLevelCall();
 
         assertNotNull(top);
 
-        long topThreadTime = top.getInclusiveTime(ClockType.THREAD);
+        long topThreadTime = top.getInclusiveTime(ClockType.THREAD, TimeUnit.NANOSECONDS);
 
         Collection<MethodInfo> methods = traceData.getMethods().values();
         Iterator<MethodInfo> it = methods.iterator();
@@ -179,23 +188,151 @@ public class VmTraceParserTest extends TestCase {
 
         while (it.hasNext()) {
             MethodInfo method = it.next();
-            sum += method.getExclusiveTime(thread, ClockType.THREAD);
+            sum += method.getProfileData().getExclusiveTime(thread, ClockType.THREAD,
+                    TimeUnit.NANOSECONDS);
         }
 
         assertEquals(topThreadTime, sum);
     }
 
-    private int findThreadIdFromName(@NonNull String threadName,
-            @NonNull SparseArray<String> threads) {
-        for (int i = 0; i < threads.size(); i++) {
-            int id = threads.keyAt(i);
-            String name = threads.valueAt(i);
-            if (threadName.equals(name)) {
-                return id;
-            }
+    public void testMethodProfileData() throws IOException {
+        VmTraceData traceData = getVmTraceData("/basic.trace");
+        ThreadInfo thread = traceData.getThread("AsyncTask #1");
+        Call top = thread.getTopLevelCall();
+
+        assertNotNull(top);
+
+        MethodProfileData topProfileData = traceData.getMethod(top.getMethodId()).getProfileData();
+
+        // There should only be 1 instance of the top level method, so that call's time
+        // should match its corresponding method's time.
+        assertEquals(top.getExclusiveTime(ClockType.GLOBAL, TimeUnit.NANOSECONDS),
+                topProfileData.getExclusiveTime(thread, ClockType.GLOBAL, TimeUnit.NANOSECONDS));
+        assertEquals(top.getInclusiveTime(ClockType.GLOBAL, TimeUnit.NANOSECONDS),
+                topProfileData.getInclusiveTime(thread, ClockType.GLOBAL, TimeUnit.NANOSECONDS));
+
+        // The top level call's time should match the sum of all its callee's inclusive times
+        // plus the top level's exclusive time.
+        long sum = 0;
+        for (Long callee : topProfileData.getCallees(thread)) {
+            sum += topProfileData.getInclusiveTimeByCallee(thread, callee, ClockType.GLOBAL,
+                    TimeUnit.NANOSECONDS);
         }
 
-        return -1;
+        long exclusiveTime = top.getExclusiveTime(ClockType.GLOBAL, TimeUnit.NANOSECONDS);
+        assertEquals(top.getInclusiveTime(ClockType.GLOBAL, TimeUnit.NANOSECONDS),
+                exclusiveTime + sum);
+
+        for (MethodInfo method : traceData.getMethods().values()) {
+            MethodProfileData profile = method.getProfileData();
+            if (profile.getInvocationCount(thread) == 0) {
+                continue;
+            }
+
+            boolean isTop = method.id == top.getMethodId();
+
+            // Top level call should not have any callers, everyone else should have atleast 1
+            assertEquals(isTop, profile.getCallers(thread).isEmpty());
+
+            if (profile.isRecursive()) {
+                continue;
+            }
+
+            // Validate that the inclusive time is properly split across all callees
+            long methodInclusiveTime =
+                    profile.getInclusiveTime(thread, ClockType.GLOBAL, TimeUnit.NANOSECONDS);
+            long methodExclusiveTime =
+                    profile.getExclusiveTime(thread, ClockType.GLOBAL, TimeUnit.NANOSECONDS);
+            long sumCalleeInclusiveTime = sumInclusiveTimesByCallee(
+                    profile, thread, ClockType.GLOBAL, TimeUnit.NANOSECONDS);
+            assertEquals(methodInclusiveTime, methodExclusiveTime + sumCalleeInclusiveTime);
+
+            if (!isTop) {
+                // Validate that the inclusive time is properly attributed to all its callers
+                long sumInclusiveTimeByCaller = sumInclusiveTimesByCaller(
+                        profile, thread, ClockType.GLOBAL, TimeUnit.NANOSECONDS);
+                assertEquals(methodInclusiveTime, sumInclusiveTimeByCaller);
+
+                // Validate that exclusive time is properly attributed to all callers
+                long sumCallerExclusiveTimeByCaller = sumExclusiveTimesByCaller(
+                        profile, thread, ClockType.GLOBAL, TimeUnit.NANOSECONDS);
+                assertEquals(methodExclusiveTime, sumCallerExclusiveTimeByCaller);
+
+                // Validate that the method count is correctly distributed among the callers
+                assertEquals(profile.getInvocationCount(thread), sumInvocationCountsByCaller(
+                        profile,
+                        thread));
+            }
+        }
+    }
+
+    private long sumInvocationCountsByCaller(MethodProfileData profile, ThreadInfo thread) {
+        long sum = 0;
+        for (Long callerId : profile.getCallers(thread)) {
+            sum += profile.getInvocationCountFromCaller(thread, callerId);
+        }
+        return sum;
+    }
+
+    private long sumInclusiveTimesByCaller(MethodProfileData profile, ThreadInfo thread,
+            ClockType type, TimeUnit unit) {
+        long sum = 0;
+        for (Long calleeId : profile.getCallers(thread)) {
+            sum += profile.getInclusiveTimeByCaller(thread, calleeId, type, unit);
+        }
+        return sum;
+    }
+
+    private long sumExclusiveTimesByCaller(MethodProfileData profile, ThreadInfo thread,
+            ClockType type, TimeUnit unit) {
+        long sum = 0;
+        for (Long calleeId : profile.getCallers(thread)) {
+            sum += profile.getExclusiveTimeByCaller(thread, calleeId, type, unit);
+        }
+        return sum;
+    }
+
+    private long sumInclusiveTimesByCallee(MethodProfileData profile, ThreadInfo thread,
+            ClockType type, TimeUnit unit) {
+        long sum = 0;
+        for (Long calleeId : profile.getCallees(thread)) {
+            sum += profile.getInclusiveTimeByCallee(thread, calleeId, type, unit);
+        }
+        return sum;
+    }
+
+
+    public void testSearch() throws IOException {
+        VmTraceData traceData = getVmTraceData("/basic.trace");
+        ThreadInfo thread = traceData.getThread("AsyncTask #1");
+
+        SearchResult results = traceData.searchFor("startMethodTracing", thread);
+
+        // 3 different methods (varying in parameter list) of name startMethodTracing are called
+        assertEquals(3, results.getMethods().size());
+        assertEquals(3, results.getInstances().size());
+    }
+
+    // Validates that search is not impacted by current locale
+    public void testSearchLocale() throws IOException {
+        VmTraceData traceData = getVmTraceData("/basic.trace");
+        ThreadInfo thread = traceData.getThread("AsyncTask #1");
+
+        String pattern = "ii)v";
+        SearchResult results = traceData.searchFor(pattern, thread);
+
+        Locale originalDefaultLocale = Locale.getDefault();
+
+        try {
+            // Turkish has two different variants for lowercase i
+            Locale.setDefault(new Locale("tr", "TR"));
+            SearchResult turkish = traceData.searchFor(pattern, thread);
+
+            assertEquals(results.getInstances().size(), turkish.getInstances().size());
+            assertEquals(results.getMethods().size(), turkish.getMethods().size());
+        } finally {
+            Locale.setDefault(originalDefaultLocale);
+        }
     }
 
     private VmTraceData getVmTraceData(String traceFilePath) throws IOException {

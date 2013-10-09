@@ -237,7 +237,7 @@ public class StretchesViewer extends JPanel {
             x = 0;
             y = 0;
 
-            if (patchInfo.patches.size() == 0) {
+            if (patchInfo.patches.isEmpty()) {
                 g.drawImage(image, 0, 0, scaledWidth, scaledHeight, null);
                 g2.dispose();
                 return;

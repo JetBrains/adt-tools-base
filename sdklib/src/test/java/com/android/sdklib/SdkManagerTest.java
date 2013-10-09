@@ -20,6 +20,7 @@ package com.android.sdklib;
 import com.android.SdkConstants;
 import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.SdkManager.LayoutlibVersion;
+import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.repository.FullRevision;
 import com.google.common.collect.Sets;
 

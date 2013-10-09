@@ -16,8 +16,15 @@
 
 package com.android.utils;
 
+import static com.android.utils.SdkUtils.fileToUrlString;
+import static com.android.utils.SdkUtils.urlToFile;
+
+import com.android.SdkConstants;
+
 import junit.framework.TestCase;
 
+import java.io.File;
+import java.net.URL;
 import java.text.ParseException;
 import java.util.Locale;
 
@@ -215,5 +222,34 @@ public class SdkUtilsTest extends TestCase {
         Locale.setDefault(Locale.FRANCE);
         assertEquals(1000.0, SdkUtils.parseLocalizedDouble("1000", -1)); // Valid
         assertEquals(0.0, SdkUtils.parseLocalizedDouble("", 8));
+    }
+
+    public void testFileToUrl() throws Exception {
+        if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS) {
+            assertEquals("file:/D:/tmp/foo/bar",
+                    fileToUrlString(new File("D:\\tmp\\foo\\bar")));
+            // File path normalization adds a missing drive letter on Windows's File
+            // implementation which defaults to C:
+            assertEquals("file:/C:/tmp/foo/bar",
+                    fileToUrlString(new File("/tmp/foo/bar")));
+            assertEquals("file:/C:/tmp/$&+,:;=%3F@/foo%20bar%25",
+                    fileToUrlString(new File("/tmp/$&+,:;=?@/foo bar%")));
+        } else {
+            assertEquals("file:/tmp/foo/bar",
+                    fileToUrlString(new File("/tmp/foo/bar")));
+            assertEquals("file:/tmp/$&+,:;=%3F@/foo%20bar%25",
+                    fileToUrlString(new File("/tmp/$&+,:;=?@/foo bar%")));
+        }
+    }
+
+    public void testUrlToFile() throws Exception {
+        assertEquals(new File("/tmp/foo/bar"), urlToFile("file:/tmp/foo/bar"));
+        assertEquals(new File("/tmp/$&+,:;=?@/foo bar%"),
+                urlToFile("file:/tmp/$&+,:;=%3F@/foo%20bar%25"));
+
+        assertEquals(new File("/tmp/foo/bar"),
+                urlToFile(new URL("file:/tmp/foo/bar")));
+        assertEquals(new File("/tmp/$&+,:;=?@/foo bar%"),
+                urlToFile(new URL("file:/tmp/$&+,:;=%3F@/foo%20bar%25")));
     }
 }

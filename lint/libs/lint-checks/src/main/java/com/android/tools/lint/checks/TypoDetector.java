@@ -17,6 +17,7 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ATTR_LOCALE;
+import static com.android.SdkConstants.ATTR_TRANSLATABLE;
 import static com.android.SdkConstants.FD_RES_VALUES;
 import static com.android.SdkConstants.TAG_STRING;
 import static com.android.SdkConstants.TOOLS_URI;
@@ -30,6 +31,7 @@ import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -39,6 +41,7 @@ import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 
+import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -229,31 +232,32 @@ public class TypoDetector extends ResourceXmlDetector {
             return;
         }
 
-        visit(context, element);
+        visit(context, element, element);
     }
 
-    private void visit(XmlContext context, Node node) {
+    private void visit(XmlContext context, Element parent, Node node) {
         if (node.getNodeType() == Node.TEXT_NODE) {
             // TODO: Figure out how to deal with entities
-            check(context, node, node.getNodeValue());
+            check(context, parent, node, node.getNodeValue());
         } else {
             NodeList children = node.getChildNodes();
             for (int i = 0, n = children.getLength(); i < n; i++) {
-                visit(context, children.item(i));
+                visit(context, parent, children.item(i));
             }
         }
     }
 
-    private void check(XmlContext context, Node node, String text) {
+    private void check(XmlContext context, Element element, Node node, String text) {
         int max = text.length();
         int index = 0;
+        int lastWordBegin = -1;
+        int lastWordEnd = -1;
         boolean checkedTypos = false;
         while (index < max) {
             for (; index < max; index++) {
                 char c = text.charAt(index);
                 if (c == '\\') {
                     index++;
-                    continue;
                 } else if (Character.isLetter(c)) {
                     break;
                 }
@@ -275,13 +279,13 @@ public class TypoDetector extends ResourceXmlDetector {
                         // If we've already checked words we may have reported typos
                         // so create a substring from the current word and on.
                         byte[] utf8Text = text.substring(begin).getBytes(Charsets.UTF_8);
-                        check(context, node, utf8Text, 0, utf8Text.length, text, begin);
+                        check(context, element, node, utf8Text, 0, utf8Text.length, text, begin);
                     } else {
                         // If all we've done so far is skip whitespace (common scenario)
                         // then no need to substring the text, just re-search with the
                         // UTF-8 routines
                         byte[] utf8Text = text.getBytes(Charsets.UTF_8);
-                        check(context, node, utf8Text, 0, utf8Text.length, text, 0);
+                        check(context, element, node, utf8Text, 0, utf8Text.length, text, 0);
                     }
                     return;
                 }
@@ -289,17 +293,53 @@ public class TypoDetector extends ResourceXmlDetector {
 
             int end = index;
             checkedTypos = true;
+            assert mLookup != null;
             List<String> replacements = mLookup.getTypos(text, begin, end);
-            if (replacements != null) {
+            if (replacements != null && isTranslatable(element)) {
                 reportTypo(context, node, text, begin, replacements);
             }
 
+            checkRepeatedWords(context, element, node, text, lastWordBegin, lastWordEnd, begin,
+                    end);
+
+            lastWordBegin = begin;
+            lastWordEnd = end;
             index = end + 1;
         }
     }
 
-    private void check(XmlContext context, Node node, byte[] utf8Text,
+    private static void checkRepeatedWords(XmlContext context, Element element, Node node,
+            String text, int lastWordBegin, int lastWordEnd, int begin, int end) {
+        if (lastWordBegin != -1 && end - begin == lastWordEnd - lastWordBegin
+                && end - begin > 1) {
+            // See whether we have a repeated word
+            boolean different = false;
+            for (int i = lastWordBegin, j = begin; i < lastWordEnd; i++, j++) {
+                if (text.charAt(i) != text.charAt(j)) {
+                    different = true;
+                    break;
+                }
+            }
+            if (!different && onlySpace(text, lastWordEnd, begin) && isTranslatable(element)) {
+                reportRepeatedWord(context, node, text, lastWordBegin, begin, end);
+            }
+        }
+    }
+
+    private static boolean onlySpace(String text, int fromInclusive, int toExclusive) {
+        for (int i = fromInclusive; i < toExclusive; i++) {
+            if (!Character.isWhitespace(text.charAt(i))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void check(XmlContext context, Element element, Node node, byte[] utf8Text,
             int byteStart, int byteEnd, String text, int charStart) {
+        int lastWordBegin = -1;
+        int lastWordEnd = -1;
         int index = byteStart;
         while (index < byteEnd) {
             // Find beginning of word
@@ -353,12 +393,22 @@ public class TypoDetector extends ResourceXmlDetector {
 
             int end = index;
             List<String> replacements = mLookup.getTypos(utf8Text, begin, end);
-            if (replacements != null) {
+            if (replacements != null && isTranslatable(element)) {
                 reportTypo(context, node, text, charStart, replacements);
             }
 
+            checkRepeatedWords(context, element, node, text, lastWordBegin, lastWordEnd, charStart,
+                    charEnd);
+
+            lastWordBegin = charStart;
+            lastWordEnd = charEnd;
             charStart = charEnd;
         }
+    }
+
+    private static boolean isTranslatable(Element element) {
+        Attr translatable = element.getAttributeNode(ATTR_TRANSLATABLE);
+        return translatable == null || Boolean.valueOf(translatable.getValue());
     }
 
     /** Report the typo found at the given offset and suggest the given replacements */
@@ -409,6 +459,17 @@ public class TypoDetector extends ResourceXmlDetector {
 
         int end = begin + word.length();
         context.report(ISSUE, node, context.getLocation(node, begin, end), message, null);
+    }
+
+    /** Reports a repeated word */
+    private static void reportRepeatedWord(XmlContext context, Node node, String text,
+            int lastWordBegin,
+            int begin, int end) {
+        String message = String.format(
+                "Repeated word \"%1$s\" in message: possible typo",
+                text.substring(begin, end));
+        Location location = context.getLocation(node, lastWordBegin, end);
+        context.report(ISSUE, node, location, message, null);
     }
 
     /** Returns the suggested replacements, if any, for the given typo. The error

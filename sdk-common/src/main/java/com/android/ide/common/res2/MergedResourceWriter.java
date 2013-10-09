@@ -19,13 +19,17 @@ package com.android.ide.common.res2;
 import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.RES_QUALIFIER_SEP;
+import static com.android.SdkConstants.TAG_EAT_COMMENT;
 import static com.android.SdkConstants.TAG_RESOURCES;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.internal.AaptRunner;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.resources.ResourceFolderType;
+import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
@@ -43,6 +47,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -137,8 +142,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                             // destination file.
                             mAaptRunner.crunchPng(file, outFile);
                         } else if (filename.endsWith(DOT_XML)) {
-                            String p = file.toURI().toURL().toString();
-                            copyXmlWithComment(file, outFile, FILENAME_PREFIX + p);
+                            copyXmlWithComment(file, outFile, createPathComment(file));
                         } else {
                             Files.copy(file, outFile);
                         }
@@ -255,12 +259,16 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     for (ResourceItem item : items) {
                         ResourceFile source = item.getSource();
                         if (source != currentFile) {
-                          currentFile = source;
-                          rootNode.appendChild(document.createTextNode("\n"));
-                          File file = source.getFile();
-                          String path = file.toURI().toURL().toString();
-                          rootNode.appendChild(document.createComment(FILENAME_PREFIX + path));
-                          rootNode.appendChild(document.createTextNode("\n"));
+                            currentFile = source;
+                            rootNode.appendChild(document.createTextNode("\n"));
+                            File file = source.getFile();
+                            rootNode.appendChild(document.createComment(createPathComment(file)));
+                            rootNode.appendChild(document.createTextNode("\n"));
+                            // Add an <eat-comment> element to ensure that this comment won't
+                            // get merged into a potential comment from the next child (or
+                            // even added as the sole comment in the R class)
+                            rootNode.appendChild(document.createElement(TAG_EAT_COMMENT));
+                            rootNode.appendChild(document.createTextNode("\n"));
                         }
                         Node adoptedNode = NodeUtils.adoptNode(document, item.getValue());
                         rootNode.appendChild(adoptedNode);
@@ -326,5 +334,25 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
         if (!folder.isDirectory() && !folder.mkdirs()) {
             throw new IOException("Failed to create directory: " + folder);
         }
+    }
+
+    /**
+     * Creates the path comment XML string. Note that it does not escape characters
+     * such as &amp; and &lt;; those are expected to be escaped by the caller (typically
+     * handled by the {@link com.android.ide.common.res2.MergedResourceWriter}'s call
+     * to {@link Document#createComment(String)})
+     *
+     * @param file the file to create a path comment for
+     * @return the corresponding XML contents of the string
+     */
+    @VisibleForTesting
+    public static String createPathComment(File file) throws MalformedURLException {
+        String url = SdkUtils.fileToUrlString(file);
+        int dashes = url.indexOf("--");
+        if (dashes != -1) { // Not allowed inside XML comments - for SGML compatibility. Sigh.
+            url = url.replace("--", "%2D%2D");
+        }
+
+        return FILENAME_PREFIX + url;
     }
 }
