@@ -441,7 +441,7 @@ public class LintDriver {
             registries.add(mRegistry);
             for (File jarFile : jarFiles) {
                 try {
-                    registries.add(JarFileIssueRegistry.get(jarFile));
+                    registries.add(JarFileIssueRegistry.get(mClient, jarFile));
                 } catch (Throwable e) {
                     mClient.log(e, "Could not load custom rule jar file %1$s", jarFile);
                 }
