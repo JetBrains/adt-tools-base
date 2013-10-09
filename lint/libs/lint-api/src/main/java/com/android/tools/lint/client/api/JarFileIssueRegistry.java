@@ -17,6 +17,7 @@ package com.android.tools.lint.client.api;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Severity;
 import com.android.utils.SdkUtils;
 import com.google.common.collect.Lists;
 
@@ -52,7 +53,7 @@ class JarFileIssueRegistry extends IssueRegistry {
     private final List<Issue> myIssues;
 
     @NonNull
-    static IssueRegistry get(@NonNull File jarFile) throws IOException,
+    static IssueRegistry get(@NonNull LintClient client, @NonNull File jarFile) throws IOException,
             ClassNotFoundException, IllegalAccessException, InstantiationException {
         if (sCache == null) {
            sCache = new HashMap<File, SoftReference<JarFileIssueRegistry>>();
@@ -66,13 +67,14 @@ class JarFileIssueRegistry extends IssueRegistry {
             }
         }
 
-        JarFileIssueRegistry registry = new JarFileIssueRegistry(jarFile);
+        JarFileIssueRegistry registry = new JarFileIssueRegistry(client, jarFile);
         sCache.put(jarFile, new SoftReference<JarFileIssueRegistry>(registry));
         return registry;
     }
 
-    private JarFileIssueRegistry(@NonNull File file) throws IOException, ClassNotFoundException,
-            IllegalAccessException, InstantiationException {
+    private JarFileIssueRegistry(@NonNull LintClient client, @NonNull File file)
+            throws IOException, ClassNotFoundException, IllegalAccessException,
+                    InstantiationException {
         myIssues = Lists.newArrayList();
         JarFile jarFile = null;
         try {
@@ -89,6 +91,12 @@ class JarFileIssueRegistry extends IssueRegistry {
                 Class<?> registryClass = Class.forName(className, true, loader);
                 IssueRegistry registry = (IssueRegistry) registryClass.newInstance();
                 myIssues.addAll(registry.getIssues());
+            } else {
+                client.log(Severity.ERROR, null,
+                    "Custom lint rule jar %1$s does not contain a valid registry manifest key " +
+                    "(%2$s).\n" +
+                    "Either the custom jar is invalid, or it uses an outdated API not supported " +
+                    "this lint client", file.getPath(), MF_LINT_REGISTRY);
             }
         } finally {
             if (jarFile != null) {
