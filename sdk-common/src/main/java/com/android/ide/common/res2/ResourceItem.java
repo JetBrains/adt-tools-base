@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ANDROID_NEW_ID_PREFIX;
 import static com.android.SdkConstants.ANDROID_NS_NAME_PREFIX;
 import static com.android.SdkConstants.ANDROID_NS_NAME_PREFIX_LEN;
 import static com.android.SdkConstants.ANDROID_PREFIX;
+import static com.android.SdkConstants.ATTR_ID;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_QUANTITY;
@@ -27,6 +28,9 @@ import static com.android.SdkConstants.ATTR_TYPE;
 import static com.android.SdkConstants.ATTR_VALUE;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
+import static com.android.ide.common.resources.ResourceResolver.ATTR_EXAMPLE;
+import static com.android.ide.common.resources.ResourceResolver.XLIFF_G_TAG;
+import static com.android.ide.common.resources.ResourceResolver.XLIFF_NAMESPACE_PREFIX;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -47,6 +51,7 @@ import com.google.common.base.Splitter;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -494,10 +499,29 @@ public class ResourceItem extends DataItem<ResourceFile>
             short nodeType = child.getNodeType();
 
             switch (nodeType) {
-                case Node.ELEMENT_NODE:
-                    String str = getTextNode(child);
-                    sb.append(str);
+                case Node.ELEMENT_NODE: {
+                    Element element = (Element) child;
+                    if (XLIFF_G_TAG.equals(element.getLocalName()) &&
+                            element.getNamespaceURI() != null &&
+                            element.getNamespaceURI().startsWith( XLIFF_NAMESPACE_PREFIX)) {
+                        if (element.hasAttribute(ATTR_EXAMPLE)) {
+                            // <xliff:g id="number" example="7">%d</xliff:g> minutes
+                            // => "(7) minutes"
+                            String example = element.getAttribute(ATTR_EXAMPLE);
+                            sb.append('(').append(example).append(')');
+                            continue;
+                        } else if (element.hasAttribute(ATTR_ID)) {
+                            // Step <xliff:g id="step_number">%1$d</xliff:g>
+                            // => Step ${step_number}
+                            String id = element.getAttribute(ATTR_ID);
+                            sb.append('$').append('{').append(id).append('}');
+                            continue;
+                        }
+                    }
+
+                    sb.append(getTextNode(child));
                     break;
+                }
                 case Node.TEXT_NODE:
                     sb.append(child.getNodeValue());
                     break;
