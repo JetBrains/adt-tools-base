@@ -370,6 +370,16 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                 "res/values/strings.xml"));
     }
 
+    public void testMissingApplicationIconInLibrary() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.APPLICATION_ICON);
+        assertEquals(
+            "No warnings.",
+            lintProject(
+                "missing_application_icon.xml=>AndroidManifest.xml",
+                "multiproject/library.properties=>project.properties",
+                "res/values/strings.xml"));
+    }
+
     public void testMissingApplicationIconOk() throws Exception {
         mEnabled = Collections.singleton(ManifestDetector.APPLICATION_ICON);
         assertEquals(
