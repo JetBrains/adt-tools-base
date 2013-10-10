@@ -36,6 +36,9 @@ import java.util.Map;
 public class ResourceResolver extends RenderResources {
     public static final String THEME_NAME = "Theme";
     public static final String THEME_NAME_DOT = "Theme.";
+    public static final String XLIFF_NAMESPACE_PREFIX = "urn:oasis:names:tc:xliff:document:";
+    public static final String XLIFF_G_TAG = "g";
+    public static final String ATTR_EXAMPLE = "example";
 
     /**
      * Number of indirections we'll follow for resource resolution before assuming there
