@@ -615,7 +615,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                             "implications for the application's data)", null);
             }
 
-            if (!element.hasAttributeNS(ANDROID_URI, SdkConstants.ATTR_ICON)) {
+            if (!element.hasAttributeNS(ANDROID_URI, SdkConstants.ATTR_ICON)
+                    && !context.getProject().isLibrary()) {
                 context.report(APPLICATION_ICON, element, context.getLocation(element),
                             "Should explicitly set android:icon, there is no default", null);
             }
