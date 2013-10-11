@@ -2,14 +2,13 @@ package ${packageName};
 
 import java.util.Locale;
 
-<#if navType?contains("tabs")>import android.app.ActionBar;
-import android.app.FragmentTransaction;</#if>
+import <#if appCompat?has_content>android.support.v7.app.ActionBarActivity<#else>android.app.Activity</#if>;
+import android.<#if appCompat?has_content>support.v7.</#if>app.ActionBar;
+import android.<#if appCompat?has_content>support.v4.</#if>app.Fragment;
+import android.<#if appCompat?has_content>support.v4.</#if>app.FragmentManager;
+import android.<#if appCompat?has_content>support.v4.</#if>app.FragmentTransaction;
+import android.support.${(appCompat?has_content)?string('v4','v13')}.app.FragmentPagerAdapter;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.app.NavUtils;
 import android.support.v4.view.ViewPager;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -19,15 +18,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-public class ${activityClass} extends FragmentActivity<#if navType?contains("tabs")> implements ActionBar.TabListener</#if> {
+public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBar','')}Activity<#if navType == 'tabs'> implements ActionBar.TabListener</#if> {
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
      * fragments for each of the sections. We use a
-     * {@link android.support.v4.app.FragmentPagerAdapter} derivative, which
-     * will keep every loaded fragment in memory. If this becomes too memory
-     * intensive, it may be best to switch to a
-     * {@link android.support.v4.app.FragmentStatePagerAdapter}.
+     * {@link FragmentPagerAdapter} derivative, which will keep every
+     * loaded fragment in memory. If this becomes too memory intensive, it
+     * may be best to switch to a
+     * {@link android.support.${(appCompat?has_content)?string('v4','v13')}.app.FragmentStatePagerAdapter}.
      */
     SectionsPagerAdapter mSectionsPagerAdapter;
 
@@ -41,28 +40,20 @@ public class ${activityClass} extends FragmentActivity<#if navType?contains("tab
         super.onCreate(savedInstanceState);
         setContentView(R.layout.${layoutName});
 
-        <#if navType?contains("tabs")>
+        <#if navType == 'tabs'>
         // Set up the action bar.
-        final ActionBar actionBar = getActionBar();
-        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
-        <#if parentActivityClass != "">
-        // Show the Up button in the action bar.
-        actionBar.setDisplayHomeAsUpEnabled(true);
-        </#if>
-        <#elseif parentActivityClass != "">
-        // Show the Up button in the action bar.
-        getActionBar().setDisplayHomeAsUpEnabled(true);
-        </#if>
+        final ActionBar actionBar = get${Support}ActionBar();
+        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);</#if>
 
         // Create the adapter that will return a fragment for each of the three
-        // primary sections of the app.
-        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
+        // primary sections of the activity.
+        mSectionsPagerAdapter = new SectionsPagerAdapter(get${Support}FragmentManager());
 
         // Set up the ViewPager with the sections adapter.
         mViewPager = (ViewPager) findViewById(R.id.pager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
-        <#if navType?contains("tabs")>
+        <#if navType == 'tabs'>
         // When swiping between different sections, select the corresponding
         // tab. We can also use ActionBar.Tab#select() to do this if we have
         // a reference to the Tab.
@@ -87,10 +78,9 @@ public class ${activityClass} extends FragmentActivity<#if navType?contains("tab
         </#if>
     }
 
-    <#include "include_onCreateOptionsMenu.java.ftl">
-    <#include "include_onOptionsItemSelected.java.ftl">
+    <#include "include_options_menu.java.ftl">
 
-    <#if navType?contains("tabs")>@Override
+    <#if navType == 'tabs'>@Override
     public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
         // When the given tab is selected, switch to the corresponding page in
         // the ViewPager.
@@ -118,13 +108,8 @@ public class ${activityClass} extends FragmentActivity<#if navType?contains("tab
         @Override
         public Fragment getItem(int position) {
             // getItem is called to instantiate the fragment for the given page.
-            // Return a DummySectionFragment (defined as a static inner class
-            // below) with the page number as its lone argument.
-            Fragment fragment = new DummySectionFragment();
-            Bundle args = new Bundle();
-            args.putInt(DummySectionFragment.ARG_SECTION_NUMBER, position + 1);
-            fragment.setArguments(args);
-            return fragment;
+            // Return a DummyFragment (defined as a static inner class below).
+            return DummyFragment.newInstance(position + 1);
         }
 
         @Override
@@ -148,6 +133,6 @@ public class ${activityClass} extends FragmentActivity<#if navType?contains("tab
         }
     }
 
-    <#include "include_DummySectionFragment.java.ftl">
+    <#include "include_fragment.java.ftl">
 
 }

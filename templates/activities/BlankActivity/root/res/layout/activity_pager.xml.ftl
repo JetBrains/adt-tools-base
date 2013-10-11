@@ -3,22 +3,4 @@
     android:id="@+id/pager"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".${activityClass}"<#if navType != "pager_strip"> /><#else>>
-
-    <!--
-    This title strip will display the currently visible page title, as well as the page
-    titles for adjacent pages.
-    -->
-
-    <android.support.v4.view.PagerTitleStrip
-        android:id="@+id/pager_title_strip"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top"
-        android:background="#33b5e5"
-        android:paddingBottom="4dp"
-        android:paddingTop="4dp"
-        android:textColor="#fff" />
-
-</android.support.v4.view.ViewPager>
-</#if>
+    tools:context=".${activityClass}" />

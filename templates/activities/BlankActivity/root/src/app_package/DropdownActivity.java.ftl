@@ -1,13 +1,11 @@
 package ${packageName};
 
-<#if minApiLevel < 14>import android.annotation.TargetApi;</#if>
-import android.app.ActionBar;
+import <#if appCompat?has_content>android.support.v7.app.ActionBarActivity<#else>android.app.Activity</#if>;
+import android.<#if appCompat?has_content>support.v7.</#if>app.ActionBar;
+import android.<#if appCompat?has_content>support.v4.</#if>app.Fragment;
+import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
-<#if minApiLevel < 14>import android.content.Context;
-import android.os.Build;</#if>
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.NavUtils;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -17,7 +15,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-public class ${activityClass} extends FragmentActivity implements ActionBar.OnNavigationListener {
+public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBar','')}Activity implements ActionBar.OnNavigationListener {
 
     /**
      * The serialization (saved instance state) Bundle key representing the
@@ -31,7 +29,7 @@ public class ${activityClass} extends FragmentActivity implements ActionBar.OnNa
         setContentView(R.layout.${layoutName});
 
         // Set up the action bar to show a dropdown list.
-        final ActionBar actionBar = getActionBar();
+        final ActionBar actionBar = get${Support}ActionBar();
         actionBar.setDisplayShowTitleEnabled(false);
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
         <#if parentActivityClass != "">
@@ -43,7 +41,7 @@ public class ${activityClass} extends FragmentActivity implements ActionBar.OnNa
         actionBar.setListNavigationCallbacks(
                 // Specify a SpinnerAdapter to populate the dropdown list.
                 new ArrayAdapter<String>(
-                        <#if minApiLevel gte 14>actionBar.getThemedContext()<#else>getActionBarThemedContextCompat()</#if>,
+                        actionBar.getThemedContext(),
                         android.R.layout.simple_list_item_1,
                         android.R.id.text1,
                         new String[] {
@@ -54,27 +52,11 @@ public class ${activityClass} extends FragmentActivity implements ActionBar.OnNa
                 this);
     }
 
-    <#if minApiLevel < 14>
-    /**
-     * Backward-compatible version of {@link ActionBar#getThemedContext()} that
-     * simply returns the {@link android.app.Activity} if
-     * <code>getThemedContext</code> is unavailable.
-     */
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    private Context getActionBarThemedContextCompat() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            return getActionBar().getThemedContext();
-        } else {
-            return this;
-        }
-    }
-    </#if>
-
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {
         // Restore the previously serialized current dropdown position.
         if (savedInstanceState.containsKey(STATE_SELECTED_NAVIGATION_ITEM)) {
-            getActionBar().setSelectedNavigationItem(
+            get${Support}ActionBar().setSelectedNavigationItem(
                     savedInstanceState.getInt(STATE_SELECTED_NAVIGATION_ITEM));
         }
     }
@@ -83,26 +65,21 @@ public class ${activityClass} extends FragmentActivity implements ActionBar.OnNa
     public void onSaveInstanceState(Bundle outState) {
         // Serialize the current dropdown position.
         outState.putInt(STATE_SELECTED_NAVIGATION_ITEM,
-                getActionBar().getSelectedNavigationIndex());
+                get${Support}ActionBar().getSelectedNavigationIndex());
     }
 
-    <#include "include_onCreateOptionsMenu.java.ftl">
-    <#include "include_onOptionsItemSelected.java.ftl">
+    <#include "include_options_menu.java.ftl">
 
     @Override
     public boolean onNavigationItemSelected(int position, long id) {
         // When the given dropdown item is selected, show its contents in the
         // container view.
-        Fragment fragment = new DummySectionFragment();
-        Bundle args = new Bundle();
-        args.putInt(DummySectionFragment.ARG_SECTION_NUMBER, position + 1);
-        fragment.setArguments(args);
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.container, fragment)
+        get${Support}FragmentManager().beginTransaction()
+                .replace(R.id.container, DummyFragment.newInstance(position + 1))
                 .commit();
         return true;
     }
 
-    <#include "include_DummySectionFragment.java.ftl">
+    <#include "include_fragment.java.ftl">
 
 }

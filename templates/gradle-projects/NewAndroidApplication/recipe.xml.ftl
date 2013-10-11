@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <recipe>
+
+
+    <#if appCompat?has_content><dependency mavenUrl="com.android.support:appcompat-v7:+"/></#if>
+
     <merge from="settings.gradle.ftl"
              to="${escapeXmlAttribute(topOut)}/settings.gradle" />
     <instantiate from="build.gradle.ftl"
@@ -14,6 +18,8 @@
             to="${escapeXmlAttribute(resOut)}/drawable-mdpi" />
     <copy from="res/drawable-xhdpi"
             to="${escapeXmlAttribute(resOut)}/drawable-xhdpi" />
+    <copy from="res/drawable-xxhdpi"
+            to="${escapeXmlAttribute(resOut)}/drawable-xxhdpi" />
 </#if>
 <#if makeIgnore>
     <copy from="project_ignore"
@@ -23,14 +29,6 @@
 </#if>
     <instantiate from="res/values/styles.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/styles.xml" />
-<#if buildApi gte 11 && baseTheme != "none">
-    <instantiate from="res/values-v11/styles_hc.xml.ftl"
-                   to="${escapeXmlAttribute(resOut)}/values-v11/styles.xml" />
-</#if>
-<#if buildApi gte 14 && baseTheme?contains("darkactionbar")>
-    <copy from="res/values-v14/styles_ics.xml"
-            to="${escapeXmlAttribute(resOut)}/values-v14/styles.xml" />
-</#if>
 
     <instantiate from="res/values/strings.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
