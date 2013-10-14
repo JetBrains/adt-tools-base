@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <template
-    format="4"
+    format="1"
     revision="4"
     name="Android Application"
     description="Creates a new Android application.">
@@ -15,7 +15,7 @@
         id="packageName"
         name="Package name"
         type="string"
-        constraints="app_package|nonempty"
+        constraints="package|nonempty"
         default="com.mycompany.myapp" />
 
     <parameter
@@ -31,7 +31,6 @@
         type="enum"
         default="holo_light_darkactionbar"
         help="The base user interface theme for the application">
-        <option id="none">None</option>
         <option id="holo_dark" minBuildApi="11">Holo Dark</option>
         <option id="holo_light" minBuildApi="11">Holo Light</option>
         <option id="holo_light_darkactionbar" minBuildApi="14" default="true">Holo Light with Dark Action Bar</option>
@@ -67,7 +66,7 @@
         name="Build API level"
         type="string"
         constraints="apilevel"
-        default="16" />
+        default="18" />
 
     <parameter
         id="copyIcons"
