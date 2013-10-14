@@ -37,7 +37,6 @@ import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -901,7 +900,7 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     private static ResourceMerger getResourceMerger()
-            throws DuplicateDataException, IOException {
+            throws MergingException, IOException {
         File root = TestUtils.getRoot("resources", "baseMerge");
 
         ResourceSet res = ResourceSetTest.getBaseResourceSet();
@@ -921,8 +920,7 @@ public class ResourceMergerTest extends BaseTestCase {
         return resourceMerger;
     }
 
-    private static File getWrittenResources() throws DuplicateDataException, IOException,
-            MergeConsumer.ConsumerException {
+    private static File getWrittenResources() throws MergingException, IOException {
         ResourceMerger resourceMerger = getResourceMerger();
 
         File folder = Files.createTempDir();
@@ -962,7 +960,7 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     private static Map<String, String> quickStringOnlyValueFileParser(File file)
-            throws IOException {
+            throws IOException, MergingException {
         Map<String, String> result = Maps.newHashMap();
 
         Document document = ValueResourceParser2.parseDocument(file);
@@ -1042,5 +1040,104 @@ public class ResourceMergerTest extends BaseTestCase {
                 "overlay/drawable-ldpi/icon.png".replace('/', File.separatorChar));
         File copied = new File(folder, FD_RES_DRAWABLE + File.separator + "icon.png");
         assertTrue(Arrays.equals(Files.toByteArray(original), Files.toByteArray(copied)));
+    }
+
+    public void testWritePermission() throws Exception {
+        ResourceMerger merger = getResourceMerger();
+
+        File folder = Files.createTempDir();
+        boolean writable = folder.setWritable(false);
+        if (!writable) {
+            // Not supported on this platform
+            return;
+        }
+        try {
+        merger.writeBlobTo(folder,
+                new MergedResourceWriter(Files.createTempDir(), null /*aaptRunner*/));
+        } catch (MergingException e) {
+            File file = new File(folder, "merger.xml");
+            assertEquals(file.getPath() + ": Error: (Permission denied)",
+                    e.getMessage());
+            return;
+        }
+        fail("Exception not thrown as expected");
+    }
+
+    public void testInvalidFileNames() throws Exception {
+        File root = TestUtils.getRoot("resources", "brokenSet5");
+        ResourceSet resourceSet = new ResourceSet("brokenSet5");
+        resourceSet.addSource(root);
+        RecordingLogger logger =  new RecordingLogger();
+        resourceSet.loadFromFiles(logger);
+
+        ResourceMerger resourceMerger = new ResourceMerger();
+        resourceMerger.addDataSet(resourceSet);
+
+
+        File folder = Files.createTempDir();
+        try {
+            MergedResourceWriter writer = new MergedResourceWriter(folder, null /*aaptRunner*/);
+            resourceMerger.mergeData(writer, false /*doCleanUp*/);
+        } catch (MergingException e) {
+            File file = new File(root, "layout" + File.separator + "ActivityMain.xml");
+            file = file.getAbsoluteFile();
+            assertEquals(file.getPath() + ": Error: Invalid file name: must contain only "
+                    + "lowercase letters and digits ([a-z0-9_.])",
+                    e.getMessage());
+            return;
+        }
+        fail("Expected error");
+    }
+
+    public void testXmlParseError1() throws Exception {
+        File root = TestUtils.getRoot("resources", "brokenSet6");
+        try {
+            ResourceSet resourceSet = new ResourceSet("brokenSet6");
+            resourceSet.addSource(root);
+            RecordingLogger logger =  new RecordingLogger();
+            resourceSet.loadFromFiles(logger);
+
+            ResourceMerger resourceMerger = new ResourceMerger();
+            resourceMerger.addDataSet(resourceSet);
+
+
+            File folder = Files.createTempDir();
+            MergedResourceWriter writer = new MergedResourceWriter(folder, null /*aaptRunner*/);
+            resourceMerger.mergeData(writer, false /*doCleanUp*/);
+        } catch (MergingException e) {
+            File file = new File(root, "values" + File.separator + "dimens.xml");
+            file = file.getAbsoluteFile();
+            assertEquals(file.getPath() + ":3:5: Error: The content of elements must consist "
+                    + "of well-formed character data or markup.",
+                    e.getMessage());
+            return;
+        }
+        fail("Expected error");
+    }
+
+    public void testXmlParseError7() throws Exception {
+        File root = TestUtils.getRoot("resources", "brokenSet7");
+        try {
+            ResourceSet resourceSet = new ResourceSet("brokenSet7");
+            resourceSet.addSource(root);
+            RecordingLogger logger =  new RecordingLogger();
+            resourceSet.loadFromFiles(logger);
+
+            ResourceMerger resourceMerger = new ResourceMerger();
+            resourceMerger.addDataSet(resourceSet);
+
+
+            File folder = Files.createTempDir();
+            MergedResourceWriter writer = new MergedResourceWriter(folder, null /*aaptRunner*/);
+            resourceMerger.mergeData(writer, false /*doCleanUp*/);
+        } catch (MergingException e) {
+            File file = new File(root, "values" + File.separator + "dimens.xml");
+            file = file.getAbsoluteFile();
+            assertEquals(file.getPath() + ":1:16: Error: Open quote is expected for "
+                    + "attribute \"{1}\" associated with an  element type  \"name\".",
+                    e.getMessage());
+            return;
+        }
+        fail("Expected error");
     }
 }

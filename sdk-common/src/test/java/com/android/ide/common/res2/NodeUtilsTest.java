@@ -17,6 +17,7 @@
 package com.android.ide.common.res2;
 
 import junit.framework.TestCase;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 

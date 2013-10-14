@@ -20,7 +20,6 @@ import com.android.testutils.TestUtils;
 import com.google.common.collect.Maps;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -70,7 +69,7 @@ public class ValueResourceParser2Test extends BaseTestCase {
         }
     }
 
-    private static List<ResourceItem> getParsedResources() throws IOException {
+    private static List<ResourceItem> getParsedResources() throws MergingException {
         if (sResources == null) {
             File root = TestUtils.getRoot("resources", "baseSet");
             File values = new File(root, "values");

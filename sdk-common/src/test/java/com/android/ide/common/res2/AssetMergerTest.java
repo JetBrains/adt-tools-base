@@ -352,7 +352,7 @@ public class AssetMergerTest extends BaseTestCase {
     }
 
     private static AssetMerger getAssetMerger()
-            throws DuplicateDataException, IOException {
+            throws IOException, MergingException {
         if (sAssetMerger == null) {
             File root = TestUtils.getRoot("assets", "baseMerge");
 
@@ -374,8 +374,7 @@ public class AssetMergerTest extends BaseTestCase {
         return sAssetMerger;
     }
 
-    private static File getWrittenResources() throws DuplicateDataException, IOException,
-            MergeConsumer.ConsumerException {
+    private static File getWrittenResources() throws MergingException, IOException {
         AssetMerger assetMerger = getAssetMerger();
 
         File folder = Files.createTempDir();

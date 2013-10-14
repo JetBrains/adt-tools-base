@@ -32,11 +32,11 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -143,12 +143,12 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
      * @param consumer the consumer of the merge.
      * @param doCleanUp clean up the state to be able to do further incremental merges. If this
      *                  is a one-shot merge, this can be false to improve performance.
-     * @throws java.io.IOException
-     * @throws DuplicateDataException
-     * @throws MergeConsumer.ConsumerException
+
+     * @throws MergingException such as a DuplicateDataException or a
+     *      MergeConsumer.ConsumerException if something goes wrong
      */
     public void mergeData(@NonNull MergeConsumer<I> consumer, boolean doCleanUp)
-            throws IOException, DuplicateDataException, MergeConsumer.ConsumerException {
+            throws MergingException {
 
         consumer.start();
 
@@ -263,12 +263,12 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
      * @param blobRootFolder the root folder where blobs are store.
      * @param consumer the merge consumer that was used by the merge.
      *
-     * @throws IOException
+     * @throws MergingException if something goes wrong
      *
      * @see #loadFromBlob(File, boolean)
      */
     public void writeBlobTo(@NonNull File blobRootFolder, @NonNull MergeConsumer<I> consumer)
-            throws IOException {
+            throws MergingException {
         // write "compact" blob
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
@@ -290,12 +290,21 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                 dataSet.appendToXml(dataSetNode, document, consumer);
             }
 
-            String content = XmlPrettyPrinter.prettyPrint(document);
+            String content = XmlPrettyPrinter.prettyPrint(document, true);
 
-            createDir(blobRootFolder);
-            Files.write(content, new File(blobRootFolder, FN_MERGER_XML), Charsets.UTF_8);
+            try {
+                createDir(blobRootFolder);
+            } catch (IOException ioe) {
+                throw new MergingException(ioe).setFile(blobRootFolder);
+            }
+            File file = new File(blobRootFolder, FN_MERGER_XML);
+            try {
+                Files.write(content, file, Charsets.UTF_8);
+            } catch (IOException ioe) {
+                throw new MergingException(ioe).setFile(file);
+            }
         } catch (ParserConfigurationException e) {
-            throw new IOException(e);
+            throw new MergingException(e);
         }
     }
 
@@ -315,12 +324,12 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
      * @param blobRootFolder the folder containing the blob.
      * @param incrementalState whether to load into an incremental state or a new state.
      * @return true if the blob was loaded.
-     * @throws IOException
+     * @throws MergingException if something goes wrong
      *
      * @see #writeBlobTo(File, MergeConsumer)
      */
     public boolean loadFromBlob(@NonNull File blobRootFolder, boolean incrementalState)
-            throws IOException {
+            throws MergingException {
         File file = new File(blobRootFolder, FN_MERGER_XML);
         if (!file.isFile()) {
             return false;
@@ -366,12 +375,21 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             }
 
             return true;
-        } catch (FileNotFoundException e) {
-            throw new IOException(e);
+        } catch (SAXParseException e) {
+            MergingException exception = new MergingException(e);
+            exception.setFile(file);
+            int lineNumber = e.getLineNumber();
+            if (lineNumber != -1) {
+                exception.setLine(lineNumber - 1); // make line numbers 0-based
+                exception.setColumn(e.getColumnNumber() - 1);
+            }
+            throw exception;
+        } catch (IOException e) {
+            throw new MergingException(e).setFile(file);
         } catch (ParserConfigurationException e) {
-            throw new IOException(e);
+            throw new MergingException(e).setFile(file);
         } catch (SAXException e) {
-            throw new IOException(e);
+            throw new MergingException(e).setFile(file);
         } finally {
             try {
                 if (stream != null) {
