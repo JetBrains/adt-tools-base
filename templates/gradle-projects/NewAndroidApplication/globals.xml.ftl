@@ -8,6 +8,6 @@
     <global id="resOut" value="src/main/res" />
     <global id="mavenUrl" value="mavenCentral" />
     <global id="buildToolsVersion" value="18.0.1" />
-    <global id="gradlePluginVersion" value="0.5.+" />
+    <global id="gradlePluginVersion" value="0.6.+" />
     <global id="v4SupportLibraryVersion" value="13.0.+" />
 </globals>

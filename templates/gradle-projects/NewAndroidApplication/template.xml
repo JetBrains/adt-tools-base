@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <template
-    format="1"
+    format="4"
     revision="4"
     name="Android Application"
     description="Creates a new Android application.">
@@ -15,7 +15,7 @@
         id="packageName"
         name="Package name"
         type="string"
-        constraints="package|nonempty"
+        constraints="app_package|nonempty"
         default="com.mycompany.myapp" />
 
     <parameter
