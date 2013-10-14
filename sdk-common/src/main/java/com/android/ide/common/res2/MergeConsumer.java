@@ -19,6 +19,8 @@ package com.android.ide.common.res2;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
+import java.io.File;
+
 /**
  * A consumer of merges. Used with {@link DataMerger#mergeData(MergeConsumer, boolean)}.
  */
@@ -28,7 +30,7 @@ public interface MergeConsumer<I extends DataItem> {
      * An exception thrown during by the consumer. It always contains the original exception
      * as its cause.
      */
-    public static class ConsumerException extends Exception {
+    public static class ConsumerException extends MergingException {
         public ConsumerException(Throwable cause) {
             super(cause);
         }

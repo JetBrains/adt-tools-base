@@ -47,6 +47,8 @@ public abstract class MergeWriter<I extends DataItem> implements MergeConsumer<I
             postWriteAction();
 
             getExecutor().waitForTasksWithQuickFail(true);
+        } catch (ConsumerException e) {
+            throw e;
         } catch (Exception e) {
             throw new ConsumerException(e);
         }

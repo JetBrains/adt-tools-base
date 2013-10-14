@@ -36,6 +36,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -71,10 +72,10 @@ class ValueResourceParser2 {
      * Parses the file and returns a list of {@link ResourceItem} objects.
      * @return a list of resources.
      *
-     * @throws IOException
+     * @throws MergingException if a merging exception happens
      */
     @NonNull
-    List<ResourceItem> parseFile() throws IOException {
+    List<ResourceItem> parseFile() throws MergingException {
         Document document = parseDocument(mFile);
 
         // get the root node
@@ -106,7 +107,12 @@ class ValueResourceParser2 {
 
                 if (resource.getType() == ResourceType.DECLARE_STYLEABLE) {
                     // Need to also create ATTR items for its children
-                    ValueResourceParser2.addStyleableItems(node, resources, map);
+                    try {
+                        ValueResourceParser2.addStyleableItems(node, resources, map);
+                    } catch (MergingException e) {
+                        e.setFile(mFile);
+                        throw e;
+                    }
                 }
             }
         }
@@ -175,22 +181,35 @@ class ValueResourceParser2 {
      * Loads the DOM for a given file and returns a {@link Document} object.
      * @param file the file to parse
      * @return a Document object.
-     * @throws IOException
+     * @throws MergingException if a merging exception happens
      */
     @NonNull
-    static Document parseDocument(File file) throws IOException {
+    static Document parseDocument(File file) throws MergingException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        BufferedInputStream stream = new BufferedInputStream(new FileInputStream(file));
-        InputSource is = new InputSource(stream);
-        factory.setNamespaceAware(true);
-        factory.setValidating(false);
+        BufferedInputStream stream = null;
         try {
+            stream = new BufferedInputStream(new FileInputStream(file));
+            InputSource is = new InputSource(stream);
+            factory.setNamespaceAware(true);
+            factory.setValidating(false);
             DocumentBuilder builder = factory.newDocumentBuilder();
             return builder.parse(is);
+        } catch (SAXParseException e) {
+            String message = e.getLocalizedMessage();
+            MergingException exception = new MergingException(message, e);
+            exception.setFile(file);
+            int lineNumber = e.getLineNumber();
+            if (lineNumber != -1) {
+                exception.setLine(lineNumber - 1); // make line numbers 0-based
+                exception.setColumn(e.getColumnNumber() - 1);
+            }
+            throw exception;
         } catch (ParserConfigurationException e) {
-            throw new IOException(e);
+            throw new MergingException(e).setFile(file);
         } catch (SAXException e) {
-            throw new IOException(e);
+            throw new MergingException(e).setFile(file);
+        } catch (IOException e) {
+            throw new MergingException(e).setFile(file);
         } finally {
             Closeables.closeQuietly(stream);
         }
@@ -206,7 +225,8 @@ class ValueResourceParser2 {
      */
     static void addStyleableItems(@NonNull Node styleableNode,
                                   @NonNull List<ResourceItem> list,
-                                  @Nullable Map<ResourceType, Set<String>> map) throws IOException {
+                                  @Nullable Map<ResourceType, Set<String>> map)
+            throws MergingException {
         assert styleableNode.getNodeName().equals(ResourceType.DECLARE_STYLEABLE.getName());
         NodeList nodes = styleableNode.getChildNodes();
 
@@ -234,7 +254,8 @@ class ValueResourceParser2 {
     }
 
     private static void checkDuplicate(@NonNull ResourceItem resource,
-                                       @Nullable Map<ResourceType, Set<String>> map) throws IOException {
+                                       @Nullable Map<ResourceType, Set<String>> map)
+            throws MergingException {
         if (map == null) {
             return;
         }
@@ -246,7 +267,7 @@ class ValueResourceParser2 {
             map.put(resource.getType(), set);
         } else {
             if (set.contains(name)) {
-                throw new IOException(String.format(
+                throw new MergingException(String.format(
                         "Found item %s/%s more than one time",
                         resource.getType().getDisplayName(), name));
             }

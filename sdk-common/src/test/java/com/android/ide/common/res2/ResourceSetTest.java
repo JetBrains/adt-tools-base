@@ -16,6 +16,8 @@
 
 package com.android.ide.common.res2;
 
+import static java.io.File.separator;
+
 import com.android.testutils.TestUtils;
 
 import java.io.File;
@@ -72,6 +74,15 @@ public class ResourceSetTest extends BaseTestCase {
             set.loadFromFiles(logger);
         } catch (DuplicateDataException e) {
             gotException = true;
+            String message = e.getMessage();
+            // Clean up paths etc for unit test
+            int index = message.indexOf("dupSet");
+            assertTrue(index != -1);
+            String prefix = message.substring(0, index);
+            message = message.replaceAll(prefix, "<PREFIX>").replace('\\','/');
+            assertEquals("<PREFIX>dupSet/res2/drawable/icon.png: Error: Duplicate resources: "
+                    + "<PREFIX>dupSet/res2/drawable/icon.png:drawable/icon, "
+                    + "<PREFIX>dupSet/res1/drawable/icon.png:drawable/icon", message);
         }
 
         checkLogger(logger);
@@ -88,8 +99,11 @@ public class ResourceSetTest extends BaseTestCase {
         RecordingLogger logger =  new RecordingLogger();
         try {
             set.loadFromFiles(logger);
-        } catch (IOException e) {
+        } catch (MergingException e) {
             gotException = true;
+            assertEquals(new File(root, "values" + separator + "dimens.xml").getAbsolutePath() +
+                    ":0:0: Error: Content is not allowed in prolog.",
+                    e.getMessage());
         }
 
         assertTrue("ResourceSet processing should have failed, but didn't", gotException);
@@ -106,8 +120,11 @@ public class ResourceSetTest extends BaseTestCase {
         RecordingLogger logger =  new RecordingLogger();
         try {
             set.loadFromFiles(logger);
-        } catch (IOException e) {
+        } catch (MergingException e) {
             gotException = true;
+            assertEquals(new File(root, "values" + separator + "values.xml").getAbsolutePath() +
+                    ": Error: Found item String/app_name more than one time",
+                    e.getMessage());
         }
 
         assertTrue("ResourceSet processing should have failed, but didn't", gotException);
@@ -124,15 +141,40 @@ public class ResourceSetTest extends BaseTestCase {
         RecordingLogger logger =  new RecordingLogger();
         try {
             set.loadFromFiles(logger);
-        } catch (IOException e) {
+        } catch (MergingException e) {
             gotException = true;
+            assertEquals(new File(root, "values" + separator + "values.xml").getAbsolutePath() +
+                    ": Error: Found item Attr/d_common_attr more than one time",
+                    e.getMessage());
         }
 
         assertTrue("ResourceSet processing should have failed, but didn't", gotException);
         assertFalse(logger.getErrorMsgs().isEmpty());
     }
 
-    static ResourceSet getBaseResourceSet() throws DuplicateDataException, IOException {
+    public void testBrokenSet4() throws Exception {
+        File root = TestUtils.getRoot("resources", "brokenSet4");
+
+        ResourceSet set = new ResourceSet("main");
+        set.addSource(root);
+
+        boolean gotException = false;
+        RecordingLogger logger =  new RecordingLogger();
+        try {
+            set.loadFromFiles(logger);
+        } catch (MergingException e) {
+            gotException = true;
+            assertEquals(new File(root, "values" + separator + "values.xml").getAbsolutePath() +
+                    ":6:5: Error: The element type \"declare-styleable\" "
+                    + "must be terminated by the matching end-tag \"</declare-styleable>\".",
+                    e.getMessage());
+        }
+
+        assertTrue("ResourceSet processing should have failed, but didn't", gotException);
+        assertFalse(logger.getErrorMsgs().isEmpty());
+    }
+
+    static ResourceSet getBaseResourceSet() throws MergingException, IOException {
         File root = TestUtils.getRoot("resources", "baseSet");
 
         ResourceSet resourceSet = new ResourceSet("main");
