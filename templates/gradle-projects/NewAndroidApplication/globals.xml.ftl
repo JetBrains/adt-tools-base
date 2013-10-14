@@ -2,11 +2,12 @@
 <globals>
     <global id="topOut" value="." />
     <global id="projectOut" value="." />
-    <global id="manifestOut" value="." />
-    <global id="srcOut" value="src/${slashedPackageName(packageName)}" />
-    <global id="resOut" value="res" />
+    <global id="appCompat" value="${(minApi lt 14)?string('1','')}" />
+    <global id="manifestOut" value="src/main" />
+    <global id="srcOut" value="src/main/java/${slashedPackageName(packageName)}" />
+    <global id="resOut" value="src/main/res" />
     <global id="mavenUrl" value="mavenCentral" />
-    <global id="buildToolsVersion" value="${buildApi}" />
-    <global id="gradlePluginVersion" value="1.0.+" />
+    <global id="buildToolsVersion" value="18.0.1" />
+    <global id="gradlePluginVersion" value="0.5.+" />
     <global id="v4SupportLibraryVersion" value="13.0.+" />
 </globals>
