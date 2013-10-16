@@ -78,5 +78,5 @@
     </#if>
 
     <open file="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
-    <open file="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
+    <open file="${escapeXmlAttribute(resOut)}/layout/${fragmentLayoutName}.xml" />
 </recipe>
