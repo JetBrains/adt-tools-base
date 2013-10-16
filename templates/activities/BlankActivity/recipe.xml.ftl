@@ -52,7 +52,7 @@
 
     </#if>
 
-    <!-- Always add the simple/dummy fragment -->
+    <!-- Always add the simple/placeholder fragment -->
     <instantiate from="res/layout/fragment_simple.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/layout/${fragmentLayoutName}.xml" />
 

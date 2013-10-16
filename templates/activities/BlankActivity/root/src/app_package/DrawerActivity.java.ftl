@@ -51,7 +51,7 @@ public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBa
         // update the main content by replacing fragments
         FragmentManager fragmentManager = get${Support}FragmentManager();
         fragmentManager.beginTransaction()
-                .replace(R.id.container, DummyFragment.newInstance(position + 1))
+                .replace(R.id.container, PlaceholderFragment.newInstance(position + 1))
                 .commit();
     }
 
