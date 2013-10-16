@@ -75,7 +75,7 @@ public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBa
         // When the given dropdown item is selected, show its contents in the
         // container view.
         get${Support}FragmentManager().beginTransaction()
-                .replace(R.id.container, DummyFragment.newInstance(position + 1))
+                .replace(R.id.container, PlaceholderFragment.newInstance(position + 1))
                 .commit();
         return true;
     }
