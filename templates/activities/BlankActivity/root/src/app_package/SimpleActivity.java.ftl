@@ -20,7 +20,7 @@ public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBa
 
         if (savedInstanceState == null) {
             get${Support}FragmentManager().beginTransaction()
-                    .add(R.id.container, new DummyFragment())
+                    .add(R.id.container, new PlaceholderFragment())
                     .commit();
         }
     }
