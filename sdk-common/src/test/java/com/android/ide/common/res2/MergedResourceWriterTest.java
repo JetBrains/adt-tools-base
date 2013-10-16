@@ -20,7 +20,6 @@ import static com.android.ide.common.res2.MergedResourceWriter.createPathComment
 import static com.android.utils.SdkUtils.urlToFile;
 
 import com.android.ide.common.xml.XmlPrettyPrinter;
-import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
 
 import junit.framework.TestCase;
@@ -29,7 +28,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.io.File;
-import java.net.URISyntaxException;
 import java.net.URL;
 
 /** NOTE: Most of the tests for MergedResourceWriterTest are in {@link ResourceMergerTest} */

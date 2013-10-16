@@ -22,6 +22,7 @@ import static com.android.SdkConstants.FD_RES_LAYOUT;
 import static com.android.SdkConstants.FD_RES_VALUES;
 
 import com.android.ide.common.rendering.api.ResourceValue;
+import com.android.ide.common.resources.TestResourceRepository;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.resources.configuration.LanguageQualifier;
 import com.android.ide.common.resources.configuration.ScreenOrientationQualifier;
@@ -312,5 +313,41 @@ public class ResourceRepositoryTest2 extends TestCase {
         resourceSet.updateWith(mRes, newFile, FileStatus.NEW, mLogger);
         mResourceMerger.mergeData(mRepository.createMergeConsumer(), true /*doCleanUp*/);
         assertTrue(mRepository.hasResourceItem("@layout/layout5"));
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public void testXliff() throws Exception {
+        ResourceRepository resources = TestResourceRepository.createRes2(false, new Object[]{
+                "values/strings.xml", ""
+                + "<resources xmlns:xliff=\"urn:oasis:names:tc:xliff:document:1.2\" >\n"
+                + "    <string name=\"share_with_application\">\n"
+                + "        Share your score of <xliff:g id=\"score\" example=\"1337\">%1$s</xliff:g>\n"
+                + "        with <xliff:g id=\"application_name\" example=\"Bluetooth\">%2$s</xliff:g>!\n"
+                + "    </string>\n"
+                + "    <string name=\"callDetailsDurationFormat\"><xliff:g id=\"minutes\" example=\"42\">%s</xliff:g> mins <xliff:g id=\"seconds\" example=\"28\">%s</xliff:g> secs</string>\n"
+                + "    <string name=\"description_call\">Call <xliff:g id=\"name\">%1$s</xliff:g></string>\n"
+                + "    <string name=\"other\"><xliff:g id=\"number_of_sessions\">%1$s</xliff:g> sessions removed from your schedule</string>\n"
+                + "    <!-- Format string used to add a suffix like \"KB\" or \"MB\" to a number\n"
+                + "         to display a size in kilobytes, megabytes, or other size units.\n"
+                + "         Some languages (like French) will want to add a space between\n"
+                + "         the placeholders. -->\n"
+                + "    <string name=\"fileSizeSuffix\"><xliff:g id=\"number\" example=\"123\">%1$s</xliff:g><xliff:g id=\"unit\" example=\"KB\">%2$s</xliff:g></string>"
+                + "</resources>\n"
+        });
+        assertFalse(resources.isFramework());
+        assertNotNull(resources);
+
+        assertNotNull(resources);
+        assertEquals("Share your score of (1337) with (Bluetooth)!",
+                resources.getResourceItem(ResourceType.STRING, "share_with_application").get(0).getResourceValue(false).getValue());
+        assertEquals("Call ${name}",
+                resources.getResourceItem(ResourceType.STRING, "description_call").get(0).getResourceValue(false).getValue());
+        assertEquals("(42) mins (28) secs",
+                resources.getResourceItem(ResourceType.STRING, "callDetailsDurationFormat").get(0).getResourceValue(false).getValue());
+        assertEquals("${number_of_sessions} sessions removed from your schedule",
+                resources.getResourceItem(ResourceType.STRING, "other").get(0).getResourceValue(false).getValue());
+        assertEquals("(123)(KB)",
+                resources.getResourceItem(ResourceType.STRING, "fileSizeSuffix").get(0).getResourceValue(false).getValue());
+
     }
 }

@@ -30,7 +30,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -116,15 +115,14 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      *
      * @param sourceFolder the source folder to load the resources from.
      *
-     * @throws DuplicateDataException
-     * @throws IOException
+     * @throws MergingException if something goes wrong
      */
     protected abstract void readSourceFolder(File sourceFolder, ILogger logger)
-            throws DuplicateDataException, IOException;
+            throws MergingException;
 
     @Nullable
     protected abstract F createFileAndItems(File sourceFolder, File file, ILogger logger)
-            throws IOException;
+            throws MergingException;
 
     /**
      * Adds a collection of source files.
@@ -226,10 +224,9 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      *
      * This also checks for duplicates items.
      *
-     * @throws DuplicateDataException
-     * @throws IOException
+     * @throws MergingException if something goes wrong
      */
-    public void loadFromFiles(ILogger logger) throws DuplicateDataException, IOException {
+    public void loadFromFiles(ILogger logger) throws MergingException {
         for (File file : mSourceFiles) {
             if (file.isDirectory()) {
                 readSourceFolder(file, logger);
@@ -393,10 +390,11 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      * @param changedFile The changed file
      * @param fileStatus the change state
      * @return true if the set was properly updated, false otherwise
+     * @throws MergingException if something goes wrong
      */
     public boolean updateWith(File sourceFolder, File changedFile, FileStatus fileStatus,
                               ILogger logger)
-            throws IOException {
+            throws MergingException {
         switch (fileStatus) {
             case NEW:
                 return handleNewFile(sourceFolder, changedFile, logger);
@@ -420,7 +418,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
     }
 
     protected boolean handleNewFile(File sourceFolder, File file, ILogger logger)
-            throws IOException {
+            throws MergingException {
         F dataFile = createFileAndItems(sourceFolder, file, logger);
         if (dataFile != null) {
             processNewDataFile(sourceFolder, dataFile, true /*setTouched*/);
@@ -444,7 +442,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
     }
 
     protected boolean handleChangedFile(@NonNull File sourceFolder,
-                                        @NonNull File changedFile) throws IOException {
+                                        @NonNull File changedFile) throws MergingException {
         F dataFile = mDataFileMap.get(changedFile);
         dataFile.getItem().setTouched();
         return true;

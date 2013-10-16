@@ -1,42 +1,32 @@
 package ${packageName};
 
+import <#if appCompat?has_content>android.support.v7.app.ActionBarActivity<#else>android.app.Activity</#if>;
+import android.<#if appCompat?has_content>support.v7.</#if>app.ActionBar;
+import android.<#if appCompat?has_content>support.v4.</#if>app.Fragment;
 import android.os.Bundle;
-import android.app.Activity;
+import android.view.LayoutInflater;
 import android.view.Menu;
-<#if parentActivityClass != "">
 import android.view.MenuItem;
-import android.support.v4.app.NavUtils;
-<#if minApiLevel < 11>
-import android.annotation.TargetApi;
+import android.view.View;
+import android.view.ViewGroup;
 import android.os.Build;
-</#if>
-</#if>
 
-public class ${activityClass} extends Activity {
+public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBar','')}Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.${layoutName});
-        <#if parentActivityClass != "">
-        // Show the Up button in the action bar.
-        setupActionBar();
-        </#if>
+
+        if (savedInstanceState == null) {
+            get${Support}FragmentManager().beginTransaction()
+                    .add(R.id.container, new DummyFragment())
+                    .commit();
+        }
     }
 
-    <#if parentActivityClass != "">
-    /**
-     * Set up the {@link android.app.ActionBar}<#if minApiLevel < 11>, if the API is available</#if>.
-     */
-    <#if minApiLevel < 11>@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    </#if>private void setupActionBar() {
-        <#if minApiLevel < 11>if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {</#if>
-        getActionBar().setDisplayHomeAsUpEnabled(true);
-        <#if minApiLevel < 11>}</#if>
-    }
-    </#if>
+    <#include "include_options_menu.java.ftl">
 
-    <#include "include_onCreateOptionsMenu.java.ftl">
-    <#include "include_onOptionsItemSelected.java.ftl">
+    <#include "include_fragment.java.ftl">
 
 }

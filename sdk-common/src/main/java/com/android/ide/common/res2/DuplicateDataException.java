@@ -16,20 +16,23 @@
 
 package com.android.ide.common.res2;
 
+import com.android.annotations.NonNull;
+
 /**
  * Exception when a {@link DataItem} is declared more than once in a {@link DataSet}
  */
-public class DuplicateDataException extends Exception {
+public class DuplicateDataException extends MergingException {
 
     private DataItem mOne;
     private DataItem mTwo;
 
-    DuplicateDataException(DataItem one, DataItem two) {
+    DuplicateDataException(@NonNull DataItem one, @NonNull DataItem two) {
         super(String.format("Duplicate resources: %1s:%2s, %3s:%4s",
                 one.getSource().getFile().getAbsolutePath(), one.getKey(),
                 two.getSource().getFile().getAbsolutePath(), two.getKey()));
         mOne = one;
         mTwo = two;
+        setFile(one.getSource().getFile());
     }
 
     public DataItem getOne() {

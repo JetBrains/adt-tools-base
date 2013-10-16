@@ -32,9 +32,9 @@ import com.google.common.collect.Maps;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXParseException;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -57,7 +57,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
     @Override
     protected ResourceFile createFileAndItems(File sourceFolder, File file, ILogger logger)
-            throws IOException {
+            throws MergingException {
         // get the type.
         FolderData folderData = getFolderData(file.getParentFile());
 
@@ -94,8 +94,9 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                         // Need to also create ATTR items for its children
                         try {
                             ValueResourceParser2.addStyleableItems(resNode, resourceList, null);
-                        } catch (IOException ignored) {
-                            // since we are not passing a dup map, this will never bet thrown
+                        } catch (MergingException ignored) {
+                            // since we are not passing a dup map, this will never be thrown
+                            assert false : file + ": " + ignored.getMessage();
                         }
                     }
                 }
@@ -122,7 +123,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
     @Override
     protected void readSourceFolder(File sourceFolder, ILogger logger)
-            throws DuplicateDataException, IOException {
+            throws MergingException {
         File[] folders = sourceFolder.listFiles();
         if (folders != null) {
             for (File folder : folders) {
@@ -153,7 +154,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
     @Override
     protected boolean handleChangedFile(@NonNull File sourceFolder, @NonNull File changedFile)
-            throws IOException {
+            throws MergingException {
 
         FolderData folderData = getFolderData(changedFile.getParentFile());
         if (folderData.folderType == null) {
@@ -163,11 +164,12 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         ResourceFile resourceFile = getDataFile(changedFile);
 
         if (resourceFile == null) {
-            throw new RuntimeException(String.format(
+            String message = String.format(
                     "In DataSet '%s', no data file for changedFile '%s'. "
                             + "This is an internal error in the incremental builds code; "
                             + "to work around it, try doing a full clean build.",
-                    getConfigName(), changedFile.getAbsolutePath()));
+                    getConfigName(), changedFile.getAbsolutePath());
+            throw new MergingException(message).setFile(changedFile);
         }
 
         //noinspection VariableNotUsedInsideIf
@@ -236,10 +238,10 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
      * @param folderData the folder Data
      * @param logger a logger object
      *
-     * @throws IOException
+     * @throws MergingException if something goes wrong
      */
     private void parseFolder(File sourceFolder, File folder, FolderData folderData, ILogger logger)
-            throws IOException {
+            throws MergingException {
         File[] files = folder.listFiles();
         if (files != null && files.length > 0) {
             for (File file : files) {
@@ -255,8 +257,8 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         }
     }
 
-    private ResourceFile createResourceFile(File file, FolderData folderData, ILogger logger)
-            throws IOException {
+    private static ResourceFile createResourceFile(File file, FolderData folderData, ILogger logger)
+            throws MergingException {
         if (folderData.type != null) {
             int pos;// get the resource name based on the filename
             String name = file.getName();
@@ -275,7 +277,8 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                 List<ResourceItem> items = parser.parseFile();
 
                 return new ResourceFile(file, items, folderData.qualifiers);
-            } catch (IOException e) {
+            } catch (MergingException e) {
+                e.setFile(file);
                 logger.error(e, "Failed to parse %s", file.getAbsolutePath());
                 throw e;
             }
