@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
-    format="3"
-    revision="3"
+    format="4"
+    revision="4"
     name="Settings Activity"
     description="Creates a new application settings activity that presents alternative layouts on handset and tablet-size screens."
     minApi="4"

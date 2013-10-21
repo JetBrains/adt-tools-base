@@ -2,5 +2,5 @@
 <globals>
     <global id="topOut" value="." />
     <global id="projectOut" value="." />
-    <global id="srcOut" value="src/${slashedPackageName(packageName)}" />
+    <global id="srcOut" value="${srcDir}/${slashedPackageName(packageName)}" />
 </globals>

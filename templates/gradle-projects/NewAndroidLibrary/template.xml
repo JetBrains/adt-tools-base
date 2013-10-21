@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
-    format="1"
-    revision="3"
+    format="4"
+    revision="4"
     name="Android Library"
     description="Creates a new Android library.">
 
