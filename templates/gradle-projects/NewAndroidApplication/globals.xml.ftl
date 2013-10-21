@@ -2,7 +2,7 @@
 <globals>
     <global id="topOut" value="." />
     <global id="projectOut" value="." />
-    <global id="appCompat" value="${(minApi lt 14)?string('1','')}" />
+    <global id="appCompat" value="${(minApiLevel lt 14)?string('1','')}" />
     <global id="manifestOut" value="src/main" />
     <global id="srcOut" value="src/main/java/${slashedPackageName(packageName)}" />
     <global id="resOut" value="src/main/res" />
