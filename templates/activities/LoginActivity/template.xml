@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
-    format="3"
-    revision="3"
+    format="4"
+    revision="4"
     name="Login Activity"
     description="Creates a new login activity, allowing users to enter an email address and password to log in to or register with your application."
     minApi="3"
