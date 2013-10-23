@@ -656,7 +656,26 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         return result.toString();
     }
 
-    /**
+  /**
+   * Returns the folder configuration as a unique key
+   */
+  public String getUniqueKey() {
+    StringBuilder result = new StringBuilder(100);
+
+    for (ResourceQualifier qualifier : mQualifiers) {
+      if (qualifier != null) {
+        String segment = qualifier.getFolderSegment();
+        if (segment != null && !segment.isEmpty()) {
+          result.append(SdkConstants.RES_QUALIFIER_SEP);
+          result.append(segment);
+        }
+      }
+    }
+
+    return result.toString();
+  }
+
+  /**
      * Returns {@link #toDisplayString()}.
      */
     @Override
@@ -730,7 +749,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
             return "default";
         }
 
-        StringBuilder result = new StringBuilder();
+        StringBuilder result = new StringBuilder(100);
         int index = 0;
 
         // pre- language/region qualifiers

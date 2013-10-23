@@ -16,6 +16,7 @@
 
 package com.android.ide.common.resources;
 
+import static com.android.SdkConstants.ANDROID_STYLE_RESOURCE_PREFIX;
 import static com.android.SdkConstants.PREFIX_ANDROID;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
 import static com.android.SdkConstants.REFERENCE_STYLE;
@@ -357,7 +358,6 @@ public class ResourceResolver extends RenderResources {
 
         // didn't find the resource anywhere.
         return null;
-
     }
 
     /**
@@ -540,6 +540,28 @@ public class ResourceResolver extends RenderResources {
                     cache.put(value, result);
                 }
                 return result;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns true if the given {@code themeStyle} extends the theme given by
+     * {@code parentStyle}
+     */
+    public boolean themeExtends(@NonNull String parentStyle, @NonNull String themeStyle) {
+        ResourceValue parentValue = findResValue(parentStyle,
+                parentStyle.startsWith(ANDROID_STYLE_RESOURCE_PREFIX));
+        if (parentValue instanceof StyleResourceValue) {
+            ResourceValue themeValue = findResValue(themeStyle,
+                    themeStyle.startsWith(ANDROID_STYLE_RESOURCE_PREFIX));
+            if (themeValue == parentValue) {
+                return true;
+            }
+            if (themeValue instanceof StyleResourceValue) {
+                return themeIsParentOf((StyleResourceValue) parentValue,
+                        (StyleResourceValue) themeValue);
             }
         }
 
