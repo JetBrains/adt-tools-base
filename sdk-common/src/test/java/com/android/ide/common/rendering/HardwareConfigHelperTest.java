@@ -71,7 +71,7 @@ public class HardwareConfigHelperTest extends TestCase {
     public void testNexusRank() {
         List<Device> devices = Lists.newArrayList();
         DeviceManager deviceManager = getDeviceManager();
-        for (String id : new String[] { "Nexus 7 2013", "Nexus 10", "Nexus 4", "Nexus 7",
+        for (String id : new String[] { "Nexus 7 2013", "Nexus 5", "Nexus 10", "Nexus 4", "Nexus 7",
                                         "Galaxy Nexus", "Nexus S", "Nexus One"}) {
             Device device = deviceManager.getDevice(id, "Google");
             assertNotNull(device);
@@ -94,8 +94,8 @@ public class HardwareConfigHelperTest extends TestCase {
                 "Nexus 7",
                 "Nexus 10",
                 "Nexus 4",
-                "Nexus 7 2013"
-
+                "Nexus 7 2013",
+                "Nexus 5"
         ), ids);
     }
 }

@@ -465,6 +465,7 @@
                         <xsd:enumeration value="hdpi" />
                         <xsd:enumeration value="xhdpi" />
                         <xsd:enumeration value="xxhdpi" />
+                        <xsd:enumeration value="xxxhdpi" />
                     </xsd:restriction>
                 </xsd:simpleType>
             </xsd:element>
