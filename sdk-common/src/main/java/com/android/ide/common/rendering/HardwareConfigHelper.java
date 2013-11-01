@@ -271,10 +271,10 @@ public class HardwareConfigHelper {
         if (id.equals("Nexus S")) {        //$NON-NLS-1$
             return 2;
         }
-        if (id.equals("Galaxy Nexus")) {  //$NON-NLS-1$
+        if (id.equals("Galaxy Nexus")) {   //$NON-NLS-1$
             return 3;
         }
-        if (id.equals("Nexus 7")) { //$NON-NLS-1$
+        if (id.equals("Nexus 7")) {        //$NON-NLS-1$
             return 4; // 2012 version
         }
         if (id.equals("Nexus 10")) {       //$NON-NLS-1$
@@ -283,11 +283,14 @@ public class HardwareConfigHelper {
         if (id.equals("Nexus 4")) {        //$NON-NLS-1$
             return 6;
         }
-        if (id.equals("Nexus 7 2013")) {        //$NON-NLS-1$
+        if (id.equals("Nexus 7 2013")) {   //$NON-NLS-1$
             return 7;
         }
+        if (id.equals("Nexus 5")) {        //$NON-NLS-1$
+          return 8;
+        }
 
-        return 8; // devices released in the future?
+        return 100; // devices released in the future?
     }
 
     /**
