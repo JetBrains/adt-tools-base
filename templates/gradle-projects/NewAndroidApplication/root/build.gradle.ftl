@@ -28,6 +28,13 @@ android {
         minSdkVersion ${minApi}
         targetSdkVersion ${targetApi}
     }
+<#if javaVersion?? && javaVersion != "1.6">
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_${javaVersion?replace('.','_','i')}
+        targetCompatibility JavaVersion.VERSION_${javaVersion?replace('.','_','i')}
+    }
+</#if>
 }
 
 dependencies {
