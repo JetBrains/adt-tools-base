@@ -16,6 +16,7 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
 import com.android.ddmlib.log.LogReceiver;
 
 import java.io.IOException;
@@ -42,6 +43,9 @@ public interface IDevice extends IShellEnabledDevice {
     public static final int CHANGE_CLIENT_LIST = 0x0002;
     /** Device change bit mask: build info change. */
     public static final int CHANGE_BUILD_INFO = 0x0004;
+
+    /** List of device level features. */
+    public enum Feature { SCREEN_RECORD };
 
     /** @deprecated Use {@link #PROP_BUILD_API_LEVEL}. */
     @Deprecated
@@ -176,6 +180,9 @@ public interface IDevice extends IShellEnabledDevice {
     public String getPropertyCacheOrSync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException;
 
+    /** Returns whether this device supports the given feature. */
+    boolean supportsFeature(@NonNull Feature feature);
+
     /**
      * Returns a mount point.
      *
@@ -260,6 +267,14 @@ public interface IDevice extends IShellEnabledDevice {
      */
     public RawImage getScreenshot() throws TimeoutException, AdbCommandRejectedException,
             IOException;
+
+    /**
+     * Initiates screen recording on the device if the device supports {@link Feature#SCREEN_RECORD}.
+     */
+    public void startScreenRecorder(@NonNull String remoteFilePath,
+            @NonNull ScreenRecorderOptions options, @NonNull IShellOutputReceiver receiver) throws
+            TimeoutException, AdbCommandRejectedException, IOException,
+            ShellCommandUnresponsiveException;
 
     /**
      * @deprecated Use {@link #executeShellCommand(String, IShellOutputReceiver, long, java.util.concurrent.TimeUnit)}.
