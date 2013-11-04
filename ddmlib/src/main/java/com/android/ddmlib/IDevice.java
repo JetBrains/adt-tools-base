@@ -45,7 +45,10 @@ public interface IDevice extends IShellEnabledDevice {
     public static final int CHANGE_BUILD_INFO = 0x0004;
 
     /** List of device level features. */
-    public enum Feature { SCREEN_RECORD };
+    public enum Feature {
+        SCREEN_RECORD,      // screen recorder available?
+        PROCSTATS,          // procstats service (dumpsys procstats) available
+    };
 
     /** @deprecated Use {@link #PROP_BUILD_API_LEVEL}. */
     @Deprecated
