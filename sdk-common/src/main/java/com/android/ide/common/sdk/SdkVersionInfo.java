@@ -28,7 +28,7 @@ public class SdkVersionInfo {
      * release. This number is used as a baseline and any more recent platforms
      * found can be used to increase the highest known number.
      */
-    public static final int HIGHEST_KNOWN_API = 18;
+    public static final int HIGHEST_KNOWN_API = 19;
 
     /**
      * Returns the Android version and code name of the given API level, or null
@@ -60,6 +60,7 @@ public class SdkVersionInfo {
             case 16: return "API 16: Android 4.1 (Jelly Bean)";
             case 17: return "API 17: Android 4.2 (Jelly Bean)";
             case 18: return "API 18: Android 4.3 (Jelly Bean)";
+            case 19: return "API 19: Android 4.4 (KitKat)";
             // If you add more versions here, also update #getBuildCodes and
             // #HIGHEST_KNOWN_API
 
@@ -98,6 +99,7 @@ public class SdkVersionInfo {
             case 16: return "JELLY_BEAN"; //$NON-NLS-1$
             case 17: return "JELLY_BEAN_MR1"; //$NON-NLS-1$
             case 18: return "JELLY_BEAN_MR2"; //$NON-NLS-1$
+            case 19: return "KITKAT"; //$NON-NLS-1$
             // If you add more versions here, also update #getAndroidName and
             // #HIGHEST_KNOWN_API
         }
@@ -118,7 +120,7 @@ public class SdkVersionInfo {
      */
     public static int getApiByBuildCode(String buildCode, boolean recognizeUnknowns) {
         for (int api = 1; api <= HIGHEST_KNOWN_API; api++) {
-            String code = SdkVersionInfo.getBuildCode(api);
+            String code = getBuildCode(api);
             if (code != null && code.equalsIgnoreCase(buildCode)) {
                 return api;
             }
