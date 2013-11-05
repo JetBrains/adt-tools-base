@@ -417,6 +417,8 @@ final class Device implements IDevice {
                     mHasScreenRecorder = hasBinary(SCREEN_RECORDER_DEVICE_PATH);
                 }
                 return mHasScreenRecorder;
+            case PROCSTATS:
+                return getApiLevel() >= 19;
             default:
                 return false;
         }
