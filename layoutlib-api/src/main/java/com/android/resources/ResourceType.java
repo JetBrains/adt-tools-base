@@ -42,6 +42,7 @@ public enum ResourceType {
     STRING("string", "String"), //$NON-NLS-1$
     STYLE("style", "Style"), //$NON-NLS-1$
     STYLEABLE("styleable", "Styleable"), //$NON-NLS-1$
+    TRANSITION("transition", "Transition"), //$NON-NLS-1$
     XML("xml", "XML"), //$NON-NLS-1$
     // this is not actually used. Only there because they get parsed and since we want to
     // detect new resource type, we need to have this one exist.

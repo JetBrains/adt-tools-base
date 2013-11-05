@@ -43,6 +43,8 @@ public class ResourceConstants {
     public static final String FD_RES_XML = "xml"; //$NON-NLS-1$
     /** Default raw resource folder name, i.e. "raw" */
     public static final String FD_RES_RAW = "raw"; //$NON-NLS-1$
+    /** Default transition resource folder name, i.e. "transition" */
+    public static final String FD_RES_TRANSITION = "transition"; //$NON-NLS-1$
 
     /** Separator between the resource folder qualifier. */
     public static final String RES_QUALIFIER_SEP = "-"; //$NON-NLS-1$
