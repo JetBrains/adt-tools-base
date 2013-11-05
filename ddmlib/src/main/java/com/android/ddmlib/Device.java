@@ -16,7 +16,9 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.ddmlib.log.LogReceiver;
 
@@ -39,7 +41,6 @@ import java.util.regex.Pattern;
  * A Device. It can be a physical device or an emulator.
  */
 final class Device implements IDevice {
-
     private static final int INSTALL_TIMEOUT = 2*60*1000; //2min
     private static final int BATTERY_TIMEOUT = 2*1000; //2 seconds
     private static final int GETPROP_TIMEOUT = 2*1000; //2 seconds
@@ -82,6 +83,13 @@ final class Device implements IDevice {
     private Integer mLastBatteryLevel = null;
     private long mLastBatteryCheckTime = 0;
 
+    /** Path to the screen recorder binary on the device. */
+    private static final String SCREEN_RECORDER_DEVICE_PATH = "/system/bin/screenrecord";
+
+    /** Flag indicating whether the device has the screen recorder binary. */
+    private Boolean mHasScreenRecorder;
+
+    private int mApiLevel;
     private String mName;
 
     /**
@@ -399,6 +407,54 @@ final class Device implements IDevice {
     }
 
     @Override
+    public boolean supportsFeature(Feature feature) {
+        switch (feature) {
+            case SCREEN_RECORD:
+                if (getApiLevel() < 19) {
+                    return false;
+                }
+                if (mHasScreenRecorder == null) {
+                    mHasScreenRecorder = hasBinary(SCREEN_RECORDER_DEVICE_PATH);
+                }
+                return mHasScreenRecorder;
+            default:
+                return false;
+        }
+    }
+
+    private int getApiLevel() {
+        if (mApiLevel > 0) {
+            return mApiLevel;
+        }
+
+        try {
+            mApiLevel = Integer.parseInt(getPropertyCacheOrSync(PROP_BUILD_API_LEVEL));
+            return mApiLevel;
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    private boolean hasBinary(String path) {
+        CountDownLatch latch = new CountDownLatch(1);
+        CollectingOutputReceiver receiver = new CollectingOutputReceiver(latch);
+        try {
+            executeShellCommand("ls " + path, receiver);
+        } catch (Exception e) {
+            return false;
+        }
+
+        try {
+            latch.await(GETPROP_TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            return false;
+        }
+
+        String value = receiver.getOutput().trim();
+        return !value.endsWith("No such file or directory");
+    }
+
+    @Override
     public String getMountPoint(String name) {
         return mMountPoints.get(name);
     }
@@ -473,6 +529,50 @@ final class Device implements IDevice {
     public RawImage getScreenshot()
             throws TimeoutException, AdbCommandRejectedException, IOException {
         return AdbHelper.getFrameBuffer(AndroidDebugBridge.getSocketAddress(), this);
+    }
+
+    @Override
+    public void startScreenRecorder(String remoteFilePath, ScreenRecorderOptions options,
+            IShellOutputReceiver receiver) throws TimeoutException, AdbCommandRejectedException,
+            IOException, ShellCommandUnresponsiveException {
+        executeShellCommand(getScreenRecorderCommand(remoteFilePath, options), receiver, 0, null);
+    }
+
+    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PRIVATE)
+    static String getScreenRecorderCommand(@NonNull String remoteFilePath,
+            @NonNull ScreenRecorderOptions options) {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("screenrecord");
+        sb.append(' ');
+
+        if (options.width > 0 && options.height > 0) {
+            sb.append("--size ");
+            sb.append(options.width);
+            sb.append('x');
+            sb.append(options.height);
+            sb.append(' ');
+        }
+
+        if (options.bitrateMbps > 0) {
+            sb.append("--bit-rate ");
+            sb.append(options.bitrateMbps * 1000000);
+            sb.append(' ');
+        }
+
+        if (options.timeLimit > 0) {
+            sb.append("--time-limit ");
+            long seconds = TimeUnit.SECONDS.convert(options.timeLimit, options.timeLimitUnits);
+            if (seconds > 180) {
+                seconds = 180;
+            }
+            sb.append(seconds);
+            sb.append(' ');
+        }
+
+        sb.append(remoteFilePath);
+
+        return sb.toString();
     }
 
     @Override
