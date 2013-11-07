@@ -25,7 +25,7 @@
         android:fitsSystemWindows="true">
 
         <LinearLayout android:id="@+id/fullscreen_content_controls"
-            style="?buttonBarStyle"
+            style="?metaButtonBarStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|center_horizontal"
@@ -34,7 +34,7 @@
             tools:ignore="UselessParent">
 
             <Button android:id="@+id/dummy_button"
-                style="?buttonBarButtonStyle"
+                style="?metaButtonBarButtonStyle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
