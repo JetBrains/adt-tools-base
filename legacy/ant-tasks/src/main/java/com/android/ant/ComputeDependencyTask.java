@@ -142,7 +142,7 @@ public class ComputeDependencyTask extends GetLibraryPathTask {
             throw new BuildException("Missing attribute buildToolsFolder");
         }
         if (mRenderscriptSupportLibsOut == null) {
-            throw new BuildException("Missing attribute renderscriptSupportOutOut");
+            throw new BuildException("Missing attribute renderscriptSupportLibsOut");
         }
 
 
