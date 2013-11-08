@@ -170,7 +170,10 @@ public class SdkManager {
                 LocalPkgInfo info = pkgsInfos[i];
                 assert info instanceof LocalPlatformPkgInfo;
                 if (info instanceof LocalPlatformPkgInfo) {
-                    targets.add(((LocalPlatformPkgInfo) info).getAndroidTarget());
+                    IAndroidTarget target = ((LocalPlatformPkgInfo) info).getAndroidTarget();
+                    if (target != null) {
+                        targets.add(target);
+                    }
                 }
             }
             mCachedTargets = targets.toArray(new IAndroidTarget[targets.size()]);
