@@ -23,6 +23,7 @@ import com.android.tools.lint.client.api.LintDriver;
 
 import java.io.File;
 
+import lombok.ast.ClassDeclaration;
 import lombok.ast.ConstructorDeclaration;
 import lombok.ast.MethodDeclaration;
 import lombok.ast.Node;
@@ -124,4 +125,21 @@ public class JavaContext extends Context {
 
         return null;
     }
+
+    @Nullable
+    public static ClassDeclaration findSurroundingClass(Node scope) {
+        while (scope != null) {
+            Class<? extends Node> type = scope.getClass();
+            // The Lombok AST uses a flat hierarchy of node type implementation classes
+            // so no need to do instanceof stuff here.
+            if (type == ClassDeclaration.class) {
+                return (ClassDeclaration) scope;
+            }
+
+            scope = scope.getParent();
+        }
+
+        return null;
+    }
+
 }
