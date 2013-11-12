@@ -32,7 +32,7 @@ public class ValueResourceParser2Test extends BaseTestCase {
     public void testParsedResourcesByCount() throws Exception {
         List<ResourceItem> resources = getParsedResources();
 
-        assertEquals(20, resources.size());
+        assertEquals(21, resources.size());
     }
 
     public void testParsedResourcesByName() throws Exception {
@@ -61,7 +61,8 @@ public class ValueResourceParser2Test extends BaseTestCase {
                 "dimen/dimen",
                 "id/item_id",
                 "integer/integer",
-                "layout/layout_ref"
+                "layout/layout_ref",
+                "plurals/plurals"
         };
 
         for (String name : resourceNames) {
