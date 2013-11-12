@@ -10,7 +10,11 @@ buildscript {
         classpath 'com.android.tools.build:gradle:${gradlePluginVersion}'
     }
 }
+<#if isLibraryProject?? && isLibraryProject>
+apply plugin: 'android-library'
+<#else>
 apply plugin: 'android'
+</#if>
 
 repositories {
 <#if mavenUrl == "mavenCentral">
@@ -34,6 +38,36 @@ android {
         sourceCompatibility JavaVersion.VERSION_${javaVersion?replace('.','_','i')}
         targetCompatibility JavaVersion.VERSION_${javaVersion?replace('.','_','i')}
     }
+</#if>
+<#if enableProGuard>
+    <#if isLibraryProject>
+    release {
+        runProguard true
+        proguardFile 'proguard-rules.txt'
+        proguardFile getDefaultProguardFile('proguard-android-optimize.txt')
+    }
+    debug {
+        runProguard true
+        proguardFile 'proguard-rules.txt'
+        proguardFile getDefaultProguardFile('proguard-android.txt')
+    }
+    <#else>
+    buildTypes {
+        release {
+            runProguard true
+            proguardFile getDefaultProguardFile('proguard-android-optimize.txt')
+        }
+        debug {
+            runProguard true
+            proguardFile getDefaultProguardFile('proguard-android.txt')
+        }
+    }
+    productFlavors {
+        defaultFlavor {
+            proguardFile 'proguard-rules.txt'
+        }
+    }
+    </#if>
 </#if>
 }
 

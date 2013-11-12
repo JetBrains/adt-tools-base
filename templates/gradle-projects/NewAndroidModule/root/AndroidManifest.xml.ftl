@@ -7,7 +7,7 @@
 
     <application <#if minApiLevel gte 4 && buildApi gte 4>android:allowBackup="true"</#if>
         android:label="@string/app_name"
-        android:icon="@drawable/ic_launcher"<#if baseTheme != "none">
+        android:icon="@drawable/ic_launcher"<#if baseTheme != "none" && !isLibraryProject>
         android:theme="@style/AppTheme"</#if>>
 
     </application>
