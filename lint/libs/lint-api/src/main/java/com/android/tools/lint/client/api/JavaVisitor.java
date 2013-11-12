@@ -24,6 +24,7 @@ import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.JavaScanner;
 import com.android.tools.lint.detector.api.Detector.XmlScanner;
 import com.android.tools.lint.detector.api.JavaContext;
+import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -133,7 +134,7 @@ public class JavaVisitor {
     private static final int SAME_TYPE_COUNT = 8;
 
     private final Map<String, List<VisitingDetector>> mMethodDetectors =
-            new HashMap<String, List<VisitingDetector>>();
+            Maps.newHashMapWithExpectedSize(24);
     private final List<VisitingDetector> mResourceFieldDetectors =
             new ArrayList<VisitingDetector>();
     private final List<VisitingDetector> mAllDetectors;
