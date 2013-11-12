@@ -82,4 +82,7 @@
     <item type="layout" name="layout_ref">@layout/ref</item>
     <item type="layout" name="alias_replaced_by_file">@layout/ref</item>
 
+    <plurals name="plurals">
+        <item quantity="one">test2 <xliff:g xmlns="urn:oasis:names:tc:xliff:document:1.2" id="test3">%s</xliff:g> test4</item>
+    </plurals>
 </resources>
