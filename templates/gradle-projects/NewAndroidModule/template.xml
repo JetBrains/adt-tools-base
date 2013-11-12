@@ -2,8 +2,8 @@
 <template
     format="4"
     revision="4"
-    name="Android Library"
-    description="Creates a new Android library.">
+    name="Android Module"
+    description="Creates a new Android module.">
 
     <thumbs>
         <thumb>template_new_project.png</thumb>
@@ -15,22 +15,22 @@
         id="packageName"
         name="Package name"
         type="string"
-        constraints="package|nonempty"
+        constraints="app_package|nonempty"
         default="com.mycompany.myapp" />
 
     <parameter
         id="appTitle"
-        name="Library title"
+        name="Module title"
         type="string"
         constraints="nonempty"
-        default="My Library"/>
+        default="My Module" />
 
     <parameter
         id="baseTheme"
         name="Base Theme"
         type="enum"
         default="holo_light_darkactionbar"
-        help="The base user interface theme for the library">
+        help="The base user interface theme for the module">
         <option id="none">None</option>
         <option id="holo_dark" minBuildApi="11">Holo Dark</option>
         <option id="holo_light" minBuildApi="11">Holo Light</option>
@@ -67,7 +67,7 @@
         name="Build API level"
         type="string"
         constraints="apilevel"
-        default="16" />
+        default="18" />
 
     <parameter
         id="copyIcons"
@@ -78,6 +78,12 @@
     <parameter
         id="makeIgnore"
         name="Create .gitignore file"
+        type="boolean"
+        default="true" />
+
+    <parameter
+        id="enableProGuard"
+        name="Enable ProGuard"
         type="boolean"
         default="true" />
 
