@@ -23,7 +23,6 @@ import com.android.io.FolderWrapper;
 import com.android.io.IAbstractFile;
 import com.android.io.IAbstractFolder;
 import com.android.io.StreamException;
-import com.android.sdklib.internal.project.ProjectProperties.PropertyType;
 import com.android.utils.ILogger;
 import com.google.common.io.Closeables;
 
@@ -77,6 +76,7 @@ public class ProjectProperties implements IPropertySource {
     public static final String PROPERTY_RULES_PATH = "layoutrules.jars";
 
     public static final String PROPERTY_SDK = "sdk.dir";
+    public static final String PROPERTY_NDK = "ndk.dir";
     // LEGACY - Kept so that we can actually remove it from local.properties.
     private static final String PROPERTY_SDK_LEGACY = "sdk-location";
 
