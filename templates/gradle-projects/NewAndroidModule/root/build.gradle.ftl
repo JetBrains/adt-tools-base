@@ -44,13 +44,13 @@ android {
     release {
         runProguard true
         proguardFile 'proguard-rules.txt'
-        proguardFile getDefaultProguardFile('proguard-android-optimize.txt')
+        proguardFile getDefaultProguardFile('proguard-android.txt')
     }
     <#else>
     buildTypes {
         release {
             runProguard true
-            proguardFile getDefaultProguardFile('proguard-android-optimize.txt')
+            proguardFile getDefaultProguardFile('proguard-android.txt')
         }
     }
     productFlavors {
