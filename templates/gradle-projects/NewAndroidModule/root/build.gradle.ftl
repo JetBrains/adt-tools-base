@@ -46,20 +46,11 @@ android {
         proguardFile 'proguard-rules.txt'
         proguardFile getDefaultProguardFile('proguard-android-optimize.txt')
     }
-    debug {
-        runProguard true
-        proguardFile 'proguard-rules.txt'
-        proguardFile getDefaultProguardFile('proguard-android.txt')
-    }
     <#else>
     buildTypes {
         release {
             runProguard true
             proguardFile getDefaultProguardFile('proguard-android-optimize.txt')
-        }
-        debug {
-            runProguard true
-            proguardFile getDefaultProguardFile('proguard-android.txt')
         }
     }
     productFlavors {
