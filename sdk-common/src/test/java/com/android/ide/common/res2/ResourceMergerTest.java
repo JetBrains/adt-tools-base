@@ -49,7 +49,7 @@ public class ResourceMergerTest extends BaseTestCase {
     public void testMergeByCount() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
-        assertEquals(27, merger.size());
+        assertEquals(28, merger.size());
     }
 
     public void testMergedResourcesByName() throws Exception {

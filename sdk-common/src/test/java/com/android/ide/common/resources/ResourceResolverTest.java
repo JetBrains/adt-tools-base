@@ -231,8 +231,17 @@ public class ResourceResolverTest extends TestCase {
                 resolver.resolveValue(ResourceType.STRING, "bright_foreground_dark",
                         "@android:color/background_light", true).getValue());
 
+        // themeExtends
+        assertTrue(resolver.themeExtends("@android:style/Theme", "@android:style/Theme"));
+        assertTrue(resolver.themeExtends("@android:style/Theme", "@android:style/Theme.Light"));
+        assertFalse(resolver.themeExtends("@android:style/Theme.Light", "@android:style/Theme"));
+        assertTrue(resolver.themeExtends("@style/MyTheme.Dotted2", "@style/MyTheme.Dotted2"));
+        assertTrue(resolver.themeExtends("@style/MyTheme", "@style/MyTheme.Dotted2"));
+        assertTrue(resolver.themeExtends("@android:style/Theme.Light", "@style/MyTheme.Dotted2"));
+        assertTrue(resolver.themeExtends("@android:style/Theme", "@style/MyTheme.Dotted2"));
+        assertFalse(resolver.themeExtends("@style/MyTheme.Dotted1", "@style/MyTheme.Dotted2"));
 
-        // Switch to MyTheme.Dotted1 (to make sure the parent="" inheritence works properly.)
+        // Switch to MyTheme.Dotted1 (to make sure the parent="" inheritance works properly.)
         // To do that we need to create a new resource resolver.
         resolver = ResourceResolver.create(projectResources, frameworkResources,
                 "MyTheme.Dotted1", true);

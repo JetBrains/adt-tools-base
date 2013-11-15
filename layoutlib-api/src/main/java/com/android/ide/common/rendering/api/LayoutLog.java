@@ -114,6 +114,11 @@ public class LayoutLog {
     public static final String TAG_SHADER = "shader";
 
     /**
+     * Fidelity Tag used when an unrecognized format is found for strftime.
+     */
+    public static final String TAG_STRFTIME = "strftime";
+
+    /**
      * Fidelity Tag used when a xfermode type is used but is not supported.
      */
     public static final String TAG_XFERMODE = "xfermode";

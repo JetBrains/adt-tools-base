@@ -80,7 +80,15 @@ class NodeUtils {
         NamedNodeMap attributes = node.getAttributes();
         if (attributes != null) {
             for (int i = 0, n = attributes.getLength(); i < n; i++) {
-                processSingleNodeNamespace(attributes.item(i), document);
+                Node attribute = attributes.item(i);
+                if (!processSingleNodeNamespace(attribute, document)) {
+                    String nsUri = attribute.getNamespaceURI();
+                    if (nsUri != null) {
+                        attributes.removeNamedItemNS(nsUri, attribute.getLocalName());
+                    } else {
+                        attributes.removeNamedItem(attribute.getLocalName());
+                    }
+                }
             }
         }
 
@@ -98,10 +106,17 @@ class NodeUtils {
 
     /**
      * Update the namespace of a given node to work with a given document.
+     *
      * @param node the node to update
      * @param document the new document
+     *
+     * @return false if the attribute is to be dropped
      */
-    private static void processSingleNodeNamespace(Node node, Document document) {
+    private static boolean processSingleNodeNamespace(Node node, Document document) {
+        if ("xmlns".equals(node.getLocalName())) {
+            return false;
+        }
+
         String ns = node.getNamespaceURI();
         if (ns != null) {
             NamedNodeMap docAttributes = document.getAttributes();
@@ -118,6 +133,8 @@ class NodeUtils {
             prefix = prefix.substring(6);
             node.setPrefix(prefix);
         }
+
+        return true;
     }
 
     /**

@@ -63,6 +63,7 @@ public final class FolderTypeRelationship {
         add(ResourceType.STRING, ResourceFolderType.VALUES);
         add(ResourceType.STYLE, ResourceFolderType.VALUES);
         add(ResourceType.STYLEABLE, ResourceFolderType.VALUES);
+        add(ResourceType.TRANSITION, ResourceFolderType.TRANSITION);
         add(ResourceType.XML, ResourceFolderType.XML);
 
         makeSafe();

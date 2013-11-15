@@ -16,6 +16,7 @@
 
 package com.android.ide.common.resources.configuration;
 
+import com.android.resources.ResourceFolderType;
 import junit.framework.TestCase;
 
 import java.util.ArrayList;
@@ -97,6 +98,15 @@ public class FolderConfigurationTest extends TestCase {
         assertEquals("US", configForFolder.getRegionQualifier().getValue());
         assertNull(configForFolder.getScreenDimensionQualifier());
         assertNull(configForFolder.getLayoutDirectionQualifier());
+    }
+
+    public void testToStrings() {
+        FolderConfiguration configForFolder = FolderConfiguration.getConfigForFolder("values-en-rUS");
+        assertNotNull(configForFolder);
+        assertEquals("Locale Language en_Region US", configForFolder.toDisplayString());
+        assertEquals("en,US", configForFolder.toShortDisplayString());
+        assertEquals("layout-en-rUS", configForFolder.getFolderName(ResourceFolderType.LAYOUT));
+        assertEquals("-en-rUS", configForFolder.getUniqueKey());
     }
 
     // --- helper methods
