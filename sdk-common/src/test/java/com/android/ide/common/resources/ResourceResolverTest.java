@@ -9,6 +9,7 @@ import com.google.common.collect.Lists;
 
 import junit.framework.TestCase;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -363,6 +364,69 @@ public class ResourceResolverTest extends TestCase {
         wasWarned.set(false);
         assertNotNull(resolver.findResValue("@color/loop2a", false));
         resolver.resolveResValue(resolver.findResValue("@color/loop2a", false));
+        assertTrue(wasWarned.get());
+
+        projectRepository.dispose();
+    }
+
+    public void testParentCycle() throws IOException {
+        TestResourceRepository projectRepository = TestResourceRepository.create(false,
+                new Object[]{
+                        "values/styles.xml", ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<resources>\n"
+                        + "    <style name=\"ButtonStyle.Base\">\n"
+                        + "        <item name=\"android:textColor\">#ff0000</item>\n"
+                        + "    </style>\n"
+                        + "    <style name=\"ButtonStyle\" parent=\"ButtonStyle.Base\">\n"
+                        + "        <item name=\"android:layout_height\">40dp</item>\n"
+                        + "    </style>\n"
+                        + "</resources>\n",
+
+                        "layouts/layout.xml", ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<RelativeLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    android:layout_width=\"match_parent\"\n"
+                        + "    android:layout_height=\"match_parent\">\n"
+                        + "\n"
+                        + "    <TextView\n"
+                        + "        style=\"@style/ButtonStyle\"\n"
+                        + "        android:layout_width=\"wrap_content\"\n"
+                        + "        android:layout_height=\"wrap_content\" />\n"
+                        + "\n"
+                        + "</RelativeLayout>\n",
+
+                });
+        assertFalse(projectRepository.isFrameworkRepository());
+        FolderConfiguration config = FolderConfiguration.getConfigForFolder("values-es-land");
+        assertNotNull(config);
+        Map<ResourceType, Map<String, ResourceValue>> projectResources =
+                projectRepository.getConfiguredResources(config);
+        assertNotNull(projectResources);
+        ResourceResolver resolver = ResourceResolver.create(projectResources, projectResources,
+                "ButtonStyle", true);
+        assertNotNull(resolver);
+
+        final AtomicBoolean wasWarned = new AtomicBoolean(false);
+        LayoutLog logger = new LayoutLog() {
+            @Override
+            public void error(String tag, String message, Object data) {
+                assertEquals("Cyclic style parent definitions: \"ButtonStyle\" specifies "
+                        + "parent \"ButtonStyle.Base\" implies parent \"ButtonStyle\"", message);
+                assertEquals(LayoutLog.TAG_BROKEN, tag);
+                wasWarned.set(true);
+            }
+        };
+        resolver.setLogger(logger);
+
+        StyleResourceValue buttonStyle = (StyleResourceValue) resolver.findResValue(
+                "@style/ButtonStyle", false);
+        ResourceValue textColor = resolver.findItemInStyle(buttonStyle, "textColor", true);
+        assertNotNull(textColor);
+        assertEquals("#ff0000", textColor.getValue());
+        assertFalse(wasWarned.get());
+        ResourceValue missing = resolver.findItemInStyle(buttonStyle, "missing", true);
+        assertNull(missing);
         assertTrue(wasWarned.get());
 
         projectRepository.dispose();
