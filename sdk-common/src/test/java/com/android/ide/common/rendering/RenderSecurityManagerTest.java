@@ -87,6 +87,25 @@ public class RenderSecurityManagerTest extends TestCase {
         }
     }
 
+    public void testInvalidPropertyWrite() throws Exception {
+        RenderSecurityManager manager = new RenderSecurityManager(null, null);
+        try {
+            manager.setActive(true);
+
+            // Try to make java.io.tmpdir point to user.home to grant myself access:
+            String userHome = System.getProperty("user.home");
+            System.setProperty("java.io.tmpdir", userHome);
+
+            fail("Should have thrown security exception");
+        } catch (SecurityException exception) {
+            assertEquals("Write access not allowed during rendering (java.io.tmpdir)",
+                    exception.toString());
+            // pass
+        } finally {
+            manager.dispose();
+        }
+    }
+
     public void testReadOk() throws Exception {
         RenderSecurityManager manager = new RenderSecurityManager(null,  null);
         try {
