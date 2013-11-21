@@ -4,7 +4,8 @@
     <merge from="AndroidManifest.xml.ftl"
              to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
 
-    <copy from="res/drawable-nodpi/example_appwidget_preview.png" />
+    <copy from="res/drawable-nodpi/example_appwidget_preview.png"
+            to="${escapeXmlAttribute(resOut)}/drawable-nodpi/example_appwidget_preview.png" />
     <instantiate from="res/layout/appwidget.xml"
                    to="${escapeXmlAttribute(resOut)}/layout/${class_name}.xml" />
 
