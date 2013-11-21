@@ -21,6 +21,7 @@ import com.google.common.io.Files;
 import junit.framework.TestCase;
 
 import java.io.File;
+import java.io.FilePermission;
 import java.security.Permission;
 import java.util.Collections;
 import java.util.concurrent.BrokenBarrierException;
@@ -44,7 +45,11 @@ public class RenderSecurityManagerTest extends TestCase {
             }
             fail("Should have thrown security exception");
         } catch (SecurityException exception) {
-            assertEquals("Read access not allowed during rendering (/bin/ls)",
+            //noinspection ConstantConditions
+            assertEquals(
+                    RenderSecurityManager.RESTRICT_READS ?
+                        "Read access not allowed during rendering (/bin/ls)" :
+                        "Exec access not allowed during rendering (/bin/ls)",
                     exception.toString());
             // pass
         } finally {
@@ -68,20 +73,74 @@ public class RenderSecurityManagerTest extends TestCase {
         }
     }
 
+    public void testReadWrite() throws Exception {
+        RenderSecurityManager manager = new RenderSecurityManager(null, null);
+        try {
+            manager.setActive(true);
+            manager.checkPermission(new FilePermission("/foo", "read,write"));
+            fail("Should have thrown security exception");
+        } catch (SecurityException exception) {
+            assertEquals("Write access not allowed during rendering (/foo)", exception.toString());
+            // pass
+        } finally {
+            manager.dispose();
+        }
+    }
+
+    public void testExecute() throws Exception {
+        RenderSecurityManager manager = new RenderSecurityManager(null, null);
+        try {
+            manager.setActive(true);
+            manager.checkPermission(new FilePermission("/foo", "execute"));
+            fail("Should have thrown security exception");
+        } catch (SecurityException exception) {
+            assertEquals("Write access not allowed during rendering (/foo)", exception.toString());
+            // pass
+        } finally {
+            manager.dispose();
+        }
+    }
+
+    public void testDelete() throws Exception {
+        RenderSecurityManager manager = new RenderSecurityManager(null, null);
+        try {
+            manager.setActive(true);
+            manager.checkPermission(new FilePermission("/foo", "delete"));
+            fail("Should have thrown security exception");
+        } catch (SecurityException exception) {
+            assertEquals("Write access not allowed during rendering (/foo)", exception.toString());
+            // pass
+        } finally {
+            manager.dispose();
+        }
+    }
+
     public void testInvalidRead() throws Exception {
         RenderSecurityManager manager = new RenderSecurityManager(null, null);
         try {
             manager.setActive(true);
 
-            File file = new File(System.getProperty("user.home"));
-            //noinspection ResultOfMethodCallIgnored
-            file.lastModified();
+            if (RenderSecurityManager.RESTRICT_READS) {
+                try {
+                    File file = new File(System.getProperty("user.home"));
+                    //noinspection ResultOfMethodCallIgnored
+                    file.lastModified();
 
-            fail("Should have thrown security exception");
-        } catch (SecurityException exception) {
-            assertEquals("Read access not allowed during rendering (" +
-                    System.getProperty("user.home") + ")", exception.toString());
-            // pass
+                    fail("Should have thrown security exception");
+                } catch (SecurityException exception) {
+                    assertEquals("Read access not allowed during rendering (" +
+                            System.getProperty("user.home") + ")", exception.toString());
+                    // pass
+                }
+            } else {
+                try {
+                    File file = new File(System.getProperty("user.home"));
+                    //noinspection ResultOfMethodCallIgnored
+                    file.lastModified();
+                } catch (SecurityException exception) {
+                    fail("Reading should be allowed");
+                }
+            }
         } finally {
             manager.dispose();
         }

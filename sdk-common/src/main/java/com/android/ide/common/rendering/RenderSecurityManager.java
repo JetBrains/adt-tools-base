@@ -41,6 +41,9 @@ public class RenderSecurityManager extends SecurityManager {
     /** Property used to disable sandbox */
     public static final String ENABLED_PROPERTY = "android.render.sandbox";
 
+    /** Whether we should restrict reading to certain paths */
+    public static final boolean RESTRICT_READS = false;
+
     /**
      * Whether the security manager is enabled for this session (it might still
      * be inactive, either because it's active for a different thread, or because
@@ -199,60 +202,67 @@ public class RenderSecurityManager extends SecurityManager {
     // Reading is permitted for certain files only
     //------------------------------------------------------------------------------------------
 
+    @SuppressWarnings({"PointlessBooleanExpression", "ConstantConditions"})
     @Override
     public void checkRead(String file) {
-        if (isRelevant() && !isReadingAllowed(file)) {
+        if (RESTRICT_READS && isRelevant() && !isReadingAllowed(file)) {
             throw RenderSecurityException.create("Read", file);
         }
     }
 
+    @SuppressWarnings({"PointlessBooleanExpression", "ConstantConditions"})
     @Override
     public void checkRead(String file, Object context) {
-        if (isRelevant() && !isReadingAllowed(file)) {
+        if (RESTRICT_READS && isRelevant() && !isReadingAllowed(file)) {
             throw RenderSecurityException.create("Read", file);
         }
     }
 
     private boolean isReadingAllowed(String path) {
-        // Allow reading files in the SDK install (fonts etc)
-        if (mSdkPath != null && path.startsWith(mSdkPath)) {
-            return true;
-        }
-
-        // Allowing reading resources in the project, such as icons
-        if (mProjectPath != null && path.startsWith(mProjectPath)) {
-            return true;
-        }
-
-        if (path.startsWith("#") && path.indexOf(File.separatorChar) == -1) {
-            // It's really layoutlib's ResourceHelper.getColorStateList which calls isFile()
-            // on values to see if it's a file or a color.
-            return true;
-        }
-
-        // Needed by layoutlib's class loader. Note that we've locked down the ability to create
-        // new class loaders.
-        if (path.endsWith(DOT_CLASS) || path.endsWith(DOT_JAR)) {
-            return true;
-        }
-
-        // Allow reading files in temp
-        if (path.startsWith(mTempDir)) {
-            return true;
-        }
-
-        String javaHome = System.getProperty("java.home");
-        if (path.startsWith(javaHome)) { // Allow JDK to load its own classes
-            return true;
-        } else if (javaHome.endsWith("/Contents/Home")) {
-            // On Mac, Home lives two directory levels down from the real home, and we sometimes
-            // need to read from sibling directories (e.g. ../Libraries/ etc)
-            if (path.regionMatches(0, javaHome, 0, javaHome.length() - "Contents/Home".length())) {
+        if (RESTRICT_READS) {
+            // Allow reading files in the SDK install (fonts etc)
+            if (mSdkPath != null && path.startsWith(mSdkPath)) {
                 return true;
             }
-        }
 
-        return false;
+            // Allowing reading resources in the project, such as icons
+            if (mProjectPath != null && path.startsWith(mProjectPath)) {
+                return true;
+            }
+
+            if (path.startsWith("#") && path.indexOf(File.separatorChar) == -1) {
+                // It's really layoutlib's ResourceHelper.getColorStateList which calls isFile()
+                // on values to see if it's a file or a color.
+                return true;
+            }
+
+            // Needed by layoutlib's class loader. Note that we've locked down the ability to
+            // create new class loaders.
+            if (path.endsWith(DOT_CLASS) || path.endsWith(DOT_JAR)) {
+                return true;
+            }
+
+            // Allow reading files in temp
+            if (path.startsWith(mTempDir)) {
+                return true;
+            }
+
+            String javaHome = System.getProperty("java.home");
+            if (path.startsWith(javaHome)) { // Allow JDK to load its own classes
+                return true;
+            } else if (javaHome.endsWith("/Contents/Home")) {
+                // On Mac, Home lives two directory levels down from the real home, and we
+                // sometimes need to read from sibling directories (e.g. ../Libraries/ etc)
+                if (path.regionMatches(0, javaHome, 0, javaHome.length() -
+                        "Contents/Home".length())) {
+                    return true;
+                }
+            }
+
+            return false;
+        } else {
+            return true;
+        }
     }
 
     private boolean isWritingAllowed(String path) {
@@ -455,11 +465,13 @@ public class RenderSecurityManager extends SecurityManager {
             }
         } else if (isRelevant()) {
             String actions = permission.getActions();
-            if ("read".equals(actions)) {
+            //noinspection PointlessBooleanExpression,ConstantConditions
+            if (RESTRICT_READS && "read".equals(actions)) {
                 if (!isReadingAllowed(name)) {
                     throw RenderSecurityException.create("Read", name);
                 }
-            } else if ("write".equals(actions)) {
+            } else if (!actions.isEmpty() && !actions.equals("read")) {
+                // write, execute, delete, readlink
                 if (!(permission instanceof FilePermission) || !isWritingAllowed(name)) {
                     throw RenderSecurityException.create("Write", name);
                 }
