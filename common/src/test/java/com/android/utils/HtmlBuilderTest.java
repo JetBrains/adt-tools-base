@@ -122,4 +122,20 @@ public class HtmlBuilderTest extends TestCase {
         }
         assertEquals(expected, actual);
     }
+
+    public void testNewlineIfNecessary() {
+        HtmlBuilder builder = new HtmlBuilder();
+        builder.newlineIfNecessary();
+        assertEquals("<BR/>\n", builder.getHtml());
+        builder.newlineIfNecessary();
+        assertEquals("<BR/>\n", builder.getHtml());
+        builder.add("a");
+        builder.newlineIfNecessary();
+        assertEquals("<BR/>\na<BR/>\n", builder.getHtml());
+        builder.newline();
+        builder.newlineIfNecessary();
+        builder.newlineIfNecessary();
+        builder.newlineIfNecessary();
+        assertEquals("<BR/>\na<BR/>\n<BR/>\n", builder.getHtml());
+    }
 }
