@@ -142,8 +142,11 @@ public class RenderSecurityManager extends SecurityManager {
         } else {
             // Disable
             mAllowSetSecurityManager = true;
-            sIsRenderThread.set(false);
-            mDisabled = true;
+            // Don't set mDisabled and clear sInRenderThread yet: the call
+            // to revert to the previous security manager below will trigger
+            // a check permission, and in that code we need to distinguish between
+            // this call (isRelevant() should return true) and other threads calling
+            // it outside the scope of the security manager
             try {
                 // Only reset the security manager if it hasn't already been set to
                 // something else. If other threads try to do the same thing we could have
@@ -155,10 +158,13 @@ public class RenderSecurityManager extends SecurityManager {
                 if (current instanceof RenderSecurityManager) {
                     System.setSecurityManager(myPreviousSecurityManager);
                 } else if (mLogger != null) {
+                    sIsRenderThread.set(false);
                     mLogger.warning("Security manager was changed behind the scenes: ", current);
                 }
             } finally {
+                mDisabled = true;
                 mAllowSetSecurityManager = false;
+                sIsRenderThread.set(false);
             }
         }
     }

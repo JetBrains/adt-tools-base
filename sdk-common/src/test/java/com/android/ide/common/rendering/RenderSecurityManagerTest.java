@@ -34,6 +34,8 @@ public class RenderSecurityManagerTest extends TestCase {
         assertNull(RenderSecurityManager.getCurrent());
 
         RenderSecurityManager manager = new RenderSecurityManager(null, null);
+        RecordingLogger logger = new RecordingLogger();
+        manager.setLogger(logger);
         try {
             assertNull(RenderSecurityManager.getCurrent());
             manager.setActive(true);
@@ -56,6 +58,7 @@ public class RenderSecurityManagerTest extends TestCase {
             manager.dispose();
             assertNull(RenderSecurityManager.getCurrent());
             assertNull(System.getSecurityManager());
+            assertEquals(Collections.<String>emptyList(), logger.getWarningMsgs());
         }
     }
 
