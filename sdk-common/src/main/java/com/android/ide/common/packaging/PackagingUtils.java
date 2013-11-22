@@ -72,8 +72,8 @@ public class PackagingUtils {
                 !"swp".equalsIgnoreCase(extension) &&         // vi swap file
                 !"thumbs.db".equalsIgnoreCase(fileName) &&    // image index file
                 !"picasa.ini".equalsIgnoreCase(fileName) &&   // image index file
+                !"about.html".equalsIgnoreCase(fileName) &&   // Javadoc
                 !"package.html".equalsIgnoreCase(fileName) && // Javadoc
                 !"overview.html".equalsIgnoreCase(fileName);  // Javadoc
-
     }
 }
