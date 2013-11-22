@@ -5,7 +5,7 @@
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".${activityClass}">
+    tools:context="${packageName}.${activityClass}">
 
     <!-- As the main content view, the view below consumes the entire
          space available using match_parent in both dimensions. -->

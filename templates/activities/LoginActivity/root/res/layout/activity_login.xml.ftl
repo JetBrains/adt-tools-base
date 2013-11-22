@@ -1,6 +1,6 @@
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context=".${activityClass}">
+    tools:context="${packageName}.${activityClass}">
 
     <!-- Login progress -->
     <LinearLayout android:id="@+id/login_status"
