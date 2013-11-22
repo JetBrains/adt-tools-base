@@ -24,6 +24,7 @@ import com.android.utils.ILogger;
 
 import java.io.File;
 import java.io.FileDescriptor;
+import java.io.FilePermission;
 import java.net.InetAddress;
 import java.security.Permission;
 
@@ -254,6 +255,15 @@ public class RenderSecurityManager extends SecurityManager {
         return false;
     }
 
+    private boolean isWritingAllowed(String path) {
+        //noinspection RedundantIfStatement
+        if (path.startsWith(mTempDir)) {
+            return true;
+        }
+
+        return false;
+    }
+
     //------------------------------------------------------------------------------------------
     // Not permitted:
     //------------------------------------------------------------------------------------------
@@ -349,7 +359,7 @@ public class RenderSecurityManager extends SecurityManager {
     public void checkDelete(String file) {
         if (isRelevant()) {
             // Allow writing to temp
-            if (file.startsWith(mTempDir)) {
+            if (isWritingAllowed(file)) {
                 return;
             }
 
@@ -376,8 +386,7 @@ public class RenderSecurityManager extends SecurityManager {
     @Override
     public void checkWrite(String file) {
         if (isRelevant()) {
-            // Allow writing to temp
-            if (file.startsWith(mTempDir)) {
+            if (isWritingAllowed(file)) {
                 return;
             }
 
@@ -449,6 +458,10 @@ public class RenderSecurityManager extends SecurityManager {
             if ("read".equals(actions)) {
                 if (!isReadingAllowed(name)) {
                     throw RenderSecurityException.create("Read", name);
+                }
+            } else if ("write".equals(actions)) {
+                if (!(permission instanceof FilePermission) || !isWritingAllowed(name)) {
+                    throw RenderSecurityException.create("Write", name);
                 }
             }
         }
