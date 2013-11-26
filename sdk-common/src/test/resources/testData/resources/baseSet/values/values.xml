@@ -70,6 +70,10 @@
         <attr name="android:colorForegroundInverse" />
         <attr name="blah2" />
 
+        <attr name="flagAttr">
+            <flag name="flag1a" value="0x30" />
+            <flag name="flag1b" value="0x40" />
+        </attr>
     </declare-styleable>
 
     <!-- The width that is used when creating thumbnails of applications. -->

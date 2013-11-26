@@ -18,7 +18,7 @@ package com.android.ide.common.rendering.api;
 
 import com.android.resources.ResourceType;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -63,7 +63,8 @@ public class DeclareStyleableResourceValue extends ResourceValue {
 
     public void addValue(AttrResourceValue attr) {
         if (mAttrMap == null) {
-            mAttrMap = new HashMap<String, AttrResourceValue>();
+            // Preserve insertion order. This order affects the int[] indices for styleables.
+            mAttrMap = new LinkedHashMap<String, AttrResourceValue>();
         }
 
         mAttrMap.put(attr.getName(), attr);
