@@ -3,14 +3,16 @@
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/lombok-ast-0.2.1.jar!/" />
     </CLASSES>
-    <JAVADOC />
+    <JAVADOC>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/lombok-ast-0.2.1-javadoc.jar!/" />
+    </JAVADOC>
     <SOURCES>
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/lombok-ast-0.2.1-src.zip!/src/template" />
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/lombok-ast-0.2.1-src.zip!/src/ecjTransformer" />
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/lombok-ast-0.2.1-src.zip!/src/javacTransformer" />
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/lombok-ast-0.2.1-src.zip!/src/printer" />
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/lombok-ast-0.2.1-src.zip!/src/main" />
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/lombok-ast-0.2.1-src.zip!/build/lombok.ast_generatedSource" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/lombok-ast-0.2.1-sources.jar!/src/main" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/lombok-ast-0.2.1-sources.jar!/src/printer" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/lombok-ast-0.2.1-sources.jar!/src/template" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/lombok-ast-0.2.1-sources.jar!/src/ecjTransformer" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/lombok-ast-0.2.1-sources.jar!/src/javacTransformer" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/lombok-ast/lombok-ast-0.2.1-sources.jar!/build/lombok.ast_generatedSource" />
     </SOURCES>
   </library>
 </component>
