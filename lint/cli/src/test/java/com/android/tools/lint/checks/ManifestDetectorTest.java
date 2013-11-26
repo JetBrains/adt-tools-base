@@ -16,16 +16,20 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+
 import com.android.annotations.NonNull;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Project;
+import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @SuppressWarnings("javadoc")
@@ -403,5 +407,72 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                 + "                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 3 warnings\n",
                 lintProject("deviceadmin.xml=>AndroidManifest.xml"));
+    }
+
+    public void testMockLocations() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.MOCK_LOCATION);
+        assertEquals(""
+                + "AndroidManifest.xml:9: Error: Mock locations should only be requested in a debug-specific manifest file (typically src/debug/AndroidManifest.xml) [MockLocation]\n"
+                + "    <uses-permission android:name=\"android.permission.ACCESS_MOCK_LOCATION\" /> \n"
+                + "                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        "mock_location.xml=>AndroidManifest.xml",
+                        "multiproject/library.properties=>build.gradle")); // dummy; only name counts
+        // TODO: When we have an instantiatable gradle model, test with real model and verify
+        // that a manifest file in a debug build type doesnot get flagged.
+    }
+
+    public void testMockLocationsOk() throws Exception {
+        // Not a Gradle project
+        mEnabled = Collections.singleton(ManifestDetector.MOCK_LOCATION);
+        assertEquals(""
+                + "No warnings.",
+                lintProject(
+                        "mock_location.xml=>AndroidManifest.xml"));
+    }
+
+    // Custom project which locates all manifest files in the project rather than just
+    // being hardcoded to the root level
+    private static class MyProject extends Project {
+        protected MyProject(@NonNull LintClient client, @NonNull File dir,
+                @NonNull File referenceDir) {
+            super(client, dir, referenceDir);
+        }
+
+        @NonNull
+        @Override
+        public List<File> getManifestFiles() {
+            if (mManifestFiles == null) {
+                mManifestFiles = Lists.newArrayList();
+                addManifestFiles(mDir);
+            }
+
+            return mManifestFiles;
+        }
+
+        private void addManifestFiles(File dir) {
+            if (dir.getName().equals(ANDROID_MANIFEST_XML)) {
+                mManifestFiles.add(dir);
+            } else if (dir.isDirectory()) {
+                File[] files = dir.listFiles();
+                if (files != null) {
+                    for (File file : files) {
+                        addManifestFiles(file);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    protected TestLintClient createClient() {
+        return new TestLintClient() {
+            @NonNull
+            @Override
+            protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                return new MyProject(this, dir, referenceDir);
+            }
+        };
     }
 }

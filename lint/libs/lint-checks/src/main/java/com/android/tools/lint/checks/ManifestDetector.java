@@ -39,6 +39,8 @@ import static com.android.xml.AndroidManifest.NODE_METADATA;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.BuildTypeContainer;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -323,6 +325,30 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             Severity.WARNING,
             IMPLEMENTATION);
 
+    /** Using a mock location in a non-debug-specific manifest file */
+    public static final Issue MOCK_LOCATION = Issue.create(
+            "MockLocation", //$NON-NLS-1$
+            "Using mock location provider in production",
+            "Checks that mock location providers are only used in debug builds",
+
+            "Using a mock location provider (by requiring the permission " +
+            "`android.permission.ACCESS_MOCK_LOCATION`) should *only* be done " +
+            "in debug builds. In Gradle projects, that means you should only " +
+            "request this permission in a debug source set specific manifest file.\n" +
+            "\n" +
+            "To fix this, create a new manifest file in the debug folder and move " +
+            "the `<uses-permission>` element there. A typical path to a debug manifest " +
+            "override file in a Gradle project is src/debug/AndroidManifest.xml.",
+
+            Category.CORRECTNESS,
+            8,
+            Severity.ERROR,
+            IMPLEMENTATION);
+
+    /** Permission name of mock location permission */
+    public static final String MOCK_LOCATION_PERMISSION =
+            "android.permission.ACCESS_MOCK_LOCATION";   //$NON-NLS-1$
+
     /** Constructs a new {@link ManifestDetector} check */
     public ManifestDetector() {
     }
@@ -603,6 +629,19 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             }
         }
 
+        if (tag.equals(TAG_USES_PERMISSION)) {
+            Attr name = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME);
+            //String name = element.getAttributeNS(ANDROID_URI, ATTR_NAME);
+            if (name != null && name.getValue().equals(MOCK_LOCATION_PERMISSION)
+                    && context.getMainProject().isGradleProject()
+                    && !isDebugManifest(context, context.file)) {
+                String message = "Mock locations should only be requested in a debug-specific "
+                        + "manifest file (typically src/debug/AndroidManifest.xml)";
+                Location location = context.getLocation(name);
+                context.report(MOCK_LOCATION, element, location, message, null);
+            }
+        }
+
         if (tag.equals(TAG_APPLICATION)) {
             mSeenApplication = true;
             if (!element.hasAttributeNS(ANDROID_URI, SdkConstants.ATTR_ALLOW_BACKUP)
@@ -646,6 +685,22 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 }
             }
         }
+    }
+
+    /** Returns true iff the given manifest file is in a debug-specific source set */
+    private static boolean isDebugManifest(XmlContext context, File manifestFile) {
+        AndroidProject model = context.getProject().getGradleProjectModel();
+        if (model != null) {
+            for (BuildTypeContainer container : model.getBuildTypes().values()) {
+                if (container.getBuildType().isDebuggable()) {
+                    if (manifestFile.equals(container.getSourceProvider().getManifestFile())) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     private static void checkDeviceAdmin(XmlContext context, Element element) {
