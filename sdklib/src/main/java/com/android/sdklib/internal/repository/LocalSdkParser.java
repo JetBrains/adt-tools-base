@@ -38,8 +38,8 @@ import com.android.sdklib.internal.repository.packages.SamplePackage;
 import com.android.sdklib.internal.repository.packages.SourcePackage;
 import com.android.sdklib.internal.repository.packages.SystemImagePackage;
 import com.android.sdklib.internal.repository.packages.ToolPackage;
-import com.android.sdklib.local.LocalAddonPkgInfo;
-import com.android.sdklib.local.LocalSdk;
+import com.android.sdklib.repository.local.LocalAddonPkgInfo;
+import com.android.sdklib.repository.local.LocalSdk;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 
