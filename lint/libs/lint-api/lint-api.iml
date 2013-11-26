@@ -12,6 +12,7 @@
     <orderEntry type="library" exported="" name="asm-tools" level="project" />
     <orderEntry type="library" exported="" name="lombok-ast" level="project" />
     <orderEntry type="module" module-name="sdk-common" exported="" />
+    <orderEntry type="library" exported="" name="builder-model" level="project" />
   </component>
 </module>
 
