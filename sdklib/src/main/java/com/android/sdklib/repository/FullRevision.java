@@ -37,6 +37,8 @@ public class FullRevision implements Comparable<FullRevision> {
     public static final int IMPLICIT_MICRO_REV = 0;
     public static final int NOT_A_PREVIEW      = 0;
 
+    public static final FullRevision NOT_SPECIFIED = new FullRevision(MISSING_MAJOR_REV);
+
     private static final Pattern FULL_REVISION_PATTERN =
         //                   1=major       2=minor       3=micro              4=preview
         Pattern.compile("\\s*([0-9]+)(?:\\.([0-9]+)(?:\\.([0-9]+))?)?\\s*(?:rc([0-9]+))?\\s*");

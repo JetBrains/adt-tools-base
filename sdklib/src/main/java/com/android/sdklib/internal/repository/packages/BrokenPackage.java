@@ -16,12 +16,15 @@
 
 package com.android.sdklib.internal.repository.packages;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
 
 import java.io.File;
 import java.util.Properties;
@@ -47,6 +50,7 @@ public class BrokenPackage extends MajorRevisionPackage
 
     private final String mShortDescription;
     private final String mLongDescription;
+    private final IPkgDesc mPkgDesc;
 
     /**
      * Creates a new "broken" package that represents a package that we failed to load,
@@ -55,12 +59,13 @@ public class BrokenPackage extends MajorRevisionPackage
      * <p/>
      * By design, this creates a package with one and only one archive.
      */
-    BrokenPackage(Properties props,
-            String shortDescription,
-            String longDescription,
+    BrokenPackage(@Nullable Properties props,
+            @NonNull String shortDescription,
+            @NonNull String longDescription,
             int minApiLevel,
             int exactApiLevel,
-            String archiveOsPath) {
+            @Nullable String archiveOsPath,
+            @NonNull IPkgDesc pkgDesc) {
         super(  null,                                   //source
                 props,                                  //properties
                 0,                                      //revision will be taken from props
@@ -75,6 +80,13 @@ public class BrokenPackage extends MajorRevisionPackage
         mLongDescription = longDescription;
         mMinApiLevel = minApiLevel;
         mExactApiLevel = exactApiLevel;
+        mPkgDesc = pkgDesc;
+    }
+
+    @Override
+    @NonNull
+    public IPkgDesc getPkgDesc() {
+        return mPkgDesc;
     }
 
     /**
