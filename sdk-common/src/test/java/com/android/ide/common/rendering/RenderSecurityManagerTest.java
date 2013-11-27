@@ -22,6 +22,7 @@ import junit.framework.TestCase;
 
 import java.io.File;
 import java.io.FilePermission;
+import java.lang.reflect.Field;
 import java.security.Permission;
 import java.util.Collections;
 import java.util.concurrent.BrokenBarrierException;
@@ -30,15 +31,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RenderSecurityManagerTest extends TestCase {
 
+    private Object myCredential = new Object();
+
     public void testExec() throws Exception {
         assertNull(RenderSecurityManager.getCurrent());
-
         RenderSecurityManager manager = new RenderSecurityManager(null, null);
         RecordingLogger logger = new RecordingLogger();
         manager.setLogger(logger);
         try {
             assertNull(RenderSecurityManager.getCurrent());
-            manager.setActive(true);
+            manager.setActive(true, myCredential);
             assertSame(manager, RenderSecurityManager.getCurrent());
             if (new File("/bin/ls").exists()) {
                 Runtime.getRuntime().exec("/bin/ls");
@@ -55,7 +57,7 @@ public class RenderSecurityManagerTest extends TestCase {
                     exception.toString());
             // pass
         } finally {
-            manager.dispose();
+            manager.dispose(myCredential);
             assertNull(RenderSecurityManager.getCurrent());
             assertNull(System.getSecurityManager());
             assertEquals(Collections.<String>emptyList(), logger.getWarningMsgs());
@@ -65,63 +67,63 @@ public class RenderSecurityManagerTest extends TestCase {
     public void testSetSecurityManager() throws Exception {
         RenderSecurityManager manager = new RenderSecurityManager(null, null);
         try {
-            manager.setActive(true);
+            manager.setActive(true, myCredential);
             System.setSecurityManager(null);
             fail("Should have thrown security exception");
         } catch (SecurityException exception) {
             assertEquals("Security access not allowed during rendering", exception.toString());
             // pass
         } finally {
-            manager.dispose();
+            manager.dispose(myCredential);
         }
     }
 
     public void testReadWrite() throws Exception {
         RenderSecurityManager manager = new RenderSecurityManager(null, null);
         try {
-            manager.setActive(true);
+            manager.setActive(true, myCredential);
             manager.checkPermission(new FilePermission("/foo", "read,write"));
             fail("Should have thrown security exception");
         } catch (SecurityException exception) {
             assertEquals("Write access not allowed during rendering (/foo)", exception.toString());
             // pass
         } finally {
-            manager.dispose();
+            manager.dispose(myCredential);
         }
     }
 
     public void testExecute() throws Exception {
         RenderSecurityManager manager = new RenderSecurityManager(null, null);
         try {
-            manager.setActive(true);
+            manager.setActive(true, myCredential);
             manager.checkPermission(new FilePermission("/foo", "execute"));
             fail("Should have thrown security exception");
         } catch (SecurityException exception) {
             assertEquals("Write access not allowed during rendering (/foo)", exception.toString());
             // pass
         } finally {
-            manager.dispose();
+            manager.dispose(myCredential);
         }
     }
 
     public void testDelete() throws Exception {
         RenderSecurityManager manager = new RenderSecurityManager(null, null);
         try {
-            manager.setActive(true);
+            manager.setActive(true, myCredential);
             manager.checkPermission(new FilePermission("/foo", "delete"));
             fail("Should have thrown security exception");
         } catch (SecurityException exception) {
             assertEquals("Write access not allowed during rendering (/foo)", exception.toString());
             // pass
         } finally {
-            manager.dispose();
+            manager.dispose(myCredential);
         }
     }
 
     public void testInvalidRead() throws Exception {
         RenderSecurityManager manager = new RenderSecurityManager(null, null);
         try {
-            manager.setActive(true);
+            manager.setActive(true, myCredential);
 
             if (RenderSecurityManager.RESTRICT_READS) {
                 try {
@@ -145,14 +147,14 @@ public class RenderSecurityManagerTest extends TestCase {
                 }
             }
         } finally {
-            manager.dispose();
+            manager.dispose(myCredential);
         }
     }
 
     public void testInvalidPropertyWrite() throws Exception {
         RenderSecurityManager manager = new RenderSecurityManager(null, null);
         try {
-            manager.setActive(true);
+            manager.setActive(true, myCredential);
 
             // Try to make java.io.tmpdir point to user.home to grant myself access:
             String userHome = System.getProperty("user.home");
@@ -164,14 +166,14 @@ public class RenderSecurityManagerTest extends TestCase {
                     exception.toString());
             // pass
         } finally {
-            manager.dispose();
+            manager.dispose(myCredential);
         }
     }
 
     public void testReadOk() throws Exception {
         RenderSecurityManager manager = new RenderSecurityManager(null,  null);
         try {
-            manager.setActive(true);
+            manager.setActive(true, myCredential);
 
             File jdkHome = new File(System.getProperty("java.home"));
             assertTrue(jdkHome.exists());
@@ -185,14 +187,14 @@ public class RenderSecurityManagerTest extends TestCase {
                 }
             }
         } finally {
-            manager.dispose();
+            manager.dispose(myCredential);
         }
     }
 
     public void testProperties() throws Exception {
         RenderSecurityManager manager = new RenderSecurityManager(null, null);
         try {
-            manager.setActive(true);
+            manager.setActive(true, myCredential);
 
             System.getProperties();
 
@@ -201,14 +203,14 @@ public class RenderSecurityManagerTest extends TestCase {
             assertEquals("Property access not allowed during rendering", exception.toString());
             // pass
         } finally {
-            manager.dispose();
+            manager.dispose(myCredential);
         }
     }
 
     public void testExit() throws Exception {
         RenderSecurityManager manager = new RenderSecurityManager(null, null);
         try {
-            manager.setActive(true);
+            manager.setActive(true, myCredential);
 
             System.exit(-1);
 
@@ -217,7 +219,7 @@ public class RenderSecurityManagerTest extends TestCase {
             assertEquals("Exit access not allowed during rendering (-1)", exception.toString());
             // pass
         } finally {
-            manager.dispose();
+            manager.dispose(myCredential);
         }
     }
 
@@ -236,7 +238,7 @@ public class RenderSecurityManagerTest extends TestCase {
         };
         RenderSecurityManager manager = new RenderSecurityManager(null, null);
         try {
-            manager.setActive(true);
+            manager.setActive(true, myCredential);
 
             // Threads cloned from this one should inherit the same security constraints
             final AtomicBoolean failedAsExpected = new AtomicBoolean(false);
@@ -257,14 +259,14 @@ public class RenderSecurityManagerTest extends TestCase {
             otherThread.join();
             assertFalse(failedUnexpectedly.get());
         } finally {
-            manager.dispose();
+            manager.dispose(myCredential);
         }
     }
 
     public void testActive() throws Exception {
         RenderSecurityManager manager = new RenderSecurityManager(null, null);
         try {
-            manager.setActive(true);
+            manager.setActive(true, myCredential);
 
             try {
                 System.getProperties();
@@ -273,7 +275,7 @@ public class RenderSecurityManagerTest extends TestCase {
                 // pass
             }
 
-            manager.setActive(false);
+            manager.setActive(false, myCredential);
 
             try {
                 System.getProperties();
@@ -281,7 +283,7 @@ public class RenderSecurityManagerTest extends TestCase {
                 fail(exception.toString());
             }
 
-            manager.setActive(true);
+            manager.setActive(true, myCredential);
 
             try {
                 System.getProperties();
@@ -290,7 +292,7 @@ public class RenderSecurityManagerTest extends TestCase {
                 // pass
             }
         } finally {
-            manager.dispose();
+            manager.dispose(myCredential);
         }
     }
 
@@ -323,7 +325,7 @@ public class RenderSecurityManagerTest extends TestCase {
                     assertNull(RenderSecurityManager.getCurrent());
 
                     RenderSecurityManager manager = new RenderSecurityManager(null, null);
-                    manager.setActive(true);
+                    manager.setActive(true, myCredential);
 
                     barrier2.await();
 
@@ -363,7 +365,7 @@ public class RenderSecurityManagerTest extends TestCase {
 
                     barrier3.await();
                     barrier4.await();
-                    manager.dispose();
+                    manager.dispose(myCredential);
 
                     assertNull(RenderSecurityManager.getCurrent());
                     assertNull(System.getSecurityManager());
@@ -452,8 +454,8 @@ public class RenderSecurityManagerTest extends TestCase {
         RenderSecurityManager.sEnabled = false;
         try {
             assertNull(RenderSecurityManager.getCurrent());
-            manager.setActive(true);
-            assertSame(manager, RenderSecurityManager.getCurrent());
+            manager.setActive(true, myCredential);
+            assertSame(manager, System.getSecurityManager());
             if (new File("/bin/ls").exists()) {
                 Runtime.getRuntime().exec("/bin/ls");
             } else {
@@ -463,7 +465,7 @@ public class RenderSecurityManagerTest extends TestCase {
             fail("Should have been disabled");
         } finally {
             RenderSecurityManager.sEnabled = true;
-            manager.dispose();
+            manager.dispose(myCredential);
             assertNull(RenderSecurityManager.getCurrent());
             assertNull(System.getSecurityManager());
         }
@@ -513,13 +515,13 @@ public class RenderSecurityManagerTest extends TestCase {
         try {
             barrier1.await();
             assertNull(RenderSecurityManager.getCurrent());
-            manager.setActive(true);
+            manager.setActive(true, myCredential);
             assertSame(manager, RenderSecurityManager.getCurrent());
             barrier2.await();
             barrier3.await();
 
             assertNull(RenderSecurityManager.getCurrent());
-            manager.setActive(false);
+            manager.setActive(false, myCredential);
             assertNull(RenderSecurityManager.getCurrent());
 
             assertEquals(Collections.singletonList(
@@ -530,11 +532,77 @@ public class RenderSecurityManagerTest extends TestCase {
         } catch (BrokenBarrierException e) {
             fail(e.toString());
         } finally {
-            manager.dispose();
+            manager.dispose(myCredential);
             assertNull(RenderSecurityManager.getCurrent());
             assertNotNull(System.getSecurityManager());
             assertEquals("MyTestSecurityManager", System.getSecurityManager().toString());
             System.setSecurityManager(null);
+        }
+    }
+
+    public void testEnterExitSafeRegion() throws Exception {
+        RenderSecurityManager manager = new RenderSecurityManager(null, null);
+        Object credential = new Object();
+        try {
+            manager.setActive(true, credential);
+
+            boolean token = RenderSecurityManager.enterSafeRegion(credential);
+            manager.checkPermission(new FilePermission("/foo", "execute"));
+            RenderSecurityManager.exitSafeRegion(token);
+
+            assertNotNull(RenderSecurityManager.getCurrent());
+            boolean tokenOuter = RenderSecurityManager.enterSafeRegion(credential);
+            assertNull(RenderSecurityManager.getCurrent());
+            boolean tokenInner = RenderSecurityManager.enterSafeRegion(credential);
+            assertNull(RenderSecurityManager.getCurrent());
+            manager.checkPermission(new FilePermission("/foo", "execute"));
+            assertNull(RenderSecurityManager.getCurrent());
+            manager.checkPermission(new FilePermission("/foo", "execute"));
+            RenderSecurityManager.exitSafeRegion(tokenInner);
+            assertNull(RenderSecurityManager.getCurrent());
+            RenderSecurityManager.exitSafeRegion(tokenOuter);
+            assertNotNull(RenderSecurityManager.getCurrent());
+
+            // Wrong credential
+            Object wrongCredential = new Object();
+            try {
+                token = RenderSecurityManager.enterSafeRegion(wrongCredential);
+                manager.checkPermission(new FilePermission("/foo", "execute"));
+                RenderSecurityManager.exitSafeRegion(token);
+                fail("Should have thrown exception");
+            } catch (SecurityException e) {
+                // pass
+            }
+
+            // Try turning off the security manager
+            try {
+                manager.setActive(false, wrongCredential);
+            } catch (SecurityException e) {
+                // pass
+            }
+            try {
+                manager.setActive(false, null);
+            } catch (SecurityException e) {
+                // pass
+            }
+            try {
+                manager.dispose(wrongCredential);
+            } catch (SecurityException e) {
+                // pass
+            }
+
+            // Try looking up the secret
+            try {
+                Field field = RenderSecurityManager.class.getField("sCredential");
+                field.setAccessible(true);
+                Object secret = field.get(null);
+                manager.dispose(secret);
+                fail("Shouldn't be able to find our way to the credential");
+            } catch (Exception e) {
+                // pass
+            }
+        } finally {
+            manager.dispose(credential);
         }
     }
 }
