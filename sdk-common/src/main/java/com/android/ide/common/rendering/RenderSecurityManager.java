@@ -34,7 +34,7 @@ import java.security.Permission;
  * {@code System.exit}, as well as unintentionally writing files etc.
  * <p>
  * The security manager only checks calls on the current thread for which it
- * was made active with a call to {@link #setActive(boolean)}, as well as any
+ * was made active with a call to {@link #setActive(boolean, Object)}, as well as any
  * threads constructed from the render thread.
  */
 public class RenderSecurityManager extends SecurityManager {
@@ -47,7 +47,7 @@ public class RenderSecurityManager extends SecurityManager {
     /**
      * Whether the security manager is enabled for this session (it might still
      * be inactive, either because it's active for a different thread, or because
-     * it has been disabled via {@link #setActive(boolean)} (which sets the
+     * it has been disabled via {@link #setActive(boolean, Object)} (which sets the
      * per-instance mEnabled flag)
      */
     public static boolean sEnabled =
@@ -69,9 +69,14 @@ public class RenderSecurityManager extends SecurityManager {
         }
     };
 
+    /** Secret which must be provided by callers wishing to deactivate the security manager  */
+    private static Object sCredential;
+
     private boolean mAllowSetSecurityManager;
     private boolean mDisabled;
+    @SuppressWarnings("FieldCanBeLocal")
     private String mSdkPath;
+    @SuppressWarnings("FieldCanBeLocal")
     private String mProjectPath;
     private String mTempDir;
     private SecurityManager myPreviousSecurityManager;
@@ -87,7 +92,8 @@ public class RenderSecurityManager extends SecurityManager {
         if (sIsRenderThread.get()) {
             SecurityManager securityManager = System.getSecurityManager();
             if (securityManager instanceof RenderSecurityManager) {
-                return (RenderSecurityManager) securityManager;
+                RenderSecurityManager manager = (RenderSecurityManager) securityManager;
+                return manager.isRelevant() ? manager : null;
             }
         }
 
@@ -103,7 +109,7 @@ public class RenderSecurityManager extends SecurityManager {
      * user's home directory.)
      * <p>
      * Note: By default a security manager is not active. You need to call
-     * {@link #setActive(boolean)} with true to activate it, <b>instead</b> of just calling
+     * {@link #setActive(boolean, Object)} with true to activate it, <b>instead</b> of just calling
      * {@link System#setSecurityManager(SecurityManager)}.
      *
      * @param sdkPath an optional path to the SDK install being used by layoutlib;
@@ -125,7 +131,17 @@ public class RenderSecurityManager extends SecurityManager {
         return this;
     }
 
-    public void setActive(boolean active) {
+    /**
+     * Sets whether the {@linkplain RenderSecurityManager} is active or not.
+     * If it is being set as active, the passed in credential is remembered
+     * and anyone wishing to turn off the security manager must provide the
+     * same credential.
+     *
+     * @param active     whether to turn on or off the security manager
+     * @param credential when turning off the security manager, the exact same
+     *                   credential passed in to the earlier activation call
+     */
+    public void setActive(boolean active, @Nullable Object credential) {
         SecurityManager current = System.getSecurityManager();
         boolean isActive = current == this;
         if (active == isActive) {
@@ -139,7 +155,13 @@ public class RenderSecurityManager extends SecurityManager {
             sIsRenderThread.set(true);
             mDisabled = false;
             System.setSecurityManager(this);
+            //noinspection AssignmentToStaticFieldFromInstanceMethod
+            sCredential = credential;
         } else {
+            if (credential != sCredential) {
+                throw RenderSecurityException.create("Invalid credential");
+            }
+
             // Disable
             mAllowSetSecurityManager = true;
             // Don't set mDisabled and clear sInRenderThread yet: the call
@@ -173,8 +195,39 @@ public class RenderSecurityManager extends SecurityManager {
         return sEnabled && !mDisabled && sIsRenderThread.get();
     }
 
-    public void dispose() {
-        setActive(false);
+    /**
+     * Disposes the security manager. An alias for calling {@link #setActive} with
+     * false.
+     *
+     * @param credential the sandbox credential initially passed to
+     *                   {@link #setActive(boolean, Object)}
+     */
+    public void dispose(@Nullable Object credential) {
+        setActive(false, credential);
+    }
+
+    /**
+     * Enters a code region where the sandbox is not needed
+     *
+     * @param credential a credential which proves that the caller has the right to do this
+     * @return a token which should be passed back to {@link #exitSafeRegion(boolean)}
+     */
+    public static boolean enterSafeRegion(@Nullable Object credential) {
+        boolean token = sEnabled;
+        if (credential == sCredential) {
+            sEnabled = false;
+        }
+        return token;
+    }
+
+    /**
+     * Exits a code region where the sandbox was not needed
+     *
+     * @param token the token which was returned back from the paired
+     *              {@link #enterSafeRegion(Object)} call
+     */
+    public static void exitSafeRegion(boolean token) {
+        sEnabled = token;
     }
 
     // Permitted by custom views: access any package or member, read properties
