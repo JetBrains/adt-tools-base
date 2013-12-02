@@ -70,6 +70,14 @@ public class HtmlBuilder {
         return this;
     }
 
+    public HtmlBuilder newlineIfNecessary() {
+        if (!SdkUtils.endsWith(mStringBuilder, "<BR/>\n")) {
+            mStringBuilder.append("<BR/>\n");
+        }
+
+        return this;
+    }
+
     public HtmlBuilder addLink(@Nullable String textBefore,
             @NonNull String linkText,
             @Nullable String textAfter,

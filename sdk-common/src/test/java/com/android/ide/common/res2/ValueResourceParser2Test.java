@@ -32,7 +32,7 @@ public class ValueResourceParser2Test extends BaseTestCase {
     public void testParsedResourcesByCount() throws Exception {
         List<ResourceItem> resources = getParsedResources();
 
-        assertEquals(21, resources.size());
+        assertEquals(22, resources.size());
     }
 
     public void testParsedResourcesByName() throws Exception {
@@ -57,6 +57,7 @@ public class ValueResourceParser2Test extends BaseTestCase {
                 "attr/flag_attr",
                 "attr/blah",
                 "attr/blah2",
+                "attr/flagAttr",
                 "declare-styleable/declare_styleable",
                 "dimen/dimen",
                 "id/item_id",

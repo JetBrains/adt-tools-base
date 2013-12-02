@@ -25,6 +25,7 @@ import static com.android.SdkConstants.TAG_ITEM;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
+import com.android.utils.XmlUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -243,7 +244,7 @@ class ValueResourceParser2 {
 
                 // is the attribute in the android namespace?
                 if (!resource.getName().startsWith(ANDROID_NS_NAME_PREFIX)) {
-                    if (hasFormatAttribute(node)) {
+                    if (hasFormatAttribute(node) || XmlUtils.hasElementChildren(node)) {
                         checkDuplicate(resource, map);
                         resource.setIgnoredFromDiskMerge(true);
                         list.add(resource);

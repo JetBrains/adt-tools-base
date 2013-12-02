@@ -31,8 +31,10 @@ import com.android.resources.ResourceType;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ResourceResolver extends RenderResources {
     public static final String THEME_NAME = "Theme";
@@ -183,6 +185,11 @@ public class ResourceResolver extends RenderResources {
     @Override
     public ResourceValue findItemInStyle(StyleResourceValue style, String itemName,
             boolean isFrameworkAttr) {
+        return findItemInStyle(style, itemName, isFrameworkAttr, 0);
+    }
+
+    private ResourceValue findItemInStyle(StyleResourceValue style, String itemName,
+                                          boolean isFrameworkAttr, int depth) {
         ResourceValue item = style.findValue(itemName, isFrameworkAttr);
 
         // if we didn't find it, we look in the parent style (if applicable)
@@ -190,11 +197,61 @@ public class ResourceResolver extends RenderResources {
         if (item == null) {
             StyleResourceValue parentStyle = mStyleInheritanceMap.get(style);
             if (parentStyle != null) {
-                return findItemInStyle(parentStyle, itemName, isFrameworkAttr);
+                if (depth >= MAX_RESOURCE_INDIRECTION) {
+                    if (mLogger != null) {
+                        mLogger.error(LayoutLog.TAG_BROKEN,
+                                String.format("Cyclic style parent definitions: %1$s",
+                                        computeCyclicStyleChain(style)),
+                                null);
+                    }
+
+                    return null;
+                }
+
+                return findItemInStyle(parentStyle, itemName, isFrameworkAttr, depth + 1);
             }
         }
 
         return item;
+    }
+
+    private String computeCyclicStyleChain(StyleResourceValue style) {
+        StringBuilder sb = new StringBuilder(100);
+        appendStyleParents(style, new HashSet<StyleResourceValue>(), 0, sb);
+        return sb.toString();
+    }
+
+    private void appendStyleParents(StyleResourceValue style, Set<StyleResourceValue> seen,
+            int depth, StringBuilder sb) {
+        if (depth >= MAX_RESOURCE_INDIRECTION) {
+            sb.append("...");
+            return;
+        }
+
+        boolean haveSeen = seen.contains(style);
+        seen.add(style);
+
+        sb.append('"');
+        if (style.isFramework()) {
+            sb.append(PREFIX_ANDROID);
+        }
+        sb.append(style.getName());
+        sb.append('"');
+
+        if (haveSeen) {
+            return;
+        }
+
+        StyleResourceValue parentStyle = mStyleInheritanceMap.get(style);
+        if (parentStyle != null) {
+            if (style.getParentStyle() != null) {
+                sb.append(" specifies parent ");
+            } else {
+                sb.append(" implies parent ");
+            }
+
+            appendStyleParents(parentStyle, seen, depth + 1, sb);
+        }
     }
 
     @Override
@@ -551,8 +608,7 @@ public class ResourceResolver extends RenderResources {
      * {@code parentStyle}
      */
     public boolean themeExtends(@NonNull String parentStyle, @NonNull String themeStyle) {
-        ResourceValue parentValue = findResValue(parentStyle,
-                parentStyle.startsWith(ANDROID_STYLE_RESOURCE_PREFIX));
+        ResourceValue parentValue = findResValue(parentStyle, parentStyle.startsWith(ANDROID_STYLE_RESOURCE_PREFIX));
         if (parentValue instanceof StyleResourceValue) {
             ResourceValue themeValue = findResValue(themeStyle,
                     themeStyle.startsWith(ANDROID_STYLE_RESOURCE_PREFIX));

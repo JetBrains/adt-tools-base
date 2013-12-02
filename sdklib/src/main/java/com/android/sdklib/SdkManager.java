@@ -339,7 +339,11 @@ public class SdkManager {
      * The version is the incremental integer major revision of the package.
      *
      * @return A non-null possibly empty map of { string "vendor/path" => integer major revision }
+     * @deprecated Starting with add-on schema 6, extras can have full revisions instead of just
+     *   major revisions. This API only returns the major revision. Callers should be modified
+     *   to use the new {code LocalSdk.getPkgInfo(LocalSdk.PKG_EXTRAS)} API instead.
      */
+    @Deprecated
     @NonNull
     public Map<String, Integer> getExtrasVersions() {
         LocalPkgInfo[] pkgsInfos = mLocalSdk.getPkgsInfos(LocalSdk.PKG_EXTRAS);
@@ -351,7 +355,7 @@ public class SdkManager {
                 LocalExtraPkgInfo ei = (LocalExtraPkgInfo) info;
                 String vendor = ei.getVendorId();
                 String path   = ei.getExtraPath();
-                int majorRev  = ei.getMajorRevision().getMajor();
+                int majorRev  = ei.getFullRevision().getMajor();
 
                 extraVersions.put(vendor + '/' + path, majorRev);
             }
