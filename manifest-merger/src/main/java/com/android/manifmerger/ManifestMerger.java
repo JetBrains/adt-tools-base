@@ -21,6 +21,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.manifmerger.IMergerLog.FileAndLine;
 import com.android.manifmerger.IMergerLog.Severity;
+import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
 import com.android.xml.AndroidXPathFactory;
 
@@ -32,6 +33,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,7 +50,7 @@ import javax.xml.xpath.XPathExpressionException;
  * Merges a library manifest into a main application manifest.
  * <p/>
  * To use, create with {@link ManifestMerger#ManifestMerger(IMergerLog, ICallback)} then
- * call {@link ManifestMerger#process(File, File, File[], Map)}.
+ * call {@link ManifestMerger#process(File, File, File[], Map, String)}.
  * <p/>
  * <pre> Merge operations:
  * - root manifest: attributes ignored, warn if defined.
@@ -136,6 +138,8 @@ public class ManifestMerger {
     private Document mMainDoc;
     /** Option to extract the package prefixes from the merged manifest. */
     private boolean mExtractPackagePrefix;
+    /** Whether the merger should insert comments pointing to the merge source files */
+    private boolean mInsertSourceMarkers;
 
     /** Namespace for Android attributes in an AndroidManifest.xml */
     private static final String NS_URI    = SdkConstants.NS_RESOURCES;
@@ -222,7 +226,7 @@ public class ManifestMerger {
             File[] libraryFiles,
             Map<String, String> injectAttributes,
             String packageOverride) {
-        Document mainDoc = MergerXmlUtils.parseDocument(mainFile, mLog);
+        Document mainDoc = MergerXmlUtils.parseDocument(mainFile, mLog, this);
         if (mainDoc == null) {
             mLog.error(Severity.ERROR, new FileAndLine(mainFile.getAbsolutePath(), 0),
                     "Failed to read manifest file.");
@@ -277,7 +281,7 @@ public class ManifestMerger {
 
         expandFqcns(mainDoc);
         for (File libFile : libraryFiles) {
-            Document libDoc = MergerXmlUtils.parseDocument(libFile, mLog);
+            Document libDoc = MergerXmlUtils.parseDocument(libFile, mLog, this);
             if (libDoc == null || !mergeLibDoc(cleanupToolsAttributes(libDoc))) {
                 success = false;
             }
@@ -293,6 +297,10 @@ public class ManifestMerger {
 
         if (mExtractPackagePrefix) {
             extractFqcns(mainDoc);
+        }
+
+        if (mInsertSourceMarkers) {
+            insertSourceMarkers(mainDoc);
         }
 
         mXPath = null;
@@ -331,6 +339,11 @@ public class ManifestMerger {
         }
 
         cleanupToolsAttributes(mainDoc);
+
+        if (mInsertSourceMarkers) {
+            insertSourceMarkers(mainDoc);
+        }
+
         mXPath = null;
         mMainDoc = null;
         return success;
@@ -1329,6 +1342,15 @@ public class ManifestMerger {
             if (needPrefixChange) {
                 changePrefix(node, srcPrefix, destPrefix);
             }
+
+            if (mInsertSourceMarkers) {
+                // Duplicate source node attribute
+                File file = MergerXmlUtils.getFileFor(start);
+                if (file != null) {
+                    MergerXmlUtils.setFileFor(node, file);
+                }
+            }
+
             dest.insertBefore(node, target);
 
             if (start == end) {
@@ -1592,5 +1614,114 @@ public class ManifestMerger {
     private Document cleanupToolsAttributes(@NonNull Document doc) {
         cleanupToolsAttributes(doc.getFirstChild());
         return doc;
+    }
+
+    /**
+     * Sets whether this manifest merger will insert source markers into the merged source
+     *
+     * @param insertSourceMarkers if true, insert source markers
+     */
+    public void setInsertSourceMarkers(boolean insertSourceMarkers) {
+        mInsertSourceMarkers = insertSourceMarkers;
+    }
+
+    /**
+     * Returns whether this manifest merger will insert source markers into the merged source
+     *
+     * @return whether this manifest merger will insert source markers into the merged source
+     */
+    public boolean isInsertSourceMarkers() {
+        return mInsertSourceMarkers;
+    }
+
+    /** Inserts source markers in the given document */
+    private static void insertSourceMarkers(@NonNull Document mainDoc) {
+        Element root = mainDoc.getDocumentElement();
+        if (root != null) {
+            File file = MergerXmlUtils.getFileFor(root);
+            if (file != null) {
+                insertSourceMarker(mainDoc, root, file, false);
+            }
+
+            insertSourceMarkers(root, file);
+        }
+    }
+
+    private static File insertSourceMarkers(@NonNull Node node, @Nullable File currentFile) {
+        for (int i = 0; i < node.getChildNodes().getLength(); i++) {
+            Node child = node.getChildNodes().item(i);
+            short nodeType = child.getNodeType();
+            if (nodeType == Node.ELEMENT_NODE
+                    || nodeType == Node.COMMENT_NODE
+                    || nodeType == Node.DOCUMENT_NODE
+                    || nodeType == Node.CDATA_SECTION_NODE) {
+                File file = MergerXmlUtils.getFileFor(child);
+                if (file != null && !file.equals(currentFile)) {
+                    i += insertSourceMarker(node, child, file, false);
+                    currentFile = file;
+                }
+
+                currentFile = insertSourceMarkers(child, currentFile);
+            }
+        }
+
+        Node lastElement = node.getLastChild();
+        while (lastElement != null && lastElement.getNodeType() == Node.TEXT_NODE) {
+            lastElement = lastElement.getPreviousSibling();
+        }
+        if (lastElement != null && lastElement.getNodeType() == Node.ELEMENT_NODE) {
+            File parentFile = MergerXmlUtils.getFileFor(node);
+            File lastFile = MergerXmlUtils.getFileFor(lastElement);
+            if (lastFile != null && parentFile != null && !parentFile.equals(lastFile)) {
+                insertSourceMarker(node, lastElement, parentFile, true);
+                currentFile = parentFile;
+            }
+        }
+
+        return currentFile;
+    }
+
+    private static int insertSourceMarker(@NonNull Node parent, @NonNull Node node,
+            @NonNull File file, boolean after) {
+        int insertCount = 0;
+        Document doc = parent.getNodeType() ==
+                Node.DOCUMENT_NODE ? (Document) parent : parent.getOwnerDocument();
+
+        String comment;
+        try {
+            comment = SdkUtils.createPathComment(file, true);
+        } catch (MalformedURLException e) {
+            return insertCount;
+        }
+
+        Node prev = node.getPreviousSibling();
+        String newline;
+        if (prev != null && prev.getNodeType() == Node.TEXT_NODE) {
+            // Duplicate indentation from previous line. Once we switch the merger
+            // over to using the XmlPrettyPrinter, we won't need this.
+            newline = prev.getNodeValue();
+            int index = newline.lastIndexOf('\n');
+            if (index != -1) {
+                newline = newline.substring(index);
+            }
+        } else {
+            newline = "\n";
+        }
+
+        if (after) {
+            node = node.getNextSibling();
+        }
+
+        parent.insertBefore(doc.createComment(comment), node);
+        insertCount++;
+
+        // Can't add text nodes at the document level in Xerces, even though
+        // it will happily parse these
+        if (parent.getNodeType() != Node.DOCUMENT_NODE) {
+            parent.insertBefore(doc.createTextNode(newline), node);
+            insertCount++;
+        }
+
+        return insertCount;
     }
 }

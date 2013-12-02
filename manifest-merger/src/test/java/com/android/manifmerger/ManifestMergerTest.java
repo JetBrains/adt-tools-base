@@ -603,7 +603,8 @@ public class ManifestMergerTest extends TestCase {
         // Test result XML. There should always be one created
         // since the process action does not stop on errors.
         log.clear();
-        Document document = MergerXmlUtils.parseDocument(testFiles.getActualResult(), mergerLog);
+        Document document = MergerXmlUtils.parseDocument(testFiles.getActualResult(), mergerLog,
+                merger);
         assertNotNull(document);
         assert document != null; // for Eclipse null analysis
         String actual = MergerXmlUtils.printXmlString(document, mergerLog);
