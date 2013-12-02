@@ -246,8 +246,12 @@ public class RenderSecurityManager extends SecurityManager {
 
     @Override
     public void checkLink(String lib) {
+        // Allow linking with relative paths
         // Needed to for example load the "fontmanager" library from layout lib (from the
         // BiDiRenderer's layoutGlyphVector call
+        if (isRelevant() && (lib.indexOf('/') != -1 || lib.indexOf('\\') != -1)) {
+            throw RenderSecurityException.create("Link", lib);
+        }
     }
 
     @Override

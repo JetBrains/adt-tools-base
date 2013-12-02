@@ -16,6 +16,7 @@
 package com.android.ide.common.rendering;
 
 import com.android.ide.common.res2.RecordingLogger;
+import com.android.utils.SdkUtils;
 import com.google.common.io.Files;
 
 import junit.framework.TestCase;
@@ -115,6 +116,39 @@ public class RenderSecurityManagerTest extends TestCase {
         } catch (SecurityException exception) {
             assertEquals("Write access not allowed during rendering (/foo)", exception.toString());
             // pass
+        } finally {
+            manager.dispose(myCredential);
+        }
+    }
+
+    public void testLoadLibrary() throws Exception {
+        RenderSecurityManager manager = new RenderSecurityManager(null, null);
+        try {
+            manager.setActive(true, myCredential);
+
+            // Unit test only runs on OSX
+            if (SdkUtils.startsWithIgnoreCase(System.getProperty("os.name"), "Mac")
+                    && new File("/usr/lib/libc.dylib").exists()) {
+                System.load("/usr/lib/libc.dylib");
+                fail("Should have thrown security exception");
+            }
+        } catch (SecurityException exception) {
+            assertEquals("Link access not allowed during rendering (/usr/lib/libc.dylib)",
+                    exception.toString());
+            // pass
+        } finally {
+            manager.dispose(myCredential);
+        }
+    }
+
+    public void testAllowedLoadLibrary() throws Exception {
+        RenderSecurityManager manager = new RenderSecurityManager(null, null);
+        try {
+            manager.setActive(true, myCredential);
+
+            System.loadLibrary("fontmanager");
+        } catch (UnsatisfiedLinkError e) {
+            // pass - library may not be present on all JDKs
         } finally {
             manager.dispose(myCredential);
         }
