@@ -17,6 +17,7 @@
 package com.android.sdklib;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 
 
@@ -49,8 +50,34 @@ public abstract class AndroidTargetHash {
      * @param version A non-null platform version.
      * @return A non-null hash string uniquely representing this platform target.
      */
+    @NonNull
     public static String getPlatformHashString(@NonNull AndroidVersion version) {
         return String.format(AndroidTargetHash.PLATFORM_HASH, version.getApiString());
+    }
+
+    /**
+     * Returns the {@link com.android.sdklib.AndroidVersion} for the given hash string,
+     * if it represents a platform. If the hash string represents a preview platform,
+     * the returned {@link AndroidVersion} will have an unknown API level (set to 1).
+     *
+     * @param hashString the hash string
+     * @return a platform, or null
+     */
+    @Nullable
+    public static AndroidVersion getPlatformVersion(@NonNull String hashString) {
+        if (hashString.startsWith(PLATFORM_HASH_PREFIX)) {
+            String suffix = hashString.substring(PLATFORM_HASH_PREFIX.length());
+            if (!suffix.isEmpty()) {
+                if (Character.isDigit(suffix.charAt(0))) {
+                    int api = Integer.parseInt(suffix);
+                    return new AndroidVersion(api, null);
+                } else {
+                    return new AndroidVersion(1, suffix);
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

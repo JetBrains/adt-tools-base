@@ -20,6 +20,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Position;
 import com.android.tools.lint.detector.api.Severity;
 import com.google.common.annotations.Beta;
+import com.google.common.base.Joiner;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -162,6 +163,19 @@ public class TextReporter extends Reporter {
                         String wrapped = Main.wrap(sb.toString(), Main.MAX_LINE_WIDTH, "     "); //$NON-NLS-1$
                         output.append(wrapped);
                     }
+                }
+
+                if (warning.isVariantSpecific()) {
+                    List<String> names;
+                    if (warning.includesMoreThanExcludes()) {
+                        output.append("Applies to variants: ");
+                        names = warning.getIncludedVariantNames();
+                    } else {
+                        output.append("Does not apply to variants: ");
+                        names = warning.getExcludedVariantNames();
+                    }
+                    output.append(Joiner.on(", ").join(names));
+                    output.append('\n');
                 }
             }
 

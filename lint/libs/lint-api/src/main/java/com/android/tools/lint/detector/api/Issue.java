@@ -234,6 +234,7 @@ public final class Issue implements Comparable<Issue> {
             return Collections.singletonList((String) mMoreInfoUrls);
         } else {
             assert mMoreInfoUrls instanceof List;
+            //noinspection unchecked
             return (List<String>) mMoreInfoUrls;
         }
     }

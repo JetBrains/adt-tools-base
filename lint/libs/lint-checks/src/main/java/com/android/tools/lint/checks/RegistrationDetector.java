@@ -205,6 +205,13 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
                             className, tag, classToTag(wrongClass)),
                     null);
         } else if (!tag.equals(TAG_RECEIVER)) { // don't need to be registered
+            if (context.getMainProject().isGradleProject()) {
+                // Disabled for now; we need to formalize the difference between
+                // the *manifest* package and the variant package, since in some contexts
+                // (such as manifest registrations) we should be using the manifest package,
+                // not the gradle package
+                return;
+            }
             Location location = context.getLocation(classNode);
             context.report(
                     ISSUE,
