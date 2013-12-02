@@ -18,6 +18,7 @@ package com.android.manifmerger;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.manifmerger.IMergerLog.FileAndLine;
 import com.android.manifmerger.IMergerLog.Severity;
 import com.android.utils.ILogger;
@@ -76,10 +77,12 @@ class MergerXmlUtils {
      *
      * @param xmlFile The XML {@link File} to parse. Must not be null.
      * @param log An {@link ILogger} for reporting errors. Must not be null.
+     * @param merger The {@link ManifestMerger} this document is intended for
      * @return A new DOM {@link Document}, or null.
      */
     @Nullable
-    static Document parseDocument(@NonNull final File xmlFile, @NonNull final IMergerLog log) {
+    static Document parseDocument(@NonNull final File xmlFile, @NonNull final IMergerLog log,
+            @NonNull ManifestMerger merger) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             Reader reader = new BufferedReader(new FileReader(xmlFile));
@@ -117,6 +120,10 @@ class MergerXmlUtils {
             doc.setUserData(DATA_ORIGIN_FILE, xmlFile, null /*handler*/);
             findLineNumbers(doc, 1);
 
+            if (merger.isInsertSourceMarkers()) {
+                setSource(doc, xmlFile);
+            }
+
             return doc;
 
         } catch (FileNotFoundException e) {
@@ -143,6 +150,7 @@ class MergerXmlUtils {
      * @param log An {@link ILogger} for reporting errors. Must not be null.
      * @return A new DOM {@link Document}, or null.
      */
+    @VisibleForTesting
     @Nullable
     static Document parseDocument(@NonNull String xml,
             @NonNull IMergerLog log,
@@ -155,6 +163,9 @@ class MergerXmlUtils {
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document doc = builder.parse(is);
             findLineNumbers(doc, 1);
+            if (errorContext.getFileName() != null) {
+                setSource(doc, new File(errorContext.getFileName()));
+            }
             return doc;
         } catch (Exception e) {
             log.error(Severity.ERROR, errorContext, "Failed to parse XML string");
@@ -199,10 +210,11 @@ class MergerXmlUtils {
     }
 
     /**
-     * Extracts the origin {@link File} that {@link #parseDocument(File, IMergerLog)}
-     * added to the XML document or the string added by
+     * Extracts the origin {@link File} that {@link #parseDocument(File, IMergerLog,
+     * ManifestMerger)} added to the XML document or the string added by
      *
-     * @param xmlNode Any node from a document returned by {@link #parseDocument(File, IMergerLog)}.
+     * @param xmlNode Any node from a document returned by {@link #parseDocument(File, IMergerLog,
+     *              ManifestMerger)}.
      * @return The {@link File} object used to create the document or null.
      */
     @Nullable
@@ -222,6 +234,21 @@ class MergerXmlUtils {
         }
 
         return null;
+    }
+
+    public static void setSource(@NonNull Node node, @NonNull File source) {
+        //noinspection ConstantConditions
+        for (; node != null; node = node.getNextSibling()) {
+            short nodeType = node.getNodeType();
+            if (nodeType == Node.ELEMENT_NODE
+                    || nodeType == Node.COMMENT_NODE
+                    || nodeType == Node.DOCUMENT_NODE
+                    || nodeType == Node.CDATA_SECTION_NODE) {
+                node.setUserData(DATA_ORIGIN_FILE, source, null);
+            }
+            Node child = node.getFirstChild();
+            setSource(child, source);
+        }
     }
 
     /**
@@ -259,7 +286,8 @@ class MergerXmlUtils {
     /**
      * Extracts the line number that {@link #findLineNumbers} added to the XML nodes.
      *
-     * @param xmlNode Any node from a document returned by {@link #parseDocument(File, IMergerLog)}.
+     * @param xmlNode Any node from a document returned by {@link #parseDocument(File, IMergerLog,
+     *                ManifestMerger)}.
      * @return The line number if found or 0.
      */
     static int extractLineNumber(@Nullable Node xmlNode) {
@@ -912,4 +940,20 @@ class MergerXmlUtils {
         return str;
     }
 
+    /**
+     * Returns the file associated with the given specific node, if any.
+     * Note that this will not search upwards for parent nodes; it returns a
+     * file associated with this specific node, if any.
+     */
+    @Nullable
+    public static File getFileFor(@NonNull Node node) {
+        return (File) node.getUserData(DATA_ORIGIN_FILE);
+    }
+
+    /**
+     * Sets the file associated with the given node, if any
+     */
+    public static void setFileFor(Node node, File file) {
+        node.setUserData(MergerXmlUtils.DATA_ORIGIN_FILE, file, null);
+    }
 }
