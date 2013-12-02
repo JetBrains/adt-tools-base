@@ -359,15 +359,12 @@ public class XmlUtils {
                 break;
             }
             case Node.COMMENT_NODE:
+                sb.append(XML_COMMENT_BEGIN);
+                sb.append(node.getNodeValue());
+                sb.append(XML_COMMENT_END);
+                break;
             case Node.TEXT_NODE: {
-                if (nodeType == Node.COMMENT_NODE) {
-                    sb.append(XML_COMMENT_BEGIN);
-                }
-                String text = node.getNodeValue();
-                sb.append(toXmlTextValue(text));
-                if (nodeType == Node.COMMENT_NODE) {
-                    sb.append(XML_COMMENT_END);
-                }
+                sb.append(toXmlTextValue(node.getNodeValue()));
                 break;
             }
             case Node.ELEMENT_NODE: {
