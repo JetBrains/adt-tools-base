@@ -50,7 +50,11 @@ public class ActionBarIconGenerator extends GraphicGenerator {
         Graphics2D g2 = (Graphics2D) tempImage.getGraphics();
         Util.drawCenterInside(g2, options.sourceImage, targetRect);
 
-        if (actionBarOptions.theme == Theme.HOLO_LIGHT) {
+        if (actionBarOptions.theme == Theme.CUSTOM) {
+          Util.drawEffects(g, tempImage, 0, 0, new Effect[] {
+            new FillEffect(new Color(actionBarOptions.customThemeColor), 0.8),
+          });
+        } else if (actionBarOptions.theme == Theme.HOLO_LIGHT) {
             Util.drawEffects(g, tempImage, 0, 0, new Effect[] {
                     new FillEffect(new Color(0x333333), 0.6),
             });
@@ -74,6 +78,9 @@ public class ActionBarIconGenerator extends GraphicGenerator {
 
         /** Whether or not the source image is a clipart source */
         public boolean sourceIsClipart = false;
+
+        /** Custom color for use with the custom theme */
+        public int customThemeColor = 0;
     }
 
     /** The themes to generate action bar icons for */
@@ -82,6 +89,9 @@ public class ActionBarIconGenerator extends GraphicGenerator {
         HOLO_DARK,
 
         /** Theme.HoloLight - a light version of the Honeycomb theme */
-        HOLO_LIGHT
+        HOLO_LIGHT,
+
+        /** Theme.Custom - custom colors */
+        CUSTOM
     }
 }
