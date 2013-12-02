@@ -55,6 +55,8 @@ public abstract class GeneratorTest extends TestCase implements GraphicGenerator
                 String relativePath = entry.getKey();
                 BufferedImage image = entry.getValue();
 
+                if (image == null) continue;
+
                 String path = "testdata" + File.separator + folderName + File.separator
                         + relativePath;
                 InputStream is = GeneratorTest.class.getResourceAsStream(path);
