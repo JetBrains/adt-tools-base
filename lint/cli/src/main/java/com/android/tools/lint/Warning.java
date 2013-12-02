@@ -16,6 +16,7 @@
 
 package com.android.tools.lint;
 
+import com.android.annotations.NonNull;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
@@ -30,7 +31,7 @@ import java.io.File;
  * list of warnings such that it can sort them all before presenting them all at
  * the end.
  */
-class Warning implements Comparable<Warning> {
+public class Warning implements Comparable<Warning> {
     public final Issue issue;
     public final String message;
     public final Severity severity;
@@ -53,8 +54,9 @@ class Warning implements Comparable<Warning> {
     }
 
     // ---- Implements Comparable<Warning> ----
+    @SuppressWarnings({"VariableNotUsedInsideIf", "ConstantConditions"})
     @Override
-    public int compareTo(Warning other) {
+    public int compareTo(@NonNull Warning other) {
         // Sort by category, then by priority, then by id,
         // then by file, then by line
         int categoryDelta = issue.getCategory().compareTo(other.issue.getCategory());
@@ -68,24 +70,69 @@ class Warning implements Comparable<Warning> {
         }
         String id1 = issue.getId();
         String id2 = other.issue.getId();
-        if (id1 == null || id2 == null) {
-            return file.getName().compareTo(other.file.getName());
-        }
+        assert id1 != null;
+        assert id2 != null;
         int idDelta = id1.compareTo(id2);
         if (idDelta != 0) {
             return idDelta;
         }
-        if (file != null && other.file != null) {
-            int fileDelta = file.getName().compareTo(
-                    other.file.getName());
-            if (fileDelta != 0) {
-                return fileDelta;
+        if (file != null) {
+            if (other.file != null) {
+                int fileDelta = file.getName().compareTo(
+                        other.file.getName());
+                if (fileDelta != 0) {
+                    return fileDelta;
+                }
+            } else {
+                return -1;
             }
+        } else if (other.file != null) {
+            return 1;
         }
         if (line != other.line) {
             return line - other.line;
         }
 
         return message.compareTo(other.message);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        Warning warning = (Warning) o;
+
+        if (line != warning.line) {
+            return false;
+        }
+        if (file != null ? !file.equals(warning.file) : warning.file != null) {
+            return false;
+        }
+        if (!issue.getCategory().equals(warning.issue.getCategory())) {
+            return false;
+        }
+        if (issue.getPriority() != warning.issue.getPriority()) {
+            return false;
+        }
+        if (!issue.getId().equals(warning.issue.getId())) {
+            return false;
+        }
+        if (!message.equals(warning.message)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = message.hashCode();
+        result = 31 * result + (file != null ? file.hashCode() : 0);
+        return result;
     }
 }
