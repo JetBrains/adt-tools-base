@@ -170,7 +170,7 @@ public class ManifestMergerSourceLinkTest extends TestCase {
         assertTrue(ok);
         String actual = MergerXmlUtils.printXmlString(mainDoc, mergerLog);
         assertEquals("Encountered unexpected errors/warnings", "[]", log.toString());
-        assertEquals(""
+        String expected = ""
             + "<!-- From: file:/path/to/main/doc -->\n"
             + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\" android:versionCode=\"100\" android:versionName=\"1.0.0\" package=\"com.example.app1\">\n"
             + "\n"
@@ -226,7 +226,17 @@ public class ManifestMergerSourceLinkTest extends TestCase {
             + "        \n"
             + "    </application>\n"
             + "\n"
-            + "</manifest>\n",
-            actual);
+            + "</manifest>\n";
+
+        if (!expected.equals(actual)) {
+            // DOM implementations vary slightly whether they'll insert a newline for comment
+            // inserted outside document
+            // JDK 7 doesn't, JDK 6 does
+            int index = expected.indexOf('\n');
+            assertTrue(index != -1);
+            expected = expected.substring(0, index) + expected.substring(index + 1);
+        }
+
+        assertEquals(expected, actual);
     }
 }
