@@ -18,7 +18,7 @@ package com.android.tools.lint;
 
 import static com.android.SdkConstants.DOT_JPG;
 import static com.android.SdkConstants.DOT_PNG;
-import static com.android.tools.lint.detector.api.Issue.OutputFormat.*;
+import static com.android.tools.lint.detector.api.Issue.OutputFormat.HTML;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
@@ -31,6 +31,7 @@ import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
@@ -60,6 +61,7 @@ import java.util.Set;
 @Beta
 public class HtmlReporter extends Reporter {
     private static final boolean USE_HOLO_STYLE = true;
+    @SuppressWarnings("ConstantConditions")
     private static final String CSS = USE_HOLO_STYLE
             ? "hololike.css" : "default.css"; //$NON-NLS-1$ //$NON-NLS-2$
 
@@ -298,6 +300,16 @@ public class HtmlReporter extends Reporter {
                     if (!addedImage && url != null && warning.location != null
                             && warning.location.getSecondary() != null) {
                         addImage(url, warning.location);
+                    }
+
+                    if (warning.isVariantSpecific()) {
+                        mWriter.write("\n");
+                        mWriter.write("Applies to variants: ");
+                        mWriter.write(Joiner.on(", ").join(warning.getIncludedVariantNames()));
+                        mWriter.write("<br/>\n");
+                        mWriter.write("Does <b>not</b> apply to variants: ");
+                        mWriter.write(Joiner.on(", ").join(warning.getExcludedVariantNames()));
+                        mWriter.write("<br/>\n");
                     }
                 }
                 if (partialHide) { // Close up the extra div

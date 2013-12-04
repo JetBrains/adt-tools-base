@@ -97,7 +97,7 @@ public class LintCliClient extends LintClient {
      * Runs the static analysis command line driver. You need to add at least one error reporter
      * to the command line flags.
      */
-    public int run(IssueRegistry registry, List<File> files) throws IOException {
+    public int run(@NonNull IssueRegistry registry, @NonNull List<File> files) throws IOException {
         assert !mFlags.getReporters().isEmpty();
         mRegistry = registry;
         mDriver = new LintDriver(registry, this);
@@ -108,7 +108,7 @@ public class LintCliClient extends LintClient {
             mDriver.addLintListener(new ProgressPrinter());
         }
 
-        mDriver.analyze(new LintRequest(this, files));
+        mDriver.analyze(createLintRequest(files));
 
         Collections.sort(mWarnings);
 
@@ -117,6 +117,12 @@ public class LintCliClient extends LintClient {
         }
 
         return mFlags.isSetExitCode() ? (mHasErrors ? -1 : 0) : 0;
+    }
+
+    /** Creates a lint request */
+    @NonNull
+    protected LintRequest createLintRequest(@NonNull List<File> files) {
+        return new LintRequest(this, files);
     }
 
     @Override
