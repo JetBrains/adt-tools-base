@@ -634,6 +634,21 @@ public class RenderSecurityManagerTest extends TestCase {
                 fail("Shouldn't be able to find our way to the credential");
             } catch (Exception e) {
                 // pass
+                assertEquals("java.lang.NoSuchFieldException: sCredential", e.toString());
+            }
+
+            // Try looking up the secret (with getDeclaredField instead of getField)
+            try {
+                Field field = RenderSecurityManager.class.getDeclaredField("sCredential");
+                field.setAccessible(true);
+                Object secret = field.get(null);
+                manager.dispose(secret);
+                fail("Shouldn't be able to find our way to the credential");
+            } catch (Exception e) {
+                // pass
+                assertEquals("Reflection access not allowed during rendering "
+                        + "(com.android.ide.common.rendering.RenderSecurityManager)",
+                        e.toString());
             }
         } finally {
             manager.dispose(credential);

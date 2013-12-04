@@ -25,6 +25,7 @@ import com.android.utils.ILogger;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FilePermission;
+import java.lang.reflect.Member;
 import java.net.InetAddress;
 import java.security.Permission;
 
@@ -238,6 +239,10 @@ public class RenderSecurityManager extends SecurityManager {
 
     @Override
     public void checkMemberAccess(Class<?> clazz, int which) {
+        if (which == Member.DECLARED && isRelevant() &&
+                "com.android.ide.common.rendering.RenderSecurityManager".equals(clazz.getName())) {
+            throw RenderSecurityException.create("Reflection", clazz.getName());
+        }
     }
 
     @Override
