@@ -225,7 +225,7 @@ class MergerXmlUtils {
         if (xmlNode != null) {
             Object data = xmlNode.getUserData(DATA_ORIGIN_FILE);
             if (data instanceof File) {
-                return ((File) data).getName();
+                return ((File) data).getPath();
             }
             data = xmlNode.getUserData(DATA_FILE_NAME);
             if (data instanceof String) {

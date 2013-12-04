@@ -583,7 +583,14 @@ public class ManifestMergerTest extends TestCase {
                                   testFiles.getInjectAttributes(),
                                   testFiles.getPackageOverride());
 
+        // Convert relative pathnames to absolute.
         String expectedErrors = testFiles.getExpectedErrors().trim();
+        expectedErrors = expectedErrors.replaceAll(testFiles.getMain().getName(),
+                testFiles.getMain().getAbsolutePath());
+        for (File file : testFiles.getLibs()) {
+            expectedErrors = expectedErrors.replaceAll(file.getName(), file.getAbsolutePath());
+        }
+
         StringBuilder actualErrors = new StringBuilder();
         for (String s : log.getMessages()) {
             actualErrors.append(s);
