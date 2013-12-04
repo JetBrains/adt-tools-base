@@ -7,7 +7,7 @@ dependencies {
     compile 'com.android.tools.external.lombok:lombok-ast:0.2.1'
     compile 'org.ow2.asm:asm:4.0'
     compile 'org.ow2.asm:asm-tree:4.0'
-    compile files("$rootProject.ext.androidRootDir/prebuilts/tools/common/builder-model/builder-model-0.6.1.jar")
+    compile files("$rootProject.ext.androidRootDir/prebuilts/tools/common/builder-model/builder-model-0.7.0.jar")
 }
 
 sourceSets {
