@@ -90,7 +90,7 @@ public abstract class GeneratorTest extends TestCase implements GraphicGenerator
         assertEquals("Wrong number of generated files", expectedFileCount, fileCount);
     }
 
-    private void assertImageSimilar(String imageName, BufferedImage goldenImage,
+    public static void assertImageSimilar(String imageName, BufferedImage goldenImage,
             BufferedImage image, float maxPercentDifferent) throws IOException {
         assertTrue("Widths differ too much for " + imageName, Math.abs(goldenImage.getWidth()
                 - image.getWidth()) < 2);
@@ -189,7 +189,7 @@ public abstract class GeneratorTest extends TestCase implements GraphicGenerator
         g.dispose();
     }
 
-    protected File getTempDir() {
+    protected static File getTempDir() {
         if (System.getProperty("os.name").equals("Mac OS X")) {
             return new File("/tmp"); //$NON-NLS-1$
         }
