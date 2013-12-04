@@ -86,12 +86,9 @@ public class XmlReporter extends Reporter {
                 List<String> moreInfo = issue.getMoreInfo();
                 if (!moreInfo.isEmpty()) {
                     // Compatibility with old format: list first URL
-                    writeAttribute(mWriter, 2, "url", moreInfo.get(0));           //$NON-NLS-1$
-                    if (issue.getMoreInfo() != null) {
-                        writeAttribute(mWriter, 2, "urls",                            //$NON-NLS-1$
-                                Joiner.on(',').join(issue.getMoreInfo()));
-
-                    }
+                    writeAttribute(mWriter, 2, "url", moreInfo.get(0));               //$NON-NLS-1$
+                    writeAttribute(mWriter, 2, "urls",                                //$NON-NLS-1$
+                            Joiner.on(',').join(issue.getMoreInfo()));
                 }
                 if (warning.errorLine != null && !warning.errorLine.isEmpty()) {
                     String line = warning.errorLine;
@@ -102,10 +99,16 @@ public class XmlReporter extends Reporter {
                             String line1 = line.substring(0, index1);
                             String line2 = line.substring(index1 + 1, index2);
                             writeAttribute(mWriter, 2, "errorLine1", line1);          //$NON-NLS-1$
-                            writeAttribute(mWriter, 2, "errorLine2", line2);       //$NON-NLS-1$
+                            writeAttribute(mWriter, 2, "errorLine2", line2);          //$NON-NLS-1$
                         }
                     }
                 }
+
+                if (warning.isVariantSpecific()) {
+                    String value = Joiner.on(',').join(warning.getIncludedVariantNames());
+                    writeAttribute(mWriter, 2, "variants", value);
+                }
+
                 if (mClient.getRegistry() instanceof BuiltinIssueRegistry &&
                         ((BuiltinIssueRegistry) mClient.getRegistry()).hasAutoFix(
                                 "adt", issue)) { //$NON-NLS-1$
