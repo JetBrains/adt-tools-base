@@ -42,4 +42,5 @@ project(':builder-test-api').projectDir = new File(rootDir, 'build-system/builde
 project(':builder'         ).projectDir = new File(rootDir, 'build-system/builder')
 project(':gradle-model'    ).projectDir = new File(rootDir, 'build-system/gradle-model')
 project(':gradle'          ).projectDir = new File(rootDir, 'build-system/gradle')
+project(':manifest-merger' ).projectDir = new File(rootDir, 'build-system/manifest-merger')
 
