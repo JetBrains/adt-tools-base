@@ -105,8 +105,8 @@ public class XmlReporter extends Reporter {
                 }
 
                 if (warning.isVariantSpecific()) {
-                    String value = Joiner.on(',').join(warning.getIncludedVariantNames());
-                    writeAttribute(mWriter, 2, "variants", value);
+                    writeAttribute(mWriter, 2, "includedVariants", Joiner.on(',').join(warning.getIncludedVariantNames()));
+                    writeAttribute(mWriter, 2, "excludedVariants", Joiner.on(',').join(warning.getExcludedVariantNames()));
                 }
 
                 if (mClient.getRegistry() instanceof BuiltinIssueRegistry &&
