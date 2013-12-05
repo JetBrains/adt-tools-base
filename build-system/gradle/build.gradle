@@ -26,9 +26,6 @@ dependencies {
     gradleApi gradleApi()
     groovy localGroovy()
     compile project(':builder')
-    compile project(':sdklib')
-    compile project(':sdk-common')
-    compile project(':common')
     compile project(':lint')
     compile 'net.sf.proguard:proguard-gradle:4.10'
 
