@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="javawriter">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/squareup/javawriter/2.2.1/javawriter-2.2.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/squareup/javawriter/2.2.1/javawriter-2.2.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
