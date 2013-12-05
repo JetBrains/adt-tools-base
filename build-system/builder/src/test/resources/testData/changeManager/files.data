@@ -1,0 +1,8 @@
+# golden files created manually to differ from the actual
+# files in key ways to test various detectors.
+$lm_untouched$ 98 272fbc249474f5c842db3c6273ca94e30e641d06 $TOP$$SEP$untouched.png
+1000000000000 98 272fbc249474f5c842db3c6273ca94e30e641d06 $TOP$$SEP$untouched_date_before.png
+9999999999999 98 272fbc249474f5c842db3c6273ca94e30e641d06 $TOP$$SEP$untouched_date_after.png
+9999999999999 98 0000000000000000000000000000000000000000 $TOP$$SEP$content_changed.png
+9999999999999 95 272fbc249474f5c842db3c6273ca94e30e641d06 $TOP$$SEP$size_changed.png
+9999999999999 2574 272fbc249474f5c842db3c6273ca94e30e641d06 $TOP$$SEP$removed.png

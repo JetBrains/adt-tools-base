@@ -1,0 +1,14 @@
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 17
+    buildToolsVersion "18.0.1"
+
+    defaultConfig {
+        renderscriptTargetApi = 11
+    }
+}
+
+dependencies {
+    compile project(':lib')
+}

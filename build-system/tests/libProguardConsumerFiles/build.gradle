@@ -1,0 +1,32 @@
+buildscript {
+    repositories {
+        maven { url '../../../../out/host/gradle/repo' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.7.0-SNAPSHOT'
+    }
+}
+
+apply plugin: 'android-library'
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+
+    defaultConfig {
+        versionCode 12
+        versionName "2.0"
+        minSdkVersion 16
+        targetSdkVersion 16
+        proguardFile 'config.pro'
+        consumerProguardFiles 'A.txt'
+    }
+
+    debug {
+    }
+
+    release {
+        runProguard true
+        consumerProguardFiles 'B.txt', 'C.txt'
+    }
+}

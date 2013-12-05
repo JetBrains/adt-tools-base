@@ -1,0 +1,42 @@
+buildscript {
+    repositories {
+        maven { url '../../../../out/host/gradle/repo' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.7.0-SNAPSHOT'
+    }
+}
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+
+    testBuildType = "staging"
+
+    defaultConfig {
+    }
+
+    productFlavors {
+        f1 {
+            packageName = "com.android.tests.flavored.f1"
+            versionName = "1.0.0-f1"
+        }
+        f2 {
+            packageName = "com.android.tests.flavored.f2"
+            versionName = "1.0.0-f2"
+        }
+    }
+
+    buildTypes {
+        debug {
+            packageNameSuffix = ".debug"
+            versionNameSuffix = ".D"
+        }
+        staging {
+            packageNameSuffix = ".staging"
+            versionNameSuffix = ".S"
+            signingConfig signingConfigs.debug
+        }
+    }
+}

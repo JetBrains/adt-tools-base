@@ -1,0 +1,10 @@
+/.gradle
+/build
+/builder.iml
+/builder.ipr
+/builder.iws
+/.classpath
+/.project
+/bin
+
+

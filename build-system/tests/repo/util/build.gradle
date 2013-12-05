@@ -1,0 +1,21 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+repositories {
+    mavenCentral()
+}
+
+group = 'com.example.android.multiproject'
+archivesBaseName = 'util'
+version = '1.0'
+
+sourceCompatibility = "1.6"
+targetCompatibility = "1.6"
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri("../testrepo"))
+        }
+    }
+}
