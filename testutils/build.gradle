@@ -18,3 +18,4 @@ sourceSets {
 // TODO: be able to ship to prebuilts/devtools/adt
 shipping.isShipping = false
 
+apply from: '../baseVersion.gradle'
