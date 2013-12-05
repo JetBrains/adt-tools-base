@@ -1,3 +1,8 @@
+apply plugin: 'java'
+apply plugin: 'distrib'
+
+evaluationDependsOn(':dvlib')
+
 group = 'com.android.tools'
 archivesBaseName = 'sdklib-test'
 

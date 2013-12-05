@@ -1,6 +1,5 @@
 apply plugin: 'java'
 apply plugin: 'clone-artifacts'
-apply plugin: 'maven'
 
 cloneArtifacts {
     mainRepo = "$rootDir/../../../../prebuilts/tools/common/gradle-plugins/repository"
