@@ -15,6 +15,7 @@ cloneArtifacts {
     mainRepo = "$rootDir/../../prebuilts/tools/common/m2/repository"
     secondaryRepo = "$rootDir/../../prebuilts/tools/common/m2/internal"
 }
+
 // set up the distribution destination
 distribution {
     destinationPath = "$rootDir/../../prebuilts/devtools"
@@ -29,23 +30,13 @@ buildDir = new File(file(ext.androidHostOut), "tools/base/build")
 
 ext.localRepo = project.hasProperty('localRepo') ? localRepo : "$ext.androidHostOut/repo"
 
-def getVersion(Project p, String baseVersion) {
-    if (p.has("release")) {
-        return baseVersion
-    }
-
-    return baseVersion + '-SNAPSHOT'
-}
+project.ext.baseVersion = '22.2.0'
+project.ext.buildVersion = '0.7.0'
 
 subprojects { Project project ->
     // Change buildDir first so that all plugins pick up the new value.
     project.buildDir = project.file("$project.parent.buildDir/../$project.name")
 
-    apply plugin: 'java'
-    apply plugin: 'maven'
-    apply plugin: 'signing'
-    apply plugin: 'findbugs'
-    apply plugin: 'distrib'
     apply plugin: 'clone-artifacts'
 
     repositories {
@@ -53,79 +44,7 @@ subprojects { Project project ->
         maven { url = uri(rootProject.cloneArtifacts.secondaryRepo) }
     }
 
-    // find bug dependencies is added dynamically so it's hard for the
-    // clone artifact plugin to find it. This custom config lets us manually
-    // add such dependencies.
-    configurations {
-        hidden
-    }
-    dependencies {
-        hidden "com.google.code.findbugs:findbugs:2.0.1"
-    }
-
-    version = getVersion(project, '22.2.0')
-
-    project.ext.sonatypeUsername = project.hasProperty('sonatypeUsername') ? sonatypeUsername : ""
-    project.ext.sonatypePassword = project.hasProperty('sonatypePassword') ? sonatypePassword : ""
-
-    // set all java compilation to use UTF-8 encoding.
-    tasks.withType(JavaCompile) {
-        options.encoding = 'UTF-8'
-    }
-
-    task disableTestFailures << {
-        tasks.withType(Test) {
-            ignoreFailures = true
-        }
-    }
-
-    // custom tasks for creating source/javadoc jars
-    task sourcesJar(type: Jar, dependsOn:classes) {
-        classifier = 'sources'
-        from sourceSets.main.allSource
-    }
-
-    task javadocJar(type: Jar, dependsOn:javadoc) {
-        classifier = 'javadoc'
-        from javadoc.destinationDir
-    }
-
-    // add javadoc/source jar tasks as artifacts
-    artifacts {
-        archives jar
-
-        archives sourcesJar
-        archives javadocJar
-    }
-
-    task publishLocal(type: Upload) {
-        configuration = configurations.archives
-        repositories {
-            mavenDeployer {
-                repository(url: uri(rootProject.ext.localRepo))
-            }
-        }
-    }
-
-    def userHome = System.getProperty("user.home")
-    publishLocal.doFirst {
-        System.setProperty("user.home", file("$buildDir/fakem2home").absolutePath)
-    }
-    publishLocal.doLast {
-        System.setProperty("user.home", userHome)
-    }
-
-    findbugs {
-        ignoreFailures = true
-        effort = "max"
-        reportLevel = "high"
-    }
-
-    signing {
-        required { project.has("release") && gradle.taskGraph.hasTask("uploadArchives") }
-        sign configurations.archives
-    }
-
+    apply from: "$project.rootDir/base.gradle"
 }
 
 // delay evaluation of this project before all subprojects have been evaluated.

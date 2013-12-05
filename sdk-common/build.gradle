@@ -1,3 +1,6 @@
+apply plugin: 'java'
+apply plugin: 'distrib'
+
 group = 'com.android.tools'
 archivesBaseName = 'sdk-common'
 
@@ -13,45 +16,10 @@ jar {
     from 'NOTICE'
 }
 
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment ->
-                if (!project.has("release")) {
-                    throw new StopExecutionException("uploadArchives must be called with the release.gradle init script")
-                }
+project.ext.pomName = 'Android Tools sdk-common library'
+project.ext.pomDesc = 'sdk-common library used by other Android tools libraries.'
 
-                signing.signPom(deployment)
-            }
+apply from: '../baseVersion.gradle'
+apply from: '../publish.gradle'
+apply from: '../javadoc.gradle'
 
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: project.ext.sonatypeUsername, password: project.ext.sonatypePassword)
-            }
-
-            pom.project {
-                name 'Android Tools sdk-common library'
-                description 'sdk-common library used by other Android tools libraries.'
-                url 'http://tools.android.com'
-                inceptionYear '2007'
-
-                licenses {
-                    license {
-                        name 'The Apache Software License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                        distribution 'repo'
-                    }
-                }
-
-                scm {
-                    url "https://android.googlesource.com/platform/tools/base"
-                    connection "git://android.googlesource.com/platform/tools/base.git"
-                }
-                developers {
-                    developer {
-                        name 'The Android Open Source Project'
-                    }
-                }
-            }
-        }
-    }
-}
