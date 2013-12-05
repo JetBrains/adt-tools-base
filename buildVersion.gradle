@@ -1,0 +1,9 @@
+def getVersion() {
+    if (project.has("release")) {
+        return project.ext.baseVersion
+    }
+
+    return project.ext.buildVersion + '-SNAPSHOT'
+}
+
+version = getVersion()
