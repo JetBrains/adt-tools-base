@@ -1,0 +1,19 @@
+buildscript {
+    repositories {
+        maven { url '../../../../out/host/gradle/repo' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.7.0-SNAPSHOT'
+    }
+}
+
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+
+    productFlavors {
+        one {}
+    }
+}

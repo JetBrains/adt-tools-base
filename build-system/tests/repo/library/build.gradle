@@ -1,0 +1,37 @@
+buildscript {
+    repositories {
+        maven { url '../../../../../out/host/gradle/repo' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.7.0-SNAPSHOT'
+    }
+}
+
+apply plugin: 'android-library'
+apply plugin: 'maven'
+
+repositories {
+    maven { url '../testrepo' }
+    mavenCentral()
+}
+
+dependencies {
+    compile 'com.example.android.multiproject:baseLib:1.0'
+}
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+}
+
+group = 'com.example.android.multiproject'
+archivesBaseName = 'lib'
+version = '1.0'
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri("../testrepo"))
+        }
+    }
+}

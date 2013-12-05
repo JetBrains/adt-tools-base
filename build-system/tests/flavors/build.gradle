@@ -1,0 +1,32 @@
+buildscript {
+    repositories {
+        maven { url '../../../../out/host/gradle/repo' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.7.0-SNAPSHOT'
+    }
+}
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+
+    flavorGroups   "group1", "group2"
+
+    productFlavors {
+        f1 {
+            flavorGroup   "group1"
+        }
+        f2 {
+            flavorGroup   "group1"
+        }
+
+        fa {
+            flavorGroup   "group2"
+        }
+        fb {
+            flavorGroup   "group2"
+        }
+    }
+}

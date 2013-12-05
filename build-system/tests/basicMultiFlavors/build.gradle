@@ -1,0 +1,35 @@
+buildscript {
+    repositories {
+        maven { url '../../../../out/host/gradle/repo' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.7.0-SNAPSHOT'
+    }
+}
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+
+    flavorGroups  "pricing", "releaseType"
+
+    productFlavors {
+
+        beta {
+            flavorGroup "releaseType"
+        }
+
+        normal {
+            flavorGroup "releaseType"
+        }
+
+        free {
+            flavorGroup "pricing"
+        }
+
+        paid {
+            flavorGroup "pricing"
+        }
+    }
+}

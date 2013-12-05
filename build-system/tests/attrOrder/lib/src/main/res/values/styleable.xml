@@ -1,0 +1,19 @@
+<resources>
+
+   <attr name="d_common_attr" format="string"/>
+
+    <declare-styleable name="StyleableExample">
+        <attr name="attr_int" format="integer"/>
+        <attr name="attr_bool" format="boolean"/>
+        <attr name="attr_str" format="string"/>
+        <attr name="d_common_attr"/>
+   </declare-styleable>
+
+   <style name="Example">
+        <item name="attr_int">10</item>
+        <item name="attr_bool">true</item>
+        <item name="attr_str">String2</item>
+        <item name="d_common_attr">Hello, world!</item>
+   </style>
+
+ </resources>
