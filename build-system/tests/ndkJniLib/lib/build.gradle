@@ -1,0 +1,12 @@
+apply plugin: 'android-library'
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+
+    defaultConfig {
+        ndk {
+            moduleName "hello-jni"
+        }
+    }
+}

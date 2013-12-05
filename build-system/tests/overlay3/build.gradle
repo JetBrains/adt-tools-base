@@ -1,0 +1,45 @@
+buildscript {
+    repositories {
+        maven { url '../../../../out/host/gradle/repo' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.7.0-SNAPSHOT'
+    }
+}
+
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+
+    flavorGroups  "pricing", "releaseType"
+
+    sourceSets {
+       beta.setRoot('movedSrc/beta')
+       free.setRoot('movedSrc/free')
+       debug.setRoot('movedSrc/debug')
+       freeBeta.setRoot('movedSrc/freeBeta')
+       freeBetaDebug.setRoot('movedSrc/freeBetaDebug')
+       freeNormal.setRoot('movedSrc/freeNormal')
+    }
+
+    productFlavors {
+
+        beta {
+            flavorGroup "releaseType"
+        }
+
+        normal {
+            flavorGroup "releaseType"
+        }
+
+        free {
+            flavorGroup "pricing"
+        }
+
+        paid {
+            flavorGroup "pricing"
+        }
+    }
+}

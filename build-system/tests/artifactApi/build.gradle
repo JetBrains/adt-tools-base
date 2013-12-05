@@ -1,0 +1,105 @@
+buildscript {
+    repositories {
+        maven { url '../../../../out/host/gradle/repo' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.7.0-SNAPSHOT'
+    }
+}
+
+apply plugin: 'android'
+
+import com.android.builder.model.ArtifactMetaData
+import com.android.builder.model.SourceProvider
+
+android.registerArtifactType("__test__", false, ArtifactMetaData.TYPE_JAVA)
+
+android.buildTypes.all { type ->
+    project.android.registerBuildTypeSourceProvider("__test__", type, getProvider("buildType:$type.name"))
+}
+
+android.productFlavors.all { flavor ->
+    project.android.registerProductFlavorSourceProvider("__test__", flavor, getProvider("productFlavor:$flavor.name"))
+}
+
+android.applicationVariants.all { variant ->
+    project.android.registerJavaArtifact(
+            "__test__",
+            variant,
+            "assemble:$variant.name",
+            "compile:$variant.name",
+            new File("classesFolder:$variant.name"),
+            getProvider("provider:$variant.name"))
+}
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+
+    flavorGroups  "pricing", "releaseType"
+
+    productFlavors {
+
+        beta {
+            flavorGroup "releaseType"
+        }
+
+        normal {
+            flavorGroup "releaseType"
+        }
+
+        free {
+            flavorGroup "pricing"
+        }
+
+        paid {
+            flavorGroup "pricing"
+        }
+    }
+}
+
+public class SourceProviderImpl implements SourceProvider, Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private final String name;
+
+    SourceProviderImpl(String name) {
+        this.name = name
+    }
+    
+    File getManifestFile() {
+        return new File(name)
+    }
+
+    Collection<File> getJavaDirectories() {
+        return Collections.emptyList()
+    }
+
+    Collection<File> getResourcesDirectories() {
+        return Collections.emptyList()
+    }
+
+    Collection<File> getAidlDirectories() {
+        return Collections.emptyList()
+    }
+
+    Collection<File> getRenderscriptDirectories() {
+        return Collections.emptyList()
+    }
+
+    Collection<File> getJniDirectories() {
+        return Collections.emptyList()
+    }
+
+    Collection<File> getResDirectories() {
+        return Collections.emptyList()
+    }
+
+    Collection<File> getAssetsDirectories() {
+        return Collections.emptyList()
+     }
+}
+
+SourceProvider getProvider(String name) {
+   return new SourceProviderImpl(name)
+}

@@ -20,14 +20,26 @@ include 'sdklib'
 include 'sdklib-test'
 include 'testutils'
 
-project(':ant-tasks'      ).projectDir = new File(rootDir, 'legacy/ant-tasks')
-project(':archquery'      ).projectDir = new File(rootDir, 'legacy/archquery')
-project(':dvlib'          ).projectDir = new File(rootDir, 'device_validator/dvlib')
-project(':fat32lib'       ).projectDir = new File(rootDir, '../external/fat32lib')
-project(':lint'           ).projectDir = new File(rootDir, 'lint/cli')
-project(':lint-api'       ).projectDir = new File(rootDir, 'lint/libs/lint-api')
-project(':lint-checks'    ).projectDir = new File(rootDir, 'lint/libs/lint-checks')
-project(':screenshot2'    ).projectDir = new File(rootDir, 'misc/screenshot2')
-project(':sdklib-test'    ).projectDir = new File(rootDir, 'sdklib')
-project(':sdklib-test'    ).buildFileName = 'test.gradle'
+include 'builder-model'
+include 'builder-test-api'
+include 'builder'
+include 'gradle-model'
+include 'gradle'
+
+project(':ant-tasks'       ).projectDir = new File(rootDir, 'legacy/ant-tasks')
+project(':archquery'       ).projectDir = new File(rootDir, 'legacy/archquery')
+project(':dvlib'           ).projectDir = new File(rootDir, 'device_validator/dvlib')
+project(':fat32lib'        ).projectDir = new File(rootDir, '../external/fat32lib')
+project(':lint'            ).projectDir = new File(rootDir, 'lint/cli')
+project(':lint-api'        ).projectDir = new File(rootDir, 'lint/libs/lint-api')
+project(':lint-checks'     ).projectDir = new File(rootDir, 'lint/libs/lint-checks')
+project(':screenshot2'     ).projectDir = new File(rootDir, 'misc/screenshot2')
+project(':sdklib-test'     ).projectDir = new File(rootDir, 'sdklib')
+project(':sdklib-test'     ).buildFileName = 'test.gradle'
+
+project(':builder-model'   ).projectDir = new File(rootDir, 'build-system/builder-model')
+project(':builder-test-api').projectDir = new File(rootDir, 'build-system/builder-test-api')
+project(':builder'         ).projectDir = new File(rootDir, 'build-system/builder')
+project(':gradle-model'    ).projectDir = new File(rootDir, 'build-system/gradle-model')
+project(':gradle'          ).projectDir = new File(rootDir, 'build-system/gradle')
 

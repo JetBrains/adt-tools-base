@@ -1,0 +1,15 @@
+apply plugin: 'android-library'
+
+dependencies {
+    compile project(':lib2:libs')
+}
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 15
+    }
+}

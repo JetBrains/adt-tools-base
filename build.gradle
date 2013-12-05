@@ -30,7 +30,7 @@ buildDir = new File(file(ext.androidHostOut), "tools/base/build")
 
 ext.localRepo = project.hasProperty('localRepo') ? localRepo : "$ext.androidHostOut/repo"
 
-project.ext.baseVersion = '22.2.0'
+project.ext.baseVersion = '22.4.0'
 project.ext.buildVersion = '0.7.0'
 
 subprojects { Project project ->
@@ -55,4 +55,10 @@ def testTasks = subprojects.collect { it.tasks.withType(Test) }.flatten()
 task aggregateResults(type: Copy) {
     from { testTasks*.testResultsDir }
     into { file("$buildDir/results") }
+}
+
+task prepareRepo(type: Copy) {
+    from { rootProject.cloneArtifacts.mainRepo }
+    from { rootProject.cloneArtifacts.secondaryRepo }
+    into { "$rootProject.ext.androidHostOut/repo" }
 }

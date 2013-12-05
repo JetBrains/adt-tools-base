@@ -1,0 +1,10 @@
+task("printTasks") << {
+    project.tasks.each { t ->
+        print("${t.name} -> ")
+        t.dependsOn.each { t2 ->
+            if (t2 instanceof Task)
+                print("${t2.name}, ")
+        }
+        println("")
+    }
+}

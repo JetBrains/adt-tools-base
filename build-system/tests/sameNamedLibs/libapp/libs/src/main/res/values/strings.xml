@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="libapp_name">LibsTest-libapp</string>
+    <string name="libapp_string">SUCCESS-LIBAPP</string>
+
+</resources>

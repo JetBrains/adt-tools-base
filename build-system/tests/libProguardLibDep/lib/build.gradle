@@ -1,0 +1,22 @@
+apply plugin: 'android-library'
+
+dependencies {
+    compile project(':lib2')
+}
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+
+    defaultConfig {
+        versionCode 12
+        versionName "2.0"
+        minSdkVersion 16
+        targetSdkVersion 16
+        proguardFile 'config.pro'
+        consumerProguardFiles 'consumerRules.pro'
+    }
+    release {
+        runProguard true
+    }
+}

@@ -1,0 +1,10 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+
+repositories {
+    maven { url '../../../../../out/host/gradle/repo' }
+}
+
+dependencies {
+    compile 'com.android.tools.build:builder-test-api:0.7.0-SNAPSHOT'
+}
