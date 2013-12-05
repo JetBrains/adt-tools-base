@@ -27,7 +27,7 @@ jar {
 project.ext.pomName = 'Android Tools Manifest Merger library'
 project.ext.pomDesc = 'A Library to merge Android manifests.'
 
-apply from: '../baseVersion.gradle'
-apply from: '../publish.gradle'
-apply from: '../javadoc.gradle'
+apply from: '../../baseVersion.gradle'
+apply from: '../../publish.gradle'
+apply from: '../../javadoc.gradle'
 
