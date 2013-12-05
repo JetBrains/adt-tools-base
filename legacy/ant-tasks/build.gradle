@@ -24,3 +24,5 @@ dependencies{
 sourceSets.main.compileClasspath += configurations.provided
 
 javadoc.classpath += configurations.provided
+
+apply from: '../../baseVersion.gradle'

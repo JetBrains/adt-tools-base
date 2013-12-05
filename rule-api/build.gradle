@@ -9,3 +9,4 @@ dependencies {
     compile project(':layoutlib-api')
 }
 
+apply from: '../baseVersion.gradle'
