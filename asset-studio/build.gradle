@@ -15,3 +15,4 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
+apply from: '../baseVersion.gradle'

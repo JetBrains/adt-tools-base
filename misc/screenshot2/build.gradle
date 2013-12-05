@@ -15,3 +15,5 @@ shipping {
 
 // configure the manifest of the buildDistributionJar task.
 buildDistributionJar.manifest.attributes("Main-Class": "com.android.screenshot.Screenshot")
+
+apply from: '../../baseVersion.gradle'
