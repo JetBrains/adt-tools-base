@@ -16,6 +16,8 @@
 
 package com.android.tools.lint;
 
+import static com.android.tools.lint.LintCliFlags.ERRNO_ERRORS;
+import static com.android.tools.lint.LintCliFlags.ERRNO_SUCCESS;
 import static com.android.tools.lint.client.api.IssueRegistry.LINT_ERROR;
 import static com.android.tools.lint.client.api.IssueRegistry.PARSER_ERROR;
 
@@ -116,7 +118,7 @@ public class LintCliClient extends LintClient {
             reporter.write(mErrorCount, mWarningCount, mWarnings);
         }
 
-        return mFlags.isSetExitCode() ? (mHasErrors ? -1 : 0) : 0;
+        return mFlags.isSetExitCode() ? (mHasErrors ? ERRNO_ERRORS : ERRNO_SUCCESS) : ERRNO_SUCCESS;
     }
 
     /** Creates a lint request */

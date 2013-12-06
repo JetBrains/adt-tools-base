@@ -56,6 +56,13 @@ public class LintCliFlags {
     private Configuration mDefaultConfiguration;
     private boolean mShowAll;
 
+    public static final int ERRNO_SUCCESS = 0;
+    public static final int ERRNO_ERRORS = 1;
+    public static final int ERRNO_USAGE = 2;
+    public static final int ERRNO_EXISTS = 3;
+    public static final int ERRNO_HELP = 4;
+    public static final int ERRNO_INVALID_ARGS = 5;
+
     /**
      * Returns the set of issue id's to suppress. Callers are allowed to modify this collection.
      * To suppress a given issue, add the {@link Issue#getId()} to the returned set.

@@ -18,6 +18,12 @@ package com.android.tools.lint;
 
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.VALUE_NONE;
+import static com.android.tools.lint.LintCliFlags.ERRNO_ERRORS;
+import static com.android.tools.lint.LintCliFlags.ERRNO_EXISTS;
+import static com.android.tools.lint.LintCliFlags.ERRNO_HELP;
+import static com.android.tools.lint.LintCliFlags.ERRNO_INVALID_ARGS;
+import static com.android.tools.lint.LintCliFlags.ERRNO_SUCCESS;
+import static com.android.tools.lint.LintCliFlags.ERRNO_USAGE;
 import static com.android.tools.lint.detector.api.Issue.OutputFormat.TEXT;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
@@ -90,12 +96,6 @@ public class Main {
     private static final String ARG_ALL_ERROR  = "-Werror";        //$NON-NLS-1$
 
     private static final String PROP_WORK_DIR = "com.android.tools.lint.workdir"; //$NON-NLS-1$
-
-    private static final int ERRNO_ERRORS = 1;
-    private static final int ERRNO_USAGE = 2;
-    private static final int ERRNO_EXISTS = 3;
-    private static final int ERRNO_HELP = 4;
-    private static final int ERRNO_INVALID_ARGS = 5;
 
     private LintCliFlags mFlags = new LintCliFlags();
 
@@ -198,7 +198,7 @@ public class Main {
                 } else {
                     displayValidIds(registry, System.out);
                 }
-                System.exit(0);
+                System.exit(ERRNO_SUCCESS);
             } else if (arg.equals(ARG_SHOW)) {
                 // Show specific issues?
                 if (index < args.length - 1 && !args[index + 1].startsWith("-")) { //$NON-NLS-1$
@@ -228,7 +228,7 @@ public class Main {
                 } else {
                     showIssues(registry);
                 }
-                System.exit(0);
+                System.exit(ERRNO_SUCCESS);
             } else if (arg.equals(ARG_FULL_PATH)
                     || arg.equals(ARG_FULL_PATH + "s")) { // allow "--fullpaths" too
                 mFlags.setFullPath(true);
@@ -242,7 +242,7 @@ public class Main {
                 mFlags.setSetExitCode(true);
             } else if (arg.equals(ARG_VERSION)) {
                 printVersion(client);
-                System.exit(0);
+                System.exit(ERRNO_SUCCESS);
             } else if (arg.equals(ARG_URL)) {
                 if (index == args.length - 1) {
                     System.err.println("Missing URL mapping string");
@@ -579,6 +579,7 @@ public class Main {
 
         List<Reporter> reporters = mFlags.getReporters();
         if (reporters.isEmpty()) {
+            //noinspection VariableNotUsedInsideIf
             if (urlMap != null) {
                 System.err.println(String.format(
                         "Warning: The %1$s option only applies to HTML reports (%2$s)",
@@ -769,7 +770,7 @@ public class Main {
             "\"lint --ignore UnusedResources,UselessLeaf /my/project/path\"\n";
     }
 
-    private void printVersion(LintCliClient client) {
+    private static void printVersion(LintCliClient client) {
         String revision = client.getRevision();
         if (revision != null) {
             System.out.println(String.format("lint: version %1$s", revision));

@@ -16,11 +16,14 @@
 
 package com.android.tools.lint;
 
+import static com.android.tools.lint.LintCliFlags.ERRNO_EXISTS;
+import static com.android.tools.lint.LintCliFlags.ERRNO_INVALID_ARGS;
+import static com.android.tools.lint.LintCliFlags.ERRNO_SUCCESS;
+
 import com.android.tools.lint.checks.AbstractCheckTest;
 import com.android.tools.lint.checks.AccessibilityDetector;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
-import com.google.common.io.Files;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -44,7 +47,8 @@ public class MainTest extends AbstractCheckTest {
         }
     }
 
-    private void checkDriver(String expectedOutput, String expectedError, String[] args)
+    private void checkDriver(String expectedOutput, String expectedError, int expectedExitCode,
+            String[] args)
             throws Exception {
         PrintStream previousOut = System.out;
         PrintStream previousErr = System.err;
@@ -63,7 +67,7 @@ public class MainTest extends AbstractCheckTest {
                 }
                 @Override
                 public void checkExit(int status) {
-                    throw new ExitException();
+                    throw new ExitException(status);
                 }
             });
 
@@ -72,14 +76,17 @@ public class MainTest extends AbstractCheckTest {
             final ByteArrayOutputStream error = new ByteArrayOutputStream();
             System.setErr(new PrintStream(error));
 
+            int exitCode = 0xCAFEBABE; // not set
             try {
                 Main.main(args);
             } catch (ExitException e) {
                 // Allow
+                exitCode = e.getStatus();
             }
 
             assertEquals(expectedError, cleanup(error.toString()));
             assertEquals(expectedOutput, cleanup(output.toString()));
+            assertEquals(expectedExitCode, exitCode);
         } finally {
             // Re-enable system exit for unit test
             System.setSecurityManager(null);
@@ -104,6 +111,9 @@ public class MainTest extends AbstractCheckTest {
 
         // Expected error
         "",
+
+        // Expected exit code
+        ERRNO_SUCCESS,
 
         // Args
         new String[] {
@@ -154,6 +164,9 @@ public class MainTest extends AbstractCheckTest {
         // Expected error
         "",
 
+        // Expected exit code
+        ERRNO_SUCCESS,
+
         // Args
         new String[] {
                 "--show",
@@ -185,6 +198,9 @@ public class MainTest extends AbstractCheckTest {
                 // Expected error
                 "",
 
+                // Expected exit code
+                ERRNO_SUCCESS,
+
                 // Args
                 new String[] {
                         "--show",
@@ -196,6 +212,9 @@ public class MainTest extends AbstractCheckTest {
         checkDriver(
         "",
         "Library foo.jar does not exist.\n",
+
+        // Expected exit code
+        ERRNO_INVALID_ARGS,
 
         // Args
         new String[] {
@@ -211,6 +230,9 @@ public class MainTest extends AbstractCheckTest {
         checkDriver(
         "",
         "The --sources, --classpath, --libraries and --resources arguments can only be used with a single project\n",
+
+        // Expected exit code
+        ERRNO_INVALID_ARGS,
 
         // Args
         new String[] {
@@ -247,6 +269,9 @@ public class MainTest extends AbstractCheckTest {
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 4 warnings\n", // Expected output
                 "",
+
+                // Expected exit code
+                ERRNO_SUCCESS,
 
                 // Args
                 new String[] {
@@ -285,6 +310,9 @@ public class MainTest extends AbstractCheckTest {
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 4 warnings\n", // Expected output
                 "",
+
+                // Expected exit code
+                ERRNO_SUCCESS,
 
                 // Args
                 new String[] {
@@ -327,6 +355,9 @@ public class MainTest extends AbstractCheckTest {
         "0 errors, 5 warnings\n",
         "",
 
+        // Expected exit code
+        ERRNO_SUCCESS,
+
         // Args
         new String[] {
                 "--check",
@@ -352,6 +383,9 @@ public class MainTest extends AbstractCheckTest {
         "No issues found.\n",
         "",
 
+        // Expected exit code
+        ERRNO_SUCCESS,
+
         // Args
         new String[] {
                 "--check",
@@ -373,8 +407,15 @@ public class MainTest extends AbstractCheckTest {
     private static class ExitException extends SecurityException {
         private static final long serialVersionUID = 1L;
 
-        private ExitException() {
+        private final int mStatus;
+
+        public ExitException(int status) {
             super("Unit test");
+            mStatus = status;
+        }
+
+        public int getStatus() {
+            return mStatus;
         }
     }
 
@@ -429,6 +470,9 @@ public class MainTest extends AbstractCheckTest {
 
                 "",
 
+                // Expected exit code
+                ERRNO_SUCCESS,
+
                 // Args
                 new String[] {
                         "--check",
@@ -452,6 +496,9 @@ public class MainTest extends AbstractCheckTest {
 
                 "",
 
+                // Expected exit code
+                ERRNO_SUCCESS,
+
                 // Args
                 new String[]{
                         "--text",
@@ -468,6 +515,9 @@ public class MainTest extends AbstractCheckTest {
 
                 "Cannot write XML output file /TESTROOT/build/foo.xml\n", // Expected error
 
+                // Expected exit code
+                ERRNO_EXISTS,
+
                 // Args
                 new String[] {
                         "--xml",
@@ -480,6 +530,9 @@ public class MainTest extends AbstractCheckTest {
 
                 "Cannot write HTML output file /TESTROOT/build/foo.html\n", // Expected error
 
+                // Expected exit code
+                ERRNO_EXISTS,
+
                 // Args
                 new String[] {
                         "--html",
@@ -491,6 +544,9 @@ public class MainTest extends AbstractCheckTest {
                 "", // Expected output
 
                 "Cannot write text output file /TESTROOT/build/foo.text\n", // Expected error
+
+                // Expected exit code
+                ERRNO_EXISTS,
 
                 // Args
                 new String[] {
