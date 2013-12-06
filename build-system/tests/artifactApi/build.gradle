@@ -12,24 +12,37 @@ apply plugin: 'android'
 import com.android.builder.model.ArtifactMetaData
 import com.android.builder.model.SourceProvider
 
+// Register an artifact type and tie it to the name "__test__".
+// This name will show up in Studio. It must be unique
 android.registerArtifactType("__test__", false, ArtifactMetaData.TYPE_JAVA)
 
+// register a new SourceProvider per build type, and associate it with the artifact
+// registered above.
 android.buildTypes.all { type ->
-    project.android.registerBuildTypeSourceProvider("__test__", type, getProvider("buildType:$type.name"))
+    project.android.registerBuildTypeSourceProvider(
+           "__test__",                              // registered name of the artifact type
+           type,                                    // associate it with a BuildType
+           getProvider("buildType:$type.name"))     // the source provider
 }
 
+// Same with ProductFlavor
 android.productFlavors.all { flavor ->
-    project.android.registerProductFlavorSourceProvider("__test__", flavor, getProvider("productFlavor:$flavor.name"))
+    project.android.registerProductFlavorSourceProvider(
+            "__test__",                                  // registered name of the artifact type
+            flavor,                                      // associate it with a ProductFlavor
+            getProvider("productFlavor:$flavor.name"))   // the source provider
 }
 
+// now register a new (java) artifact for each variant, still associated
+// with the artifact type registered above.
 android.applicationVariants.all { variant ->
     project.android.registerJavaArtifact(
-            "__test__",
-            variant,
-            "assemble:$variant.name",
-            "compile:$variant.name",
-            new File("classesFolder:$variant.name"),
-            getProvider("provider:$variant.name"))
+            "__test__",                                  // registered name of the artifact type
+            variant,                                     // associate it with a variant
+            "assemble:$variant.name",                    // name of the assemble task for this artifact
+            "compile:$variant.name",                     // name of the java compile task for this artifact
+            new File("classesFolder:$variant.name"),     // location of the classes folder (compile output)
+            getProvider("provider:$variant.name"))       // source provider specific to this variant for the artifact.
 }
 
 android {

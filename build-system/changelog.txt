@@ -1,0 +1,209 @@
+0.7.0
+- Requires Gradle 1.9
+- You can now have a variant specific source folder if you have flavors.
+  Only for app (not library or test). Name is src/flavorDebug/... or src/flavor1Flavor2Debug/
+  (note the camelcase naming, with lower case for first letter).
+  Its components (res, manifest, etc...) have higher priority than components from build type
+  or flavors.
+  There is also a "flavor combination" source folder available when more than one
+  flavor dimension is used.
+  For instance src/flavor1Flavor2/
+  Note that this is for all combinations of *all* dimensions.
+- Build config improvements and DSL changes.
+  The previous DSL proprety:
+    buildConfigLine "<value>"
+  has changed to
+    buildConfigField "<type>", "<name>", "<value>"
+  You can only add a single field at a time.
+  This allows override a field (see 'basic' sample)
+  Also, BuildConfig now automatically contains constants for
+  PACKAGE_NAME, VERSION_CODE, VERSION_NAME, BUILD_TYPE, FLAVOR as well as FLAVOR_<group> if there are several flavor dimensions.
+- Switch to ProGuard 4.10
+   - Added ability to test proguarded (obfuscated) apps.
+- New option on product Flavor (and defaultConfig) allow filtering of resources through the -c option of aapt
+  You can pass single or multiple values through the DSL. All values from the default config and flavors get combined and passed to aapt.
+  The DSL is
+     resConfig "en"
+  or
+     resConfigs "nodpi","hdpi"
+
+- Jar files are now pre-dexed for faster dexing.
+  Incremental dexing is disabled by default as it can lead to increased dex file size.
+- First pass at NDK integration. See the samples.
+- API to add new generated source folders:
+     variant.addJavaSourceFoldersToModel(sourceFolder1, sourceFolders2,...)
+  This adds the source folder to the model (for IDE support).
+  Another API:
+     variant.registerJavaGeneratingTask(task, sourceFolder1, sourceFolders2,...)
+  This automatically adds the dependency on the task, sets up the JavaCompile task inputs and propagates
+  the folders to the model for IDE integration.
+  See sample 'genFolderApi'
+- API to add extra artifacts on variants. This will allow to register Java or Android artifacts, for instance
+  for alternative test artifacts.
+  See sample 'artifactApi' for the API (sample is not meant to be used, it's for testing).
+
+0.6.3
+- Fixed ClassNotFoundException:MergingException introduced in 0.6.2
+
+0.6.2
+- Lint now picks up the SDK home from sdk.dir in local.properties
+- Error message shown when using an unsupported version of Gradle now explains how to update the Gradle wrapper
+- Merged resource files no longer place their source markers into the R file as comments
+- Project path can contain '--' (two dashes)
+- Internal changes to improve integration with Android Studio
+
+0.6.1
+
+- Fixed issues with lint task found in 0.6.0
+
+0.6.0
+
+- Enabled support for Gradle 1.8
+- Gradle 1.8 is now the minimum supported version
+- Default encoding for compiling Java code is UTF-8
+- Users can now specify the encoding to use to compile Java code
+- Fixed Gradle 1.8-specific bugs
+  - Importing projects with missing dependencies was broken
+  - Compiling projects with AIDL files was broken
+
+0.5.7
+
+- Proguard support for libraries.
+  Note the current DSL property 'proguardFiles' for library now sets the proguard rule file used when proguarding the library code.
+  The new property 'consumerProguardFiles' is used to package a rule file inside an aar.
+- Improved IDE support, including loading project with broken dependencies and anchor task to generate Java code
+- New hook tasks: preBuild and prebuild<VariantName>
+- First lint integration. This is a work in progress and therefore the lint task is not added to the check task.
+- Enable compatibility with 1.8
+
+0.5.6
+
+- Enabled support for 1.7
+
+0.5.5
+
+- Fix issue preventing to use Build Tools 18.0.1
+- access to the variants container don't force creating the task.
+  This means android.[application|Library|Test]Variants will be empty
+  during the evaluation phase. To use it, use .all instead of .each
+- Only package a library's own resources in its aar.
+- Fix incremental issues in the resource merger.
+- Misc bug fixes.
+
+0.5.4
+
+- Fixed incremental compilation issue with declare-styleable
+
+0.5.3
+
+- Fixed a crashing bug in PrepareDependenciesTask
+
+0.5.2
+
+- Better error reporting for cmd line tools, especially
+  if run in parallel in spawned threads
+- Fixed an issue due to windows path in merged resource files.
+
+0.5.1
+
+- Fixed issue in the dependency checker.
+
+0.5.0:
+
+- IDE Model is changed and is not compatible with earlier version! A new IDE
+  will required.
+- Fixed IDE model to contain the output file even if it's customized
+  through the DSL. Also fixed the DSL to get/set the output file on the
+  variant object so that it's not necessary to use variant.packageApplication
+  or variant.zipAlign
+- Fixed dependency resolution so that we resolved the combination of (default config,
+  build types, flavor(s)) together instead of separately.
+- Fixed dependency for tests of library project to properly include all the dependencies
+  of the library itself.
+- Fixed case where two dependencies have the same leaf name.
+- Fixed issue where proguard rules file cannot be applied on flavors.
+
+0.4.3:
+
+- Enabled crunching for all png files, not just .9.png
+- Fixed dealing with non resource files in res/ and assets/
+- Fixed crash when doing incremental aidl compilation due to broken method name (ah the joy of Groovy...)
+- Cleaned older R classes when the app package name has changed.
+
+0.4.2
+
+* Fixed incremental support for resource merging.
+* Fixed issue where all pngs would be processed in parallel with no limit
+  on the number of thread used, leading to failure to run aapt.
+* Fixed ignoreAsset support in aaptOptions
+* Added more logging on failure to merge manifests.
+* Added flavor names to the TestServer API.
+
+0.4.1:
+
+* Renamed 'package' scope to 'apk'
+    - variants are 'debugApk', 'releaseApk', 'flavor1Apk', etc...
+    - Now properly supported at build to allow package-only dependencies.
+* Only Jar dependencies can be package-only. Library projects must be added to the compile scope.
+* Fixed [application|library|test]Variants API (always returned empty on 0.4)
+* Fixed issue in Proguard where it would complain about duplicate Manifests.
+
+0.4
+
+* System requirements:
+   - Gradle 1.6+
+   - Android Build Tools 16.0.2+
+* Rename deviceCheck into connectedDevice
+* API for 3rd party Device Providers and Test Servers to run and deploy tests. API is @Beta
+* Support for ProGuard 4.9
+   - enable with BuildType.runProguard
+   - add proguard config files with BuiltType.proguardFile or ProductFlavor.proguardFile
+   - default proguard files accessible through android.getDefaultProguardFile(name) with name
+     being 'proguard-android.txt' or 'proguard-android-optimize.txt'
+* Implements Gradle 1.6 custom model for IDE Tooling support
+* Fixes:
+   - Fix support for subfolders in assets/
+   - Fix cases where Android Libraries have local Jars dependencies
+   - Fix renaming of package through DSL to ensure resources are compiled in the new namespace
+   - Fix DSL to add getSourceSets on the "android" extension.
+   - DSL to query variants has changed to applicationVariants and libraryVariants (depending on the plugin)
+     Also both plugin have testVariants (tests are not included in the default collection).
+
+0.3
+
+* System requirements:
+   - Gradle 1.3+ (tested on 1.3/1.4)
+   - Android Platform Tools 16.0.2+
+* New Features:
+   - Renderscript support.
+   - Support for multi resource folders. See 'multires' sample.
+      * PNG crunch is now done incrementally and in parallel.
+   - Support for multi asset folders.
+   - Support for asset folders in Library Projects.
+   - Support for versionName suffix provided by the BuildType.
+   - Testing
+      * Default sourceset for tests now src/instrumentTest (instrumentTest<Name> for flavors)
+      * Instrumentation tests now:
+          - started from "deviceCheck" instead of "check"
+          - run on all connected devices in parallel.
+          - break the build if any test fails.
+          - generate an HTML report for each flavor/project, but also aggregated.
+      * New plugin 'android-reporting' to aggregate android test results across projects. See 'flavorlib' sample.
+   - Improved DSL:
+      * replaced android.target with android.compileSdkVersion to make it less confusing with targetSdkVersion
+      * signing information now a SigningConfig object reusable across BuildType and ProductFlavor
+      * ability to relocate a full sourceSet. See 'migrated' sample.
+      * API to manipulate Build Variants.
+* Fixes:
+   - Default Java compile target set to 1.6.
+   - Fix generation of R classes in case libraries share same package name as the app project.
+
+0.2
+
+* Fixed support for windows.
+* Added support for customized sourceset. (http://tools.android.com/tech-docs/new-build-system/using-the-new-build-system#TOC-Working-with-and-Customizing-SourceSets)
+* Added support for dependency per configuration.
+* Fixed support for dependency on local jar files.
+* New samples "migrated" and "flavorlib"
+
+0.1: initial release
