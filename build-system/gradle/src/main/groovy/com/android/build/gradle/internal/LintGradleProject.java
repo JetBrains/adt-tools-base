@@ -100,7 +100,9 @@ public class LintGradleProject extends Project {
             try {
                 String xml = Files.toString(manifest, Charsets.UTF_8);
                 Document document = XmlUtils.parseDocumentSilently(xml, true);
-                readManifest(document);
+                if (document != null) {
+                    readManifest(document);
+                }
             } catch (IOException e) {
                 mClient.log(e, "Could not read manifest %1$s", manifest);
             }
@@ -175,18 +177,12 @@ public class LintGradleProject extends Project {
                 List<SourceProvider> providers = Lists.newArrayList();
                 AndroidArtifact mainArtifact = mVariant.getMainArtifact();
 
-                SourceProvider defaultProvider = mProject.getDefaultConfig().getSourceProvider();
-                if (defaultProvider != null) {
-                    providers.add(defaultProvider);
-                }
+                providers.add(mProject.getDefaultConfig().getSourceProvider());
 
                 for (String flavorName : mVariant.getProductFlavors()) {
                     for (ProductFlavorContainer flavor : mProject.getProductFlavors()) {
                         if (flavorName.equals(flavor.getProductFlavor().getName())) {
-                            SourceProvider provider = flavor.getSourceProvider();
-                            if (provider != null) {
-                                providers.add(provider);
-                            }
+                            providers.add(flavor.getSourceProvider());
                             break;
                         }
                     }
@@ -200,10 +196,7 @@ public class LintGradleProject extends Project {
                 String buildTypeName = mVariant.getBuildType();
                 for (BuildTypeContainer buildType : mProject.getBuildTypes()) {
                     if (buildTypeName.equals(buildType.getBuildType().getName())) {
-                        SourceProvider provider = buildType.getSourceProvider();
-                        if (provider != null) {
-                            providers.add(provider);
-                        }
+                        providers.add(buildType.getSourceProvider());
                         break;
                     }
                 }
@@ -235,22 +228,29 @@ public class LintGradleProject extends Project {
             return mManifestFiles;
         }
 
+        @NonNull
         @Override
         public List<File> getProguardFiles() {
             if (mProguardFiles == null) {
                 ProductFlavor flavor = mProject.getDefaultConfig().getProductFlavor();
                 mProguardFiles = Lists.newArrayList();
-                mProguardFiles.addAll(flavor.getProguardFiles());
-                // TODO: This is currently broken:
-                //mProguardFiles.addAll(flavor.getConsumerProguardFiles());
-                // It will throw
-                //org.gradle.tooling.model.UnsupportedMethodException: Unsupported method: BaseConfig.getConsumerProguardFiles().
-                //  The version of Gradle you connect to does not support that method.
-                //  To resolve the problem you can change/upgrade the target version of Gradle you connect to.
-                //  Alternatively, you can ignore this exception and read other information from the model.
-                //at org.gradle.tooling.model.internal.Exceptions.unsupportedMethod(Exceptions.java:33)
-                //at org.gradle.tooling.internal.adapter.ProtocolToModelAdapter$InvocationHandlerImpl.invoke(ProtocolToModelAdapter.java:239)
-                //at com.sun.proxy.$Proxy129.getConsumerProguardFiles(Unknown Source)
+                for (File file : flavor.getProguardFiles()) {
+                    if (file.exists()) {
+                        mProguardFiles.add(file);
+                    }
+                }
+                try {
+                    for (File file : flavor.getConsumerProguardFiles()) {
+                        if (file.exists()) {
+                            mProguardFiles.add(file);
+                        }
+                    }
+                } catch (Throwable t) {
+                    // On some models, this threw
+                    //   org.gradle.tooling.model.UnsupportedMethodException:
+                    //    Unsupported method: BaseConfig.getConsumerProguardFiles().
+                    // Playing it safe for a while.
+                }
             }
 
             return mProguardFiles;
@@ -298,7 +298,7 @@ public class LintGradleProject extends Project {
             if (mJavaClassFolders == null) {
                 mJavaClassFolders = new ArrayList<File>(1);
                 File outputClassFolder = mVariant.getMainArtifact().getClassesFolder();
-                if (outputClassFolder != null && outputClassFolder.exists()) {
+                if (outputClassFolder.exists()) {
                     mJavaClassFolders.add(outputClassFolder);
                 }
             }
@@ -306,6 +306,7 @@ public class LintGradleProject extends Project {
             return mJavaClassFolders;
         }
 
+        @NonNull
         @Override
         public List<File> getJavaLibraries() {
             if (mJavaLibraries == null) {
@@ -359,11 +360,9 @@ public class LintGradleProject extends Project {
         @Override
         public int getBuildSdk() {
             String compileTarget = mProject.getCompileTarget();
-            if (compileTarget != null) {
-                AndroidVersion version = AndroidTargetHash.getPlatformVersion(compileTarget);
-                if (version != null) {
-                    return version.getApiLevel();
-                }
+            AndroidVersion version = AndroidTargetHash.getPlatformVersion(compileTarget);
+            if (version != null) {
+                return version.getApiLevel();
             }
 
             return super.getBuildSdk();
@@ -413,6 +412,21 @@ public class LintGradleProject extends Project {
             }
 
             return mManifestFiles;
+        }
+
+        @NonNull
+        @Override
+        public List<File> getProguardFiles() {
+            if (mProguardFiles == null) {
+                File proguardRules = mLibrary.getProguardRules();
+                if (proguardRules.exists()) {
+                    mProguardFiles = Collections.singletonList(proguardRules);
+                } else {
+                    mProguardFiles = Collections.emptyList();
+                }
+            }
+
+            return mProguardFiles;
         }
 
         @NonNull
