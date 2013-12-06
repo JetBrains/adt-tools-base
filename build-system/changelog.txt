@@ -41,6 +41,11 @@
 - API to add extra artifacts on variants. This will allow to register Java or Android artifacts, for instance
   for alternative test artifacts.
   See sample 'artifactApi' for the API (sample is not meant to be used, it's for testing).
+- Revamped lint integration. Lint is now run as part of the check task, and will analyze all variants and then
+  merge the results and create a report which lists which variants each error applies to (unless an error
+  applies to all variants). You can also run lint on a specific variant, e.g. lintDebug or lintFreeRelease.
+  Lint will no longer report errors in AAR libraries. This version of the plugin also picks up some new lint
+  checks.
 
 0.6.3
 - Fixed ClassNotFoundException:MergingException introduced in 0.6.2
