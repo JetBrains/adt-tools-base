@@ -737,7 +737,7 @@ public abstract class BasePlugin {
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Java",
                 JavaCompile)
         variantData.javaCompileTask = compileTask
-        compileTask.dependsOn variantData.sourceGenTask
+        compileTask.dependsOn variantData.sourceGenTask, variantData.variantDependency.compileConfiguration
 
         VariantConfiguration config = variantData.variantConfiguration
 
