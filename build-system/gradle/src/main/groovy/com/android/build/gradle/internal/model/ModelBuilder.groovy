@@ -22,6 +22,7 @@ import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
+import com.android.build.gradle.internal.dsl.LintOptionsImpl
 import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.LibraryVariantData
@@ -33,6 +34,7 @@ import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.ArtifactMetaData
 import com.android.builder.model.JavaArtifact
+import com.android.builder.model.LintOptions
 import com.android.builder.model.SigningConfig
 import com.android.builder.model.SourceProvider
 import com.android.builder.model.SourceProviderContainer
@@ -94,6 +96,8 @@ public class ModelBuilder implements ToolingModelBuilder {
                         true /*isTest*/,
                         ArtifactMetaData.TYPE_ANDROID));
 
+        LintOptions lintOptions = LintOptionsImpl.create(basePlugin.extension.lintOptions)
+
         //noinspection GroovyVariableNotAssigned
         DefaultAndroidProject androidProject = new DefaultAndroidProject(
                 getModelVersion(),
@@ -105,6 +109,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 artifactMetaDataList,
                 basePlugin.unresolvedDependencies,
                 basePlugin.extension.compileOptions,
+                lintOptions,
                 libPlugin != null)
                     .setDefaultConfig(ProductFlavorContainerImpl.createPFC(
                         basePlugin.defaultConfigData,

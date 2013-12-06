@@ -53,7 +53,7 @@ public class LintCliFlags {
     private List<File> mLibraries;
     private List<File> mResources;
 
-    private Configuration mDefaultConfiguration;
+    private File mDefaultConfiguration;
     private boolean mShowAll;
 
     public static final int ERRNO_SUCCESS = 0;
@@ -213,20 +213,20 @@ public class LintCliFlags {
     }
 
     /**
-     * Returns the default configuration to use as a fallback
+     * Returns the default configuration file to use as a fallback
      */
     @Nullable
-    public Configuration getDefaultConfiguration() {
+    public File getDefaultConfiguration() {
         return mDefaultConfiguration;
     }
 
     /**
-     * Sets the default configuration to use as a fallback. This corresponds to a {@code lint.xml}
+     * Sets the default config file to use as a fallback. This corresponds to a {@code lint.xml}
      * file with severities etc to use when a project does not have more specific information.
      * To construct a configuration from a {@link java.io.File}, use
      * {@link LintCliClient#createConfigurationFromFile(java.io.File)}.
      */
-    public void setDefaultConfiguration(@Nullable Configuration defaultConfiguration) {
+    public void setDefaultConfiguration(@Nullable File defaultConfiguration) {
         mDefaultConfiguration = defaultConfiguration;
     }
 

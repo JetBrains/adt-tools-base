@@ -41,11 +41,7 @@ import static com.android.SdkConstants.DOT_XML
 
 public class Lint extends DefaultTask {
     @NonNull private BasePlugin mPlugin
-    @Nullable private File mConfigFile
-    @Nullable private File mHtmlOutput
-    @Nullable private File mXmlOutput
     @Nullable private String mVariantName
-    private boolean mQuiet = true
 
     public void setPlugin(@NonNull BasePlugin plugin) {
         mPlugin = plugin
@@ -55,26 +51,12 @@ public class Lint extends DefaultTask {
         mVariantName = variantName
     }
 
-    public void setQuiet() {
-        mQuiet = true
-    }
-
-    public void setConfig(@NonNull File configFile) {
-        mConfigFile = configFile
-    }
-
-    public void setHtmlOutput(@NonNull File htmlOutput) {
-        mHtmlOutput = htmlOutput
-    }
-
-    public void setXmlOutput(@NonNull File xmlOutput) {
-        mXmlOutput = xmlOutput
-    }
-
     @SuppressWarnings("GroovyUnusedDeclaration")
     @TaskAction
     public void lint() {
-        def modelProject = createAndroidProject(mPlugin.getProject())
+        assert project == mPlugin.getProject()
+
+        def modelProject = createAndroidProject(project)
         if (mVariantName != null) {
             lintSingleVariant(modelProject, mVariantName)
         } else {
@@ -90,7 +72,7 @@ public class Lint extends DefaultTask {
         Map<Variant,List<Warning>> warningMap = Maps.newHashMap()
         for (Variant variant : modelProject.getVariants()) {
             try {
-                List<Warning> warnings = runLint(modelProject, variant.getName())
+                List<Warning> warnings = runLint(modelProject, variant.getName(), false)
                 warningMap.put(variant, warnings)
             } catch (IOException e) {
                 throw new GradleException("Invalid arguments.", e)
@@ -120,9 +102,13 @@ public class Lint extends DefaultTask {
         LintCliFlags flags = new LintCliFlags()
         LintGradleClient client = new LintGradleClient(registry, flags, mPlugin, modelProject,
                 null)
-        configureReporters(client, flags, null)
+        mPlugin.getExtension().lintOptions.syncTo(client, flags, null, project, true)
         for (Reporter reporter : flags.getReporters()) {
             reporter.write(errorCount, warningCount, mergedWarnings)
+        }
+
+        if (flags.isSetExitCode() && errorCount > 0) {
+            throw new GradleException("Lint found errors with abortOnError=true; aborting build.")
         }
     }
 
@@ -130,111 +116,32 @@ public class Lint extends DefaultTask {
      * Runs lint on a single specified variant
      */
     public void lintSingleVariant(@NonNull AndroidProject modelProject, String variantName) {
-        runLint(modelProject, variantName)
+        runLint(modelProject, variantName, true)
     }
 
     /** Runs lint on the given variant and returns the set of warnings */
     private List<Warning> runLint(
             @NonNull AndroidProject modelProject,
-            @NonNull String variantName) {
+            @NonNull String variantName,
+            boolean report) {
         IssueRegistry registry = new BuiltinIssueRegistry()
         LintCliFlags flags = new LintCliFlags()
         LintGradleClient client = new LintGradleClient(registry, flags, mPlugin, modelProject,
                 variantName)
+        mPlugin.getExtension().lintOptions.syncTo(client, flags, variantName, project, report)
 
-        // Configure Reporters
-        configureReporters(client, flags, variantName)
-
-        // Flags
-        if (mQuiet) {
-            flags.setQuiet(true)
-        }
-        if (mConfigFile != null) {
-            flags.setDefaultConfiguration(client.createConfigurationFromFile(mConfigFile))
-        }
-
-        // Finally perform lint run
+        List<Warning> warnings;
         try {
-            return client.run(registry)
+            warnings = client.run(registry)
         } catch (IOException e) {
             throw new GradleException("Invalid arguments.", e)
         }
-    }
 
-    private void configureReporters(@NonNull LintGradleClient client, @NonNull LintCliFlags flags,
-            @Nullable String variantName) {
-        StringBuilder base = new StringBuilder()
-        base.append("lint-results/")
-        if (variantName != null) {
-            base.append(variantName)
-            base.append("/")
-        }
-        base.append("lint-results")
-        if (variantName != null) {
-            base.append("-")
-            base.append(variantName)
-        }
-        File htmlOutput = mHtmlOutput
-        File xmlOutput = mXmlOutput
-        if (htmlOutput == null) {
-            htmlOutput = project.file(base.toString() + ".html")
-            File parent = htmlOutput.parentFile
-            if (!parent.exists()) {
-                parent.mkdirs()
-            }
+        if (report && client.haveErrors() && flags.isSetExitCode()) {
+            throw new GradleException("Lint found errors with abortOnError=true; aborting build.")
         }
 
-        if (xmlOutput == null) {
-            xmlOutput = project.file(base.toString() + DOT_XML)
-            File parent = xmlOutput.parentFile
-            if (!parent.exists()) {
-                parent.mkdirs()
-            }
-        }
-
-        htmlOutput = htmlOutput.getAbsoluteFile()
-        if (htmlOutput.exists()) {
-            boolean delete = htmlOutput.delete()
-            if (!delete) {
-                throw new GradleException("Could not delete old " + htmlOutput)
-            }
-        }
-        if (htmlOutput.getParentFile() != null && !htmlOutput.getParentFile().canWrite()) {
-            throw new GradleException("Cannot write HTML output file " + htmlOutput)
-        }
-        try {
-            flags.getReporters().add(new HtmlReporter(client, htmlOutput))
-        } catch (IOException e) {
-            throw new GradleException("HTML invalid argument.", e)
-        }
-
-        xmlOutput = xmlOutput.getAbsoluteFile()
-        if (xmlOutput.exists()) {
-            boolean delete = xmlOutput.delete()
-            if (!delete) {
-                throw new GradleException("Could not delete old " + xmlOutput)
-            }
-        }
-        if (xmlOutput.getParentFile() != null && !xmlOutput.getParentFile().canWrite()) {
-            throw new GradleException("Cannot write XML output file " + xmlOutput)
-        }
-        try {
-            flags.getReporters().add(new XmlReporter(client, xmlOutput))
-        } catch (IOException e) {
-            throw new GradleException("XML invalid argument.", e)
-        }
-
-        List<Reporter> reporters = flags.getReporters()
-        if (reporters.isEmpty()) {
-            throw new GradleException("No reporter specified.")
-        }
-
-        Map<String, String> map = new HashMap<String, String>() {{
-            put("", "file://")
-        }}
-        for (Reporter reporter : reporters) {
-            reporter.setUrlMap(map)
-        }
+        return warnings;
     }
 
     private static AndroidProject createAndroidProject(@NonNull Project gradleProject) {
