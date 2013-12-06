@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.model;
 
+import static com.android.builder.model.AndroidProject.ARTIFACT_INSTRUMENT_TEST;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.StringHelper;
@@ -36,7 +38,9 @@ import com.android.builder.model.Variant;
 import com.android.builder.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation;
 import com.google.common.collect.Maps;
+
 import junit.framework.TestCase;
+
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
 import org.gradle.tooling.UnknownModelException;
@@ -50,8 +54,6 @@ import java.security.KeyStore;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
-
-import static com.android.builder.model.AndroidProject.ARTIFACT_INSTRUMENT_TEST;
 
 public class AndroidProjectTest extends TestCase {
 
@@ -569,6 +571,26 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("jar dep count", 2, jars.size());
     }
 
+    public void testTestWithDep() {
+        // Load the custom model for the project
+        ProjectData projectData = getModelForProject("testWithDep");
+
+        AndroidProject model = projectData.model;
+
+        Collection<Variant> variants = model.getVariants();
+        Variant debugVariant = getVariant(variants, "debug");
+        assertNotNull(debugVariant);
+
+        Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts();
+        AndroidArtifact testArtifact = getAndroidArtifact(extraAndroidArtifact,
+                ARTIFACT_INSTRUMENT_TEST);
+        assertNotNull(testArtifact);
+
+        Dependencies testDependencies = testArtifact.getDependencies();
+        assertEquals(1, testDependencies.getJars().size());
+    }
+
+
     public void testGenFolderApi() throws Exception {
         // Load the custom model for the project
         ProjectData projectData = getModelForProject("genFolderApi");
@@ -733,7 +755,7 @@ public class AndroidProjectTest extends TestCase {
                     f = dir.getParentFile().getParentFile().getParentFile();
                 } else {
                     f = dir.getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile();
-                    f = new File(f, "tools" + File.separator + "build");
+                    f = new File(f, "tools" + File.separator + "base" + File.separator + "build-system");
                 }
                 return f;
             } catch (URISyntaxException e) {
