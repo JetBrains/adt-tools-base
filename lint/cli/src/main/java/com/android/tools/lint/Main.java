@@ -265,7 +265,7 @@ public class Main {
                     System.err.println(file.getAbsolutePath() + " does not exist");
                     System.exit(ERRNO_INVALID_ARGS);
                 }
-                mFlags.setDefaultConfiguration(client.createConfigurationFromFile(file));
+                mFlags.setDefaultConfiguration(file);
             } else if (arg.equals(ARG_HTML) || arg.equals(ARG_SIMPLE_HTML)) {
                 if (index == args.length - 1) {
                     System.err.println("Missing HTML output file name");
@@ -347,7 +347,7 @@ public class Main {
                 }
             } else if (arg.equals(ARG_TEXT)) {
                 if (index == args.length - 1) {
-                    System.err.println("Missing XML output file name");
+                    System.err.println("Missing text output file name");
                     System.exit(ERRNO_INVALID_ARGS);
                 }
 
@@ -383,7 +383,7 @@ public class Main {
                     }
                     closeWriter = true;
                 }
-                mFlags.getReporters().add(new TextReporter(client, writer, closeWriter));
+                mFlags.getReporters().add(new TextReporter(client, mFlags, writer, closeWriter));
             } else if (arg.equals(ARG_DISABLE) || arg.equals(ARG_IGNORE)) {
                 if (index == args.length - 1) {
                     System.err.println("Missing categories or id's to disable");
@@ -586,7 +586,8 @@ public class Main {
                             ARG_URL, ARG_HTML));
             }
 
-            reporters.add(new TextReporter(client, new PrintWriter(System.out, true), false));
+            reporters.add(new TextReporter(client, mFlags,
+                    new PrintWriter(System.out, true), false));
         } else {
             if (urlMap == null) {
                 // By default just map from /foo to file:///foo

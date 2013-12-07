@@ -18,11 +18,13 @@ package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.CompileOptions;
+import com.android.build.gradle.internal.dsl.LintOptionsImpl;
 import com.android.builder.model.AaptOptions;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ArtifactMetaData;
 import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.JavaCompileOptions;
+import com.android.builder.model.LintOptions;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.Variant;
@@ -56,6 +58,8 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     private final Collection<String> unresolvedDependencies;
     @NonNull
     private final JavaCompileOptions javaCompileOptions;
+    @NonNull
+    private final LintOptions lintOptions;
     private final boolean isLibrary;
 
     private final Collection<BuildTypeContainer> buildTypes = Lists.newArrayList();
@@ -73,6 +77,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
                           @NonNull Collection<ArtifactMetaData> extraArtifacts,
                           @NonNull Collection<String> unresolvedDependencies,
                           @NonNull CompileOptions compileOptions,
+                          @NonNull LintOptions lintOptions,
                           boolean isLibrary) {
         this.modelVersion = modelVersion;
         this.name = name;
@@ -83,6 +88,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
         this.extraArtifacts = extraArtifacts;
         this.unresolvedDependencies = unresolvedDependencies;
         javaCompileOptions = new DefaultJavaCompileOptions(compileOptions);
+        this.lintOptions = lintOptions;
         this.isLibrary = isLibrary;
     }
 
@@ -186,6 +192,12 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     @NonNull
     public AaptOptions getAaptOptions() {
         return null;
+    }
+
+    @Override
+    @NonNull
+    public LintOptions getLintOptions() {
+        return lintOptions;
     }
 
     @Override

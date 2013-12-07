@@ -74,6 +74,11 @@ class AppPlugin extends com.android.build.gradle.BasePlugin implements Plugin<Pr
     }
 
     @Override
+    public AppExtension getExtension() {
+        return extension
+    }
+
+    @Override
     void apply(Project project) {
         super.apply(project)
 

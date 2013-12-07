@@ -187,7 +187,7 @@ public abstract class BasePlugin {
         }
     }
 
-    protected abstract BaseExtension getExtension()
+    public abstract BaseExtension getExtension()
     protected abstract void doCreateAndroidTasks()
 
     protected void apply(Project project) {
