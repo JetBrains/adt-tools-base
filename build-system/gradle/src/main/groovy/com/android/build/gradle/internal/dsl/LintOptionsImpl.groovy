@@ -34,8 +34,9 @@ import org.gradle.api.tasks.OutputFile
 
 import static com.android.SdkConstants.DOT_XML
 
-public class LintOptionsImpl implements LintOptions {
+public class LintOptionsImpl implements LintOptions, Serializable {
     public static final String STDOUT = "stdout"
+    private static final long serialVersionUID = 1L;
 
     @Input
     private Set<String> disable = Sets.newHashSet()
