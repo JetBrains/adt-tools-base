@@ -31,6 +31,8 @@ android {
     defaultConfig {
         minSdkVersion ${minApi}
         targetSdkVersion ${targetApi}
+        versionCode 1
+        versionName "1.0"
     }
 <#if javaVersion?? && javaVersion != "1.6">
 
