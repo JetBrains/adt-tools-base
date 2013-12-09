@@ -69,6 +69,11 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
     }
 
     @Override
+    public LibraryExtension getExtension() {
+        return extension
+    }
+
+    @Override
     void apply(Project project) {
         super.apply(project)
 

@@ -83,11 +83,13 @@ public class LintCliClient extends LintClient {
     protected IssueRegistry mRegistry;
     protected LintDriver mDriver;
     protected final LintCliFlags mFlags;
+    private Configuration mConfiguration;
 
     /** Creates a CLI driver */
     public LintCliClient() {
         mFlags = new LintCliFlags();
-        TextReporter reporter = new TextReporter(this, new PrintWriter(System.out, true), false);
+        TextReporter reporter = new TextReporter(this, mFlags, new PrintWriter(System.out, true),
+                false);
         mFlags.getReporters().add(reporter);
     }
 
@@ -154,7 +156,7 @@ public class LintCliClient extends LintClient {
 
     @Override
     public Configuration getConfiguration(@NonNull Project project) {
-        return new CliConfiguration(mFlags.getDefaultConfiguration(), project);
+        return new CliConfiguration(getConfiguration(), project);
     }
 
     /** File content cache */
@@ -576,7 +578,18 @@ public class LintCliClient extends LintClient {
 
     /** Returns the configuration used by this client */
     Configuration getConfiguration() {
-        return mFlags.getDefaultConfiguration();
+        if (mConfiguration == null) {
+            File configFile = mFlags.getDefaultConfiguration();
+            if (configFile != null) {
+                if (!configFile.exists()) {
+                    log(Severity.ERROR, null, "Warning: Configuration file %1$s does not exist",
+                            configFile);
+                }
+                mConfiguration = createConfigurationFromFile(configFile);
+            }
+        }
+
+        return mConfiguration;
     }
 
     /** Returns true if the given issue has been explicitly disabled */
@@ -612,5 +625,9 @@ public class LintCliClient extends LintClient {
         }
 
         return null;
+    }
+
+    public boolean haveErrors() {
+        return mErrorCount > 0;
     }
 }

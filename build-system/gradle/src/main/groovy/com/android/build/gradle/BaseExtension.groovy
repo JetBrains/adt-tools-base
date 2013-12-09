@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.SourceSetSourceProviderWrapper
 import com.android.build.gradle.internal.dsl.AaptOptionsImpl
 import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory
 import com.android.build.gradle.internal.dsl.DexOptionsImpl
+import com.android.build.gradle.internal.dsl.LintOptionsImpl
 import com.android.build.gradle.internal.dsl.ProductFlavorDsl
 import com.android.build.gradle.internal.test.TestOptions
 import com.android.builder.BuilderConstants
@@ -56,6 +57,7 @@ public abstract class BaseExtension {
 
     final DefaultProductFlavor defaultConfig
     final AaptOptionsImpl aaptOptions
+    final LintOptionsImpl lintOptions
     final DexOptionsImpl dexOptions
     final TestOptions testOptions
     final CompileOptions compileOptions
@@ -82,6 +84,7 @@ public abstract class BaseExtension {
 
         aaptOptions = instantiator.newInstance(AaptOptionsImpl.class)
         dexOptions = instantiator.newInstance(DexOptionsImpl.class)
+        lintOptions = instantiator.newInstance(LintOptionsImpl.class)
         testOptions = instantiator.newInstance(TestOptions.class)
         compileOptions = instantiator.newInstance(CompileOptions.class)
 
@@ -166,6 +169,11 @@ public abstract class BaseExtension {
     void dexOptions(Action<DexOptionsImpl> action) {
         plugin.checkTasksAlreadyCreated();
         action.execute(dexOptions)
+    }
+
+    void lintOptions(Action<LintOptionsImpl> action) {
+        plugin.checkTasksAlreadyCreated();
+        action.execute(lintOptions)
     }
 
     void testOptions(Action<TestOptions> action) {

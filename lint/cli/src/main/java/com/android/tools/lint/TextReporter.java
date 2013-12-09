@@ -22,6 +22,7 @@ import com.android.tools.lint.detector.api.Severity;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Joiner;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
@@ -36,23 +37,40 @@ import java.util.List;
 public class TextReporter extends Reporter {
     private final Writer mWriter;
     private final boolean mClose;
+    private final LintCliFlags mFlags;
 
     /**
      * Constructs a new {@link TextReporter}
      *
      * @param client the client
+     * @param flags the flags
      * @param writer the writer to write into
      * @param close whether the writer should be closed when done
      */
-    public TextReporter(LintCliClient client, Writer writer, boolean close) {
-        super(client, null);
+    public TextReporter(LintCliClient client, LintCliFlags flags, Writer writer, boolean close) {
+        this(client, flags, null, writer, close);
+    }
+
+    /**
+     * Constructs a new {@link TextReporter}
+     *
+     * @param client the client
+     * @param flags the flags
+     * @param file the file corresponding to the writer, if any
+     * @param writer the writer to write into
+     * @param close whether the writer should be closed when done
+     */
+    public TextReporter(LintCliClient client, LintCliFlags flags, File file, Writer writer,
+            boolean close) {
+        super(client, file);
+        mFlags = flags;
         mWriter = writer;
         mClose = close;
     }
 
     @Override
     public void write(int errorCount, int warningCount, List<Warning> issues) throws IOException {
-        boolean abbreviate = mClient.getDriver().isAbbreviating();
+        boolean abbreviate = !mFlags.isShowEverything();
 
         StringBuilder output = new StringBuilder(issues.size() * 200);
         if (issues.isEmpty()) {
@@ -187,6 +205,11 @@ public class TextReporter extends Reporter {
             mWriter.flush();
             if (mClose) {
                 mWriter.close();
+
+                if (mOutput != null) {
+                    String path = mOutput.getAbsolutePath();
+                    System.out.println(String.format("Wrote text report to %1$s", path));
+                }
             }
         }
     }

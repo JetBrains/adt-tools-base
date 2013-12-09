@@ -138,6 +138,14 @@ public interface AndroidProject {
     AaptOptions getAaptOptions();
 
     /**
+     * Returns the lint options.
+     *
+     * @return the lint options.
+     */
+    @NonNull
+    LintOptions getLintOptions();
+
+    /**
      * Returns the dependencies that were not successfully resolved. The returned list gets
      * populated only if the system property {@link #BUILD_MODEL_ONLY_SYSTEM_PROPERTY} has been
      * set to {@code true}.

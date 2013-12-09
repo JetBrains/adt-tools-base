@@ -271,7 +271,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
 
         public TestLintClient() {
             super(new LintCliFlags());
-            mFlags.getReporters().add(new TextReporter(this, mWriter, false));
+            mFlags.getReporters().add(new TextReporter(this, mFlags, mWriter, false));
         }
 
         @Override
