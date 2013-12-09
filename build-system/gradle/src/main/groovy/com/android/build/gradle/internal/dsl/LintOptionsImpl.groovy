@@ -45,7 +45,7 @@ public class LintOptionsImpl implements LintOptions, Serializable {
     @Input
     private Set<String> check = Sets.newHashSet()
     @Input
-    private boolean abortOnError
+    private boolean abortOnError = true
     @Input
     private boolean absolutePaths = true
     @Input
