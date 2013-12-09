@@ -19,6 +19,7 @@ include 'sdk-common'
 include 'sdklib'
 include 'sdklib-test'
 include 'testutils'
+include 'gradle-import'
 
 include 'builder-model'
 include 'builder-test-api'
