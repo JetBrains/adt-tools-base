@@ -55,7 +55,7 @@ import java.util.regex.Pattern;
  */
 public final class Packager implements IArchiveBuilder {
 
-    private final static Pattern PATTERN_NATIVELIB_EXT = Pattern.compile("^.+\\.so$",
+    private static final Pattern PATTERN_NATIVELIB_EXT = Pattern.compile("^.+\\.so$",
             Pattern.CASE_INSENSITIVE);
 
     /**
@@ -189,7 +189,7 @@ public final class Packager implements IArchiveBuilder {
     }
 
     /** Internal implementation of {@link JarStatus}. */
-    private final static class JarStatusImpl implements JarStatus {
+    private static final class JarStatusImpl implements JarStatus {
         public final List<String> mLibs;
         public final boolean mNativeLibsConflict;
 
@@ -471,7 +471,7 @@ public final class Packager implements IArchiveBuilder {
 
     /**
      * Seals the APK, and signs it if necessary.
-     * @throws PackagerException
+     *
      * @throws PackagerException if an error occurred
      * @throws SealedPackageException if the APK is already sealed.
      */
@@ -569,7 +569,7 @@ public final class Packager implements IArchiveBuilder {
         }
     }
 
-    private String getLocalVersion() {
+    private static String getLocalVersion() {
         Class clazz = Packager.class;
         String className = clazz.getSimpleName() + ".class";
         String classPath = clazz.getResource(className).toString();
@@ -578,7 +578,7 @@ public final class Packager implements IArchiveBuilder {
             return null;
         }
         try {
-            String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1) +
+            String manifestPath = classPath.substring(0, classPath.lastIndexOf('!') + 1) +
                     "/META-INF/MANIFEST.MF";
             Manifest manifest = new Manifest(new URL(manifestPath).openStream());
             Attributes attr = manifest.getMainAttributes();
