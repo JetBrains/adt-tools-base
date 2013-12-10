@@ -31,36 +31,41 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
     private final String mPath;
     private final String[] mOldPaths;
 
-    PkgDescExtra(@NonNull final String vendorId,
-                 @NonNull final String path,
-                 @NonNull final String[] oldPaths,
-                 @NonNull final NoPreviewRevision revision) {
+    PkgDescExtra(@NonNull  final String vendorId,
+                 @NonNull  final String path,
+                 @Nullable final String[] oldPaths,
+                 @NonNull  final NoPreviewRevision revision) {
         mVendorId = vendorId;
         mPath = path;
-        mOldPaths = oldPaths;
+        mOldPaths = oldPaths != null ? oldPaths : new String[0];
         mRevision = revision;
     }
 
+    @NonNull
     @Override
     public PkgType getType() {
         return PkgType.PKG_EXTRAS;
     }
 
+    @NonNull
     @Override
     public FullRevision getFullRevision() {
         return mRevision;
     }
 
+    @NonNull
     @Override
     public String getPath() {
         return mPath;
     }
 
+    @NonNull
     @Override
     public String[] getOldPaths() {
         return mOldPaths;
     }
 
+    @NonNull
     @Override
     public String getVendorId() {
         return mVendorId;

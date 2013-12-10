@@ -504,14 +504,15 @@ public abstract class PkgDesc implements IPkgDesc {
      *
      * @param vendorId The vendor id string of the extra package.
      * @param path The path id string of the extra package.
+     * @param oldPaths An optional list of older paths for this extra package.
      * @param revision The revision of the extra package.
      * @return A {@link PkgDesc} describing this extra package.
      */
     @NonNull
-    public static IPkgDescExtra newExtra(@NonNull final String vendorId,
-                                         @NonNull final String path,
-                                         @NonNull final String[] oldPaths,
-                                         @NonNull final NoPreviewRevision revision) {
+    public static IPkgDescExtra newExtra(@NonNull  final String vendorId,
+                                         @NonNull  final String path,
+                                         @Nullable final String[] oldPaths,
+                                         @NonNull  final NoPreviewRevision revision) {
         return new PkgDescExtra(vendorId, path, oldPaths, revision);
     }
 
