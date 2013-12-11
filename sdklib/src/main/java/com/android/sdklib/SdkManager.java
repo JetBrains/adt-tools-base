@@ -25,11 +25,11 @@ import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.sdklib.internal.androidTarget.AddOnTarget;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
-import com.android.sdklib.local.LocalExtraPkgInfo;
-import com.android.sdklib.local.LocalPkgInfo;
-import com.android.sdklib.local.LocalPlatformPkgInfo;
-import com.android.sdklib.local.LocalSdk;
 import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.local.LocalExtraPkgInfo;
+import com.android.sdklib.repository.local.LocalPkgInfo;
+import com.android.sdklib.repository.local.LocalPlatformPkgInfo;
+import com.android.sdklib.repository.local.LocalSdk;
 import com.android.utils.ILogger;
 
 import java.io.File;

@@ -14,31 +14,31 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.local;
+package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
+import com.android.sdklib.internal.repository.packages.DocPackage;
 import com.android.sdklib.internal.repository.packages.Package;
-import com.android.sdklib.internal.repository.packages.PlatformToolPackage;
-import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.MajorRevision;
 
 import java.io.File;
 import java.util.Properties;
 
-public class LocalPlatformToolPkgInfo extends LocalFullRevisionPkgInfo {
+public class LocalDocPkgInfo extends LocalMajorRevisionPkgInfo {
 
-    public LocalPlatformToolPkgInfo(@NonNull LocalSdk localSdk,
-                                    @NonNull File localDir,
-                                    @NonNull Properties sourceProps,
-                                    @NonNull FullRevision revision) {
+    public LocalDocPkgInfo(@NonNull LocalSdk localSdk,
+                           @NonNull File localDir,
+                           @NonNull Properties sourceProps,
+                           @NonNull MajorRevision revision) {
         super(localSdk, localDir, sourceProps, revision);
     }
 
     @Override
     public int getType() {
-        return LocalSdk.PKG_PLATFORM_TOOLS;
+        return LocalSdk.PKG_DOCS;
     }
 
     @Nullable
@@ -47,12 +47,14 @@ public class LocalPlatformToolPkgInfo extends LocalFullRevisionPkgInfo {
         Package pkg = super.getPackage();
         if (pkg == null) {
             try {
-                pkg = PlatformToolPackage.create(
+                pkg = DocPackage.create(
                         null,                       //source
                         getSourceProperties(),      //properties
+                        0,                          //apiLevel
+                        null,                       //codename
                         0,                          //revision
                         null,                       //license
-                        "Platform Tools",           //description
+                        null,                       //description
                         null,                       //descUrl
                         Os.getCurrentOs(),          //archiveOs
                         Arch.getCurrentArch(),      //archiveArch

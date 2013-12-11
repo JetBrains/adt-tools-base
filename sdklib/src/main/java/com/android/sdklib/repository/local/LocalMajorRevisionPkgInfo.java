@@ -14,35 +14,35 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.local;
+package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
-import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.repository.MajorRevision;
 
 import java.io.File;
 import java.util.Properties;
 
-abstract class LocalAndroidVersionPkgInfo extends LocalPkgInfo {
+abstract class LocalMajorRevisionPkgInfo extends LocalPkgInfo {
 
     @NonNull
-    private final AndroidVersion mVersion;
+    private final MajorRevision mRevision;
 
-    public LocalAndroidVersionPkgInfo(@NonNull LocalSdk localSdk,
-                                      @NonNull File localDir,
-                                      @NonNull Properties sourceProps,
-                                      @NonNull AndroidVersion version) {
+    public LocalMajorRevisionPkgInfo(@NonNull LocalSdk localSdk,
+                                     @NonNull File localDir,
+                                     @NonNull Properties sourceProps,
+                                     @NonNull MajorRevision revision) {
         super(localSdk, localDir, sourceProps);
-        mVersion = version;
+        mRevision = revision;
     }
 
     @Override
-    public boolean hasAndroidVersion() {
+    public boolean hasMajorRevision() {
         return true;
     }
 
     @NonNull
     @Override
-    public AndroidVersion getAndroidVersion() {
-        return mVersion;
+    public MajorRevision getMajorRevision() {
+        return mRevision;
     }
 }

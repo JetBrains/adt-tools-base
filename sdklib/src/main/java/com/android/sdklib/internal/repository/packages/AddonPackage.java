@@ -28,10 +28,10 @@ import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.local.LocalAddonPkgInfo;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.sdklib.repository.SdkRepoConstants;
+import com.android.sdklib.repository.local.LocalAddonPkgInfo;
 import com.android.utils.Pair;
 
 import org.w3c.dom.Node;
