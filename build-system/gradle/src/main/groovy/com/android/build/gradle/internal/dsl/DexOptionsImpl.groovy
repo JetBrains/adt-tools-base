@@ -53,7 +53,8 @@ public class DexOptionsImpl implements DexOptions {
 
     @Override
     boolean getIncremental() {
-        return isIncrementalFlag
+        return false; // incremental support is broken.
+        //return isIncrementalFlag
     }
 
     @Override
