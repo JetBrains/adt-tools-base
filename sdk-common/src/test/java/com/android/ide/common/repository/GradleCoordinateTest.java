@@ -16,6 +16,9 @@
 package com.android.ide.common.repository;
 
 import com.android.ide.common.res2.BaseTestCase;
+import com.google.common.collect.Lists;
+
+import java.util.List;
 
 /**
  * Test class for {@see GradleCoordinate}
@@ -37,6 +40,15 @@ public class GradleCoordinateTest extends BaseTestCase {
     expected = new GradleCoordinate("a.b.c", "package", GradleCoordinate.PLUS_REV);
     actual = GradleCoordinate.parseCoordinateString("a.b.c:package:+");
     assertEquals(expected, actual);
+
+    List<Integer> revisionList = Lists.newArrayList(GradleCoordinate.PLUS_REV);
+    expected = new GradleCoordinate("a.b.c", "package", revisionList, GradleCoordinate.ArtifactType.JAR);
+    actual = GradleCoordinate.parseCoordinateString("a.b.c:package:+@jar");
+    assertEquals(expected, actual);
+
+    expected = new GradleCoordinate("a.b.c", "package", revisionList, GradleCoordinate.ArtifactType.AAR);
+    actual = GradleCoordinate.parseCoordinateString("a.b.c:package:+@AAR");
+    assertEquals(expected, actual);
   }
 
   public void testToString() throws Exception {
@@ -54,6 +66,15 @@ public class GradleCoordinateTest extends BaseTestCase {
 
     expected = "a.b.c:package:+";
     actual = new GradleCoordinate("a.b.c", "package", GradleCoordinate.PLUS_REV).toString();
+    assertEquals(expected, actual);
+
+    expected = "a.b.c:package:+@jar";
+    List<Integer> revisionList = Lists.newArrayList(GradleCoordinate.PLUS_REV);
+    actual = new GradleCoordinate("a.b.c", "package", revisionList, GradleCoordinate.ArtifactType.JAR).toString();
+    assertEquals(expected, actual);
+
+    expected = "a.b.c:package:+@aar";
+    actual = new GradleCoordinate("a.b.c", "package", revisionList, GradleCoordinate.ArtifactType.AAR).toString();
     assertEquals(expected, actual);
   }
 
