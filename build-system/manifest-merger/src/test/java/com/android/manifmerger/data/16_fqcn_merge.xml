@@ -16,7 +16,9 @@
     <application
             android:name="TheApp"
             android:backupAgent=".MyBackupAgent" >
-        <activity android:name=".MainActivity" />
+        <activity
+                android:name=".MainActivity"
+                android:parentActivityName=".MainParentActivity" />
         <receiver android:name="AppReceiver" />
         <activity android:name="com.example.lib2.LibActivity" />
     </application>
@@ -30,7 +32,9 @@
     package="com.example.lib1">
 
     <application android:name="com.example.app1.TheApp" >
-        <activity android:name=".WidgetLibrary" />
+        <activity
+                android:name=".WidgetLibrary"
+                android:parentActivityName=".WidgetParentLibrary" />
         <receiver android:name=".WidgetReceiver" />
         <service  android:name="AppService" />
         <activity android:name="com.example.lib1.WidgetConfigurationUI" />
@@ -96,11 +100,15 @@
     <application
             android:name="com.example.app1.TheApp"
             android:backupAgent="com.example.app1.MyBackupAgent" >
-        <activity android:name="com.example.app1.MainActivity" />
+        <activity
+                android:name="com.example.app1.MainActivity"
+                android:parentActivityName="com.example.app1.MainParentActivity" />
         <receiver android:name="com.example.app1.AppReceiver" />
         <activity android:name="com.example.lib2.LibActivity" />
 # from @lib1_widget
-        <activity android:name="com.example.lib1.WidgetLibrary" />
+        <activity
+                android:name="com.example.lib1.WidgetLibrary"
+                android:parentActivityName="com.example.lib1.WidgetParentLibrary"/>
         <activity android:name="com.example.lib1.WidgetConfigurationUI" />
         <service  android:name="com.example.lib1.AppService" />
         <receiver android:name="com.example.lib1.WidgetReceiver" />

@@ -165,6 +165,7 @@ public class ManifestMerger {
             "application/name",
             "application/backupAgent",
             "activity/name",
+            "activity/parentActivityName",
             "activity-alias/name",
             "receiver/name",
             "service/name",
