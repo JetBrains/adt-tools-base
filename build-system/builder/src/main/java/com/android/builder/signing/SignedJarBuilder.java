@@ -226,8 +226,32 @@ public class SignedJarBuilder {
                 String name = entry.getName();
 
                 // do not take directories or anything inside a potential META-INF folder.
-                if (entry.isDirectory() || name.startsWith("META-INF/")) {
+                if (entry.isDirectory()) {
                     continue;
+                }
+
+                // ignore some of the content in META-INF/ but not all
+                if (name.startsWith("META-INF/")) {
+                    // ignore the manifest file.
+                    String subName = name.substring(9);
+                    if ("MANIFEST.MF".equals(subName)) {
+                        continue;
+                    }
+
+                    // special case for Maven meta-data because we really don't care about them in apks.
+                    if (name.startsWith("META-INF/maven/")) {
+                        continue;
+                    }
+
+
+                    // check for subfolder
+                    int index = subName.indexOf('/');
+                    if (index == -1) {
+                        // no sub folder, ignores signature files.
+                        if (subName.endsWith(".SF") || name.endsWith(".RSA") || name.endsWith(".DSA")) {
+                            continue;
+                        }
+                    }
                 }
 
                 // if we have a filter, we check the entry against it

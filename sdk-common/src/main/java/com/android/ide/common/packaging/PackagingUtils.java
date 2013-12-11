@@ -32,7 +32,6 @@ public class PackagingUtils {
         return !folderName.equalsIgnoreCase("CVS") &&
                 !folderName.equalsIgnoreCase(".svn") &&
                 !folderName.equalsIgnoreCase("SCCS") &&
-                !folderName.equalsIgnoreCase("META-INF") &&
                 !folderName.startsWith("_");
     }
 
