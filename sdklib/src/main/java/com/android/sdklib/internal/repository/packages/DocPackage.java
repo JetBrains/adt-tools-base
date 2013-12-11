@@ -24,7 +24,10 @@ import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
+import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.SdkRepoConstants;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDesc;
 
 import org.w3c.dom.Node;
 
@@ -42,6 +45,7 @@ import java.util.Properties;
 public class DocPackage extends MajorRevisionPackage implements IAndroidVersionProvider {
 
     private final AndroidVersion mVersion;
+    private final IPkgDesc mPkgDesc;
 
     /**
      * Creates a new doc package from the attributes and elements of the given XML node.
@@ -67,6 +71,8 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
             codeName = null;
         }
         mVersion = new AndroidVersion(apiLevel, codeName);
+
+        mPkgDesc = PkgDesc.newDoc(mVersion, (MajorRevision) getRevision());
     }
 
     /**
@@ -112,6 +118,14 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
                 archiveArch,
                 archiveOsPath);
         mVersion = new AndroidVersion(props, apiLevel, codename);
+
+        mPkgDesc = PkgDesc.newDoc(mVersion, (MajorRevision) getRevision());
+    }
+
+    @Override
+    @NonNull
+    public IPkgDesc getPkgDesc() {
+        return mPkgDesc;
     }
 
     /**

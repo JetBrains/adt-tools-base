@@ -38,8 +38,8 @@ import com.android.sdklib.internal.repository.packages.SamplePackage;
 import com.android.sdklib.internal.repository.packages.SourcePackage;
 import com.android.sdklib.internal.repository.packages.SystemImagePackage;
 import com.android.sdklib.internal.repository.packages.ToolPackage;
+import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.sdklib.repository.local.LocalAddonPkgInfo;
-import com.android.sdklib.repository.local.LocalSdk;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 
@@ -60,33 +60,33 @@ public class LocalSdkParser {
     private Package[] mPackages;
 
     /** Parse all SDK folders. */
-    public static final int PARSE_ALL            = LocalSdk.PKG_ALL;
+    public static final int PARSE_ALL            = PkgType.PKG_ALL_INT;
     /** Parse the SDK/tools folder. */
-    public static final int PARSE_TOOLS          = LocalSdk.PKG_TOOLS;
+    public static final int PARSE_TOOLS          = PkgType.PKG_TOOLS.getIntValue();
     /** Parse the SDK/platform-tools folder */
-    public static final int PARSE_PLATFORM_TOOLS = LocalSdk.PKG_PLATFORM_TOOLS;
+    public static final int PARSE_PLATFORM_TOOLS = PkgType.PKG_PLATFORM_TOOLS.getIntValue();
     /** Parse the SDK/docs folder. */
-    public static final int PARSE_DOCS           = LocalSdk.PKG_DOCS;
+    public static final int PARSE_DOCS           = PkgType.PKG_DOCS.getIntValue();
     /**
      * Equivalent to parsing the SDK/platforms folder but does so
      * by using the <em>valid</em> targets loaded by the {@link SdkManager}.
      * Parsing the platforms also parses the SDK/system-images folder.
      */
-    public static final int PARSE_PLATFORMS      = LocalSdk.PKG_PLATFORMS;
+    public static final int PARSE_PLATFORMS      = PkgType.PKG_PLATFORMS.getIntValue();
     /**
      * Equivalent to parsing the SDK/addons folder but does so
      * by using the <em>valid</em> targets loaded by the {@link SdkManager}.
      */
-    public static final int PARSE_ADDONS         = LocalSdk.PKG_ADDONS;
+    public static final int PARSE_ADDONS         = PkgType.PKG_ADDONS.getIntValue();
     /** Parse the SDK/samples folder.
      * Note: this will not detect samples located in the SDK/extras packages. */
-    public static final int PARSE_SAMPLES        = LocalSdk.PKG_SAMPLES;
+    public static final int PARSE_SAMPLES        = PkgType.PKG_SAMPLES.getIntValue();
     /** Parse the SDK/sources folder. */
-    public static final int PARSE_SOURCES        = LocalSdk.PKG_SOURCES;
+    public static final int PARSE_SOURCES        = PkgType.PKG_SOURCES.getIntValue();
     /** Parse the SDK/extras folder. */
-    public static final int PARSE_EXTRAS         = LocalSdk.PKG_EXTRAS;
+    public static final int PARSE_EXTRAS         = PkgType.PKG_EXTRAS.getIntValue();
     /** Parse the SDK/build-tools folder. */
-    public static final int PARSE_BUILD_TOOLS    = LocalSdk.PKG_BUILD_TOOLS;
+    public static final int PARSE_BUILD_TOOLS    = PkgType.PKG_BUILD_TOOLS.getIntValue();
 
     public LocalSdkParser() {
         // pass
@@ -488,7 +488,6 @@ public class LocalSdkParser {
             }
 
             String api = propertyMap.get(LocalAddonPkgInfo.ADDON_API);
-            PlatformTarget plat = null;
             if (api == null) {
                 error = String.format("'%1$s' is missing from %2$s.",
                         LocalAddonPkgInfo.ADDON_API,

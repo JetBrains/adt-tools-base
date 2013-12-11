@@ -22,6 +22,8 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.packages.SourcePackage;
 import com.android.sdklib.repository.MajorRevision;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDesc;
 
 import java.io.File;
 import java.util.Properties;
@@ -31,34 +33,23 @@ import java.util.Properties;
  * The package itself has a major revision.
  * There should be only one for a given android platform version.
  */
-public class LocalSourcePkgInfo extends LocalAndroidVersionPkgInfo {
+public class LocalSourcePkgInfo extends LocalPkgInfo {
 
-    @NonNull
-    private final MajorRevision mRevision;
+    private final @NonNull IPkgDesc mDesc;
 
     public LocalSourcePkgInfo(@NonNull LocalSdk localSdk,
                               @NonNull File localDir,
                               @NonNull Properties sourceProps,
                               @NonNull AndroidVersion version,
                               @NonNull MajorRevision revision) {
-        super(localSdk, localDir, sourceProps, version);
-        mRevision = revision;
-    }
-
-    @Override
-    public int getType() {
-        return LocalSdk.PKG_SOURCES;
-    }
-
-    @Override
-    public boolean hasMajorRevision() {
-        return true;
+        super(localSdk, localDir, sourceProps);
+        mDesc = PkgDesc.newSource(version, revision);
     }
 
     @NonNull
     @Override
-    public MajorRevision getMajorRevision() {
-        return mRevision;
+    public IPkgDesc getDesc() {
+        return mDesc;
     }
 
     @Nullable

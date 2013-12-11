@@ -18,15 +18,25 @@ package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.internal.repository.IListDescription;
 import com.android.sdklib.internal.repository.packages.Package;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.MajorRevision;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.remote.RemotePkgInfo;
+import com.android.sdklib.repository.remote.RemoteSdk;
 
 import java.io.File;
 import java.util.Properties;
 
+/**
+ * Information about a locally installed package.
+ * <p/>
+ * Local package information is retrieved via the {@link LocalSdk} object.
+ * Clients should not need to create instances of {@link LocalPkgInfo} directly.
+ * Instead please use the {@link LocalSdk} methods to parse and retrieve packages.
+ * <p/>
+ * These objects can also contain optional information about updates available
+ * from remote servers. These are computed and set by the {@link RemoteSdk} object.
+ */
 public abstract class LocalPkgInfo implements IListDescription, Comparable<LocalPkgInfo> {
 
     private final LocalSdk mLocalSdk;
@@ -35,6 +45,7 @@ public abstract class LocalPkgInfo implements IListDescription, Comparable<Local
 
     private Package mPackage;
     private String mLoadError;
+    private RemotePkgInfo mUpdate;
 
     protected LocalPkgInfo(@NonNull LocalSdk   localSdk,
                            @NonNull File       localDir,
@@ -66,114 +77,128 @@ public abstract class LocalPkgInfo implements IListDescription, Comparable<Local
         return mLoadError;
     }
 
+    /**
+     * Indicates whether this local package has an update available.
+     * This is only defined if {@link Update} has been used to decorate the packages.
+     *
+     * @return True if {@link #getUpdate()} would return a non-null {@link RemotePkgInfo}.
+     */
+    public boolean hasUpdate() {
+        return mUpdate != null;
+    }
+
+    /**
+     * Returns a {@link RemotePkgInfo} that can update this package, if available.
+     * This is only defined if {@link Update} has been used to decorate the packages.
+     *
+     * @return A {@link RemotePkgInfo} or null.
+     */
+    @Nullable
+    public RemotePkgInfo getUpdate() {
+        return mUpdate;
+    }
+
+    /**
+     * Used by {@link Update} to indicate if there's an update available for this package.
+     */
+    void setUpdate(@Nullable RemotePkgInfo update) {
+        mUpdate = update;
+    }
+
     // ----
 
-    public abstract int getType();
+    /** Returns the {@link IPkgDesc} describing this package. */
+    @NonNull
+    public abstract IPkgDesc getDesc();
 
-    public boolean hasFullRevision() {
-        return false;
-    }
-
-    public boolean hasMajorRevision() {
-        return false;
-    }
-
-    public boolean hasAndroidVersion() {
-        return false;
-    }
-
-    public boolean hasPath() {
-        return false;
-    }
-
-    @Nullable
-    public FullRevision getFullRevision() {
-        return null;
-    }
-
-    @Nullable
-    public MajorRevision getMajorRevision() {
-        return null;
-    }
-
-    @Nullable
-    public AndroidVersion getAndroidVersion() {
-        return null;
-    }
-
-    @Nullable
-    public String getPath() {
-        return null;
-    }
 
     //---- Ordering ----
 
+    /**
+     * Comparison is solely done based on the {@link IPkgDesc}.
+     * <p/>
+     * Other local attributes (local directory, source properties, updates available)
+     * are <em>not used</em> in the comparison. Consequently {@link #compareTo(LocalPkgInfo)}
+     * does not match {@link #equals(Object)} and the {@link #hashCode()} properties.
+     */
     @Override
     public int compareTo(@NonNull LocalPkgInfo o) {
-        int t1 = getType();
-        int t2 = o.getType();
-        if (t1 != t2) {
-            return t2 - t1;
-        }
-
-        if (hasAndroidVersion() && o.hasAndroidVersion()) {
-            t1 = getAndroidVersion().compareTo(o.getAndroidVersion());
-            if (t1 != 0) {
-                return t1;
-            }
-        }
-
-
-        if (hasPath() && o.hasPath()) {
-            t1 = getPath().compareTo(o.getPath());
-            if (t1 != 0) {
-                return t1;
-            }
-        }
-
-        if (hasFullRevision() && o.hasFullRevision()) {
-            t1 = getFullRevision().compareTo(o.getFullRevision());
-            if (t1 != 0) {
-                return t1;
-            }
-        }
-
-        if (hasMajorRevision() && o.hasMajorRevision()) {
-            t1 = getMajorRevision().compareTo(o.getMajorRevision());
-            if (t1 != 0) {
-                return t1;
-            }
-        }
-
-        return 0;
+        return getDesc().compareTo(o.getDesc());
     }
 
     /** String representation for debugging purposes. */
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("<");
+        builder.append('<');
         builder.append(this.getClass().getSimpleName());
-
-        if (hasAndroidVersion()) {
-            builder.append(" Android=").append(getAndroidVersion());
-        }
-
-        if (hasPath()) {
-            builder.append(" Path=").append(getPath());
-        }
-
-        if (hasFullRevision()) {
-            builder.append(" FullRev=").append(getFullRevision());
-        }
-
-        if (hasMajorRevision()) {
-            builder.append(" MajorRev=").append(getMajorRevision());
-        }
-
-        builder.append(">");
+        builder.append(getDesc().toString().replace('<', ':'));
         return builder.toString();
     }
+
+    /**
+     * Computes a hash code specific to this instance based on the underlying
+     * {@link IPkgDesc} but also specific local properties such a local directory,
+     * update available and actual source properties.
+     */
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((getDesc() == null)         ? 0 : getDesc().hashCode());
+        result = prime * result + ((mLocalDir == null)         ? 0 : mLocalDir.hashCode());
+        result = prime * result + ((mSourceProperties == null) ? 0 : mSourceProperties.hashCode());
+        result = prime * result + ((mUpdate == null)           ? 0 : mUpdate.hashCode());
+        return result;
+    }
+
+    /**
+     * Computes object equality to this instance based on the underlying
+     * {@link IPkgDesc} but also specific local properties such a local directory,
+     * update available and actual source properties. This is different from
+     * the behavioe of {@link #compareTo(LocalPkgInfo)} which only uses the
+     * {@link IPkgDesc} for ordering.
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (!(obj instanceof LocalPkgInfo)) {
+            return false;
+        }
+        LocalPkgInfo other = (LocalPkgInfo) obj;
+
+        if (!getDesc().equals(other.getDesc())) {
+            return false;
+        }
+        if (mLocalDir == null) {
+            if (other.mLocalDir != null) {
+                return false;
+            }
+        } else if (!mLocalDir.equals(other.mLocalDir)) {
+            return false;
+        }
+        if (mSourceProperties == null) {
+            if (other.mSourceProperties != null) {
+                return false;
+            }
+        } else if (!mSourceProperties.equals(other.mSourceProperties)) {
+            return false;
+        }
+        if (mUpdate == null) {
+            if (other.mUpdate != null) {
+                return false;
+            }
+        } else if (!mUpdate.equals(other.mUpdate)) {
+            return false;
+        }
+        return true;
+    }
+
 
     //---- Package Management ----
 
