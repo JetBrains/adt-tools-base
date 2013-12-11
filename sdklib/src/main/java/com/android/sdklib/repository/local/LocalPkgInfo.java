@@ -21,8 +21,6 @@ import com.android.annotations.Nullable;
 import com.android.sdklib.internal.repository.IListDescription;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
-import com.android.sdklib.repository.remote.RemotePkgInfo;
-import com.android.sdklib.repository.remote.RemoteSdk;
 
 import java.io.File;
 import java.util.Properties;
@@ -45,7 +43,6 @@ public abstract class LocalPkgInfo implements IListDescription, Comparable<Local
 
     private Package mPackage;
     private String mLoadError;
-    private RemotePkgInfo mUpdate;
 
     protected LocalPkgInfo(@NonNull LocalSdk   localSdk,
                            @NonNull File       localDir,
@@ -75,34 +72,6 @@ public abstract class LocalPkgInfo implements IListDescription, Comparable<Local
     @Nullable
     public String getLoadError() {
         return mLoadError;
-    }
-
-    /**
-     * Indicates whether this local package has an update available.
-     * This is only defined if {@link Update} has been used to decorate the packages.
-     *
-     * @return True if {@link #getUpdate()} would return a non-null {@link RemotePkgInfo}.
-     */
-    public boolean hasUpdate() {
-        return mUpdate != null;
-    }
-
-    /**
-     * Returns a {@link RemotePkgInfo} that can update this package, if available.
-     * This is only defined if {@link Update} has been used to decorate the packages.
-     *
-     * @return A {@link RemotePkgInfo} or null.
-     */
-    @Nullable
-    public RemotePkgInfo getUpdate() {
-        return mUpdate;
-    }
-
-    /**
-     * Used by {@link Update} to indicate if there's an update available for this package.
-     */
-    void setUpdate(@Nullable RemotePkgInfo update) {
-        mUpdate = update;
     }
 
     // ----
@@ -148,7 +117,6 @@ public abstract class LocalPkgInfo implements IListDescription, Comparable<Local
         result = prime * result + ((getDesc() == null)         ? 0 : getDesc().hashCode());
         result = prime * result + ((mLocalDir == null)         ? 0 : mLocalDir.hashCode());
         result = prime * result + ((mSourceProperties == null) ? 0 : mSourceProperties.hashCode());
-        result = prime * result + ((mUpdate == null)           ? 0 : mUpdate.hashCode());
         return result;
     }
 
@@ -187,13 +155,6 @@ public abstract class LocalPkgInfo implements IListDescription, Comparable<Local
                 return false;
             }
         } else if (!mSourceProperties.equals(other.mSourceProperties)) {
-            return false;
-        }
-        if (mUpdate == null) {
-            if (other.mUpdate != null) {
-                return false;
-            }
-        } else if (!mUpdate.equals(other.mUpdate)) {
             return false;
         }
         return true;
