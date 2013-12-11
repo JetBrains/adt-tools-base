@@ -40,11 +40,12 @@ public abstract class RenderParams {
     private int mCustomBackgroundColor;
     private long mTimeout;
 
-    private IImageFactory mImageFactory = null;
+    private IImageFactory mImageFactory;
 
-    private String mAppIcon = null;
-    private String mAppLabel = null;
-    private String mLocale = null;
+    private String mAppIcon;
+    private String mAppLabel;
+    private String mLocale;
+    private String mActivityName;
     private boolean mForceNoDecor;
     private boolean mSupportsRtl;
 
@@ -95,6 +96,7 @@ public abstract class RenderParams {
         mAppIcon = params.mAppIcon;
         mAppLabel = params.mAppLabel;
         mLocale = params.mLocale;
+        mActivityName = params.mActivityName;
         mForceNoDecor = params.mForceNoDecor;
         mSupportsRtl = params.mSupportsRtl;
     }
@@ -122,6 +124,10 @@ public abstract class RenderParams {
 
     public void setLocale(String locale) {
         mLocale = locale;
+    }
+
+    public void setActivityName(String activityName) {
+        mActivityName = activityName;
     }
 
     public void setForceNoDecor() {
@@ -234,6 +240,10 @@ public abstract class RenderParams {
 
     public String getLocale() {
         return mLocale;
+    }
+
+    public String getActivityName() {
+        return mActivityName;
     }
 
     public boolean isForceNoDecor() {

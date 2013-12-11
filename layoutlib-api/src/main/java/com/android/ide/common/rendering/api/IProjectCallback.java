@@ -151,4 +151,12 @@ public interface IProjectCallback {
      */
     AdapterBinding getAdapterBinding(ResourceReference adapterViewRef, Object adapterCookie,
             Object viewObject);
+
+    /**
+     * Returns a callback for Action Bar information needed by the Layout Library. The callback
+     * provides information like the menus to add to the Action Bar.
+     *
+     * @since API 11
+     */
+    ActionBarCallback getActionBarCallback();
 }
