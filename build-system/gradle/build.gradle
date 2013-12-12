@@ -116,3 +116,6 @@ artifacts {
     archives javadocJar
 }
 
+apply plugin: 'distrib'
+shipping.isShipping = false
+

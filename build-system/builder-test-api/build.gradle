@@ -13,3 +13,6 @@ project.ext.pomDesc = 'API for the Test extension point in the Builder library.'
 apply from: '../../buildVersion.gradle'
 apply from: '../../publish.gradle'
 apply from: '../../javadoc.gradle'
+
+apply plugin: 'distrib'
+shipping.isShipping = false
