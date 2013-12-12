@@ -1,5 +1,6 @@
 apply plugin: 'groovy'
 apply plugin: 'clone-artifacts'
+apply plugin: 'idea'
 
 configurations {
     gradleApi
