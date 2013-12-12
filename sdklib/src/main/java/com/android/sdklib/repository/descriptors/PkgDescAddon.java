@@ -28,7 +28,7 @@ import com.android.sdklib.repository.MajorRevision;
  * Do not use this class directly.
  * To create an instance use {@link PkgDesc#newAddon} instead.
  */
-class PkgDescAddon extends PkgDesc {
+final class PkgDescAddon extends PkgDesc {
 
     public static final String ADDON_NAME         = "name";                 //$NON-NLS-1$
     public static final String ADDON_VENDOR       = "vendor";               //$NON-NLS-1$
@@ -42,19 +42,21 @@ class PkgDescAddon extends PkgDesc {
 
     private @NonNull  final AndroidVersion mVersion;
     private @NonNull  final MajorRevision mRevision;
-    private @NonNull  final String mAddonPath;
-    private @Nullable final ITargetHashProvider mTargetHashProvider;
+    private @Nullable final String mAddonPath;
+    private @Nullable final String mAddonVendor;
+    private @Nullable final IAddonDesc mTargetHashProvider;
 
     /**
      * Creates an add-on pkg description where the target hash isn't determined yet.
      */
     PkgDescAddon(@NonNull AndroidVersion version,
                  @NonNull MajorRevision revision,
-                 @NonNull ITargetHashProvider targetHashProvider) {
+                 @NonNull IAddonDesc targetHashProvider) {
         mVersion = version;
         mRevision = revision;
         mTargetHashProvider = targetHashProvider;
         mAddonPath = null;
+        mAddonVendor = null;
     }
 
     PkgDescAddon(@NonNull AndroidVersion version,
@@ -63,6 +65,7 @@ class PkgDescAddon extends PkgDesc {
                         @NonNull String addonName) {
         mVersion = version;
         mRevision = revision;
+        mAddonVendor = addonVendor;
         mTargetHashProvider = null;
         mAddonPath = AndroidTargetHash.getAddonHashString(addonVendor, addonName, version);
     }
@@ -84,6 +87,14 @@ class PkgDescAddon extends PkgDesc {
         return mRevision;
     }
 
+    @Override
+    public String getVendorId() {
+        if (mTargetHashProvider != null) {
+            return mTargetHashProvider.getVendorId();
+        }
+        return mAddonVendor;
+    }
+
     /** The "path" of a Add-on is its Target Hash. */
     @NonNull
     @Override
@@ -97,5 +108,10 @@ class PkgDescAddon extends PkgDesc {
     @Override
     public FullRevision getMinToolsRev() {
         return null;
+    }
+
+    @Override
+    public boolean isUpdateFor(IPkgDesc existingDesc) {
+        return isGenericUpdateFor(existingDesc);
     }
 }

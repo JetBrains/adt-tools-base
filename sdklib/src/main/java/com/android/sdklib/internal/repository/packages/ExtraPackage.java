@@ -32,8 +32,9 @@ import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.RepoConstants;
-import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.IPkgDescExtra;
 import com.android.sdklib.repository.descriptors.PkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDescExtra;
 import com.android.utils.NullLogger;
 
 import org.w3c.dom.Node;
@@ -92,7 +93,7 @@ public class ExtraPackage extends NoPreviewRevisionPackage
      */
     private final String[] mProjectFiles;
 
-    private final IPkgDesc mPkgDesc;
+    private final IPkgDescExtra mPkgDesc;
 
     /**
      * Creates a new tool package from the attributes and elements of the given XML node.
@@ -158,7 +159,7 @@ public class ExtraPackage extends NoPreviewRevisionPackage
 
         mOldPaths = PackageParserUtils.getXmlString(packageNode, RepoConstants.NODE_OLD_PATHS);
 
-        mPkgDesc = PkgDesc.newExtra(mVendorId, mPath, getRevision());
+        mPkgDesc = PkgDesc.newExtra(mVendorId, mPath, getOldPaths(), getRevision());
     }
 
     private String[] parseProjectFiles(Node projectFilesNode) {
@@ -296,12 +297,12 @@ public class ExtraPackage extends NoPreviewRevisionPackage
 
         mProjectFiles = filePaths.toArray(new String[filePaths.size()]);
 
-        mPkgDesc = PkgDesc.newExtra(mVendorId, mPath, getRevision());
+        mPkgDesc = PkgDesc.newExtra(mVendorId, mPath, getOldPaths(), getRevision());
     }
 
     @Override
     @NonNull
-    public IPkgDesc getPkgDesc() {
+    public IPkgDescExtra getPkgDesc() {
         return mPkgDesc;
     }
 
@@ -387,10 +388,7 @@ public class ExtraPackage extends NoPreviewRevisionPackage
      * @return A list of old paths. Can be empty but not null.
      */
     public String[] getOldPaths() {
-        if (mOldPaths == null || mOldPaths.length() == 0) {
-            return new String[0];
-        }
-        return mOldPaths.split(";");  //$NON-NLS-1$
+        return PkgDescExtra.convertOldPaths(mOldPaths);
     }
 
     /**
@@ -647,64 +645,7 @@ public class ExtraPackage extends NoPreviewRevisionPackage
         // Extra packages are similar if they have the same path and vendor
         if (pkg instanceof ExtraPackage) {
             ExtraPackage ep = (ExtraPackage) pkg;
-
-            String[] epOldPaths = ep.getOldPaths();
-            int lenEpOldPaths = epOldPaths.length;
-            for (int indexEp = -1; indexEp < lenEpOldPaths; indexEp++) {
-                if (sameVendorAndPath(
-                        mVendorId,    mPath,
-                        ep.mVendorId, indexEp   < 0 ? ep.mPath : epOldPaths[indexEp])) {
-                    return true;
-                }
-            }
-
-            String[] thisOldPaths = getOldPaths();
-            int lenThisOldPaths = thisOldPaths.length;
-            for (int indexThis = -1; indexThis < lenThisOldPaths; indexThis++) {
-                if (sameVendorAndPath(
-                        mVendorId,    indexThis < 0 ? mPath    : thisOldPaths[indexThis],
-                        ep.mVendorId, ep.mPath)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private static boolean sameVendorAndPath(
-            String thisVendor, String thisPath,
-            String otherVendor, String otherPath) {
-        // To be backward compatible, we need to support the old vendor-path form
-        // in either the current or the remote package.
-        //
-        // The vendor test below needs to account for an old installed package
-        // (e.g. with an install path of vendor-name) that has then been updated
-        // in-place and thus when reloaded contains the vendor name in both the
-        // path and the vendor attributes.
-        if (otherPath != null && thisPath != null && thisVendor != null) {
-            if (otherPath.equals(thisVendor + '-' + thisPath) &&
-                    (otherVendor == null ||
-                     otherVendor.length() == 0 ||
-                     otherVendor.equals(thisVendor))) {
-                return true;
-            }
-        }
-        if (thisPath != null && otherPath != null && otherVendor != null) {
-            if (thisPath.equals(otherVendor + '-' + otherPath) &&
-                    (thisVendor == null ||
-                     thisVendor.length() == 0 ||
-                     thisVendor.equals(otherVendor))) {
-                return true;
-            }
-        }
-
-
-        if (thisPath != null && thisPath.equals(otherPath)) {
-            if ((thisVendor == null && otherVendor == null) ||
-                (thisVendor != null && thisVendor.equals(otherVendor))) {
-                return true;
-            }
+            return PkgDescExtra.compatibleVendorAndPath(mPkgDesc, ep.mPkgDesc);
         }
 
         return false;
@@ -722,7 +663,7 @@ public class ExtraPackage extends NoPreviewRevisionPackage
         int pos = s.indexOf("|r:");         //$NON-NLS-1$
         assert pos > 0;
         s = s.substring(0, pos) +
-            "|ve:" + getVendorId() +          //$NON-NLS-1$
+            "|ve:" + getVendorId() +        //$NON-NLS-1$
             "|pa:" + getPath() +            //$NON-NLS-1$
             s.substring(pos);
         return s;

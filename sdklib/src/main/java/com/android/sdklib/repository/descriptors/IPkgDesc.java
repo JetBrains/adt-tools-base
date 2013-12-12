@@ -31,8 +31,8 @@ import com.android.sdklib.repository.MajorRevision;
  * To create a new {@link IPkgDesc}, use one of the package-specific constructors
  * provided by {@code PkgDesc.newXxx()}.
  * <p/>
- * To query packages capabilities, rely on {@link #getType()} and the {@code PkgDesc.hasXxx()}
- * methods provided in the base {@link IPkgDesc}.
+ * To query packages capabilities, rely on {@link #getType()} and the {@code IPkgDesc.hasXxx()}
+ * methods provided by {@link IPkgDesc}.
  */
 public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities {
 
@@ -66,10 +66,23 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities {
 
     /**
      * Returns the package's path string or null.
+     * <p/>
+     * For {@link PkgType#PKG_SYS_IMAGES}, the path is the system-image ABI. <br/>
+     * For {@link PkgType#PKG_PLATFORMS}, the path is the platform hash string. <br/>
+     * For {@link PkgType#PKG_ADDONS}, the path is the platform hash string. <br/>
+     * For {@link PkgType#PKG_EXTRAS}, the path is the extra-path string. <br/>
+     *
      * @return A non-null value if {@link #hasPath()} is true; otherwise a null value.
      */
     @Nullable
     public String getPath();
+
+    /**
+     * Returns the package's vendor-id string or null.
+     * @return A non-null value if {@link #hasVendorId()} is true; otherwise a null value.
+     */
+    @Nullable
+    public String getVendorId();
 
     /**
      * Returns the package's {@code min-tools-rev} or null.
@@ -84,6 +97,15 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities {
      */
     @Nullable
     public FullRevision getMinPlatformToolsRev();
+
+    /**
+     * Indicates whether <em>this</em> package descriptor is an update for the given
+     * existing descriptor.
+     *
+     * @param existingDesc A non-null existing descriptor.
+     * @return True if this package is an update for the given one.
+     */
+    public abstract boolean isUpdateFor(@NonNull IPkgDesc existingDesc);
 
 }
 

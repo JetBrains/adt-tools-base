@@ -99,9 +99,9 @@ public abstract class LocalPkgInfo implements IListDescription, Comparable<Local
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append('<');
-        builder.append(this.getClass().getSimpleName());
-        builder.append(getDesc().toString().replace('<', ':'));
+        builder.append('<').append(this.getClass().getSimpleName()).append(' ');
+        builder.append(getDesc().toString());
+        builder.append('>');
         return builder.toString();
     }
 
@@ -197,7 +197,7 @@ public abstract class LocalPkgInfo implements IListDescription, Comparable<Local
     @Override
     public String getListDescription() {
         Package pkg = getPackage();
-        return pkg == null ? "" : pkg.getListDescription();
+        return pkg == null ? "" : pkg.getListDescription();             //$NON-NLS-1$
     }
 
 }

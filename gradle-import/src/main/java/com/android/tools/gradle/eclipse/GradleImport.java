@@ -31,6 +31,7 @@ import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkManager;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.sdklib.repository.local.LocalExtraPkgInfo;
 import com.android.sdklib.repository.local.LocalPkgInfo;
@@ -997,12 +998,10 @@ public class GradleImport {
             LocalSdk localSdk = sdkManager.getLocalSdk();
             LocalPkgInfo[] infos = localSdk.getPkgsInfos(PkgType.PKG_EXTRAS);
             for (LocalPkgInfo info : infos) {
-                if (info instanceof LocalExtraPkgInfo) {
-                    LocalExtraPkgInfo ei = (LocalExtraPkgInfo) info;
-                    if (vendor.equals(ei.getVendorId()) &&
-                            "m2repository".equals(ei.getExtraPath())) {
-                        return true;
-                    }
+                IPkgDesc d = info.getDesc();
+                if (d.hasVendorId() && vendor.equals(d.getVendorId()) &&
+                        d.hasPath() && "m2repository".equals(d.getPath())) {
+                      return true;
                 }
             }
         }
