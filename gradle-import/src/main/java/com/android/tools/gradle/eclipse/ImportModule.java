@@ -91,6 +91,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
     @NonNull protected abstract List<File> getLocalProguardFiles();
     @NonNull protected abstract List<File> getSdkProguardFiles();
     @NonNull protected abstract String getLanguageLevel();
+    @NonNull protected abstract List<ImportModule> getDirectDependencies();
     @Nullable protected abstract String getPackage();
     @Nullable protected abstract File getOutputDir();
     @Nullable protected abstract File getManifestFile();
@@ -407,6 +408,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
         copied.add(new File(canonicalDir, FN_PROJECT_PROPERTIES));
         copied.add(new File(canonicalDir, FN_PROJECT_PROPERTIES));
         copied.add(new File(canonicalDir, LIBS_FOLDER));
+        copied.add(new File(canonicalDir, ".settings"));
 
         reportIgnored(canonicalDir, copied, 0);
     }

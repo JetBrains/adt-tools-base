@@ -19,6 +19,7 @@ package com.android.tools.gradle.eclipse;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
+import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.List;
@@ -30,6 +31,7 @@ class EclipseImportModule extends ImportModule {
     public EclipseImportModule(@NonNull GradleImport importer, @NonNull EclipseProject project) {
         super(importer);
         mProject = project;
+        mProject.setModule(this);
     }
 
     @Override
@@ -79,6 +81,24 @@ class EclipseImportModule extends ImportModule {
         }
 
         return false;
+    }
+
+    private List<ImportModule> mDirectDependencies;
+
+    @NonNull
+    @Override
+    protected List<ImportModule> getDirectDependencies() {
+        if (mDirectDependencies == null) {
+            mDirectDependencies = Lists.newArrayList();
+            for (EclipseProject project : mProject.getDirectLibraries()) {
+                EclipseImportModule module = project.getModule();
+                if (module != null) {
+                    mDirectDependencies.add(module);
+                }
+            }
+        }
+
+        return mDirectDependencies;
     }
 
     @Override

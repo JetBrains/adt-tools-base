@@ -39,7 +39,6 @@ import static com.android.xml.AndroidManifest.NODE_USES_SDK;
 import static java.io.File.separator;
 import static java.io.File.separatorChar;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidTargetHash;
@@ -92,6 +91,7 @@ class EclipseProject implements Comparable<EclipseProject> {
     private List<File> mLocalProguardFiles;
     private List<File> mSdkProguardFiles;
     private List<EclipseProject> mAllLibraries;
+    private EclipseImportModule mModule;
 
     private EclipseProject(
             @NonNull GradleImport importer,
@@ -292,23 +292,28 @@ class EclipseProject implements Comparable<EclipseProject> {
                     String relative = path.replace('/', separatorChar);
                     File file = new File(relative);
                     if (file.isAbsolute()) {
-                        // If it's something like /<projectname>, it could be an attempt
-                        // to hack in library sources, since that did not work properly
-                        // with ADT library projects. Ignore these.
-                        if (file.exists()) {
-                            mSourcePaths.add(file);
-                        } else {
-                            if (isProjectMount(file)) {
-                                // Ignore, not needed in Gradle
+                        File resolved = resolveWorkspacePath(path);
+                        if (resolved != null) {
+                            if (GradleImport.isEclipseProjectDir(resolved)) {
+                                // It's pointing to another project. Just add a dependency.
+                                EclipseProject lib = EclipseProject.getProject(mImporter,
+                                        resolved);
+                                if (!mDirectLibraries.contains(lib)) {
+                                    mDirectLibraries.add(lib);
+                                    mAllLibraries = null; // force refresh if already consulted
+                                }
+                                continue;
                             } else {
-                                // TODO: Resolve workspace paths!
-                                mImporter.reportWarning(this, getClassPathFile(),
-                                        "Could not resolve source path " + path + " in project "
-                                                + getName() + ": ignored. The project may not "
-                                                + "compile if the given source path provided "
-                                                + "source code.");
+                                // It's some other source directory: just include as a source path
+                                mSourcePaths.add(resolved);
+                                continue;
                             }
                         }
+                        mImporter.reportWarning(this, getClassPathFile(),
+                                "Could not resolve source path " + path + " in project "
+                                        + getName() + ": ignored. The project may not "
+                                        + "compile if the given source path provided "
+                                        + "source code.");
                     } else {
                         mSourcePaths.add(file);
                     }
@@ -321,13 +326,17 @@ class EclipseProject implements Comparable<EclipseProject> {
                     String relative = path.replace('/', separatorChar);
                     File file = new File(relative);
                     if (file.isAbsolute()) {
-                        // What do we do here?
-                        mImporter.reportWarning(this, getClassPathFile(),
+                        File resolved = resolveWorkspacePath(path);
+                        if (resolved != null) {
+                            mJarPaths.add(resolved);
+                        } else {
+                            mImporter.reportWarning(this, getClassPathFile(),
                                 "Absolute path in the path entry: If outside project, may not "
                                         + "work correctly: " + path);
+                        }
+                    } else {
+                        mJarPaths.add(file);
                     }
-                    mJarPaths.add(file);
-                    // TODO: Pick up source path for the library; not sure what we'll do with it
                 }
             } else if (kind.equals("output") && !path.isEmpty()) {
                 String relative = path.replace('/', separatorChar);
@@ -348,6 +357,9 @@ class EclipseProject implements Comparable<EclipseProject> {
                     // Skip jars that are the result of a library project dependency
                     boolean isLibraryJar = false;
                     for (EclipseProject project : getAllLibraries()) {
+                        if (!project.isAndroidProject()) {
+                            continue;
+                        }
                         String pkg = project.getPackage();
                         if (pkg != null) {
                             String jarName = pkg.replace('.', '-') + DOT_JAR;
@@ -365,29 +377,53 @@ class EclipseProject implements Comparable<EclipseProject> {
         }
     }
 
-    /** Determines if the given source path represents a project mount.
-     * For example, in some projects, users have worked around the library
-     * project limitation in ADT by also including the library's sources
-     * like this:
-     * {@code
-     * <classpathentry combineaccessrules="false" kind="src" path="/android-support-v7-appcompat"/>
-     * }
-     */
-    private boolean isProjectMount(@NonNull File file) {
+    @Nullable
+    private File resolveWorkspacePath(@NonNull String path) {
+        if (path.isEmpty()) {
+            return null;
+        }
+        String relative = path.replace('/', separatorChar);
+        File file = new File(relative);
         if (file.isAbsolute()) {
-            String name = file.getPath().substring(1);
-            if (name.indexOf('/') == -1 && name.indexOf('\\') == -1) {
-                // Unlikely to point to a source directory at the root level
-                return true;
+            if (file.exists()) {
+                return file;
             }
-            for (EclipseProject project : getAllLibraries()) {
-                if (name.equals(project.getName())) {
-                    return true;
+
+            // It might be a workspace reference
+            if (relative.charAt(0) == separatorChar) {
+                // Try to resolve it using the workspace name
+                File f = mImporter.resolveWorkspacePath(path);
+                if (f != null && f.exists()) {
+                    return f;
                 }
+
+                if (path.indexOf('/', 1) == -1 && path.indexOf('\\', 1) == -1) {
+                    String name = path.substring(1);
+                    // If we can't resolve workspace paths, try looking relative
+                    // to the current project; dependent projects are often there
+                    File parent = mDir.getParentFile();
+                    if (parent != null) {
+                        File sibling = new File(parent, name);
+                        if (sibling.exists()) {
+                            return sibling;
+                        }
+                    }
+
+                    // Libraries are also often children
+                    File child = new File(mDir, name);
+                    if (child.exists()) {
+                        return child;
+                    }
+                }
+            }
+        } else {
+            File f = new File(mDir, relative);
+            if (f.exists()) {
+                return f;
             }
         }
 
-        return false;
+        return null;
     }
 
     private void initPathVariables() throws IOException {
@@ -664,6 +700,11 @@ class EclipseProject implements Comparable<EclipseProject> {
     }
 
     @NonNull
+    public List<EclipseProject> getDirectLibraries() {
+        return mDirectLibraries;
+    }
+
+    @NonNull
     public List<EclipseProject> getAllLibraries() {
         if (mAllLibraries == null) {
             if (mDirectLibraries.isEmpty()) {
@@ -749,5 +790,14 @@ class EclipseProject implements Comparable<EclipseProject> {
         Collections.sort(modules);
 
         return modules;
+    }
+
+    @Nullable
+    public EclipseImportModule getModule() {
+        return mModule;
+    }
+
+    public void setModule(@Nullable EclipseImportModule module) {
+        mModule = module;
     }
 }
