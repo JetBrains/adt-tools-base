@@ -825,7 +825,6 @@ public class GradleImportTest extends TestCase {
                 + "}\n"
                 + "\n"
                 + "dependencies {\n"
-                + "    compile project(':lib2')\n"
                 + "    compile project(':javaLib')\n"
                 + "    compile 'com.actionbarsherlock:actionbarsherlock:4.4.0@aar'\n"
                 + "    compile 'com.android.support:support-v4:+'\n"
