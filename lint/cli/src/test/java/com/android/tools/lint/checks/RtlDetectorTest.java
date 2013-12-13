@@ -332,4 +332,16 @@ public class RtlDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testNullLocalName() throws Exception {
+        // Regression test for attribute with null local name
+        mEnabled = ALL;
+        assertEquals(
+                "No warnings.",
+
+                lintProject(
+                        "overdraw/project.properties=>project.properties",
+                        "rtl/minsdk5targetsdk17.xml=>AndroidManifest.xml",
+                        "rtl/rtl_noprefix.xml=>res/layout/rtl.xml"
+                ));
+    }
 }
