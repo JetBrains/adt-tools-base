@@ -92,6 +92,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
     @NonNull protected abstract List<File> getSdkProguardFiles();
     @NonNull protected abstract String getLanguageLevel();
     @NonNull protected abstract List<ImportModule> getDirectDependencies();
+    @NonNull protected abstract List<ImportModule> getAllDependencies();
     @Nullable protected abstract String getPackage();
     @Nullable protected abstract File getOutputDir();
     @Nullable protected abstract File getManifestFile();
@@ -101,7 +102,6 @@ abstract class ImportModule implements Comparable<ImportModule> {
     public void initialize() {
         initDependencies();
         initReplaceWithDependency();
-        mImporter.registerModule(this);
     }
 
     protected void initDependencies() {
@@ -132,7 +132,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
             return GradleCoordinate.parseCoordinateString(SHERLOCK_DEP);
         } else if (name.equals("guava.jar") || name.startsWith("guava-")) {
             mImporter.markJarHandled(jar);
-            String version = getVersion("guava-", name, "15.0");
+            String version = getVersion(jar, "guava-", name, "15.0");
             if (version.startsWith("r")) { // really old versions
                 version = "15.0";
             }
@@ -140,21 +140,21 @@ abstract class ImportModule implements Comparable<ImportModule> {
         } else if (name.startsWith("joda-time")) {
             mImporter.markJarHandled(jar);
             // Convert joda-time-2.1 jar into joda-time:joda-time:2.1 etc
-            String version = getVersion("joda-time-", name, "2.3");
+            String version = getVersion(jar, "joda-time-", name, "2.3");
             return GradleCoordinate.parseCoordinateString("joda-time:joda-time:" + version);
         } else if (name.startsWith("robotium-solo-")) {
             mImporter.markJarHandled(jar);
-            String version = getVersion("robotium-solo-", name, "4.3.1");
+            String version = getVersion(jar, "robotium-solo-", name, "4.3.1");
             return GradleCoordinate.parseCoordinateString(
                     "com.jayway.android.robotium:robotium-solo:" + version);
         } else if (name.startsWith("protobuf-java-")) {
             mImporter.markJarHandled(jar);
-            String version = getVersion("protobuf-java-", name, "2.5");
+            String version = getVersion(jar, "protobuf-java-", name, "2.5");
             return GradleCoordinate.parseCoordinateString("com.google.protobuf:protobuf-java:"
                     + version);
         } else if (name.startsWith("gson-")) {
             mImporter.markJarHandled(jar);
-            String version = getVersion("gson-", name, "2.2.4");
+            String version = getVersion(jar, "gson-", name, "2.2.4");
             return GradleCoordinate.parseCoordinateString("com.google.code.gson:gson:" + version);
         } else if (name.startsWith("google-http-client-gson-")) {
             mImporter.markJarHandled(jar);
@@ -175,9 +175,13 @@ abstract class ImportModule implements Comparable<ImportModule> {
         return null;
     }
 
-    private static String getVersion(String prefix, String jarName, String defaultVersion) {
+    private String getVersion(File jar, String prefix, String jarName, String defaultVersion) {
         if (jarName.matches(prefix + "([\\d\\.]+)\\.jar")) {
-            return jarName.substring(prefix.length(), jarName.length() - 4);
+            String version = jarName.substring(prefix.length(), jarName.length() - 4);
+            if (!defaultVersion.equals(version)) {
+                mImporter.getSummary().reportGuessedVersion(jar);
+            }
+            return version;
         }
 
         return defaultVersion;
@@ -213,7 +217,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
                 }
 
                 if (mReplaceWithDependencies != null) {
-                    mImporter.getSummary().replacedLib(getOriginalName(),
+                    mImporter.getSummary().reportReplacedLib(getOriginalName(),
                             mReplaceWithDependencies);
                 }
             }
@@ -231,11 +235,10 @@ abstract class ImportModule implements Comparable<ImportModule> {
 
     public String getModuleName() {
         if (mModuleName == null) {
-            // TODO:
-            // if (mImporter.getModuleCount() == 1) {
-            //     mModuleName = "app";
-            //     return mModuleName;
-            // }
+            if (mImporter.isGradleNameStyle() && mImporter.getModuleCount() == 1) {
+                 mModuleName = "app";
+                 return mModuleName;
+            }
 
             String string = getOriginalName();
             // Strip whitespace and characters which can pose a problem when the module
@@ -493,7 +496,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
         } else if (other.dependsOn(this)) {
             return -1;
         } else {
-            return getModuleName().compareTo(other.getModuleName());
+            return getOriginalName().compareTo(other.getOriginalName());
         }
     }
 }

@@ -18,6 +18,7 @@ package com.android.tools.gradle.eclipse;
 
 import com.android.annotations.NonNull;
 import com.android.ide.common.repository.GradleCoordinate;
+import com.android.sdklib.repository.FullRevision;
 import com.android.utils.SdkUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
@@ -115,8 +116,8 @@ public class ImportSummary {
             + "Eclipse projects. Here's how the projects were restructured:\n\n";
 
     static final String MSG_MISSING_REPO_1 = "\n"
-            + "Missing Repositories\n"
-            + "--------------------\n"
+            + "Missing Android Support Repository:\n"
+            + "-----------------------------------\n"
             + "Some useful libraries, such as the Android Support Library, are\n"
             + "installed from a special Maven repository, which should be installed\n"
             + "via the SDK manager.\n"
@@ -130,8 +131,8 @@ public class ImportSummary {
             + "Services.\n";
 
     static final String MSG_MISSING_GOOGLE_REPOSITORY_1 = "\n"
-            + "Missing Repositories\n"
-            + "--------------------\n"
+            + "Missing Google Repository:\n"
+            + "--------------------------\n"
             + "The Google Play Services library is installed from a special Maven\n"
             + "Repository, which should be installed via the SDK manager.\n"
             + "\n"
@@ -141,6 +142,25 @@ public class ImportSummary {
             + "To install it, open the SDK manager, and in the Extras category,\n"
             + "select \"Google Repository\".\n";
 
+    static final String MSG_BUILD_TOOLS_VERSION = "\n"
+            + "Old Build Tools:\n"
+            + "----------------\n"
+            + "The version of the build tools installed with your SDK is old. It\n"
+            + "should be at least version 19.0.1 to work well with the Gradle build\n"
+            + "system. To update it, open the Android SDK Manager, and install the\n"
+            + "highest available version of Tools > Android SDK Build-tools.\n";
+
+    static final String MSG_GUESSED_VERSIONS = "\n"
+            + "Potentially Missing Dependency:\n"
+            + "-------------------------------\n"
+            + "When we replaced the following .jar files with a Gradle dependency, we\n"
+            + "inferred the dependency version number from the filename. This\n"
+            + "specific version may not actually be available from the repository.\n"
+            + "If you get a build error stating that the dependency is missing, edit\n"
+            + "the version number to for example \"+\" to pick up the latest version\n"
+            + "instead. (This may require you to update your code if the library APIs\n"
+            + "have changed.)\n\n";
+
     private final GradleImport mImporter;
     private File mDestDir;
     private boolean mManifestsMayDiffer;
@@ -148,6 +168,8 @@ public class ImportSummary {
     private Map<ImportModule,Map<File,File>> mMoved = Maps.newHashMap();
     private Map<File,GradleCoordinate> mJarDependencies = Maps.newHashMap();
     private Map<String,List<GradleCoordinate>> mLibDependencies = Maps.newHashMap();
+    private List<String> mGuessedDependencyVersions = Lists.newArrayList();
+    private File mLastGuessedJar;
 
     public ImportSummary(@NonNull GradleImport importer) {
         mImporter = importer;
@@ -171,13 +193,26 @@ public class ImportSummary {
         mManifestsMayDiffer = true;
     }
 
-    public void replacedJar(@NonNull File jar, @NonNull GradleCoordinate dependency) {
+    public void reportReplacedJar(@NonNull File jar, @NonNull GradleCoordinate dependency) {
         mJarDependencies.put(jar, dependency);
+        if (jar.equals(mLastGuessedJar)) {
+            boolean replaced = mGuessedDependencyVersions.remove(jar.getName());
+            if (replaced) {
+                mGuessedDependencyVersions.add(jar.getName() + " => version " +
+                        dependency.getFullRevision() + " in " + dependency.toString());
+            }
+            mLastGuessedJar = null;
+        }
     }
 
-    public void replacedLib(@NonNull String module,
+    public void reportReplacedLib(@NonNull String module,
             @NonNull List<GradleCoordinate> dependencies) {
         mLibDependencies.put(module, dependencies);
+    }
+
+    public void reportGuessedVersion(@NonNull File jar) {
+        mGuessedDependencyVersions.add(jar.getName());
+        mLastGuessedJar = jar;
     }
 
     public void reportMoved(@NonNull ImportModule module, @NonNull File from,
@@ -247,6 +282,14 @@ public class ImportSummary {
                 String jar = file.getName();
                 GradleCoordinate dependency = mJarDependencies.get(file);
                 sb.append(jar).append(" => ").append(dependency).append("\n");
+            }
+        }
+
+        if (!mGuessedDependencyVersions.isEmpty()) {
+            sb.append(MSG_GUESSED_VERSIONS);
+            Collections.sort(mGuessedDependencyVersions);
+            for (String replaced : mGuessedDependencyVersions) {
+                sb.append(replaced).append("\n");
             }
         }
 
@@ -324,6 +367,11 @@ public class ImportSummary {
             sb.append(MSG_MISSING_GOOGLE_REPOSITORY_1);
             sb.append(mImporter.getSdkLocation()).append("\n");
             sb.append(MSG_MISSING_GOOGLE_REPOSITORY_2);
+        }
+
+        if (FullRevision.parseRevision(mImporter.getBuildToolsVersion()).getMajor() < 19) {
+            sb.append(MSG_BUILD_TOOLS_VERSION);
+
         }
 
         sb.append(MSG_FOOTER);

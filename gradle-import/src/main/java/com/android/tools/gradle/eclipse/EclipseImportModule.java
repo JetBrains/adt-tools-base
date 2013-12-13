@@ -27,6 +27,8 @@ import java.util.List;
 /** An imported module from Eclipse */
 class EclipseImportModule extends ImportModule {
     private final EclipseProject mProject;
+    private List<ImportModule> mDirectDependencies;
+    private List<ImportModule> mAllDependencies;
 
     public EclipseImportModule(@NonNull GradleImport importer, @NonNull EclipseProject project) {
         super(importer);
@@ -52,7 +54,7 @@ class EclipseImportModule extends ImportModule {
                 GradleCoordinate dependency = guessDependency(jar);
                 if (dependency != null) {
                     mDependencies.add(dependency);
-                    mImporter.getSummary().replacedJar(jar, dependency);
+                    mImporter.getSummary().reportReplacedJar(jar, dependency);
                     continue;
                 }
             }
@@ -83,8 +85,6 @@ class EclipseImportModule extends ImportModule {
         return false;
     }
 
-    private List<ImportModule> mDirectDependencies;
-
     @NonNull
     @Override
     protected List<ImportModule> getDirectDependencies() {
@@ -99,6 +99,22 @@ class EclipseImportModule extends ImportModule {
         }
 
         return mDirectDependencies;
+    }
+
+    @NonNull
+    @Override
+    protected List<ImportModule> getAllDependencies() {
+        if (mAllDependencies == null) {
+            mAllDependencies = Lists.newArrayList();
+            for (EclipseProject project : mProject.getAllLibraries()) {
+                EclipseImportModule module = project.getModule();
+                if (module != null) {
+                    mAllDependencies.add(module);
+                }
+            }
+        }
+
+        return mAllDependencies;
     }
 
     @Override
