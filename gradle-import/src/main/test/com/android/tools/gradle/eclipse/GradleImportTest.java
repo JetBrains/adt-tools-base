@@ -19,9 +19,11 @@ package com.android.tools.gradle.eclipse;
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.DOT_JAVA;
 import static com.android.tools.gradle.eclipse.GradleImport.ANDROID_GRADLE_PLUGIN;
+import static com.android.tools.gradle.eclipse.GradleImport.DECLARE_GLOBAL_REPOSITORIES;
 import static com.android.tools.gradle.eclipse.GradleImport.IMPORT_SUMMARY_TXT;
 import static com.android.tools.gradle.eclipse.GradleImport.MAVEN_REPOSITORY;
 import static com.android.tools.gradle.eclipse.GradleImport.NL;
+import static com.android.tools.gradle.eclipse.ImportSummary.MSG_GUESSED_VERSIONS;
 import static com.android.tools.gradle.eclipse.ImportSummary.MSG_MISSING_GOOGLE_REPOSITORY_1;
 import static com.android.tools.gradle.eclipse.ImportSummary.MSG_MISSING_GOOGLE_REPOSITORY_2;
 import static com.android.tools.gradle.eclipse.ImportSummary.MSG_FOOTER;
@@ -41,9 +43,11 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkManager;
+import com.android.testutils.TestUtils;
 import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
+import com.google.common.base.Charsets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
@@ -152,10 +156,7 @@ public class GradleImportTest extends TestCase {
 
         // Imported contents
         assertEquals(""
-                + "build.gradle\n"
-                + "import-summary.txt\n"
-                + "settings.gradle\n"
-                + "test1\n"
+                + "app\n"
                 + "  build.gradle\n"
                 + "  src\n"
                 + "    main\n"
@@ -168,7 +169,10 @@ public class GradleImportTest extends TestCase {
                 + "        drawable\n"
                 + "          ic_launcher.xml\n"
                 + "        values\n"
-                + "          strings.xml\n",
+                + "          strings.xml\n"
+                + "build.gradle\n"
+                + "import-summary.txt\n"
+                + "settings.gradle\n",
                 fileTree(imported, true));
 
         deleteDir(projectDir);
@@ -208,17 +212,14 @@ public class GradleImportTest extends TestCase {
                 + MSG_HEADER
                 + MSG_FOLDER_STRUCTURE
                 + DEFAULT_MOVED
-                + "* src/test/pkg/IHardwareService.aidl => test1/src/main/aidl/test/pkg/IHardwareService.aidl\n"
-                + "* src/test/pkg/latency.rs => test1/src/main/rs/latency.rs\n"
+                + "* src/test/pkg/IHardwareService.aidl => app/src/main/aidl/test/pkg/IHardwareService.aidl\n"
+                + "* src/test/pkg/latency.rs => app/src/main/rs/latency.rs\n"
                 + MSG_FOOTER,
                 true /* checkBuild */);
 
         // Imported contents
         assertEquals(""
-                + "build.gradle\n"
-                + "import-summary.txt\n"
-                + "settings.gradle\n"
-                + "test1\n"
+                + "app\n"
                 + "  build.gradle\n"
                 + "  src\n"
                 + "    main\n"
@@ -237,7 +238,10 @@ public class GradleImportTest extends TestCase {
                 + "        values\n"
                 + "          strings.xml\n"
                 + "      rs\n"
-                + "        latency.rs\n",
+                + "        latency.rs\n"
+                + "build.gradle\n"
+                + "import-summary.txt\n"
+                + "settings.gradle\n",
                 fileTree(imported, true));
 
         deleteDir(projectDir);
@@ -324,6 +328,9 @@ public class GradleImportTest extends TestCase {
                 + MSG_FOLDER_STRUCTURE
                 + "In JavaLib:\n"
                 + "* src/ => javaLib/src/main/java/\n"
+                + "In Lib1:\n"
+                + "* AndroidManifest.xml => lib1/src/main/AndroidManifest.xml\n"
+                + "* src/ => lib1/src/main/java/\n"
                 + "In Lib2:\n"
                 + "* AndroidManifest.xml => lib2/src/main/AndroidManifest.xml\n"
                 + "* src/ => lib2/src/main/java/\n"
@@ -361,6 +368,16 @@ public class GradleImportTest extends TestCase {
                 + "          lib2\n"
                 + "            pkg\n"
                 + "              Utilities.java\n"
+                + "lib1\n"
+                + "  build.gradle\n"
+                + "  src\n"
+                + "    main\n"
+                + "      AndroidManifest.xml\n"
+                + "      java\n"
+                + "        test\n"
+                + "          lib\n"
+                + "            pkg\n"
+                + "              MyLibActivity.java\n"
                 + "lib2\n"
                 + "  build.gradle\n"
                 + "  src\n"
@@ -375,29 +392,57 @@ public class GradleImportTest extends TestCase {
                 fileTree(imported, true));
 
         // Let's peek at some of the key files to make sure we codegen'ed the right thing
+        //noinspection PointlessBooleanExpression,ConstantConditions
         assertEquals(""
-                + "buildscript {\n"
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                "buildscript {\n"
                 + "    repositories {\n"
                 + "        " + MAVEN_REPOSITORY + "\n"
                 + "    }\n"
-                + "}\n"
+                + "}\n" : "")
                 + "apply plugin: 'java'\n",
                 Files.toString(new File(imported, "javaLib" + separator + "build.gradle"), UTF_8)
                         .replace(NL, "\n"));
+
+        // Let's peek at some of the key files to make sure we codegen'ed the right thing
+        //noinspection ConstantConditions
         assertEquals(""
-                + "buildscript {\n"
-                + "    repositories {\n"
-                + "        " + MAVEN_REPOSITORY + "\n"
-                + "    }\n"
-                + "    dependencies {\n"
-                + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
-                + "    }\n"
-                + "}\n"
+                + "// Top-level build file where you can add configuration options common to all sub-projects/modules.\n"
+                + (DECLARE_GLOBAL_REPOSITORIES ?
+                    "buildscript {\n"
+                    + "    repositories {\n"
+                    + "        " + MAVEN_REPOSITORY + "\n"
+                    + "    }\n"
+                    + "    dependencies {\n"
+                    + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
+                    + "    }\n"
+                    + "}\n"
+                    + "\n"
+                    + "allprojects {\n"
+                    + "    repositories {\n"
+                    + "        " + MAVEN_REPOSITORY + "\n"
+                    + "    }\n"
+                    + "}\n" : ""),
+                Files.toString(new File(imported, "build.gradle"), UTF_8)
+                        .replace(NL, "\n"));
+
+        //noinspection PointlessBooleanExpression,ConstantConditions
+        assertEquals(""
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "buildscript {\n"
+                    + "    repositories {\n"
+                    + "        " + MAVEN_REPOSITORY + "\n"
+                    + "    }\n"
+                    + "    dependencies {\n"
+                    + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
+                    + "    }\n"
+                    + "}\n" : "")
                 + "apply plugin: 'android'\n"
-                + "\n"
-                + "repositories {\n"
-                + "    " + MAVEN_REPOSITORY + "\n"
-                + "}\n"
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "\n"
+                    + "repositories {\n"
+                    + "    " + MAVEN_REPOSITORY + "\n"
+                    + "}\n" : "")
                 + "\n"
                 + "android {\n"
                 + "    compileSdkVersion 17\n"
@@ -417,25 +462,29 @@ public class GradleImportTest extends TestCase {
                 + "}\n"
                 + "\n"
                 + "dependencies {\n"
+                + "    compile project(':lib1')\n"
                 + "    compile project(':lib2')\n"
                 + "    compile project(':javaLib')\n"
                 + "}",
                 Files.toString(new File(imported, "app" + separator + "build.gradle"), UTF_8)
                         .replace(NL,"\n"));
+        //noinspection PointlessBooleanExpression,ConstantConditions
         assertEquals(""
-                + "buildscript {\n"
-                + "    repositories {\n"
-                + "        " + MAVEN_REPOSITORY + "\n"
-                + "    }\n"
-                + "    dependencies {\n"
-                + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
-                + "    }\n"
-                + "}\n"
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "buildscript {\n"
+                    + "    repositories {\n"
+                    + "        " + MAVEN_REPOSITORY + "\n"
+                    + "    }\n"
+                    + "    dependencies {\n"
+                    + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
+                    + "    }\n"
+                    + "}\n" : "")
                 + "apply plugin: 'android-library'\n"
-                + "\n"
-                + "repositories {\n"
-                + "    " + MAVEN_REPOSITORY + "\n"
-                + "}\n"
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "\n"
+                    + "repositories {\n"
+                    + "    " + MAVEN_REPOSITORY + "\n"
+                    + "}\n" : "")
                 + "\n"
                 + "android {\n"
                 + "    compileSdkVersion 18\n"
@@ -450,11 +499,16 @@ public class GradleImportTest extends TestCase {
                 + "        runProguard false\n"
                 + "        proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'\n"
                 + "    }\n"
-                + "}\n",
+                + "}\n"
+                + "\n"
+                + "dependencies {\n"
+                + "    compile project(':lib1')\n"
+                + "}",
                 Files.toString(new File(imported, "lib2" + separator + "build.gradle"), UTF_8)
                         .replace(NL, "\n"));
         assertEquals(""
                 + "include ':javaLib'\n"
+                + "include ':lib1'\n"
                 + "include ':lib2'\n"
                 + "include ':app'\n",
                 Files.toString(new File(imported, "settings.gradle"), UTF_8)
@@ -497,7 +551,7 @@ public class GradleImportTest extends TestCase {
                 Collections.<File>emptyList());
         createProjectProperties(lib1, "android-19", null, true, null,
                 Collections.<File>singletonList(new File(".." + separator + javaLibRelative)));
-        createAndroidManifest(lib1, lib1Pkg, -1, -1, "");
+        createAndroidManifest(lib1, lib1Pkg, -1, -1, "<application/>");
 
         String lib2Name = "Lib2";
         File lib2 = new File(root, lib2Name);
@@ -513,7 +567,7 @@ public class GradleImportTest extends TestCase {
                 Collections.<File>emptyList());
         createProjectProperties(lib2, "android-18", null, true, null,
                 Collections.<File>singletonList(new File(".." + separator + lib1Name)));
-        createAndroidManifest(lib2, lib2Pkg, 7, -1, "");
+        createAndroidManifest(lib2, lib2Pkg, 7, -1, "<application/>");
 
         // Main app project, depends on library1, library2 and java lib
         String appName = "App";
@@ -567,10 +621,7 @@ public class GradleImportTest extends TestCase {
 
         // Imported contents
         assertEquals(""
-                + "build.gradle\n"
-                + "import-summary.txt\n"
-                + "settings.gradle\n"
-                + "test1\n"
+                + "app\n"
                 + "  build.gradle\n"
                 + "  src\n"
                 + "    main\n"
@@ -583,23 +634,29 @@ public class GradleImportTest extends TestCase {
                 + "        drawable\n"
                 + "          ic_launcher.xml\n"
                 + "        values\n"
-                + "          strings.xml\n",
+                + "          strings.xml\n"
+                + "build.gradle\n"
+                + "import-summary.txt\n"
+                + "settings.gradle\n",
                 fileTree(imported, true));
 
+        //noinspection PointlessBooleanExpression,ConstantConditions
         assertEquals(""
-                + "buildscript {\n"
-                + "    repositories {\n"
-                + "        " + MAVEN_REPOSITORY + "\n"
-                + "    }\n"
-                + "    dependencies {\n"
-                + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
-                + "    }\n"
-                + "}\n"
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "buildscript {\n"
+                    + "    repositories {\n"
+                    + "        " + MAVEN_REPOSITORY + "\n"
+                    + "    }\n"
+                    + "    dependencies {\n"
+                    + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
+                    + "    }\n"
+                    + "}\n" : "")
                 + "apply plugin: 'android'\n"
-                + "\n"
-                + "repositories {\n"
-                + "    " + MAVEN_REPOSITORY + "\n"
-                + "}\n"
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "\n"
+                    + "repositories {\n"
+                    + "    " + MAVEN_REPOSITORY + "\n"
+                    + "}\n" : "")
                 + "\n"
                 + "android {\n"
                 + "    compileSdkVersion 17\n"
@@ -623,7 +680,7 @@ public class GradleImportTest extends TestCase {
                 + "    compile 'com.android.support:appcompat-v7:+'\n"
                 + "    compile 'com.android.support:gridlayout-v7:+'\n"
                 + "}",
-                Files.toString(new File(imported, "test1" + separator + "build.gradle"), UTF_8)
+                Files.toString(new File(imported, "app" + separator + "build.gradle"), UTF_8)
                         .replace(NL, "\n"));
 
         deleteDir(projectDir);
@@ -650,7 +707,7 @@ public class GradleImportTest extends TestCase {
                 + "* res/ => Test1/src/main/res/\n"
                 + "* src/ => Test1/src/main/java/\n"
                 + MSG_FOOTER,
-                true /* checkBuild */,
+                false /* checkBuild */,
                 new ImportCustomizer() {
                     @Override
                     public void customize(GradleImport importer) {
@@ -685,20 +742,23 @@ public class GradleImportTest extends TestCase {
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
+        //noinspection PointlessBooleanExpression,ConstantConditions
         assertEquals(""
-                + "buildscript {\n"
-                + "    repositories {\n"
-                + "        " + MAVEN_REPOSITORY + "\n"
-                + "    }\n"
-                + "    dependencies {\n"
-                + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
-                + "    }\n"
-                + "}\n"
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "buildscript {\n"
+                    + "    repositories {\n"
+                    + "        " + MAVEN_REPOSITORY + "\n"
+                    + "    }\n"
+                    + "    dependencies {\n"
+                    + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
+                    + "    }\n"
+                    + "}\n" : "")
                 + "apply plugin: 'android'\n"
-                + "\n"
-                + "repositories {\n"
-                + "    " + MAVEN_REPOSITORY + "\n"
-                + "}\n"
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "\n"
+                    + "repositories {\n"
+                    + "    " + MAVEN_REPOSITORY + "\n"
+                    + "}\n" : "")
                 + "\n"
                 + "android {\n"
                 + "    compileSdkVersion 17\n"
@@ -755,6 +815,9 @@ public class GradleImportTest extends TestCase {
                 // TODO: The summary should describe the library!!
                 + "In JavaLib:\n"
                 + "* src/ => javaLib/src/main/java/\n"
+                + "In Lib1:\n"
+                + "* AndroidManifest.xml => lib1/src/main/AndroidManifest.xml\n"
+                + "* src/ => lib1/src/main/java/\n"
                 + "In App:\n"
                 + "* AndroidManifest.xml => app/src/main/AndroidManifest.xml\n"
                 + "* res/ => app/src/main/res/\n"
@@ -789,23 +852,36 @@ public class GradleImportTest extends TestCase {
                 + "          lib2\n"
                 + "            pkg\n"
                 + "              Utilities.java\n"
+                + "lib1\n"
+                + "  build.gradle\n"
+                + "  src\n"
+                + "    main\n"
+                + "      AndroidManifest.xml\n"
+                + "      java\n"
+                + "        test\n"
+                + "          lib\n"
+                + "            pkg\n"
+                + "              MyLibActivity.java\n"
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
+        //noinspection PointlessBooleanExpression,ConstantConditions
         assertEquals(""
-                + "buildscript {\n"
-                + "    repositories {\n"
-                + "        " + MAVEN_REPOSITORY + "\n"
-                + "    }\n"
-                + "    dependencies {\n"
-                + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
-                + "    }\n"
-                + "}\n"
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "buildscript {\n"
+                    + "    repositories {\n"
+                    + "        " + MAVEN_REPOSITORY + "\n"
+                    + "    }\n"
+                    + "    dependencies {\n"
+                    + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
+                    + "    }\n"
+                    + "}\n" : "")
                 + "apply plugin: 'android'\n"
-                + "\n"
-                + "repositories {\n"
-                + "    " + MAVEN_REPOSITORY + "\n"
-                + "}\n"
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "\n"
+                    + "repositories {\n"
+                    + "    " + MAVEN_REPOSITORY + "\n"
+                    + "}\n" : "")
                 + "\n"
                 + "android {\n"
                 + "    compileSdkVersion 17\n"
@@ -825,6 +901,7 @@ public class GradleImportTest extends TestCase {
                 + "}\n"
                 + "\n"
                 + "dependencies {\n"
+                + "    compile project(':lib1')\n"
                 + "    compile project(':javaLib')\n"
                 + "    compile 'com.actionbarsherlock:actionbarsherlock:4.4.0@aar'\n"
                 + "    compile 'com.android.support:support-v4:+'\n"
@@ -858,7 +935,7 @@ public class GradleImportTest extends TestCase {
                 + "$ROOT_PARENT/sdk\n"
                 + MSG_MISSING_REPO_2
                 + MSG_FOOTER,
-                true /* checkBuild */, new ImportCustomizer() {
+                false /* checkBuild */, new ImportCustomizer() {
             @Override
             public void customize(GradleImport importer) {
                 importer.setSdkLocation(sdkLocation);
@@ -891,7 +968,39 @@ public class GradleImportTest extends TestCase {
                 + "$ROOT_PARENT/sdk\n"
                 + MSG_MISSING_GOOGLE_REPOSITORY_2
                 + MSG_FOOTER,
-                true /* checkBuild */, new ImportCustomizer() {
+                false /* checkBuild */, new ImportCustomizer() {
+            @Override
+            public void customize(GradleImport importer) {
+                importer.setSdkLocation(sdkLocation);
+            }
+        });
+
+        deleteDir(root);
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testGuessedVersion() throws Exception {
+        File root = Files.createTempDir();
+        final File sdkLocation = new File(root, "sdk");
+        sdkLocation.mkdirs();
+        File projectDir = new File(root, "project");
+        projectDir.mkdirs();
+        createProject(projectDir, "test1", "test.pkg");
+        File libs = new File(projectDir, "libs");
+        libs.mkdirs();
+        new File(libs, "guava-13.0.1.jar").createNewFile();
+
+        File imported = checkProject(projectDir, ""
+                + MSG_HEADER
+                + MSG_REPLACED_JARS
+                + "guava-13.0.1.jar => com.google.guava:guava:13.0.1\n"
+                + MSG_GUESSED_VERSIONS
+                + "guava-13.0.1.jar => version 13.0.1 in com.google.guava:guava:13.0.1\n"
+                + MSG_FOLDER_STRUCTURE
+                + DEFAULT_MOVED
+                + MSG_FOOTER,
+                false /* checkBuild */, new ImportCustomizer() {
             @Override
             public void customize(GradleImport importer) {
                 importer.setSdkLocation(sdkLocation);
@@ -918,6 +1027,7 @@ public class GradleImportTest extends TestCase {
         File classpath = new File(projectDir, ".classpath");
         assertTrue(classpath.exists());
         classpath.delete();
+        //noinspection SpellCheckingInspection
         Files.write(""
                 + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
                 + "<classpath>\n"
@@ -941,6 +1051,7 @@ public class GradleImportTest extends TestCase {
                 + "</classpath>".replace('/', separatorChar),
                 classpath, UTF_8);
 
+        //noinspection SpellCheckingInspection
         File imported = checkProject(projectDir, ""
                 + MSG_HEADER
                 + MSG_FOLDER_STRUCTURE
@@ -949,10 +1060,445 @@ public class GradleImportTest extends TestCase {
                 + "* res/ => _1Weirdnameofproject/src/main/res/\n"
                 + "* src/ => _1Weirdnameofproject/src/main/java/\n"
                 + MSG_FOOTER,
-                false /* checkBuild */);
+                false /* checkBuild */, new ImportCustomizer() {
+            @Override
+            public void customize(GradleImport importer) {
+                importer.setGradleNameStyle(false);
+            }
+        });
 
         deleteDir(projectDir);
         deleteDir(imported);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testLibraries2() throws Exception {
+        File root = Files.createTempDir();
+
+        // Workspace Setup
+        // /Library1, compiled with 1.7, and depends on an external jar outside the project (guava)
+        // /Library2 (depends on /Library1)
+        // /AndroidLibraryProject (depend on /Library1, /Library2)
+        // /AndroidAppProject (depends on /AndroidLibraryProject)
+        // In addition to make things complicated, /Library1 lives outside the workspace,
+        // and /Library2 lives in a subdirectory of the workspace
+
+        // Plain Java library, used by Library 1 and App
+        //String javaLibName = "UnrelatedName";
+        // TODO: Use this to place subdir in a different workspace location
+        //String javaLibRelative = "subdir1" + separator + "subdir2" + separator + javaLibName;
+
+        // Make Java Library library 1
+        // TODO: Place it in a more random location!
+        String lib1Name = "Library1";
+        //File lib1 = new File(root, javaLibRelative);
+        File lib1 = new File(root, lib1Name);
+        lib1.mkdirs();
+        String lib1Pkg = "test.lib1.pkg";
+        createDotProject(lib1, lib1Name, false);
+        createSampleJavaSource(lib1, "src", lib1Pkg, "Library1");
+        File guavaPath = new File(root, "some" + separator + "path" + separator +
+                "guava-13.0.1.jar");
+        guavaPath.getParentFile().mkdirs();
+        guavaPath.createNewFile();
+        Files.write(""
+                + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<classpath>\n"
+                + "\t<classpathentry kind=\"src\" path=\"src\"/>\n"
+                + "\t<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/Java 7\"/>\n"
+                + "\t<classpathentry exported=\"true\" kind=\"lib\" path=\"" + guavaPath.getAbsoluteFile().getCanonicalFile().getPath() + "\"/>\n"
+                + "\t<classpathentry kind=\"output\" path=\"bin\"/>\n"
+                + "</classpath>",
+                new File(lib1, ".classpath"), UTF_8);
+        createEclipseSettingsFile(lib1, "1.6");
+
+        // Make Java Library 2
+        String lib2Name = "Library2";
+        File lib2 = new File(root, lib2Name);
+        lib2.mkdirs();
+        createDotProject(lib2, lib2Name, false);
+        String lib2Pkg = "test.lib2.pkg";
+        createSampleJavaSource(lib2, "src", lib2Pkg, "Library2");
+        Files.write(""
+                + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<classpath>\n"
+                + "\t<classpathentry kind=\"src\" path=\"src\"/>\n"
+                + "\t<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/Java 7\"/>\n"
+                + "\t<classpathentry combineaccessrules=\"false\" kind=\"src\" path=\"/Library1\"/>\n"
+                + "\t<classpathentry kind=\"output\" path=\"bin\"/>\n"
+                + "</classpath>",
+                new File(lib2, ".classpath"), UTF_8);
+        createEclipseSettingsFile(lib2, "1.7");
+
+        // Make Android Library Project 1
+        String androidLibName = "AndroidLibrary";
+        File androidLib = new File(root, androidLibName);
+        androidLib.mkdirs();
+        createDotProject(androidLib, androidLibName, true);
+        String androidLibPkg = "test.android.lib.pkg";
+        createSampleJavaSource(androidLib, "src", androidLibPkg, "AndroidLibrary");
+        createSampleJavaSource(androidLib, "gen", androidLibPkg, "R");
+        Files.write(""
+                + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<classpath>\n"
+                + "\t<classpathentry kind=\"src\" path=\"src\"/>\n"
+                + "\t<classpathentry kind=\"src\" path=\"gen\"/>\n"
+                + "\t<classpathentry kind=\"con\" path=\"com.android.ide.eclipse.adt.ANDROID_FRAMEWORK\"/>\n"
+                + "\t<classpathentry exported=\"true\" kind=\"con\" path=\"com.android.ide.eclipse.adt.LIBRARIES\"/>\n"
+                + "\t<classpathentry exported=\"true\" kind=\"con\" path=\"com.android.ide.eclipse.adt.DEPENDENCIES\"/>\n"
+                + "\t<classpathentry combineaccessrules=\"false\" exported=\"true\" kind=\"src\" path=\"/Library1\"/>\n"
+                + "\t<classpathentry combineaccessrules=\"false\" exported=\"true\" kind=\"src\" path=\"/Library2\"/>\n"
+                + "\t<classpathentry kind=\"output\" path=\"bin/classes\"/>\n"
+                + "</classpath>", new File(androidLib, ".classpath"), UTF_8);
+        createProjectProperties(androidLib, "android-18", null, true, null,
+                // Note how Android library projects don't point to non-Android projects
+                // in the project.properties file; only via the .classpath file!
+                Collections.<File>emptyList());
+        createAndroidManifest(androidLib, androidLibPkg, 7, -1, "");
+
+        // Main app project, depends on library project
+        String appName = "AndroidApp";
+        File app = new File(root, appName);
+        app.mkdirs();
+        String appPkg = "test.pkg";
+        createDotProject(app, appName, true);
+        File appSrc = new File("src");
+        File appGen = new File("gen");
+        createSampleJavaSource(app, "src", appPkg, "AppActivity");
+        createSampleJavaSource(app, "gen", appPkg, "R");
+        createClassPath(app,
+                new File("bin", "classes"),
+                Arrays.<File>asList(appSrc, appGen),
+                Collections.<File>emptyList());
+        createProjectProperties(app, "android-17", null, null, null,
+                Collections.singletonList(new File(".." + separator + androidLibName)));
+        createAndroidManifest(app, appPkg, 8, 16, null);
+        createDefaultStrings(app);
+        createDefaultIcon(app);
+
+        // Add some files in there that we are ignoring
+        new File(app, ".gitignore").createNewFile();
+
+        // ADT Directory structure created by the above:
+        assertEquals(""
+                + "AndroidApp\n"
+                + "  .classpath\n"
+                + "  .gitignore\n"
+                + "  .project\n"
+                + "  AndroidManifest.xml\n"
+                + "  gen\n"
+                + "    test\n"
+                + "      pkg\n"
+                + "        R.java\n"
+                + "  project.properties\n"
+                + "  res\n"
+                + "    drawable\n"
+                + "      ic_launcher.xml\n"
+                + "    values\n"
+                + "      strings.xml\n"
+                + "  src\n"
+                + "    test\n"
+                + "      pkg\n"
+                + "        AppActivity.java\n"
+                + "AndroidLibrary\n"
+                + "  .classpath\n"
+                + "  .project\n"
+                + "  AndroidManifest.xml\n"
+                + "  gen\n"
+                + "    test\n"
+                + "      android\n"
+                + "        lib\n"
+                + "          pkg\n"
+                + "            R.java\n"
+                + "  project.properties\n"
+                + "  src\n"
+                + "    test\n"
+                + "      android\n"
+                + "        lib\n"
+                + "          pkg\n"
+                + "            AndroidLibrary.java\n"
+                + "Library1\n"
+                + "  .classpath\n"
+                + "  .project\n"
+                + "  .settings\n"
+                + "    org.eclipse.jdt.core.prefs\n"
+                + "  src\n"
+                + "    test\n"
+                + "      lib1\n"
+                + "        pkg\n"
+                + "          Library1.java\n"
+                + "Library2\n"
+                + "  .classpath\n"
+                + "  .project\n"
+                + "  .settings\n"
+                + "    org.eclipse.jdt.core.prefs\n"
+                + "  src\n"
+                + "    test\n"
+                + "      lib2\n"
+                + "        pkg\n"
+                + "          Library2.java\n"
+                + "some\n"
+                + "  path\n"
+                + "    guava-13.0.1.jar\n",
+                fileTree(root, true));
+
+        File imported = checkProject(app, ""
+                + MSG_HEADER
+                + MSG_MANIFEST
+                + MSG_UNHANDLED
+                + "* .gitignore\n"
+                + MSG_REPLACED_JARS
+                + "guava-13.0.1.jar => com.google.guava:guava:13.0.1\n"
+                + MSG_GUESSED_VERSIONS
+                + "guava-13.0.1.jar => version 13.0.1 in com.google.guava:guava:13.0.1\n"
+                + MSG_FOLDER_STRUCTURE
+                + "In Library1:\n"
+                + "* src/ => library1/src/main/java/\n"
+                + "In Library2:\n"
+                + "* src/ => library2/src/main/java/\n"
+                + "In AndroidLibrary:\n"
+                + "* AndroidManifest.xml => androidLibrary/src/main/AndroidManifest.xml\n"
+                + "* src/ => androidLibrary/src/main/java/\n"
+                + "In AndroidApp:\n"
+                + "* AndroidManifest.xml => androidApp/src/main/AndroidManifest.xml\n"
+                + "* res/ => androidApp/src/main/res/\n"
+                + "* src/ => androidApp/src/main/java/\n"
+                + MSG_FOOTER,
+                false /* checkBuild */);
+
+        // Imported project
+        assertEquals(""
+                + "androidApp\n"
+                + "  build.gradle\n"
+                + "  src\n"
+                + "    main\n"
+                + "      AndroidManifest.xml\n"
+                + "      java\n"
+                + "        test\n"
+                + "          pkg\n"
+                + "            AppActivity.java\n"
+                + "      res\n"
+                + "        drawable\n"
+                + "          ic_launcher.xml\n"
+                + "        values\n"
+                + "          strings.xml\n"
+                + "androidLibrary\n"
+                + "  build.gradle\n"
+                + "  src\n"
+                + "    main\n"
+                + "      AndroidManifest.xml\n"
+                + "      java\n"
+                + "        test\n"
+                + "          android\n"
+                + "            lib\n"
+                + "              pkg\n"
+                + "                AndroidLibrary.java\n"
+                + "build.gradle\n"
+                + "import-summary.txt\n"
+                + "library1\n"
+                + "  build.gradle\n"
+                + "  src\n"
+                + "    main\n"
+                + "      java\n"
+                + "        test\n"
+                + "          lib1\n"
+                + "            pkg\n"
+                + "              Library1.java\n"
+                + "library2\n"
+                + "  build.gradle\n"
+                + "  src\n"
+                + "    main\n"
+                + "      java\n"
+                + "        test\n"
+                + "          lib2\n"
+                + "            pkg\n"
+                + "              Library2.java\n"
+                + "settings.gradle\n",
+                fileTree(imported, true));
+
+        // Let's peek at some of the key files to make sure we codegen'ed the right thing
+        //noinspection PointlessBooleanExpression,ConstantConditions
+        assertEquals(""
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "buildscript {\n"
+                    + "    repositories {\n"
+                    + "        " + MAVEN_REPOSITORY + "\n"
+                    + "    }\n"
+                    + "}\n" : "")
+                + "apply plugin: 'java'\n"
+                + "\n"
+                + "dependencies {\n"
+                + "    compile 'com.google.guava:guava:13.0.1'\n"
+                + "}",
+                Files.toString(new File(imported, "library1" + separator + "build.gradle"), UTF_8)
+                        .replace(NL, "\n"));
+        //noinspection PointlessBooleanExpression,ConstantConditions
+        assertEquals(""
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "buildscript {\n"
+                    + "    repositories {\n"
+                    + "        " + MAVEN_REPOSITORY + "\n"
+                    + "    }\n"
+                    + "    dependencies {\n"
+                    + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
+                    + "    }\n"
+                    + "}\n" : "")
+                + "apply plugin: 'android'\n"
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "\n"
+                    + "repositories {\n"
+                    + "    " + MAVEN_REPOSITORY + "\n"
+                    + "}\n" : "")
+                + "\n"
+                + "android {\n"
+                + "    compileSdkVersion 17\n"
+                + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
+                + "\n"
+                + "    defaultConfig {\n"
+                + "        minSdkVersion 8\n"
+                + "        targetSdkVersion 16\n"
+                + "    }\n"
+                + "\n"
+                + "    buildTypes {\n"
+                + "        release {\n"
+                + "            runProguard false\n"
+                + "            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'\n"
+                + "        }\n"
+                + "    }\n"
+                + "}\n"
+                + "\n"
+                + "dependencies {\n"
+                + "    compile project(':androidLibrary')\n"
+                + "}",
+                Files.toString(new File(imported, "androidApp" + separator + "build.gradle"), UTF_8)
+                        .replace(NL,"\n"));
+
+        //noinspection PointlessBooleanExpression,ConstantConditions
+        assertEquals(""
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "buildscript {\n"
+                    + "    repositories {\n"
+                    + "        " + MAVEN_REPOSITORY + "\n"
+                    + "    }\n"
+                    + "    dependencies {\n"
+                    + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
+                    + "    }\n"
+                    + "}\n" : "")
+                + "apply plugin: 'android-library'\n"
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "\n"
+                    + "repositories {\n"
+                    + "    " + MAVEN_REPOSITORY + "\n"
+                    + "}\n" : "")
+                + "\n"
+                + "android {\n"
+                + "    compileSdkVersion 18\n"
+                + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
+                + "\n"
+                + "    defaultConfig {\n"
+                + "        minSdkVersion 8\n"
+                + "        targetSdkVersion 8\n"
+                + "    }\n"
+                + "\n"
+                + "    release {\n"
+                + "        runProguard false\n"
+                + "        proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'\n"
+                + "    }\n"
+                + "}\n"
+                + "\n"
+                + "dependencies {\n"
+                + "    compile project(':library1')\n"
+                + "    compile project(':library2')\n"
+                + "}",
+                Files.toString(new File(imported, "androidLibrary" + separator + "build.gradle"), UTF_8)
+                        .replace(NL,"\n"));
+
+        //noinspection PointlessBooleanExpression,ConstantConditions
+        assertEquals(""
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "buildscript {\n"
+                    + "    repositories {\n"
+                    + "        " + MAVEN_REPOSITORY + "\n"
+                    + "    }\n"
+                    + "}\n" : "")
+                + "apply plugin: 'java'\n"
+                + "\n"
+                + "dependencies {\n"
+                + "    compile 'com.google.guava:guava:13.0.1'\n"
+                + "}",
+                Files.toString(new File(imported, "library1" + separator + "build.gradle"), UTF_8)
+                        .replace(NL, "\n"));
+        //noinspection PointlessBooleanExpression,ConstantConditions
+        assertEquals(""
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                    "buildscript {\n"
+                    + "    repositories {\n"
+                    + "        " + MAVEN_REPOSITORY + "\n"
+                    + "    }\n"
+                    + "}\n" : "")
+                + "apply plugin: 'java'\n"
+                + "\n"
+                + "sourceCompatibility = \"1.7\"\n"
+                + "targetCompatibility = \"1.7\"\n"
+                + "\n"
+                + "dependencies {\n"
+                + "    compile project(':library1')\n"
+                + "}",
+                Files.toString(new File(imported, "library2" + separator + "build.gradle"), UTF_8)
+                        .replace(NL, "\n"));
+
+        // TODO: Should this ONLY include the root module?
+        assertEquals(""
+                + "include ':library1'\n"
+                + "include ':library2'\n"
+                + "include ':androidLibrary'\n"
+                + "include ':androidApp'\n",
+                Files.toString(new File(imported, "settings.gradle"), UTF_8)
+                        .replace(NL, "\n"));
+
+        //noinspection ConstantConditions
+        assertEquals(""
+                + "// Top-level build file where you can add configuration options common to all sub-projects/modules.\n"
+                + (DECLARE_GLOBAL_REPOSITORIES ?
+                    "buildscript {\n"
+                    + "    repositories {\n"
+                    + "        " + MAVEN_REPOSITORY + "\n"
+                    + "    }\n"
+                    + "    dependencies {\n"
+                    + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
+                    + "    }\n"
+                    + "}\n"
+                    + "\n"
+                    + "allprojects {\n"
+                    + "    repositories {\n"
+                    + "        " + MAVEN_REPOSITORY + "\n"
+                    + "    }\n"
+                    + "}\n" : ""),
+                Files.toString(new File(imported, "build.gradle"), UTF_8)
+                        .replace(NL, "\n"));
+
+        deleteDir(root);
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings({"ResultOfMethodCallIgnored", "SpellCheckingInspection"})
+    private static void createEclipseSettingsFile(File prj, String languageLevel)
+            throws IOException {
+        File file = new File(prj, ".settings" + separator + "org.eclipse.jdt.core.prefs");
+        file.getParentFile().mkdirs();
+        Files.write(""
+                + "eclipse.preferences.version=1\n"
+                + "org.eclipse.jdt.core.compiler.codegen.inlineJsrBytecode=enabled\n"
+                + "org.eclipse.jdt.core.compiler.codegen.targetPlatform=" + languageLevel + "\n"
+                + "org.eclipse.jdt.core.compiler.codegen.unusedLocal=preserve\n"
+                + "org.eclipse.jdt.core.compiler.compliance=" + languageLevel + "\n"
+                + "org.eclipse.jdt.core.compiler.debug.lineNumber=generate\n"
+                + "org.eclipse.jdt.core.compiler.debug.localVariable=generate\n"
+                + "org.eclipse.jdt.core.compiler.debug.sourceFile=generate\n"
+                + "org.eclipse.jdt.core.compiler.problem.assertIdentifier=error\n"
+                + "org.eclipse.jdt.core.compiler.problem.enumIdentifier=error\n"
+                + "org.eclipse.jdt.core.compiler.source=" + languageLevel,
+                file, Charsets.UTF_8);
     }
 
     // --- Unit test infrastructure from this point on ----
@@ -978,14 +1524,17 @@ public class GradleImportTest extends TestCase {
         if (sdkPath != null) {
             importer.setSdkLocation(new File(sdkPath));
         }
+
+        File wrapper = findGradleWrapper();
+        if (wrapper != null) {
+            importer.setGradleWrapperLocation(wrapper);
+        }
+
         if (customizer != null) {
             customizer.customize(importer);
         }
         importer.importProjects(projects);
 
-        // TODO: Find the gradle wrapper resources and assign to them here?
-        // importer.setGradleWrapperLocation(<derived location>
-        //        new File("$AOSP/tools/base/templates/gradle/wrapper"));
         importer.exportProject(destDir, false);
         String summary = Files.toString(new File(destDir, IMPORT_SUMMARY_TXT), UTF_8);
         summary = summary.replace("\r", "");
@@ -1007,6 +1556,30 @@ public class GradleImportTest extends TestCase {
         }
 
         return destDir;
+    }
+
+    @Nullable
+    private static File findGradleWrapper() throws IOException {
+        File root = TestUtils.getCanonicalRoot("resources", "baseMerge");
+        // The TestUtils call returns results within sdk-common when run from within the IDE
+        // so look relative to it to find the templates folder
+        if (root != null) {
+            File top = root
+                    .getParentFile()
+                    .getParentFile()
+                    .getParentFile()
+                    .getParentFile()
+                    .getParentFile()
+                    .getParentFile()
+                    .getParentFile();
+            File wrapper = new File(top, "templates" + separator + "gradle" + separator +
+                    "wrapper");
+            if (wrapper.exists()) {
+                return wrapper;
+            }
+        }
+
+        return null;
     }
 
     private static boolean isWindows() {
@@ -1188,7 +1761,8 @@ public class GradleImportTest extends TestCase {
         }
 
         if (mergeManifest != null) {
-            String escaped = escapeProperty("manifestmerger.enabled", Boolean.toString(mergeManifest));
+            String escaped = escapeProperty("manifestmerger.enabled",
+                    Boolean.toString(mergeManifest));
             sb.append(escaped).append("\n");
         }
 
@@ -1199,13 +1773,10 @@ public class GradleImportTest extends TestCase {
 
         for (int i = 0, n = libraries.size(); i < n; i++) {
             String path = libraries.get(i).getPath();
-            String escaped = escapeProperty("android.library.reference." + Integer.toString(i), path);
+            String escaped = escapeProperty("android.library.reference." + Integer.toString(i + 1),
+                    path);
             sb.append(escaped).append("\n");
         }
-
-
-        // Slow, stupid implementation, but is 100% compatible with Java's property file implementation
-
 
         Files.write(sb.toString(), new File(projectDir, "project.properties"), UTF_8);
     }
@@ -1400,7 +1971,7 @@ public class GradleImportTest extends TestCase {
     }
 
     private static final String DEFAULT_MOVED = ""
-            + "* AndroidManifest.xml => test1/src/main/AndroidManifest.xml\n"
-            + "* res/ => test1/src/main/res/\n"
-            + "* src/ => test1/src/main/java/\n";
+            + "* AndroidManifest.xml => app/src/main/AndroidManifest.xml\n"
+            + "* res/ => app/src/main/res/\n"
+            + "* src/ => app/src/main/java/\n";
 }
