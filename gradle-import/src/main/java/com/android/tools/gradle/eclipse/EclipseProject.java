@@ -58,7 +58,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -82,7 +81,6 @@ class EclipseProject implements Comparable<EclipseProject> {
     private AndroidVersion mVersion;
     private String mName;
     private String mLanguageLevel;
-    private List<String> mPathVariables;
     private List<EclipseProject> mDirectLibraries;
     private List<File> mSourcePaths;
     private List<File> mJarPaths;
@@ -105,7 +103,7 @@ class EclipseProject implements Comparable<EclipseProject> {
         mImporter.registerProject(this);
 
         File file = getClassPathFile();
-        mClassPathDoc = GradleImport.getXmlDocument(file, false);
+        mClassPathDoc = mImporter.getXmlDocument(file, false);
 
         initProjectName();
         initAndroidProject();
@@ -124,7 +122,6 @@ class EclipseProject implements Comparable<EclipseProject> {
         }
 
         initClassPathEntries();
-        initPathVariables();
     }
 
     @NonNull
@@ -278,15 +275,26 @@ class EclipseProject implements Comparable<EclipseProject> {
             int index = path.indexOf('/');
             if (kind.equals("var") && index > 0) {
                 String var = path.substring(0, index);
-                String value = mImporter.resolvePathVariable(var);
-                if (value == null) {
+                if (mImporter.getEclipseWorkspace() != null) {
+                    try {
+                        String prefix = mImporter.resolvePathVariable(var);
+                        File resolved = new File(prefix, path.replace('/', separatorChar));
+                        if (resolved.exists()) {
+                            mSourcePaths.add(resolved);
+                            continue;
+                        }
+                    } catch (IOException ioe) {
+                        // Don't abort; instead record missing path in resolveWorkspacePath
+                        // call below
+                    }
+                }
+                File resolved = mImporter.resolveWorkspacePath(path);
+                if (resolved != null) {
+                    mSourcePaths.add(resolved);
+                } else {
                     mImporter.reportError(this, getClassPathFile(),
                             "Could not resolve path variable " + var);
-                    continue;
                 }
-                File file = new File(value.replace('/', separatorChar),
-                        path.replace('/', separatorChar));
-                mSourcePaths.add(file);
             } else if (kind.equals("src") && !path.isEmpty()) {
                 if (!path.equals(GEN_FOLDER)) { // ignore special generated source folder
                     String relative = path.replace('/', separatorChar);
@@ -296,8 +304,7 @@ class EclipseProject implements Comparable<EclipseProject> {
                         if (resolved != null) {
                             if (GradleImport.isEclipseProjectDir(resolved)) {
                                 // It's pointing to another project. Just add a dependency.
-                                EclipseProject lib = EclipseProject.getProject(mImporter,
-                                        resolved);
+                                EclipseProject lib = getProject(mImporter, resolved);
                                 if (!mDirectLibraries.contains(lib)) {
                                     mDirectLibraries.add(lib);
                                     mAllLibraries = null; // force refresh if already consulted
@@ -426,27 +433,6 @@ class EclipseProject implements Comparable<EclipseProject> {
         return null;
     }
 
-    private void initPathVariables() throws IOException {
-        Document document = getClassPathDocument();
-        Set<String> variables = new HashSet<String>();
-        NodeList entries = document.getElementsByTagName("classpathentry");
-        for (int i = 0; i < entries.getLength(); i++) {
-            Node entry = entries.item(i);
-            assert entry.getNodeType() == Node.ELEMENT_NODE;
-            Element element = (Element) entry;
-            String kind = element.getAttribute("kind");
-            String path = element.getAttribute("path");
-            int index = path.indexOf('/');
-            if (kind.equals("var") && index > 0) {
-                variables.add(path.substring(0, index));
-            }
-        }
-
-        List<String> sorted = Lists.newArrayList(variables);
-        Collections.sort(sorted);
-        mPathVariables = sorted;
-    }
-
     private void initAndroidProject() throws IOException {
         Document document = getProjectDocument();
         if (document == null) {
@@ -560,11 +546,6 @@ class EclipseProject implements Comparable<EclipseProject> {
         return new File(mDir, FD_ASSETS);
     }
 
-    public boolean needWorkspaceLocation() {
-        // TODO: && no workspace dependencies I can't resolve?
-        return !getPathVariables().isEmpty();
-    }
-
     @NonNull
     public Document getClassPathDocument()  {
         return mClassPathDoc;
@@ -580,7 +561,7 @@ class EclipseProject implements Comparable<EclipseProject> {
         assert isAndroidProject();
         if (mManifestDoc == null) {
             File file = getManifestFile();
-            mManifestDoc = GradleImport.getXmlDocument(file, true);
+            mManifestDoc = mImporter.getXmlDocument(file, true);
         }
 
         return mManifestDoc;
@@ -618,7 +599,7 @@ class EclipseProject implements Comparable<EclipseProject> {
         if (mProjectDoc == null) {
             File file = new File(mDir, ECLIPSE_DOT_PROJECT);
             if (file.exists()) {
-                mProjectDoc = GradleImport.getXmlDocument(file, false);
+                mProjectDoc = mImporter.getXmlDocument(file, false);
             } else {
                 mImporter.reportError(this, mDir,
                         "No Eclipse .project file found in " + mDir.getPath());
@@ -672,11 +653,6 @@ class EclipseProject implements Comparable<EclipseProject> {
     @NonNull
     public String getLanguageLevel()  {
         return mLanguageLevel;
-    }
-
-    @NonNull
-    public List<String> getPathVariables() {
-        return mPathVariables;
     }
 
     @NonNull
