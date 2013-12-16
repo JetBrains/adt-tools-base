@@ -125,7 +125,7 @@ public class GradleImport {
      * Whether we should place the repository definitions in the global build.gradle rather
      * than in each module
      */
-    static final boolean DECLARE_GLOBAL_REPOSITORIES = false;
+    static final boolean DECLARE_GLOBAL_REPOSITORIES = true;
 
     private List<? extends ImportModule> mRootModules;
     private Set<ImportModule> mModules;
