@@ -53,6 +53,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -167,8 +168,9 @@ public class GradleImport {
         mHandledJars.clear();
         mWarnings.clear();
         mErrors.clear();
-        mPathMap.clear();
         mWorkspaceProjects = null;
+        mRootModules = Collections.emptyList();
+        mModules = Sets.newHashSet();
 
         for (File file : projectDirs) {
             if (file.isFile()) {
@@ -198,7 +200,6 @@ public class GradleImport {
         // if the dir and the canonical dir differ, so pick unique values here)
         Set<EclipseProject> projects = Sets.newHashSet(mProjectMap.values());
         mRootModules = EclipseProject.performImport(this, projects);
-        mModules = Sets.newHashSet();
         for (ImportModule module : mRootModules) {
             mModules.add(module);
             mModules.addAll(module.getAllDependencies());
@@ -892,11 +893,9 @@ public class GradleImport {
 
     int getModuleCount() {
         int moduleCount = 0;
-        if (mModules != null) {
-            for (ImportModule module : mModules) {
-                if (!module.isReplacedWithDependency()) {
-                    moduleCount++;
-                }
+        for (ImportModule module : mModules) {
+            if (!module.isReplacedWithDependency()) {
+                moduleCount++;
             }
         }
         return moduleCount;
@@ -1009,12 +1008,10 @@ public class GradleImport {
     }
 
     private boolean haveArtifact(String groupId) {
-        if (mRootModules != null) {
-            for (ImportModule module : mRootModules) {
-                for (GradleCoordinate dependency : module.getDependencies()) {
-                    if (groupId.equals(dependency.getGroupId())) {
-                        return true;
-                    }
+        for (ImportModule module : mRootModules) {
+            for (GradleCoordinate dependency : module.getDependencies()) {
+                if (groupId.equals(dependency.getGroupId())) {
+                    return true;
                 }
             }
         }
