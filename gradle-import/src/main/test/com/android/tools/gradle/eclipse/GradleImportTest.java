@@ -48,6 +48,7 @@ import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
@@ -60,7 +61,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 
 // TODO:
 // -- Test what happens if we're missing a project.properties file
@@ -1242,6 +1245,7 @@ public class GradleImportTest extends TestCase {
                 + "    guava-13.0.1.jar\n",
                 fileTree(root, true));
 
+        final AtomicReference<GradleImport> importReference = new AtomicReference<GradleImport>();
         File imported = checkProject(app, ""
                 + MSG_HEADER
                 + MSG_MANIFEST
@@ -1264,7 +1268,14 @@ public class GradleImportTest extends TestCase {
                 + "* res/ => androidApp/src/main/res/\n"
                 + "* src/ => androidApp/src/main/java/\n"
                 + MSG_FOOTER,
-                false /* checkBuild */);
+                false /* checkBuild */, new ImportCustomizer() {
+            @Override
+            public void customize(GradleImport importer) {
+                importReference.set(importer);
+            }
+        });
+        Map<String,File> pathMap = importReference.get().getPathMap();
+        assertEquals("{/Library1=null, /Library2=null}", pathMap.toString());
 
         // Imported project
         assertEquals(""

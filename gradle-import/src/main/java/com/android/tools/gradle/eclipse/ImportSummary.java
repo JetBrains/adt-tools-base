@@ -171,7 +171,7 @@ public class ImportSummary {
     private List<String> mGuessedDependencyVersions = Lists.newArrayList();
     private File mLastGuessedJar;
 
-    public ImportSummary(@NonNull GradleImport importer) {
+    ImportSummary(@NonNull GradleImport importer) {
         mImporter = importer;
     }
 
@@ -234,7 +234,9 @@ public class ImportSummary {
         list.add(file);
     }
 
-    private String createSummary() {
+    /** Provides the summary */
+    @NonNull
+    public String createSummary() {
         StringBuilder sb = new StringBuilder(2000);
         sb.append(MSG_HEADER);
 
