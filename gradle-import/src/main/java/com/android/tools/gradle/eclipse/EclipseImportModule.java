@@ -72,6 +72,9 @@ class EclipseImportModule extends ImportModule {
 
     @Override
     protected boolean dependsOnLibrary(@NonNull String pkg) {
+        if (!isAndroidProject()) {
+            return false;
+        }
         if (pkg.equals(mProject.getPackage())) {
             return true;
         }
