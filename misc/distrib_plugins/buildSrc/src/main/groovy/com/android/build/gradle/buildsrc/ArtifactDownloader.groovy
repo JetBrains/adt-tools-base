@@ -25,9 +25,11 @@ import org.apache.commons.io.FileUtils
 import org.gradle.api.Project
 import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.artifacts.ModuleVersionIdentifier
-import org.gradle.api.artifacts.ModuleVersionSelector
-import org.gradle.api.artifacts.result.*
-import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier
+import org.gradle.api.artifacts.result.DependencyResult
+import org.gradle.api.artifacts.result.ResolutionResult
+import org.gradle.api.artifacts.result.ResolvedComponentResult
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.artifacts.result.UnresolvedDependencyResult
 
 class ArtifactDownloader {
 
@@ -139,17 +141,17 @@ class ArtifactDownloader {
         }
     }
 
-    protected void buildArtifactList(ResolvedModuleVersionResult module,
-                                   Set<ModuleVersionIdentifier> list) {
-        list.add(module.id)
+    protected void buildArtifactList(ResolvedComponentResult module,
+                                     Set<ModuleVersionIdentifier> list) {
+        list.add(module.moduleVersion)
 
         for (DependencyResult d : module.getDependencies()) {
             if (d instanceof UnresolvedDependencyResult) {
-                UnresolvedDependencyResult dependency = (UnresolvedDependencyResult) d
-                ModuleVersionSelector attempted = dependency.getAttempted()
-                ModuleVersionIdentifier id = DefaultModuleVersionIdentifier.newId(
-                        attempted.getGroup(), attempted.getName(), attempted.getVersion())
-                list.add(id)
+//                UnresolvedDependencyResult dependency = (UnresolvedDependencyResult) d
+//                ModuleVersionSelector attempted = dependency.getAttempted()
+//                ModuleVersionIdentifier id = DefaultModuleVersionIdentifier.newId(
+//                        attempted.getGroup(), attempted.getName(), attempted.getVersion())
+//                list.add(id)
             } else {
                 buildArtifactList(((ResolvedDependencyResult) d).getSelected(), list)
             }
