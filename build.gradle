@@ -3,7 +3,7 @@ buildscript {
         maven { url "$rootDir/../../prebuilts/tools/common/gradle-plugins/repository" }
     }
     dependencies {
-        classpath 'com.android.tools.internal:internal-plugins:1.0'
+        classpath 'com.android.tools.internal:internal-plugins:1.1'
     }
 }
 
