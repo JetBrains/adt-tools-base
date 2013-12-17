@@ -851,6 +851,7 @@ public class GradleImport {
 
     private File getSettingsFile() {
         return new File(getWorkspaceLocation(),
+                ".metadata" + separator +
                 ".plugins" + separator +
                 "org.eclipse.core.runtime" + separator +
                 ".settings" + separator +
