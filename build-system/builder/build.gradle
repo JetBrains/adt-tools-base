@@ -1,0 +1,37 @@
+apply plugin: 'java'
+apply plugin: 'clone-artifacts'
+
+evaluationDependsOn(':builder-model')
+evaluationDependsOn(':builder-test-api')
+
+dependencies {
+    compile project(':builder-model')
+    compile project(':builder-test-api')
+
+    compile project(':sdklib')
+    compile project(':sdk-common')
+    compile project(':common')
+    compile project(':manifest-merger')
+    compile project(':ddmlib')
+
+    compile 'com.squareup:javawriter:2.2.1'
+    compile 'org.bouncycastle:bcpkix-jdk15on:1.48'
+
+    testCompile 'junit:junit:3.8.1'
+    testCompile project(':testutils')
+}
+
+group = 'com.android.tools.build'
+archivesBaseName = 'builder'
+project.ext.pomName = 'Android Builder library'
+project.ext.pomDesc = 'Library to build Android applications.'
+
+apply from: '../../buildVersion.gradle'
+apply from: '../../publish.gradle'
+apply from: '../../javadoc.gradle'
+
+jar.manifest.attributes("Builder-Version": version)
+publishLocal.dependsOn ':builder-model:publishLocal', ':builder-test-api:publishLocal'
+
+apply plugin: 'distrib'
+shipping.isShipping = false

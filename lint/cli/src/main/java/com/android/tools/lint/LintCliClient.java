@@ -16,6 +16,8 @@
 
 package com.android.tools.lint;
 
+import static com.android.tools.lint.LintCliFlags.ERRNO_ERRORS;
+import static com.android.tools.lint.LintCliFlags.ERRNO_SUCCESS;
 import static com.android.tools.lint.client.api.IssueRegistry.LINT_ERROR;
 import static com.android.tools.lint.client.api.IssueRegistry.PARSER_ERROR;
 
@@ -81,11 +83,13 @@ public class LintCliClient extends LintClient {
     protected IssueRegistry mRegistry;
     protected LintDriver mDriver;
     protected final LintCliFlags mFlags;
+    private Configuration mConfiguration;
 
     /** Creates a CLI driver */
     public LintCliClient() {
         mFlags = new LintCliFlags();
-        TextReporter reporter = new TextReporter(this, new PrintWriter(System.out, true), false);
+        TextReporter reporter = new TextReporter(this, mFlags, new PrintWriter(System.out, true),
+                false);
         mFlags.getReporters().add(reporter);
     }
 
@@ -97,7 +101,7 @@ public class LintCliClient extends LintClient {
      * Runs the static analysis command line driver. You need to add at least one error reporter
      * to the command line flags.
      */
-    public int run(IssueRegistry registry, List<File> files) throws IOException {
+    public int run(@NonNull IssueRegistry registry, @NonNull List<File> files) throws IOException {
         assert !mFlags.getReporters().isEmpty();
         mRegistry = registry;
         mDriver = new LintDriver(registry, this);
@@ -108,7 +112,7 @@ public class LintCliClient extends LintClient {
             mDriver.addLintListener(new ProgressPrinter());
         }
 
-        mDriver.analyze(new LintRequest(this, files));
+        mDriver.analyze(createLintRequest(files));
 
         Collections.sort(mWarnings);
 
@@ -116,7 +120,13 @@ public class LintCliClient extends LintClient {
             reporter.write(mErrorCount, mWarningCount, mWarnings);
         }
 
-        return mFlags.isSetExitCode() ? (mHasErrors ? -1 : 0) : 0;
+        return mFlags.isSetExitCode() ? (mHasErrors ? ERRNO_ERRORS : ERRNO_SUCCESS) : ERRNO_SUCCESS;
+    }
+
+    /** Creates a lint request */
+    @NonNull
+    protected LintRequest createLintRequest(@NonNull List<File> files) {
+        return new LintRequest(this, files);
     }
 
     @Override
@@ -146,7 +156,7 @@ public class LintCliClient extends LintClient {
 
     @Override
     public Configuration getConfiguration(@NonNull Project project) {
-        return new CliConfiguration(mFlags.getDefaultConfiguration(), project);
+        return new CliConfiguration(getConfiguration(), project);
     }
 
     /** File content cache */
@@ -568,7 +578,18 @@ public class LintCliClient extends LintClient {
 
     /** Returns the configuration used by this client */
     Configuration getConfiguration() {
-        return mFlags.getDefaultConfiguration();
+        if (mConfiguration == null) {
+            File configFile = mFlags.getDefaultConfiguration();
+            if (configFile != null) {
+                if (!configFile.exists()) {
+                    log(Severity.ERROR, null, "Warning: Configuration file %1$s does not exist",
+                            configFile);
+                }
+                mConfiguration = createConfigurationFromFile(configFile);
+            }
+        }
+
+        return mConfiguration;
     }
 
     /** Returns true if the given issue has been explicitly disabled */
@@ -604,5 +625,9 @@ public class LintCliClient extends LintClient {
         }
 
         return null;
+    }
+
+    public boolean haveErrors() {
+        return mErrorCount > 0;
     }
 }

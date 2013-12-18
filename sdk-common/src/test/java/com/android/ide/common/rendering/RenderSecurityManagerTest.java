@@ -15,19 +15,29 @@
  */
 package com.android.ide.common.rendering;
 
+import static java.io.File.separator;
+
 import com.android.ide.common.res2.RecordingLogger;
+import com.android.testutils.TestUtils;
+import com.android.utils.SdkUtils;
 import com.google.common.io.Files;
 
 import junit.framework.TestCase;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FilePermission;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.security.Permission;
 import java.util.Collections;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.imageio.ImageIO;
+import javax.swing.*;
 
 public class RenderSecurityManagerTest extends TestCase {
 
@@ -115,6 +125,39 @@ public class RenderSecurityManagerTest extends TestCase {
         } catch (SecurityException exception) {
             assertEquals("Write access not allowed during rendering (/foo)", exception.toString());
             // pass
+        } finally {
+            manager.dispose(myCredential);
+        }
+    }
+
+    public void testLoadLibrary() throws Exception {
+        RenderSecurityManager manager = new RenderSecurityManager(null, null);
+        try {
+            manager.setActive(true, myCredential);
+
+            // Unit test only runs on OSX
+            if (SdkUtils.startsWithIgnoreCase(System.getProperty("os.name"), "Mac")
+                    && new File("/usr/lib/libc.dylib").exists()) {
+                System.load("/usr/lib/libc.dylib");
+                fail("Should have thrown security exception");
+            }
+        } catch (SecurityException exception) {
+            assertEquals("Link access not allowed during rendering (/usr/lib/libc.dylib)",
+                    exception.toString());
+            // pass
+        } finally {
+            manager.dispose(myCredential);
+        }
+    }
+
+    public void testAllowedLoadLibrary() throws Exception {
+        RenderSecurityManager manager = new RenderSecurityManager(null, null);
+        try {
+            manager.setActive(true, myCredential);
+
+            System.loadLibrary("fontmanager");
+        } catch (UnsatisfiedLinkError e) {
+            // pass - library may not be present on all JDKs
         } finally {
             manager.dispose(myCredential);
         }
@@ -600,9 +643,68 @@ public class RenderSecurityManagerTest extends TestCase {
                 fail("Shouldn't be able to find our way to the credential");
             } catch (Exception e) {
                 // pass
+                assertEquals("java.lang.NoSuchFieldException: sCredential", e.toString());
+            }
+
+            // Try looking up the secret (with getDeclaredField instead of getField)
+            try {
+                Field field = RenderSecurityManager.class.getDeclaredField("sCredential");
+                field.setAccessible(true);
+                Object secret = field.get(null);
+                manager.dispose(secret);
+                fail("Shouldn't be able to find our way to the credential");
+            } catch (Exception e) {
+                // pass
+                assertEquals("Reflection access not allowed during rendering "
+                        + "(com.android.ide.common.rendering.RenderSecurityManager)",
+                        e.toString());
             }
         } finally {
             manager.dispose(credential);
+        }
+    }
+
+    public void testImageIo() throws Exception {
+        RenderSecurityManager manager = new RenderSecurityManager(null, null);
+        try {
+            manager.setActive(true, myCredential);
+
+            File root = TestUtils.getRoot("resources", "baseMerge");
+            assertNotNull(root);
+            assertTrue(root.exists());
+            final File icon = new File(root, "overlay" + separator + "drawable" + separator
+                    + "icon2.png");
+            assertTrue(icon.exists());
+            final byte[] buf = Files.toByteArray(icon);
+            InputStream stream = new ByteArrayInputStream(buf);
+            assertNotNull(stream);
+            BufferedImage image = ImageIO.read(stream);
+            assertNotNull(image);
+            assertNull(ImageIO.getCacheDirectory());
+
+            // Also run in non AWT thread to test ImageIO thread locals cache dir behavior
+            Thread thread = new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        assertFalse(SwingUtilities.isEventDispatchThread());
+                        final byte[] buf = Files.toByteArray(icon);
+                        InputStream stream = new ByteArrayInputStream(buf);
+                        assertNotNull(stream);
+                        BufferedImage image = ImageIO.read(stream);
+                        assertNotNull(image);
+                        assertNull(ImageIO.getCacheDirectory());
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                        fail(t.toString());
+                    }
+                }
+            };
+
+            thread.start();
+            thread.join();
+        } finally {
+            manager.dispose(myCredential);
         }
     }
 }

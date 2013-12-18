@@ -25,8 +25,10 @@ import com.android.utils.ILogger;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FilePermission;
+import java.lang.reflect.Member;
 import java.net.InetAddress;
 import java.security.Permission;
+import java.util.PropertyPermission;
 
 /**
  * A {@link java.lang.SecurityManager} which is used for layout lib rendering, to
@@ -79,6 +81,7 @@ public class RenderSecurityManager extends SecurityManager {
     @SuppressWarnings("FieldCanBeLocal")
     private String mProjectPath;
     private String mTempDir;
+    private String mNormalizedTempDir;
     private SecurityManager myPreviousSecurityManager;
     private ILogger mLogger;
 
@@ -123,6 +126,7 @@ public class RenderSecurityManager extends SecurityManager {
         mSdkPath = sdkPath;
         mProjectPath = projectPath;
         mTempDir = System.getProperty("java.io.tmpdir");
+        mNormalizedTempDir = new File(mTempDir).getPath(); // will call fs.normalize() on the path
     }
 
     /** Sets an optional logger. Returns this for constructor chaining. */
@@ -238,6 +242,10 @@ public class RenderSecurityManager extends SecurityManager {
 
     @Override
     public void checkMemberAccess(Class<?> clazz, int which) {
+        if (which == Member.DECLARED && isRelevant() &&
+                "com.android.ide.common.rendering.RenderSecurityManager".equals(clazz.getName())) {
+            throw RenderSecurityException.create("Reflection", clazz.getName());
+        }
     }
 
     @Override
@@ -246,8 +254,15 @@ public class RenderSecurityManager extends SecurityManager {
 
     @Override
     public void checkLink(String lib) {
+        // Allow linking with relative paths
         // Needed to for example load the "fontmanager" library from layout lib (from the
         // BiDiRenderer's layoutGlyphVector call
+        if (isRelevant() && (lib.indexOf('/') != -1 || lib.indexOf('\\') != -1)) {
+            if (lib.startsWith(System.getProperty("java.home"))) {
+                return; // Allow loading JRE libraries
+            }
+            throw RenderSecurityException.create("Link", lib);
+        }
     }
 
     @Override
@@ -302,7 +317,7 @@ public class RenderSecurityManager extends SecurityManager {
             }
 
             // Allow reading files in temp
-            if (path.startsWith(mTempDir)) {
+            if (path.startsWith(mTempDir) || path.startsWith(mNormalizedTempDir)) {
                 return true;
             }
 
@@ -324,9 +339,26 @@ public class RenderSecurityManager extends SecurityManager {
         }
     }
 
+    @SuppressWarnings("RedundantIfStatement")
     private boolean isWritingAllowed(String path) {
-        //noinspection RedundantIfStatement
-        if (path.startsWith(mTempDir)) {
+        if (path.startsWith(mTempDir) || path.startsWith(mNormalizedTempDir)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    @SuppressWarnings({"SpellCheckingInspection", "RedundantIfStatement"})
+    private static boolean isPropertyWriteAllowed(String name) {
+        // Linux sets this on fontmanager load; allow it since even if code points
+        // to their own classes they don't get additional privileges, it's just like
+        // using reflection
+        if (name.equals("sun.font.fontmanager")) {
+            return true;
+        }
+
+        // Toolkit initializations
+        if (name.startsWith("sun.awt.") || name.startsWith("apple.awt.")) {
             return true;
         }
 
@@ -532,6 +564,9 @@ public class RenderSecurityManager extends SecurityManager {
             } else if (!actions.isEmpty() && !actions.equals("read")) {
                 // write, execute, delete, readlink
                 if (!(permission instanceof FilePermission) || !isWritingAllowed(name)) {
+                    if (permission instanceof PropertyPermission && isPropertyWriteAllowed(name)) {
+                        return;
+                    }
                     throw RenderSecurityException.create("Write", name);
                 }
             }

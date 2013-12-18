@@ -1,3 +1,6 @@
+apply plugin: 'java'
+apply plugin: 'distrib'
+
 group = 'com.android.tools'
 archivesBaseName = 'testutils'
 
@@ -15,3 +18,4 @@ sourceSets {
 // TODO: be able to ship to prebuilts/devtools/adt
 shipping.isShipping = false
 
+apply from: '../baseVersion.gradle'

@@ -1,0 +1,28 @@
+apply plugin: 'android'
+
+dependencies {
+    compile project(':lib')
+}
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+
+    productFlavors {
+        x86 {
+            ndk {
+                abiFilter "x86"
+            }
+        }
+        arm {
+            ndk {
+                abiFilter "armeabi-v7a"
+            }
+        }
+        mips {
+            ndk {
+                abiFilter "mips"
+            }
+        }
+    }
+}

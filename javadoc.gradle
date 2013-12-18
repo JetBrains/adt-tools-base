@@ -1,0 +1,16 @@
+javadoc {
+    exclude               "**/internal/**"
+    options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PROTECTED
+
+    title                 project.ext.pomName
+}
+
+task javadocJar(type: Jar, dependsOn:javadoc) {
+    classifier         'javadoc'
+    from               javadoc.destinationDir
+}
+
+// add javadoc jar tasks as artifacts
+artifacts {
+    archives javadocJar
+}
