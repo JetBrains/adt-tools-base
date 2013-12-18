@@ -305,9 +305,15 @@ abstract class ImportModule implements Comparable<ImportModule> {
         for (final File src : getSourcePaths()) {
             final File srcJava = resolveFile(src);
             File destJava = new File(main, FD_JAVA);
-            // Merge all the separate source folders into a single one; they aren't allowed
-            // to contain source file conflicts anyway
-            mImporter.mkdirs(destJava);
+
+            if (srcJava.isDirectory()) {
+                // Merge all the separate source folders into a single one; they aren't allowed
+                // to contain source file conflicts anyway
+                mImporter.mkdirs(destJava);
+            } else {
+                destJava = new File(main, srcJava.getName());
+            }
+
             mImporter.copyDir(srcJava, destJava, new GradleImport.CopyHandler() {
                 // Handle moving .rs/.rsh/.fs files to main/rs/ and .aidl files to the
                 // corresponding aidl package under main/aidl
