@@ -20,6 +20,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.packaging.JavaResourceProcessor.IArchiveBuilder;
+import com.android.builder.model.PackagingOptions;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.SealedPackageException;
@@ -92,8 +93,16 @@ public final class Packager implements IArchiveBuilder {
      */
     private final class JavaAndNativeResourceFilter implements IZipEntryFilter {
         private final List<String> mNativeLibs = new ArrayList<String>();
+
+        @Nullable
+        private final PackagingOptions mPackagingOptions;
+
         private boolean mNativeLibsConflict = false;
         private File mInputFile;
+
+        private JavaAndNativeResourceFilter(@Nullable PackagingOptions packagingOptions) {
+            mPackagingOptions = packagingOptions;
+        }
 
         @Override
         public boolean checkEntry(String archivePath) throws ZipAbortException {
@@ -103,6 +112,13 @@ public final class Packager implements IArchiveBuilder {
             // empty path? skip to next entry.
             if (segments.length == 0) {
                 return false;
+            }
+
+            if (mPackagingOptions != null) {
+                Set<String> excludes = mPackagingOptions.getExcludes();
+                if (excludes.contains(archivePath)) {
+                    return false;
+                }
             }
 
             // Check each folders to make sure they should be included.
@@ -167,7 +183,7 @@ public final class Packager implements IArchiveBuilder {
     private boolean mIsSealed = false;
 
     private final NullZipFilter mNullFilter = new NullZipFilter();
-    private final JavaAndNativeResourceFilter mFilter = new JavaAndNativeResourceFilter();
+    private final JavaAndNativeResourceFilter mFilter;
     private final HashMap<String, File> mAddedFiles = new HashMap<String, File>();
 
     /**
@@ -234,7 +250,9 @@ public final class Packager implements IArchiveBuilder {
             @NonNull String dexLocation,
             CertificateInfo certificateInfo,
             @Nullable String createdBy,
+            @Nullable PackagingOptions packagingOptions,
             ILogger logger) throws PackagerException {
+        mFilter = new JavaAndNativeResourceFilter(packagingOptions);
 
         try {
             File apkFile = new File(apkLocation);
