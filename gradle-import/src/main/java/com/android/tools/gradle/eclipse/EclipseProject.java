@@ -41,11 +41,14 @@ import static java.io.File.separatorChar;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.lint.detector.api.LintUtils;
+import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import org.w3c.dom.Document;
@@ -62,6 +65,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** Provides information about an Eclipse project */
 class EclipseProject implements Comparable<EclipseProject> {
@@ -90,6 +95,8 @@ class EclipseProject implements Comparable<EclipseProject> {
     private List<File> mSdkProguardFiles;
     private List<EclipseProject> mAllLibraries;
     private EclipseImportModule mModule;
+    private Map<String,String> mProjectVariableMap;
+    private Map<String,String> mLinkedResourceMap;
 
     private EclipseProject(
             @NonNull GradleImport importer,
@@ -272,60 +279,35 @@ class EclipseProject implements Comparable<EclipseProject> {
             Element element = (Element) entry;
             String kind = element.getAttribute("kind");
             String path = element.getAttribute("path");
-            int index = path.indexOf('/');
-            if (kind.equals("var") && index > 0) {
-                String var = path.substring(0, index);
-                if (mImporter.getEclipseWorkspace() != null) {
-                    try {
-                        String prefix = mImporter.resolvePathVariable(var);
-                        if (prefix != null) {
-                            File resolved = new File(prefix.replace('/', separatorChar),
-                                    path.replace('/', separatorChar));
-                            if (resolved.exists()) {
-                                mSourcePaths.add(resolved);
-                                continue;
-                            }
-                        }
-                    } catch (IOException ioe) {
-                        // Don't abort; instead record missing path in resolveWorkspacePath
-                        // call below
-                    }
-                }
-                File resolved = mImporter.resolveWorkspacePath(path);
+            if (kind.equals("var")) {
+                File resolved = resolveVariableExpression(path);
                 if (resolved != null) {
                     mSourcePaths.add(resolved);
                 } else {
-                    mImporter.reportError(this, getClassPathFile(),
-                            "Could not resolve path variable " + var);
+                    mImporter.reportWarning(this, getClassPathFile(),
+                            "Could not resolve path variable " + path);
                 }
             } else if (kind.equals("src") && !path.isEmpty()) {
                 if (!path.equals(GEN_FOLDER)) { // ignore special generated source folder
-                    String relative = path.replace('/', separatorChar);
-                    File file = new File(relative);
-                    if (file.isAbsolute() || path.startsWith("/")) {
-                        File resolved = resolveWorkspacePath(path);
-                        if (resolved != null) {
-                            if (GradleImport.isEclipseProjectDir(resolved)) {
-                                // It's pointing to another project. Just add a dependency.
-                                EclipseProject lib = getProject(mImporter, resolved);
-                                if (!mDirectLibraries.contains(lib)) {
-                                    mDirectLibraries.add(lib);
-                                    mAllLibraries = null; // force refresh if already consulted
-                                }
-                                continue;
-                            } else {
-                                // It's some other source directory: just include as a source path
-                                mSourcePaths.add(resolved);
-                                continue;
+                    File resolved = resolveVariableExpression(path);
+                    if (resolved != null) {
+                        if (path.startsWith("/") && GradleImport.isEclipseProjectDir(resolved)) {
+                            // It's pointing to another project. Just add a dependency.
+                            EclipseProject lib = getProject(mImporter, resolved);
+                            if (!mDirectLibraries.contains(lib)) {
+                                mDirectLibraries.add(lib);
+                                mAllLibraries = null; // force refresh if already consulted
                             }
+                        } else {
+                            // It's some other source directory: just include as a source path
+                            mSourcePaths.add(resolved);
                         }
+                    } else {
                         mImporter.reportWarning(this, getClassPathFile(),
                                 "Could not resolve source path " + path + " in project "
                                         + getName() + ": ignored. The project may not "
                                         + "compile if the given source path provided "
                                         + "source code.");
-                    } else {
-                        mSourcePaths.add(file);
                     }
                 }
             } else if (kind.equals("lib") && !path.isEmpty()) {
@@ -333,19 +315,13 @@ class EclipseProject implements Comparable<EclipseProject> {
                 // we pick up the information from the project.properties file for library
                 // dependencies and the libs/ folder for jar files.
                 if (!isAndroidProject()) {
-                    String relative = path.replace('/', separatorChar);
-                    File file = new File(relative);
-                    if (file.isAbsolute() || path.startsWith("/")) {
-                        File resolved = resolveWorkspacePath(path);
-                        if (resolved != null) {
-                            mJarPaths.add(resolved);
-                        } else {
-                            mImporter.reportWarning(this, getClassPathFile(),
-                                "Absolute path in the path entry: If outside project, may not "
-                                        + "work correctly: " + path);
-                        }
+                    File resolved = resolveVariableExpression(path);
+                    if (resolved != null) {
+                        mJarPaths.add(resolved);
                     } else {
-                        mJarPaths.add(file);
+                        mImporter.reportWarning(this, getClassPathFile(),
+                            "Absolute path in the path entry: If outside project, may not "
+                                    + "work correctly: " + path);
                     }
                 }
             } else if (kind.equals("output") && !path.isEmpty()) {
@@ -387,49 +363,234 @@ class EclipseProject implements Comparable<EclipseProject> {
         }
     }
 
-    @Nullable
-    private File resolveWorkspacePath(@NonNull String path) {
-        if (path.isEmpty()) {
-            return null;
+    private Map<String,String> getProjectVariableMap() {
+        if (mProjectVariableMap == null) {
+            mProjectVariableMap = Maps.newHashMap();
+
+            Document document;
+            try {
+                document = getProjectDocument();
+            } catch (IOException e) {
+                return mProjectVariableMap;
+            }
+            assert document != null;
+            NodeList variables = document.getElementsByTagName("variable");
+            for (int i = 0, n = variables.getLength(); i < n; i++) {
+                Element variable = (Element) variables.item(i);
+                NodeList names = variable.getElementsByTagName("name");
+                NodeList values = variable.getElementsByTagName("value");
+                if (names.getLength() == 1 && values.getLength() == 1) {
+                    String value = getStringValue((Element)values.item(0));
+                    String key = getStringValue((Element) names.item(0));
+                    mProjectVariableMap.put(key, value);
+                }
+            }
         }
-        String relative = path.replace('/', separatorChar);
-        File file = new File(relative);
-        if (file.isAbsolute() || path.startsWith("/")) {
-            if (file.exists()) {
-                return file;
+
+        return mProjectVariableMap;
+    }
+
+    private Map<String,String> getLinkedResourceMap() {
+        if (mLinkedResourceMap == null) {
+            mLinkedResourceMap = Maps.newHashMap();
+
+            Document document;
+            try {
+                document = getProjectDocument();
+            } catch (IOException e) {
+                return mLinkedResourceMap;
+            }
+            assert document != null;
+            NodeList links = document.getElementsByTagName("link");
+            for (int i = 0, n = links.getLength(); i < n; i++) {
+                Element variable = (Element) links.item(i);
+                NodeList names = variable.getElementsByTagName("name");
+                NodeList values = variable.getElementsByTagName("locationURI");
+                if (names.getLength() == 1 && values.getLength() == 1) {
+                    String value = getStringValue((Element)values.item(0));
+                    String key = getStringValue((Element) names.item(0));
+                    mLinkedResourceMap.put(key, value);
+                }
             }
 
-            // It might be a workspace reference
-            if (path.charAt(0) == '/') { // Workspace roots use '/', even on Windows
-                // Try to resolve it using the workspace name
-                File f = mImporter.resolveWorkspacePath(path);
-                if (f != null && f.exists()) {
-                    return f;
+        }
+
+        return mLinkedResourceMap;
+    }
+
+    @VisibleForTesting
+    @Nullable
+    File resolveVariableExpression(@NonNull String path) throws IOException {
+        File file = resolveVariableExpression(path, true, 0);
+        if (file != null && mImporter.getPathMap().containsKey(path)) {
+            mImporter.getPathMap().put(path, file);
+        }
+        return file;
+    }
+
+    @Nullable
+    private File resolveVariableExpression(@NonNull String path, boolean record, int depth)
+            throws IOException {
+        if (depth > 50) { // probably cyclical definition of variables
+            return null;
+        }
+        if (path.equals("PROJECT_LOC")) {
+            return mDir;
+        } else if (path.equals("PARENT_LOC")) {
+            return mDir.getParentFile();
+        } else if (path.equals("WORKSPACE_LOC")) {
+            return mImporter.getEclipseWorkspace();
+        } else if (path.startsWith("PARENT-")) {
+            Pattern pattern = Pattern.compile("PARENT-(\\d+)-(.+)");
+            Matcher matcher = pattern.matcher(path);
+            if (matcher.matches()) {
+                // Replace suffix a given number of times
+                int count = Integer.parseInt(matcher.group(1));
+                String target = matcher.group(2);
+                int index = target.indexOf('/');
+                if (index == -1) {
+                    index = target.indexOf('\\');
+                }
+                String var = index == -1 ? target : target.substring(0, index);
+                File file = resolveVariableExpression(var, false, depth + 1);
+                if (file != null){
+                    File original = file;
+                    for (int i = 0; i < count; i++) {
+                        if (file == null) {
+                            break;
+                        }
+                        file = file.getParentFile();
+                    }
+                    if (file == null) {
+                        // Try again but with canonical files
+                        file = original.getCanonicalFile();
+                        for (int i = 0; i < count; i++) {
+                            if (file == null) {
+                                break;
+                            }
+                            file = file.getParentFile();
+                        }
+
+                    }
                 }
 
-                if (path.indexOf('/', 1) == -1 && path.indexOf('\\', 1) == -1) {
-                    String name = path.substring(1);
-                    // If we can't resolve workspace paths, try looking relative
-                    // to the current project; dependent projects are often there
-                    File parent = mDir.getParentFile();
-                    if (parent != null) {
-                        File sibling = new File(parent, name);
-                        if (sibling.exists()) {
-                            return sibling;
-                        }
-                    }
+                if (file != null && index != -1) {
+                    file = new File(file, target.substring(index + 1));
+                }
+                return file;
+            }
+        }
 
-                    // Libraries are also often children
-                    File child = new File(mDir, name);
-                    if (child.exists()) {
-                        return child;
+        // See if it's an absolute path
+        String filePath = path.replace('/', separatorChar);
+        File resolved = new File(filePath);
+        if (resolved.exists()) {
+            return resolved;
+        }
+
+        // See if it's a relative path
+        resolved = new File(mDir, filePath);
+        if (resolved.exists()) {
+            return resolved;
+        }
+
+        // Look up in shared path map (and record path for user editing in wizard
+        // if not resolvable)
+        // No -- this needs to be per project?? Only if it's used in multiple projects...
+        resolved = mImporter.getPathMap().get(path);
+        if (resolved != null) {
+            return resolved;
+        }
+
+        if (record) {
+            // Record the path expression such that the user can provide a resolution
+            mImporter.getPathMap().put(path, null);
+        }
+
+        // Workspace path?
+        if (path.startsWith("/")) { // It's / on Windows too
+            // Workspace path
+            resolved = mImporter.resolveWorkspacePath(this, path, record);
+            if (resolved != null) {
+                return resolved;
+            }
+
+            if (path.indexOf('/', 1) == -1 && path.indexOf('\\', 1) == -1) {
+                String name = path.substring(1);
+                // If we can't resolve workspace paths, try looking relative
+                // to the current project; dependent projects are often there
+                File parent = mDir.getParentFile();
+                if (parent != null) {
+                    File sibling = new File(parent, name);
+                    if (sibling.exists()) {
+                        return sibling;
+                    }
+                }
+
+                // Libraries are also often children
+                File child = new File(mDir, name);
+                if (child.exists()) {
+                    return child;
+                }
+            }
+        } else if (path.startsWith("$%7B")) {
+            // E.g. "<value>$%7BPARENT-2-PARENT_LOC%7D/Users</value>"
+            // This corresponds to {PARENT_LOC}/../../
+            int start = 4;
+            int end = path.indexOf("%7D", 4);
+            if (end != -1) {
+                String sub = path.substring(start, end);
+                File expression = resolveVariableExpression(sub, false, depth + 1);
+                if (expression != null) {
+                    String suffix = path.substring(end + 3);
+                    if (suffix.isEmpty()) {
+                        return expression;
+                    } else {
+                        resolved = new File(expression, suffix.replace('/', separatorChar));
+                        if (resolved.exists()) {
+                            return resolved;
+                        }
                     }
                 }
             }
         } else {
-            File f = new File(mDir, relative);
-            if (f.exists()) {
-                return f;
+            // Path variable?
+            int index = path.indexOf('/');
+            if (index == -1) {
+                index = path.indexOf('\\');
+            }
+            String var;
+            if (index == -1) {
+                var = path;
+            } else {
+                var = path.substring(0, index);
+            }
+
+            Map<String, String> map = getLinkedResourceMap();
+            String expression = map.get(var);
+            if (expression == null || expression.equals(var)) {
+                map = getProjectVariableMap();
+                expression = map.get(var);
+            }
+            File file;
+            if (expression != null) {
+                if (expression.startsWith("file:")) {
+                    file = SdkUtils.urlToFile(expression);
+                } else {
+                    file = resolveVariableExpression(expression, false, depth + 1);
+                }
+            } else {
+                file = mImporter.resolvePathVariable(this, var, false);
+            }
+            if (file != null) {
+                if (index == -1) {
+                    return file;
+                } else {
+                    resolved = new File(file, path.substring(index + 1));
+                    if (resolved.exists()) {
+                        return resolved;
+                    }
+                }
             }
         }
 
@@ -598,7 +759,7 @@ class EclipseProject implements Comparable<EclipseProject> {
     }
 
     @Nullable
-    public Document getProjectDocument() throws IOException {
+    private Document getProjectDocument() throws IOException {
         if (mProjectDoc == null) {
             File file = new File(mDir, ECLIPSE_DOT_PROJECT);
             if (file.exists()) {
@@ -618,7 +779,7 @@ class EclipseProject implements Comparable<EclipseProject> {
     }
 
     @Nullable
-    public static String getStringValue(@NonNull Element element) {
+    private static String getStringValue(@NonNull Element element) {
         NodeList children = element.getChildNodes();
         for (int j = 0; j < children.getLength(); j++) {
             Node child = children.item(j);

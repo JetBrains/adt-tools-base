@@ -49,6 +49,7 @@ import com.android.utils.Pair;
 import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
@@ -107,6 +108,174 @@ public class GradleImportTest extends TestCase {
         createDefaultIcon(dir);
 
         return dir;
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testResolveExpressions() throws Exception {
+        File root = Files.createTempDir();
+        File projectDir = new File(root, "dir1" + separator + "dir2" + separator + "dir3" +
+                separator + "dir4" + separator + "prj");
+        projectDir.mkdirs();
+        createProject(projectDir, "test1", "test.pkg");
+        File var1 = new File(root, "sub1" + separator + "sub2" + separator + "sub3");
+        var1.mkdirs();
+        File var4 = new File(projectDir.getParentFile(), "var4");
+        var4.mkdirs();
+        File tpl = new File(projectDir.getParentFile().getParentFile().getParentFile(), "TARGET" +
+                separator + "android" + separator + "third-party");
+        tpl.mkdirs();
+        File supportLib = new File(tpl, "android-support-v4.r19.jar");
+        supportLib.createNewFile();
+
+        Files.write(""
+                + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<projectDescription>\n"
+                + "\t<name>UnitTest</name>\n"
+                + "\t<comment></comment>\n"
+                + "\t<projects>\n"
+                + "\t</projects>\n"
+                + "\t<buildSpec>\n"
+                + "\t\t<buildCommand>\n"
+                + "\t\t\t<name>org.eclipse.jdt.core.javabuilder</name>\n"
+                + "\t\t\t<arguments>\n"
+                + "\t\t\t</arguments>\n"
+                + "\t\t</buildCommand>\n"
+                + "\t</buildSpec>\n"
+                + "\t<natures>\n"
+                + "\t\t<nature>org.eclipse.jdt.core.javanature</nature>\n"
+                + "\t</natures>\n"
+                + "\t<linkedResources>\n"
+                + "\t\t<link>\n"
+                + "\t\t\t<name>MYLIBS</name>\n"
+                + "\t\t\t<type>2</type>\n"
+                + "\t\t\t<locationURI>MYLIBS</locationURI>\n"
+                + "\t\t</link>\n"
+                + "\t\t<link>\n"
+                + "\t\t\t<name>3rd_java_libs</name>\n"
+                + "\t\t\t<type>2</type>\n"
+                + "\t\t\t<locationURI>PARENT-3-PROJECT_LOC/TARGET/android/third-party</locationURI>\n"
+                + "\t\t</link>\n"
+                + "\t\t<link>\n"
+                + "\t\t\t<name>jnilibs</name>\n"
+                + "\t\t\t<type>2</type>\n"
+                + "\t\t\t<locationURI>virtual:/virtual</locationURI>\n"
+                + "\t\t</link>\n"
+                + "\t</linkedResources>\n"
+                + "\t<variableList>\n"
+                + "\t\t<variable>\n"
+                + "\t\t\t<name>MY_VAR_1</name>\n"
+                + "\t\t\t<value>" + SdkUtils.fileToUrl(var1) + "</value>\n"
+                + "\t\t</variable>\n"
+                + "\t\t<variable>\n"
+                + "\t\t\t<name>MY_VAR_2</name>\n"
+                + "\t\t\t<value>$%7BMY_VAR_1%7D</value>\n"
+                + "\t\t</variable>\n"
+                + "\t\t<variable>\n"
+                + "\t\t\t<name>MY_VAR_3</name>\n"
+                + "\t\t\t<value>$%7BPROJECT_LOC%7D/src</value>\n"
+                + "\t\t</variable>\n"
+                + "\t\t<variable>\n"
+                + "\t\t\t<name>MY_VAR_4</name>\n"
+                + "\t\t\t<value>$%7BPARENT-1-PROJECT_LOC%7D/var4</value>\n"
+                + "\t\t</variable>\n"
+                + "\t\t<variable>\n"
+                + "\t\t\t<name>MY_VAR_5</name>\n"
+                + "\t\t\t<value>$%7BPARENT_LOC%7D/var4</value>\n"
+                + "\t\t</variable>\n"
+                + "\t</variableList>\n"
+                + "</projectDescription>",
+                new File(projectDir, ".project"), UTF_8);
+
+        GradleImport importer = new GradleImport();
+        EclipseProject project = EclipseProject.getProject(importer, projectDir);
+        importer.getPathMap();
+
+        // Test absolute paths
+        assertEquals(var1, project.resolveVariableExpression(var1.getPath()));
+        assertEquals(var1, project.resolveVariableExpression(var1.getAbsolutePath()));
+        assertEquals(var1.getCanonicalFile(),
+                project.resolveVariableExpression(var1.getCanonicalPath()));
+        assertEquals(var1, project.resolveVariableExpression(var1.getPath().replace('/',
+                separatorChar))); // on Windows, make sure we handle workspace files with forwards
+
+
+        // Test project relative paths
+        String relative = "src" + separator + "test" + separator + "pkg" + separator
+                + "MyActivity.java";
+        assertEquals(new File(projectDir, relative), project.resolveVariableExpression(relative));
+        assertEquals(new File(projectDir, relative), project.resolveVariableExpression(
+                relative.replace('/', separatorChar)));
+
+        // Test workspace paths
+        // This is handled by testLibraries2
+
+        // Test path variables
+        assertEquals(var1, project.resolveVariableExpression("MY_VAR_1"));
+        assertEquals(var1, project.resolveVariableExpression("MY_VAR_2"));
+        assertEquals(new File(projectDir, "src"), project.resolveVariableExpression("MY_VAR_3"));
+        assertEquals(var4, project.resolveVariableExpression("MY_VAR_4"));
+        assertEquals(var4, project.resolveVariableExpression("MY_VAR_5"));
+
+        // Test linked variables
+        assertEquals(supportLib, project.resolveVariableExpression(
+                "3rd_java_libs/android-support-v4.r19.jar"));
+
+        // Test user-supplied values
+        assertEquals(var1, project.resolveVariableExpression("MY_VAR_1"));
+        importer.getPathMap().put("MY_VAR_1", projectDir);
+        assertEquals(projectDir, project.resolveVariableExpression("MY_VAR_1"));
+        importer.getPathMap().put("/some/unresolved/path", var4);
+        assertEquals(var4, project.resolveVariableExpression("/some/unresolved/path"));
+
+        // Setup for workspace tests
+
+        assertNull(project.resolveVariableExpression("MY_GLOBAL_VAR"));
+        final File workspace = new File(root, "workspace");
+        workspace.mkdirs();
+        File prefs = new File(workspace, ".metadata" + separator +
+                ".plugins" + separator +
+                "org.eclipse.core.runtime" + separator +
+                ".settings" + separator +
+                "org.eclipse.jdt.core.prefs");
+        prefs.getParentFile().mkdirs();
+        File global1 = var1.getParentFile();
+        Files.write(""
+                + "eclipse.preferences.version=1\n"
+                + "org.eclipse.jdt.core.classpathVariable.MY_GLOBAL_VAR="
+                + global1.getPath().replace(separatorChar,'/').replace(":","\\:") + "\n"
+                + "org.eclipse.jdt.core.codeComplete.visibilityCheck=enabled\n"
+                + "org.eclipse.jdt.core.compiler.codegen.inlineJsrBytecode=enabled\n"
+                + "org.eclipse.jdt.core.compiler.codegen.targetPlatform=1.6\n"
+                + "org.eclipse.jdt.core.compiler.compliance=1.6\n"
+                + "org.eclipse.jdt.core.compiler.problem.assertIdentifier=error\n"
+                + "org.eclipse.jdt.core.compiler.problem.enumIdentifier=error\n"
+                + "org.eclipse.jdt.core.compiler.source=1.6\n"
+                + "org.eclipse.jdt.core.formatter.tabulation.char=space", prefs, UTF_8);
+        File global2 = var4.getParentFile();
+        prefs = new File(workspace, ".metadata" + separator +
+                ".plugins" + separator +
+                "org.eclipse.core.runtime" + separator +
+                ".settings" + separator +
+                "org.eclipse.core.resources.prefs");
+        prefs.getParentFile().mkdirs();
+        Files.write(""
+                + "eclipse.preferences.version=1\n"
+                + "pathvariable.MY_GLOBAL_VAR_2="
+                + global2.getPath().replace(separatorChar,'/').replace(":", "\\:") + "\n"
+                + "version=1", prefs, UTF_8);
+
+        importer.setEclipseWorkspace(workspace);
+
+        // Test global path variables
+
+        assertEquals(global1, project.resolveVariableExpression("MY_GLOBAL_VAR"));
+        assertEquals(var1, project.resolveVariableExpression("MY_GLOBAL_VAR/sub3"));
+        assertEquals(var1, project.resolveVariableExpression("MY_GLOBAL_VAR" + separator + "sub3"));
+
+        // Test workspace linked resources
+        assertEquals(global2, project.resolveVariableExpression("MY_GLOBAL_VAR_2"));
+
+        deleteDir(projectDir);
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -1278,8 +1447,9 @@ public class GradleImportTest extends TestCase {
                 importReference.set(importer);
             }
         });
-        Map<String,File> pathMap = importReference.get().getPathMap();
-        assertEquals("{/Library1=null, /Library2=null}", pathMap.toString());
+        assertEquals("{/Library1=" + new File(root, "Library1").getCanonicalPath() +
+                ", /Library2=" + new File(root, "Library2").getCanonicalPath() +"}",
+                describePathMap(importReference.get()));
 
         // Imported project
         assertEquals(""
@@ -1536,11 +1706,36 @@ public class GradleImportTest extends TestCase {
                 importer.getPathMap().put("/Library1", new File(root, library1Path));
             }
         });
-        Map<String,File> pathMap = importReference.get().getPathMap();
-        assertEquals("{/Library1=" + new File(root, library1Path).getPath() +", /Library2=null}",
-                pathMap.toString());
+        assertEquals("{/Library1=" + new File(root, library1Path).getCanonicalPath()
+                + ", /Library2=" + new File(root, "Library2").getCanonicalPath() + "}",
+                describePathMap(importReference.get()));
         deleteDir(root);
         deleteDir(imported);
+    }
+
+    private static String describePathMap(GradleImport importer) throws IOException {
+        Map<String, File> map = importer.getPathMap();
+        List<String> keys = Lists.newArrayList(map.keySet());
+        Collections.sort(keys);
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        boolean first = true;
+        for (String key : keys) {
+            File file = map.get(key);
+            if (file != null) {
+                file = file.getCanonicalFile();
+            }
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(key);
+            sb.append("=");
+            sb.append(file);
+        }
+        sb.append("}");
+        return sb.toString();
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -1601,9 +1796,73 @@ public class GradleImportTest extends TestCase {
                 importer.setEclipseWorkspace(workspace);
             }
         });
-        Map<String,File> pathMap = importReference.get().getPathMap();
-        assertEquals("{/Library1=" + new File(root, library1Path).getPath() +", /Library2=null}",
-                pathMap.toString());
+        assertEquals("{/Library1=" + new File(root, library1Path).getCanonicalPath()
+                + ", /Library2=" + new File(root, "Library2").getCanonicalPath() + "}",
+                describePathMap(importReference.get()));
+        deleteDir(root);
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testLibrariesWithWorkspacePathVars() throws Exception {
+        // Provide manually edited workspace location which contains workspace locations
+        final String library1Path = "subdir1" + separator + "subdir2" + separator +
+                "UnrelatedName";
+        final File library1Dir = new File(library1Path);
+        Pair<File,File> pair = createLibrary2(library1Dir);
+        final File root = pair.getFirst();
+        File app = pair.getSecond();
+        final File library1AbsDir = new File(root, library1Path);
+
+        final File workspace = new File(root, "workspace");
+        workspace.mkdirs();
+        File metadata = new File(workspace, ".metadata");
+        metadata.mkdirs();
+        new File(metadata, "version.ini").createNewFile();
+        assertTrue(GradleImport.isEclipseWorkspaceDir(workspace));
+        File projects = new File(metadata, ".plugins" + separator + "org.eclipse.core.resources" +
+                separator + ".projects");
+        projects.mkdirs();
+        File library1 = new File(projects, "Library1");
+        library1.mkdirs();
+        File location = new File(library1, ".location");
+        byte[] data = ("blahblahblahURI//" + SdkUtils.fileToUrl(library1AbsDir) +
+                "\000blahblahblah").getBytes(Charsets.UTF_8);
+        Files.write(data, location);
+
+        final AtomicReference<GradleImport> importReference = new AtomicReference<GradleImport>();
+        File imported = checkProject(app, ""
+                + MSG_HEADER
+                + MSG_MANIFEST
+                + MSG_UNHANDLED
+                + "* .gitignore\n"
+                + MSG_REPLACED_JARS
+                + "guava-13.0.1.jar => com.google.guava:guava:13.0.1\n"
+                + MSG_GUESSED_VERSIONS
+                + "guava-13.0.1.jar => version 13.0.1 in com.google.guava:guava:13.0.1\n"
+                + MSG_FOLDER_STRUCTURE
+                + "In Library1:\n"
+                + "* src/ => library1/src/main/java/\n"
+                + "In Library2:\n"
+                + "* src/ => library2/src/main/java/\n"
+                + "In AndroidLibrary:\n"
+                + "* AndroidManifest.xml => androidLibrary/src/main/AndroidManifest.xml\n"
+                + "* src/ => androidLibrary/src/main/java/\n"
+                + "In AndroidApp:\n"
+                + "* AndroidManifest.xml => androidApp/src/main/AndroidManifest.xml\n"
+                + "* res/ => androidApp/src/main/res/\n"
+                + "* src/ => androidApp/src/main/java/\n"
+                + MSG_FOOTER,
+                false /* checkBuild */, new ImportCustomizer() {
+            @Override
+            public void customize(GradleImport importer) {
+                importReference.set(importer);
+                importer.setEclipseWorkspace(workspace);
+            }
+        });
+        assertEquals("{/Library1=" + new File(root, library1Path).getCanonicalPath()
+                + ", /Library2=" + new File(root, "Library2").getCanonicalPath() + "}",
+                describePathMap(importReference.get()));
         deleteDir(root);
         deleteDir(imported);
     }
