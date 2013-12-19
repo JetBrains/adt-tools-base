@@ -15,6 +15,7 @@
  */
 package com.android.build.gradle.tasks
 
+import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.build.gradle.internal.dsl.SigningConfigDsl
 import com.android.build.gradle.internal.tasks.IncrementalTask
 import com.android.build.gradle.internal.tasks.OutputFileTask
@@ -61,6 +62,9 @@ public class PackageApplication extends IncrementalTask implements OutputFileTas
     @Nested @Optional
     SigningConfigDsl signingConfig
 
+    @Nested @Optional
+    PackagingOptionsImpl packagingOptions
+
     @InputFiles
     public FileTree getNativeLibraries() {
         FileTree src = null
@@ -83,6 +87,7 @@ public class PackageApplication extends IncrementalTask implements OutputFileTas
                     getAbiFilters(),
                     getJniDebugBuild(),
                     getSigningConfig(),
+                    getPackagingOptions(),
                     getOutputFile().absolutePath)
         } catch (DuplicateFileException e) {
             def logger = getLogger()

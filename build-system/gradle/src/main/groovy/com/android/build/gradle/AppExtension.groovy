@@ -16,6 +16,7 @@
 package com.android.build.gradle
 
 import com.android.build.gradle.api.ApplicationVariant
+import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.builder.DefaultBuildType
 import com.android.builder.DefaultProductFlavor
 import com.android.builder.model.SigningConfig
@@ -34,6 +35,8 @@ public class AppExtension extends BaseExtension {
     final NamedDomainObjectContainer<DefaultBuildType> buildTypes
     final NamedDomainObjectContainer<SigningConfig> signingConfigs
 
+    final PackagingOptionsImpl packagingOptions
+
     private final DefaultDomainObjectSet<ApplicationVariant> applicationVariantList =
         new DefaultDomainObjectSet<ApplicationVariant>(ApplicationVariant.class)
 
@@ -48,6 +51,7 @@ public class AppExtension extends BaseExtension {
         this.buildTypes = buildTypes
         this.productFlavors = productFlavors
         this.signingConfigs = signingConfigs
+        this.packagingOptions = new PackagingOptionsImpl()
     }
 
     void buildTypes(Action<? super NamedDomainObjectContainer<DefaultBuildType>> action) {
@@ -68,6 +72,11 @@ public class AppExtension extends BaseExtension {
     public void flavorGroups(String... groups) {
         plugin.checkTasksAlreadyCreated();
         flavorGroupList = Arrays.asList(groups)
+    }
+
+    void packagingOptions(Action<PackagingOptionsImpl> action) {
+        plugin.checkTasksAlreadyCreated();
+        action.execute(packagingOptions)
     }
 
     public DefaultDomainObjectSet<ApplicationVariant> getApplicationVariants() {
