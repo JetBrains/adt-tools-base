@@ -21,14 +21,6 @@ android {
         targetSdkVersion 16
     }
 
-    buildTypes {
-        proguard.initWith(buildTypes.debug)
-        proguard {
-            runProguard true
-            proguardFile getDefaultProguardFile('proguard-android.txt')
-        }
-    }
-
     dexOptions {
         incremental false
     }

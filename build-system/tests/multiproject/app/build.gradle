@@ -3,6 +3,13 @@ apply plugin: 'android'
 android {
     compileSdkVersion 15
     buildToolsVersion "18.0.1"
+
+    buildTypes {
+        release {
+            runProguard true
+            proguardFile getDefaultProguardFile('proguard-android.txt')
+        }
+    }
 }
 
 dependencies {
