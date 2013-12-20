@@ -31,16 +31,18 @@ import com.android.build.gradle.tasks.ProcessManifest;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.VariantConfiguration;
 import com.google.common.collect.Lists;
-import groovy.lang.Closure;
+
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.compile.JavaCompile;
-import proguard.gradle.ProGuardTask;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
+import groovy.lang.Closure;
+import proguard.gradle.ProGuardTask;
 
 /**
  * Base data about a variant.
@@ -137,10 +139,18 @@ public abstract class BaseVariantData {
     }
 
     public void addJavaSourceFoldersToModel(@NonNull File... generatedSourceFolders) {
+        if (extraGeneratedSourceFolders == null) {
+            extraGeneratedSourceFolders = Lists.newArrayList();
+        }
+
         Collections.addAll(extraGeneratedSourceFolders, generatedSourceFolders);
     }
 
     public void addJavaSourceFoldersToModel(@NonNull Collection<File> generatedSourceFolders) {
+        if (extraGeneratedSourceFolders == null) {
+            extraGeneratedSourceFolders = Lists.newArrayList();
+        }
+
         extraGeneratedSourceFolders.addAll(generatedSourceFolders);
     }
 
