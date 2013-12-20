@@ -63,6 +63,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
+import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -1175,7 +1178,20 @@ public class AndroidBuilder {
             }
 
             // add the resources from the jar files.
+            Set<String> hashs = Sets.newHashSet();
+
             for (File jar : packagedJars) {
+                // TODO remove once we can properly add a library as a dependency of its test.
+                String hash = getFileHash(jar);
+                if (hash == null) {
+                    throw new PackagerException("Unable to compute hash of " + jar.getAbsolutePath());
+                }
+                if (hashs.contains(hash)) {
+                    continue;
+                }
+
+                hashs.add(hash);
+
                 packager.addResourcesFromJar(jar);
             }
 
@@ -1192,4 +1208,22 @@ public class AndroidBuilder {
             throw new RuntimeException(e);
         }
     }
+
+    /**
+     * Returns the hash of a file.
+     * @param file the file to hash
+     * @return the hash or null if an error happened
+     */
+    @Nullable
+    private static String getFileHash(@NonNull File file) {
+        try {
+            HashCode hashCode = Files.hash(file, Hashing.sha1());
+            return hashCode.toString();
+        } catch (IOException ignored) {
+
+        }
+
+        return null;
+    }
+
 }
