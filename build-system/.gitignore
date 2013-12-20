@@ -4,6 +4,7 @@ tests/api/*/build
 tests/applibtest/*/build
 tests/assets/*/build
 tests/attrOrder/*/build
+tests/basic/lint-report*
 tests/3rdPartyTests/*/build
 tests/dependencies/jarProject/build
 tests/flavorlib/*/build

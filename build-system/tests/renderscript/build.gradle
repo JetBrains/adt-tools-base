@@ -13,6 +13,7 @@ android {
     buildToolsVersion "18.0.1"
 
     defaultConfig {
+        minSdkVersion 17
         renderscriptTargetApi = 17
     }
 }
