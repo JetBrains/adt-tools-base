@@ -1,0 +1,38 @@
+buildscript {
+    repositories {
+        maven { url '../../../../../out/host/gradle/repo' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.7.2-SNAPSHOT'
+    }
+}
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+}
+
+
+public class GenerateCode extends DefaultTask {
+    @Input
+    String value
+
+    @OutputFile
+    File outputFile
+
+    @TaskAction
+    void taskAction() {
+        getOutputFile().text =
+            "package com.custom;\n" +
+            "public class Foo {\n" +
+            "    public static String getBuildDate() { return \"${getValue()}\"; }\n" +
+            "}\n";
+    }
+}
+
+
+android.applicationVariants.all { variant ->
+    File sourceFolder = file("${buildDir}/customCode/${variant.dirName}")
+    variant.addJavaSourceFoldersToModel(sourceFolder)
+}
