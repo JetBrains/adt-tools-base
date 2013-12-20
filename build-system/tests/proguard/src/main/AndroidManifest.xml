@@ -10,21 +10,4 @@
             </intent-filter>
         </activity>
     </application>
-
-    <uses-permission android:name="com.blah" />
-
-    <permission-group android:name="foo.permission-group.COST_MONEY"
-        android:label="@string/app_name"
-        android:description="@string/app_name" />
-
-    <permission android:name="foo.permission.SEND_SMS"
-        android:permissionGroup="foo.permission-group.COST_MONEY"
-        android:label="@string/app_name"
-        android:description="@string/app_name" />
-
-    <permission android:name="foo.blah.SEND_SMS"
-        android:permissionGroup="foo.permission-group.COST_MONEY"
-        android:label="@string/app_name"
-        android:description="@string/app_name" />
-
 </manifest>
