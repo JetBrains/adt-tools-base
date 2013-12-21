@@ -16,12 +16,15 @@
 
 package com.android.build.gradle.internal.test.report;
 
+import static org.gradle.api.tasks.testing.TestResult.ResultType;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.gradle.api.internal.ErroringAction;
+
 import org.gradle.api.internal.html.SimpleHtmlWriter;
 import org.gradle.api.internal.tasks.testing.junit.result.TestFailure;
+import org.gradle.internal.ErroringAction;
 import org.gradle.reporting.CodePanelRenderer;
 
 import java.io.IOException;
@@ -29,8 +32,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static org.gradle.api.tasks.testing.TestResult.ResultType;
 
 /**
  * Custom ClassPageRenderer based on Gradle's ClassPageRenderer

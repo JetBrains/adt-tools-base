@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.api.AndroidSourceSet
@@ -103,8 +102,8 @@ import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.SelfResolvingDependency
 import org.gradle.api.artifacts.result.DependencyResult
+import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
-import org.gradle.api.artifacts.result.ResolvedModuleVersionResult
 import org.gradle.api.artifacts.result.UnresolvedDependencyResult
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.JavaBasePlugin
@@ -132,14 +131,13 @@ import static com.android.builder.BuilderConstants.FD_INSTRUMENT_TESTS
 import static com.android.builder.BuilderConstants.FD_REPORTS
 import static com.android.builder.BuilderConstants.INSTRUMENT_TEST
 import static java.io.File.separator
-
 /**
  * Base class for all Android plugins
  */
 public abstract class BasePlugin {
     protected final static String DIR_BUNDLES = "bundles";
 
-    public static final String GRADLE_MIN_VERSION = "1.9"
+    public static final String GRADLE_MIN_VERSION = "1.10"
     public static final String[] GRADLE_SUPPORTED_VERSIONS = [ GRADLE_MIN_VERSION ]
 
     public static final String INSTALL_GROUP = "Install"
@@ -1831,14 +1829,14 @@ public abstract class BasePlugin {
         }
     }
 
-    def addDependency(ResolvedModuleVersionResult moduleVersion,
+    def addDependency(ResolvedComponentResult moduleVersion,
                       VariantDependencies configDependencies,
                       Collection<LibraryDependencyImpl> bundles,
                       List<JarDependency> jars,
                       Map<ModuleVersionIdentifier, List<LibraryDependencyImpl>> modules,
                       Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
                       Multimap<LibraryDependency, VariantDependencies> reverseMap) {
-        def id = moduleVersion.id
+        ModuleVersionIdentifier id = moduleVersion.moduleVersion
         if (configDependencies.checker.excluded(id)) {
             return
         }
