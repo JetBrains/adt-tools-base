@@ -25,7 +25,6 @@ dependencies {
     compile 'net.sf.proguard:proguard-gradle:4.10'
 
     testCompile 'junit:junit:3.8.1'
-    
 
     buildTestCompile sourceSets.main.output
     buildTestCompile sourceSets.test.output
