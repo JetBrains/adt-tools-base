@@ -53,7 +53,9 @@ public abstract class DependencyBasedCompileTask extends IncrementalTask {
         boolean processFile(@NonNull File dependencyFile) {
             DependencyData data = DependencyData.parseDependencyFile(dependencyFile)
             if (data != null) {
-                dependencyDataList.add(data)
+                synchronized (this) {
+                    dependencyDataList.add(data)
+                }
             }
 
             return true
