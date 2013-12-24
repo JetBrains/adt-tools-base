@@ -16,6 +16,9 @@
 
 package com.android.builder;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -24,6 +27,7 @@ import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.internal.MergedNdkConfig;
 import com.android.builder.internal.StringHelper;
+import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.NdkConfig;
 import com.android.builder.model.ProductFlavor;
@@ -40,9 +44,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * A Variant configuration.
@@ -676,7 +677,7 @@ public class VariantConfiguration implements TestData {
         String packageName = mMergedFlavor.getPackageName();
         String packageSuffix = mBuildType.getPackageNameSuffix();
 
-        if (packageSuffix != null && packageSuffix.length() > 0) {
+        if (packageSuffix != null && !packageSuffix.isEmpty()) {
             if (packageName == null) {
                 packageName = getPackageFromManifest();
             }
@@ -703,7 +704,7 @@ public class VariantConfiguration implements TestData {
         String versionName = mMergedFlavor.getVersionName();
         String versionSuffix = mBuildType.getVersionNameSuffix();
 
-        if (versionSuffix != null && versionSuffix.length() > 0) {
+        if (versionSuffix != null && !versionSuffix.isEmpty()) {
             if (versionName == null) {
                 if (mType != Type.TEST) {
                     versionName = getVersionNameFromManifest();
@@ -736,9 +737,9 @@ public class VariantConfiguration implements TestData {
         return versionCode;
     }
 
-    private final static String DEFAULT_TEST_RUNNER = "android.test.InstrumentationTestRunner";
-    private final static Boolean DEFAULT_HANDLE_PROFILING = false;
-    private final static Boolean DEFAULT_FUNCTIONAL_TEST = false;
+    private static final String DEFAULT_TEST_RUNNER = "android.test.InstrumentationTestRunner";
+    private static final Boolean DEFAULT_HANDLE_PROFILING = false;
+    private static final Boolean DEFAULT_FUNCTIONAL_TEST = false;
 
     /**
      * Returns the instrumentationRunner to use to test this variant, or if the
@@ -868,6 +869,61 @@ public class VariantConfiguration implements TestData {
         }
 
         return null;
+    }
+
+    /**
+     * Returns a list of sorted SourceProvider in order of ascending order, meaning, the earlier
+     * items are meant to be overriden by later items.
+     *
+     * @return a list of source provider
+     */
+    @NonNull
+    public List<SourceProvider> getSortedSourceProviders() {
+        List<SourceProvider> providers = Lists.newArrayList();
+
+        // first the default source provider
+        providers.add(mDefaultSourceProvider);
+
+        // the list of flavor must be reversed to use the right overlay order.
+        for (int n = mFlavorSourceProviders.size() - 1; n >= 0 ; n--) {
+            providers.add(mFlavorSourceProviders.get(n));
+        }
+
+        // multiflavor specific overrides flavor
+        if (mMultiFlavorSourceProvider != null) {
+            providers.add(mMultiFlavorSourceProvider);
+        }
+
+        // build type overrides flavors
+        if (mType != Type.TEST && mBuildTypeSourceProvider != null) {
+            providers.add(mBuildTypeSourceProvider);
+        }
+
+        // variant specific overrides all
+        if (mVariantSourceProvider != null) {
+            providers.add(mVariantSourceProvider);
+        }
+
+        return providers;
+    }
+
+    @NonNull
+    public List<BaseConfig> getSortedBaseConfigs() {
+        List<BaseConfig> configs = Lists.newArrayList();
+
+        configs.add(mDefaultConfig);
+
+        // the list of flavor must be reversed to use the right overlay order.
+        for (int n = mFlavorConfigs.size() - 1; n >= 0 ; n--) {
+            configs.add(mFlavorConfigs.get(n));
+        }
+
+        // build type overrides flavors
+        if (mType != Type.TEST) {
+            configs.add(mBuildType);
+        }
+
+        return configs;
     }
 
     @NonNull
@@ -1097,24 +1153,12 @@ public class VariantConfiguration implements TestData {
      */
     @NonNull
     public List<File> getRenderscriptSourceList() {
-        List<File> sourceList = Lists.newArrayList();
-        sourceList.addAll(mDefaultSourceProvider.getRenderscriptDirectories());
-        if (mType != Type.TEST && mBuildTypeSourceProvider != null) {
-            sourceList.addAll(mBuildTypeSourceProvider.getRenderscriptDirectories());
-        }
+        List<SourceProvider> providers = getSortedSourceProviders();
 
-        if (hasFlavors()) {
-            for (SourceProvider flavorSourceSet : mFlavorSourceProviders) {
-                sourceList.addAll(flavorSourceSet.getRenderscriptDirectories());
-            }
-        }
+        List<File> sourceList = Lists.newArrayListWithExpectedSize(providers.size());
 
-        if (mMultiFlavorSourceProvider != null) {
-            sourceList.addAll(mMultiFlavorSourceProvider.getRenderscriptDirectories());
-        }
-
-        if (mVariantSourceProvider != null) {
-            sourceList.addAll(mVariantSourceProvider.getRenderscriptDirectories());
+        for (SourceProvider provider : providers) {
+            sourceList.addAll(provider.getRenderscriptDirectories());
         }
 
         return sourceList;
@@ -1139,24 +1183,12 @@ public class VariantConfiguration implements TestData {
 
     @NonNull
     public List<File> getAidlSourceList() {
-        List<File> sourceList = Lists.newArrayList();
-        sourceList.addAll(mDefaultSourceProvider.getAidlDirectories());
-        if (mType != Type.TEST && mBuildTypeSourceProvider != null) {
-            sourceList.addAll(mBuildTypeSourceProvider.getAidlDirectories());
-        }
+        List<SourceProvider> providers = getSortedSourceProviders();
 
-        if (hasFlavors()) {
-            for (SourceProvider flavorSourceSet : mFlavorSourceProviders) {
-                sourceList.addAll(flavorSourceSet.getAidlDirectories());
-            }
-        }
+        List<File> sourceList = Lists.newArrayListWithExpectedSize(providers.size());
 
-        if (mMultiFlavorSourceProvider != null) {
-            sourceList.addAll(mMultiFlavorSourceProvider.getAidlDirectories());
-        }
-
-        if (mVariantSourceProvider != null) {
-            sourceList.addAll(mVariantSourceProvider.getAidlDirectories());
+        for (SourceProvider provider : providers) {
+            sourceList.addAll(provider.getAidlDirectories());
         }
 
         return sourceList;
@@ -1164,24 +1196,25 @@ public class VariantConfiguration implements TestData {
 
     @NonNull
     public List<File> getJniSourceList() {
-        List<File> sourceList = Lists.newArrayList();
-        sourceList.addAll(mDefaultSourceProvider.getJniDirectories());
-        if (mType != Type.TEST && mBuildTypeSourceProvider != null) {
-            sourceList.addAll(mBuildTypeSourceProvider.getJniDirectories());
+        List<SourceProvider> providers = getSortedSourceProviders();
+
+        List<File> sourceList = Lists.newArrayListWithExpectedSize(providers.size());
+
+        for (SourceProvider provider : providers) {
+            sourceList.addAll(provider.getJniDirectories());
         }
 
-        if (hasFlavors()) {
-            for (SourceProvider flavorSourceSet : mFlavorSourceProviders) {
-                sourceList.addAll(flavorSourceSet.getJniDirectories());
-            }
-        }
+        return sourceList;
+    }
 
-        if (mMultiFlavorSourceProvider != null) {
-            sourceList.addAll(mMultiFlavorSourceProvider.getJniDirectories());
-        }
+    @NonNull
+    public List<File> getJniLibsList() {
+        List<SourceProvider> providers = getSortedSourceProviders();
 
-        if (mVariantSourceProvider != null) {
-            sourceList.addAll(mVariantSourceProvider.getJniDirectories());
+        List<File> sourceList = Lists.newArrayListWithExpectedSize(providers.size());
+
+        for (SourceProvider provider : providers) {
+            sourceList.addAll(provider.getJniLibsDirectories());
         }
 
         return sourceList;

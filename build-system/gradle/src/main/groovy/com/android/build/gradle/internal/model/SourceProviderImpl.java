@@ -39,6 +39,7 @@ class SourceProviderImpl implements SourceProvider, Serializable {
     private Collection<File> jniDirs;
     private Collection<File> resDirs;
     private Collection<File> assetsDirs;
+    private Collection<File> libsDirs;
 
     @NonNull
     static SourceProviderImpl cloneProvider(SourceProvider sourceProvider) {
@@ -52,6 +53,7 @@ class SourceProviderImpl implements SourceProvider, Serializable {
         sourceProviderClone.jniDirs = sourceProvider.getJniDirectories();
         sourceProviderClone.resDirs = sourceProvider.getResDirectories();
         sourceProviderClone.assetsDirs = sourceProvider.getAssetsDirectories();
+        sourceProviderClone.libsDirs = sourceProvider.getJniLibsDirectories();
 
         return sourceProviderClone;
     }
@@ -118,6 +120,12 @@ class SourceProviderImpl implements SourceProvider, Serializable {
         return assetsDirs;
     }
 
+    @NonNull
+    @Override
+    public Collection<File> getJniLibsDirectories() {
+        return libsDirs;
+    }
+
     @Override
     public String toString() {
         return "SourceProviderImpl{" +
@@ -129,6 +137,7 @@ class SourceProviderImpl implements SourceProvider, Serializable {
                 ", jniDirs=" + jniDirs +
                 ", resDirs=" + resDirs +
                 ", assetsDirs=" + assetsDirs +
+                ", libsDirs=" + libsDirs +
                 '}';
     }
 }

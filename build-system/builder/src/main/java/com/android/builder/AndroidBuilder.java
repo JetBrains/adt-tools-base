@@ -884,6 +884,9 @@ public class AndroidBuilder {
      * @param targetApi the target api
      * @param debugBuild whether the build is debug
      * @param optimLevel the optimization level
+     * @param ndkMode
+     * @param supportMode support mode flag to generate .so files.
+     * @param abiFilters ABI filters in case of support mode
      *
      * @throws IOException
      * @throws InterruptedException
@@ -1198,7 +1201,9 @@ public class AndroidBuilder {
             // also add resources from library projects and jars
             if (jniLibsFolders != null) {
                 for (File jniFolder : jniLibsFolders) {
-                    packager.addNativeLibraries(jniFolder, abiFilters);
+                    if (jniFolder.isDirectory()) {
+                        packager.addNativeLibraries(jniFolder, abiFilters);
+                    }
                 }
             }
 
