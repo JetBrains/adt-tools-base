@@ -1,0 +1,30 @@
+apply plugin: 'android-library'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'com.google.guava:guava:11.0.2'
+    compile fileTree(dir: 'libs', include: '*.jar')
+}
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+
+    defaultConfig {
+        versionCode 12
+        versionName "2.0"
+        minSdkVersion 16
+        targetSdkVersion 16
+        proguardFile 'config.pro'
+        consumerProguardFiles 'config.pro'
+    }
+    debug {
+        runProguard true
+    }
+    release {
+        runProguard true
+    }
+}

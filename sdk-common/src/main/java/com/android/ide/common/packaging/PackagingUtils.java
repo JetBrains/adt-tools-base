@@ -32,7 +32,6 @@ public class PackagingUtils {
         return !folderName.equalsIgnoreCase("CVS") &&
                 !folderName.equalsIgnoreCase(".svn") &&
                 !folderName.equalsIgnoreCase("SCCS") &&
-                !folderName.equalsIgnoreCase("META-INF") &&
                 !folderName.startsWith("_");
     }
 
@@ -72,8 +71,8 @@ public class PackagingUtils {
                 !"swp".equalsIgnoreCase(extension) &&         // vi swap file
                 !"thumbs.db".equalsIgnoreCase(fileName) &&    // image index file
                 !"picasa.ini".equalsIgnoreCase(fileName) &&   // image index file
+                !"about.html".equalsIgnoreCase(fileName) &&   // Javadoc
                 !"package.html".equalsIgnoreCase(fileName) && // Javadoc
                 !"overview.html".equalsIgnoreCase(fileName);  // Javadoc
-
     }
 }

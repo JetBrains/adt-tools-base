@@ -1,3 +1,8 @@
+apply plugin: 'java'
+apply plugin: 'distrib'
+
+evaluationDependsOn(':dvlib')
+
 group = 'com.android.tools'
 archivesBaseName = 'sdklib'
 
@@ -45,45 +50,11 @@ copyXsd.doLast {
 
 buildDistributionJar.dependsOn copyXsd
 
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment ->
-                if (!project.has("release")) {
-                    throw new StopExecutionException("uploadArchives must be called with the release.gradle init script")
-                }
 
-                signing.signPom(deployment)
-            }
+project.ext.pomName = 'Android Tools sdklib'
+project.ext.pomDesc = 'A library to parse and download the Android SDK.'
 
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: project.ext.sonatypeUsername, password: project.ext.sonatypePassword)
-            }
+apply from: '../baseVersion.gradle'
+apply from: '../publish.gradle'
+apply from: '../javadoc.gradle'
 
-            pom.project {
-                name 'Android Tools sdklib'
-                description 'A library to parse and download the Android SDK.'
-                url 'http://tools.android.com'
-                inceptionYear '2007'
-
-                licenses {
-                    license {
-                        name 'The Apache Software License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                        distribution 'repo'
-                    }
-                }
-
-                scm {
-                    url "https://android.googlesource.com/platform/tools/base"
-                    connection "git://android.googlesource.com/platform/toos/base.git"
-                }
-                developers {
-                    developer {
-                        name 'The Android Open Source Project'
-                    }
-                }
-            }
-        }
-    }
-}

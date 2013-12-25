@@ -1,0 +1,25 @@
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+
+    productFlavors {
+        flavor1 {
+            packageName = "com.android.tests.flavorlib.app.flavor1"
+        }
+        flavor2 {
+            packageName = "com.android.tests.flavorlib.app.flavor2"
+        }
+    }
+
+    testOptions {
+        resultsDir = "$project.buildDir/foo/results"
+        reportDir = "$project.buildDir/foo/report"
+    }
+}
+
+dependencies {
+    flavor1Compile project(':lib1')
+    flavor2Compile project(':lib2')
+}

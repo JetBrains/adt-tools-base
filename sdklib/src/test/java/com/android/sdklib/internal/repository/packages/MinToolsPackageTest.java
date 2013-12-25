@@ -22,7 +22,10 @@ import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.packages.MinToolsPackage;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.sources.SdkSource;
+import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDesc;
 
 import java.io.File;
 import java.util.Properties;
@@ -75,6 +78,11 @@ public class MinToolsPackageTest extends PackageTest {
         @Override
         public String installId() {
             return "";  //$NON-NLS-1$
+        }
+
+        @Override
+        public IPkgDesc getPkgDesc() {
+            return PkgDesc.newTool(new FullRevision(1, 2, 3, 4), FullRevision.NOT_SPECIFIED);
         }
     }
 

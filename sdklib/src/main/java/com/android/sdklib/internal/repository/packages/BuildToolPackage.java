@@ -17,6 +17,7 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.SdkManager;
@@ -27,6 +28,8 @@ import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.FullRevision.PreviewComparison;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDesc;
 
 import org.w3c.dom.Node;
 
@@ -44,6 +47,8 @@ public class BuildToolPackage extends FullRevisionPackage {
     /** The base value returned by {@link BuildToolPackage#installId()}. */
     private static final String INSTALL_ID_BASE = SdkConstants.FD_BUILD_TOOLS + '-';
 
+    private final IPkgDesc mPkgDesc;
+
     /**
      * Creates a new build-tool package from the attributes and elements of the given XML node.
      * This constructor should throw an exception if the package cannot be created.
@@ -60,6 +65,8 @@ public class BuildToolPackage extends FullRevisionPackage {
             String nsUri,
             Map<String,String> licenses) {
         super(source, packageNode, nsUri, licenses);
+
+        mPkgDesc = PkgDesc.newBuildTool(getRevision());
     }
 
     /**
@@ -166,10 +173,14 @@ public class BuildToolPackage extends FullRevisionPackage {
 
         String longDesc = sb.toString();
 
+        IPkgDesc desc = PkgDesc.newBuildTool(
+                rev != null ? rev : new FullRevision(FullRevision.MISSING_MAJOR_REV));
+
         return new BrokenPackage(props, shortDesc, longDesc,
                 IMinApiLevelDependency.MIN_API_LEVEL_NOT_SPECIFIED,
                 IExactApiLevelDependency.API_LEVEL_INVALID,
-                buildToolDir.getAbsolutePath());
+                buildToolDir.getAbsolutePath(),
+                desc);
     }
 
     @VisibleForTesting(visibility=Visibility.PRIVATE)
@@ -192,6 +203,14 @@ public class BuildToolPackage extends FullRevisionPackage {
                 archiveOs,
                 archiveArch,
                 archiveOsPath);
+
+        mPkgDesc = PkgDesc.newBuildTool(getRevision());
+    }
+
+    @Override
+    @NonNull
+    public IPkgDesc getPkgDesc() {
+        return mPkgDesc;
     }
 
     /**

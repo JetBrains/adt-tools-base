@@ -1469,6 +1469,23 @@ public class ApiDetector extends ResourceXmlDetector
                     if (list == null) {
                         list = new ArrayList<Pair<String, Location>>();
                         mPendingFields.put(fqcn, list);
+                    } else {
+                        // See if this location already exists. This can happen if
+                        // we have multiple references to an inlined field on the same
+                        // line. Since the class file only gives us line information, we
+                        // can't distinguish between these in the client as separate usages,
+                        // so they end up being identical errors.
+                        for (Pair<String, Location> pair : list) {
+                            Location existingLocation = pair.getSecond();
+                            if (location.getFile().equals(existingLocation.getFile())) {
+                                Position start = location.getStart();
+                                Position existingStart = existingLocation.getStart();
+                                if (start != null && existingStart != null
+                                        && start.getLine() == existingStart.getLine()) {
+                                    return true;
+                                }
+                            }
+                        }
                     }
                     list.add(Pair.of(message, location));
                 }

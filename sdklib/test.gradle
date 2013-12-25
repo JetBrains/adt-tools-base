@@ -1,3 +1,9 @@
+apply plugin: 'java'
+apply plugin: 'distrib'
+apply plugin: 'maven'
+
+evaluationDependsOn(':dvlib')
+
 group = 'com.android.tools'
 archivesBaseName = 'sdklib-test'
 
@@ -17,3 +23,14 @@ javadoc {
 }
 
 shipping.isShipping = false
+
+apply from: '../baseVersion.gradle'
+
+task publishLocal(type: Upload) {
+    configuration = configurations.archives
+    repositories {
+        mavenDeployer {
+            repository(url: uri("$rootProject.ext.androidHostOut/repo"))
+        }
+    }
+}

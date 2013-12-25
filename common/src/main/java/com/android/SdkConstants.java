@@ -203,6 +203,7 @@ public final class SdkConstants {
      * filename for gdbserver.
      */
     public static final String FN_GDBSERVER = "gdbserver";              //$NON-NLS-1$
+    public static final String FN_GDB_SETUP = "gdb.setup";              //$NON-NLS-1$
 
     /** global Android proguard config file */
     public static final String FN_ANDROID_PROGUARD_FILE = "proguard-android.txt";   //$NON-NLS-1$
@@ -1283,4 +1284,10 @@ public final class SdkConstants {
     public static final String ATTR_EMS = "ems"; //$NON-NLS-1$
 
     public static final String VALUE_HORIZONTAL = "horizontal"; //$NON-NLS-1$
+
+    public static final String GRADLE_PLUGIN_NAME = "com.android.tools.build:gradle:";
+    public static final String GRADLE_MINIMUM_VERSION = "1.9";
+    public static final String GRADLE_LATEST_VERSION = GRADLE_MINIMUM_VERSION;
+    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "0.7.0";
+    public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.7.+";
 }

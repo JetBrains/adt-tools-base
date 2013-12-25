@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/resoverlay"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/general_string" />
+    <TextView
+        android:id="@+id/resoverlay1"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/group1_string" />
+    <TextView
+        android:id="@+id/resoverlay2"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/group2_string" />
+    <TextView
+        android:id="@+id/buildconfig1"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" />
+    <TextView
+        android:id="@+id/buildconfig2"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/codeoverlay1"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/codeoverlay2"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" />
+
+</LinearLayout>

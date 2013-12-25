@@ -178,6 +178,12 @@ public class ImageViewer extends JComponent {
         helpLabel = new JLabel("Press Shift to erase pixels."
                 + " Press Control to draw layout bounds");
         helpLabel.putClientProperty("JComponent.sizeVariant", "small");
+        // Labels are not opaque by default, as a result, if there is not enough space,
+        // the label will be painted over the button we add below. However, we still want the same
+        // background as the panel, so we explicitly set that background as well
+        // https://code.google.com/p/android/issues/detail?id=62576
+        helpLabel.setOpaque(true);
+        helpLabel.setBackground(HELP_COLOR);
         helpPanel.add(helpLabel, BorderLayout.WEST);
         checkButton = new JButton("Show bad patches");
         checkButton.putClientProperty("JComponent.sizeVariant", "small");

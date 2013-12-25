@@ -17,6 +17,7 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
@@ -31,6 +32,8 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.FullRevision.PreviewComparison;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.util.GrabProcessOutput;
 import com.android.sdklib.util.GrabProcessOutput.IProcessOutput;
 import com.android.sdklib.util.GrabProcessOutput.Wait;
@@ -56,6 +59,8 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
      * or {@link #MIN_PLATFORM_TOOLS_REV_INVALID} if the value was missing.
      */
     private final FullRevision mMinPlatformToolsRevision;
+
+    private final IPkgDesc mPkgDesc;
 
     /**
      * Creates a new tool package from the attributes and elements of the given XML node.
@@ -87,6 +92,8 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
                                 SdkRepoConstants.NODE_PLATFORM_TOOL));
             }
         }
+
+        mPkgDesc = PkgDesc.newTool(getRevision(), mMinPlatformToolsRevision);
     }
 
     /**
@@ -142,6 +149,14 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
         }
 
         mMinPlatformToolsRevision = rev;
+
+        mPkgDesc = PkgDesc.newTool(getRevision(), mMinPlatformToolsRevision);
+    }
+
+    @Override
+    @NonNull
+    public IPkgDesc getPkgDesc() {
+        return mPkgDesc;
     }
 
     @Override

@@ -1,3 +1,6 @@
+apply plugin: 'java'
+apply plugin: 'distrib'
+
 group = 'com.android.tools'
 archivesBaseName = 'rule-api'
 
@@ -6,3 +9,4 @@ dependencies {
     compile project(':layoutlib-api')
 }
 
+apply from: '../baseVersion.gradle'

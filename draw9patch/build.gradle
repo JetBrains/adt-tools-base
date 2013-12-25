@@ -1,3 +1,6 @@
+apply plugin: 'java'
+apply plugin: 'distrib'
+
 group = 'com.android.tools'
 archivesBaseName = 'draw9patch'
 
@@ -16,3 +19,4 @@ shipping {
 
 buildDistributionJar.manifest.attributes("Main-Class": "com.android.draw9patch.Application")
 
+apply from: '../baseVersion.gradle'
