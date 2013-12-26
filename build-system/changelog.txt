@@ -1,9 +1,13 @@
 0.7.2
 
-- Add packagingOptions support in Library projects
+- Fix issue with Proguard.
+- Add packagingOptions support in Library projects.
 - Solve issue with local jar when testing library projects.
 - Fix bug with variant.addJavaSourceFoldersToModel
 - Add jniLibs folder to source sets for prebuilt .so files.
+- Lint fixes:
+   * fix RTL detector
+   * fix HTML report to have valid HTML
 
 0.7.1
 
