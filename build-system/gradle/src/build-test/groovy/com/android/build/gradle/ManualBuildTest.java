@@ -19,10 +19,11 @@ package com.android.build.gradle;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+
+import javax.imageio.ImageIO;
 
 /**
  * Some manual tests for building projects.
@@ -32,9 +33,9 @@ import java.io.IOException;
  */
 public class ManualBuildTest extends BuildTest {
 
-    private final static int RED = 0xFFFF0000;
-    private final static int GREEN = 0xFF00FF00;
-    private final static int BLUE = 0xFF0000FF;
+    private static final int RED = 0xFFFF0000;
+    private static final int GREEN = 0xFF00FF00;
+    private static final int BLUE = 0xFF0000FF;
 
 
     public void testOverlay1Content() throws Exception {
