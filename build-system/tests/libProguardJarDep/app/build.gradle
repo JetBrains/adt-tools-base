@@ -1,0 +1,35 @@
+apply plugin: 'android'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile project(':lib')
+}
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+
+    testBuildType "proguard"
+
+    defaultConfig {
+        versionCode 12
+        versionName "2.0"
+        minSdkVersion 16
+        targetSdkVersion 16
+    }
+
+    buildTypes {
+        proguard.initWith(buildTypes.debug)
+        proguard {
+            runProguard true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'config.pro'
+        }
+    }
+
+    dexOptions {
+        incremental false
+    }
+}

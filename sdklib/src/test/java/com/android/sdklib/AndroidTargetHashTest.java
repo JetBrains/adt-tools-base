@@ -46,4 +46,17 @@ public class AndroidTargetHashTest extends TestCase {
         assertEquals("vendor 10:my-addon:10", AndroidTargetHash.getTargetHashString(a));
     }
 
+    public void testGetPlatformVersion() {
+        assertNull(AndroidTargetHash.getPlatformVersion("blah-5"));
+        assertNull(AndroidTargetHash.getPlatformVersion("android-"));
+
+        AndroidVersion version = AndroidTargetHash.getPlatformVersion("android-5");
+        assertNotNull(version);
+        assertEquals(5, version.getApiLevel());
+        assertNull(version.getCodename());
+
+        version = AndroidTargetHash.getPlatformVersion("android-next");
+        assertNotNull(version);
+        assertEquals("next", version.getCodename());
+    }
 }

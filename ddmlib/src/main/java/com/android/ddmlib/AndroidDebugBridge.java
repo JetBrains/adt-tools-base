@@ -729,8 +729,10 @@ public final class AndroidDebugBridge {
         }
 
         // kill the monitoring services
-        mDeviceMonitor.stop();
-        mDeviceMonitor = null;
+        if (mDeviceMonitor != null) {
+            mDeviceMonitor.stop();
+            mDeviceMonitor = null;
+        }
 
         if (!stopAdb()) {
             return false;

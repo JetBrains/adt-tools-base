@@ -1,0 +1,17 @@
+package test.pkg;
+
+import android.view.View;
+
+public class CheckPermissions {
+  private void foo() {
+      context.checkCallingOrSelfPermission(Manifest.permission.INTERNET); // WRONG
+      context.checkPermission(Manifest.permission.INTERNET); // UNKNOWN (without type resolution)
+      check(context.checkCallingOrSelfPermission(Manifest.permission.INTERNET)); // OK
+      int check = context.checkCallingOrSelfPermission(Manifest.permission.INTERNET); // OK
+      if (context.checkCallingOrSelfPermission(Manifest.permission.INTERNET) // OK
+              != PackageManager.PERMISSION_GRANTED) {
+          Util.showAlert(context, "Error",
+                  "Application requires permission to access the Internet");
+      }
+  }
+}

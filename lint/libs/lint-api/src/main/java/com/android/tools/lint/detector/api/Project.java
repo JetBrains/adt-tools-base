@@ -33,6 +33,10 @@ import static com.android.SdkConstants.VALUE_TRUE;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.SourceProvider;
+import com.android.builder.model.Variant;
 import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.tools.lint.client.api.CircularDependencyException;
 import com.android.tools.lint.client.api.Configuration;
@@ -131,6 +135,43 @@ public class Project {
         }
 
         return mGradleProject;
+    }
+
+    /**
+     * Returns the project model for this project if it corresponds to
+     * a Gradle project. This is the case if {@link #isGradleProject()}
+     * is true and {@link #isLibrary()} is false.
+     *
+     * @return the project model, or null
+     */
+    @Nullable
+    public AndroidProject getGradleProjectModel() {
+        return null;
+    }
+
+    /**
+     * Returns the project model for this project if it corresponds to
+     * a Gradle library. This is the case if both
+     * {@link #isGradleProject()} and {@link #isLibrary()} return true.
+     *
+     * @return the project model, or null
+     */
+    @Nullable
+    public AndroidLibrary getGradleLibraryModel() {
+        return null;
+    }
+
+    /**
+     * Returns the current selected variant, if any (and if the current project is a Gradle
+     * project). This can be used by incremental lint rules to warn about problems in the current
+     * context. Lint rules should however strive to perform cross variant analysis and warn about
+     * problems in any configuration.
+     *
+     * @return the select variant, or null
+     */
+    @Nullable
+    public Variant getCurrentVariant() {
+        return null;
     }
 
     /** Creates a new Project. Use one of the factory methods to create. */

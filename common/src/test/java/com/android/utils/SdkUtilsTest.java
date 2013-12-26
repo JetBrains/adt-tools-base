@@ -16,14 +16,22 @@
 
 package com.android.utils;
 
+import static com.android.utils.SdkUtils.FILENAME_PREFIX;
+import static com.android.utils.SdkUtils.createPathComment;
 import static com.android.utils.SdkUtils.fileToUrlString;
 import static com.android.utils.SdkUtils.urlToFile;
 
 import com.android.SdkConstants;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 
 import junit.framework.TestCase;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.text.ParseException;
 import java.util.Locale;
@@ -251,5 +259,77 @@ public class SdkUtilsTest extends TestCase {
                 urlToFile(new URL("file:/tmp/foo/bar")));
         assertEquals(new File("/tmp/$&+,:;=?@/foo bar%"),
                 urlToFile(new URL("file:/tmp/$&+,:;=%3F@/foo%20bar%25")));
+    }
+
+    public void testCreatePathComment() throws Exception {
+        assertEquals("From: file:/tmp/foo", createPathComment(new File("/tmp/foo"), false));
+        assertEquals(" From: file:/tmp/foo ", createPathComment(new File("/tmp/foo"), true));
+        assertEquals("From: file:/tmp-/%2D%2D/a%2D%2Da/foo",
+                createPathComment(new File("/tmp-/--/a--a/foo"), false));
+
+        String path = "/tmp/foo";
+        String urlString =
+                createPathComment(new File(path), false).substring(5); // 5: "From:".length()
+        assertEquals(path, urlToFile(new URL(urlString)).getPath());
+
+        path = "/tmp-/--/a--a/foo";
+        urlString = createPathComment(new File(path), false).substring(5);
+        assertEquals(path, urlToFile(new URL(urlString)).getPath());
+
+        // Make sure we handle file://path too, not just file:path
+        urlString = "file:///tmp-/%2D%2D/a%2D%2Da/foo";
+        assertEquals(path, urlToFile(new URL(urlString)).getPath());
+    }
+
+    public void testFormattedComment() throws Exception {
+        Document document = XmlUtils.parseDocumentSilently("<root/>", true);
+        assertNotNull(document);
+        // Many invalid characters in XML, such as -- and <, and characters invalid in URLs, such
+        // as spaces
+        String path = "/My Program Files/--/Q&A/X<Y/foo";
+        String comment = createPathComment(new File(path), true);
+        Element root = document.getDocumentElement();
+        assertNotNull(root);
+        root.appendChild(document.createComment(comment));
+        String xml = XmlUtils.toXml(document, false);
+        assertEquals(""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<root><!-- From: file:/My%20Program%20Files/%2D%2D/Q&A/X%3CY/foo --></root>",
+                xml);
+        int index = xml.indexOf(FILENAME_PREFIX);
+        assertTrue(index != -1);
+        String urlString = xml.substring(index + FILENAME_PREFIX.length(),
+                xml.indexOf("-->")).trim();
+        assertEquals(path, urlToFile(new URL(urlString)).getPath());
+    }
+
+    public void testCopyXmlWithSourceReference() throws IOException {
+        File source = File.createTempFile("source", SdkConstants.DOT_XML);
+        File dest = File.createTempFile("dest", SdkConstants.DOT_XML);
+        Files.write(""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources>\n"
+                + "    <string name=\"description_search\">Search</string>\n"
+                + "    <string name=\"description_map\">Map</string>\n"
+                + "    <string name=\"description_refresh\">Refresh</string>\n"
+                + "    <string name=\"description_share\">Share</string>\n"
+                + "</resources>",
+                source, Charsets.UTF_8);
+        SdkUtils.copyXmlWithSourceReference(source, dest);
+
+        String sourceUrl = SdkUtils.fileToUrlString(source);
+        assertEquals(""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources>\n"
+                + "    <string name=\"description_search\">Search</string>\n"
+                + "    <string name=\"description_map\">Map</string>\n"
+                + "    <string name=\"description_refresh\">Refresh</string>\n"
+                + "    <string name=\"description_share\">Share</string>\n"
+                + "</resources><!-- From: " + sourceUrl + " -->",
+                Files.toString(dest, Charsets.UTF_8));
+        boolean deleted = source.delete();
+        assertTrue(deleted);
+        deleted = dest.delete();
+        assertTrue(deleted);
     }
 }

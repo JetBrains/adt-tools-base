@@ -24,7 +24,10 @@ import com.android.sdklib.internal.repository.packages.BrokenPackage;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.sources.SdkRepoSource;
 import com.android.sdklib.internal.repository.sources.SdkSource;
+import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDesc;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -84,6 +87,11 @@ public class PackageTest extends TestCase {
         @Override
         public String installId() {
             return "mock-pkg";  //$NON-NLS-1$
+        }
+
+        @Override
+        public IPkgDesc getPkgDesc() {
+            return PkgDesc.newTool(new FullRevision(1, 2, 3, 4), FullRevision.NOT_SPECIFIED);
         }
     }
 

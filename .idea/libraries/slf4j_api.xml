@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="slf4j-api">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/internal/org/slf4j/slf4j-api/1.7.2/slf4j-api-1.7.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/internal/org/slf4j/slf4j-api/1.7.2/slf4j-api-1.7.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

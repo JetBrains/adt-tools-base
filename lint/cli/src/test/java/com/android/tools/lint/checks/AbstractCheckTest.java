@@ -25,6 +25,7 @@ import com.android.tools.lint.LintCliXmlParser;
 import com.android.tools.lint.LombokParser;
 import com.android.tools.lint.Reporter;
 import com.android.tools.lint.TextReporter;
+import com.android.tools.lint.Warning;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.DefaultConfiguration;
 import com.android.tools.lint.client.api.IDomParser;
@@ -51,7 +52,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.CodeSource;
 import java.util.ArrayList;
@@ -95,7 +95,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         return issues;
     }
 
-    private class CustomIssueRegistry extends IssueRegistry {
+    public class CustomIssueRegistry extends IssueRegistry {
         @NonNull
         @Override
         public List<Issue> getIssues() {
@@ -271,7 +271,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
 
         public TestLintClient() {
             super(new LintCliFlags());
-            mFlags.getReporters().add(new TextReporter(this, mWriter, false));
+            mFlags.getReporters().add(new TextReporter(this, mFlags, mWriter, false));
         }
 
         @Override
@@ -289,7 +289,37 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             configureDriver(mDriver);
             mDriver.analyze(new LintRequest(this, files).setScope(getLintScope(files)));
 
+            // Check compare contract
+            Warning prev = null;
+            for (Warning warning : mWarnings) {
+                if (prev != null) {
+                    boolean equals = warning.equals(prev);
+                    assertEquals(equals, prev.equals(warning));
+                    int compare = warning.compareTo(prev);
+                    assertEquals(equals, compare == 0);
+                    assertEquals(-compare, prev.compareTo(warning));
+                }
+                prev = warning;
+            }
+
             Collections.sort(mWarnings);
+
+            // Check compare contract & transitivity
+            Warning prev2 = prev;
+            prev = null;
+            for (Warning warning : mWarnings) {
+                if (prev != null && prev2 != null) {
+                    assertTrue(warning.compareTo(prev) >= 0);
+                    assertTrue(prev.compareTo(prev2) >= 0);
+                    assertTrue(warning.compareTo(prev2) >= 0);
+
+                    assertTrue(prev.compareTo(warning) <= 0);
+                    assertTrue(prev2.compareTo(prev) <= 0);
+                    assertTrue(prev2.compareTo(warning) <= 0);
+                }
+                prev2 = prev;
+                prev = warning;
+            }
 
             for (Reporter reporter : mFlags.getReporters()) {
                 reporter.write(mErrorCount, mWarningCount, mWarnings);
@@ -345,6 +375,13 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             }
 
             super.report(context, issue, severity, location, message, data);
+
+            // Make sure errors are unique!
+            Warning prev = null;
+            for (Warning warning : mWarnings) {
+                assert prev == null || !warning.equals(prev);
+                prev = warning;
+            }
         }
 
         @Override

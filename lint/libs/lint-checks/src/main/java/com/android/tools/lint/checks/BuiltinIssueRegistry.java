@@ -36,7 +36,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
     static {
-        final int initialCapacity = 158;
+        final int initialCapacity = 161;
         List<Issue> issues = new ArrayList<Issue>(initialCapacity);
 
         issues.add(AccessibilityDetector.ISSUE);
@@ -127,6 +127,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ManifestDetector.DUPLICATE_USES_FEATURE);
         issues.add(ManifestDetector.APPLICATION_ICON);
         issues.add(ManifestDetector.DEVICE_ADMIN);
+        issues.add(ManifestDetector.MOCK_LOCATION);
         issues.add(ManifestTypoDetector.ISSUE);
         issues.add(SecurityDetector.EXPORTED_PROVIDER);
         issues.add(SecurityDetector.EXPORTED_SERVICE);
@@ -135,6 +136,8 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(SecurityDetector.WORLD_READABLE);
         issues.add(SecurityDetector.WORLD_WRITEABLE);
         issues.add(SecureRandomDetector.ISSUE);
+        issues.add(CheckPermissionDetector.ISSUE);
+        issues.add(SecureRandomGeneratorDetector.ISSUE);
         issues.add(IconDetector.GIF_USAGE);
         issues.add(IconDetector.ICON_DENSITIES);
         issues.add(IconDetector.ICON_MISSING_FOLDER);

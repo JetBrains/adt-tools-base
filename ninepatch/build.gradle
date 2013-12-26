@@ -1,3 +1,6 @@
+apply plugin: 'java'
+apply plugin: 'distrib'
+
 group = 'com.android.tools'
 archivesBaseName = 'ninepatch'
 
@@ -10,3 +13,4 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
+apply from: '../baseVersion.gradle'

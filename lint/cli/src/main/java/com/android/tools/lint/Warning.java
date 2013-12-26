@@ -16,13 +16,24 @@
 
 package com.android.tools.lint;
 
+import com.android.annotations.NonNull;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Variant;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * A {@link Warning} represents a specific warning that a {@link LintClient}
@@ -30,12 +41,13 @@ import java.io.File;
  * list of warnings such that it can sort them all before presenting them all at
  * the end.
  */
-class Warning implements Comparable<Warning> {
+public class Warning implements Comparable<Warning> {
     public final Issue issue;
     public final String message;
     public final Severity severity;
     public final Object data;
     public final Project project;
+    public AndroidProject gradleProject;
     public Location location;
     public File file;
     public String path;
@@ -43,6 +55,7 @@ class Warning implements Comparable<Warning> {
     public int offset = -1;
     public String errorLine;
     public String fileContents;
+    public Set<Variant> variants;
 
     public Warning(Issue issue, String message, Severity severity, Project project, Object data) {
         this.issue = issue;
@@ -53,8 +66,9 @@ class Warning implements Comparable<Warning> {
     }
 
     // ---- Implements Comparable<Warning> ----
+    @SuppressWarnings({"VariableNotUsedInsideIf", "ConstantConditions"})
     @Override
-    public int compareTo(Warning other) {
+    public int compareTo(@NonNull Warning other) {
         // Sort by category, then by priority, then by id,
         // then by file, then by line
         int categoryDelta = issue.getCategory().compareTo(other.issue.getCategory());
@@ -68,24 +82,107 @@ class Warning implements Comparable<Warning> {
         }
         String id1 = issue.getId();
         String id2 = other.issue.getId();
-        if (id1 == null || id2 == null) {
-            return file.getName().compareTo(other.file.getName());
-        }
+        assert id1 != null;
+        assert id2 != null;
         int idDelta = id1.compareTo(id2);
         if (idDelta != 0) {
             return idDelta;
         }
-        if (file != null && other.file != null) {
-            int fileDelta = file.getName().compareTo(
-                    other.file.getName());
-            if (fileDelta != 0) {
-                return fileDelta;
+        if (file != null) {
+            if (other.file != null) {
+                int fileDelta = file.getName().compareTo(
+                        other.file.getName());
+                if (fileDelta != 0) {
+                    return fileDelta;
+                }
+            } else {
+                return -1;
             }
+        } else if (other.file != null) {
+            return 1;
         }
         if (line != other.line) {
             return line - other.line;
         }
 
         return message.compareTo(other.message);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        Warning warning = (Warning) o;
+
+        if (line != warning.line) {
+            return false;
+        }
+        if (file != null ? !file.equals(warning.file) : warning.file != null) {
+            return false;
+        }
+        if (!issue.getCategory().equals(warning.issue.getCategory())) {
+            return false;
+        }
+        if (issue.getPriority() != warning.issue.getPriority()) {
+            return false;
+        }
+        if (!issue.getId().equals(warning.issue.getId())) {
+            return false;
+        }
+        //noinspection RedundantIfStatement
+        if (!message.equals(warning.message)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = message.hashCode();
+        result = 31 * result + (file != null ? file.hashCode() : 0);
+        return result;
+    }
+
+    public boolean isVariantSpecific() {
+        return variants != null && variants.size() < gradleProject.getVariants().size();
+    }
+
+    public boolean includesMoreThanExcludes() {
+        assert isVariantSpecific();
+        int variantCount = variants.size();
+        int allVariantCount = gradleProject.getVariants().size();
+        return variantCount <= allVariantCount - variantCount;
+    }
+
+    public List<String> getIncludedVariantNames() {
+        assert isVariantSpecific();
+        List<String> names = new ArrayList<String>();
+        if (variants != null) {
+            for (Variant variant : variants) {
+                names.add(variant.getName());
+            }
+        }
+        Collections.sort(names);
+        return names;
+    }
+
+    public List<String> getExcludedVariantNames() {
+        assert isVariantSpecific();
+        Collection<Variant> variants = gradleProject.getVariants();
+        Set<String> allVariants = new HashSet<String>(variants.size());
+        for (Variant variant : variants) {
+            allVariants.add(variant.getName());
+        }
+        Set<String> included = new HashSet<String>(getIncludedVariantNames());
+        Set<String> excluded = Sets.difference(allVariants, included);
+        List<String> sorted = Lists.newArrayList(excluded);
+        Collections.sort(sorted);
+        return sorted;
     }
 }

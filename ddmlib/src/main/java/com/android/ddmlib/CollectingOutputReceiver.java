@@ -18,6 +18,7 @@ package com.android.ddmlib;
 
 import java.io.UnsupportedEncodingException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A {@link IShellOutputReceiver} which collects the whole shell output into one
@@ -26,7 +27,7 @@ import java.util.concurrent.CountDownLatch;
 public class CollectingOutputReceiver implements IShellOutputReceiver {
     private CountDownLatch mCompletionLatch;
     private StringBuffer mOutputBuffer = new StringBuffer();
-    private boolean mIsCanceled = false;
+    private AtomicBoolean mIsCanceled = new AtomicBoolean(false);
 
     public CollectingOutputReceiver() {
     }
@@ -41,20 +42,20 @@ public class CollectingOutputReceiver implements IShellOutputReceiver {
 
     @Override
     public boolean isCancelled() {
-        return mIsCanceled;
+        return mIsCanceled.get();
     }
 
     /**
      * Cancel the output collection
      */
     public void cancel() {
-        mIsCanceled = true;
+        mIsCanceled.set(true);
     }
 
     @Override
     public void addOutput(byte[] data, int offset, int length) {
         if (!isCancelled()) {
-            String s = null;
+            String s;
             try {
                 s = new String(data, offset, length, "UTF-8"); //$NON-NLS-1$
             } catch (UnsupportedEncodingException e) {

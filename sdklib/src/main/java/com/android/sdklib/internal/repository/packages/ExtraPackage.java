@@ -17,6 +17,7 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
@@ -31,6 +32,8 @@ import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.RepoConstants;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.utils.NullLogger;
 
 import org.w3c.dom.Node;
@@ -88,6 +91,8 @@ public class ExtraPackage extends NoPreviewRevisionPackage
      * The array can be empty but not null.
      */
     private final String[] mProjectFiles;
+
+    private final IPkgDesc mPkgDesc;
 
     /**
      * Creates a new tool package from the attributes and elements of the given XML node.
@@ -152,6 +157,8 @@ public class ExtraPackage extends NoPreviewRevisionPackage
                 PackageParserUtils.findChildElement(packageNode, RepoConstants.NODE_PROJECT_FILES));
 
         mOldPaths = PackageParserUtils.getXmlString(packageNode, RepoConstants.NODE_OLD_PATHS);
+
+        mPkgDesc = PkgDesc.newExtra(mVendorId, mPath, getRevision());
     }
 
     private String[] parseProjectFiles(Node projectFilesNode) {
@@ -286,7 +293,16 @@ public class ExtraPackage extends NoPreviewRevisionPackage
                 }
             }
         }
+
         mProjectFiles = filePaths.toArray(new String[filePaths.size()]);
+
+        mPkgDesc = PkgDesc.newExtra(mVendorId, mPath, getRevision());
+    }
+
+    @Override
+    @NonNull
+    public IPkgDesc getPkgDesc() {
+        return mPkgDesc;
     }
 
     /**

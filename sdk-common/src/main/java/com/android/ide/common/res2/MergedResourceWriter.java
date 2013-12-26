@@ -21,33 +21,27 @@ import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.RES_QUALIFIER_SEP;
 import static com.android.SdkConstants.TAG_EAT_COMMENT;
 import static com.android.SdkConstants.TAG_RESOURCES;
+import static com.android.utils.SdkUtils.createPathComment;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.internal.AaptRunner;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.resources.ResourceFolderType;
+import com.android.resources.ResourceType;
 import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Sets;
-import com.google.common.io.ByteStreams;
-import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -68,6 +62,8 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     @Nullable
     private final AaptRunner mAaptRunner;
 
+    private boolean mInsertSourceMarkers = true;
+
     /**
      * map of XML values files to write after parsing all the files. the key is the qualifier.
      */
@@ -83,6 +79,24 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     public MergedResourceWriter(@NonNull File rootFolder, @Nullable AaptRunner aaptRunner) {
         super(rootFolder);
         mAaptRunner = aaptRunner;
+    }
+
+    /**
+     * Sets whether this manifest merger will insert source markers into the merged source
+     *
+     * @param insertSourceMarkers if true, insert source markers
+     */
+    public void setInsertSourceMarkers(boolean insertSourceMarkers) {
+      mInsertSourceMarkers = insertSourceMarkers;
+    }
+
+    /**
+     * Returns whether this manifest merger will insert source markers into the merged source
+     *
+     * @return whether this manifest merger will insert source markers into the merged source
+     */
+    public boolean isInsertSourceMarkers() {
+      return mInsertSourceMarkers;
     }
 
     @Override
@@ -146,7 +160,8 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                             }
                         }
 
-                        String folderName = item.getType().getName();
+                        ResourceType itemType = item.getType();
+                        String folderName = itemType.getName();
                         String qualifiers = resourceFile.getQualifiers();
                         if (!qualifiers.isEmpty()) {
                             folderName = folderName + RES_QUALIFIER_SEP + qualifiers;
@@ -162,12 +177,15 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         File outFile = new File(typeFolder, filename);
 
                         try {
-                            if (mAaptRunner != null && filename.endsWith(DOT_PNG)) {
+                            if (itemType == ResourceType.RAW) {
+                                // Don't crunch, don't insert source comments, etc - leave alone.
+                                Files.copy(file, outFile);
+                            } else if (mAaptRunner != null && filename.endsWith(DOT_PNG)) {
                                 // run aapt in single crunch mode on the original file to write the
                                 // destination file.
                                 mAaptRunner.crunchPng(file, outFile);
-                            } else if (filename.endsWith(DOT_XML)) {
-                                copyXmlWithComment(file, outFile, createPathComment(file));
+                            } else if (mInsertSourceMarkers && filename.endsWith(DOT_XML)) {
+                                SdkUtils.copyXmlWithSourceReference(file, outFile);
                             } else {
                                 Files.copy(file, outFile);
                             }
@@ -178,30 +196,6 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     }
                 });
             }
-        }
-    }
-
-    /** Copies a given XML file, and appends a given comment to the end */
-    private static void copyXmlWithComment(@NonNull File from, @NonNull File to,
-            @Nullable String comment) throws IOException {
-        int successfulOps = 0;
-        InputStream in = new FileInputStream(from);
-        try {
-            FileOutputStream out = new FileOutputStream(to, false);
-            try {
-                ByteStreams.copy(in, out);
-                successfulOps++;
-                if (comment != null) {
-                    String commentText = "<!-- " + XmlUtils.toXmlTextValue(comment) + " -->";
-                    byte[] suffix = commentText.getBytes(Charsets.UTF_8);
-                    out.write(suffix);
-                }
-            } finally {
-                Closeables.close(out, successfulOps < 1);
-                successfulOps++;
-            }
-        } finally {
-            Closeables.close(in, successfulOps < 2);
         }
     }
 
@@ -286,11 +280,12 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
                     for (ResourceItem item : items) {
                         ResourceFile source = item.getSource();
-                        if (source != currentFile) {
+                        if (source != currentFile && source != null && mInsertSourceMarkers) {
                             currentFile = source;
                             rootNode.appendChild(document.createTextNode("\n"));
                             File file = source.getFile();
-                            rootNode.appendChild(document.createComment(createPathComment(file)));
+                            rootNode.appendChild(document.createComment(
+                                    createPathComment(file, true)));
                             rootNode.appendChild(document.createTextNode("\n"));
                             // Add an <eat-comment> element to ensure that this comment won't
                             // get merged into a potential comment from the next child (or
@@ -330,7 +325,6 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
         }
     }
 
-
     /**
      * Removes a file that already exists in the out res folder. This has to be a non value file.
      *
@@ -366,25 +360,5 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
         if (!folder.isDirectory() && !folder.mkdirs()) {
             throw new IOException("Failed to create directory: " + folder);
         }
-    }
-
-    /**
-     * Creates the path comment XML string. Note that it does not escape characters
-     * such as &amp; and &lt;; those are expected to be escaped by the caller (typically
-     * handled by the {@link com.android.ide.common.res2.MergedResourceWriter}'s call
-     * to {@link Document#createComment(String)})
-     *
-     * @param file the file to create a path comment for
-     * @return the corresponding XML contents of the string
-     */
-    @VisibleForTesting
-    public static String createPathComment(File file) throws MalformedURLException {
-        String url = SdkUtils.fileToUrlString(file);
-        int dashes = url.indexOf("--");
-        if (dashes != -1) { // Not allowed inside XML comments - for SGML compatibility. Sigh.
-            url = url.replace("--", "%2D%2D");
-        }
-
-        return FILENAME_PREFIX + url;
     }
 }

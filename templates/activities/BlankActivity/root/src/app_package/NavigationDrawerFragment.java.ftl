@@ -77,7 +77,11 @@ public class NavigationDrawerFragment extends Fragment {
 
         // Select either the default item (0) or the last selected item.
         selectItem(mCurrentSelectedPosition);
+    }
 
+    @Override
+    public void onActivityCreated (Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
         // Indicate that this fragment would like to influence the set of actions in the action bar.
         setHasOptionsMenu(true);
     }
@@ -95,7 +99,7 @@ public class NavigationDrawerFragment extends Fragment {
         });
         mDrawerListView.setAdapter(new ArrayAdapter<String>(
                 getActionBar().getThemedContext(),
-                android.R.layout.simple_list_item_<#if minApi gte 11>activated_</#if>1,
+                android.R.layout.simple_list_item_<#if minApiLevel gte 11>activated_</#if>1,
                 android.R.id.text1,
                 new String[]{
                         getString(R.string.title_section1),
@@ -160,7 +164,7 @@ public class NavigationDrawerFragment extends Fragment {
                     mUserLearnedDrawer = true;
                     SharedPreferences sp = PreferenceManager
                             .getDefaultSharedPreferences(getActivity());
-                    sp.edit().putBoolean(PREF_USER_LEARNED_DRAWER, true).${(minApi gte 9)?string('apply','commit')}();
+                    sp.edit().putBoolean(PREF_USER_LEARNED_DRAWER, true).${(minApiLevel gte 9)?string('apply','commit')}();
                 }
 
                 getActivity().${(appCompat?has_content)?string('supportInvalidate','invalidate')}OptionsMenu(); // calls onPrepareOptionsMenu()
@@ -243,10 +247,9 @@ public class NavigationDrawerFragment extends Fragment {
             return true;
         }
 
-        switch (item.getItemId()) {
-            case R.id.action_example:
-                Toast.makeText(getActivity(), "Example action.", Toast.LENGTH_SHORT).show();
-                return true;
+        if (item.getItemId() == R.id.action_example) {
+            Toast.makeText(getActivity(), "Example action.", Toast.LENGTH_SHORT).show();
+            return true;
         }
 
         return super.onOptionsItemSelected(item);

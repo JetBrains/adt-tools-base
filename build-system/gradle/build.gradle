@@ -1,0 +1,114 @@
+apply plugin: 'groovy'
+apply plugin: 'clone-artifacts'
+apply plugin: 'idea'
+
+sourceSets {
+    main {
+        groovy.srcDirs = ['src/main/groovy', 'src/fromGradle/groovy']
+        resources.srcDirs = ['src/main/resources', 'src/fromGradle/resources']
+    }
+    buildTest {
+        groovy.srcDir file('src/build-test/groovy')
+        resources.srcDir file('src/build-test/resources')
+    }
+    deviceTest {
+        groovy.srcDir file('src/device-test/groovy')
+        resources.srcDir file('src/device-test/resources')
+    }
+}
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+    compile project(':builder')
+    compile project(':lint')
+    compile 'net.sf.proguard:proguard-gradle:4.10'
+
+    testCompile 'junit:junit:3.8.1'
+
+    buildTestCompile sourceSets.main.output
+    buildTestCompile sourceSets.test.output
+    buildTestCompile configurations.testCompile
+    buildTestCompile configurations.testRuntime
+
+    deviceTestCompile sourceSets.main.output
+    deviceTestCompile sourceSets.test.output
+    deviceTestCompile sourceSets.buildTest.output
+    deviceTestCompile configurations.testCompile
+    deviceTestCompile configurations.testRuntime
+}
+
+// configuration for dependencies provided by the runtime,
+// in this case proguard.
+configurations{
+    provided
+}
+
+dependencies{
+    provided 'net.sf.proguard:proguard-gradle:4.10'
+}
+
+//Include provided for compilation
+sourceSets.main.compileClasspath += configurations.provided
+
+idea {
+    module {
+        testSourceDirs += files('src/build-test/groovy', 'src/device-test/groovy').files
+
+        scopes.COMPILE.plus += configurations.provided
+    }
+}
+
+group = 'com.android.tools.build'
+archivesBaseName = 'gradle'
+project.ext.pomName = 'Gradle Plug-in for Android'
+project.ext.pomDesc = 'Gradle plug-in to build Android applications.'
+
+apply from: '../../buildVersion.gradle'
+apply from: '../../publish.gradle'
+
+jar.manifest.attributes("Plugin-Version": version)
+publishLocal.dependsOn ':builder:publishLocal'
+
+task buildTest(type: Test, dependsOn: publishLocal) {
+    testClassesDir = sourceSets.buildTest.output.classesDir
+    classpath = sourceSets.buildTest.runtimeClasspath
+    description = "Runs the project build tests. This requires an SDK either from the Android source tree, under out/..., or an env var ANDROID_HOME."
+    group = "verification"
+    systemProperties['jar.path'] = jar.archivePath
+}
+
+task deviceTest(type: Test, dependsOn: publishLocal) {
+    testClassesDir = sourceSets.deviceTest.output.classesDir
+    classpath = sourceSets.deviceTest.runtimeClasspath
+    description = "Runs the device tests. This requires a device."
+    group = "verification"
+    systemProperties['jar.path'] = jar.archivePath
+}
+
+check.dependsOn buildTest
+
+
+groovydoc {
+    exclude     "**/internal/**"
+    includePrivate false
+
+    docTitle "Gradle Plugin for Android"
+    header ""
+    footer "Copyright (C) 2012 The Android Open Source Project"
+    overview ""
+}
+
+task javadocJar(type: Jar, dependsOn:groovydoc) {
+    classifier  'javadoc'
+    from        groovydoc.destinationDir
+}
+
+// add javadoc jar tasks as artifacts
+artifacts {
+    archives javadocJar
+}
+
+apply plugin: 'distrib'
+shipping.isShipping = false
+

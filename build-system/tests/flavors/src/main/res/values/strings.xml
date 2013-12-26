@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">libsTest-app</string>
+    <string name="group2_string">FLAVOR OVERLAY FAILED!</string>
+    <string name="group1_string">FLAVOR OVERLAY FAILED!</string>
+    <string name="general_string">FLAVOR OVERLAY FAILED!</string>
+
+</resources>

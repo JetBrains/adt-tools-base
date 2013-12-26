@@ -245,6 +245,18 @@ public class XmlUtilsTest extends TestCase {
                 xml);
     }
 
+    public void testToXml5() throws Exception {
+        String xml = ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<root>\n"
+                + "    <!-- <&'>\" -->\n"
+                + "</root>";
+        Document doc = parse(xml);
+
+        String formatted = XmlUtils.toXml(doc, true);
+        assertEquals(xml, formatted);
+    }
+
     @Nullable
     private static Document createEmptyPlainDocument() throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();

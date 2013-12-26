@@ -1,7 +1,7 @@
     /**
-     * A dummy fragment containing a simple view.
+     * A placeholder fragment containing a simple view.
      */
-    public static class DummyFragment extends Fragment {
+    public static class PlaceholderFragment extends Fragment {
 <#if hasSections?has_content>
         /**
          * The fragment argument representing the section number for this
@@ -13,8 +13,8 @@
          * Returns a new instance of this fragment for the given section
          * number.
          */
-        public static DummyFragment newInstance(int sectionNumber) {
-            DummyFragment fragment = new DummyFragment();
+        public static PlaceholderFragment newInstance(int sectionNumber) {
+            PlaceholderFragment fragment = new PlaceholderFragment();
             Bundle args = new Bundle();
             args.putInt(ARG_SECTION_NUMBER, sectionNumber);
             fragment.setArguments(args);
@@ -22,7 +22,7 @@
         }
         </#if>
 
-        public DummyFragment() {
+        public PlaceholderFragment() {
         }
 
         @Override
@@ -30,8 +30,8 @@
                 Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.${fragmentLayoutName}, container, false);
             <#if hasSections?has_content>
-            TextView dummyTextView = (TextView) rootView.findViewById(R.id.section_label);
-            dummyTextView.setText(Integer.toString(getArguments().getInt(ARG_SECTION_NUMBER)));
+            TextView textView = (TextView) rootView.findViewById(R.id.section_label);
+            textView.setText(Integer.toString(getArguments().getInt(ARG_SECTION_NUMBER)));
             </#if>
             return rootView;
         }

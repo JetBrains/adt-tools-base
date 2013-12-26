@@ -18,7 +18,7 @@ dependencies {
 
 group = "com.android.tools.internal"
 archivesBaseName = "internal-plugins"
-version="1.0"
+version="1.1"
 
 task updatePrebuilts(type: Upload) {
     configuration = configurations.archives

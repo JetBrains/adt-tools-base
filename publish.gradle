@@ -1,0 +1,78 @@
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+task publishLocal(type: Upload) {
+    configuration = configurations.archives
+    repositories {
+        mavenDeployer {
+            repository(url: uri("$rootProject.ext.localRepo"))
+        }
+    }
+}
+
+project.ext.sonatypeUsername = hasProperty('sonatypeUsername') ? sonatypeUsername : ""
+project.ext.sonatypePassword = hasProperty('sonatypePassword') ? sonatypePassword : ""
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment ->
+                if (!project.has("release")) {
+                    throw new StopExecutionException("uploadArchives must be called with the release.gradle init script")
+                }
+
+                if (project.ext.sonatypeUsername.length() == 0 || project.ext.sonatypePassword.length() == 0) {
+                    throw new StopExecutionException("uploadArchives cannot be called without sonatype username and password")
+                }
+
+                signing.signPom(deployment)
+            }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: project.ext.sonatypeUsername, password: project.ext.sonatypePassword)
+            }
+
+            pom.project {
+                name project.ext.pomName
+                description project.ext.pomDesc
+                url 'http://tools.android.com'
+                inceptionYear '2007'
+
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        distribution 'repo'
+                    }
+                }
+
+                scm {
+                    url 'https://android.googlesource.com/platform/tools/base'
+                    connection 'git://android.googlesource.com/platform/tools/base.git'
+                }
+                developers {
+                    developer {
+                        name 'The Android Open Source Project'
+                    }
+                }
+            }
+        }
+    }
+}
+
+// custom tasks for creating source/javadoc jars
+task sourcesJar(type: Jar, dependsOn:classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+// add source jar tasks as artifacts
+artifacts {
+    archives jar
+    archives sourcesJar
+}
+
+signing {
+    required { project.has("release") && gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
+}

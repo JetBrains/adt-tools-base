@@ -341,7 +341,7 @@ public class LintUtils {
      *            path separators.
      * @return the individual path components as an Iterable of strings
      */
-    public static Iterable<String> splitPath(String path) {
+    public static Iterable<String> splitPath(@NonNull String path) {
         if (path.indexOf(';') != -1) {
             return Splitter.on(';').omitEmptyStrings().trimResults().split(path);
         }

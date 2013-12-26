@@ -32,7 +32,7 @@ public class NotificationIconGeneratorTest extends GeneratorTest {
     }
 
     private void checkGraphic(String baseName) throws IOException {
-        checkGraphic(baseName, 1, "notification", 9);
+        checkGraphic(baseName, 1, "notification", 12);
     }
 
     public void testNotification1() throws Exception {
@@ -40,10 +40,10 @@ public class NotificationIconGeneratorTest extends GeneratorTest {
     }
 
     public void testNotification2() throws Exception {
-        checkGraphic("ic_stat_1", 9 /* minSdk */, "notification-v9+", 6 /* fileCount */);
+        checkGraphic("ic_stat_1", 9 /* minSdk */, "notification-v9+", 8 /* fileCount */);
     }
 
     public void testNotification3() throws Exception {
-        checkGraphic("ic_stat_1", 11, "notification-v11+", 3);
+        checkGraphic("ic_stat_1", 11, "notification-v11+", 4);
     }
 }

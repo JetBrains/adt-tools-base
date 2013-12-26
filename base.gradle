@@ -1,0 +1,29 @@
+apply plugin: 'findbugs'
+
+// find bug dependencies is added dynamically so it's hard for the
+// clone artifact plugin to find it. This custom config lets us manually
+// add such dependencies.
+configurations {
+    hidden
+}
+dependencies {
+    hidden "com.google.code.findbugs:findbugs:2.0.1"
+}
+
+// set all java compilation to use UTF-8 encoding.
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+task disableTestFailures << {
+    tasks.withType(Test) {
+        ignoreFailures = true
+    }
+}
+
+findbugs {
+    ignoreFailures = true
+    effort = "max"
+    reportLevel = "high"
+}
+
