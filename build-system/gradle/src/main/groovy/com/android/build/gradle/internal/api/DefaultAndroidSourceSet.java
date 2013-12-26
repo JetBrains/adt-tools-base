@@ -22,7 +22,7 @@ import com.android.build.gradle.api.AndroidSourceDirectorySet;
 import com.android.build.gradle.api.AndroidSourceFile;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.builder.model.SourceProvider;
-import groovy.lang.Closure;
+
 import org.gradle.api.file.FileTreeElement;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.file.DefaultSourceDirectorySet;
@@ -33,8 +33,11 @@ import org.gradle.util.ConfigureUtil;
 import org.gradle.util.GUtil;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+
+import groovy.lang.Closure;
 
 /**
  */
@@ -50,6 +53,7 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
     private final AndroidSourceDirectorySet aidl;
     private final AndroidSourceDirectorySet renderscript;
     private final AndroidSourceDirectorySet jni;
+    private final AndroidSourceDirectorySet jniLibs;
     private final String displayName;
     private final SourceDirectorySet allSource;
 
@@ -97,6 +101,9 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
 
         String jniDisplayName = String.format("%s jni", displayName);
         jni = new DefaultAndroidSourceDirectorySet(jniDisplayName, fileResolver);
+
+        String libsDisplayName = String.format("%s jniLibs", displayName);
+        jniLibs = new DefaultAndroidSourceDirectorySet(libsDisplayName, fileResolver);
     }
 
     @Override
@@ -215,6 +222,19 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
 
     @Override
     @NonNull
+    public AndroidSourceDirectorySet getJniLibs() {
+        return jniLibs;
+    }
+
+    @Override
+    @NonNull
+    public AndroidSourceSet jniLibs(Closure configureClosure) {
+        ConfigureUtil.configure(configureClosure, getJniLibs());
+        return this;
+    }
+
+    @Override
+    @NonNull
     public SourceDirectorySet getJava() {
         return javaSource;
     }
@@ -262,6 +282,7 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
         aidl.setSrcDirs(Collections.singletonList(path + "/aidl"));
         renderscript.setSrcDirs(Collections.singletonList(path + "/rs"));
         jni.setSrcDirs(Collections.singletonList(path + "/jni"));
+        jniLibs.setSrcDirs(Collections.singletonList(path + "/jniLibs"));
         return this;
     }
 
@@ -313,5 +334,11 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
     @NonNull
     public Set<File> getAssetsDirectories() {
         return getAssets().getSrcDirs();
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getJniLibsDirectories() {
+        return getJniLibs().getSrcDirs();
     }
 }
