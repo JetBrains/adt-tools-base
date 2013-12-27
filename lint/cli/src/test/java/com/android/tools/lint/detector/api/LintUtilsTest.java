@@ -21,20 +21,22 @@ import static com.android.tools.lint.detector.api.LintUtils.isImported;
 import static com.android.tools.lint.detector.api.LintUtils.splitPath;
 
 import com.android.annotations.Nullable;
+import com.android.tools.lint.EcjParser;
 import com.android.tools.lint.LintCliClient;
-import com.android.tools.lint.LombokParser;
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.client.api.IJavaParser;
 import com.android.tools.lint.client.api.LintDriver;
 import com.google.common.collect.Iterables;
+
+import junit.framework.TestCase;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
+import java.util.Locale;
 
-import junit.framework.TestCase;
 import lombok.ast.Node;
 
 @SuppressWarnings("javadoc")
@@ -207,6 +209,7 @@ public class LintUtilsTest extends TestCase {
 
     private static void checkEncoding(String encoding, boolean writeBom, String lineEnding)
             throws Exception {
+        @SuppressWarnings("StringBufferReplaceableByString")
         StringBuilder sb = new StringBuilder();
 
         // Norwegian extra vowel characters such as "latin small letter a with ring above"
@@ -220,7 +223,7 @@ public class LintUtilsTest extends TestCase {
         OutputStreamWriter writer = new OutputStreamWriter(stream, encoding);
 
         if (writeBom) {
-            String normalized = encoding.toLowerCase().replace("-", "_");
+            String normalized = encoding.toLowerCase(Locale.US).replace("-", "_");
             if (normalized.equals("utf_8")) {
                 stream.write(0xef);
                 stream.write(0xbb);
@@ -332,15 +335,15 @@ public class LintUtilsTest extends TestCase {
                 "android.app.Activity"));
     }
 
-    private Node getCompilationUnit(String javaSource) {
-        IJavaParser parser = new LombokParser();
+    public static Node getCompilationUnit(String javaSource) {
         TestContext context = new TestContext(javaSource, new File("test"));
+        IJavaParser parser = new EcjParser(new LintCliClient());
         Node compilationUnit = parser.parseJava(context);
         assertNotNull(javaSource, compilationUnit);
         return compilationUnit;
     }
 
-    private class TestContext extends JavaContext {
+    private static class TestContext extends JavaContext {
         private final String mJavaSource;
         public TestContext(String javaSource, File file) {
             super(new LintDriver(new BuiltinIssueRegistry(),
