@@ -18,6 +18,8 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.ATTR_ALLOW_BACKUP;
+import static com.android.SdkConstants.ATTR_ICON;
 import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
@@ -37,8 +39,8 @@ import static com.android.xml.AndroidManifest.NODE_ACTION;
 import static com.android.xml.AndroidManifest.NODE_DATA;
 import static com.android.xml.AndroidManifest.NODE_METADATA;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.BuildTypeContainer;
 import com.android.tools.lint.detector.api.Category;
@@ -367,6 +369,17 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     /** Permission basenames */
     private Map<String, String> mPermissionNames;
 
+    /** Handle to the {@code <application>} tag */
+    private Location.Handle mApplicationTagHandle;
+
+    /** Whether we've seen an application icon definition in any of the manifest files (or
+     * if a manifest tag warning for this has been explicitly disabled) */
+    private boolean mSeenAppIcon;
+
+    /** Whether we've seen an allow backup definition in any of the manifest files (or
+     * if a manifest tag warning for this has been explicitly disabled) */
+    private boolean mSeenAllowBackup;
+
     @NonNull
     @Override
     public Speed getSpeed() {
@@ -401,6 +414,39 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                     "<uses-sdk android:minSdkVersion=\"?\" />; if it really supports " +
                     "all versions of Android set it to 1.", null);
         }
+    }
+
+    @Override
+    public void afterCheckProject(@NonNull Context context) {
+        if (!mSeenAllowBackup && context.isEnabled(ALLOW_BACKUP)
+                && context.getMainProject().getMinSdk() >= 4) {
+            Location location = getMainApplicationTagLocation(context);
+            context.report(ALLOW_BACKUP, location,
+                    "Should explicitly set android:allowBackup to true or " +
+                            "false (it's true by default, and that can have some security " +
+                            "implications for the application's data)", null);
+        }
+
+        if (!context.getMainProject().isLibrary()
+                && !mSeenAppIcon && context.isEnabled(APPLICATION_ICON)) {
+            Location location = getMainApplicationTagLocation(context);
+            context.report(APPLICATION_ICON, location,
+                    "Should explicitly set android:icon, there is no default", null);
+        }
+    }
+
+    @Nullable
+    private Location getMainApplicationTagLocation(@NonNull Context context) {
+        if (mApplicationTagHandle != null) {
+            return mApplicationTagHandle.resolve();
+        }
+
+        List<File> manifestFiles = context.getMainProject().getManifestFiles();
+        if (!manifestFiles.isEmpty()) {
+            return Location.create(manifestFiles.get(0));
+        }
+
+        return null;
     }
 
     private static void checkDocumentElement(XmlContext context, Element element) {
@@ -643,20 +689,22 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
         if (tag.equals(TAG_APPLICATION)) {
             mSeenApplication = true;
-            if (!element.hasAttributeNS(ANDROID_URI, SdkConstants.ATTR_ALLOW_BACKUP)
-                    && context.isEnabled(ALLOW_BACKUP)
-                    && context.getMainProject().getMinSdk() >= 4) {
-                // TODO: For gradle, just needs to be set SOMEWHERE
-                context.report(ALLOW_BACKUP, element, context.getLocation(element),
-                            "Should explicitly set android:allowBackup to true or " +
-                            "false (it's true by default, and that can have some security " +
-                            "implications for the application's data)", null);
+            boolean recordLocation = false;
+            if (element.hasAttributeNS(ANDROID_URI, ATTR_ALLOW_BACKUP)
+                    || context.getDriver().isSuppressed(ALLOW_BACKUP, element)) {
+                mSeenAllowBackup = true;
+            } else {
+                recordLocation = true;
             }
-
-            if (!element.hasAttributeNS(ANDROID_URI, SdkConstants.ATTR_ICON)
-                    && !context.getProject().isLibrary()) {
-                context.report(APPLICATION_ICON, element, context.getLocation(element),
-                            "Should explicitly set android:icon, there is no default", null);
+            if (element.hasAttributeNS(ANDROID_URI, ATTR_ICON)
+                    || context.getDriver().isSuppressed(APPLICATION_ICON, element)) {
+                mSeenAppIcon = true;
+            } else {
+                recordLocation = true;
+            }
+            if (recordLocation && !context.getProject().isLibrary() &&
+                    (mApplicationTagHandle == null || isMainManifest(context, context.file))) {
+                mApplicationTagHandle = context.parser.createLocationHandle(context, element);
             }
         } else if (mSeenApplication) {
             if (context.isEnabled(ORDER)) {
@@ -684,6 +732,18 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 }
             }
         }
+    }
+
+    /** Returns true iff the given manifest file is the main manifest file */
+    private static boolean isMainManifest(XmlContext context, File manifestFile) {
+        if (!context.getProject().isGradleProject()) {
+            // In non-gradle projects, just one manifest per project
+            return true;
+        }
+
+        AndroidProject model = context.getProject().getGradleProjectModel();
+        return model == null || manifestFile
+                .equals(model.getDefaultConfig().getSourceProvider().getManifestFile());
     }
 
     /** Returns true iff the given manifest file is in a debug-specific source set */
