@@ -189,6 +189,10 @@ public final class SdkConstants {
     public static final String FN_FIND_LOCK =
         "find_lock" + ext(".exe", "");                    //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
+    /** hprof-conv executable (with extension for the current OS) */
+    public static final String FN_HPROF_CONV =
+        "hprof-conv" + ext(".exe", "");                   //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
     /** properties file for SDK Updater packages */
     public static final String FN_SOURCE_PROP = "source.properties";                  //$NON-NLS-1$
     /** properties file for content hash of installed packages */
@@ -995,6 +999,8 @@ public final class SdkConstants {
     public static final String EXT_PNG = "png"; //$NON-NLS-1$
     /** Extension for Android archive files */
     public static final String EXT_AAR = "aar"; //$NON-NLS-1$
+    /** Extension for Java heap dumps. */
+    public static final String EXT_HPROF = "hprof"; //$NON-NLS-1$
 
     private static final String DOT = "."; //$NON-NLS-1$
 
