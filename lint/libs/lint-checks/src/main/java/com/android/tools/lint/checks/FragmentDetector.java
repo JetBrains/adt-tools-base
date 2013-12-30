@@ -67,7 +67,7 @@ public class FragmentDetector extends Detector implements ClassScanner {
 
         Category.CORRECTNESS,
         6,
-        Severity.ERROR,
+        Severity.FATAL,
         new Implementation(
                 FragmentDetector.class,
                 Scope.CLASS_FILE_SCOPE)

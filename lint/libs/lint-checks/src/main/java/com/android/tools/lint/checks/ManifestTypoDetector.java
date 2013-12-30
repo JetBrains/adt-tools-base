@@ -79,7 +79,7 @@ public class ManifestTypoDetector extends Detector implements Detector.XmlScanne
             "that look like likely misspellings, they are flagged.",
             Category.CORRECTNESS,
             5,
-            Severity.WARNING,
+            Severity.FATAL,
             new Implementation(
                     ManifestTypoDetector.class,
                     Scope.MANIFEST_SCOPE));
