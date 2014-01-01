@@ -43,6 +43,7 @@ import com.android.tools.lint.detector.api.Severity;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
 
 import java.io.File;
@@ -116,8 +117,17 @@ public class LintCliClient extends LintClient {
 
         Collections.sort(mWarnings);
 
+        boolean hasConsoleOutput = false;
         for (Reporter reporter : mFlags.getReporters()) {
             reporter.write(mErrorCount, mWarningCount, mWarnings);
+            if (reporter instanceof TextReporter && ((TextReporter)reporter).isWriteToConsole()) {
+                hasConsoleOutput = true;
+            }
+        }
+
+        if (!mFlags.isQuiet() && !hasConsoleOutput) {
+            System.out.println(String.format(
+                    "Lint found %1$d errors and %2$d warnings", mErrorCount, mWarningCount));
         }
 
         return mFlags.isSetExitCode() ? (mHasErrors ? ERRNO_ERRORS : ERRNO_SUCCESS) : ERRNO_SUCCESS;
@@ -585,14 +595,22 @@ public class LintCliClient extends LintClient {
         return mDriver;
     }
 
+    private static Set<File> sAlreadyWarned;
+
     /** Returns the configuration used by this client */
     Configuration getConfiguration() {
         if (mConfiguration == null) {
             File configFile = mFlags.getDefaultConfiguration();
             if (configFile != null) {
                 if (!configFile.exists()) {
-                    log(Severity.ERROR, null, "Warning: Configuration file %1$s does not exist",
-                            configFile);
+                    if (sAlreadyWarned == null || !sAlreadyWarned.contains(configFile)) {
+                        log(Severity.ERROR, null,
+                                "Warning: Configuration file %1$s does not exist", configFile);
+                    }
+                    if (sAlreadyWarned == null) {
+                        sAlreadyWarned = Sets.newHashSet();
+                    }
+                    sAlreadyWarned.add(configFile);
                 }
                 mConfiguration = createConfigurationFromFile(configFile);
             }

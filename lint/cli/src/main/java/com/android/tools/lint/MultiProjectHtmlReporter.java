@@ -135,7 +135,6 @@ public class MultiProjectHtmlReporter extends HtmlReporter {
         Closeables.closeQuietly(mWriter);
 
         File index = new File(mDir, INDEX_NAME);
-        System.out.println();
         System.out.println(String.format("Wrote overview index to %1$s", index));
     }
 
