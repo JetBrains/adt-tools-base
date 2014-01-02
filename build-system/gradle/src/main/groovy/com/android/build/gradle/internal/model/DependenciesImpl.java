@@ -18,19 +18,21 @@ package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
-import com.android.builder.model.Dependencies;
+import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.Dependencies;
 import com.google.common.collect.Lists;
+
 import org.gradle.api.Project;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -48,43 +50,45 @@ public class DependenciesImpl implements Dependencies, Serializable {
 
     @NonNull
     static DependenciesImpl cloneDependencies(
-            @Nullable VariantDependencies variantDependencies,
+            @NonNull BaseVariantData variantData,
+            @NonNull BasePlugin basePlugin,
             @NonNull Set<Project> gradleProjects) {
+
+        VariantDependencies variantDependencies = variantData.getVariantDependency();
 
         List<AndroidLibrary> libraries;
         List<File> jars;
         List<String> projects;
 
-        if (variantDependencies != null) {
-            List<LibraryDependencyImpl> libs = variantDependencies.getLibraries();
-            libraries = Lists.newArrayListWithCapacity(libs.size());
-            for (LibraryDependencyImpl libImpl : libs) {
-                AndroidLibrary clonedLib = getAndroidLibrary(libImpl, gradleProjects);
-                libraries.add(clonedLib);
-            }
+        List<LibraryDependencyImpl> libs = variantDependencies.getLibraries();
+        libraries = Lists.newArrayListWithCapacity(libs.size());
+        for (LibraryDependencyImpl libImpl : libs) {
+            AndroidLibrary clonedLib = getAndroidLibrary(libImpl, gradleProjects);
+            libraries.add(clonedLib);
+        }
 
-            List<JarDependency> jarDeps = variantDependencies.getJarDependencies();
-            List<JarDependency> localDeps = variantDependencies.getLocalDependencies();
+        List<JarDependency> jarDeps = variantDependencies.getJarDependencies();
+        List<JarDependency> localDeps = variantDependencies.getLocalDependencies();
 
-            jars = Lists.newArrayListWithExpectedSize(jarDeps.size() + localDeps.size());
-            projects = Lists.newArrayList();
+        jars = Lists.newArrayListWithExpectedSize(jarDeps.size() + localDeps.size());
+        projects = Lists.newArrayList();
 
-            for (JarDependency jarDep : jarDeps) {
-                File jarFile = jarDep.getJarFile();
-                Project projectMatch = getProject(jarFile, gradleProjects);
-                if (projectMatch != null) {
-                    projects.add(projectMatch.getPath());
-                } else {
-                    jars.add(jarFile);
-                }
+        for (JarDependency jarDep : jarDeps) {
+            File jarFile = jarDep.getJarFile();
+            Project projectMatch = getProject(jarFile, gradleProjects);
+            if (projectMatch != null) {
+                projects.add(projectMatch.getPath());
+            } else {
+                jars.add(jarFile);
             }
-            for (JarDependency jarDep : localDeps) {
-                jars.add(jarDep.getJarFile());
-            }
-        } else {
-            libraries = Collections.emptyList();
-            jars = Collections.emptyList();
-            projects = Collections.emptyList();
+        }
+
+        for (JarDependency jarDep : localDeps) {
+            jars.add(jarDep.getJarFile());
+        }
+
+        if (variantData.getVariantConfiguration().getMergedFlavor().getRenderscriptSupportMode()) {
+            jars.add(basePlugin.getAndroidBuilder(variantData).getRenderScriptSupportJar());
         }
 
         return new DependenciesImpl(libraries, jars, projects);
