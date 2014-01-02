@@ -460,7 +460,10 @@ public abstract class BasePlugin {
         renderscriptTask.plugin = this
         renderscriptTask.variant = variantData
 
-        renderscriptTask.targetApi = mergedFlavor.renderscriptTargetApi
+        int targetApi = mergedFlavor.renderscriptTargetApi
+        int minSdk = config.getMinSdkVersion()
+        renderscriptTask.targetApi = targetApi > minSdk ? targetApi : minSdk
+
         renderscriptTask.supportMode = mergedFlavor.renderscriptSupportMode
         renderscriptTask.ndkMode = ndkMode
         renderscriptTask.debugBuild = config.buildType.renderscriptDebugBuild
