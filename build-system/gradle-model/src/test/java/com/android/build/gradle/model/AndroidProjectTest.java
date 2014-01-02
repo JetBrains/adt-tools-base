@@ -18,6 +18,7 @@ package com.android.build.gradle.model;
 
 import static com.android.builder.model.AndroidProject.ARTIFACT_INSTRUMENT_TEST;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.StringHelper;
@@ -229,7 +230,8 @@ public class AndroidProjectTest extends TestCase {
         }
     }
 
-    private void testDefaultSourceSets(@NonNull AndroidProject model, @NonNull File projectDir) {
+    private static void testDefaultSourceSets(@NonNull AndroidProject model,
+            @NonNull File projectDir) {
         ProductFlavorContainer defaultConfig = model.getDefaultConfig();
 
         // test the main source provider
@@ -588,6 +590,32 @@ public class AndroidProjectTest extends TestCase {
 
         Dependencies testDependencies = testArtifact.getDependencies();
         assertEquals(1, testDependencies.getJars().size());
+    }
+
+    public void testRsSupportMode() throws Exception {
+        // Load the custom model for the project
+        ProjectData projectData = getModelForProject("rsSupportMode");
+
+        AndroidProject model = projectData.model;
+        File projectDir = projectData.projectDir;
+
+        Variant debugVariant = getVariant(model.getVariants(), "x86Debug");
+        assertNotNull("x86Debug variant null-check", debugVariant);
+
+        AndroidArtifact mainArtifact = debugVariant.getMainArtifact();
+        Dependencies dependencies = mainArtifact.getDependencies();
+
+        assertFalse(dependencies.getJars().isEmpty());
+
+        boolean foundSupportJar = false;
+        for (File file : dependencies.getJars()) {
+            if (SdkConstants.FN_RENDERSCRIPT_V8_JAR.equals(file.getName())) {
+                foundSupportJar = true;
+                break;
+            }
+        }
+
+        assertTrue("Found suppport jar check", foundSupportJar);
     }
 
 

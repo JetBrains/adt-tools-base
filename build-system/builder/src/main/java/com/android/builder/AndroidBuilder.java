@@ -211,6 +211,16 @@ public class AndroidBuilder {
     }
 
     /**
+     * Returns the jar file for the renderscript mode.
+     * @return the jar file.
+     */
+    @NonNull
+    public File getRenderScriptSupportJar() {
+        return RenderScriptProcessor.getSupportJar(
+                mBuildTools.getLocation().getAbsolutePath());
+    }
+
+    /**
      * Returns the compile classpath for this config. If the config tests a library, this
      * will include the classpath of the tested config
      *
@@ -223,8 +233,7 @@ public class AndroidBuilder {
         ProductFlavor mergedFlavor = variantConfiguration.getMergedFlavor();
 
         if (mergedFlavor.getRenderscriptSupportMode()) {
-            File renderScriptSupportJar = RenderScriptProcessor.getSupportJar(
-                    mBuildTools.getLocation().getAbsolutePath());
+            File renderScriptSupportJar = getRenderScriptSupportJar();
 
             Set<File> fullJars = Sets.newHashSetWithExpectedSize(compileClasspath.size() + 1);
             fullJars.addAll(compileClasspath);
@@ -248,8 +257,7 @@ public class AndroidBuilder {
         ProductFlavor mergedFlavor = variantConfiguration.getMergedFlavor();
 
         if (mergedFlavor.getRenderscriptSupportMode()) {
-            File renderScriptSupportJar = RenderScriptProcessor.getSupportJar(
-                    mBuildTools.getLocation().getAbsolutePath());
+            File renderScriptSupportJar = getRenderScriptSupportJar();
 
             List<File> fullJars = Lists.newArrayListWithCapacity(packagedJars.size() + 1);
             fullJars.addAll(packagedJars);
