@@ -45,6 +45,7 @@ android {
 
         buildConfigField "boolean", "DEFAULT", "true"
         buildConfigField "String", "FOO", "\"foo\""
+        buildConfigField "String", "FOO", "\"foo2\""
 
         resConfig "en"
         resConfigs "nodpi", "hdpi"
@@ -55,6 +56,7 @@ android {
             packageNameSuffix ".debug"
             signingConfig signingConfigs.myConfig
 
+            buildConfigField "String", "FOO", "\"bar1\""
             buildConfigField "String", "FOO", "\"bar\""
         }
     }
