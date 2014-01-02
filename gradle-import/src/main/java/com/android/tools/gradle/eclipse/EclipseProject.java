@@ -89,6 +89,7 @@ class EclipseProject implements Comparable<EclipseProject> {
     private List<EclipseProject> mDirectLibraries;
     private List<File> mSourcePaths;
     private List<File> mJarPaths;
+    private List<File> mNativeLibs;
     private File mOutputDir;
     private String mPackage;
     private List<File> mLocalProguardFiles;
@@ -338,7 +339,27 @@ class EclipseProject implements Comparable<EclipseProject> {
         File[] libs = new File(mDir, LIBS_FOLDER).listFiles();
         if (libs != null) {
             for (File lib : libs) {
-                if (!lib.isFile() || !SdkUtils.endsWithIgnoreCase(lib.getPath(), DOT_JAR)) {
+                if (!lib.isFile()) {
+                    // ABI folder?
+                    File[] libraries = lib.listFiles();
+                    if (libraries != null) {
+                        for (File library : libraries) {
+                            String name = library.getName();
+                            if (library.isFile() && name.startsWith("lib")
+                                    && name.contains(".so")) { // or .endsWith? Allow libfoo.so.1 ?
+                                if (mNativeLibs == null) {
+                                    mNativeLibs = Lists.newArrayList();
+                                }
+                                File relative = new File(LIBS_FOLDER,
+                                        lib.getName() + separator + library.getName());
+                                mNativeLibs.add(relative);
+                            }
+                        }
+                    }
+                    continue;
+                }
+                assert lib.isFile();
+                if (!SdkUtils.endsWithIgnoreCase(lib.getPath(), DOT_JAR)) {
                     continue;
                 }
                 File relative = new File(LIBS_FOLDER, lib.getName());
@@ -809,6 +830,11 @@ class EclipseProject implements Comparable<EclipseProject> {
     @NonNull
     public List<File> getJarPaths() {
         return mJarPaths;
+    }
+
+    @NonNull
+    public List<File> getNativeLibs() {
+        return mNativeLibs != null ? mNativeLibs : Collections.<File>emptyList();
     }
 
     @Nullable
