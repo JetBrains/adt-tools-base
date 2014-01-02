@@ -1,6 +1,8 @@
 0.8.0
 
 - Support for Gradle 1.10
+- Fixed issue 64302: Add renderscript support mode jar to the dependencies in the IDE model.
+
 
 0.7.3
 
