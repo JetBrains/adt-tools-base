@@ -338,6 +338,9 @@ class EclipseProject implements Comparable<EclipseProject> {
         File[] libs = new File(mDir, LIBS_FOLDER).listFiles();
         if (libs != null) {
             for (File lib : libs) {
+                if (!lib.isFile() || !SdkUtils.endsWithIgnoreCase(lib.getPath(), DOT_JAR)) {
+                    continue;
+                }
                 File relative = new File(LIBS_FOLDER, lib.getName());
                 if (!(mJarPaths.contains(relative) || mJarPaths.contains(lib))) {
                     // Skip jars that are the result of a library project dependency
