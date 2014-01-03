@@ -18,10 +18,19 @@ package com.android.build.gradle.buildsrc
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.artifacts.ModuleVersionIdentifier
+import org.gradle.api.artifacts.ResolvedArtifact
 
 abstract class BaseTask extends DefaultTask {
 
     public static boolean isLocalArtifact(ModuleVersionIdentifier id) {
         return id.group == "base" || id.group == "swt"
+    }
+
+    public static boolean isAndroidArtifact(ModuleVersionIdentifier id) {
+        return id.group.startsWith("com.android.tools") && !id.group.startsWith("com.android.tools.external")
+    }
+
+    public static boolean isValidArtifactType(ResolvedArtifact artifact) {
+        return artifact.type.equals("jar") || artifact.type.equals("bundle")
     }
 }
