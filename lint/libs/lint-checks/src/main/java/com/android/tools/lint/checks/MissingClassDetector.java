@@ -109,7 +109,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
 
             Category.CORRECTNESS,
             6,
-            Severity.WARNING,
+            Severity.FATAL,
             new Implementation(
                     MissingClassDetector.class,
                     Scope.CLASS_FILE_SCOPE));

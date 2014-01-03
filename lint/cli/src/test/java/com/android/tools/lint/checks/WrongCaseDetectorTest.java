@@ -27,19 +27,19 @@ public class WrongCaseDetectorTest extends AbstractCheckTest {
 
     public void test() throws Exception {
         assertEquals(""
-                + "res/layout/case.xml:18: Warning: Invalid tag <Merge>; should be <merge> [WrongCase]\n"
+                + "res/layout/case.xml:18: Error: Invalid tag <Merge>; should be <merge> [WrongCase]\n"
                 + "<Merge xmlns:android=\"http://schemas.android.com/apk/res/android\" >\n"
                 + "^\n"
-                + "res/layout/case.xml:20: Warning: Invalid tag <Fragment>; should be <fragment> [WrongCase]\n"
+                + "res/layout/case.xml:20: Error: Invalid tag <Fragment>; should be <fragment> [WrongCase]\n"
                 + "    <Fragment android:name=\"foo.bar.Fragment\" />\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/layout/case.xml:21: Warning: Invalid tag <Include>; should be <include> [WrongCase]\n"
+                + "res/layout/case.xml:21: Error: Invalid tag <Include>; should be <include> [WrongCase]\n"
                 + "    <Include layout=\"@layout/foo\" />\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/layout/case.xml:22: Warning: Invalid tag <RequestFocus>; should be <requestFocus> [WrongCase]\n"
+                + "res/layout/case.xml:22: Error: Invalid tag <RequestFocus>; should be <requestFocus> [WrongCase]\n"
                 + "    <RequestFocus />\n"
                 + "    ~~~~~~~~~~~~~~~~\n"
-                + "0 errors, 4 warnings\n",
+                + "4 errors, 0 warnings\n",
 
                 lintProject("res/layout/case.xml"));
     }

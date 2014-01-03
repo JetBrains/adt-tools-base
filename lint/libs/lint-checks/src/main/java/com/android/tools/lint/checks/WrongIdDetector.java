@@ -116,7 +116,7 @@ public class WrongIdDetector extends LayoutDetector {
             "within the same relative layout.",
             Category.CORRECTNESS,
             6,
-            Severity.ERROR,
+            Severity.FATAL,
             IMPLEMENTATION);
 
     /** An ID declaration which is not valid */
@@ -132,7 +132,7 @@ public class WrongIdDetector extends LayoutDetector {
             "instead, such as `login_button1` and `login_button2`.",
             Category.CORRECTNESS,
             6,
-            Severity.ERROR,
+            Severity.FATAL,
             IMPLEMENTATION);
 
     /** Reference to an id that is not in the current layout */

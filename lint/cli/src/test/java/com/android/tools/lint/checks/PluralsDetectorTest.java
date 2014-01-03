@@ -27,10 +27,10 @@ public class PluralsDetectorTest extends AbstractCheckTest {
 
     public void test1() throws Exception {
         assertEquals(""
-                + "res/values-pl/plurals2.xml:3: Warning: For locale \"pl\" the following quantities should also be defined: many [MissingQuantity]\n"
+                + "res/values-pl/plurals2.xml:3: Error: For locale \"pl\" the following quantities should also be defined: many [MissingQuantity]\n"
                 + "    <plurals name=\"numberOfSongsAvailable\">\n"
                 + "    ^\n"
-                + "0 errors, 1 warnings\n",
+                + "1 errors, 0 warnings\n",
 
             lintProject(
                  "res/values/plurals.xml",
@@ -40,7 +40,7 @@ public class PluralsDetectorTest extends AbstractCheckTest {
 
     public void test2() throws Exception {
         assertEquals(""
-                + "res/values-cs/plurals3.xml:3: Warning: For locale \"cs\" the following quantities should also be defined: few [MissingQuantity]\n" +
+                + "res/values-cs/plurals3.xml:3: Error: For locale \"cs\" the following quantities should also be defined: few [MissingQuantity]\n" +
                 "  <plurals name=\"draft\">\n" +
                 "  ^\n" +
                 "res/values-zh-rCN/plurals3.xml:3: Warning: For language \"zh\" the following quantities are not relevant: one [UnusedQuantity]\n" +
@@ -49,7 +49,7 @@ public class PluralsDetectorTest extends AbstractCheckTest {
                 "res/values-zh-rCN/plurals3.xml:7: Warning: For language \"zh\" the following quantities are not relevant: one [UnusedQuantity]\n" +
                 "  <plurals name=\"title_day_dialog_content\">\n" +
                 "  ^\n" +
-                "0 errors, 3 warnings\n",
+                "1 errors, 2 warnings\n",
 
                 lintProject(
                         "res/values-zh-rCN/plurals3.xml",
@@ -58,10 +58,10 @@ public class PluralsDetectorTest extends AbstractCheckTest {
 
     public void testEmptyPlural() throws Exception {
         assertEquals(""
-                + "res/values/plurals4.xml:3: Warning: There should be at least one quantity string in this <plural> definition [MissingQuantity]\n"
+                + "res/values/plurals4.xml:3: Error: There should be at least one quantity string in this <plural> definition [MissingQuantity]\n"
                 + "   <plurals name=\"minutes_until_num\">\n"
                 + "   ^\n"
-                + "0 errors, 1 warnings\n",
+                + "1 errors, 0 warnings\n",
 
                 lintProject(
                         "res/values/plurals4.xml"));
