@@ -460,13 +460,6 @@ public class LintOptionsImpl implements LintOptions, Serializable {
                     throw new GradleException("HTML invalid argument.", e)
                 }
             }
-
-            Map<String, String> map = new HashMap<String, String>() {{
-                put("", "file://")
-            }}
-            for (Reporter reporter : flags.getReporters()) {
-                reporter.setUrlMap(map)
-            }
         }
     }
 

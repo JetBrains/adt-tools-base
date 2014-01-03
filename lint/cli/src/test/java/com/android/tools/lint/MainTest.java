@@ -379,7 +379,6 @@ public class MainTest extends AbstractCheckTest {
         checkDriver(
         "\n" +
         "Scanning MainTest_testLibraries: \n" +
-        "\n" +
         "No issues found.\n",
         "",
 

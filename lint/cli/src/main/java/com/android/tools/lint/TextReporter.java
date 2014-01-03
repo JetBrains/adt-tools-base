@@ -74,7 +74,6 @@ public class TextReporter extends Reporter {
 
         StringBuilder output = new StringBuilder(issues.size() * 200);
         if (issues.isEmpty()) {
-            mWriter.write('\n');
             mWriter.write("No issues found.");
             mWriter.write('\n');
             mWriter.flush();
@@ -212,5 +211,9 @@ public class TextReporter extends Reporter {
                 }
             }
         }
+    }
+
+    boolean isWriteToConsole() {
+        return mOutput == null;
     }
 }
