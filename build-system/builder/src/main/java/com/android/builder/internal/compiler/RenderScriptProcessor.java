@@ -17,6 +17,9 @@
 
 package com.android.builder.internal.compiler;
 
+import static com.android.SdkConstants.EXT_BC;
+import static com.android.SdkConstants.FN_RENDERSCRIPT_V8_JAR;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -35,9 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-
-import static com.android.SdkConstants.EXT_BC;
-import static com.android.SdkConstants.FN_RENDERSCRIPT_V8_JAR;
 
 /**
  * Compiles Renderscript files.
@@ -109,7 +109,7 @@ public class RenderScriptProcessor {
     private final Set<String> mAbiFilters;
 
     private final File mRsLib;
-    private final File mLibClCore;
+    private final Map<String, File> mLibClCore = Maps.newHashMap();
 
     public RenderScriptProcessor(
             @NonNull List<File> sourceFolders,
@@ -142,9 +142,12 @@ public class RenderScriptProcessor {
         if (supportMode) {
             File rs = new File(mBuildToolInfo.getLocation(), "renderscript");
             mRsLib = new File(rs, "lib");
-            mLibClCore = new File(mRsLib, "libclcore.bc");
+            File bcFolder = new File(mRsLib, "bc");
+            for (Abi abi : ABIS) {
+                mLibClCore.put(abi.mDevice,
+                        new File(bcFolder, abi.mDevice + File.separatorChar + "libclcore.bc"));
+            }
         } else {
-            mLibClCore = null;
             mRsLib = null;
         }
     }
@@ -334,7 +337,7 @@ public class RenderScriptProcessor {
         args.add("-shared");
 
         args.add("-rt-path");
-        args.add(mLibClCore.getAbsolutePath());
+        args.add(mLibClCore.get(abi.mDevice).getAbsolutePath());
 
         args.add("-mtriple");
         args.add(abi.mToolchain);
