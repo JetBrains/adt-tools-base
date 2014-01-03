@@ -37,11 +37,10 @@ import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskAction
 
-import static com.android.SdkConstants.DOT_XML
-
 public class Lint extends DefaultTask {
     @NonNull private BasePlugin mPlugin
     @Nullable private String mVariantName
+    private boolean mFatalOnly
 
     public void setPlugin(@NonNull BasePlugin plugin) {
         mPlugin = plugin
@@ -49,6 +48,10 @@ public class Lint extends DefaultTask {
 
     public void setVariantName(@NonNull String variantName) {
         mVariantName = variantName
+    }
+
+    public void setFatalOnly(boolean fatalOnly) {
+        mFatalOnly = fatalOnly
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
@@ -108,8 +111,42 @@ public class Lint extends DefaultTask {
         }
 
         if (flags.isSetExitCode() && errorCount > 0) {
-            throw new GradleException("Lint found errors with abortOnError=true; aborting build.")
+            abort()
         }
+    }
+
+    private void abort() {
+        def message;
+        if (mFatalOnly) {
+            message = "" +
+                    "Lint found fatal errors while assembling a release target.\n" +
+                    "\n" +
+                    "To proceed, either fix the issues identified by lint, or modify your build script as follows:\n" +
+                    "...\n" +
+                    "android {\n" +
+                    "    lintOptions {\n" +
+                    "        checkReleaseBuilds false\n" +
+                    "        // Or, if you prefer, you can continue to check for errors in release builds,\n" +
+                    "        // but continue the build even when errors are found:\n" +
+                    "        abortOnError false\n" +
+                    "    }\n" +
+                    "}\n" +
+                    "..."
+                    ""
+        } else {
+            message = "" +
+                    "Lint found errors in the project; aborting build.\n" +
+                    "\n" +
+                    "Fix the issues identified by lint, or add the following to your build script to proceed with errors:\n" +
+                    "...\n" +
+                    "android {\n" +
+                    "    lintOptions {\n" +
+                    "        abortOnError false\n" +
+                    "    }\n" +
+                    "}\n" +
+                    "..."
+        }
+        throw new GradleException(message);
     }
 
     /**
@@ -128,7 +165,14 @@ public class Lint extends DefaultTask {
         LintCliFlags flags = new LintCliFlags()
         LintGradleClient client = new LintGradleClient(registry, flags, mPlugin, modelProject,
                 variantName)
-        mPlugin.getExtension().lintOptions.syncTo(client, flags, variantName, project, report)
+        def options = mPlugin.getExtension().lintOptions
+        if (mFatalOnly) {
+            if (!options.isCheckReleaseBuilds()) {
+                return
+            }
+            flags.setFatalOnly(true)
+        }
+        options.syncTo(client, flags, variantName, project, report)
 
         List<Warning> warnings;
         try {
@@ -138,7 +182,7 @@ public class Lint extends DefaultTask {
         }
 
         if (report && client.haveErrors() && flags.isSetExitCode()) {
-            throw new GradleException("Lint found errors with abortOnError=true; aborting build.")
+            abort()
         }
 
         return warnings;

@@ -174,6 +174,8 @@ public abstract class BasePlugin {
     protected Task deviceCheck
     protected Task connectedCheck
     protected Task lintCompile
+    protected Task lintAll
+    protected Task lintVital
 
     protected BasePlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
         this.instantiator = instantiator
@@ -277,6 +279,14 @@ public abstract class BasePlugin {
 
         doCreateAndroidTasks()
         createReportTasks()
+
+        if (lintVital != null) {
+            project.gradle.taskGraph.whenReady { taskGraph ->
+                if (taskGraph.hasTask(lintAll)) {
+                    lintVital.setEnabled(false)
+                }
+            }
+        }
     }
 
     void checkTasksAlreadyCreated() {
@@ -933,6 +943,7 @@ public abstract class BasePlugin {
         lint.group = JavaBasePlugin.VERIFICATION_GROUP
         lint.setPlugin(this)
         project.tasks.check.dependsOn lint
+        lintAll = lint
 
         int count = variantDataList.size()
         for (int i = 0 ; i < count ; i++) {
@@ -956,6 +967,25 @@ public abstract class BasePlugin {
             variantLintCheck.setVariantName(variantName)
             variantLintCheck.description = "Runs lint on the " + capitalizedVariantName + " build"
             variantLintCheck.group = JavaBasePlugin.VERIFICATION_GROUP
+        }
+    }
+
+    private void createLintVitalTask(@NonNull ApkVariantData variantData) {
+        assert extension.lintOptions.checkReleaseBuilds
+        if (!variantData.variantConfiguration.buildType.debuggable) {
+            String variantName = variantData.variantConfiguration.fullName
+            def capitalizedVariantName = variantName.capitalize()
+            def taskName = "lintVital" + capitalizedVariantName
+            Lint lintReleaseCheck = project.tasks.create(taskName, Lint)
+            // TODO: Make this task depend on lintCompile too (resolve initialization order first)
+            lintReleaseCheck.dependsOn variantData.javaCompileTask
+            lintReleaseCheck.setPlugin(this)
+            lintReleaseCheck.setVariantName(variantName)
+            lintReleaseCheck.setFatalOnly(true)
+            lintReleaseCheck.description = "Runs lint on just the fatal issues in the " +
+                    capitalizedVariantName + " build"
+            variantData.assembleTask.dependsOn lintReleaseCheck
+            lintVital = lintReleaseCheck
         }
     }
 
@@ -1368,6 +1398,9 @@ public abstract class BasePlugin {
         }
         assembleTask.dependsOn appTask
         variantData.assembleTask = assembleTask
+        if (extension.lintOptions.checkReleaseBuilds) {
+            createLintVitalTask(variantData)
+        }
 
         variantData.outputFile = { outputFileTask.outputFile }
 

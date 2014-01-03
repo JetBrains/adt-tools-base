@@ -48,6 +48,7 @@ public class LintCliFlags {
     private boolean mWarnAll;
     private boolean mNoWarnings;
     private boolean mAllErrors;
+    private boolean mFatalOnly;
     private List<File> mSources;
     private List<File> mClasses;
     private List<File> mLibraries;
@@ -336,5 +337,21 @@ public class LintCliFlags {
      */
     public void setResourcesOverride(@Nullable List<File> resources) {
         mResources = resources;
+    }
+
+    /**
+     * Returns true if we should only check fatal issues
+     * @return true if we should only check fatal issues
+     */
+    public boolean isFatalOnly() {
+        return mFatalOnly;
+    }
+
+    /**
+     * Sets whether we should only check fatal issues
+     * @param fatalOnly if true, only check fatal issues
+     */
+    public void setFatalOnly(boolean fatalOnly) {
+        mFatalOnly = fatalOnly;
     }
 }
