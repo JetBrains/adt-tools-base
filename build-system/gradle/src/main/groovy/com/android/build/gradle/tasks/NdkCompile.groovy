@@ -79,7 +79,11 @@ class NdkCompile extends NdkTask {
 
         File ndkDirectory = getPlugin().ndkDirectory
         if (ndkDirectory == null || !ndkDirectory.isDirectory()) {
-            throw new GradleException("NDK not configured")
+            throw new GradleException(
+                    "NDK not configured.\n" +
+                    "Download the NDK from http://developer.android.com/tools/sdk/ndk/." +
+                    "Then add ndk.dir=path/to/ndk in local.properties.\n" +
+                    "(On Windows, make sure you escape backslashes, e.g. C:\\\\ndk rather than C:\\ndk)");
         }
 
         boolean generateMakefile = false
