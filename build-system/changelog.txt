@@ -2,7 +2,7 @@
 
 - Support for Gradle 1.10
 - Fixed issue 64302: Add renderscript support mode jar to the dependencies in the IDE model.
-
+- Fixed issue 64094: buildConfigField can now replace previous values inside the same type/flavors.
 
 0.7.3
 

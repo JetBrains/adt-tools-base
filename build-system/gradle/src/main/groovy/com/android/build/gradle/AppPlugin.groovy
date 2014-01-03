@@ -88,9 +88,9 @@ class AppPlugin extends com.android.build.gradle.BasePlugin implements Plugin<Pr
         }
 
         def buildTypeContainer = project.container(DefaultBuildType,
-                new BuildTypeFactory(instantiator,  project.fileResolver))
+                new BuildTypeFactory(instantiator,  project.fileResolver, project.getLogger()))
         def productFlavorContainer = project.container(GroupableProductFlavorDsl,
-                new GroupableProductFlavorFactory(instantiator, project.fileResolver))
+                new GroupableProductFlavorFactory(instantiator, project.fileResolver, project.getLogger()))
         def signingConfigContainer = project.container(SigningConfig,
                 new SigningConfigFactory(instantiator))
 

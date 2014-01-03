@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation of BuildType that is serializable. Objects used in the DSL cannot be
@@ -113,8 +114,8 @@ class BuildTypeImpl implements BuildType, Serializable {
 
     @NonNull
     @Override
-    public List<ClassField> getBuildConfigFields() {
-        return Collections.emptyList();
+    public Map<String, ClassField> getBuildConfigFields() {
+        return Collections.emptyMap();
     }
 
     @NonNull

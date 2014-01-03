@@ -74,7 +74,7 @@ public class BuildTypeDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        BuildTypeDsl object1 = new BuildTypeDsl("foo", project.fileResolver)
+        BuildTypeDsl object1 = new BuildTypeDsl("foo", project.fileResolver, project.getLogger())
 
         // change every value from their default.
         object1.setDebuggable(true)
@@ -87,7 +87,7 @@ public class BuildTypeDslTest extends BaseTest {
         object1.setSigningConfig(new SigningConfigDsl("blah"))
         object1.setZipAlign(false)
 
-        BuildTypeDsl object2 = new BuildTypeDsl(object1.name, project.fileResolver)
+        BuildTypeDsl object2 = new BuildTypeDsl(object1.name, project.fileResolver, project.getLogger())
         object2.initWith(object1)
 
         assertEquals(object1, object2)
