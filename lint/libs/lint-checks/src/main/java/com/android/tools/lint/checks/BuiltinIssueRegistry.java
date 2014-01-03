@@ -36,7 +36,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
     static {
-        final int initialCapacity = 161;
+        final int initialCapacity = 162;
         List<Issue> issues = new ArrayList<Issue>(initialCapacity);
 
         issues.add(AccessibilityDetector.ISSUE);
@@ -128,6 +128,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ManifestDetector.APPLICATION_ICON);
         issues.add(ManifestDetector.DEVICE_ADMIN);
         issues.add(ManifestDetector.MOCK_LOCATION);
+        issues.add(ManifestDetector.GRADLE_OVERRIDES);
         issues.add(ManifestTypoDetector.ISSUE);
         issues.add(SecurityDetector.EXPORTED_PROVIDER);
         issues.add(SecurityDetector.EXPORTED_SERVICE);
