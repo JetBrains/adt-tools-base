@@ -17,13 +17,21 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static org.easymock.EasyMock.createNiceMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.Variant;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Project;
 import com.google.common.collect.Lists;
+
+import org.easymock.EasyMock;
 
 import java.io.File;
 import java.util.Arrays;
@@ -420,7 +428,7 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                         "mock_location.xml=>AndroidManifest.xml",
                         "multiproject/library.properties=>build.gradle")); // dummy; only name counts
         // TODO: When we have an instantiatable gradle model, test with real model and verify
-        // that a manifest file in a debug build type doesnot get flagged.
+        // that a manifest file in a debug build type does not get flagged.
     }
 
     public void testMockLocationsOk() throws Exception {
@@ -430,6 +438,38 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                 + "No warnings.",
                 lintProject(
                         "mock_location.xml=>AndroidManifest.xml"));
+    }
+
+    public void testGradleOverrides() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.GRADLE_OVERRIDES);
+        assertEquals(""
+                + "AndroidManifest.xml:4: Warning: This versionCode value (1) is not used; it is always overridden by the value specified in the Gradle build script (2) [GradleOverrides]\n"
+                + "    android:versionCode=\"1\"\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "AndroidManifest.xml:5: Warning: This versionName value (1.0) is not used; it is always overridden by the value specified in the Gradle build script (MyName) [GradleOverrides]\n"
+                + "    android:versionName=\"1.0\" >\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "AndroidManifest.xml:7: Warning: This minSdkVersion value (14) is not used; it is always overridden by the value specified in the Gradle build script (5) [GradleOverrides]\n"
+                + "    <uses-sdk android:minSdkVersion=\"14\" android:targetSdkVersion=\"17\" />\n"
+                + "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "AndroidManifest.xml:7: Warning: This targetSdkVersion value (17) is not used; it is always overridden by the value specified in the Gradle build script (16) [GradleOverrides]\n"
+                + "    <uses-sdk android:minSdkVersion=\"14\" android:targetSdkVersion=\"17\" />\n"
+                + "                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 4 warnings\n",
+                lintProject(
+                        "gradle_override.xml=>AndroidManifest.xml",
+                        "multiproject/library.properties=>build.gradle")); // dummy; only name counts
+    }
+
+    public void testGradleOverridesOk() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.GRADLE_OVERRIDES);
+        // (See custom logic in #createClient which returns -1/null for the merged flavor
+        // from this test, and not from testGradleOverrides)
+        assertEquals(""
+                + "No warnings.",
+                lintProject(
+                        "gradle_override.xml=>AndroidManifest.xml",
+                        "multiproject/library.properties=>build.gradle")); // dummy; only name counts
     }
 
     // Custom project which locates all manifest files in the project rather than just
@@ -467,12 +507,53 @@ public class ManifestDetectorTest extends AbstractCheckTest {
 
     @Override
     protected TestLintClient createClient() {
-        return new TestLintClient() {
-            @NonNull
-            @Override
-            protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
-                return new MyProject(this, dir, referenceDir);
-            }
-        };
+        if (mEnabled.contains(ManifestDetector.MOCK_LOCATION)) {
+            return new TestLintClient() {
+                @NonNull
+                @Override
+                protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                    return new MyProject(this, dir, referenceDir);
+                }
+            };
+        } else if (mEnabled.contains(ManifestDetector.GRADLE_OVERRIDES)) {
+            return new TestLintClient() {
+                @NonNull
+                @Override
+                protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                    return new Project(this, dir, referenceDir) {
+                        @Override
+                        public boolean isGradleProject() {
+                            return true;
+                        }
+
+                        @Nullable
+                        @Override
+                        public Variant getCurrentVariant() {
+                            ProductFlavor flavor = createNiceMock(ProductFlavor.class);
+                            if (getName().equals("ManifestDetectorTest_testGradleOverridesOk")) {
+                                expect(flavor.getMinSdkVersion()).andReturn(-1).anyTimes();
+                                expect(flavor.getTargetSdkVersion()).andReturn(-1).anyTimes();
+                                expect(flavor.getVersionCode()).andReturn(-1).anyTimes();
+                                expect(flavor.getVersionName()).andReturn(null).anyTimes();
+                            } else {
+                                assertEquals(getName(),
+                                        "ManifestDetectorTest_testGradleOverrides");
+                                expect(flavor.getMinSdkVersion()).andReturn(5).anyTimes();
+                                expect(flavor.getTargetSdkVersion()).andReturn(16).anyTimes();
+                                expect(flavor.getVersionCode()).andReturn(2).anyTimes();
+                                expect(flavor.getVersionName()).andReturn("MyName").anyTimes();
+                            }
+                            replay(flavor);
+                            Variant mock = createNiceMock(Variant.class);
+                            expect(mock.getMergedFlavor()).andReturn(flavor).anyTimes();
+                            replay(mock);
+                            return mock;
+                        }
+                    };
+                }
+            };
+
+        }
+        return super.createClient();
     }
 }
