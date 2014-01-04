@@ -16,6 +16,9 @@
 
 package com.android.tools.gradle.eclipse;
 
+import static com.android.SdkConstants.LIBS_FOLDER;
+
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
@@ -58,7 +61,20 @@ class EclipseImportModule extends ImportModule {
                     continue;
                 }
             }
-            mJarDependencies.add(jar);
+            mJarDependencies.add(getJarOutputRelativePath(jar));
+        }
+
+        for (File jar : mProject.getTestJarPaths()) {
+            if (mImporter.isReplaceJars()) {
+                GradleCoordinate dependency = guessDependency(jar);
+                if (dependency != null) {
+                    mTestDependencies.add(dependency);
+                    mImporter.getSummary().reportReplacedJar(jar, dependency);
+                    continue;
+                }
+            }
+            // Test jars unconditionally get copied into the libs/ folder
+            mTestJarDependencies.add(getTestJarOutputRelativePath(jar));
         }
     }
 
@@ -191,6 +207,12 @@ class EclipseImportModule extends ImportModule {
 
     @Override
     @NonNull
+    protected List<File> getTestJarPaths() {
+        return mProject.getTestJarPaths();
+    }
+
+    @Override
+    @NonNull
     protected List<File> getNativeLibs() {
         return mProject.getNativeLibs();
     }
@@ -260,5 +282,11 @@ class EclipseImportModule extends ImportModule {
     @NonNull
     public EclipseProject getProject() {
         return mProject;
+    }
+
+    @Nullable
+    @Override
+    protected File getInstrumentationDir() {
+        return mProject.getInstrumentationDir();
     }
 }
