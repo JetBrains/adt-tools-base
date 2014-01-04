@@ -27,10 +27,10 @@ public class CallSuperDetectorTest extends AbstractCheckTest {
         assertEquals(""
                 + "src/test/pkg/DetachedFromWindow.java:7: Warning: Overriding method should call super.onDetachedFromWindow [MissingSuperCall]\n"
                 + "        protected void onDetachedFromWindow() {\n"
-                + "                       ~~~~~~~~~~~~~~~~~~~~\n"
+                + "                       ~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "src/test/pkg/DetachedFromWindow.java:26: Warning: Overriding method should call super.onDetachedFromWindow [MissingSuperCall]\n"
                 + "        protected void onDetachedFromWindow() {\n"
-                + "                       ~~~~~~~~~~~~~~~~~~~~\n"
+                + "                       ~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 2 warnings\n",
 
                 lintProject("src/test/pkg/DetachedFromWindow.java.txt=>" +

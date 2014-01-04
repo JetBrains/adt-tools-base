@@ -185,7 +185,7 @@ public class LintCliClient extends LintClient {
 
     @Override
     public IJavaParser getJavaParser() {
-        return new LombokParser();
+        return new EcjParser(this);
     }
 
     @Override
