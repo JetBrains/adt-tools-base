@@ -260,7 +260,7 @@ public class LocalSdkTest extends TestCase {
     public final void testLocalSdkTest_getPkgInfo_Extra() {
         // check empty
         assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_EXTRAS)));
-        assertNull(mLS.getPkgInfo(PkgType.PKG_EXTRAS, "vendor1/path1"));
+        assertNull(mLS.getPkgInfo(PkgType.PKG_EXTRAS, "vendor1", "path1"));
         assertNull(mLS.getExtra("vendor1", "path1"));
 
         // setup fake files
