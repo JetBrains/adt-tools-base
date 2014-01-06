@@ -48,9 +48,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
-import java.util.zip.Adler32;
 
 /**
  * This class keeps information on the current locally installed SDK.
@@ -171,7 +169,7 @@ public class LocalSdk {
     /** List of package information loaded so far. Lazily populated. */
     private final Multimap<PkgType, LocalPkgInfo> mLocalPackages = TreeMultimap.create();
     /** Directories already parsed into {@link #mLocalPackages}. */
-    private final Multimap<PkgType, DirInfo> mVisitedDirs = HashMultimap.create();
+    private final Multimap<PkgType, LocalDirInfo> mVisitedDirs = HashMultimap.create();
     /** A legacy build-tool for older platform-tools < 17. */
     private BuildToolInfo mLegacyBuildTools;
 
@@ -256,7 +254,7 @@ public class LocalSdk {
      */
     public boolean hasChanged(@NonNull EnumSet<PkgType> filters) {
         for (PkgType filter : filters) {
-            for(DirInfo dirInfo : mVisitedDirs.get(filter)) {
+            for(LocalDirInfo dirInfo : mVisitedDirs.get(filter)) {
                 if (dirInfo.hasChanged()) {
                     return true;
                 }
@@ -443,7 +441,7 @@ public class LocalSdk {
         }
 
         // Whether we have found a valid pkg or not, this directory has been visited.
-        mVisitedDirs.put(filter, new DirInfo(uniqueDir));
+        mVisitedDirs.put(filter, new LocalDirInfo(mFileOp, uniqueDir));
 
         if (info != null) {
             mLocalPackages.put(filter, info);
@@ -544,7 +542,7 @@ public class LocalSdk {
                     case PKG_DOCS:
                         break;
                     }
-                    mVisitedDirs.put(filter, new DirInfo(subDir));
+                    mVisitedDirs.put(filter, new LocalDirInfo(mFileOp, subDir));
                     list.addAll(existing);
                 }
             }
@@ -764,7 +762,7 @@ public class LocalSdk {
                     mVisitedDirs.containsEntry(PkgType.PKG_BUILD_TOOLS, buildToolDir)) {
                 continue;
             }
-            mVisitedDirs.put(PkgType.PKG_BUILD_TOOLS, new DirInfo(buildToolDir));
+            mVisitedDirs.put(PkgType.PKG_BUILD_TOOLS, new LocalDirInfo(mFileOp, buildToolDir));
 
             Properties props = parseProperties(new File(buildToolDir, SdkConstants.FN_SOURCE_PROP));
             FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
@@ -785,7 +783,7 @@ public class LocalSdk {
                     mVisitedDirs.containsEntry(PkgType.PKG_PLATFORMS, platformDir)) {
                 continue;
             }
-            mVisitedDirs.put(PkgType.PKG_PLATFORMS, new DirInfo(platformDir));
+            mVisitedDirs.put(PkgType.PKG_PLATFORMS, new LocalDirInfo(mFileOp, platformDir));
 
             Properties props = parseProperties(new File(platformDir, SdkConstants.FN_SOURCE_PROP));
             MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
@@ -818,7 +816,7 @@ public class LocalSdk {
                     mVisitedDirs.containsEntry(PkgType.PKG_ADDONS, addonDir)) {
                 continue;
             }
-            mVisitedDirs.put(PkgType.PKG_ADDONS, new DirInfo(addonDir));
+            mVisitedDirs.put(PkgType.PKG_ADDONS, new LocalDirInfo(mFileOp, addonDir));
 
             Properties props = parseProperties(new File(addonDir, SdkConstants.FN_SOURCE_PROP));
             MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
@@ -845,14 +843,14 @@ public class LocalSdk {
                     mVisitedDirs.containsEntry(PkgType.PKG_SYS_IMAGES, platformDir)) {
                 continue;
             }
-            mVisitedDirs.put(PkgType.PKG_SYS_IMAGES, new DirInfo(platformDir));
+            mVisitedDirs.put(PkgType.PKG_SYS_IMAGES, new LocalDirInfo(mFileOp, platformDir));
 
             for (File abiDir : mFileOp.listFiles(platformDir)) {
                 if (!mFileOp.isDirectory(abiDir) ||
                         mVisitedDirs.containsEntry(PkgType.PKG_SYS_IMAGES, abiDir)) {
                     continue;
                 }
-                mVisitedDirs.put(PkgType.PKG_SYS_IMAGES, new DirInfo(abiDir));
+                mVisitedDirs.put(PkgType.PKG_SYS_IMAGES, new LocalDirInfo(mFileOp, abiDir));
 
                 Properties props = parseProperties(new File(abiDir, SdkConstants.FN_SOURCE_PROP));
                 MajorRevision rev =
@@ -881,7 +879,7 @@ public class LocalSdk {
                     mVisitedDirs.containsEntry(PkgType.PKG_SAMPLES, platformDir)) {
                 continue;
             }
-            mVisitedDirs.put(PkgType.PKG_SAMPLES, new DirInfo(platformDir));
+            mVisitedDirs.put(PkgType.PKG_SAMPLES, new LocalDirInfo(mFileOp, platformDir));
 
             Properties props = parseProperties(new File(platformDir, SdkConstants.FN_SOURCE_PROP));
             MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
@@ -914,7 +912,7 @@ public class LocalSdk {
                     mVisitedDirs.containsEntry(PkgType.PKG_SOURCES, platformDir)) {
                 continue;
             }
-            mVisitedDirs.put(PkgType.PKG_SOURCES, new DirInfo(platformDir));
+            mVisitedDirs.put(PkgType.PKG_SOURCES, new LocalDirInfo(mFileOp, platformDir));
 
             Properties props = parseProperties(new File(platformDir, SdkConstants.FN_SOURCE_PROP));
             MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
@@ -940,14 +938,14 @@ public class LocalSdk {
                     mVisitedDirs.containsEntry(PkgType.PKG_EXTRAS, vendorDir)) {
                 continue;
             }
-            mVisitedDirs.put(PkgType.PKG_EXTRAS, new DirInfo(vendorDir));
+            mVisitedDirs.put(PkgType.PKG_EXTRAS, new LocalDirInfo(mFileOp, vendorDir));
 
             for (File extraDir : mFileOp.listFiles(vendorDir)) {
                 if (!mFileOp.isDirectory(extraDir) ||
                         mVisitedDirs.containsEntry(PkgType.PKG_EXTRAS, extraDir)) {
                     continue;
                 }
-                mVisitedDirs.put(PkgType.PKG_EXTRAS, new DirInfo(extraDir));
+                mVisitedDirs.put(PkgType.PKG_EXTRAS, new LocalDirInfo(mFileOp, extraDir));
 
                 Properties props = parseProperties(new File(extraDir, SdkConstants.FN_SOURCE_PROP));
                 NoPreviewRevision rev =
@@ -1000,162 +998,6 @@ public class LocalSdk {
             }
         }
         return null;
-    }
-
-    // -------------
-
-    /**
-     * Keeps information on a visited directory to quickly determine if it
-     * has changed later. A directory has changed if its timestamp has been
-     * modified, or if an underlying source.properties file has changed in
-     * timestamp or checksum.
-     * <p/>
-     * Note that depending on the filesystem & OS, the content of the files in
-     * a directory can change without the directory's last-modified property
-     * changing. A generic directory monitor would work around that by checking
-     * the list of files. Instead here we know that each directory is an SDK
-     * directory and the source.property file will change if a new package is
-     * installed or updated.
-     * <p/>
-     * The {@link #hashCode()} and {@link #equals(Object)} methods directly
-     * defer to the underlying File object. This allows the DirInfo to be placed
-     * into a map and still call {@link Map#containsKey(Object)} with a File
-     * object to check whether there's a corresponding DirInfo in the map.
-     */
-    private class DirInfo {
-        @NonNull
-        private final File mDir;
-        private final long mDirModifiedTS;
-        private final long mPropsModifiedTS;
-        private final long mPropsChecksum;
-
-        /**
-         * Creates a new immutable {@link DirInfo}.
-         *
-         * @param dir The platform/addon directory of the target. It should be a directory.
-         */
-        public DirInfo(@NonNull File dir) {
-            mDir = dir;
-            mDirModifiedTS = mFileOp.lastModified(dir);
-
-            // Capture some info about the source.properties file if it exists.
-            // We use propsModifiedTS == 0 to mean there is no props file.
-            long propsChecksum = 0;
-            long propsModifiedTS = 0;
-            File props = new File(dir, SdkConstants.FN_SOURCE_PROP);
-            if (mFileOp.isFile(props)) {
-                propsModifiedTS = mFileOp.lastModified(props);
-                propsChecksum = getFileChecksum(props);
-            }
-            mPropsModifiedTS = propsModifiedTS;
-            mPropsChecksum = propsChecksum;
-        }
-
-        /**
-         * Checks whether the directory/source.properties attributes have changed.
-         *
-         * @return True if the directory modified timestamp or
-         *  its source.property files have changed.
-         */
-        public boolean hasChanged() {
-            // Does platform directory still exist?
-            if (!mFileOp.isDirectory(mDir)) {
-                return true;
-            }
-            // Has platform directory modified-timestamp changed?
-            if (mDirModifiedTS != mFileOp.lastModified(mDir)) {
-                return true;
-            }
-
-            File props = new File(mDir, SdkConstants.FN_SOURCE_PROP);
-
-            // The directory did not have a props file if target was null or
-            // if mPropsModifiedTS is 0.
-            boolean hadProps = mPropsModifiedTS != 0;
-
-            // Was there a props file and it vanished, or there wasn't and there's one now?
-            if (hadProps != mFileOp.isFile(props)) {
-                return true;
-            }
-
-            if (hadProps) {
-                // Has source.props file modified-timestamp changed?
-                if (mPropsModifiedTS != mFileOp.lastModified(props)) {
-                    return true;
-                }
-                // Had the content of source.props changed?
-                if (mPropsChecksum != getFileChecksum(props)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /**
-         * Computes an adler32 checksum (source.props are small files, so this
-         * should be OK with an acceptable collision rate.)
-         */
-        private long getFileChecksum(@NonNull File file) {
-            InputStream fis = null;
-            try {
-                fis = mFileOp.newFileInputStream(file);
-                Adler32 a = new Adler32();
-                byte[] buf = new byte[1024];
-                int n;
-                while ((n = fis.read(buf)) > 0) {
-                    a.update(buf, 0, n);
-                }
-                return a.getValue();
-            } catch (Exception ignore) {
-            } finally {
-                try {
-                    if (fis != null) {
-                        fis.close();
-                    }
-                } catch(Exception ignore) {}
-            }
-            return 0;
-        }
-
-        /** Returns a visual representation of this object for debugging. */
-        @Override
-        public String toString() {
-            String s = String.format("<DirInfo %1$s TS=%2$d", mDir, mDirModifiedTS);  //$NON-NLS-1$
-            if (mPropsModifiedTS != 0) {
-                s += String.format(" | Props TS=%1$d, Chksum=%2$s",                   //$NON-NLS-1$
-                        mPropsModifiedTS, mPropsChecksum);
-            }
-            return s + ">";                                                           //$NON-NLS-1$
-        }
-
-        /**
-         * Returns the hashCode of the underlying File object.
-         * <p/>
-         * When a {@link DirInfo} is placed in a map, what matters is to use the underlying
-         * File object as the key so {@link #hashCode()} and {@link #equals(Object)} both
-         * return the properties of the underlying File object.
-         *
-         * @see File#hashCode()
-         */
-        @Override
-        public int hashCode() {
-            return mDir.hashCode();
-        }
-
-        /**
-         * Checks equality of the underlying File object.
-         * <p/>
-         * When a {@link DirInfo} is placed in a map, what matters is to use the underlying
-         * File object as the key so {@link #hashCode()} and {@link #equals(Object)} both
-         * return the properties of the underlying File object.
-         *
-         * @see File#equals(Object)
-         */
-        @Override
-        public boolean equals(Object obj) {
-            return mDir.equals(obj);
-        };
     }
 
 }
