@@ -29,14 +29,16 @@ import static com.android.SdkConstants.FD_JAVA;
 import static com.android.SdkConstants.FD_MAIN;
 import static com.android.SdkConstants.FD_RENDERSCRIPT;
 import static com.android.SdkConstants.FD_RES;
+import static com.android.SdkConstants.FD_SOURCES;
+import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.SdkConstants.FN_PROJECT_PROPERTIES;
 import static com.android.SdkConstants.GEN_FOLDER;
 import static com.android.SdkConstants.LIBS_FOLDER;
-import static com.android.SdkConstants.SRC_FOLDER;
 import static com.android.tools.gradle.eclipse.GradleImport.ECLIPSE_DOT_CLASSPATH;
 import static com.android.tools.gradle.eclipse.GradleImport.ECLIPSE_DOT_PROJECT;
 import static java.io.File.separator;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
@@ -80,6 +82,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
     protected abstract boolean isAndroidLibrary();
     protected abstract boolean isAndroidProject();
     protected abstract boolean isJavaLibrary();
+    protected abstract boolean isNdkProject();
     protected abstract int getCompileSdkVersion();
     protected abstract int getMinSdkVersion();
     protected abstract int getTargetSdkVersion();
@@ -99,6 +102,8 @@ abstract class ImportModule implements Comparable<ImportModule> {
     @Nullable protected abstract File getManifestFile();
     @Nullable protected abstract File getResourceDir();
     @Nullable protected abstract File getAssetsDir();
+    @Nullable protected abstract File getNativeSources();
+    @Nullable protected abstract String getNativeModuleName();
 
     public void initialize() {
         initDependencies();
@@ -274,7 +279,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
 
         Set<File> copied = Sets.newHashSet();
 
-        final File main = new File(destDir, SRC_FOLDER + separator + FD_MAIN);
+        final File main = new File(destDir, FD_SOURCES + separator + FD_MAIN);
         mImporter.mkdirs(main);
         if (isAndroidProject()) {
             File srcManifest = getManifestFile();
@@ -378,7 +383,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
         for (File lib : getNativeLibs()) {
             File srcLib = resolveFile(lib);
             String abi = lib.getParentFile().getName();
-            File destLib = new File(destDir, "src" + separator + "main" + separator
+            File destLib = new File(destDir, FD_SOURCES + separator + FD_MAIN + separator
                     + "jniLibs" + separator + abi + separator + lib.getName());
             if (destLib.getParentFile() != null) {
                 mImporter.mkdirs(destLib.getParentFile());
@@ -386,6 +391,16 @@ abstract class ImportModule implements Comparable<ImportModule> {
             Files.copy(srcLib, destLib);
             summary.reportMoved(this, srcLib, destLib);
             recordCopiedFile(copied, srcLib);
+        }
+
+        File jni = getNativeSources();
+        if (jni != null) {
+            File srcJni = resolveFile(jni);
+            File destJni = new File(destDir, FD_SOURCES + separator + FD_MAIN + separator
+                    + "jni");
+            mImporter.copyDir(srcJni, destJni, null);
+            summary.reportMoved(this, srcJni, destJni);
+            recordCopiedFile(copied, srcJni);
         }
 
         if (isAndroidProject()) {
@@ -427,8 +442,14 @@ abstract class ImportModule implements Comparable<ImportModule> {
         copied.add(new File(canonicalDir, ECLIPSE_DOT_PROJECT));
         copied.add(new File(canonicalDir, FN_PROJECT_PROPERTIES));
         copied.add(new File(canonicalDir, FN_PROJECT_PROPERTIES));
+        copied.add(new File(canonicalDir, FN_LOCAL_PROPERTIES));
         copied.add(new File(canonicalDir, LIBS_FOLDER));
         copied.add(new File(canonicalDir, ".settings"));
+        copied.add(new File(canonicalDir, ".cproject"));
+        if (isNdkProject()) {
+            // TODO: Also resolve NDK_OUT in the Makefile in case a custom location is used
+            copied.add(new File(canonicalDir, "obj"));
+        }
 
         reportIgnored(canonicalDir, copied, 0);
     }
