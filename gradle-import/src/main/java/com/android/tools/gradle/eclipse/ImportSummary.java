@@ -17,6 +17,7 @@
 package com.android.tools.gradle.eclipse;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.repository.GradleCoordinate;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.SdkUtils;
@@ -43,7 +44,6 @@ import java.util.Map;
  *    <li>Warning if manifest merger was not enabled before AND there are libraries
  *    without empty manifests</li>
  *    <li>Warning if I've replaced a .jar with a dependency of unknown version</li>
- *    <li>TODO: Warn about proguard config if not hooked up properly</li>
  *    <li>TODO: End with a section of migration tips for Eclipse users (e.g. to not look
  *    for the Problems view, how to use Eclipse key bindings, etc.</li>
  *     </ul>
@@ -161,15 +161,36 @@ public class ImportSummary {
             + "instead. (This may require you to update your code if the library APIs\n"
             + "have changed.)\n\n";
 
+    static final String MSG_USER_HOME_PROGUARD = "\n"
+            + "Ignored Per-User ProGuard Configuration File:\n"
+            + "---------------------------------------------\n"
+            + "The ProGuard configuration in the imported project pointed to a\n"
+            + "ProGuard rule file in the current user's home directory. This is not\n"
+            + "supported from the Android Gradle build system (which emphasizes\n"
+            + "repeatable builds). If you want to share ProGuard rules between\n"
+            + "projects, use relative paths (from the project location) instead.\n";
+
+    static final String MSG_RISKY_PROJECT_LOCATION = "\n"
+            + "Risky Project Location:\n"
+            + "-----------------------\n"
+            + "The tools *should* handle project locations in any directory. However,\n"
+            + "due to bugs, placing projects in directories containing spaces in the\n"
+            + "path, or characters like \", ' and &, have had issues. We're working to\n"
+            + "eliminate these bugs, but to save yourself headaches you may want to\n"
+            + "move your project to a location where this is not a problem.\n";
+
     private final GradleImport mImporter;
     private File mDestDir;
     private boolean mManifestsMayDiffer;
-    private Map<String,List<File>> mNotMigrated = Maps.newHashMap();
+    private Map<String,List<String>> mNotMigrated = Maps.newHashMap();
     private Map<ImportModule,Map<File,File>> mMoved = Maps.newHashMap();
     private Map<File,GradleCoordinate> mJarDependencies = Maps.newHashMap();
     private Map<String,List<GradleCoordinate>> mLibDependencies = Maps.newHashMap();
     private List<String> mGuessedDependencyVersions = Lists.newArrayList();
     private File mLastGuessedJar;
+    private List<String> mIgnoredUserHomeProGuardFiles = Lists.newArrayList();
+    private boolean mHasRiskyPathChars;
+    private boolean mWrapErrorMessages = true;
 
     ImportSummary(@NonNull GradleImport importer) {
         mImporter = importer;
@@ -187,6 +208,24 @@ public class ImportSummary {
 
     public void setDestDir(File destDir) {
         mDestDir = destDir;
+
+        mHasRiskyPathChars = false;
+        String path = destDir.getPath();
+        for (int i = 0, n = path.length(); i < n; i++) {
+            char c = path.charAt(i);
+            if (isRiskyPathChar(c)) {
+                mHasRiskyPathChars = true;
+            }
+        }
+    }
+
+    @VisibleForTesting
+    void setWrapErrorMessages(boolean wrap) {
+        mWrapErrorMessages = wrap;
+    }
+
+    private static boolean isRiskyPathChar(char c) {
+        return (c == ' ' || c == '\'' || c == '"' || c == '&');
     }
 
     public void reportManifestsMayDiffer() {
@@ -215,6 +254,10 @@ public class ImportSummary {
         mLastGuessedJar = jar;
     }
 
+    public void reportIgnoredUserHomeProGuardFile(@NonNull String relativePath) {
+        mIgnoredUserHomeProGuardFiles.add(relativePath);
+    }
+
     public void reportMoved(@NonNull ImportModule module, @NonNull File from,
             @NonNull File to) {
         Map<File, File> map = mMoved.get(module);
@@ -225,13 +268,18 @@ public class ImportSummary {
         map.put(from, to);
     }
 
-    public void reportIgnored(@NonNull String module, @NonNull File file) {
-        List<File> list = mNotMigrated.get(module);
+    /**
+     * Reports an ignored relative path. (We use a path string rather than a file since
+     * we want to include a trailing file separator on directories; these relative paths are
+     * not interpreted in any way other than to display in the report.)
+     */
+    public void reportIgnored(@NonNull String module, @NonNull String path) {
+        List<String> list = mNotMigrated.get(module);
         if (list == null) {
             list = Lists.newArrayList();
             mNotMigrated.put(module, list);
         }
-        list.add(file);
+        list.add(path);
     }
 
     /** Provides the summary */
@@ -247,9 +295,24 @@ public class ImportSummary {
             sb.append("\n");
             for (String warning : problems) {
                 sb.append(" * ");
-                sb.append(SdkUtils.wrap(warning, 80, "   "));
+                if (mWrapErrorMessages) {
+                    sb.append(SdkUtils.wrap(warning, 80, "   "));
+                } else {
+                    sb.append(warning);
+                }
                 sb.append("\n");
             }
+        }
+
+        if (mHasRiskyPathChars) {
+            sb.append(MSG_RISKY_PROJECT_LOCATION);
+            String path = mDestDir.getPath();
+            sb.append(path).append("\n");
+            for (int i = 0, n = path.length(); i < n; i++) {
+                char c = path.charAt(i);
+                sb.append(isRiskyPathChar(c) ? '-' : ' ');
+            }
+            sb.append("\n");
         }
 
         if (mManifestsMayDiffer) {
@@ -264,10 +327,10 @@ public class ImportSummary {
                 if (modules.size() > 1) {
                     sb.append("From ").append(module).append(":\n");
                 }
-                List<File> sorted = new ArrayList<File>(mNotMigrated.get(module));
+                List<String> sorted = new ArrayList<String>(mNotMigrated.get(module));
                 Collections.sort(sorted);
-                for (File file : sorted) {
-                    sb.append("* ").append(file.getPath()).append("\n");
+                for (String path : sorted) {
+                    sb.append("* ").append(path).append("\n");
                 }
             }
         }
@@ -373,7 +436,14 @@ public class ImportSummary {
 
         if (FullRevision.parseRevision(mImporter.getBuildToolsVersion()).getMajor() < 19) {
             sb.append(MSG_BUILD_TOOLS_VERSION);
+        }
 
+        if (!mIgnoredUserHomeProGuardFiles.isEmpty()) {
+            sb.append(MSG_USER_HOME_PROGUARD);
+            Collections.sort(mIgnoredUserHomeProGuardFiles);
+            for (String path : mIgnoredUserHomeProGuardFiles) {
+                sb.append(path).append("\n");
+            }
         }
 
         sb.append(MSG_FOOTER);
@@ -385,7 +455,6 @@ public class ImportSummary {
         //   up on necessary gradle support). If the tools relied on building with older APIs,
         //   be aware of changes. (Mention API lint (gradlew lint) to prevent accidental API
         //   usage.)
-        // TODO: Add note about instrumentation tests not getting migrated yet!
 
         return sb.toString().replace("\n", GradleImport.NL);
     }

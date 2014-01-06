@@ -17,7 +17,12 @@
 package com.android.tools.gradle.eclipse;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.FD_EXTRAS;
+import static com.android.SdkConstants.FD_RES;
+import static com.android.SdkConstants.FD_SOURCES;
 import static com.android.SdkConstants.FN_BUILD_GRADLE;
 import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.SdkConstants.FN_SETTINGS_GRADLE;
@@ -25,10 +30,12 @@ import static com.android.SdkConstants.GRADLE_PLUGIN_LATEST_VERSION;
 import static com.android.SdkConstants.GRADLE_PLUGIN_NAME;
 import static com.android.sdklib.internal.project.ProjectProperties.PROPERTY_NDK;
 import static com.android.sdklib.internal.project.ProjectProperties.PROPERTY_SDK;
+import static com.android.xml.AndroidManifest.NODE_INSTRUMENTATION;
 import static com.google.common.base.Charsets.UTF_8;
 import static java.io.File.separator;
 import static java.io.File.separatorChar;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
@@ -36,7 +43,6 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
-import com.android.sdklib.repository.local.LocalExtraPkgInfo;
 import com.android.sdklib.repository.local.LocalPkgInfo;
 import com.android.sdklib.repository.local.LocalSdk;
 import com.android.utils.ILogger;
@@ -50,7 +56,10 @@ import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import com.google.common.primitives.Bytes;
 
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import java.io.File;
@@ -78,13 +87,12 @@ import javax.xml.parsers.DocumentBuilderFactory;
  *     <li>Migrate SDK folder from local.properties. If should make doubly sure that
  *         the repository you point to contains the app support library and other
  *         libraries that may be needed.</li>
- *     <li>Handle workspace paths in dependencies, resolve to actual paths</li>
  *     <li>Consider whether I can make this import mechanism work for Maven and plain
  *     sources as well?</li>
  *     <li>Make it optional whether we replace the directory structure with the Gradle one?</li>
+ *     <li>Allow migrating a project in-place?</li>
  *     <li>If I have a workspace, check to see if there are problem markers and if
  *     so warn that the project may not be buildable</li>
- *     <li>Do I migrate VCS folders (.git, .svn., etc?)</li>
  *     <li>Read SDK home out of local.properties and ask whether to use it or the Studio one
  *     (if they differ), and if the former, ensure it has all the gradle repositories we need</li>
  *     <li>Optional:  at the end of the import, migrate Eclipse settings too --
@@ -92,11 +100,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
  *      project), ask about enabling eclipse key bindings, etc?</li>
  *     <li>If replaceJars=false, insert *comments* in the source code for potential
  *     replacements such that users don't forget and consider switching in the future</li>
- *     <li>Allow migrating a project in-place?</li>
  *     <li>Figure out if we can reuse fragments from the default freemarker templates for
  *     the code generation part.</li>
- *     <li>Move instrumentation tests; analyze instrumentation ADT test project, pull out package
- *      info etc and put in Gradle file, then move to instrumentation tests folder</li>
  *     <li>Allow option to preserve module nesting hierarchy</li>
  *     <li>Make it possible to use this wizard to migrate an already exported Eclipse project?</li>
  *     <li>Consider making the export create an HTML file and open in browser?</li>
@@ -222,8 +227,10 @@ public class GradleImport {
     }
 
     public static boolean isAdtProjectDir(@Nullable File file) {
-        return isEclipseProjectDir(file)
-                && new File(file, ANDROID_MANIFEST_XML).exists();
+        return new File(file, ANDROID_MANIFEST_XML).exists() &&
+                (isEclipseProjectDir(file) ||
+                        (new File(file, FD_RES).exists() &&
+                         new File(file, FD_SOURCES).exists()));
     }
 
     /** Sets location of gradle wrapper to copy into exported project, if known */
@@ -690,6 +697,39 @@ public class GradleImport {
                 sb.append("        }").append(NL);
             }
 
+            if (module.getInstrumentationDir() != null) {
+                sb.append(NL);
+                File manifestFile = new File(module.getInstrumentationDir(), ANDROID_MANIFEST_XML);
+                assert manifestFile.exists() : manifestFile;
+                Document manifest = getXmlDocument(manifestFile, true);
+                if (manifest != null && manifest.getDocumentElement() != null) {
+                    String pkg = manifest.getDocumentElement().getAttribute(ATTR_PACKAGE);
+                    if (pkg != null && !pkg.isEmpty()) {
+                        sb.append("        testPackageName \"").append(pkg).append("\"")
+                                .append(NL);
+                    }
+                    NodeList list = manifest.getElementsByTagName(NODE_INSTRUMENTATION);
+                    if (list.getLength() > 0) {
+                        Element tag = (Element) list.item(0);
+                        String runner = tag.getAttributeNS(ANDROID_URI, ATTR_NAME);
+                        if (runner != null && !runner.isEmpty()) {
+                            sb.append("        testInstrumentationRunner \"").append(runner)
+                                    .append("\"").append(NL);
+                        }
+                        Attr attr = tag.getAttributeNodeNS(ANDROID_URI, "functionalTest");
+                        if (attr != null) {
+                            sb.append("        testFunctionalTest ").append(attr.getValue())
+                                    .append(NL);
+                        }
+                        attr = tag.getAttributeNodeNS(ANDROID_URI, "handleProfiling");
+                        if (attr != null) {
+                            sb.append("        testHandlingProfiling ").append(attr.getValue())
+                                    .append(NL);
+                        }
+                    }
+                }
+            }
+
             sb.append("    }").append(NL);
             sb.append(NL);
 
@@ -781,7 +821,7 @@ public class GradleImport {
                 sb.append(", ");
             }
             sb.append("getDefaultProguardFile('");
-            sb.append(rule.getName());
+            sb.append(escapeGroovyStringLiteral(rule.getName()));
             sb.append("')");
         }
 
@@ -792,7 +832,7 @@ public class GradleImport {
             sb.append("'");
             // Note: project config files are flattened into the module structure (see
             // ImportModule#copyInto handler)
-            sb.append(rule.getName());
+            sb.append(escapeGroovyStringLiteral(rule.getName()));
             sb.append("'");
         }
 
@@ -804,7 +844,9 @@ public class GradleImport {
             throws IOException {
         if (!module.getDirectDependencies().isEmpty()
                 || !module.getDependencies().isEmpty()
-                || !module.getJarDependencies().isEmpty()) {
+                || !module.getJarDependencies().isEmpty()
+                || !module.getTestDependencies().isEmpty()
+                || !module.getTestJarDependencies().isEmpty()) {
             sb.append(NL);
             sb.append("dependencies {").append(NL);
             for (ImportModule lib : module.getDirectDependencies()) {
@@ -819,10 +861,32 @@ public class GradleImport {
             }
             for (File jar : module.getJarDependencies()) {
                 String path = jar.getPath().replace(separatorChar, '/'); // Always / in gradle
-                sb.append("    compile files('").append(path).append("')").append(NL);
+                sb.append("    compile files('").append(escapeGroovyStringLiteral(path))
+                        .append("')").append(NL);
             }
-            sb.append("}");
+            for (GradleCoordinate dependency : module.getTestDependencies()) {
+                sb.append("    instrumentTestCompile '").append(dependency.toString()).append("'")
+                        .append(NL);
+            }
+            for (File jar : module.getTestJarDependencies()) {
+                String path = jar.getPath().replace(separatorChar, '/');
+                sb.append("    instrumentTestCompile files('")
+                        .append(escapeGroovyStringLiteral(path)).append("')").append(NL);
+            }
+            sb.append("}").append(NL);
         }
+    }
+
+    private static String escapeGroovyStringLiteral(String s) {
+        StringBuilder sb = new StringBuilder(s.length() + 5);
+        for (int i = 0, n = s.length(); i < n; i++) {
+            char c = s.charAt(i);
+            if (c == '\\' || c == '\'') {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
+        return sb.toString();
     }
 
     private static void appendRepositories(@NonNull StringBuilder sb, boolean needAndroidPlugin) {
@@ -1145,8 +1209,7 @@ public class GradleImport {
             return;
         }
         if (source.isDirectory()) {
-            String name = source.getName();
-            if (name.equals(".git") || name.equals(".svn")) {
+            if (isIgnoredFile(source)) {
                 // Skip version control files when generating the migrated project;
                 // it will only have fragments of the project, and in some cases moved
                 // around, so don't pick up partial VCS state
@@ -1163,6 +1226,18 @@ public class GradleImport {
         } else {
             Files.copy(source, dest);
         }
+    }
+
+    /**
+     * Returns true if the given file should be ignored (note: this may not return
+     * true for files inside ignored folders, so to determine if a given file should
+     * really be ignored you should check all ancestors as well, or only call this as
+     * part of a recursive directory traversal)
+     */
+    static boolean isIgnoredFile(File file) {
+        String name = file.getName();
+        return name.equals(".svn") || name.equals(".git") || name.equals(".hg")
+                || name.equals(".DS_Store") || name.endsWith("~") && name.length() > 1;
     }
 
     /** Computes the relative path for the given file inside another directory */
