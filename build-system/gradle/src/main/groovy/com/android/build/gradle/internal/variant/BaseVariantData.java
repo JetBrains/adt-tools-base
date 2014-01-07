@@ -20,6 +20,7 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.internal.StringHelper;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
+import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
@@ -55,6 +56,7 @@ public abstract class BaseVariantData {
     public Task preBuildTask;
     public PrepareDependenciesTask prepareDependenciesTask;
     public Task sourceGenTask;
+    public CheckManifest checkManifestTask;
 
     public ProcessManifest processManifestTask;
     public RenderscriptCompile renderscriptCompileTask;
