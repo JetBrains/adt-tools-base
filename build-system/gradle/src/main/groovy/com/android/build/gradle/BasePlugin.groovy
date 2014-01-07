@@ -1673,6 +1673,8 @@ public abstract class BasePlugin {
                 CheckManifest)
         variantData.checkManifestTask.dependsOn variantData.preBuildTask
 
+        variantData.prepareDependenciesTask.dependsOn variantData.checkManifestTask
+
         variantData.checkManifestTask.variantName = name
         variantData.checkManifestTask.conventionMapping.manifest = {
             variantData.variantConfiguration.getDefaultSourceSet().manifestFile
