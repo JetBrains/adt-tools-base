@@ -34,4 +34,26 @@ public class GridLayoutDetectorTest extends AbstractCheckTest {
             "",
             lintFiles("res/layout/gridlayout.xml"));
     }
+
+    public void testGridLayout2() throws Exception {
+        assertEquals(""
+                + "res/layout/layout.xml:9: Error: Wrong namespace; with v7 GridLayout you should use myns:orientation [GridLayout]\n"
+                + "        android:orientation=\"horizontal\">\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/layout.xml:14: Error: Wrong namespace; with v7 GridLayout you should use myns:layout_row [GridLayout]\n"
+                + "            android:layout_row=\"2\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "2 errors, 0 warnings\n",
+                lintFiles("res/layout/gridlayout2.xml=>res/layout/layout.xml"));
+    }
+
+    public void testGridLayout3() throws Exception {
+        assertEquals(""
+                + "res/layout/layout.xml:12: Error: Wrong namespace; with v7 GridLayout you should use app:layout_row "
+                + "(and add xmlns:app=\"http://schemas.android.com/apk/res-auto\" to your root element.) [GridLayout]\n"
+                + "            android:layout_row=\"2\" />\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintFiles("res/layout/gridlayout3.xml=>res/layout/layout.xml"));
+    }
 }
