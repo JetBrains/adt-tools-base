@@ -71,6 +71,21 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Unit tests for the Gradle importer.
+ * <p>
+ * TODO:
+ * -  Test emitting proguard rules in android-library (check build.gradle declaration)
+ * -  Test compile options
+ * -  Skip instrumentation stuff if same as default?
+ * -  Test having more than one SDK proguard list?
+ * -  Escaped groovy paths
+ * -  Path variable in .classpath
+ * -  Case where a lib is both in libs/ and in .classpath (cull and only include once)
+ * -  Filename clashes (collapsing into libs/, etc.)
+ * -  Finding a lib that is using a workspace path which isn't found but is a direct child
+ * -  Instrumentation libs/ .jar which gets replaced by a gradle dependency
+ */
 public class GradleImportTest extends TestCase {
     private static File createProject(String name, String pkg) throws IOException {
         File dir = Files.createTempDir();
@@ -348,7 +363,7 @@ public class GradleImportTest extends TestCase {
                 + "          strings.xml\n"
                 + "build.gradle\n"
                 + "import-summary.txt\n"
-                + "local.properties\n"
+                + (getTestSdkPath() != null ? "local.properties\n" : "")
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -418,7 +433,7 @@ public class GradleImportTest extends TestCase {
                 + "        latency.rs\n"
                 + "build.gradle\n"
                 + "import-summary.txt\n"
-                + "local.properties\n"
+                + (getTestSdkPath() != null ? "local.properties\n" : "")
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -556,7 +571,7 @@ public class GradleImportTest extends TestCase {
                 + "          strings.xml\n"
                 + "build.gradle\n"
                 + "import-summary.txt\n"
-                + "local.properties\n"
+                + (getTestSdkPath() != null ? "local.properties\n" : "")
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -728,7 +743,7 @@ public class GradleImportTest extends TestCase {
                 + "          lib2\n"
                 + "            pkg\n"
                 + "              MyLib2Activity.java\n"
-                + "local.properties\n"
+                + (getTestSdkPath() != null ? "local.properties\n" : "")
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -957,6 +972,7 @@ public class GradleImportTest extends TestCase {
                 + "android-support-v7-gridlayout.jar => com.android.support:gridlayout-v7:+\n"
                 + MSG_FOLDER_STRUCTURE
                 + DEFAULT_MOVED
+                + (getTestSdkPath() == null ? MSG_MISSING_REPO_1 + "null\n" + MSG_MISSING_REPO_2 : "")
                 + MSG_FOOTER,
                 true /* checkBuild */);
 
@@ -978,7 +994,7 @@ public class GradleImportTest extends TestCase {
                 + "          strings.xml\n"
                 + "build.gradle\n"
                 + "import-summary.txt\n"
-                + "local.properties\n"
+                + (getTestSdkPath() != null ? "local.properties\n" : "")
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -1082,7 +1098,7 @@ public class GradleImportTest extends TestCase {
                 + "          strings.xml\n"
                 + "build.gradle\n"
                 + "import-summary.txt\n"
-                + "local.properties\n"
+                + (getTestSdkPath() != null ? "local.properties\n" : "")
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -1335,7 +1351,7 @@ public class GradleImportTest extends TestCase {
                 + "          strings.xml\n"
                 + "build.gradle\n"
                 + "import-summary.txt\n"
-                + "local.properties\n"
+                + (getTestSdkPath() != null ? "local.properties\n" : "")
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -1436,7 +1452,7 @@ public class GradleImportTest extends TestCase {
                 + "          strings.xml\n"
                 + "build.gradle\n"
                 + "import-summary.txt\n"
-                + "local.properties\n"
+                + (getTestSdkPath() != null ? "local.properties\n" : "")
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -1593,6 +1609,7 @@ public class GradleImportTest extends TestCase {
                 + "* AndroidManifest.xml => app/src/main/AndroidManifest.xml\n"
                 + "* res/ => app/src/main/res/\n"
                 + "* src/ => app/src/main/java/\n"
+                + (getTestSdkPath() == null ? MSG_MISSING_REPO_1 + "null\n" + MSG_MISSING_REPO_2 : "")
                 + MSG_FOOTER,
                 false /* checkBuild */);
 
@@ -1633,7 +1650,7 @@ public class GradleImportTest extends TestCase {
                 + "          lib\n"
                 + "            pkg\n"
                 + "              MyLibActivity.java\n"
-                + "local.properties\n"
+                + (getTestSdkPath() != null ? "local.properties\n" : "")
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -2121,7 +2138,7 @@ public class GradleImportTest extends TestCase {
                 + "          lib2\n"
                 + "            pkg\n"
                 + "              Library2.java\n"
-                + "local.properties\n"
+                + (getTestSdkPath() != null ? "local.properties\n" : "")
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -2632,7 +2649,7 @@ public class GradleImportTest extends TestCase {
                 + "          strings.xml\n"
                 + "build.gradle\n"
                 + "import-summary.txt\n"
-                + "local.properties\n"
+                + (getTestSdkPath() != null ? "local.properties\n" : "")
                 + "settings.gradle\n",
                 fileTree(imported, true));
 

@@ -35,7 +35,6 @@ import static com.google.common.base.Charsets.UTF_8;
 import static java.io.File.separator;
 import static java.io.File.separatorChar;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
