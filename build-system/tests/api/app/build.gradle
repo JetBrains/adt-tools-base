@@ -21,7 +21,7 @@ android.applicationVariants.all { variant ->
 
     // now make the dex task depend on it and use its output
     variant.dex.dependsOn jarTask
-    variant.dex.sourceFiles = files(jarTask.archivePath).files
+    variant.dex.inputFiles = files(jarTask.archivePath).files
 }
 
 project.afterEvaluate {
