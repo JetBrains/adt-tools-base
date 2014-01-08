@@ -870,7 +870,7 @@ public class VariantConfiguration implements TestData {
 
     /**
      * Returns a list of sorted SourceProvider in order of ascending order, meaning, the earlier
-     * items are meant to be overriden by later items.
+     * items are meant to be overridden by later items.
      *
      * @return a list of source provider
      */
