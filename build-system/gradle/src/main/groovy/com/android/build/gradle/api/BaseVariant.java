@@ -114,7 +114,6 @@ public interface BaseVariant {
 
     void setOutputFile(@NonNull File outputFile);
 
-
     /**
      * Returns the pre-build anchor task
      */

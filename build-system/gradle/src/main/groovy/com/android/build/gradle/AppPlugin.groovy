@@ -386,11 +386,11 @@ class AppPlugin extends com.android.build.gradle.BasePlugin implements Plugin<Pr
                                          @NonNull ApplicationVariantData appVariantData,
                                          @Nullable TestVariantData testVariantData) {
         ApplicationVariantImpl appVariant = instantiator.newInstance(
-                ApplicationVariantImpl.class, appVariantData)
+                ApplicationVariantImpl.class, appVariantData, this)
 
         TestVariantImpl testVariant = null;
         if (testVariantData != null) {
-            testVariant = instantiator.newInstance(TestVariantImpl.class, testVariantData)
+            testVariant = instantiator.newInstance(TestVariantImpl.class, testVariantData, this)
         }
 
         if (appVariant != null && testVariant != null) {

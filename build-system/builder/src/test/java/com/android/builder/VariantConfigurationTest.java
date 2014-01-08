@@ -133,13 +133,7 @@ public class VariantConfigurationTest extends TestCase {
         VariantConfiguration variant = new VariantConfiguration(
                 mDefaultConfig, new MockSourceProvider("main"),
                 mBuildType, new MockSourceProvider("debug"),
-                VariantConfiguration.Type.DEFAULT) {
-            // don't do validation.
-            @Override
-            protected void validate() {
-
-            }
-        };
+                VariantConfiguration.Type.DEFAULT);
 
         variant.addProductFlavor(mFlavorConfig, new MockSourceProvider("custom"), "");
 
@@ -154,11 +148,6 @@ public class VariantConfigurationTest extends TestCase {
             @Override
             public String getPackageFromManifest() {
                 return packageName;
-            }
-            // don't do validation.
-            @Override
-            protected void validate() {
-
             }
         };
 
@@ -176,10 +165,6 @@ public class VariantConfigurationTest extends TestCase {
                 return versionName;
             }
             // don't do validation.
-            @Override
-            protected void validate() {
-
-            }
         };
 
         variant.addProductFlavor(mFlavorConfig, new MockSourceProvider("custom"), "");
