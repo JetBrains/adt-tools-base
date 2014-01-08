@@ -169,7 +169,8 @@ public class ApiDetector extends ResourceXmlDetector
                     ApiDetector.class,
                     EnumSet.of(Scope.CLASS_FILE, Scope.RESOURCE_FILE, Scope.MANIFEST),
                     Scope.RESOURCE_FILE_SCOPE,
-                    Scope.CLASS_FILE_SCOPE));
+                    Scope.CLASS_FILE_SCOPE,
+                    Scope.MANIFEST_SCOPE));
 
     /** Accessing an inlined API on older platforms */
     public static final Issue INLINED = Issue.create(

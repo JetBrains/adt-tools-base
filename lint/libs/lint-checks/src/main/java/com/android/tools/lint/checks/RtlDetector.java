@@ -98,7 +98,8 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             RtlDetector.class,
             EnumSet.of(Scope.RESOURCE_FILE, Scope.JAVA_FILE, Scope.MANIFEST),
             Scope.RESOURCE_FILE_SCOPE,
-            Scope.JAVA_FILE_SCOPE
+            Scope.JAVA_FILE_SCOPE,
+            Scope.MANIFEST_SCOPE
     );
 
     public static final Issue USE_START = Issue.create(

@@ -34,6 +34,7 @@ public class Implementation {
     private final EnumSet<Scope> mScope;
     private EnumSet<Scope>[] mAnalysisScopes;
 
+    @SuppressWarnings("unchecked")
     private static final EnumSet<Scope>[] EMPTY = new EnumSet[0];
 
     /**
@@ -42,6 +43,7 @@ public class Implementation {
      * @param detectorClass the class of the detector to find this issue
      * @param scope the scope of files required to analyze this issue
      */
+    @SuppressWarnings("unchecked")
     public Implementation(
             @NonNull Class<? extends Detector> detectorClass,
             @NonNull EnumSet<Scope> scope) {
@@ -176,7 +178,7 @@ public class Implementation {
 
         if (mAnalysisScopes != null) {
             for (EnumSet<Scope> analysisScope : mAnalysisScopes) {
-                if (mScope.containsAll(analysisScope)) {
+                if (scope.containsAll(analysisScope)) {
                     return true;
                 }
             }
