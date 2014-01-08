@@ -845,7 +845,7 @@ public class LintDriver {
         runFileDetectors(project, project);
 
         if (!Scope.checkSingleFile(mScope)) {
-            List<Project> libraries = project.getDirectLibraries();
+            List<Project> libraries = project.getAllLibraries();
             for (Project library : libraries) {
                 Context libraryContext = new Context(this, library, project, projectDir);
                 fireEvent(EventType.SCANNING_LIBRARY_PROJECT, libraryContext);
