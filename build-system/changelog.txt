@@ -3,6 +3,15 @@
 - Support for Gradle 1.10
 - Fixed issue 64302: Add renderscript support mode jar to the dependencies in the IDE model.
 - Fixed issue 64094: buildConfigField can now replace previous values inside the same type/flavors.
+- Add support for NDK prebuilts in library projects.
+- Parallelize pre-dexing to speed up clean builds.
+- Variant API improvements:
+   * getPreBuild() returns the prebuild task for the variant
+   * getSourceSets() returns the sorted sourcesets for the task, from lower to higher priority
+   * createZipAlignTask(String taskName, File inputFile, File outputFile)
+     This creates and return a new zipalign task. Useful if you have a custom plugin providing custom signing of APKs.
+     This also makes the assemble task depend on the new zipalign task, and wires variant.getOutputFile() to return the result of the zipalign task.
+
 
 0.7.3
 
