@@ -370,6 +370,9 @@ public class LintDriver {
     private void analyze() {
         mCanceled = false;
         mScope = mRequest.getScope();
+        assert mScope == null || !mScope.contains(Scope.ALL_RESOURCE_FILES) ||
+                mScope.contains(Scope.RESOURCE_FILE);
+
         Collection<Project> projects;
         try {
             projects = mRequest.getProjects();
