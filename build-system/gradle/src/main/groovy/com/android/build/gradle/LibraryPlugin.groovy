@@ -244,9 +244,18 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
         createCompileTask(variantData, null/*testedVariant*/)
 
         // Add NDK tasks
-        createNdkTasks(
-                variantData,
-                { project.file("$project.buildDir/$DIR_BUNDLES/${variantData.variantConfiguration.dirName}/jni") });
+        createNdkTasks(variantData);
+
+        // package the prebuilt native libs into the bundle folder
+        Sync packageJniLibs = project.tasks.create(
+                "package${variantData.variantConfiguration.fullName.capitalize()}JniLibs",
+                Sync)
+        packageJniLibs.dependsOn variantData.ndkCompileTask
+        // package from 3 sources.
+        packageJniLibs.from(variantConfig.jniLibsList).include("**/*.so")
+        packageJniLibs.from(variantData.ndkCompileTask.soFolder).include("**/*.so")
+        packageJniLibs.into(project.file(
+                "$project.buildDir/$DIR_BUNDLES/${variantData.variantConfiguration.dirName}/jni"))
 
         // package the aidl files into the bundle folder
         Sync packageAidl = project.tasks.create(
@@ -296,7 +305,7 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
             // hack since bundle can't depend on variantData.proguardTask
             mergeProGuardFileTask.dependsOn variantData.proguardTask
 
-            bundle.dependsOn packageRes, packageAidl, packageRenderscript, mergeProGuardFileTask, lintCopy, variantData.ndkCompileTask
+            bundle.dependsOn packageRes, packageAidl, packageRenderscript, mergeProGuardFileTask, lintCopy, packageJniLibs
         } else {
             Sync packageLocalJar = project.tasks.create(
                     "package${variantData.variantConfiguration.fullName.capitalize()}LocalJar",
@@ -328,7 +337,7 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
             jar.exclude(packageName + "/BuildConfig.class")
 
             bundle.dependsOn packageRes, jar, packageAidl, packageRenderscript, packageLocalJar,
-                    mergeProGuardFileTask, lintCopy, variantData.ndkCompileTask
+                    mergeProGuardFileTask, lintCopy, packageJniLibs
         }
 
         bundle.setDescription("Assembles a bundle containing the library in ${variantData.variantConfiguration.fullName.capitalize()}.");
