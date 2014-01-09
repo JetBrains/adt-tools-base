@@ -57,6 +57,7 @@ public class AutomatedBuildTest extends BuildTest {
             "ndkSanAngeles",
             "ndkJniLib",
             "ndkPrebuilts",
+            "ndkLibPrebuilts",
             "overlay1",
             "overlay2",
             "pkgOverride",
