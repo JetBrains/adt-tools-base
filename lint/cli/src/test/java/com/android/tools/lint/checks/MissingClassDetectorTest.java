@@ -179,6 +179,43 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
            checkLint(Arrays.asList(master, library)));
     }
 
+    public void testIndirectLibraryProjects() throws Exception {
+        mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
+        File master = getProjectDir("MasterProject",
+                // Master project
+                "bytecode/AndroidManifestRegs.xml=>AndroidManifest.xml",
+                "multiproject/main.properties=>project.properties",
+                "bytecode/TestService.java.txt=>src/test/pkg/TestService.java",
+                "bytecode/TestService.class.data=>bin/classes/test/pkg/TestService.class",
+                "bytecode/.classpath=>.classpath"
+        );
+        File library2 = getProjectDir("LibraryProject",
+                // Library project
+                "multiproject/library-manifest2.xml=>AndroidManifest.xml",
+                "multiproject/library2.properties=>project.properties"
+        );
+        File library = getProjectDir("RealLibrary",
+                // Library project
+                "multiproject/library-manifest.xml=>AndroidManifest.xml",
+                "multiproject/library.properties=>project.properties",
+                "bytecode/OnClickActivity.java.txt=>src/test/pkg/OnClickActivity.java",
+                "bytecode/OnClickActivity.class.data=>bin/classes/test/pkg/OnClickActivity.class",
+                "bytecode/TestProvider.java.txt=>src/test/pkg/TestProvider.java",
+                "bytecode/TestProvider.class.data=>bin/classes/test/pkg/TestProvider.class",
+                "bytecode/TestProvider2.java.txt=>src/test/pkg/TestProvider2.java",
+                "bytecode/TestProvider2.class.data=>bin/classes/test/pkg/TestProvider2.class"
+                // Missing TestReceiver: Test should complain about just that class
+        );
+        assertEquals(""
+                + "MasterProject/AndroidManifest.xml:32: Error: Class referenced in the manifest, test.pkg.TestReceiver, was not found in the project or the libraries [MissingRegistered]\n"
+                + "        <receiver android:name=\"TestReceiver\" />\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                checkLint(Arrays.asList(master, library2, library)));
+    }
+
     public void testInnerClassStatic() throws Exception {
         mScopes = null;
         mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
