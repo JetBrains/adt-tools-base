@@ -106,6 +106,13 @@ public interface AndroidSourceSet {
     String getPackageConfigurationName();
 
     /**
+     * Returns the name of the compiled-only configuration for this source set.
+     * @return The provided configuration name
+     */
+    @NonNull
+    String getProvidedConfigurationName();
+
+    /**
      * The Android Manifest file for this source set.
      *
      * @return the manifest. Never returns null.

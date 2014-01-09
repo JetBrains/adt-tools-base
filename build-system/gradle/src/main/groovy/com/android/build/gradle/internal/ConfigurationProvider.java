@@ -20,7 +20,7 @@ import com.android.annotations.NonNull;
 import org.gradle.api.artifacts.Configuration;
 
 /**
- * Provides the compile and package configuration.
+ * Provides the compile, provided and package configurations.
  */
 public interface ConfigurationProvider {
 
@@ -29,4 +29,7 @@ public interface ConfigurationProvider {
 
     @NonNull
     Configuration getPackageConfiguration();
+
+    @NonNull
+    Configuration getProvidedConfiguration();
 }

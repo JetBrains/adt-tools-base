@@ -144,6 +144,16 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
 
     @Override
     @NonNull
+    public String getProvidedConfigurationName() {
+        if (name.equals(SourceSet.MAIN_SOURCE_SET_NAME)) {
+            return "provided";
+        } else {
+            return String.format("%sProvided", name);
+        }
+    }
+
+    @Override
+    @NonNull
     public AndroidSourceFile getManifest() {
         return manifest;
     }

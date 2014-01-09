@@ -53,4 +53,9 @@ class BuildTypeData implements ConfigurationProvider {
     Configuration getPackageConfiguration() {
         return project.configurations.getByName(sourceSet.packageConfigurationName)
     }
+
+    @NonNull
+    Configuration getProvidedConfiguration() {
+        return project.configurations.getByName(sourceSet.providedConfigurationName)
+    }
 }

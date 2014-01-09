@@ -11,12 +11,5 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-                android:name="ShowPeopleActivity"
-                android:label="@string/title_activity_display_message" >
-                <meta-data
-                    android:name="android.support.PARENT_ACTIVITY"
-                    android:value="org.gradle.sample.MainActivity" />
-            </activity>
     </application>
 </manifest>
