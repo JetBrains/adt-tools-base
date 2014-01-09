@@ -65,7 +65,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 @Beta
 public class DefaultConfiguration extends Configuration {
     private final LintClient mClient;
-    private static final String CONFIG_FILE_NAME = "lint.xml"; //$NON-NLS-1$
+    /** Default name of the configuration file */
+    public static final String CONFIG_FILE_NAME = "lint.xml"; //$NON-NLS-1$
 
     // Lint XML File
     @NonNull
