@@ -107,7 +107,8 @@ public class ApiLookup {
      * @return a (possibly shared) instance of the API database, or null
      *         if its data can't be found
      */
-    public static ApiLookup get(LintClient client) {
+    @Nullable
+    public static ApiLookup get(@NonNull LintClient client) {
         synchronized (ApiLookup.class) {
             ApiLookup db = sInstance.get();
             if (db == null) {
@@ -122,7 +123,6 @@ public class ApiLookup {
                 }
 
                 if (file == null || !file.exists()) {
-                    client.log(null, "Fatal error: No API database found at %1$s", file);
                     return null;
                 } else {
                     db = get(client, file);
