@@ -40,6 +40,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.resources.ResourceFolderType;
+import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
@@ -237,6 +238,7 @@ public class ApiDetector extends ResourceXmlDetector
     private static final String ORDINAL_METHOD = "ordinal"; //$NON-NLS-1$
 
     protected ApiLookup mApiDatabase;
+    private boolean mWarnedMissingDb;
     private int mMinApi = -1;
     private Map<String, List<Pair<String, Location>>> mPendingFields;
 
@@ -257,6 +259,12 @@ public class ApiDetector extends ResourceXmlDetector
         // The manifest file hasn't been processed yet in the -before- project hook.
         // For now it's initialized lazily in getMinSdk(Context), but the
         // lint infrastructure should be fixed to parse manifest file up front.
+
+        if (!mWarnedMissingDb) {
+            mWarnedMissingDb = true;
+            context.report(IssueRegistry.LINT_ERROR, Location.create(context.file),
+                        "Can't find API database; API check not performed", null);
+        }
     }
 
     // ---- Implements XmlScanner ----
@@ -1064,6 +1072,10 @@ public class ApiDetector extends ResourceXmlDetector
     @Nullable
     @Override
     public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
+        if (mApiDatabase == null) {
+            return new ForwardingAstVisitor() {
+            };
+        }
         return new ApiVisitor(context);
     }
 
