@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.tasks
+
 import com.android.annotations.NonNull
 import com.android.build.gradle.internal.tasks.NdkTask
 import com.android.builder.model.NdkConfig
@@ -32,8 +33,7 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.gradle.api.tasks.util.PatternSet
-/**
- */
+
 class NdkCompile extends NdkTask {
 
     List<File> sourceFolders
@@ -52,6 +52,9 @@ class NdkCompile extends NdkTask {
 
     @Input
     boolean ndkRenderScriptMode
+
+    @Input
+    boolean ndkCygwinMode
 
     @InputFiles
     FileTree getSource() {
@@ -181,7 +184,11 @@ class NdkCompile extends NdkTask {
 
         List<String> commands = Lists.newArrayList()
 
-        commands.add(ndkLocation.absolutePath + File.separator + "ndk-build")
+        String exe = ndkLocation.absolutePath + File.separator + "ndk-build"
+        if (!ndkCygwinMode) {
+            exe += ".cmd"
+        }
+        commands.add(exe)
 
         commands.add("NDK_PROJECT_PATH=null")
 

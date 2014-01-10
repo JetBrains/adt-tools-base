@@ -7,6 +7,7 @@
 - Parallelize pre-dexing to speed up clean builds.
 - Added 'provided' dependency scope for compile only (not packaged) dependencies.
   Additional scope per buildtype and flavors are also available (debugProvided, myFlavorProvided,etc...)
+- Fix NDK on windows.
 - Variant API improvements:
    * getPreBuild() returns the prebuild task for the variant
    * getSourceSets() returns the sorted sourcesets for the task, from lower to higher priority
