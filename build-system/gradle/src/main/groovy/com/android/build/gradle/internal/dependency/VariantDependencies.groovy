@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dependency
 import com.android.annotations.NonNull
+
 import com.android.build.gradle.internal.ConfigurationProvider
 import com.android.builder.dependency.DependencyContainer
 import com.android.builder.dependency.JarDependency
@@ -40,6 +41,8 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
     final Configuration compileConfiguration
     @NonNull
     final Configuration packageConfiguration
+    @NonNull
+    final Configuration providedConfiguration
 
     @NonNull
     private final List<LibraryDependencyImpl> libraries = []
@@ -55,9 +58,13 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
                                        @NonNull ConfigurationProvider... providers) {
         Set<Configuration> compileConfigs = Sets.newHashSet()
         Set<Configuration> apkConfigs = Sets.newHashSet()
+        Set<Configuration> providedConfigs = Sets.newHashSet()
 
         for (ConfigurationProvider provider : providers) {
             compileConfigs.add(provider.compileConfiguration)
+            compileConfigs.add(provider.providedConfiguration)
+
+            apkConfigs.add(provider.compileConfiguration)
             apkConfigs.add(provider.packageConfiguration)
         }
 
@@ -67,30 +74,37 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
         Configuration apk = project.configurations.create("_${name}Apk")
         apk.setExtendsFrom(apkConfigs)
 
-        return new VariantDependencies(name, compile, apk);
+        // this empty and used for things that consume a variant dependency,
+        // which is only tests for libraries.
+        Configuration provided = project.configurations.create("_${name}Provided")
+        //provided.setExtendsFrom(providedConfigs)
+
+        return new VariantDependencies(name, compile, apk, provided);
     }
 
     private VariantDependencies(@NonNull String name,
                                 @NonNull Configuration compileConfiguration,
-                                @NonNull Configuration packageConfiguration) {
+                                @NonNull Configuration packageConfiguration,
+                                @NonNull Configuration providedConfiguration) {
         this.name = name
         this.compileConfiguration = compileConfiguration
         this.packageConfiguration = packageConfiguration
+        this.providedConfiguration = providedConfiguration
     }
 
     public String getName() {
         return name
     }
 
-    void addLibraries(List<LibraryDependencyImpl> list) {
+    void addLibraries(@NonNull List<LibraryDependencyImpl> list) {
         libraries.addAll(list)
     }
 
-    void addJars(List<JarDependency> list) {
+    void addJars(@NonNull Collection<JarDependency> list) {
         jars.addAll(list)
     }
 
-    void addLocalJars(List<JarDependency> list) {
+    void addLocalJars(@NonNull Collection<JarDependency> list) {
         localJars.addAll(list)
     }
 

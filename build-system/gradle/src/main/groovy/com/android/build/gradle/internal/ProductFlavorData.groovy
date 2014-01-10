@@ -16,15 +16,46 @@
 
 package com.android.build.gradle.internal
 
+import com.android.annotations.NonNull
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.builder.DefaultProductFlavor
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.Configuration
 
 /**
  * Class containing a ProductFlavor and associated data (sourcesets)
  */
 public class ProductFlavorData<T extends DefaultProductFlavor> {
+
+    private static class ConfigurationProviderImpl implements ConfigurationProvider {
+
+        private final Project project
+        private final DefaultAndroidSourceSet sourceSet
+
+        ConfigurationProviderImpl(Project project, DefaultAndroidSourceSet sourceSet) {
+            this.project = project
+            this.sourceSet = sourceSet
+        }
+
+        @Override
+        @NonNull
+        public Configuration getCompileConfiguration() {
+            return project.configurations.getByName(sourceSet.compileConfigurationName)
+        }
+
+        @Override
+        @NonNull
+        public Configuration getPackageConfiguration() {
+            return project.configurations.getByName(sourceSet.packageConfigurationName)
+        }
+
+        @Override
+        @NonNull
+        Configuration getProvidedConfiguration() {
+            return project.configurations.getByName(sourceSet.providedConfigurationName)
+        }
+    }
 
     final T productFlavor
 
