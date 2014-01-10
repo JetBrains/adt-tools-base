@@ -261,7 +261,7 @@ public class ApiDetector extends ResourceXmlDetector
         // For now it's initialized lazily in getMinSdk(Context), but the
         // lint infrastructure should be fixed to parse manifest file up front.
 
-        if (!mWarnedMissingDb) {
+        if (mApiDatabase == null && !mWarnedMissingDb) {
             mWarnedMissingDb = true;
             context.report(IssueRegistry.LINT_ERROR, Location.create(context.file),
                         "Can't find API database; API check not performed", null);
