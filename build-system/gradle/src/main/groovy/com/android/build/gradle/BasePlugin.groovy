@@ -1873,7 +1873,6 @@ public abstract class BasePlugin {
         // TODO - shouldn't need to do this - fix this in Gradle
         ensureConfigured(compileClasspath)
         ensureConfigured(packageClasspath)
-        ensureConfigured(providedClasspath)
 
         variantDeps.checker = new DependencyChecker(variantDeps, logger)
 
