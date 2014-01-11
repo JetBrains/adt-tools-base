@@ -45,12 +45,6 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
 
     @Override
     @NonNull
-    public DefaultProductFlavor getMergedFlavor() {
-        return getVariantData().getVariantConfiguration().getMergedFlavor();
-    }
-
-    @Override
-    @NonNull
     public List<DefaultProductFlavor> getProductFlavors() {
         return getVariantData().getVariantConfiguration().getFlavorConfigs();
     }
