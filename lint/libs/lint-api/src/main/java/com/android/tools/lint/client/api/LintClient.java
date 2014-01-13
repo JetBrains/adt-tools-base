@@ -16,8 +16,6 @@
 
 package com.android.tools.lint.client.api;
 
-import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
-import static com.android.SdkConstants.BIN_FOLDER;
 import static com.android.SdkConstants.CLASS_FOLDER;
 import static com.android.SdkConstants.DOT_AAR;
 import static com.android.SdkConstants.DOT_JAR;

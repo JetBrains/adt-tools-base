@@ -23,13 +23,13 @@ import com.android.build.gradle.internal.LintGradleClient
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
-import com.android.tools.lint.HtmlReporter
 import com.android.tools.lint.LintCliFlags
 import com.android.tools.lint.Reporter
 import com.android.tools.lint.Warning
-import com.android.tools.lint.XmlReporter
 import com.android.tools.lint.checks.BuiltinIssueRegistry
+import com.android.tools.lint.checks.GradleDetector
 import com.android.tools.lint.client.api.IssueRegistry
+import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Severity
 import com.google.common.collect.Maps
 import org.gradle.api.DefaultTask
@@ -161,7 +161,7 @@ public class Lint extends DefaultTask {
             @NonNull AndroidProject modelProject,
             @NonNull String variantName,
             boolean report) {
-        IssueRegistry registry = new BuiltinIssueRegistry()
+        IssueRegistry registry = createIssueRegistry()
         LintCliFlags flags = new LintCliFlags()
         LintGradleClient client = new LintGradleClient(registry, flags, mPlugin, modelProject,
                 variantName)
@@ -195,5 +195,38 @@ public class Lint extends DefaultTask {
         String modelName = AndroidProject.class.getName()
         ModelBuilder builder = new ModelBuilder()
         return (AndroidProject) builder.buildAll(modelName, gradleProject)
+    }
+
+    private static BuiltinIssueRegistry createIssueRegistry() {
+        return new LintGradleIssueRegistry()
+    }
+
+    // Issue registry when Lint is run inside Gradle: we replace the Gradle
+    // detector with a local implementation which directly references Groovy
+    // for parsing. In Studio on the other hand, the implementation is replaced
+    // by a PSI-based check. (This is necessary for now since we don't have a
+    // tool-agnostic API for the Groovy AST and we don't want to add a 6.3MB dependency
+    // on Groovy itself quite yet.
+    public static class LintGradleIssueRegistry extends BuiltinIssueRegistry {
+        private boolean mInitialized;
+
+        public LintGradleIssueRegistry() {
+        }
+
+        @NonNull
+        @Override
+        public List<Issue> getIssues() {
+            List<Issue> issues = super.getIssues();
+            if (!mInitialized) {
+                mInitialized = true;
+                for (Issue issue : issues) {
+                    if (issue.getImplementation().getDetectorClass() == GradleDetector.class) {
+                        issue.setImplementation(GroovyGradleDetector.IMPLEMENTATION);
+                    }
+                }
+            }
+
+            return issues;
+        }
     }
 }
