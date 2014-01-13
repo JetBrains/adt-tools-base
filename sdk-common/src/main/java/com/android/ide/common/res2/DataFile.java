@@ -34,13 +34,13 @@ import java.util.Map;
  */
 public abstract class DataFile<I extends DataItem> {
 
-    static enum FileType {
+    enum FileType {
         SINGLE, MULTI
     }
 
     private final FileType mType;
     protected File mFile;
-    private final Map<String, I> mItems = Maps.newHashMap();
+    protected final Map<String, I> mItems = Maps.newHashMap();
 
     /**
      * Creates a data file with a list of data items.
@@ -61,19 +61,15 @@ public abstract class DataFile<I extends DataItem> {
      * @param item the item
      */
     protected final void init(@NonNull I item) {
-        item.setSource(this);
-        mItems.put(item.getKey(), item);
+        addItem(item);
     }
 
     /**
      * This must be called from the constructor of the children classes.
      * @param items the items
      */
-    protected void init(@NonNull Iterable<I> items) {
-        for (I item : items) {
-            item.setSource(this);
-            mItems.put(item.getKey(), item);
-        }
+    protected final void init(@NonNull Iterable<I> items) {
+        addItems(items);
     }
 
     @NonNull
@@ -111,16 +107,24 @@ public abstract class DataFile<I extends DataItem> {
         return mItems;
     }
 
-    public void addItems(@NonNull Collection<I> items) {
+    public void addItem(@NonNull I item) {
+          //noinspection unchecked
+          item.setSource(this);
+          mItems.put(item.getKey(), item);
+     }
+
+    public void addItems(@NonNull Iterable<I> items) {
         for (I item : items) {
+            //noinspection unchecked
             item.setSource(this);
             mItems.put(item.getKey(), item);
         }
     }
 
-    public void removeItems(@NonNull Collection<I> items) {
+    public void removeItems(@NonNull Iterable<I> items) {
         for (I item : items) {
             mItems.remove(item.getKey());
+            //noinspection unchecked
             item.setSource(null);
         }
     }
@@ -136,7 +140,9 @@ public abstract class DataFile<I extends DataItem> {
 
     public void replace(@NonNull I oldItem, @NonNull I newItem) {
         mItems.remove(oldItem.getKey());
+        //noinspection unchecked
         oldItem.setSource(null);
+        //noinspection unchecked
         newItem.setSource(this);
         mItems.put(newItem.getKey(), newItem);
     }
