@@ -12,6 +12,11 @@ apply plugin: 'android'
 import com.android.builder.model.ArtifactMetaData
 import com.android.builder.model.SourceProvider
 
+// create a configuration to allow dependencies specific to the Java artifact
+configurations {
+   foo
+}
+
 // Register an artifact type and tie it to the name "__test__".
 // This name will show up in Studio. It must be unique
 android.registerArtifactType("__test__", false, ArtifactMetaData.TYPE_JAVA)
@@ -41,9 +46,17 @@ android.applicationVariants.all { variant ->
             variant,                                     // associate it with a variant
             "assemble:$variant.name",                    // name of the assemble task for this artifact
             "compile:$variant.name",                     // name of the java compile task for this artifact
+            configurations.foo,
             new File("classesFolder:$variant.name"),     // location of the classes folder (compile output)
             getProvider("provider:$variant.name"))       // source provider specific to this variant for the artifact.
 }
+
+
+// after the artifact is created, add a dependency
+dependencies {
+   foo files('libs/util-1.0.jar')
+}
+
 
 android {
     compileSdkVersion 15

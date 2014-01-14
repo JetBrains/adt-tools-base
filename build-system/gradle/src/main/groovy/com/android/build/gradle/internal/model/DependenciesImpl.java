@@ -33,6 +33,7 @@ import org.gradle.api.Project;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -47,6 +48,15 @@ public class DependenciesImpl implements Dependencies, Serializable {
     private final List<File> jars;
     @NonNull
     private final List<String> projects;
+
+    @NonNull
+    static DependenciesImpl cloneDependenciesForJavaArtifacts(@NonNull Dependencies dependencies) {
+        List<AndroidLibrary> libraries = Collections.emptyList();
+        List<File> jars = Lists.newArrayList(dependencies.getJars());
+        List<String> projects = Collections.emptyList();
+
+        return new DependenciesImpl(libraries, jars, projects);
+    }
 
     @NonNull
     static DependenciesImpl cloneDependencies(
@@ -92,6 +102,12 @@ public class DependenciesImpl implements Dependencies, Serializable {
         }
 
         return new DependenciesImpl(libraries, jars, projects);
+    }
+
+    public DependenciesImpl(@NonNull Set<File> jars) {
+        this.jars = Lists.newArrayList(jars);
+        this.libraries = Collections.emptyList();
+        this.projects = Collections.emptyList();
     }
 
     private DependenciesImpl(@NonNull List<AndroidLibrary> libraries,
