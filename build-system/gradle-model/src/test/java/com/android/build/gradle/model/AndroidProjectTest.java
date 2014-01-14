@@ -781,6 +781,10 @@ public class AndroidProjectTest extends TestCase {
             SourceProvider variantSourceProvider = javaArtifact.getVariantSourceProvider();
             assertNotNull(variantSourceProvider);
             assertEquals("provider:" + name, variantSourceProvider.getManifestFile().getPath());
+
+            Dependencies deps = javaArtifact.getDependencies();
+            assertNotNull("java artifact deps null-check", deps);
+            assertFalse(deps.getJars().isEmpty());
         }
     }
 

@@ -257,10 +257,11 @@ public abstract class BaseExtension {
             @NonNull BaseVariant variant,
             @NonNull String assembleTaskName,
             @NonNull String javaCompileTaskName,
+            @NonNull Configuration configuration,
             @NonNull File classesFolder,
             @Nullable SourceProvider sourceProvider) {
         plugin.registerJavaArtifact(name, variant, assembleTaskName, javaCompileTaskName,
-                classesFolder, sourceProvider)
+                configuration, classesFolder, sourceProvider)
     }
 
     public void registerMultiFlavorSourceProvider(
