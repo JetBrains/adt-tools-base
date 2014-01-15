@@ -362,9 +362,15 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             // specifically included in the text report
             if (location != null && location.getSecondary() != null) {
                 Location l = location.getSecondary();
+                if (l == location) {
+                    fail("Location link cycle");
+                }
                 while (l != null) {
                     if (l.getMessage() == null) {
                         l.setMessage("<No location-specific message");
+                    }
+                    if (l == l.getSecondary()) {
+                        fail("Location link cycle");
                     }
                     l = l.getSecondary();
                 }
