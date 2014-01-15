@@ -19,6 +19,6 @@ jar {
 project.ext.pomName = 'Android Tools dvlib'
 project.ext.pomDesc = 'A Library to manage the Android device database XML files.'
 
-apply from: '../../baseVersion.gradle'
-apply from: '../../publish.gradle'
-apply from: '../../javadoc.gradle'
+apply from: "$rootDir/buildSrc/base/baseVersion.gradle"
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"

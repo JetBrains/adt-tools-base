@@ -19,4 +19,4 @@ shipping {
 
 buildDistributionJar.manifest.attributes("Main-Class": "com.android.draw9patch.Application")
 
-apply from: '../baseVersion.gradle'
+apply from: "$rootDir/buildSrc/base/baseVersion.gradle"

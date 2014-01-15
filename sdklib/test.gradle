@@ -24,7 +24,7 @@ javadoc {
 
 shipping.isShipping = false
 
-apply from: '../baseVersion.gradle'
+apply from: "$rootDir/buildSrc/base/baseVersion.gradle"
 
 task publishLocal(type: Upload) {
     configuration = configurations.archives

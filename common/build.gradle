@@ -16,6 +16,6 @@ jar {
     from 'NOTICE'
 }
 
-apply from: '../baseVersion.gradle'
-apply from: '../publish.gradle'
-apply from: '../javadoc.gradle'
+apply from: "$rootDir/buildSrc/base/baseVersion.gradle"
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"

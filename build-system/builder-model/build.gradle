@@ -11,8 +11,8 @@ archivesBaseName = 'builder-model'
 project.ext.pomName = 'Android Builder Model library'
 project.ext.pomDesc = 'Model for the Builder library.'
 
-apply from: '../../buildVersion.gradle'
-apply from: '../../publish.gradle'
-apply from: '../../javadoc.gradle'
+apply from: "$rootDir/buildSrc/base/buildVersion.gradle"
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 
 jar.manifest.attributes("Model-Version": "$version")

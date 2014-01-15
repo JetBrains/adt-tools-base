@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'idea'
 
 repositories {
-    maven { url '../../../../../../out/host/gradle/repo' }
+    maven { url '../../../../../../out/repo' }
 }
 
 dependencies {

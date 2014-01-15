@@ -15,4 +15,4 @@ shipping {
     launcherScripts = ['etc/jobb', 'etc/jobb.bat']
 }
 
-apply from: '../baseVersion.gradle'
+apply from: "$rootDir/buildSrc/base/baseVersion.gradle"

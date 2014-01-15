@@ -1,6 +1,6 @@
 buildscript {
     repositories {
-        maven { url '../../../../../../out/host/gradle/repo' }
+        maven { url '../../../../../../out/repo' }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:0.10.0-SNAPSHOT'

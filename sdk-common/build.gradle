@@ -19,7 +19,7 @@ jar {
 project.ext.pomName = 'Android Tools sdk-common library'
 project.ext.pomDesc = 'sdk-common library used by other Android tools libraries.'
 
-apply from: '../baseVersion.gradle'
-apply from: '../publish.gradle'
-apply from: '../javadoc.gradle'
+apply from: "$rootDir/buildSrc/base/baseVersion.gradle"
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 

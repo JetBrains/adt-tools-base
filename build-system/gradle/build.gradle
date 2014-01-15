@@ -66,8 +66,8 @@ archivesBaseName = 'gradle'
 project.ext.pomName = 'Gradle Plug-in for Android'
 project.ext.pomDesc = 'Gradle plug-in to build Android applications.'
 
-apply from: '../../buildVersion.gradle'
-apply from: '../../publish.gradle'
+apply from: "$rootDir/buildSrc/base/buildVersion.gradle"
+apply from: "$rootDir/buildSrc/base/publish.gradle"
 
 jar.manifest.attributes("Plugin-Version": version)
 
