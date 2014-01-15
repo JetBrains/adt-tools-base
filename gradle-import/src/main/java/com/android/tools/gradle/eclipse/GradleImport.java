@@ -61,10 +61,12 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.Collections;
 import java.util.List;
@@ -1147,7 +1149,7 @@ public class GradleImport {
 
     static Properties getProperties(File file) throws IOException {
         Properties properties = new Properties();
-        FileReader reader = new FileReader(file);
+        InputStreamReader reader = new InputStreamReader(new BufferedInputStream(new FileInputStream(file)), Charsets.UTF_8);
         properties.load(reader);
         Closeables.close(reader, true);
         return properties;
