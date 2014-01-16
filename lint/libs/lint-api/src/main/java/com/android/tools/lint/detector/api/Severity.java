@@ -17,6 +17,7 @@
 package com.android.tools.lint.detector.api;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.annotations.Beta;
 
 /**
@@ -74,5 +75,29 @@ public enum Severity {
     @NonNull
     public String getDescription() {
         return mDisplay;
+    }
+
+    /** Returns the name of this severity */
+    @NonNull
+    public String getName() {
+        return name();
+    }
+
+    /**
+     * Looks up the severity corresponding to a given named severity. The severity
+     * string should be one returned by {@link #toString()}
+     *
+     * @param name the name to look up
+     * @return the corresponding severity, or null if it is not a valid severity name
+     */
+    @Nullable
+    public static Severity fromName(@NonNull String name) {
+        for (Severity severity : values()) {
+            if (severity.name().equalsIgnoreCase(name)) {
+                return severity;
+            }
+        }
+
+        return null;
     }
 }

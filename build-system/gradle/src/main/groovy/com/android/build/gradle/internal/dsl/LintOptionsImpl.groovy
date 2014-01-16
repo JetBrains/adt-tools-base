@@ -22,9 +22,10 @@ import com.android.builder.model.LintOptions
 import com.android.tools.lint.HtmlReporter
 import com.android.tools.lint.LintCliClient
 import com.android.tools.lint.LintCliFlags
-import com.android.tools.lint.Reporter
 import com.android.tools.lint.TextReporter
 import com.android.tools.lint.XmlReporter
+import com.android.tools.lint.detector.api.Severity
+import com.google.common.collect.Maps
 import com.google.common.collect.Sets
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -77,6 +78,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
     @OutputFile
     private File xmlOutput
 
+    private Map<String,Severity> severities = Maps.newHashMap();
+
     public LintOptionsImpl() {
     }
 
@@ -99,7 +102,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
             boolean ignoreWarnings,
             boolean warningsAsErrors,
             boolean showAll,
-            boolean checkReleaseBuilds) {
+            boolean checkReleaseBuilds,
+            Map<String,LintOptions.Severity> severityOverrides) {
         this.disable = disable
         this.enable = enable
         this.check = check
@@ -119,6 +123,12 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         this.warningsAsErrors = warningsAsErrors
         this.showAll = showAll
         this.checkReleaseBuilds = checkReleaseBuilds
+
+        if (severityOverrides != null) {
+            for (Map.Entry<String,LintOptions.Severity> entry : severityOverrides.entrySet()) {
+                severities.put(entry.key, convert(entry.value))
+            }
+        }
     }
 
     @NonNull
@@ -142,7 +152,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
                 source.isIgnoreWarnings(),
                 source.isWarningsAsErrors(),
                 source.isShowAll(),
-                source.isCheckReleaseBuilds()
+                source.isCheckReleaseBuilds(),
+                source.getSeverityOverrides()
         )
     }
 
@@ -403,6 +414,7 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         flags.setWarningsAsErrors(warningsAsErrors)
         flags.setShowEverything(showAll)
         flags.setDefaultConfiguration(lintConfig)
+        flags.setSeverityOverrides(severities)
 
         if (report || flags.isFatalOnly()) {
             if (textReport || flags.isFatalOnly()) {
@@ -432,20 +444,6 @@ public class LintOptionsImpl implements LintOptions, Serializable {
                 flags.getReporters().add(new TextReporter(client, flags, file, writer,
                         closeWriter))
             }
-            if (xmlReport) {
-                File output = xmlOutput
-                if (output == null || flags.isFatalOnly()) {
-                    output = createOutputPath(project, variantName, DOT_XML, flags.isFatalOnly())
-                } else if (!output.isAbsolute()) {
-                    output = project.file(output.getPath())
-                }
-                output = validateOutputFile(output)
-                try {
-                    flags.getReporters().add(new XmlReporter(client, output))
-                } catch (IOException e) {
-                    throw new GradleException("XML invalid argument.", e)
-                }
-            }
             if (htmlReport) {
                 File output = htmlOutput
                 if (output == null || flags.isFatalOnly()) {
@@ -458,6 +456,20 @@ public class LintOptionsImpl implements LintOptions, Serializable {
                     flags.getReporters().add(new HtmlReporter(client, output))
                 } catch (IOException e) {
                     throw new GradleException("HTML invalid argument.", e)
+                }
+            }
+            if (xmlReport) {
+                File output = xmlOutput
+                if (output == null || flags.isFatalOnly()) {
+                    output = createOutputPath(project, variantName, DOT_XML, flags.isFatalOnly())
+                } else if (!output.isAbsolute()) {
+                    output = project.file(output.getPath())
+                }
+                output = validateOutputFile(output)
+                try {
+                    flags.getReporters().add(new XmlReporter(client, output))
+                } catch (IOException e) {
+                    throw new GradleException("XML invalid argument.", e)
                 }
             }
         }
@@ -510,14 +522,32 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         return new File(project.buildDir, base.toString())
     }
 
-    // -- DSL Methods. TODO remove once the instantiator does what I expect it to do.
+    @Override
+    @Nullable
+    public Map<String, LintOptions.Severity> getSeverityOverrides() {
+        if (severities == null) {
+            return null
+        }
+
+        Map<String, LintOptions.Severity> map =
+                Maps.newHashMapWithExpectedSize(severities.size())
+        for (Map.Entry<String,Severity> entry : severities.entrySet()) {
+            map.put(entry.key, convert(entry.value))
+        }
+
+        return map
+    }
+
+    // -- DSL Methods.
 
     public void check(String id) {
         check.add(id)
     }
 
     public void check(String... ids) {
-        check.addAll(ids)
+        for (String id : ids) {
+            check(id);
+        }
     }
 
     public void enable(String id) {
@@ -525,15 +555,20 @@ public class LintOptionsImpl implements LintOptions, Serializable {
     }
 
     public void enable(String... ids) {
-        enable.addAll(ids)
+        for (String id : ids) {
+            enable(id);
+        }
     }
 
     public void disable(String id) {
         disable.add(id)
+        severities.put(id, Severity.IGNORE)
     }
 
     public void disable(String... ids) {
-        disable.addAll(ids)
+        for (String id : ids) {
+            disable(id);
+        }
     }
 
     // For textOutput 'stdout' (normally a file)
@@ -544,5 +579,77 @@ public class LintOptionsImpl implements LintOptions, Serializable {
     // For textOutput file()
     void textOutput(File textOutput) {
         this.textOutput = textOutput;
+    }
+
+    public void fatal(String id) {
+        severities.put(id, Severity.FATAL)
+    }
+
+    public void fatal(String... ids) {
+        for (String id : ids) {
+            fatal(id);
+        }
+    }
+
+    public void error(String id) {
+        severities.put(id, Severity.ERROR)
+    }
+
+    public void error(String... ids) {
+        for (String id : ids) {
+            error(id);
+        }
+    }
+
+    public void warning(String id) {
+        severities.put(id, Severity.WARNING)
+    }
+
+    public void warning(String... ids) {
+        for (String id : ids) {
+            warning(id);
+        }
+    }
+
+    public void ignore(String id) {
+        severities.put(id, Severity.IGNORE)
+    }
+
+    public void ignore(String... ids) {
+        for (String id : ids) {
+            ignore(id);
+        }
+    }
+
+    private static LintOptions.Severity convert(Severity s) {
+        switch (s) {
+            case Severity.FATAL:
+                return LintOptions.Severity.FATAL
+            case Severity.ERROR:
+                return LintOptions.Severity.ERROR
+            case Severity.WARNING:
+                return LintOptions.Severity.WARNING
+            case Severity.INFORMATIONAL:
+                return LintOptions.Severity.INFORMATIONAL
+            case Severity.IGNORE:
+            default:
+                return LintOptions.Severity.IGNORE
+        }
+    }
+
+    private static Severity convert(LintOptions.Severity s) {
+        switch (s) {
+            case LintOptions.Severity.FATAL:
+                return Severity.FATAL
+            case LintOptions.Severity.ERROR:
+                return Severity.ERROR
+            case LintOptions.Severity.WARNING:
+                return Severity.WARNING
+            case LintOptions.Severity.INFORMATIONAL:
+                return Severity.INFORMATIONAL
+            case LintOptions.Severity.IGNORE:
+            default:
+                return Severity.IGNORE
+        }
     }
 }
