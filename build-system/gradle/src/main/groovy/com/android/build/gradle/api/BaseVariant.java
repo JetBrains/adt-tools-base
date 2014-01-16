@@ -38,6 +38,8 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
+import proguard.gradle.ProGuardTask;
+
 /**
  * A Build variant and all its public data. This is the base class for items common to apps,
  * test apps, and libraries
@@ -175,8 +177,17 @@ public interface BaseVariant {
     @NonNull
     JavaCompile getJavaCompile();
 
+    /**
+     * Returns the NDK Compilation task.
+     */
     @NonNull
     NdkCompile getNdkCompile();
+
+    /**
+     * Returns the Proguard task. This can be null if proguard is not enabled.
+     */
+    @Nullable
+    ProGuardTask getProguardTask();
 
     /**
      * Returns the Java resource processing task.
