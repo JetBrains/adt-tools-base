@@ -69,7 +69,7 @@ public class LintGradleProject extends Project {
             @NonNull AndroidProject project,
             @NonNull Variant variant,
             @NonNull org.gradle.api.Project gradleProject) {
-        File dir = gradleProject.getRootDir();
+        File dir = gradleProject.getProjectDir();
         AppGradleProject lintProject = new AppGradleProject(client, dir,
                 dir, project, variant);
 
