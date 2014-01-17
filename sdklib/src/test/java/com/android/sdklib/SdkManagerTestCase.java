@@ -129,7 +129,7 @@ public class SdkManagerTestCase extends TestCase {
         @Override
         public String getBaseAvdFolder() throws AndroidLocationException {
             if (mTmpAvdRoot == null) {
-                mTmpAvdRoot = new File(getSdk().getLocation(), "tmp_avds");
+                mTmpAvdRoot = new File(getLocalSdk().getLocation(), "tmp_avds");
                 mTmpAvdRoot.mkdirs();
             }
             return mTmpAvdRoot.getAbsolutePath();
