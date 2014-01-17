@@ -49,4 +49,18 @@
         android:scaleType="fitXY"
         android:src="@drawable/menu_list_divider" />
 
+    <Button
+            android:id="@+id/cancel2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignEnd="@id/text"
+            android:layout_below="@id/text"
+            android:background="@null"
+            android:layout_marginLeft="40dip"
+            android:layout_marginRight="40dip"
+            android:paddingLeft="120dip"
+            android:paddingRight="120dip"
+            android:text="@string/cancel" />
+
 </RelativeLayout>
