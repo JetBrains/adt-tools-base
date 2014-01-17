@@ -1065,6 +1065,7 @@ public final class SdkConstants {
     public static final String ANDROID_THEME_PREFIX = "?android:";      //$NON-NLS-1$
     public static final String LAYOUT_RESOURCE_PREFIX = "@layout/";     //$NON-NLS-1$
     public static final String STYLE_RESOURCE_PREFIX = "@style/";       //$NON-NLS-1$
+    public static final String COLOR_RESOURCE_PREFIX = "@color/";       //$NON-NLS-1$
     public static final String NEW_ID_PREFIX = "@+id/";                 //$NON-NLS-1$
     public static final String ID_PREFIX = "@id/";                      //$NON-NLS-1$
     public static final String DRAWABLE_PREFIX = "@drawable/";          //$NON-NLS-1$
