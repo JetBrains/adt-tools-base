@@ -1266,7 +1266,7 @@ public abstract class BasePlugin {
                 preDexTask.dexOptions = extension.dexOptions
 
                 preDexTask.conventionMapping.inputFiles = {
-                    project.files(getAndroidBuilder(variantData).getPackagedJars(variantConfig))
+                    getAndroidBuilder(variantData).getPackagedJars(variantConfig)
                 }
                 preDexTask.conventionMapping.outputFolder = {
                     project.file(
@@ -1873,7 +1873,6 @@ public abstract class BasePlugin {
 
         Configuration compileClasspath = variantDeps.compileConfiguration
         Configuration packageClasspath = variantDeps.packageConfiguration
-        Configuration providedClasspath = variantDeps.providedConfiguration
 
         // TODO - shouldn't need to do this - fix this in Gradle
         ensureConfigured(compileClasspath)
@@ -1924,6 +1923,9 @@ public abstract class BasePlugin {
                 if (compileFiles.contains(f)) {
                     // if also in compile
                     JarDependency jarDep = jars.get(f);
+                    if (jarDep == null) {
+                        jarDep = localJars.get(f);
+                    }
                     if (jarDep != null) {
                         jarDep.setPackaged(true)
                     }
