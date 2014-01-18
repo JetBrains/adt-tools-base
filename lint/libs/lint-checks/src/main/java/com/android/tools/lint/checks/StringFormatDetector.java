@@ -410,7 +410,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                             if (last != 'd' && last != 'o' && last != 'x' && last != 'X') {
                                 Object clientData = handle.getClientData();
                                 if (clientData instanceof Node) {
-                                    if (context.getDriver().isSuppressed(INVALID,
+                                    if (context.getDriver().isSuppressed(null, INVALID,
                                             (Node) clientData)) {
                                         return;
                                     }
@@ -453,7 +453,8 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
 
                         Object clientData = handle.getClientData();
                         if (clientData instanceof Node) {
-                            if (context.getDriver().isSuppressed(ARG_TYPES, (Node) clientData)) {
+                            if (context.getDriver().isSuppressed(null, ARG_TYPES,
+                                    (Node) clientData)) {
                                 return;
                             }
                         }
@@ -616,7 +617,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             if (prevCount != -1 && prevCount != count) {
                 Object clientData = handle.getClientData();
                 if (clientData instanceof Node) {
-                    if (context.getDriver().isSuppressed(ARG_COUNT, (Node) clientData)) {
+                    if (context.getDriver().isSuppressed(null, ARG_COUNT, (Node) clientData)) {
                         return;
                     }
                 }
@@ -635,7 +636,8 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                 if (!indices.contains(i)) {
                     Object clientData = handle.getClientData();
                     if (clientData instanceof Node) {
-                        if (context.getDriver().isSuppressed(ARG_COUNT, (Node) clientData)) {
+                        if (context.getDriver().isSuppressed(null, ARG_COUNT,
+                                (Node) clientData)) {
                             return;
                         }
                     }
@@ -927,7 +929,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             Handle handle = mNotFormatStrings.get(name);
             Object clientData = handle.getClientData();
             if (clientData instanceof Node) {
-                if (context.getDriver().isSuppressed(INVALID, (Node) clientData)) {
+                if (context.getDriver().isSuppressed(null, INVALID, (Node) clientData)) {
                     return;
                 }
             }

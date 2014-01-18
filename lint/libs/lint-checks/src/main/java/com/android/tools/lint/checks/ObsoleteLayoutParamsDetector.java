@@ -373,7 +373,7 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
             if (!isValid) {
                 Object clientData = handle.getClientData();
                 if (clientData instanceof Node) {
-                    if (context.getDriver().isSuppressed(ISSUE, (Node) clientData)) {
+                    if (context.getDriver().isSuppressed(null, ISSUE, (Node) clientData)) {
                         return;
                     }
                 }

@@ -194,7 +194,7 @@ public class ArraySizeDetector extends ResourceXmlDetector {
                         Object clientData = curr.getClientData();
                         if (clientData instanceof Node) {
                             Node node = (Node) clientData;
-                            if (driver.isSuppressed(INCONSISTENT, node)) {
+                            if (driver.isSuppressed(null, INCONSISTENT, node)) {
                                 continue;
                             }
                             int newCount = LintUtils.getChildCount(node);
@@ -250,7 +250,7 @@ public class ArraySizeDetector extends ResourceXmlDetector {
             } else {
                 assert phase == 2;
                 if (mLocations.containsKey(name)) {
-                    if (context.getDriver().isSuppressed(INCONSISTENT, element)) {
+                    if (context.getDriver().isSuppressed(context, INCONSISTENT, element)) {
                         return;
                     }
                     Location location = context.getLocation(element);

@@ -70,4 +70,13 @@ public class HardcodedValuesDetectorTest  extends AbstractCheckTest {
             lintFiles("res/layout/ignores.xml"));
     }
 
+    public void testSuppressViaComment() throws Exception {
+        assertEquals(""
+                + "res/layout/ignores2.xml:51: Warning: [I18N] Hardcoded string \"Hardcoded\", should use @string resource [HardcodedText]\n"
+                + "        android:text=\"Hardcoded\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintFiles("res/layout/ignores2.xml"));
+    }
 }

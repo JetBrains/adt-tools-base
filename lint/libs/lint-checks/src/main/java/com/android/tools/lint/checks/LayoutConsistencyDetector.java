@@ -195,7 +195,7 @@ public class LayoutConsistencyDetector extends LayoutDetector implements Detecto
         String id = getId(element);
         if (id != null) {
             if (map.containsKey(id)) {
-                if (context.getDriver().isSuppressed(INCONSISTENT_IDS, element)) {
+                if (context.getDriver().isSuppressed(context, INCONSISTENT_IDS, element)) {
                     map.remove(id);
                     return;
                 }

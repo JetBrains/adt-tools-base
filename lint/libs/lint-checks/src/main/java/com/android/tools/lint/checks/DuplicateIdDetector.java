@@ -180,7 +180,7 @@ public class DuplicateIdDetector extends LayoutDetector {
                         Object clientData = location.getClientData();
                         if (clientData instanceof Node) {
                             Node node = (Node) clientData;
-                            if (context.getDriver().isSuppressed(CROSS_LAYOUT, node)) {
+                            if (context.getDriver().isSuppressed(null, CROSS_LAYOUT, node)) {
                                 continue;
                             }
                         }
@@ -286,7 +286,8 @@ public class DuplicateIdDetector extends LayoutDetector {
                         Collection<Occurrence> occurrences = map.get(id);
                         if (occurrences != null && !occurrences.isEmpty()) {
                             for (Occurrence occurrence : occurrences) {
-                                if (context.getDriver().isSuppressed(CROSS_LAYOUT, attribute)) {
+                                if (context.getDriver().isSuppressed(context, CROSS_LAYOUT,
+                                        attribute)) {
                                     return;
                                 }
                                 Location location = context.getLocation(attribute);

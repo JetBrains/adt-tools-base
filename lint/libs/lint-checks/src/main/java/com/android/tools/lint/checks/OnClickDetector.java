@@ -100,7 +100,7 @@ public class OnClickDetector extends LayoutDetector implements ClassScanner {
 
                 Object clientData = handle.getClientData();
                 if (clientData instanceof Node) {
-                    if (driver.isSuppressed(ISSUE, (Node) clientData)) {
+                    if (driver.isSuppressed(null, ISSUE, (Node) clientData)) {
                         continue;
                     }
                 }
