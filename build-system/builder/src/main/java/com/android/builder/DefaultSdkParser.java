@@ -38,6 +38,8 @@ import java.io.Reader;
 import java.util.List;
 import java.util.Properties;
 
+import static com.android.SdkConstants.FD_EXTRAS;
+import static com.android.SdkConstants.FD_M2_REPOSITORY;
 import static com.android.SdkConstants.FD_PLATFORM_TOOLS;
 import static com.android.SdkConstants.FD_SUPPORT;
 import static com.android.SdkConstants.FD_TOOLS;
@@ -175,12 +177,14 @@ public class DefaultSdkParser implements SdkParser {
     public List<File> getRepositories() {
         List<File> repositories = Lists.newArrayList();
 
-        File androidRepo = new File(mSdkLocation + "/extras/android/m2repository");
+        File androidRepo = new File(mSdkLocation, FD_EXTRAS + File.separator + "android"
+                + File.separator + FD_M2_REPOSITORY);
         if (androidRepo.isDirectory()) {
             repositories.add(androidRepo);
         }
 
-        File googleRepo = new File(mSdkLocation + "/extras/google/m2repository");
+        File googleRepo = new File(mSdkLocation, FD_EXTRAS + File.separator + "google"
+                + File.separator + FD_M2_REPOSITORY);
         if (googleRepo.isDirectory()) {
             repositories.add(googleRepo);
         }
