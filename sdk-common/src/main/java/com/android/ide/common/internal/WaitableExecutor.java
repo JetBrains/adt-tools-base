@@ -24,6 +24,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
@@ -40,17 +41,19 @@ import java.util.concurrent.Future;
  */
 public class WaitableExecutor<T> {
 
+    private final ExecutorService mExecutorService;
     private final CompletionService<T> mCompletionService;
     private final Set<Future<T>> mFutureSet = Sets.newHashSet();
 
+
     public WaitableExecutor(int nThreads) {
         if (nThreads < 1) {
-            mCompletionService = new ExecutorCompletionService<T>(
-                    Executors.newCachedThreadPool());
+            mExecutorService = Executors.newCachedThreadPool();
         } else {
-            mCompletionService = new ExecutorCompletionService<T>(
-                    Executors.newFixedThreadPool(nThreads));
+            mExecutorService = Executors.newFixedThreadPool(nThreads);
         }
+
+        mCompletionService = new ExecutorCompletionService<T>(mExecutorService);
     }
 
     public WaitableExecutor() {
@@ -106,6 +109,8 @@ public class WaitableExecutor<T> {
             } else {
                 throw new RuntimeException(cause);
             }
+        } finally {
+            mExecutorService.shutdownNow();
         }
 
         return results;
@@ -139,27 +144,31 @@ public class WaitableExecutor<T> {
      */
     public List<TaskResult<T>> waitForAllTasks() throws InterruptedException {
         List<TaskResult<T>> results = Lists.newArrayListWithCapacity(mFutureSet.size());
-        while (!mFutureSet.isEmpty()) {
-            Future<T> future = mCompletionService.take();
+        try {
+            while (!mFutureSet.isEmpty()) {
+                Future<T> future = mCompletionService.take();
 
-            assert mFutureSet.contains(future);
-            mFutureSet.remove(future);
+                assert mFutureSet.contains(future);
+                mFutureSet.remove(future);
 
-            // Get the result from the task.
-            try {
-                results.add(TaskResult.withValue(future.get()));
-            } catch (ExecutionException e) {
-                // the original exception thrown by the task is the cause of this one.
-                Throwable cause = e.getCause();
+                // Get the result from the task.
+                try {
+                    results.add(TaskResult.withValue(future.get()));
+                } catch (ExecutionException e) {
+                    // the original exception thrown by the task is the cause of this one.
+                    Throwable cause = e.getCause();
 
-                //noinspection StatementWithEmptyBody
-                if (cause instanceof InterruptedException) {
-                    // if the task was cancelled we probably don't care about its result.
-                } else {
-                    // there was an error.
-                    results.add(new TaskResult<T>(cause));
+                    //noinspection StatementWithEmptyBody
+                    if (cause instanceof InterruptedException) {
+                        // if the task was cancelled we probably don't care about its result.
+                    } else {
+                        // there was an error.
+                        results.add(new TaskResult<T>(cause));
+                    }
                 }
             }
+        } finally {
+            mExecutorService.shutdownNow();
         }
 
         return results;
