@@ -14,7 +14,7 @@ repositories {
 
 android {
     compileSdkVersion 15
-    buildToolsVersion "18.0.1"
+    buildToolsVersion "19.0.1"
 
     buildTypes.debug {
         zipAlign true

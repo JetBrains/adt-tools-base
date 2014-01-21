@@ -90,8 +90,8 @@ import java.util.Set;
  * {@link #processTestManifest(String, int, int, String, String, Boolean, Boolean, java.util.List, String)}
  * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions, java.util.Collection)}
  * {@link #compileAllAidlFiles(java.util.List, java.io.File, java.util.List, com.android.builder.compiling.DependencyFileProcessor)}
- * {@link #convertByteCode(Iterable, Iterable, File, DexOptions, boolean)}
- * {@link #packageApk(String, String, java.util.List, String, java.util.Collection, java.util.Set, boolean, com.android.builder.model.SigningConfig, com.android.builder.model.PackagingOptions, String)}
+ * {@link #convertByteCode(Iterable, Iterable, java.io.File, DexOptions, java.util.List, boolean)}
+ * {@link #packageApk(String, java.io.File, java.util.List, String, java.util.Collection, java.util.Set, boolean, com.android.builder.model.SigningConfig, com.android.builder.model.PackagingOptions, String)}
  *
  * Java compilation is not handled but the builder provides the bootclasspath with
  * {@link #getBootClasspath(SdkParser)}.
@@ -989,8 +989,9 @@ public class AndroidBuilder {
      * Converts the bytecode to Dalvik format
      * @param inputs the input files
      * @param preDexedLibraries the list of pre-dexed libraries
-     * @param outDexFile the location of the output classes.dex file
+     * @param outDexFolder the location of the output folder
      * @param dexOptions dex options
+     * @param additionalParameters
      * @param incremental true if it should attempt incremental dex if applicable
      *
      * @throws IOException
@@ -1000,13 +1001,15 @@ public class AndroidBuilder {
     public void convertByteCode(
             @NonNull Iterable<File> inputs,
             @NonNull Iterable<File> preDexedLibraries,
-            @NonNull File outDexFile,
+            @NonNull File outDexFolder,
             @NonNull DexOptions dexOptions,
+            @Nullable List<String> additionalParameters,
             boolean incremental) throws IOException, InterruptedException, LoggedErrorException {
         checkNotNull(inputs, "inputs cannot be null.");
         checkNotNull(preDexedLibraries, "preDexedLibraries cannot be null.");
-        checkNotNull(outDexFile, "outDexFile cannot be null.");
+        checkNotNull(outDexFolder, "outDexFolder cannot be null.");
         checkNotNull(dexOptions, "dexOptions cannot be null.");
+        checkArgument(outDexFolder.isDirectory(), "outDexFolder must be a folder");
 
         // launch dx: create the command line
         ArrayList<String> command = Lists.newArrayList();
@@ -1028,10 +1031,6 @@ public class AndroidBuilder {
             command.add("--verbose");
         }
 
-        if (dexOptions.isCoreLibrary()) {
-            command.add("--core-library");
-        }
-
         if (dexOptions.getJumboMode()) {
             command.add("--force-jumbo");
         }
@@ -1041,8 +1040,14 @@ public class AndroidBuilder {
             command.add("--no-strict");
         }
 
+        if (additionalParameters != null) {
+            for (String arg : additionalParameters) {
+                command.add(arg);
+            }
+        }
+
         command.add("--output");
-        command.add(outDexFile.getAbsolutePath());
+        command.add(outDexFolder.getAbsolutePath());
 
         // clean up input list
         List<String> inputList = Lists.newArrayList();
@@ -1112,10 +1117,6 @@ public class AndroidBuilder {
             command.add("--verbose");
         }
 
-        if (dexOptions.isCoreLibrary()) {
-            command.add("--core-library");
-        }
-
         if (dexOptions.getJumboMode()) {
             command.add("--force-jumbo");
         }
@@ -1132,7 +1133,7 @@ public class AndroidBuilder {
      * Packages the apk.
      *
      * @param androidResPkgLocation the location of the packaged resource file
-     * @param classesDexLocation the location of the classes.dex file
+     * @param dexFolder the folder with the dex file.
      * @param packagedJars the jars that are packaged (libraries + jar dependencies)
      * @param javaResourcesLocation the processed Java resource folder
      * @param jniLibsFolders the folders containing jni shared libraries
@@ -1151,7 +1152,7 @@ public class AndroidBuilder {
      */
     public void packageApk(
             @NonNull String androidResPkgLocation,
-            @NonNull String classesDexLocation,
+            @NonNull File dexFolder,
             @NonNull List<File> packagedJars,
             @Nullable String javaResourcesLocation,
             @Nullable Collection<File> jniLibsFolders,
@@ -1163,7 +1164,8 @@ public class AndroidBuilder {
             throws DuplicateFileException, FileNotFoundException,
             KeytoolException, PackagerException, SigningException {
         checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
-        checkNotNull(classesDexLocation, "classesDexLocation cannot be null.");
+        checkNotNull(dexFolder, "dexFolder cannot be null.");
+        checkArgument(dexFolder.isDirectory(), "dexFolder is not a directory");
         checkNotNull(outApkLocation, "outApkLocation cannot be null.");
 
         CertificateInfo certificateInfo = null;
@@ -1176,7 +1178,7 @@ public class AndroidBuilder {
 
         try {
             Packager packager = new Packager(
-                    outApkLocation, androidResPkgLocation, classesDexLocation,
+                    outApkLocation, androidResPkgLocation, dexFolder,
                     certificateInfo, mCreatedBy, packagingOptions, mLogger);
 
             packager.setJniDebugMode(jniDebugBuild);
