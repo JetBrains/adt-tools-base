@@ -23,9 +23,6 @@ import org.gradle.api.tasks.Optional
 public class DexOptionsImpl implements DexOptions {
 
     @Input
-    private boolean coreLibraryFlag
-
-    @Input
     private boolean isIncrementalFlag = false
 
     @Input
@@ -38,23 +35,13 @@ public class DexOptionsImpl implements DexOptions {
     @Optional
     private String javaMaxHeapSize
 
-    public void setCoreLibrary(boolean coreLibrary) {
-        coreLibraryFlag = coreLibrary
-    }
-
-    @Override
-    boolean isCoreLibrary() {
-        return coreLibraryFlag
-    }
-
     public void setIncremental(boolean isIncremental) {
         isIncrementalFlag = isIncremental
     }
 
     @Override
     boolean getIncremental() {
-        return false; // incremental support is broken.
-        //return isIncrementalFlag
+        return isIncrementalFlag
     }
 
     @Override

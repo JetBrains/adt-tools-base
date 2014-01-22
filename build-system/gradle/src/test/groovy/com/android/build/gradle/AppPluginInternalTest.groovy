@@ -46,6 +46,7 @@ public class AppPluginInternalTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion "19"
         }
 
         AppPlugin plugin = AppPlugin.pluginHolder.plugin
@@ -73,6 +74,7 @@ public class AppPluginInternalTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion "19"
 
             signingConfigs {
                 fakeConfig {
@@ -116,6 +118,7 @@ public class AppPluginInternalTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion "19"
             testBuildType "staging"
 
             buildTypes {
@@ -152,6 +155,7 @@ public class AppPluginInternalTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion "19"
 
             productFlavors {
                 flavor1 {
@@ -188,6 +192,7 @@ public class AppPluginInternalTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion "19"
 
             flavorGroups   "group1", "group2"
 
@@ -252,6 +257,7 @@ public class AppPluginInternalTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion "19"
 
             signingConfigs {
                 one {
@@ -352,6 +358,7 @@ public class AppPluginInternalTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion "19"
 
             signingConfigs {
                 debug {
@@ -405,6 +412,7 @@ public class AppPluginInternalTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion "19"
         }
 
         AppPlugin plugin = AppPlugin.pluginHolder.plugin
