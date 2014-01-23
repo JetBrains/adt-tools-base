@@ -30,6 +30,7 @@ import com.android.resources.Keyboard;
 import com.android.resources.Navigation;
 import com.android.resources.TouchScreen;
 import com.android.xml.AndroidManifest;
+import com.google.common.io.Closeables;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.ErrorHandler;
@@ -606,7 +607,12 @@ public class AndroidManifestParser {
 
             ManifestHandler manifestHandler = new ManifestHandler(manifestFile,
                     data, errorHandler);
-            parser.parse(new InputSource(manifestFile.getContents()), manifestHandler);
+            InputStream is = manifestFile.getContents();
+            try {
+                parser.parse(new InputSource(is), manifestHandler);
+            } finally {
+                Closeables.closeQuietly(is);
+            }
 
             return data;
         }
