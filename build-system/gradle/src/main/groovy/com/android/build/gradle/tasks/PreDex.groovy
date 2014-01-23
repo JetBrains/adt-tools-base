@@ -44,7 +44,7 @@ public class PreDex extends BaseTask {
     // in the class uses it.
     @SuppressWarnings("GroovyUnusedDeclaration")
     @InputFiles
-    Iterable<File> inputFiles
+    Collection<File> inputFiles
 
     @OutputDirectory
     File outputFolder
