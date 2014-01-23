@@ -1,5 +1,4 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
 
 group = 'com.android.tools'
 archivesBaseName = 'testutils'
@@ -13,9 +12,5 @@ sourceSets {
     main.resources.srcDir 'src/main/java'
     test.resources.srcDir 'src/test/java'
 }
-
-// Needed for ADT
-// TODO: be able to ship to prebuilts/devtools/adt
-shipping.isShipping = false
 
 apply from: "$rootDir/buildSrc/base/baseVersion.gradle"

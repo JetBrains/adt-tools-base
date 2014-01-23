@@ -1,5 +1,5 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
+apply plugin: 'sdk-java-lib'
 
 group = 'com.android.tools.layoutlib'
 archivesBaseName = 'layoutlib-api'
@@ -9,10 +9,6 @@ dependencies {
     compile 'net.sf.kxml:kxml2:2.3.0'
 
     testCompile 'junit:junit:3.8.1'
-}
-
-jar {
-    from 'NOTICE'
 }
 
 project.ext.pomName = 'Android Tools layoutlib-api'

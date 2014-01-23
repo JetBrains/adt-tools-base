@@ -1,5 +1,6 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
+apply plugin: 'sdk-java-lib'
+
 
 group = 'com.android.tools.lint'
 archivesBaseName = 'lint-api'
@@ -16,10 +17,6 @@ dependencies {
 sourceSets {
     main.resources.srcDir 'src/main/java'
     test.resources.srcDir 'src/test/java'
-}
-
-jar {
-    from 'NOTICE'
 }
 
 project.ext.pomName = 'Android Tools Lint API'

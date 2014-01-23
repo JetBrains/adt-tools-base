@@ -1,5 +1,6 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
+apply plugin: 'sdk-java-lib'
+
 
 dependencies {
     compile 'com.google.guava:guava:15.0'
@@ -11,10 +12,6 @@ group = 'com.android.tools'
 archivesBaseName = 'common'
 project.ext.pomName = 'Android Tools common library'
 project.ext.pomDesc = 'common library used by other Android tools libraries.'
-
-jar {
-    from 'NOTICE'
-}
 
 apply from: "$rootDir/buildSrc/base/baseVersion.gradle"
 apply from: "$rootDir/buildSrc/base/publish.gradle"

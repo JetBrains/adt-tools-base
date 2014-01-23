@@ -109,7 +109,3 @@ task javadocJar(type: Jar, dependsOn:groovydoc) {
 artifacts {
     archives javadocJar
 }
-
-apply plugin: 'distrib'
-shipping.isShipping = false
-

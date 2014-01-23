@@ -1,5 +1,5 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
+apply plugin: 'sdk-java-lib'
 
 evaluationDependsOn(':sdklib')
 
@@ -20,10 +20,6 @@ dependencies {
 sourceSets {
     main.resources.srcDir 'src/main/java'
     test.resources.srcDir 'src/test/java'
-}
-
-jar {
-    from 'NOTICE'
 }
 
 project.ext.pomName = 'Android Tools Manifest Merger library'

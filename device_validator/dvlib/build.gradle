@@ -1,5 +1,5 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
+apply plugin: 'sdk-java-lib'
 
 dependencies {
     compile project(':common')
@@ -9,12 +9,8 @@ dependencies {
 group = 'com.android.tools'
 archivesBaseName = 'dvlib'
 
-// configure the manifest of the buildDistributionJar task
-buildDistributionJar.manifest.attributes("Main-Class": "com.android.validator.DeviceValidator")
-
-jar {
-    from 'NOTICE'
-}
+// configure the manifest of the sdkJar task
+sdkJar.manifest.attributes("Main-Class": "com.android.validator.DeviceValidator")
 
 project.ext.pomName = 'Android Tools dvlib'
 project.ext.pomDesc = 'A Library to manage the Android device database XML files.'

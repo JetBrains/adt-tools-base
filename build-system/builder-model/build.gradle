@@ -1,6 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'clone-artifacts'
-apply plugin: 'distrib'
+apply plugin: 'sdk-java-lib'
 
 dependencies {
     compile project(':common')
@@ -16,3 +16,4 @@ apply from: "$rootDir/buildSrc/base/publish.gradle"
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 
 jar.manifest.attributes("Model-Version": "$version")
+sdkJar.manifest.attributes("Model-Version": "$version")
