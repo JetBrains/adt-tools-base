@@ -1225,7 +1225,7 @@ public class VariantConfiguration implements TestData {
      */
     @NonNull
     public Set<File> getCompileClasspath() {
-        Set<File> classpath = Sets.newHashSet();
+        Set<File> classpath = Sets.newHashSetWithExpectedSize(mJars.size() + mFlatLibraries.size());
 
         for (LibraryDependency lib : mFlatLibraries) {
             classpath.add(lib.getJarFile());
@@ -1250,7 +1250,7 @@ public class VariantConfiguration implements TestData {
      * @return a non null, but possibly empty list.
      */
     @NonNull
-    public List<File> getPackagedJars() {
+    public Set<File> getPackagedJars() {
         Set<File> jars = Sets.newHashSetWithExpectedSize(mJars.size() + mFlatLibraries.size());
 
         for (JarDependency jar : mJars) {
@@ -1272,7 +1272,7 @@ public class VariantConfiguration implements TestData {
             }
         }
 
-        return Lists.newArrayList(jars);
+        return jars;
     }
 
     /**

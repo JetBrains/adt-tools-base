@@ -54,7 +54,7 @@ public class PackageApplication extends IncrementalTask implements OutputFileTas
     // ----- PRIVATE TASK API -----
 
     @InputFiles
-    List<File> packagedJars
+    Set<File> packagedJars
 
     @Input
     boolean jniDebugBuild

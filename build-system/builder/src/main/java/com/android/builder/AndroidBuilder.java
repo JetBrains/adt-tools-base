@@ -251,15 +251,15 @@ public class AndroidBuilder {
      * @return a non null, but possibly empty list.
      */
     @NonNull
-    public List<File> getPackagedJars(@NonNull VariantConfiguration variantConfiguration) {
-        List<File> packagedJars = variantConfiguration.getPackagedJars();
+    public Set<File> getPackagedJars(@NonNull VariantConfiguration variantConfiguration) {
+        Set<File> packagedJars = variantConfiguration.getPackagedJars();
 
         ProductFlavor mergedFlavor = variantConfiguration.getMergedFlavor();
 
         if (mergedFlavor.getRenderscriptSupportMode()) {
             File renderScriptSupportJar = getRenderScriptSupportJar();
 
-            List<File> fullJars = Lists.newArrayListWithCapacity(packagedJars.size() + 1);
+            Set<File> fullJars = Sets.newHashSetWithExpectedSize(packagedJars.size() + 1);
             fullJars.addAll(packagedJars);
             fullJars.add(renderScriptSupportJar);
             packagedJars = fullJars;
@@ -1153,7 +1153,7 @@ public class AndroidBuilder {
     public void packageApk(
             @NonNull String androidResPkgLocation,
             @NonNull File dexFolder,
-            @NonNull List<File> packagedJars,
+            @NonNull Collection<File> packagedJars,
             @Nullable String javaResourcesLocation,
             @Nullable Collection<File> jniLibsFolders,
             @Nullable Set<String> abiFilters,
