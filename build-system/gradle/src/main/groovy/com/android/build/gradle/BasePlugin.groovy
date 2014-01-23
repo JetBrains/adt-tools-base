@@ -42,6 +42,7 @@ import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestLibra
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
 import com.android.build.gradle.internal.tasks.InstallTask
 import com.android.build.gradle.internal.tasks.OutputFileTask
+import com.android.build.gradle.internal.tasks.PreBuildTask
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask
 import com.android.build.gradle.internal.tasks.PrepareLibraryTask
 import com.android.build.gradle.internal.tasks.SigningReportTask
@@ -173,7 +174,7 @@ public abstract class BasePlugin {
     protected DefaultAndroidSourceSet mainSourceSet
     protected DefaultAndroidSourceSet testSourceSet
 
-    protected Task mainPreBuild
+    protected PreBuildTask mainPreBuild
     protected Task uninstallAll
     protected Task assembleTest
     protected Task deviceCheck
@@ -222,7 +223,9 @@ public abstract class BasePlugin {
         connectedCheck.description = "Runs all device checks on currently connected devices."
         connectedCheck.group = JavaBasePlugin.VERIFICATION_GROUP
 
-        mainPreBuild = project.tasks.create("preBuild")
+        mainPreBuild = project.tasks.create("preBuild", PreBuildTask)
+        mainPreBuild.conventionMapping.extension =  { getExtension() }
+
 
         project.afterEvaluate {
             createAndroidTasks(false)
@@ -281,11 +284,6 @@ public abstract class BasePlugin {
             return
         }
         hasCreatedTasks = true
-
-        // check on the build tools version.
-        if (extension.buildToolsRevision.major < 19) {
-            throw new RuntimeException("Build Tools Revision 19.0.0+ is required.")
-        }
 
         doCreateAndroidTasks()
         createReportTasks()
