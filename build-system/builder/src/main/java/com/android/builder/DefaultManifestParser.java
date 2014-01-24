@@ -22,65 +22,39 @@ import com.android.io.FileWrapper;
 import com.android.io.StreamException;
 import com.android.xml.AndroidManifest;
 import com.android.xml.AndroidXPathFactory;
+import com.google.common.io.Closeables;
+
 import org.xml.sax.InputSource;
 
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathExpressionException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
 
 public class DefaultManifestParser implements ManifestParser {
 
     @Nullable
     @Override
     public String getPackage(@NonNull File manifestFile) {
-        XPath xpath = AndroidXPathFactory.newXPath();
-
-        try {
-            return xpath.evaluate("/manifest/@package",
-                    new InputSource(new FileInputStream(manifestFile)));
-        } catch (XPathExpressionException e) {
-            // won't happen.
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-
-        return null;
+        return getStringValue(manifestFile, "/manifest/@package");
     }
 
     @Nullable
     @Override
     public String getVersionName(@NonNull File manifestFile) {
-        XPath xpath = AndroidXPathFactory.newXPath();
-
-        try {
-            return xpath.evaluate("/manifest/@android:versionName",
-                    new InputSource(new FileInputStream(manifestFile)));
-        } catch (XPathExpressionException e) {
-            // won't happen.
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-
-        return null;
+        return getStringValue(manifestFile, "/manifest/@android:versionName");
     }
 
     @Override
     public int getVersionCode(@NonNull File manifestFile) {
-        XPath xpath = AndroidXPathFactory.newXPath();
-
         try {
-            String value= xpath.evaluate("/manifest/@android:versionCode",
-                    new InputSource(new FileInputStream(manifestFile)));
+            String value = getStringValue(manifestFile, "/manifest/@android:versionCode");
             if (value != null) {
-                return Integer.parseInt(value);
+                return Integer.valueOf(value);
             }
-        } catch (XPathExpressionException e) {
-            // won't happen.
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException ignored) {
             // return -1 below.
         }
 
@@ -123,5 +97,24 @@ public class DefaultManifestParser implements ManifestParser {
         }
 
         return -1;
+    }
+
+    private static String getStringValue(@NonNull File file, @NonNull String xPath) {
+        XPath xpath = AndroidXPathFactory.newXPath();
+
+        FileInputStream fis = null;
+        try {
+            //noinspection IOResourceOpenedButNotSafelyClosed
+            fis = new FileInputStream(file);
+            return xpath.evaluate(xPath, new InputSource(fis));
+        } catch (XPathExpressionException e) {
+            // won't happen.
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } finally {
+            Closeables.closeQuietly(fis);
+        }
+
+        return null;
     }
 }
