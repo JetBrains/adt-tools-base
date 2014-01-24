@@ -28,6 +28,7 @@ import static com.android.SdkConstants.OLD_PROGUARD_FILE;
 import static com.android.SdkConstants.PROGUARD_CONFIG;
 import static com.android.SdkConstants.PROJECT_PROPERTIES;
 import static com.android.SdkConstants.RES_FOLDER;
+import static com.android.SdkConstants.SUPPORT_LIB_ARTIFACT;
 import static com.android.SdkConstants.TAG_USES_SDK;
 import static com.android.SdkConstants.VALUE_TRUE;
 
@@ -107,6 +108,7 @@ public class Project {
     protected List<Project> mAllLibraries;
     protected boolean mReportIssues = true;
     protected Boolean mGradleProject;
+    protected Boolean mSupportLib;
 
     /**
      * Creates a new {@link Project} for the given directory.
@@ -1046,5 +1048,45 @@ public class Project {
         }
 
         return sCurrentVersion;
+    }
+
+    /**
+     * Returns true if this project depends on the given artifact. Note that
+     * the project doesn't have to be a Gradle project; the artifact is just
+     * an identifier for name a specific library, such as com.android.support:support-v4
+     * to identify the support library
+     *
+     * @param artifact the Gradle/Maven name of a library
+     * @return true if the library is installed, false if it is not, and null if
+     *   we're not sure
+     */
+    @Nullable
+    public Boolean dependsOn(@NonNull String artifact) {
+        if (SUPPORT_LIB_ARTIFACT.equals(artifact)) {
+            if (mSupportLib == null) {
+                for (File file : getJavaLibraries()) {
+                    String name = file.getName();
+                    if (name.equals("android-support-v4.jar") || name.startsWith("support-v4-")) {
+                        mSupportLib = true;
+                        break;
+                    }
+                }
+                if (mSupportLib == null) {
+                    for (Project dependency : getDirectLibraries()) {
+                        Boolean b = dependency.dependsOn(artifact);
+                        if (b != null && b) {
+                            mSupportLib = true;
+                            break;
+                        }
+                    }
+                }
+                if (mSupportLib == null) {
+                    mSupportLib = false;
+                }
+            }
+
+            return mSupportLib;
+        }
+        return null;
     }
 }

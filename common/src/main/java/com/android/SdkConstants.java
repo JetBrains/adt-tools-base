@@ -1300,4 +1300,5 @@ public final class SdkConstants {
     public static final String GRADLE_LATEST_VERSION = "1.10";
     public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "0.7.0";
     public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.8.+";
+    public static final String SUPPORT_LIB_ARTIFACT = "com.android.support:support-v4";
 }
