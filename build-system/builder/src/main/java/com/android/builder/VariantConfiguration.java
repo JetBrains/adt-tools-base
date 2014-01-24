@@ -966,14 +966,13 @@ public class VariantConfiguration implements TestData {
      * overridden by the 2nd one and so on. This is meant to facilitate usage of the list in a
      * {@link com.android.ide.common.res2.ResourceMerger}.
      *
-     * @param generatedResFolder the generated res folder typically the output of the renderscript
-     *                           compilation
+     * @param generatedResFolders a list of generated res folders
      * @param includeDependencies whether to include in the result the resources of the dependencies
      *
      * @return a list ResourceSet.
      */
     @NonNull
-    public List<ResourceSet> getResourceSets(@Nullable File generatedResFolder,
+    public List<ResourceSet> getResourceSets(@NonNull List<File> generatedResFolders,
                                              boolean includeDependencies) {
         List<ResourceSet> resourceSets = Lists.newArrayList();
 
@@ -994,8 +993,11 @@ public class VariantConfiguration implements TestData {
 
         ResourceSet resourceSet = new ResourceSet(BuilderConstants.MAIN);
         resourceSet.addSources(mainResDirs);
-        if (generatedResFolder != null) {
-            resourceSet.addSource(generatedResFolder);
+        if (!generatedResFolders.isEmpty()) {
+            for (File generatedResFolder : generatedResFolders) {
+                resourceSet.addSource(generatedResFolder);
+
+            }
         }
         resourceSets.add(resourceSet);
 
@@ -1334,6 +1336,58 @@ public class VariantConfiguration implements TestData {
         list = mDefaultConfig.getBuildConfigFields().values();
         if (!list.isEmpty()) {
             fullList.add("Fields from default config.");
+            for (ClassField f : list) {
+                String name = f.getName();
+                if (!usedFieldNames.contains(name)) {
+                    usedFieldNames.add(f.getName());
+                    fullList.add(f);
+                }
+            }
+        }
+
+        return fullList;
+    }
+
+    /**
+     * Returns a list of generated resource values.
+     *
+     * Items can be either fields (instance of {@link com.android.builder.model.ClassField})
+     * or comments (instance of String).
+     *
+     * @return a list of items.
+     */
+    @NonNull
+    public List<Object> getResValues() {
+        List<Object> fullList = Lists.newArrayList();
+
+        Set<String> usedFieldNames = Sets.newHashSet();
+
+        Collection<ClassField> list = mBuildType.getResValues().values();
+        if (!list.isEmpty()) {
+            fullList.add("Values from build type: " + mBuildType.getName());
+            for (ClassField f : list) {
+                usedFieldNames.add(f.getName());
+                fullList.add(f);
+            }
+        }
+
+        for (DefaultProductFlavor flavor : mFlavorConfigs) {
+            list = flavor.getResValues().values();
+            if (!list.isEmpty()) {
+                fullList.add("Values from product flavor: " + flavor.getName());
+                for (ClassField f : list) {
+                    String name = f.getName();
+                    if (!usedFieldNames.contains(name)) {
+                        usedFieldNames.add(f.getName());
+                        fullList.add(f);
+                    }
+                }
+            }
+        }
+
+        list = mDefaultConfig.getResValues().values();
+        if (!list.isEmpty()) {
+            fullList.add("Values from default config.");
             for (ClassField f : list) {
                 String name = f.getName();
                 if (!usedFieldNames.contains(name)) {

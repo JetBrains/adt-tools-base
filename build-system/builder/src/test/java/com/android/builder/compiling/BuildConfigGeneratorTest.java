@@ -29,8 +29,7 @@ import java.util.List;
 public class BuildConfigGeneratorTest extends TestCase {
     public void testFalse() throws Exception {
         File tempDir = Files.createTempDir();
-        BuildConfigGenerator generator = new BuildConfigGenerator(tempDir.getPath(),
-                "my.app.pkg");
+        BuildConfigGenerator generator = new BuildConfigGenerator(tempDir, "my.app.pkg");
 
         generator.addField("boolean", "DEBUG", "false").generate();
 
@@ -52,8 +51,7 @@ public class BuildConfigGeneratorTest extends TestCase {
 
     public void testTrue() throws Exception {
         File tempDir = Files.createTempDir();
-        BuildConfigGenerator generator = new BuildConfigGenerator(tempDir.getPath(),
-                "my.app.pkg");
+        BuildConfigGenerator generator = new BuildConfigGenerator(tempDir, "my.app.pkg");
         generator.addField("boolean", "DEBUG", "Boolean.parseBoolean(\"true\")").generate();
 
         File file = generator.getBuildConfigFile();
@@ -74,8 +72,7 @@ public class BuildConfigGeneratorTest extends TestCase {
 
     public void testExtra() throws Exception {
         File tempDir = Files.createTempDir();
-        BuildConfigGenerator generator = new BuildConfigGenerator(tempDir.getPath(),
-                "my.app.pkg");
+        BuildConfigGenerator generator = new BuildConfigGenerator(tempDir, "my.app.pkg");
 
         List<Object> items = Lists.newArrayList();
         items.add("Extra line");
