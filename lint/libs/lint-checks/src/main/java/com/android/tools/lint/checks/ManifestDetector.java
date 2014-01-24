@@ -18,9 +18,13 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.ATTR_ALLOW_BACKUP;
+import static com.android.SdkConstants.ATTR_ICON;
 import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
+import static com.android.SdkConstants.ATTR_VERSION_CODE;
+import static com.android.SdkConstants.ATTR_VERSION_NAME;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
 import static com.android.SdkConstants.TAG_ACTIVITY;
 import static com.android.SdkConstants.TAG_APPLICATION;
@@ -37,10 +41,12 @@ import static com.android.xml.AndroidManifest.NODE_ACTION;
 import static com.android.xml.AndroidManifest.NODE_DATA;
 import static com.android.xml.AndroidManifest.NODE_METADATA;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.BuildTypeContainer;
+import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.Variant;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -48,6 +54,7 @@ import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
@@ -182,7 +189,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
             Category.CORRECTNESS,
             5,
-            Severity.ERROR,
+            Severity.FATAL,
             IMPLEMENTATION);
 
     /** Not explicitly defining allowBackup */
@@ -226,19 +233,17 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             "Checks that permission names are unique",
 
             "The unqualified names or your permissions must be unique. The reason for this " +
-                    "is that at build time, the `aapt` tool will generate a class named `Manifest` "
-                    +
-                    "which contains a field for each of your permissions. These fields are named " +
-                    "using your permission unqualified names (i.e. the name portion after the last "
-                    +
-                    "dot).\n" +
-                    "\n" +
-                    "If more than one permission maps to the same field name, that field will " +
-                    "arbitrarily name just one of them.",
+            "is that at build time, the `aapt` tool will generate a class named `Manifest` " +
+            "which contains a field for each of your permissions. These fields are named " +
+            "using your permission unqualified names (i.e. the name portion after the last " +
+            "dot).\n" +
+            "\n" +
+            "If more than one permission maps to the same field name, that field will " +
+            "arbitrarily name just one of them.",
 
             Category.CORRECTNESS,
             6,
-            Severity.ERROR,
+            Severity.FATAL,
             IMPLEMENTATION);
 
     /** Using a resource for attributes that do not allow it */
@@ -267,9 +272,9 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             "Checks for resource references where only literals are allowed",
 
             "For the `versionCode` attribute, you have to specify an actual integer " +
-                    "literal; you cannot use an indirection with a `@dimen/name` resource. " +
-                    "Similarly, the `versionName` attribute should be an actual string, not " +
-                    "a string resource url.",
+            "literal; you cannot use an indirection with a `@dimen/name` resource. " +
+            "Similarly, the `versionName` attribute should be an actual string, not " +
+            "a string resource url.",
 
             Category.CORRECTNESS,
             8,
@@ -342,7 +347,24 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
             Category.CORRECTNESS,
             8,
-            Severity.ERROR,
+            Severity.FATAL,
+            IMPLEMENTATION);
+
+    /** Defining a value that is overridden by Gradle */
+    public static final Issue GRADLE_OVERRIDES = Issue.create(
+            "GradleOverrides", //$NON-NLS-1$
+            "Value overridden by Gradle build script",
+            "Looks for values specified in the manifest file which are overridden by values "
+                    + "in Gradle",
+
+            "The value of (for example) `minSdkVersion` is only used if it is not specified in " +
+            "the `build.gradle` build scripts. When specified in the Gradle build scripts, " +
+            "the manifest value is ignored and can be misleading, so should be removed to " +
+            "avoid ambiguity.",
+
+            Category.CORRECTNESS,
+            4,
+            Severity.WARNING,
             IMPLEMENTATION);
 
     /** Permission name of mock location permission */
@@ -366,6 +388,17 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
     /** Permission basenames */
     private Map<String, String> mPermissionNames;
+
+    /** Handle to the {@code <application>} tag */
+    private Location.Handle mApplicationTagHandle;
+
+    /** Whether we've seen an application icon definition in any of the manifest files (or
+     * if a manifest tag warning for this has been explicitly disabled) */
+    private boolean mSeenAppIcon;
+
+    /** Whether we've seen an allow backup definition in any of the manifest files (or
+     * if a manifest tag warning for this has been explicitly disabled) */
+    private boolean mSeenAllowBackup;
 
     @NonNull
     @Override
@@ -403,8 +436,41 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
         }
     }
 
+    @Override
+    public void afterCheckProject(@NonNull Context context) {
+        if (!mSeenAllowBackup && context.isEnabled(ALLOW_BACKUP)
+                && context.getMainProject().getMinSdk() >= 4) {
+            Location location = getMainApplicationTagLocation(context);
+            context.report(ALLOW_BACKUP, location,
+                    "Should explicitly set android:allowBackup to true or " +
+                            "false (it's true by default, and that can have some security " +
+                            "implications for the application's data)", null);
+        }
+
+        if (!context.getMainProject().isLibrary()
+                && !mSeenAppIcon && context.isEnabled(APPLICATION_ICON)) {
+            Location location = getMainApplicationTagLocation(context);
+            context.report(APPLICATION_ICON, location,
+                    "Should explicitly set android:icon, there is no default", null);
+        }
+    }
+
+    @Nullable
+    private Location getMainApplicationTagLocation(@NonNull Context context) {
+        if (mApplicationTagHandle != null) {
+            return mApplicationTagHandle.resolve();
+        }
+
+        List<File> manifestFiles = context.getMainProject().getManifestFiles();
+        if (!manifestFiles.isEmpty()) {
+            return Location.create(manifestFiles.get(0));
+        }
+
+        return null;
+    }
+
     private static void checkDocumentElement(XmlContext context, Element element) {
-        Attr codeNode = element.getAttributeNodeNS(ANDROID_URI, "versionCode");//$NON-NLS-1$
+        Attr codeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_VERSION_CODE);
         if (codeNode != null && codeNode.getValue().startsWith(PREFIX_RESOURCE_REF)
                 && context.isEnabled(ILLEGAL_REFERENCE)) {
             context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
@@ -417,7 +483,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             context.report(SET_VERSION, element, context.getLocation(element),
                     "Should set android:versionCode to specify the application version", null);
         }
-        Attr nameNode = element.getAttributeNodeNS(ANDROID_URI, "versionName");//$NON-NLS-1$
+        Attr nameNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_VERSION_NAME);
         if (nameNode != null && nameNode.getValue().startsWith(PREFIX_RESOURCE_REF)
                 && context.isEnabled(ILLEGAL_REFERENCE)) {
             context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
@@ -429,6 +495,51 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 && !context.getMainProject().isGradleProject()) {
             context.report(SET_VERSION, element, context.getLocation(element),
                     "Should set android:versionName to specify the application version", null);
+        }
+
+        checkOverride(context, element, ATTR_VERSION_CODE);
+        checkOverride(context, element, ATTR_VERSION_NAME);
+    }
+
+    private static void checkOverride(XmlContext context, Element element, String attributeName) {
+        Project project = context.getProject();
+        Attr attribute = element.getAttributeNodeNS(ANDROID_URI, attributeName);
+        if (project.isGradleProject() && attribute != null && context.isEnabled(GRADLE_OVERRIDES)) {
+            Variant variant = project.getCurrentVariant();
+            if (variant != null) {
+                ProductFlavor flavor = variant.getMergedFlavor();
+                String gradleValue = null;
+                if (ATTR_MIN_SDK_VERSION.equals(attributeName)) {
+                    int minSdkVersion = flavor.getMinSdkVersion();
+                    if (minSdkVersion >= 1) {
+                        gradleValue = Integer.toString(minSdkVersion);
+                    }
+                } else if (ATTR_TARGET_SDK_VERSION.equals(attributeName)) {
+                    int targetSdkVersion = flavor.getTargetSdkVersion();
+                    if (targetSdkVersion >= 1) {
+                        gradleValue = Integer.toString(targetSdkVersion);
+                    }
+                } else if (ATTR_VERSION_CODE.equals(attributeName)) {
+                    int versionCode = flavor.getVersionCode();
+                    if (versionCode != -1) {
+                        gradleValue = Integer.toString(versionCode);
+                    }
+                } else if (ATTR_VERSION_NAME.equals(attributeName)) {
+                    gradleValue = flavor.getVersionName();
+                } else {
+                    assert false : attributeName;
+                    return;
+                }
+
+                if (gradleValue != null) {
+                    String manifestValue = attribute.getValue();
+                    String message = String.format("This %1$s value (%2$s) is not used; it is "
+                            + "always overridden by the value specified in the Gradle build "
+                            + "script (%3$s)", attributeName,  manifestValue, gradleValue);
+                    context.report(GRADLE_OVERRIDES, attribute, context.getLocation(attribute),
+                            message, null);
+                }
+            }
         }
     }
 
@@ -552,6 +663,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                             "The android:minSdkVersion cannot be a resource url, it must be "
                                     + "a literal integer (or string if a preview codename)", null);
                 }
+
+                checkOverride(context, element, ATTR_MIN_SDK_VERSION);
             }
 
             if (!element.hasAttributeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION)) {
@@ -565,19 +678,23 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                         "compatibility behaviors may be enabled) with " +
                         "android:targetSdkVersion=\"?\"", null);
                 }
-            } else if (context.isEnabled(TARGET_NEWER)){
-                String target = element.getAttributeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION);
-                try {
-                    int api = Integer.parseInt(target);
-                    if (api < context.getClient().getHighestKnownApiLevel()) {
-                        context.report(TARGET_NEWER, element, context.getLocation(element),
-                                "Not targeting the latest versions of Android; compatibility " +
-                                "modes apply. Consider testing and updating this version. " +
-                                "Consult the android.os.Build.VERSION_CODES javadoc for details.",
-                                null);
+            } else {
+                checkOverride(context, element, ATTR_TARGET_SDK_VERSION);
+
+                if (context.isEnabled(TARGET_NEWER)){
+                    String target = element.getAttributeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION);
+                    try {
+                        int api = Integer.parseInt(target);
+                        if (api < context.getClient().getHighestKnownApiLevel()) {
+                            context.report(TARGET_NEWER, element, context.getLocation(element),
+                                    "Not targeting the latest versions of Android; compatibility " +
+                                            "modes apply. Consider testing and updating this version. " +
+                                            "Consult the android.os.Build.VERSION_CODES javadoc for details.",
+                                    null);
+                        }
+                    } catch (NumberFormatException nufe) {
+                        // Ignore: AAPT will enforce this.
                     }
-                } catch (NumberFormatException nufe) {
-                    // Ignore: AAPT will enforce this.
                 }
             }
 
@@ -643,20 +760,22 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
         if (tag.equals(TAG_APPLICATION)) {
             mSeenApplication = true;
-            if (!element.hasAttributeNS(ANDROID_URI, SdkConstants.ATTR_ALLOW_BACKUP)
-                    && context.isEnabled(ALLOW_BACKUP)
-                    && context.getMainProject().getMinSdk() >= 4) {
-                // TODO: For gradle, just needs to be set SOMEWHERE
-                context.report(ALLOW_BACKUP, element, context.getLocation(element),
-                            "Should explicitly set android:allowBackup to true or " +
-                            "false (it's true by default, and that can have some security " +
-                            "implications for the application's data)", null);
+            boolean recordLocation = false;
+            if (element.hasAttributeNS(ANDROID_URI, ATTR_ALLOW_BACKUP)
+                    || context.getDriver().isSuppressed(ALLOW_BACKUP, element)) {
+                mSeenAllowBackup = true;
+            } else {
+                recordLocation = true;
             }
-
-            if (!element.hasAttributeNS(ANDROID_URI, SdkConstants.ATTR_ICON)
-                    && !context.getProject().isLibrary()) {
-                context.report(APPLICATION_ICON, element, context.getLocation(element),
-                            "Should explicitly set android:icon, there is no default", null);
+            if (element.hasAttributeNS(ANDROID_URI, ATTR_ICON)
+                    || context.getDriver().isSuppressed(APPLICATION_ICON, element)) {
+                mSeenAppIcon = true;
+            } else {
+                recordLocation = true;
+            }
+            if (recordLocation && !context.getProject().isLibrary() &&
+                    (mApplicationTagHandle == null || isMainManifest(context, context.file))) {
+                mApplicationTagHandle = context.parser.createLocationHandle(context, element);
             }
         } else if (mSeenApplication) {
             if (context.isEnabled(ORDER)) {
@@ -684,6 +803,18 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 }
             }
         }
+    }
+
+    /** Returns true iff the given manifest file is the main manifest file */
+    private static boolean isMainManifest(XmlContext context, File manifestFile) {
+        if (!context.getProject().isGradleProject()) {
+            // In non-gradle projects, just one manifest per project
+            return true;
+        }
+
+        AndroidProject model = context.getProject().getGradleProjectModel();
+        return model == null || manifestFile
+                .equals(model.getDefaultConfig().getSourceProvider().getManifestFile());
     }
 
     /** Returns true iff the given manifest file is in a debug-specific source set */

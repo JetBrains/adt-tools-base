@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.annotations.NonNull
 import org.gradle.api.internal.file.FileResolver
+import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
 
 /**
@@ -31,7 +32,8 @@ public class GroupableProductFlavorDsl extends ProductFlavorDsl {
     public GroupableProductFlavorDsl(
             @NonNull String name,
             @NonNull FileResolver fileResolver,
-            @NonNull Instantiator instantiator) {
-        super(name, fileResolver, instantiator)
+            @NonNull Instantiator instantiator,
+            @NonNull Logger logger) {
+        super(name, fileResolver, instantiator, logger)
     }
 }

@@ -60,9 +60,6 @@ public class TypoLookup {
     /** Default size to reserve for each API entry when creating byte buffer to build up data */
     private static final int BYTES_PER_ENTRY = 28;
 
-    private final LintClient mClient;
-    private final File mXmlFile;
-    private final File mBinaryFile;
     private byte[] mData;
     private int[] mIndices;
     private int mWordCount;
@@ -117,6 +114,7 @@ public class TypoLookup {
                 }
 
                 if (file == null || !file.exists()) {
+                    //noinspection VariableNotUsedInsideIf
                     if (region != null) {
                         // Fall back to the generic locale (non-region-specific) database
                         return get(client, locale, null);
@@ -223,29 +221,23 @@ public class TypoLookup {
             @NonNull LintClient client,
             @NonNull File xmlFile,
             @Nullable File binaryFile) {
-        mClient = client;
-        mXmlFile = xmlFile;
-        mBinaryFile = binaryFile;
-
         if (binaryFile != null) {
-            readData();
+            readData(client, xmlFile, binaryFile);
         }
     }
 
     private TypoLookup() {
-        mClient = null;
-        mXmlFile = null;
-        mBinaryFile = null;
     }
 
-    private void readData() {
-        if (!mBinaryFile.exists()) {
-            mClient.log(null, "%1$s does not exist", mBinaryFile);
+    private void readData(@NonNull LintClient client, @NonNull File xmlFile,
+            @NonNull File binaryFile) {
+        if (!binaryFile.exists()) {
+            client.log(null, "%1$s does not exist", binaryFile);
             return;
         }
         long start = System.currentTimeMillis();
         try {
-            MappedByteBuffer buffer = Files.map(mBinaryFile, MapMode.READ_ONLY);
+            MappedByteBuffer buffer = Files.map(binaryFile, MapMode.READ_ONLY);
             assert buffer.order() == ByteOrder.BIG_ENDIAN;
 
             // First skip the header
@@ -253,7 +245,7 @@ public class TypoLookup {
             buffer.rewind();
             for (int offset = 0; offset < expectedHeader.length; offset++) {
                 if (expectedHeader[offset] != buffer.get()) {
-                    mClient.log(null, "Incorrect file header: not an typo database cache " +
+                    client.log(null, "Incorrect file header: not an typo database cache " +
                             "file, or a corrupt cache file");
                     return;
                 }
@@ -262,8 +254,8 @@ public class TypoLookup {
             // Read in the format number
             if (buffer.get() != BINARY_FORMAT_VERSION) {
                 // Force regeneration of new binary data with up to date format
-                if (createCache(mClient, mXmlFile, mBinaryFile)) {
-                    readData(); // Recurse
+                if (createCache(client, xmlFile, binaryFile)) {
+                    readData(client, xmlFile, binaryFile); // Recurse
                 }
 
                 return;
@@ -296,7 +288,7 @@ public class TypoLookup {
             // TODO: Investigate (profile) accessing the byte buffer directly instead of
             // accessing a byte array.
         } catch (IOException e) {
-            mClient.log(e, null);
+            client.log(e, null);
         }
         if (WRITE_STATS) {
             long end = System.currentTimeMillis();
@@ -307,7 +299,7 @@ public class TypoLookup {
         }
     }
 
-    /** See the {@link #readData()} for documentation on the data format. */
+    /** See the {@link #readData(LintClient,File,File)} for documentation on the data format. */
     private static void writeDatabase(File file, List<String> lines) throws IOException {
         /*
          * 1. A file header, which is the exact contents of {@link FILE_HEADER} encoded

@@ -17,10 +17,12 @@
 package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 import org.gradle.api.artifacts.Configuration;
 
 /**
- * Provides the compile and package configuration.
+ * Provides the compile, provided and package configurations.
  */
 public interface ConfigurationProvider {
 
@@ -29,4 +31,7 @@ public interface ConfigurationProvider {
 
     @NonNull
     Configuration getPackageConfiguration();
+
+    @Nullable
+    Configuration getProvidedConfiguration();
 }

@@ -1,8 +1,8 @@
 body {
     max-width: 800px;
     background-color: #000000;
-    background: -webkit-gradient(linear, left top, left bottom, from(#000000), to(#272d33));
-    background: -moz-linear-gradient(top, #000000, #272d33);
+    background: -webkit-gradient(linear, left top, right bottom, from(#000000), to(#272d33));
+    background: -moz-linear-gradient(left top, #000000, #272d33);
     color: #f3f3f3;
     font-family: 'Roboto', Sans-Serif;
 }

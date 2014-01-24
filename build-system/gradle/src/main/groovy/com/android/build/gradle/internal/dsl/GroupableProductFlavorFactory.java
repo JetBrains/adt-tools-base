@@ -19,28 +19,33 @@ package com.android.build.gradle.internal.dsl;
 import com.android.annotations.NonNull;
 import org.gradle.api.NamedDomainObjectFactory;
 import org.gradle.api.internal.file.FileResolver;
+import org.gradle.api.logging.Logger;
 import org.gradle.internal.reflect.Instantiator;
 
 /**
  * Factory to create GroupableProductFlavorDsl object using an {@link Instantiator} to add
  * the DSL methods.
  */
-class GroupableProductFlavorFactory implements NamedDomainObjectFactory<GroupableProductFlavorDsl> {
+public class GroupableProductFlavorFactory implements NamedDomainObjectFactory<GroupableProductFlavorDsl> {
 
     @NonNull
     private final Instantiator instantiator;
     @NonNull
     private final FileResolver fileResolver;
+    @NonNull
+    private final Logger logger;
 
     public GroupableProductFlavorFactory(@NonNull Instantiator instantiator,
-                                         @NonNull FileResolver fileResolver) {
+                                         @NonNull FileResolver fileResolver,
+                                         @NonNull Logger logger) {
         this.fileResolver = fileResolver;
         this.instantiator = instantiator;
+        this.logger = logger;
     }
 
     @Override
     public GroupableProductFlavorDsl create(String name) {
         return instantiator.newInstance(GroupableProductFlavorDsl.class,
-                name, fileResolver, instantiator);
+                name, fileResolver, instantiator, logger);
     }
 }

@@ -32,14 +32,17 @@ public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, 
     private static final long serialVersionUID = 1L;
 
     public static JavaArtifactImpl clone(@NonNull JavaArtifact javaArtifact) {
+        SourceProvider variantSP = javaArtifact.getVariantSourceProvider();
+        SourceProvider flavorsSP = javaArtifact.getMultiFlavorSourceProvider();
+
         return new JavaArtifactImpl(
                 javaArtifact.getName(),
                 javaArtifact.getAssembleTaskName(),
                 javaArtifact.getJavaCompileTaskName(),
                 javaArtifact.getClassesFolder(),
-                javaArtifact.getDependencies(), // TODO:FixME
-                SourceProviderImpl.cloneProvider(javaArtifact.getVariantSourceProvider()),
-                SourceProviderImpl.cloneProvider(javaArtifact.getMultiFlavorSourceProvider()));
+                DependenciesImpl.cloneDependenciesForJavaArtifacts(javaArtifact.getDependencies()),
+                variantSP != null ? SourceProviderImpl.cloneProvider(variantSP) : null,
+                flavorsSP != null ? SourceProviderImpl.cloneProvider(flavorsSP) : null);
     }
 
     public JavaArtifactImpl(@NonNull String name,

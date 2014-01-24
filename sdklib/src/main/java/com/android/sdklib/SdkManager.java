@@ -25,21 +25,21 @@ import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.sdklib.internal.androidTarget.AddOnTarget;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
-import com.android.sdklib.local.LocalExtraPkgInfo;
-import com.android.sdklib.local.LocalPkgInfo;
-import com.android.sdklib.local.LocalPlatformPkgInfo;
-import com.android.sdklib.local.LocalSdk;
 import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgType;
+import com.android.sdklib.repository.local.LocalExtraPkgInfo;
+import com.android.sdklib.repository.local.LocalPkgInfo;
+import com.android.sdklib.repository.local.LocalSdk;
 import com.android.utils.ILogger;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -52,6 +52,7 @@ import java.util.TreeSet;
  */
 public class SdkManager {
 
+    @SuppressWarnings("unused")
     private static final boolean DEBUG = System.getenv("SDKMAN_DEBUG") != null;        //$NON-NLS-1$
 
     /** Preference file containing the usb ids for adb */
@@ -64,9 +65,6 @@ public class SdkManager {
 
     /** Embedded reference to the new local SDK object. */
     private final LocalSdk mLocalSdk;
-
-    /** Cache of targets from local sdk. See {@link #getTargets()}. */
-    private IAndroidTarget[] mCachedTargets;
 
     /**
      * Create a new {@link SdkManager} instance.
@@ -112,8 +110,7 @@ public class SdkManager {
      * @param log the ILogger object receiving warning/error from the parsing.
      */
     public void reloadSdk(@NonNull ILogger log) {
-        mCachedTargets = null;
-        mLocalSdk.clearLocalPkg(LocalSdk.PKG_ALL);
+        mLocalSdk.clearLocalPkg(PkgType.PKG_ALL);
     }
 
     /**
@@ -136,9 +133,9 @@ public class SdkManager {
      * @return True if at least one directory or source.prop has changed.
      */
     public boolean hasChanged(@Nullable ILogger log) {
-        return mLocalSdk.hasChanged(LocalSdk.PKG_PLATFORMS |
-                                    LocalSdk.PKG_ADDONS |
-                                    LocalSdk.PKG_BUILD_TOOLS);
+        return mLocalSdk.hasChanged(EnumSet.of(PkgType.PKG_PLATFORMS,
+                                               PkgType.PKG_ADDONS,
+                                               PkgType.PKG_BUILD_TOOLS));
     }
 
     /**
@@ -161,24 +158,7 @@ public class SdkManager {
      */
     @NonNull
     public IAndroidTarget[] getTargets() {
-        if (mCachedTargets == null) {
-            LocalPkgInfo[] pkgsInfos = mLocalSdk.getPkgsInfos(LocalSdk.PKG_PLATFORMS |
-                                                              LocalSdk.PKG_ADDONS);
-            int n = pkgsInfos.length;
-            List<IAndroidTarget> targets = new ArrayList<IAndroidTarget>(n);
-            for (int i = 0; i < n; i++) {
-                LocalPkgInfo info = pkgsInfos[i];
-                assert info instanceof LocalPlatformPkgInfo;
-                if (info instanceof LocalPlatformPkgInfo) {
-                    IAndroidTarget target = ((LocalPlatformPkgInfo) info).getAndroidTarget();
-                    if (target != null) {
-                        targets.add(target);
-                    }
-                }
-            }
-            mCachedTargets = targets.toArray(new IAndroidTarget[targets.size()]);
-        }
-        return mCachedTargets;
+        return mLocalSdk.getTargets();
     }
 
     /**
@@ -188,11 +168,12 @@ public class SdkManager {
     @Deprecated
     @NonNull
     public Set<FullRevision> getBuildTools() {
-        LocalPkgInfo[] pkgs = mLocalSdk.getPkgsInfos(LocalSdk.PKG_BUILD_TOOLS);
+        LocalPkgInfo[] pkgs = mLocalSdk.getPkgsInfos(PkgType.PKG_BUILD_TOOLS);
         TreeSet<FullRevision> bt = new TreeSet<FullRevision>();
         for (LocalPkgInfo pkg : pkgs) {
-            if (pkg.hasFullRevision()) {
-                bt.add(pkg.getFullRevision());
+            IPkgDesc d = pkg.getDesc();
+            if (d.hasFullRevision()) {
+                bt.add(d.getFullRevision());
             }
         }
         return Collections.unmodifiableSet(bt);
@@ -308,7 +289,7 @@ public class SdkManager {
     @NonNull
     public Map<File, String> getExtraSamples() {
 
-        LocalPkgInfo[] pkgsInfos = mLocalSdk.getPkgsInfos(LocalSdk.PKG_EXTRAS);
+        LocalPkgInfo[] pkgsInfos = mLocalSdk.getPkgsInfos(PkgType.PKG_EXTRAS);
         Map<File, String> samples = new HashMap<File, String>();
 
         for (LocalPkgInfo info : pkgsInfos) {
@@ -341,21 +322,22 @@ public class SdkManager {
      * @return A non-null possibly empty map of { string "vendor/path" => integer major revision }
      * @deprecated Starting with add-on schema 6, extras can have full revisions instead of just
      *   major revisions. This API only returns the major revision. Callers should be modified
-     *   to use the new {code LocalSdk.getPkgInfo(LocalSdk.PKG_EXTRAS)} API instead.
+     *   to use the new {code LocalSdk.getPkgInfo(PkgType.PKG_EXTRAS)} API instead.
      */
     @Deprecated
     @NonNull
     public Map<String, Integer> getExtrasVersions() {
-        LocalPkgInfo[] pkgsInfos = mLocalSdk.getPkgsInfos(LocalSdk.PKG_EXTRAS);
+        LocalPkgInfo[] pkgsInfos = mLocalSdk.getPkgsInfos(PkgType.PKG_EXTRAS);
         Map<String, Integer> extraVersions = new TreeMap<String, Integer>();
 
         for (LocalPkgInfo info : pkgsInfos) {
             assert info instanceof LocalExtraPkgInfo;
             if (info instanceof LocalExtraPkgInfo) {
                 LocalExtraPkgInfo ei = (LocalExtraPkgInfo) info;
-                String vendor = ei.getVendorId();
-                String path   = ei.getExtraPath();
-                int majorRev  = ei.getFullRevision().getMajor();
+                IPkgDesc d = ei.getDesc();
+                String vendor = d.getVendorId();
+                String path   = d.getPath();
+                int majorRev  = d.getFullRevision().getMajor();
 
                 extraVersions.put(vendor + '/' + path, majorRev);
             }
@@ -367,9 +349,10 @@ public class SdkManager {
     /** Returns the platform tools version if installed, null otherwise. */
     @Nullable
     public String getPlatformToolsVersion() {
-        LocalPkgInfo info = mLocalSdk.getPkgInfo(LocalSdk.PKG_PLATFORM_TOOLS);
-        if (info != null && info.hasFullRevision()) {
-            return info.getFullRevision().toShortString();
+        LocalPkgInfo info = mLocalSdk.getPkgInfo(PkgType.PKG_PLATFORM_TOOLS);
+        IPkgDesc d = info == null ? null : info.getDesc();
+        if (d != null && d.hasFullRevision()) {
+            return d.getFullRevision().toShortString();
         }
 
         return null;

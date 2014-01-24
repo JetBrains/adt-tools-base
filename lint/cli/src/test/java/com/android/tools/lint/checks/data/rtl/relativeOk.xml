@@ -31,6 +31,8 @@
         android:ellipsize="end"
         android:maxLines="3"
         android:paddingRight="120dip"
+        android:paddingLeft="60dip"
+        android:paddingStart="60dip"
         android:paddingEnd="120dip"
         android:text="@string/creating_instant_mix"
         android:textAppearance="?android:attr/textAppearanceMedium" />

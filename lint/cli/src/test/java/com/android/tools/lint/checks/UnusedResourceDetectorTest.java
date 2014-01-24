@@ -258,7 +258,6 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
             "No warnings.",
 
              lintProject(
-                 "res/layout/accessibility.xml",
                  "src/test/pkg/Foo.java.txt=>src/test/pkg/Foo.java",
                  "AndroidManifest.xml"));
     }

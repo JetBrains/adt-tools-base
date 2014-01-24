@@ -53,4 +53,31 @@ public class InvalidPackageDetectorTest extends AbstractCheckTest {
                 "bytecode/classes.jar=>libs/classes.jar"
             ));
     }
+
+    public void testLibraryInJavax() throws Exception {
+        assertEquals(
+            "No warnings.",
+
+            lintProject(
+                "apicheck/minsdk14.xml=>AndroidManifest.xml",
+                "apicheck/layout.xml=>res/layout/layout.xml",
+                "apicheck/themes.xml=>res/values/themes.xml",
+                "apicheck/themes.xml=>res/color/colors.xml",
+                "bytecode/javax.jar.data=>libs/javax.jar"
+            ));
+    }
+
+    public void testAnnotationProcessors() throws Exception {
+        // See https://code.google.com/p/android/issues/detail?id=64014
+        assertEquals(
+            "No warnings.",
+
+            lintProject(
+                "apicheck/minsdk14.xml=>AndroidManifest.xml",
+                "apicheck/layout.xml=>res/layout/layout.xml",
+                "apicheck/themes.xml=>res/values/themes.xml",
+                "apicheck/themes.xml=>res/color/colors.xml",
+                "bytecode/butterknife-2.0.1.jar.data=>libs/butterknife-2.0.1.jar"
+            ));
+    }
 }

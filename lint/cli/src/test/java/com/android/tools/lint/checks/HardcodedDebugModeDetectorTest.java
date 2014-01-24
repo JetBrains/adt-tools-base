@@ -27,10 +27,10 @@ public class HardcodedDebugModeDetectorTest extends AbstractCheckTest {
 
     public void test() throws Exception {
         assertEquals(
-            "AndroidManifest.xml:10: Warning: Avoid hardcoding the debug mode; leaving it out allows debug and release builds to automatically assign one [HardcodedDebugMode]\n" +
+            "AndroidManifest.xml:10: Error: Avoid hardcoding the debug mode; leaving it out allows debug and release builds to automatically assign one [HardcodedDebugMode]\n" +
             "        android:debuggable=\"true\"\n" +
             "        ~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 1 warnings\n" +
+            "1 errors, 0 warnings\n" +
             "",
             lintProject("debuggable.xml=>AndroidManifest.xml"));
     }

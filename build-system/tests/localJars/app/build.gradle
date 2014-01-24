@@ -2,7 +2,12 @@ apply plugin: 'android'
 
 android {
     compileSdkVersion 15
-    buildToolsVersion "18.0.1"
+    buildToolsVersion "19.0.1"
+
+    packagingOptions {
+        exclude 'META-INF/exclude.txt'
+        exclude 'META-INF/LICENSE'
+    }
 }
 
 dependencies {

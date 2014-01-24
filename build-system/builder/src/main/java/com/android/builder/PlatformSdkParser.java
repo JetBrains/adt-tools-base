@@ -45,6 +45,8 @@ public class PlatformSdkParser implements SdkParser {
 
     public PlatformSdkParser(@NonNull String sdkLocation) {
         mPlatformRootFolder = sdkLocation;
+        // This parser should ONLY be used on platforms where the following is true
+        assert File.separatorChar == '/';
     }
 
     @Override

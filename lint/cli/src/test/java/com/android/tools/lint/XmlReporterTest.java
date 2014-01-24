@@ -48,6 +48,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                     return "unittest"; // Hardcode version to keep unit test output stable
                 }
             };
+            //noinspection ResultOfMethodCallIgnored
             file.getParentFile().mkdirs();
             XmlReporter reporter = new XmlReporter(client, file);
             Project project = Project.create(client, new File("/foo/bar/Foo"),
@@ -135,6 +136,7 @@ public class XmlReporterTest extends AbstractCheckTest {
             assertNotNull(document);
             assertEquals(2, document.getElementsByTagName("issue").getLength());
         } finally {
+            //noinspection ResultOfMethodCallIgnored
             file.delete();
         }
     }
@@ -150,6 +152,7 @@ public class XmlReporterTest extends AbstractCheckTest {
             };
             client.mFlags.setFullPath(true);
 
+            //noinspection ResultOfMethodCallIgnored
             file.getParentFile().mkdirs();
             XmlReporter reporter = new XmlReporter(client, file);
             Project project = Project.create(client, new File("/foo/bar/Foo"),
@@ -237,6 +240,7 @@ public class XmlReporterTest extends AbstractCheckTest {
             assertNotNull(document);
             assertEquals(2, document.getElementsByTagName("issue").getLength());
         } finally {
+            //noinspection ResultOfMethodCallIgnored
             file.delete();
         }
     }
@@ -251,6 +255,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                     return "unittest"; // Hardcode version to keep unit test output stable
                 }
             };
+            //noinspection ResultOfMethodCallIgnored
             file.getParentFile().mkdirs();
             XmlReporter reporter = new XmlReporter(client, file);
             Project project = Project.create(client, new File("/foo/bar/Foo"),
@@ -306,6 +311,7 @@ public class XmlReporterTest extends AbstractCheckTest {
             assertEquals(TypographyDetector.FRACTIONS.getExplanation(Issue.OutputFormat.RAW),
                     explanation);
         } finally {
+            //noinspection ResultOfMethodCallIgnored
             file.delete();
         }
     }

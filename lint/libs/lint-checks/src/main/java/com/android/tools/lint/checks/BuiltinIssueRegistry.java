@@ -36,7 +36,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
     static {
-        final int initialCapacity = 161;
+        final int initialCapacity = 164;
         List<Issue> issues = new ArrayList<Issue>(initialCapacity);
 
         issues.add(AccessibilityDetector.ISSUE);
@@ -57,7 +57,8 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(WrongIdDetector.INVALID);
         issues.add(LayoutConsistencyDetector.INCONSISTENT_IDS);
         issues.add(StateListDetector.ISSUE);
-        issues.add(StyleCycleDetector.ISSUE);
+        issues.add(ResourceCycleDetector.CYCLE);
+        issues.add(ResourceCycleDetector.CRASH);
         issues.add(InefficientWeightDetector.INEFFICIENT_WEIGHT);
         issues.add(InefficientWeightDetector.NESTED_WEIGHTS);
         issues.add(InefficientWeightDetector.BASELINE_WEIGHTS);
@@ -128,6 +129,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ManifestDetector.APPLICATION_ICON);
         issues.add(ManifestDetector.DEVICE_ADMIN);
         issues.add(ManifestDetector.MOCK_LOCATION);
+        issues.add(ManifestDetector.GRADLE_OVERRIDES);
         issues.add(ManifestTypoDetector.ISSUE);
         issues.add(SecurityDetector.EXPORTED_PROVIDER);
         issues.add(SecurityDetector.EXPORTED_SERVICE);
@@ -199,6 +201,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(WrongCallDetector.ISSUE);
         issues.add(RtlDetector.COMPAT);
         issues.add(RtlDetector.ENABLED);
+        issues.add(RtlDetector.SYMMETRY);
         issues.add(RtlDetector.USE_START);
 
         assert initialCapacity >= issues.size() : issues.size();

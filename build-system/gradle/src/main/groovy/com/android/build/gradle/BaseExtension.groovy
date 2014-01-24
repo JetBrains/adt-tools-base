@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.dsl.AaptOptionsImpl
 import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory
 import com.android.build.gradle.internal.dsl.DexOptionsImpl
 import com.android.build.gradle.internal.dsl.LintOptionsImpl
+import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.build.gradle.internal.dsl.ProductFlavorDsl
 import com.android.build.gradle.internal.test.TestOptions
 import com.android.builder.BuilderConstants
@@ -61,6 +62,7 @@ public abstract class BaseExtension {
     final DexOptionsImpl dexOptions
     final TestOptions testOptions
     final CompileOptions compileOptions
+    final PackagingOptionsImpl packagingOptions
 
     private final DefaultDomainObjectSet<TestVariant> testVariantList =
         new DefaultDomainObjectSet<TestVariant>(TestVariant.class)
@@ -80,13 +82,14 @@ public abstract class BaseExtension {
         this.plugin = plugin
 
         defaultConfig = instantiator.newInstance(ProductFlavorDsl.class, BuilderConstants.MAIN,
-                project.fileResolver, instantiator)
+                project.fileResolver, instantiator, project.getLogger())
 
         aaptOptions = instantiator.newInstance(AaptOptionsImpl.class)
         dexOptions = instantiator.newInstance(DexOptionsImpl.class)
         lintOptions = instantiator.newInstance(LintOptionsImpl.class)
         testOptions = instantiator.newInstance(TestOptions.class)
         compileOptions = instantiator.newInstance(CompileOptions.class)
+        packagingOptions = instantiator.newInstance(PackagingOptionsImpl.class)
 
         sourceSetsContainer = project.container(AndroidSourceSet,
                 new AndroidSourceSetFactory(instantiator, project.fileResolver))
@@ -113,6 +116,15 @@ public abstract class BaseExtension {
             packageConfiguration.setDescription(
                     String.format("Classpath packaged with the compiled %s classes.",
                             sourceSet.getName()));
+
+            Configuration providedConfiguration = configurations.findByName(
+                    sourceSet.getProvidedConfigurationName())
+            if (providedConfiguration == null) {
+                providedConfiguration = configurations.create(sourceSet.getProvidedConfigurationName())
+            }
+            providedConfiguration.setVisible(false);
+            providedConfiguration.setDescription(
+                    String.format("Classpath for only compiling the %s sources.", sourceSet.getName()))
 
             sourceSet.setRoot(String.format("src/%s", sourceSet.getName()))
         }
@@ -186,6 +198,11 @@ public abstract class BaseExtension {
         action.execute(compileOptions)
     }
 
+    void packagingOptions(Action<PackagingOptionsImpl> action) {
+        plugin.checkTasksAlreadyCreated();
+        action.execute(packagingOptions)
+    }
+
     void deviceProvider(DeviceProvider deviceProvider) {
         plugin.checkTasksAlreadyCreated();
         deviceProviderList.add(deviceProvider)
@@ -240,10 +257,11 @@ public abstract class BaseExtension {
             @NonNull BaseVariant variant,
             @NonNull String assembleTaskName,
             @NonNull String javaCompileTaskName,
+            @NonNull Configuration configuration,
             @NonNull File classesFolder,
             @Nullable SourceProvider sourceProvider) {
         plugin.registerJavaArtifact(name, variant, assembleTaskName, javaCompileTaskName,
-                classesFolder, sourceProvider)
+                configuration, classesFolder, sourceProvider)
     }
 
     public void registerMultiFlavorSourceProvider(

@@ -23,6 +23,7 @@ import com.android.builder.PlatformSdkParser
 import com.android.builder.SdkParser
 import com.android.sdklib.repository.FullRevision
 import com.android.utils.ILogger
+import com.google.common.base.Charsets
 import org.gradle.api.Project
 
 import static com.android.SdkConstants.FN_LOCAL_PROPERTIES
@@ -168,9 +169,17 @@ public class Sdk {
         def localProperties = new File(rootDir, FN_LOCAL_PROPERTIES)
         if (localProperties.exists()) {
             Properties properties = new Properties()
-            localProperties.withInputStream { instr ->
-                properties.load(instr)
+
+            FileInputStream fis = new FileInputStream(localProperties)
+            InputStreamReader reader = new InputStreamReader(fis, Charsets.UTF_8)
+            try {
+                properties.load(reader)
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to read ${localProperties}", e)
+            } finally {
+                reader.close()
             }
+
             def sdkDirProp = properties.getProperty('sdk.dir')
 
             if (sdkDirProp != null) {

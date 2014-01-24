@@ -54,7 +54,7 @@ abstract class BuildTest extends BaseTest {
     }
 
     protected File buildProject(String name, String gradleVersion) {
-        return runTasksOnProject(name, gradleVersion, "clean", "assembleDebug");
+        return runTasksOnProject(name, gradleVersion, "clean", "assembleDebug", "lint");
     }
 
     protected File runTasksOnProject(String name, String gradleVersion, String... tasks) {

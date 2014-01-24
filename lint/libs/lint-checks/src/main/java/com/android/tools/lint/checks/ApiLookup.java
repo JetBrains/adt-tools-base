@@ -84,9 +84,6 @@ public class ApiLookup {
     /** Default size to reserve for each API entry when creating byte buffer to build up data */
     private static final int BYTES_PER_ENTRY = 36;
 
-    private final LintClient mClient;
-    private final File mXmlFile;
-    private final File mBinaryFile;
     private final Api mInfo;
     private byte[] mData;
     private int[] mIndices;
@@ -107,7 +104,8 @@ public class ApiLookup {
      * @return a (possibly shared) instance of the API database, or null
      *         if its data can't be found
      */
-    public static ApiLookup get(LintClient client) {
+    @Nullable
+    public static ApiLookup get(@NonNull LintClient client) {
         synchronized (ApiLookup.class) {
             ApiLookup db = sInstance.get();
             if (db == null) {
@@ -122,7 +120,6 @@ public class ApiLookup {
                 }
 
                 if (file == null || !file.exists()) {
-                    client.log(null, "Fatal error: No API database found at %1$s", file);
                     return null;
                 } else {
                     db = get(client, file);
@@ -220,13 +217,10 @@ public class ApiLookup {
             @NonNull File xmlFile,
             @Nullable File binaryFile,
             @Nullable Api info) {
-        mClient = client;
-        mXmlFile = xmlFile;
-        mBinaryFile = binaryFile;
         mInfo = info;
 
         if (binaryFile != null) {
-            readData();
+            readData(client, xmlFile, binaryFile);
         }
     }
 
@@ -263,14 +257,15 @@ public class ApiLookup {
      * in readData().
      * </pre>
      */
-    private void readData() {
-        if (!mBinaryFile.exists()) {
-            mClient.log(null, "%1$s does not exist", mBinaryFile);
+    private void readData(@NonNull LintClient client, @NonNull File xmlFile,
+            @NonNull File binaryFile) {
+        if (!binaryFile.exists()) {
+            client.log(null, "%1$s does not exist", binaryFile);
             return;
         }
         long start = System.currentTimeMillis();
         try {
-            MappedByteBuffer buffer = Files.map(mBinaryFile, MapMode.READ_ONLY);
+            MappedByteBuffer buffer = Files.map(binaryFile, MapMode.READ_ONLY);
             assert buffer.order() == ByteOrder.BIG_ENDIAN;
 
             // First skip the header
@@ -278,7 +273,7 @@ public class ApiLookup {
             buffer.rewind();
             for (int offset = 0; offset < expectedHeader.length; offset++) {
                 if (expectedHeader[offset] != buffer.get()) {
-                    mClient.log(null, "Incorrect file header: not an API database cache " +
+                    client.log(null, "Incorrect file header: not an API database cache " +
                             "file, or a corrupt cache file");
                     return;
                 }
@@ -287,8 +282,8 @@ public class ApiLookup {
             // Read in the format number
             if (buffer.get() != BINARY_FORMAT_VERSION) {
                 // Force regeneration of new binary data with up to date format
-                if (createCache(mClient, mXmlFile, mBinaryFile)) {
-                    readData(); // Recurse
+                if (createCache(client, xmlFile, binaryFile)) {
+                    readData(client, xmlFile, binaryFile); // Recurse
                 }
 
                 return;
@@ -332,10 +327,10 @@ public class ApiLookup {
             // TODO: Investigate (profile) accessing the byte buffer directly instead of
             // accessing a byte array.
         } catch (Throwable e) {
-            mClient.log(null, "Failure reading binary cache file %1$s", mBinaryFile.getPath());
-            mClient.log(null, "Please delete the file and restart the IDE/lint: %1$s",
-                    mBinaryFile.getPath());
-            mClient.log(e, null);
+            client.log(null, "Failure reading binary cache file %1$s", binaryFile.getPath());
+            client.log(null, "Please delete the file and restart the IDE/lint: %1$s",
+                    binaryFile.getPath());
+            client.log(e, null);
         }
         if (WRITE_STATS) {
             long end = System.currentTimeMillis();
@@ -346,7 +341,7 @@ public class ApiLookup {
         }
     }
 
-    /** See the {@link #readData()} for documentation on the data format. */
+    /** See the {@link #readData(LintClient,File,File)} for documentation on the data format. */
     private static void writeDatabase(File file, Api info) throws IOException {
         /*
          * 1. A file header, which is the exact contents of {@link FILE_HEADER} encoded

@@ -2,7 +2,7 @@ apply plugin: 'android'
 
 android {
     compileSdkVersion 15
-    buildToolsVersion "18.0.1"
+    buildToolsVersion "19.0.1"
 }
 
 // query for all (non-test) variants and inject a new step in the builds
@@ -21,7 +21,7 @@ android.applicationVariants.all { variant ->
 
     // now make the dex task depend on it and use its output
     variant.dex.dependsOn jarTask
-    variant.dex.sourceFiles = files(jarTask.archivePath).files
+    variant.dex.inputFiles = files(jarTask.archivePath).files
 }
 
 project.afterEvaluate {

@@ -16,10 +16,15 @@
 
 package com.android.ide.common.xml;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.resources.ResourceFolderType;
 import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -28,11 +33,14 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.TAG_COLOR;
 import static com.android.SdkConstants.TAG_DIMEN;
 import static com.android.SdkConstants.TAG_ITEM;
@@ -1102,5 +1110,115 @@ public class XmlPrettyPrinter {
         }
 
         return true;
+    }
+
+    private static void printUsage() {
+        System.out.println("Usage: " + XmlPrettyPrinter.class.getSimpleName() +
+            " <options>... <files or directories...>");
+        System.out.println("OPTIONS:");
+        System.out.println("--stdout");
+        System.out.println("--removeEmptyLines");
+        System.out.println("--noAttributeOnFirstLine");
+        System.out.println("--noSpaceBeforeClose");
+        System.exit(1);
+    }
+
+    /** Command line driver */
+    public static void main(String[] args) {
+        if (args.length == 0) {
+            printUsage();
+        }
+
+        List<File> files = Lists.newArrayList();
+
+        XmlFormatPreferences prefs = XmlFormatPreferences.defaults();
+        boolean stdout = false;
+
+        for (String arg : args) {
+            if (arg.startsWith("--")) {
+                if ("--stdout".equals(arg)) {
+                    stdout = true;
+                } else if ("--removeEmptyLines".equals(arg)) {
+                    prefs.removeEmptyLines = true;
+                } else if ("--noAttributeOnFirstLine".equals(arg)) {
+                    prefs.oneAttributeOnFirstLine = false;
+                } else if ("--noSpaceBeforeClose".equals(arg)) {
+                    prefs.spaceBeforeClose = false;
+                } else {
+                    System.err.println("Unknown flag " + arg);
+                    printUsage();
+                }
+            } else {
+                File file = new File(arg).getAbsoluteFile();
+                if (!file.exists()) {
+                    System.err.println("Can't find file " + file);
+                    System.exit(1);
+                } else {
+                    files.add(file);
+                }
+            }
+        }
+
+        for (File file : files) {
+            formatFile(prefs, file, stdout);
+        }
+
+        System.exit(0);
+    }
+
+    private static void formatFile(@NonNull XmlFormatPreferences prefs, File file,
+            boolean stdout) {
+        if (file.isDirectory()) {
+            File[] files = file.listFiles();
+            if (files != null) {
+                for (File child : files) {
+                    formatFile(prefs, child, stdout);
+                }
+            }
+        } else if (file.isFile() && SdkUtils.endsWithIgnoreCase(file.getName(), DOT_XML)) {
+            XmlFormatStyle style = null;
+            if (file.getName().equals(SdkConstants.ANDROID_MANIFEST_XML)) {
+                style = XmlFormatStyle.MANIFEST;
+            } else {
+                File parent = file.getParentFile();
+                if (parent != null) {
+                    String parentName = parent.getName();
+                    ResourceFolderType folderType = ResourceFolderType.getFolderType(parentName);
+                    if (folderType == ResourceFolderType.LAYOUT) {
+                        style = XmlFormatStyle.LAYOUT;
+                    } else if (folderType == ResourceFolderType.VALUES) {
+                        style = XmlFormatStyle.RESOURCE;
+                    }
+                }
+            }
+
+            try {
+                String xml = Files.toString(file, Charsets.UTF_8);
+                Document document = XmlUtils.parseDocumentSilently(xml, true);
+                if (document == null) {
+                    System.err.println("Could not parse " + file);
+                    System.exit(1);
+                    return;
+                }
+
+                if (style == null) {
+                    style = XmlFormatStyle.get(document);
+                }
+                boolean endWithNewline = xml.endsWith("\n");
+                int firstNewLine = xml.indexOf('\n');
+                String lineSeparator = firstNewLine > 0 && xml.charAt(firstNewLine - 1) == '\r' ?
+                        "\r\n" : "\n";
+                String formatted = XmlPrettyPrinter.prettyPrint(document, prefs, style,
+                        lineSeparator, endWithNewline);
+                if (stdout) {
+                    System.out.println(formatted);
+                } else {
+                    Files.write(formatted, file, Charsets.UTF_8);
+                }
+            } catch (IOException e) {
+                System.err.println("Could not read " + file);
+                System.exit(1);
+            }
+        }
     }
 }

@@ -27,6 +27,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import org.objectweb.asm.Opcodes;
@@ -42,8 +43,6 @@ import org.objectweb.asm.tree.MethodNode;
 import java.io.File;
 import java.util.List;
 import java.util.Set;
-
-import lombok.ast.libs.org.parboiled.google.collect.Lists;
 
 /**
  * Looks for usages of Java packages that are not included in Android.
@@ -125,6 +124,10 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
 
         if (classNode.name.startsWith(JAVAX_PKG_PREFIX)) {
             mJavaxLibraryClasses.add(classNode.name);
+        } else if ((classNode.access & Opcodes.ACC_ANNOTATION) != 0
+                || classNode.superName.startsWith("javax/annotation/")) {
+            // Don't flag references from annotations and annotation processors
+           return;
         }
 
         List methodList = classNode.methods;
@@ -232,6 +235,8 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
             return;
         }
 
+        Set<String> seen = Sets.newHashSet();
+
         for (Candidate candidate : mCandidates) {
             String type = candidate.mClass;
             if (mJavaxLibraryClasses.contains(type)) {
@@ -241,7 +246,11 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
             String referencedIn = candidate.mReferencedIn;
 
             Location location = Location.create(jarFile);
-            Object pkg = getPackageName(type);
+            String pkg = getPackageName(type);
+            if (seen.contains(pkg)) {
+                continue;
+            }
+            seen.add(pkg);
             String message = String.format(
                     "Invalid package reference in library; not included in Android: %1$s. " +
                     "Referenced from %2$s.", pkg, ClassContext.getFqcn(referencedIn));
@@ -249,7 +258,7 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
         }
     }
 
-    private static Object getPackageName(String owner) {
+    private static String getPackageName(String owner) {
         String pkg = owner;
         int index = pkg.lastIndexOf('/');
         if (index != -1) {

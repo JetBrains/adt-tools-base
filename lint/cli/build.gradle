@@ -6,6 +6,7 @@ archivesBaseName = 'lint'
 
 dependencies {
     compile project(':lint-checks')
+    compile 'org.eclipse.jdt.core.compiler:ecj:4.2.2'
 
     testCompile 'org.easymock:easymock:3.1'
     testCompile 'junit:junit:3.8.1'

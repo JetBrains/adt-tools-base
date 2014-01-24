@@ -4,8 +4,10 @@ tests/api/*/build
 tests/applibtest/*/build
 tests/assets/*/build
 tests/attrOrder/*/build
+tests/basic/lint-report*
 tests/3rdPartyTests/*/build
 tests/dependencies/jarProject/build
+tests/dependencies/jarProject2/build
 tests/flavorlib/*/build
 tests/flavorlibWithFailedTests/*/build
 tests/libProguardJarDep/*/build
@@ -17,6 +19,7 @@ tests/ndkJniLib/*/build
 tests/proguardLib/*/build
 tests/renderscriptInLib/*/build
 tests/repo/*/build
+tests/mavenLocal/*/build
 tests/sameNamedLibs/*/build
 tests/sameNamedLibs/*/*/build
 tests/tictactoe/*/build

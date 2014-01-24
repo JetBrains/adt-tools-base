@@ -37,6 +37,7 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.sdklib.repository.SdkRepoConstants;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.w3c.dom.Node;
@@ -264,6 +265,14 @@ public abstract class Package implements IDescription, IListDescription, Compara
         // installed package.) If it's null, this makes a remote archive.
         mArchives = initializeArchives(props, archiveOs, archiveArch, archiveOsPath);
     }
+
+    /**
+     * Returns the {@link IPkgDesc} describing this package's meta data.
+     *
+     * @return A non-null {@link IPkgDesc}.
+     */
+    @NonNull
+    public abstract IPkgDesc getPkgDesc();
 
     /**
      * Called by the constructor to get the initial {@link #mArchives} array.

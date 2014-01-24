@@ -16,6 +16,9 @@
 
 package com.android.builder;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -34,6 +37,7 @@ import com.android.builder.internal.packaging.JavaResourceProcessor;
 import com.android.builder.internal.packaging.Packager;
 import com.android.builder.model.AaptOptions;
 import com.android.builder.model.ClassField;
+import com.android.builder.model.PackagingOptions;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.packaging.DuplicateFileException;
@@ -59,6 +63,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
+import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -69,9 +76,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * This is the main builder class. It is given all the data to process the build (such as
@@ -84,10 +88,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * then build steps can be done with
  * {@link #processManifest(java.io.File, java.util.List, java.util.List, String, int, String, int, int, String)}
  * {@link #processTestManifest(String, int, int, String, String, Boolean, Boolean, java.util.List, String)}
- * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions)}
+ * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions, java.util.Collection)}
  * {@link #compileAllAidlFiles(java.util.List, java.io.File, java.util.List, com.android.builder.compiling.DependencyFileProcessor)}
- * {@link #convertByteCode(Iterable, Iterable, File, DexOptions, boolean)}
- * {@link #packageApk(String, String, java.util.List, String, java.util.Collection, java.util.Set, boolean, com.android.builder.model.SigningConfig, String)}
+ * {@link #convertByteCode(Iterable, Iterable, java.io.File, DexOptions, java.util.List, boolean)}
+ * {@link #packageApk(String, java.io.File, java.util.List, String, java.util.Collection, java.util.Set, boolean, com.android.builder.model.SigningConfig, com.android.builder.model.PackagingOptions, String)}
  *
  * Java compilation is not handled but the builder provides the bootclasspath with
  * {@link #getBootClasspath(SdkParser)}.
@@ -207,6 +211,16 @@ public class AndroidBuilder {
     }
 
     /**
+     * Returns the jar file for the renderscript mode.
+     * @return the jar file.
+     */
+    @NonNull
+    public File getRenderScriptSupportJar() {
+        return RenderScriptProcessor.getSupportJar(
+                mBuildTools.getLocation().getAbsolutePath());
+    }
+
+    /**
      * Returns the compile classpath for this config. If the config tests a library, this
      * will include the classpath of the tested config
      *
@@ -219,8 +233,7 @@ public class AndroidBuilder {
         ProductFlavor mergedFlavor = variantConfiguration.getMergedFlavor();
 
         if (mergedFlavor.getRenderscriptSupportMode()) {
-            File renderScriptSupportJar = RenderScriptProcessor.getSupportJar(
-                    mBuildTools.getLocation().getAbsolutePath());
+            File renderScriptSupportJar = getRenderScriptSupportJar();
 
             Set<File> fullJars = Sets.newHashSetWithExpectedSize(compileClasspath.size() + 1);
             fullJars.addAll(compileClasspath);
@@ -238,16 +251,15 @@ public class AndroidBuilder {
      * @return a non null, but possibly empty list.
      */
     @NonNull
-    public List<File> getPackagedJars(@NonNull VariantConfiguration variantConfiguration) {
-        List<File> packagedJars = variantConfiguration.getPackagedJars();
+    public Set<File> getPackagedJars(@NonNull VariantConfiguration variantConfiguration) {
+        Set<File> packagedJars = variantConfiguration.getPackagedJars();
 
         ProductFlavor mergedFlavor = variantConfiguration.getMergedFlavor();
 
         if (mergedFlavor.getRenderscriptSupportMode()) {
-            File renderScriptSupportJar = RenderScriptProcessor.getSupportJar(
-                    mBuildTools.getLocation().getAbsolutePath());
+            File renderScriptSupportJar = getRenderScriptSupportJar();
 
-            List<File> fullJars = Lists.newArrayListWithCapacity(packagedJars.size() + 1);
+            Set<File> fullJars = Sets.newHashSetWithExpectedSize(packagedJars.size() + 1);
             fullJars.addAll(packagedJars);
             fullJars.add(renderScriptSupportJar);
             packagedJars = fullJars;
@@ -880,6 +892,9 @@ public class AndroidBuilder {
      * @param targetApi the target api
      * @param debugBuild whether the build is debug
      * @param optimLevel the optimization level
+     * @param ndkMode
+     * @param supportMode support mode flag to generate .so files.
+     * @param abiFilters ABI filters in case of support mode
      *
      * @throws IOException
      * @throws InterruptedException
@@ -974,8 +989,9 @@ public class AndroidBuilder {
      * Converts the bytecode to Dalvik format
      * @param inputs the input files
      * @param preDexedLibraries the list of pre-dexed libraries
-     * @param outDexFile the location of the output classes.dex file
+     * @param outDexFolder the location of the output folder
      * @param dexOptions dex options
+     * @param additionalParameters
      * @param incremental true if it should attempt incremental dex if applicable
      *
      * @throws IOException
@@ -985,13 +1001,15 @@ public class AndroidBuilder {
     public void convertByteCode(
             @NonNull Iterable<File> inputs,
             @NonNull Iterable<File> preDexedLibraries,
-            @NonNull File outDexFile,
+            @NonNull File outDexFolder,
             @NonNull DexOptions dexOptions,
+            @Nullable List<String> additionalParameters,
             boolean incremental) throws IOException, InterruptedException, LoggedErrorException {
         checkNotNull(inputs, "inputs cannot be null.");
         checkNotNull(preDexedLibraries, "preDexedLibraries cannot be null.");
-        checkNotNull(outDexFile, "outDexFile cannot be null.");
+        checkNotNull(outDexFolder, "outDexFolder cannot be null.");
         checkNotNull(dexOptions, "dexOptions cannot be null.");
+        checkArgument(outDexFolder.isDirectory(), "outDexFolder must be a folder");
 
         // launch dx: create the command line
         ArrayList<String> command = Lists.newArrayList();
@@ -1013,10 +1031,6 @@ public class AndroidBuilder {
             command.add("--verbose");
         }
 
-        if (dexOptions.isCoreLibrary()) {
-            command.add("--core-library");
-        }
-
         if (dexOptions.getJumboMode()) {
             command.add("--force-jumbo");
         }
@@ -1026,8 +1040,14 @@ public class AndroidBuilder {
             command.add("--no-strict");
         }
 
+        if (additionalParameters != null) {
+            for (String arg : additionalParameters) {
+                command.add(arg);
+            }
+        }
+
         command.add("--output");
-        command.add(outDexFile.getAbsolutePath());
+        command.add(outDexFolder.getAbsolutePath());
 
         // clean up input list
         List<String> inputList = Lists.newArrayList();
@@ -1097,10 +1117,6 @@ public class AndroidBuilder {
             command.add("--verbose");
         }
 
-        if (dexOptions.isCoreLibrary()) {
-            command.add("--core-library");
-        }
-
         if (dexOptions.getJumboMode()) {
             command.add("--force-jumbo");
         }
@@ -1117,13 +1133,14 @@ public class AndroidBuilder {
      * Packages the apk.
      *
      * @param androidResPkgLocation the location of the packaged resource file
-     * @param classesDexLocation the location of the classes.dex file
+     * @param dexFolder the folder with the dex file.
      * @param packagedJars the jars that are packaged (libraries + jar dependencies)
      * @param javaResourcesLocation the processed Java resource folder
      * @param jniLibsFolders the folders containing jni shared libraries
      * @param abiFilters optional ABI filter
      * @param jniDebugBuild whether the app should include jni debug data
      * @param signingConfig the signing configuration
+     * @param packagingOptions the packaging options
      * @param outApkLocation location of the APK.
      * @throws DuplicateFileException
      * @throws FileNotFoundException if the store location was not found
@@ -1135,17 +1152,20 @@ public class AndroidBuilder {
      */
     public void packageApk(
             @NonNull String androidResPkgLocation,
-            @NonNull String classesDexLocation,
-            @NonNull List<File> packagedJars,
+            @NonNull File dexFolder,
+            @NonNull Collection<File> packagedJars,
             @Nullable String javaResourcesLocation,
             @Nullable Collection<File> jniLibsFolders,
             @Nullable Set<String> abiFilters,
             boolean jniDebugBuild,
             @Nullable SigningConfig signingConfig,
-            @NonNull String outApkLocation) throws DuplicateFileException, FileNotFoundException,
+            @Nullable PackagingOptions packagingOptions,
+            @NonNull String outApkLocation)
+            throws DuplicateFileException, FileNotFoundException,
             KeytoolException, PackagerException, SigningException {
         checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
-        checkNotNull(classesDexLocation, "classesDexLocation cannot be null.");
+        checkNotNull(dexFolder, "dexFolder cannot be null.");
+        checkArgument(dexFolder.isDirectory(), "dexFolder is not a directory");
         checkNotNull(outApkLocation, "outApkLocation cannot be null.");
 
         CertificateInfo certificateInfo = null;
@@ -1158,8 +1178,8 @@ public class AndroidBuilder {
 
         try {
             Packager packager = new Packager(
-                    outApkLocation, androidResPkgLocation, classesDexLocation,
-                    certificateInfo, mCreatedBy, mLogger);
+                    outApkLocation, androidResPkgLocation, dexFolder,
+                    certificateInfo, mCreatedBy, packagingOptions, mLogger);
 
             packager.setJniDebugMode(jniDebugBuild);
 
@@ -1171,14 +1191,29 @@ public class AndroidBuilder {
             }
 
             // add the resources from the jar files.
+            Set<String> hashs = Sets.newHashSet();
+
             for (File jar : packagedJars) {
+                // TODO remove once we can properly add a library as a dependency of its test.
+                String hash = getFileHash(jar);
+                if (hash == null) {
+                    throw new PackagerException("Unable to compute hash of " + jar.getAbsolutePath());
+                }
+                if (hashs.contains(hash)) {
+                    continue;
+                }
+
+                hashs.add(hash);
+
                 packager.addResourcesFromJar(jar);
             }
 
             // also add resources from library projects and jars
             if (jniLibsFolders != null) {
                 for (File jniFolder : jniLibsFolders) {
-                    packager.addNativeLibraries(jniFolder, abiFilters);
+                    if (jniFolder.isDirectory()) {
+                        packager.addNativeLibraries(jniFolder, abiFilters);
+                    }
                 }
             }
 
@@ -1188,4 +1223,22 @@ public class AndroidBuilder {
             throw new RuntimeException(e);
         }
     }
+
+    /**
+     * Returns the hash of a file.
+     * @param file the file to hash
+     * @return the hash or null if an error happened
+     */
+    @Nullable
+    private static String getFileHash(@NonNull File file) {
+        try {
+            HashCode hashCode = Files.hash(file, Hashing.sha1());
+            return hashCode.toString();
+        } catch (IOException ignored) {
+
+        }
+
+        return null;
+    }
+
 }

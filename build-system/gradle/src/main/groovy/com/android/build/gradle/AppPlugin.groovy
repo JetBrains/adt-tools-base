@@ -88,9 +88,9 @@ class AppPlugin extends com.android.build.gradle.BasePlugin implements Plugin<Pr
         }
 
         def buildTypeContainer = project.container(DefaultBuildType,
-                new BuildTypeFactory(instantiator,  project.fileResolver))
+                new BuildTypeFactory(instantiator,  project.fileResolver, project.getLogger()))
         def productFlavorContainer = project.container(GroupableProductFlavorDsl,
-                new GroupableProductFlavorFactory(instantiator, project.fileResolver))
+                new GroupableProductFlavorFactory(instantiator, project.fileResolver, project.getLogger()))
         def signingConfigContainer = project.container(SigningConfig,
                 new SigningConfigFactory(instantiator))
 
@@ -386,11 +386,11 @@ class AppPlugin extends com.android.build.gradle.BasePlugin implements Plugin<Pr
                                          @NonNull ApplicationVariantData appVariantData,
                                          @Nullable TestVariantData testVariantData) {
         ApplicationVariantImpl appVariant = instantiator.newInstance(
-                ApplicationVariantImpl.class, appVariantData)
+                ApplicationVariantImpl.class, appVariantData, this)
 
         TestVariantImpl testVariant = null;
         if (testVariantData != null) {
-            testVariant = instantiator.newInstance(TestVariantImpl.class, testVariantData)
+            testVariant = instantiator.newInstance(TestVariantImpl.class, testVariantData, this)
         }
 
         if (appVariant != null && testVariant != null) {
@@ -574,6 +574,8 @@ class AppPlugin extends com.android.build.gradle.BasePlugin implements Plugin<Pr
             @Nullable Task assembleTask) {
 
         createAnchorTasks(variant)
+
+        createCheckManifestTask(variant)
 
         // Add a task to process the manifest(s)
         createProcessManifestTask(variant, "manifests")

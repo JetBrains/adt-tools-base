@@ -4,9 +4,8 @@ import android.app.Activity;
 import android.view.View;
 import android.content.Intent;
 import android.os.Bundle;
-
-import android.annotation.TargetApi;
 import android.widget.TextView;
+import com.android.tests.dependencies.jar.StringHelper2;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -37,9 +36,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    @TargetApi(10)
-    public void sendMessage(View view) {
-        Intent intent = new Intent(this, ShowPeopleActivity.class);
-        startActivity(intent);
+    public String getString2(String foo) {
+        return StringHelper2.getString2(foo);
     }
 }

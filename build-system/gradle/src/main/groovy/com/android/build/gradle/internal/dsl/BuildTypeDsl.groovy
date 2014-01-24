@@ -21,10 +21,12 @@ import com.android.annotations.VisibleForTesting
 import com.android.builder.AndroidBuilder
 import com.android.builder.BuilderConstants
 import com.android.builder.DefaultBuildType
+import com.android.builder.model.ClassField
 import com.android.builder.model.NdkConfig
 import com.android.builder.model.SigningConfig
 import org.gradle.api.Action
 import org.gradle.api.internal.file.FileResolver
+import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
 /**
  * DSL overlay to make methods that accept String... work.
@@ -34,22 +36,29 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
 
     @NonNull
     private final FileResolver fileResolver
+    @NonNull
+    private final Logger logger
 
     private final NdkConfigDsl ndkConfig
 
+
     public BuildTypeDsl(@NonNull String name,
-                 @NonNull FileResolver fileResolver,
-                 @NonNull Instantiator instantiator) {
+                        @NonNull FileResolver fileResolver,
+                        @NonNull Instantiator instantiator,
+                        @NonNull Logger logger) {
         super(name)
         this.fileResolver = fileResolver
+        this.logger = logger
         ndkConfig = instantiator.newInstance(NdkConfigDsl.class)
     }
 
     @VisibleForTesting
     BuildTypeDsl(@NonNull String name,
-                 @NonNull FileResolver fileResolver) {
+                 @NonNull FileResolver fileResolver,
+                 @NonNull Logger logger) {
         super(name)
         this.fileResolver = fileResolver
+        this.logger = logger
         ndkConfig = null
     }
 
@@ -86,6 +95,11 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
             @NonNull String type,
             @NonNull String name,
             @NonNull String value) {
+        ClassField alreadyPresent = getBuildConfigFields().get(name);
+        if (alreadyPresent != null) {
+            logger.info(
+                    "BuildType(${getName()}): buildConfigField '$name' value is being replaced: ${alreadyPresent.value} -> $value");
+        }
         addBuildConfigField(AndroidBuilder.createClassField(type, name, value));
     }
 

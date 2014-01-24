@@ -20,40 +20,30 @@ import com.android.annotations.NonNull;
 import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * An object that contain a BuildConfig configuration
  */
-public class BaseConfigImpl implements Serializable, BaseConfig {
+public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     private static final long serialVersionUID = 1L;
 
-    private final List<ClassField> mBuildConfigFields = Lists.newArrayList();
+    private final Map<String, ClassField> mBuildConfigFields = Maps.newTreeMap();
     private final List<File> mProguardFiles = Lists.newArrayList();
     private final List<File> mConsumerProguardFiles = Lists.newArrayList();
 
-    public void setBuildConfigFields(@NonNull ClassField... fields) {
-        mBuildConfigFields.clear();
-        mBuildConfigFields.addAll(Arrays.asList(fields));
-    }
-
-    public void setBuildConfigFields(@NonNull Collection<ClassField> fields) {
-        mBuildConfigFields.clear();
-        mBuildConfigFields.addAll(fields);
-    }
-
     public void addBuildConfigField(@NonNull ClassField field) {
-        mBuildConfigFields.add(field);
+        mBuildConfigFields.put(field.getName(), field);
     }
 
     @Override
     @NonNull
-    public List<ClassField> getBuildConfigFields() {
+    public Map<String, ClassField> getBuildConfigFields() {
         return mBuildConfigFields;
     }
 
@@ -69,7 +59,8 @@ public class BaseConfigImpl implements Serializable, BaseConfig {
         return mConsumerProguardFiles;
     }
 
-    protected void _initWith(BaseConfig that) {
+
+    protected void _initWith(@NonNull BaseConfig that) {
         setBuildConfigFields(that.getBuildConfigFields());
 
         mProguardFiles.clear();
@@ -77,6 +68,11 @@ public class BaseConfigImpl implements Serializable, BaseConfig {
 
         mConsumerProguardFiles.clear();
         mConsumerProguardFiles.addAll(that.getConsumerProguardFiles());
+    }
+
+    private void setBuildConfigFields(@NonNull Map<String, ClassField> fields) {
+        mBuildConfigFields.clear();
+        mBuildConfigFields.putAll(fields);
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dependency
 import com.android.annotations.NonNull
+
 import com.android.build.gradle.internal.ConfigurationProvider
 import com.android.builder.dependency.DependencyContainer
 import com.android.builder.dependency.JarDependency
@@ -58,6 +59,11 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
 
         for (ConfigurationProvider provider : providers) {
             compileConfigs.add(provider.compileConfiguration)
+            if (provider.providedConfiguration != null) {
+                compileConfigs.add(provider.providedConfiguration)
+            }
+
+            apkConfigs.add(provider.compileConfiguration)
             apkConfigs.add(provider.packageConfiguration)
         }
 
@@ -82,15 +88,20 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
         return name
     }
 
-    void addLibraries(List<LibraryDependencyImpl> list) {
+    @Override
+    Configuration getProvidedConfiguration() {
+        return null
+    }
+
+    void addLibraries(@NonNull List<LibraryDependencyImpl> list) {
         libraries.addAll(list)
     }
 
-    void addJars(List<JarDependency> list) {
+    void addJars(@NonNull Collection<JarDependency> list) {
         jars.addAll(list)
     }
 
-    void addLocalJars(List<JarDependency> list) {
+    void addLocalJars(@NonNull Collection<JarDependency> list) {
         localJars.addAll(list)
     }
 

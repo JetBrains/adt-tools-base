@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.tasks
+
 import com.android.annotations.NonNull
 import com.android.build.gradle.internal.tasks.NdkTask
 import com.android.builder.model.NdkConfig
@@ -32,8 +33,10 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.gradle.api.tasks.util.PatternSet
-/**
- */
+
+import static com.android.SdkConstants.CURRENT_PLATFORM
+import static com.android.SdkConstants.PLATFORM_WINDOWS
+
 class NdkCompile extends NdkTask {
 
     List<File> sourceFolders
@@ -52,6 +55,9 @@ class NdkCompile extends NdkTask {
 
     @Input
     boolean ndkRenderScriptMode
+
+    @Input
+    boolean ndkCygwinMode
 
     @InputFiles
     FileTree getSource() {
@@ -79,7 +85,11 @@ class NdkCompile extends NdkTask {
 
         File ndkDirectory = getPlugin().ndkDirectory
         if (ndkDirectory == null || !ndkDirectory.isDirectory()) {
-            throw new GradleException("NDK not configured")
+            throw new GradleException(
+                    "NDK not configured.\n" +
+                    "Download the NDK from http://developer.android.com/tools/sdk/ndk/." +
+                    "Then add ndk.dir=path/to/ndk in local.properties.\n" +
+                    "(On Windows, make sure you escape backslashes, e.g. C:\\\\ndk rather than C:\\ndk)");
         }
 
         boolean generateMakefile = false
@@ -177,7 +187,11 @@ class NdkCompile extends NdkTask {
 
         List<String> commands = Lists.newArrayList()
 
-        commands.add(ndkLocation.absolutePath + File.separator + "ndk-build")
+        String exe = ndkLocation.absolutePath + File.separator + "ndk-build"
+        if (CURRENT_PLATFORM == PLATFORM_WINDOWS && !ndkCygwinMode) {
+            exe += ".cmd"
+        }
+        commands.add(exe)
 
         commands.add("NDK_PROJECT_PATH=null")
 

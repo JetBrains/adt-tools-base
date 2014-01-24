@@ -23,8 +23,11 @@ import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ZipAlign;
 import com.android.builder.DefaultProductFlavor;
 import com.android.builder.model.SigningConfig;
+
 import org.gradle.api.DefaultTask;
 
+import java.io.File;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -40,13 +43,6 @@ public interface ApkVariant extends BaseVariant {
      */
     @NonNull
     List<DefaultProductFlavor> getProductFlavors();
-
-    /**
-     * Returns a {@link com.android.builder.DefaultProductFlavor} that represents the merging
-     * of the default config and the flavors of this build variant.
-     */
-    @NonNull
-    DefaultProductFlavor getMergedFlavor();
 
     /**
      * Returns the {@link SigningConfig} for this build variant,
@@ -77,6 +73,22 @@ public interface ApkVariant extends BaseVariant {
      */
     @Nullable
     ZipAlign getZipAlign();
+
+    @NonNull
+    ZipAlign createZipAlignTask(@NonNull String taskName, @NonNull File inputFile, @NonNull File outputFile);
+
+    /**
+     * Returns the list of jar files that are on the compile classpath. This does not include
+     * the runtime.
+     */
+    @NonNull
+    Collection<File> getCompileLibraries();
+
+    /**
+     * Returns the list of jar files that are packaged in the APK.
+     */
+    @NonNull
+    Collection<File> getApkLibraries();
 
     /**
      * Returns the installation task.

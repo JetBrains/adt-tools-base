@@ -96,13 +96,13 @@ public class DeviceManager {
     /**
      * Creates a new instance of DeviceManager.
      *
-     * @param osSdkPath Path to the current SDK. If null or invalid, vendor devices are ignored.
+     * @param sdkLocation Path to the current SDK. If null or invalid, vendor devices are ignored.
      * @param log SDK logger instance. Should be non-null.
      */
-    public static DeviceManager createInstance(@Nullable String osSdkPath, @NonNull ILogger log) {
+    public static DeviceManager createInstance(@Nullable File sdkLocation, @NonNull ILogger log) {
         // TODO consider using a cache and reusing the same instance of the device manager
         // for the same manager/log combo.
-        return new DeviceManager(osSdkPath, log);
+        return new DeviceManager(sdkLocation == null ? null : sdkLocation.getPath(), log);
     }
 
     /**

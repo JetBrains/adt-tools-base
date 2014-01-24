@@ -16,6 +16,7 @@
 package com.android.build.gradle
 
 import com.android.build.gradle.api.ApplicationVariant
+import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.builder.DefaultBuildType
 import com.android.builder.DefaultProductFlavor
 import com.android.builder.model.SigningConfig
@@ -33,6 +34,7 @@ public class AppExtension extends BaseExtension {
     final NamedDomainObjectContainer<DefaultProductFlavor> productFlavors
     final NamedDomainObjectContainer<DefaultBuildType> buildTypes
     final NamedDomainObjectContainer<SigningConfig> signingConfigs
+
 
     private final DefaultDomainObjectSet<ApplicationVariant> applicationVariantList =
         new DefaultDomainObjectSet<ApplicationVariant>(ApplicationVariant.class)

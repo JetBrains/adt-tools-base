@@ -19,16 +19,23 @@ package com.android.ide.common.xml;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.utils.XmlUtils;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
+
+import junit.framework.TestCase;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintStream;
+import java.security.Permission;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-
-import junit.framework.TestCase;
 
 @SuppressWarnings("javadoc")
 public class XmlPrettyPrinterTest extends TestCase {
@@ -61,7 +68,7 @@ public class XmlPrettyPrinterTest extends TestCase {
         assertEquals(expected, formatted);
     }
 
-    private Node findNode(Node node, String nodeName) {
+    private static Node findNode(Node node, String nodeName) {
         if (node.getNodeName().equals(nodeName)) {
             return node;
         }
@@ -1132,6 +1139,160 @@ public class XmlPrettyPrinterTest extends TestCase {
         assertEquals(expected, after);
     }
 
+    public void testDriver1() throws Exception {
+        checkDriver(""
+                + "Usage: XmlPrettyPrinter <options>... <files or directories...>\n"
+                + "OPTIONS:\n"
+                + "--stdout\n"
+                + "--removeEmptyLines\n"
+                + "--noAttributeOnFirstLine\n"
+                + "--noSpaceBeforeClose\n",
+                "Unknown flag --nonexistentFlag\n",
+                1,
+                new String[]{"--nonexistentFlag"},
+                null
+        );
+    }
+
+    public void testDriver2() throws Exception {
+        String brokenXml = "<view>\n"
+                + "<notclosed>\n"
+                + "</view>";
+        File temp = File.createTempFile("mylayout", ".xml");
+        Files.write(brokenXml, temp, Charsets.UTF_8);
+        checkDriver(
+                "",
+                "[Fatal Error] :3:3: The element type \"notclosed\" must be terminated by "
+                        + "the matching end-tag \"</notclosed>\".\n"
+                        + "Could not parse $TESTFILE\n",
+                1,
+                new String[]{"--stdout", temp.getPath()},
+                temp
+        );
+        //noinspection ResultOfMethodCallIgnored
+        temp.delete();
+    }
+
+    public void testDriver3() throws Exception {
+        String xml = ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                + " xmlns:tools=\"http://schemas.android.com/tools\""
+                + " android:layout_width=\"match_parent\" android:layout_height=\"match_parent\""
+                + " android:orientation=\"vertical\"  tools:ignore=\"HardcodedText\">"
+                + "\n"
+                + "        <!-- Comment -->\n"
+                + "</LinearLayout>";
+        File temp = File.createTempFile("mylayout", ".xml");
+        Files.write(xml, temp, Charsets.UTF_8);
+        checkDriver(
+                "",
+                "",
+                0,
+                new String[]{temp.getPath()},
+                temp
+        );
+
+        assertEquals(""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    android:layout_width=\"match_parent\"\n"
+                + "    android:layout_height=\"match_parent\"\n"
+                + "    android:orientation=\"vertical\"\n"
+                + "    tools:ignore=\"HardcodedText\" >\n"
+                + "\n"
+                + "    <!-- Comment -->\n"
+                + "\n"
+                + "</LinearLayout>",
+                Files.toString(temp, Charsets.UTF_8));
+        //noinspection ResultOfMethodCallIgnored
+        temp.delete();
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testDriver4() throws Exception {
+        File root = Files.createTempDir();
+        String xml = ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                + " xmlns:tools=\"http://schemas.android.com/tools\""
+                + " android:layout_width=\"match_parent\" android:layout_height=\"match_parent\""
+                + " android:orientation=\"vertical\"  tools:ignore=\"HardcodedText\">"
+                + "\n"
+                + "        <!-- Comment -->\n"
+                + "</LinearLayout>";
+        File file1 = new File(root, "layout1.xml");
+        Files.write(xml, file1, Charsets.UTF_8);
+        File dir1 = new File(root, "layout");
+        dir1.mkdirs();
+        File file2 = new File(dir1, "layout2.xml");
+        Files.write(xml, file2, Charsets.UTF_8);
+
+        checkDriver(
+                "",
+                "",
+                0,
+                new String[]{file1.getPath(), dir1.getPath()},
+                root
+        );
+
+        String formatted = ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    android:layout_width=\"match_parent\"\n"
+                + "    android:layout_height=\"match_parent\"\n"
+                + "    android:orientation=\"vertical\"\n"
+                + "    tools:ignore=\"HardcodedText\" >\n"
+                + "\n"
+                + "    <!-- Comment -->\n"
+                + "\n"
+                + "</LinearLayout>";
+
+        assertEquals(formatted, Files.toString(file1, Charsets.UTF_8));
+        assertEquals(formatted, Files.toString(file2, Charsets.UTF_8));
+
+        file1.delete();
+        file2.delete();
+        dir1.delete();
+        root.delete();
+    }
+
+    public void testDriver5() throws Exception {
+        String xml = ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                + "<Button></Button>"
+                + "<Button/>"
+                + "</LinearLayout>";
+        File temp = File.createTempFile("mylayout", ".xml");
+        Files.write(xml, temp, Charsets.UTF_8);
+        checkDriver(
+                "",
+                "",
+                0,
+                new String[]{temp.getPath()},
+                temp
+        );
+
+        // Note limitation of command line XML parser: Can't distinguish
+        // between <element></element> and <element/>
+
+        assertEquals(""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\" >\n"
+                + "\n"
+                + "    <Button />\n"
+                + "\n"
+                + "    <Button />\n"
+                + "\n"
+                + "</LinearLayout>",
+                Files.toString(temp, Charsets.UTF_8));
+        //noinspection ResultOfMethodCallIgnored
+        temp.delete();
+    }
+
     @Nullable
     private static Document createEmptyPlainDocument() throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -1149,5 +1310,72 @@ public class XmlPrettyPrinterTest extends TestCase {
         Document doc = XmlUtils.parseDocumentSilently(xml, true);
         assertNotNull(doc);
         return doc;
+    }
+
+    private static void checkDriver(String expectedOutput, String expectedError,
+            int expectedExitCode, String[] args, File testFile)
+            throws Exception {
+        PrintStream previousOut = System.out;
+        PrintStream previousErr = System.err;
+        try {
+            // Trap System.exit calls:
+            System.setSecurityManager(new SecurityManager() {
+                @Override
+                public void checkPermission(Permission perm)
+                {
+                    // allow anything.
+                }
+                @Override
+                public void checkPermission(Permission perm, Object context)
+                {
+                    // allow anything.
+                }
+                @Override
+                public void checkExit(int status) {
+                    throw new ExitException(status);
+                }
+            });
+
+            final ByteArrayOutputStream output = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(output));
+            final ByteArrayOutputStream error = new ByteArrayOutputStream();
+            System.setErr(new PrintStream(error));
+
+            int exitCode = 0xCAFEBABE; // not set
+            try {
+                XmlPrettyPrinter.main(args);
+            } catch (ExitException e) {
+                // Allow
+                exitCode = e.getStatus();
+            }
+
+            String testPath = testFile == null
+                    ? XmlPrettyPrinterTest.class.getName() : testFile.getPath();
+            String pathName = "$TESTFILE";
+            assertEquals(expectedError, error.toString().replace(testPath, pathName));
+            assertEquals(expectedOutput, output.toString().replace(testPath, pathName));
+            assertEquals(expectedExitCode, exitCode);
+        } finally {
+            // Re-enable system exit for unit test
+            System.setSecurityManager(null);
+
+            System.setOut(previousOut);
+            System.setErr(previousErr);
+        }
+    }
+
+    private static class ExitException extends SecurityException {
+        private static final long serialVersionUID = 1L;
+
+        private final int mStatus;
+
+        public ExitException(int status) {
+            super("Unit test");
+            mStatus = status;
+        }
+
+        public int getStatus() {
+            return mStatus;
+        }
     }
 }

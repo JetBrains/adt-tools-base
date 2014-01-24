@@ -45,6 +45,34 @@ public class DuplicateResourceDetectorTest extends AbstractCheckTest {
                 "res/values/customattr.xml=>res/values/customattr2.xml"));
     }
 
+    public void testSameFile() throws Exception {
+        assertEquals(""
+                + "res/values/duplicate-strings.xml:6: Error: app_name has already been defined in this folder [DuplicateDefinition]\n"
+                + "    <string name=\"app_name\">App Name 1</string>\n"
+                + "            ~~~~~~~~~~~~~~~\n"
+                + "    res/values/duplicate-strings.xml:4: Previously defined here\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "res/values/duplicate-strings.xml"));
+    }
+
+    public void testStyleItems() throws Exception {
+        assertEquals(""
+                + "res/values/duplicate-items.xml:7: Error: android:textColor has already been defined in this <style> [DuplicateDefinition]\n"
+                + "        <item name=\"android:textColor\">#ff0000</item>\n"
+                + "              ~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/duplicate-items.xml:5: Previously defined here\n"
+                + "res/values/duplicate-items.xml:13: Error: contentId has already been defined in this <declare-styleable> [DuplicateDefinition]\n"
+                + "        <attr name=\"contentId\" format=\"integer\" />\n"
+                + "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/duplicate-items.xml:11: Previously defined here\n"
+                + "2 errors, 0 warnings\n",
+
+                lintProject(
+                        "res/values/duplicate-items.xml"));
+    }
+
     public void testOk() throws Exception {
         assertEquals(
         "No warnings.",

@@ -25,6 +25,7 @@ import com.android.utils.ILogger;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FilePermission;
+import java.io.IOException;
 import java.lang.reflect.Member;
 import java.net.InetAddress;
 import java.security.Permission;
@@ -73,6 +74,8 @@ public class RenderSecurityManager extends SecurityManager {
 
     /** Secret which must be provided by callers wishing to deactivate the security manager  */
     private static Object sCredential;
+    /** For debugging purposes */
+    private static String sLastFailedPath;
 
     private boolean mAllowSetSecurityManager;
     private boolean mDisabled;
@@ -82,6 +85,7 @@ public class RenderSecurityManager extends SecurityManager {
     private String mProjectPath;
     private String mTempDir;
     private String mNormalizedTempDir;
+    private String mCanonicalTempDir;
     private SecurityManager myPreviousSecurityManager;
     private ILogger mLogger;
 
@@ -127,6 +131,7 @@ public class RenderSecurityManager extends SecurityManager {
         mProjectPath = projectPath;
         mTempDir = System.getProperty("java.io.tmpdir");
         mNormalizedTempDir = new File(mTempDir).getPath(); // will call fs.normalize() on the path
+        sLastFailedPath = null;
     }
 
     /** Sets an optional logger. Returns this for constructor chaining. */
@@ -234,6 +239,16 @@ public class RenderSecurityManager extends SecurityManager {
         sEnabled = token;
     }
 
+    /**
+     * Returns the most recently denied path.
+     *
+     * @return the most recently denied path
+     */
+    @Nullable
+    public static String getLastFailedPath() {
+        return sLastFailedPath;
+    }
+
     // Permitted by custom views: access any package or member, read properties
 
     @Override
@@ -317,7 +332,7 @@ public class RenderSecurityManager extends SecurityManager {
             }
 
             // Allow reading files in temp
-            if (path.startsWith(mTempDir) || path.startsWith(mNormalizedTempDir)) {
+            if (isTempDirPath(path)) {
                 return true;
             }
 
@@ -341,9 +356,29 @@ public class RenderSecurityManager extends SecurityManager {
 
     @SuppressWarnings("RedundantIfStatement")
     private boolean isWritingAllowed(String path) {
+        return isTempDirPath(path);
+    }
+
+    private boolean isTempDirPath(String path) {
         if (path.startsWith(mTempDir) || path.startsWith(mNormalizedTempDir)) {
             return true;
         }
+
+        // Work around weird temp directories
+        try {
+            if (mCanonicalTempDir == null) {
+                mCanonicalTempDir = new File(mNormalizedTempDir).getCanonicalPath();
+            }
+
+            if (path.startsWith(mCanonicalTempDir)
+                    || new File(path).getCanonicalPath().startsWith(mCanonicalTempDir)) {
+                return true;
+            }
+        } catch (IOException e) {
+            // ignore
+        }
+
+        sLastFailedPath = path;
 
         return false;
     }

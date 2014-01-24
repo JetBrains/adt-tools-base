@@ -20,14 +20,19 @@ import com.android.build.gradle.internal.dsl.DexOptionsImpl
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.builder.AndroidBuilder
 import com.android.builder.DexOptions
+import com.android.ide.common.internal.WaitableExecutor
+import com.google.common.collect.Sets
 import com.google.common.hash.HashCode
 import com.google.common.hash.HashFunction
 import com.google.common.hash.Hashing
+import com.google.common.io.Files
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
+
+import java.util.concurrent.Callable
 
 public class PreDex extends BaseTask {
 
@@ -39,7 +44,7 @@ public class PreDex extends BaseTask {
     // in the class uses it.
     @SuppressWarnings("GroovyUnusedDeclaration")
     @InputFiles
-    Iterable<File> inputFiles
+    Collection<File> inputFiles
 
     @OutputDirectory
     File outputFolder
@@ -58,14 +63,34 @@ public class PreDex extends BaseTask {
             emptyFolder(outFolder)
         }
 
-        AndroidBuilder builder = getBuilder()
+        final AndroidBuilder builder = getBuilder()
+        final Set<String> hashs = Sets.newHashSet()
+        final WaitableExecutor<Void> executor = new WaitableExecutor<Void>()
 
         taskInputs.outOfDate { change ->
 
-            //noinspection GroovyAssignabilityCheck
-            File preDexedFile = getDexFileName(outFolder, change.file)
-            //noinspection GroovyAssignabilityCheck
-            builder.preDexLibrary(change.file, preDexedFile, options)
+            executor.execute(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    // TODO remove once we can properly add a library as a dependency of its test.
+                    String hash = getFileHash(change.file)
+
+                    synchronized (hashs) {
+                        if (hashs.contains(hash)) {
+                            return null
+                        }
+
+                        hashs.add(hash)
+                    }
+
+                    //noinspection GroovyAssignabilityCheck
+                    File preDexedFile = getDexFileName(outFolder, change.file)
+                    //noinspection GroovyAssignabilityCheck
+                    builder.preDexLibrary(change.file, preDexedFile, options)
+
+                    return null
+                }
+            });
         }
 
         taskInputs.removed { change ->
@@ -73,6 +98,18 @@ public class PreDex extends BaseTask {
             File preDexedFile = getDexFileName(outFolder, change.file)
             preDexedFile.delete()
         }
+
+        executor.waitForTasksWithQuickFail(false)
+    }
+
+    /**
+     * Returns the hash of a file.
+     * @param file the file to hash
+     * @return
+     */
+    private static String getFileHash(@NonNull File file) {
+        HashCode hashCode = Files.hash(file, Hashing.sha1())
+        return hashCode.toString()
     }
 
     /**
@@ -87,17 +124,17 @@ public class PreDex extends BaseTask {
     @NonNull
     private static File getDexFileName(@NonNull File outFolder, @NonNull File inputFile) {
         // get the filename
-        String name = inputFile.getName();
+        String name = inputFile.getName()
         // remove the extension
-        int pos = name.lastIndexOf('.');
+        int pos = name.lastIndexOf('.')
         if (pos != -1) {
-            name = name.substring(0, pos);
+            name = name.substring(0, pos)
         }
 
         // add a hash of the original file path
-        HashFunction hashFunction = Hashing.md5();
-        HashCode hashCode = hashFunction.hashString(inputFile.getAbsolutePath());
+        HashFunction hashFunction = Hashing.sha1()
+        HashCode hashCode = hashFunction.hashString(inputFile.getAbsolutePath())
 
-        return new File(outFolder, name + "-" + hashCode.toString() + SdkConstants.DOT_JAR);
+        return new File(outFolder, name + "-" + hashCode.toString() + SdkConstants.DOT_JAR)
     }
 }

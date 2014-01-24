@@ -589,35 +589,32 @@ public class Main {
             reporters.add(new TextReporter(client, mFlags,
                     new PrintWriter(System.out, true), false));
         } else {
-            if (urlMap == null) {
-                // By default just map from /foo to file:///foo
-                // TODO: Find out if we need file:// on Windows.
-                urlMap = "=file://"; //$NON-NLS-1$
-            } else {
+            //noinspection VariableNotUsedInsideIf
+            if (urlMap != null) {
                 for (Reporter reporter : reporters) {
                     if (!reporter.isSimpleFormat()) {
                         reporter.setBundleResources(true);
                     }
                 }
-            }
 
-            if (!urlMap.equals(VALUE_NONE)) {
-                Map<String, String> map = new HashMap<String, String>();
-                String[] replace = urlMap.split(","); //$NON-NLS-1$
-                for (String s : replace) {
-                    // Allow ='s in the suffix part
-                    int index = s.indexOf('=');
-                    if (index == -1) {
-                        System.err.println(
-                            "The URL map argument must be of the form 'path_prefix=url_prefix'");
-                        System.exit(ERRNO_INVALID_ARGS);
+                if (!urlMap.equals(VALUE_NONE)) {
+                    Map<String, String> map = new HashMap<String, String>();
+                    String[] replace = urlMap.split(","); //$NON-NLS-1$
+                    for (String s : replace) {
+                        // Allow ='s in the suffix part
+                        int index = s.indexOf('=');
+                        if (index == -1) {
+                            System.err.println(
+                              "The URL map argument must be of the form 'path_prefix=url_prefix'");
+                            System.exit(ERRNO_INVALID_ARGS);
+                        }
+                        String key = s.substring(0, index);
+                        String value = s.substring(index + 1);
+                        map.put(key, value);
                     }
-                    String key = s.substring(0, index);
-                    String value = s.substring(index + 1);
-                    map.put(key, value);
-                }
-                for (Reporter reporter : reporters) {
-                    reporter.setUrlMap(map);
+                    for (Reporter reporter : reporters) {
+                        reporter.setUrlMap(map);
+                    }
                 }
             }
         }

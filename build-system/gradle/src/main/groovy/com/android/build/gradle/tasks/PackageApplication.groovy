@@ -15,6 +15,7 @@
  */
 package com.android.build.gradle.tasks
 
+import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.build.gradle.internal.dsl.SigningConfigDsl
 import com.android.build.gradle.internal.tasks.IncrementalTask
 import com.android.build.gradle.internal.tasks.OutputFileTask
@@ -36,8 +37,8 @@ public class PackageApplication extends IncrementalTask implements OutputFileTas
     @InputFile
     File resourceFile
 
-    @InputFile
-    File dexFile
+    @InputDirectory
+    File dexFolder
 
     @InputDirectory @Optional
     File javaResourceDir
@@ -53,13 +54,16 @@ public class PackageApplication extends IncrementalTask implements OutputFileTas
     // ----- PRIVATE TASK API -----
 
     @InputFiles
-    List<File> packagedJars
+    Set<File> packagedJars
 
     @Input
     boolean jniDebugBuild
 
     @Nested @Optional
     SigningConfigDsl signingConfig
+
+    @Nested
+    PackagingOptionsImpl packagingOptions
 
     @InputFiles
     public FileTree getNativeLibraries() {
@@ -76,13 +80,14 @@ public class PackageApplication extends IncrementalTask implements OutputFileTas
         try {
             getBuilder().packageApk(
                     getResourceFile().absolutePath,
-                    getDexFile().absolutePath,
+                    getDexFolder(),
                     getPackagedJars(),
                     getJavaResourceDir()?.absolutePath,
                     getJniFolders(),
                     getAbiFilters(),
                     getJniDebugBuild(),
                     getSigningConfig(),
+                    getPackagingOptions(),
                     getOutputFile().absolutePath)
         } catch (DuplicateFileException e) {
             def logger = getLogger()
@@ -90,6 +95,12 @@ public class PackageApplication extends IncrementalTask implements OutputFileTas
             logger.error("\tPath in archive: " + e.archivePath)
             logger.error("\tOrigin 1: " + e.file1)
             logger.error("\tOrigin 2: " + e.file2)
+            logger.error("You can ignore those files in your build.gradle:")
+            logger.error("\tandroid {")
+            logger.error("\t  packagingOptions {")
+            logger.error("\t    exclude '$e.archivePath'")
+            logger.error("\t  }")
+            logger.error("\t}")
             throw new BuildException(e.getMessage(), e);
         } catch (Exception e) {
             throw new BuildException(e.getMessage(), e);

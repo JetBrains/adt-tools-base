@@ -45,7 +45,7 @@ public class WrongLocationDetector extends LayoutDetector {
             "rather than the `values/` folder where it belongs.",
             Category.CORRECTNESS,
             8,
-            Severity.ERROR,
+            Severity.FATAL,
             new Implementation(
                     WrongLocationDetector.class,
                     Scope.RESOURCE_FILE_SCOPE));

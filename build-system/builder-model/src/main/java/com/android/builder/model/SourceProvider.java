@@ -90,4 +90,12 @@ public interface SourceProvider {
      */
     @NonNull
     Collection<File> getAssetsDirectories();
+
+    /**
+     * Returns the native libs folders.
+     *
+     * @return a list of folders. They may not all exist.
+     */
+    @NonNull
+    Collection<File> getJniLibsDirectories();
 }

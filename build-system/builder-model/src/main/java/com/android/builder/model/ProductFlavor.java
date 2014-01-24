@@ -53,7 +53,7 @@ public interface ProductFlavor extends BaseConfig {
      * Returns the version code. This is only the value set on this product flavor.
      * To get the final value, use {@link Variant#getMergedFlavor()}
      *
-     * @return the version code
+     * @return the version code, or -1 if not specified
      */
     int getVersionCode();
 
@@ -71,7 +71,7 @@ public interface ProductFlavor extends BaseConfig {
      * Returns the minSdkVersion. This is only the value set on this product flavor.
      * TODO: make final minSdkVersion available through the model
      *
-     * @return the minSdkVersion
+     * @return the minSdkVersion, or -1 if not specified
      */
     int getMinSdkVersion();
 
@@ -79,7 +79,7 @@ public interface ProductFlavor extends BaseConfig {
      * Returns the targetSdkVersion. This is only the value set on this product flavor.
      * TODO: make final targetSdkVersion available through the model
      *
-     * @return the targetSdkVersion
+     * @return the targetSdkVersion, or -1 if not specified
      */
     int getTargetSdkVersion();
 
@@ -87,7 +87,7 @@ public interface ProductFlavor extends BaseConfig {
      * Returns the renderscript target api. This is only the value set on this product flavor.
      * TODO: make final renderscript target api available through the model
      *
-     * @return the renderscript target api
+     * @return the renderscript target api, or -1 if not specified
      */
     int getRenderscriptTargetApi();
 

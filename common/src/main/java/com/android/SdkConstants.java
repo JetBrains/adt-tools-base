@@ -189,6 +189,10 @@ public final class SdkConstants {
     public static final String FN_FIND_LOCK =
         "find_lock" + ext(".exe", "");                    //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
+    /** hprof-conv executable (with extension for the current OS) */
+    public static final String FN_HPROF_CONV =
+        "hprof-conv" + ext(".exe", "");                   //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
     /** properties file for SDK Updater packages */
     public static final String FN_SOURCE_PROP = "source.properties";                  //$NON-NLS-1$
     /** properties file for content hash of installed packages */
@@ -299,6 +303,7 @@ public final class SdkConstants {
     public static final String FD_SAMPLES = "samples";                  //$NON-NLS-1$
     /** Name of the SDK extras folder. */
     public static final String FD_EXTRAS = "extras";                    //$NON-NLS-1$
+    public static final String FD_M2_REPOSITORY = "m2repository";       //$NON-NLS-1$
     /**
      * Name of an extra's sample folder.
      * Ideally extras should have one {@link #FD_SAMPLES} folder containing
@@ -632,7 +637,7 @@ public final class SdkConstants {
     public static final String ANDROID_NS_NAME_PREFIX = "android:";          //$NON-NLS-1$
     public static final int ANDROID_NS_NAME_PREFIX_LEN = ANDROID_NS_NAME_PREFIX.length();
 
-  /** The default prefix used for the app */
+    /** The default prefix used for the app */
     public static final String APP_PREFIX = "app";                          //$NON-NLS-1$
     /** The entity for the ampersand character */
     public static final String AMP_ENTITY = "&amp;";                         //$NON-NLS-1$
@@ -772,6 +777,8 @@ public final class SdkConstants {
     public static final String ATTR_DEBUGGABLE = "debuggable";         //$NON-NLS-1$
     public static final String ATTR_READ_PERMISSION = "readPermission"; //$NON_NLS-1$
     public static final String ATTR_WRITE_PERMISSION = "writePermission"; //$NON_NLS-1$
+    public static final String ATTR_VERSION_CODE = "versionCode";      //$NON_NLS-1$
+    public static final String ATTR_VERSION_NAME = "versionName";      //$NON_NLS-1$
 
     // Attributes: Resources
     public static final String ATTR_NAME = "name";                     //$NON-NLS-1$
@@ -995,6 +1002,8 @@ public final class SdkConstants {
     public static final String EXT_PNG = "png"; //$NON-NLS-1$
     /** Extension for Android archive files */
     public static final String EXT_AAR = "aar"; //$NON-NLS-1$
+    /** Extension for Java heap dumps. */
+    public static final String EXT_HPROF = "hprof"; //$NON-NLS-1$
 
     private static final String DOT = "."; //$NON-NLS-1$
 
@@ -1057,6 +1066,7 @@ public final class SdkConstants {
     public static final String ANDROID_THEME_PREFIX = "?android:";      //$NON-NLS-1$
     public static final String LAYOUT_RESOURCE_PREFIX = "@layout/";     //$NON-NLS-1$
     public static final String STYLE_RESOURCE_PREFIX = "@style/";       //$NON-NLS-1$
+    public static final String COLOR_RESOURCE_PREFIX = "@color/";       //$NON-NLS-1$
     public static final String NEW_ID_PREFIX = "@+id/";                 //$NON-NLS-1$
     public static final String ID_PREFIX = "@id/";                      //$NON-NLS-1$
     public static final String DRAWABLE_PREFIX = "@drawable/";          //$NON-NLS-1$
@@ -1284,4 +1294,10 @@ public final class SdkConstants {
     public static final String ATTR_EMS = "ems"; //$NON-NLS-1$
 
     public static final String VALUE_HORIZONTAL = "horizontal"; //$NON-NLS-1$
+
+    public static final String GRADLE_PLUGIN_NAME = "com.android.tools.build:gradle:";
+    public static final String GRADLE_MINIMUM_VERSION = "1.9";
+    public static final String GRADLE_LATEST_VERSION = "1.10";
+    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "0.7.0";
+    public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.8.+";
 }

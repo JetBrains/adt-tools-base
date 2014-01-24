@@ -18,6 +18,7 @@ package com.android.build.gradle.model;
 
 import static com.android.builder.model.AndroidProject.ARTIFACT_INSTRUMENT_TEST;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.StringHelper;
@@ -57,7 +58,7 @@ import java.util.Map;
 
 public class AndroidProjectTest extends TestCase {
 
-    private final static String MODEL_VERSION = "0.7.0-SNAPSHOT";
+    private static final String MODEL_VERSION = "0.8.1-SNAPSHOT";
 
     private static final Map<String, ProjectData> sProjectModelMap = Maps.newHashMap();
 
@@ -229,7 +230,8 @@ public class AndroidProjectTest extends TestCase {
         }
     }
 
-    private void testDefaultSourceSets(@NonNull AndroidProject model, @NonNull File projectDir) {
+    private static void testDefaultSourceSets(@NonNull AndroidProject model,
+            @NonNull File projectDir) {
         ProductFlavorContainer defaultConfig = model.getDefaultConfig();
 
         // test the main source provider
@@ -590,10 +592,69 @@ public class AndroidProjectTest extends TestCase {
         assertEquals(1, testDependencies.getJars().size());
     }
 
+    public void testRsSupportMode() throws Exception {
+        // Load the custom model for the project
+        ProjectData projectData = getModelForProject("rsSupportMode");
+
+        AndroidProject model = projectData.model;
+        File projectDir = projectData.projectDir;
+
+        Variant debugVariant = getVariant(model.getVariants(), "x86Debug");
+        assertNotNull("x86Debug variant null-check", debugVariant);
+
+        AndroidArtifact mainArtifact = debugVariant.getMainArtifact();
+        Dependencies dependencies = mainArtifact.getDependencies();
+
+        assertFalse(dependencies.getJars().isEmpty());
+
+        boolean foundSupportJar = false;
+        for (File file : dependencies.getJars()) {
+            if (SdkConstants.FN_RENDERSCRIPT_V8_JAR.equals(file.getName())) {
+                foundSupportJar = true;
+                break;
+            }
+        }
+
+        assertTrue("Found suppport jar check", foundSupportJar);
+    }
+
 
     public void testGenFolderApi() throws Exception {
         // Load the custom model for the project
         ProjectData projectData = getModelForProject("genFolderApi");
+
+        AndroidProject model = projectData.model;
+        File projectDir = projectData.projectDir;
+
+        File buildDir = new File(projectDir, "build");
+
+        for (Variant variant : model.getVariants()) {
+
+            AndroidArtifact mainInfo = variant.getMainArtifact();
+            assertNotNull(
+                    "Null-check on mainArtifactInfo for " + variant.getDisplayName(),
+                    mainInfo);
+
+            // get the generated source folders.
+            Collection<File> genFolder = mainInfo.getGeneratedSourceFolders();
+
+            // We're looking for a custom folder
+            String folderStart = new File(buildDir, "customCode").getAbsolutePath() + File.separatorChar;
+            boolean found = false;
+            for (File f : genFolder) {
+                if (f.getAbsolutePath().startsWith(folderStart)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            assertTrue("custom generated source folder check", found);
+        }
+    }
+
+    public void testGenFolderApi2() throws Exception {
+        // Load the custom model for the project
+        ProjectData projectData = getModelForProject("genFolderApi2");
 
         AndroidProject model = projectData.model;
         File projectDir = projectData.projectDir;
@@ -720,6 +781,10 @@ public class AndroidProjectTest extends TestCase {
             SourceProvider variantSourceProvider = javaArtifact.getVariantSourceProvider();
             assertNotNull(variantSourceProvider);
             assertEquals("provider:" + name, variantSourceProvider.getManifestFile().getPath());
+
+            Dependencies deps = javaArtifact.getDependencies();
+            assertNotNull("java artifact deps null-check", deps);
+            assertFalse(deps.getJars().isEmpty());
         }
     }
 

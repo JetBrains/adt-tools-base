@@ -23,13 +23,12 @@ import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.sdklib.internal.avd.AvdManager;
 import com.android.sdklib.io.FileOp;
-import com.android.sdklib.local.LocalPlatformPkgInfo;
 import com.android.sdklib.mock.MockLog;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
+import com.android.sdklib.repository.local.LocalPlatformPkgInfo;
 import com.android.utils.ILogger;
-
 import junit.framework.TestCase;
 
 import java.io.File;
@@ -124,13 +123,13 @@ public class SdkManagerTestCase extends TestCase {
         private File mTmpAvdRoot;
 
         public TmpAvdManager(SdkManager sdkManager, ILogger log) throws AndroidLocationException {
-            super(sdkManager, log);
+            super(sdkManager.getLocalSdk(), log);
         }
 
         @Override
         public String getBaseAvdFolder() throws AndroidLocationException {
             if (mTmpAvdRoot == null) {
-                mTmpAvdRoot = new File(getSdkManager().getLocation(), "tmp_avds");
+                mTmpAvdRoot = new File(getLocalSdk().getLocation(), "tmp_avds");
                 mTmpAvdRoot.mkdirs();
             }
             return mTmpAvdRoot.getAbsolutePath();

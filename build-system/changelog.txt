@@ -1,3 +1,51 @@
+0.8.0
+
+- Support for Gradle 1.10
+- Requires Build-Tools 19.0.0+
+- Fixed issue 64302: Add renderscript support mode jar to the dependencies in the IDE model.
+- Fixed issue 64094: buildConfigField can now replace previous values inside the same type/flavors.
+- Add support for NDK prebuilts in library projects.
+- Parallelize pre-dexing to speed up clean builds.
+- Incremental dexing re-enabled (though it'll be automatically disabled in some builds for some cases that dx doesn't support yet.)
+- Added 'provided' dependency scope for compile only (not packaged) dependencies.
+  Additional scope per buildtype and flavors are also available (debugProvided, myFlavorProvided,etc...)
+- Fix NDK on windows.
+- Variant API improvements:
+   * getPreBuild() returns the prebuild task for the variant
+   * getSourceSets() returns the sorted sourcesets for the task, from lower to higher priority
+   * createZipAlignTask(String taskName, File inputFile, File outputFile)
+     This creates and return a new zipalign task. Useful if you have a custom plugin providing custom signing of APKs.
+     This also makes the assemble task depend on the new zipalign task, and wires variant.getOutputFile() to return the result of the zipalign task.
+   * project.android.registerJavaArtifact() now receives a Configuration object to pass the dependencies to the IDE. See artifactApi sample.
+- New "lintVital" task, run automatically as part of assembling release variants, which checks only fatal-severity issues
+- Replace Java parser in lint with ECJ; must faster and fixes bug where lint could hang on certain source constructs
+- Lint HTML report now writes links to source files and images as URLs relative to the report location
+
+0.7.3
+
+- Rebuild 0.7.2 to work with Java6
+
+0.7.2
+
+- Fix issue with Proguard.
+- Add packagingOptions support in Library projects.
+- Solve issue with local jar when testing library projects.
+- Fix bug with variant.addJavaSourceFoldersToModel
+- Add jniLibs folder to source sets for prebuilt .so files.
+- Lint fixes:
+   * fix RTL detector
+   * fix HTML report to have valid HTML
+
+0.7.1
+
+- DSL to exclude some files coming from jar dependencies
+    android {
+      packagingOptions {
+        exclude 'META-INF/LICENSE.txt'
+      }
+    }
+
+
 0.7.0
 - Requires Gradle 1.9
 - You can now have a variant specific source folder if you have flavors.

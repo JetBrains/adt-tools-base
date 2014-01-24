@@ -20,6 +20,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.packaging.JavaResourceProcessor.IArchiveBuilder;
+import com.android.builder.model.PackagingOptions;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.SealedPackageException;
@@ -33,6 +34,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -92,8 +94,16 @@ public final class Packager implements IArchiveBuilder {
      */
     private final class JavaAndNativeResourceFilter implements IZipEntryFilter {
         private final List<String> mNativeLibs = new ArrayList<String>();
+
+        @Nullable
+        private final PackagingOptions mPackagingOptions;
+
         private boolean mNativeLibsConflict = false;
         private File mInputFile;
+
+        private JavaAndNativeResourceFilter(@Nullable PackagingOptions packagingOptions) {
+            mPackagingOptions = packagingOptions;
+        }
 
         @Override
         public boolean checkEntry(String archivePath) throws ZipAbortException {
@@ -103,6 +113,13 @@ public final class Packager implements IArchiveBuilder {
             // empty path? skip to next entry.
             if (segments.length == 0) {
                 return false;
+            }
+
+            if (mPackagingOptions != null) {
+                Set<String> excludes = mPackagingOptions.getExcludes();
+                if (excludes.contains(archivePath)) {
+                    return false;
+                }
             }
 
             // Check each folders to make sure they should be included.
@@ -167,7 +184,7 @@ public final class Packager implements IArchiveBuilder {
     private boolean mIsSealed = false;
 
     private final NullZipFilter mNullFilter = new NullZipFilter();
-    private final JavaAndNativeResourceFilter mFilter = new JavaAndNativeResourceFilter();
+    private final JavaAndNativeResourceFilter mFilter;
     private final HashMap<String, File> mAddedFiles = new HashMap<String, File>();
 
     /**
@@ -223,7 +240,7 @@ public final class Packager implements IArchiveBuilder {
      *
      * @param apkLocation the file to create
      * @param resLocation the file representing the packaged resource file.
-     * @param dexLocation the file representing the dex file. This can be null for apk with no code.
+     * @param dexFolder the folder containing the dex file.
      * @param certificateInfo the signing information used to sign the package. Optional the OS path to the debug keystore, if needed or null.
      * @param logger the logger.
      * @throws com.android.builder.packaging.PackagerException
@@ -231,10 +248,12 @@ public final class Packager implements IArchiveBuilder {
     public Packager(
             @NonNull String apkLocation,
             @NonNull String resLocation,
-            @NonNull String dexLocation,
+            @NonNull File dexFolder,
             CertificateInfo certificateInfo,
             @Nullable String createdBy,
+            @Nullable PackagingOptions packagingOptions,
             ILogger logger) throws PackagerException {
+        mFilter = new JavaAndNativeResourceFilter(packagingOptions);
 
         try {
             File apkFile = new File(apkLocation);
@@ -242,12 +261,6 @@ public final class Packager implements IArchiveBuilder {
 
             File resFile = new File(resLocation);
             checkInputFile(resFile);
-
-            File dexFile = null;
-            if (dexLocation != null) {
-                dexFile = new File(dexLocation);
-                checkInputFile(dexFile);
-            }
 
             mLogger = logger;
 
@@ -264,9 +277,8 @@ public final class Packager implements IArchiveBuilder {
             addZipFile(resFile);
 
             // add the class dex file at the root of the apk
-            if (dexFile != null) {
-                addFile(dexFile, SdkConstants.FN_APK_CLASSES_DEX);
-            }
+
+            addDexFolder(dexFolder);
 
         } catch (PackagerException e) {
             if (mBuilder != null) {
@@ -278,6 +290,22 @@ public final class Packager implements IArchiveBuilder {
                 mBuilder.cleanUp();
             }
             throw new PackagerException(e);
+        }
+    }
+
+    private void addDexFolder(@NonNull File dexFolder)
+            throws DuplicateFileException, SealedPackageException, PackagerException {
+        File[] files = dexFolder.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File file, String name) {
+                return name.endsWith(SdkConstants.DOT_DEX);
+            }
+        });
+
+        if (files != null && files.length > 0) {
+            for (File file : files) {
+                addFile(file, file.getName());
+            }
         }
     }
 

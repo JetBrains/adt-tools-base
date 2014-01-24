@@ -19,10 +19,13 @@ package com.android.build.gradle.internal.dsl
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.builder.AndroidBuilder
+import com.android.builder.BuilderConstants
 import com.android.builder.DefaultProductFlavor
+import com.android.builder.model.ClassField
 import com.android.builder.model.NdkConfig
 import org.gradle.api.Action
 import org.gradle.api.internal.file.FileResolver
+import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
 /**
  * DSL overlay to make methods that accept String... work.
@@ -32,15 +35,18 @@ class ProductFlavorDsl extends DefaultProductFlavor {
 
     @NonNull
     private final FileResolver fileResolver
+    @NonNull
+    private final Logger logger
 
     private final NdkConfigDsl ndkConfig
 
     ProductFlavorDsl(@NonNull String name,
                      @NonNull FileResolver fileResolver,
-                     @NonNull Instantiator instantiator) {
+                     @NonNull Instantiator instantiator,
+                     @NonNull Logger logger) {
         super(name)
         this.fileResolver = fileResolver
-
+        this.logger = logger
         ndkConfig = instantiator.newInstance(NdkConfigDsl.class)
     }
 
@@ -56,6 +62,17 @@ class ProductFlavorDsl extends DefaultProductFlavor {
             @NonNull String type,
             @NonNull String name,
             @NonNull String value) {
+        ClassField alreadyPresent = getBuildConfigFields().get(name);
+        if (alreadyPresent != null) {
+            String flavorName = getName();
+            if (BuilderConstants.MAIN.equals(flavorName)) {
+                logger.info(
+                        "DefaultConfig: buildConfigField '$name' value is being replaced: ${alreadyPresent.value} -> $value");
+            } else {
+                logger.info(
+                        "ProductFlavor($flavorName): buildConfigField '$name' value is being replaced: ${alreadyPresent.value} -> $value");
+            }
+        }
         addBuildConfigField(AndroidBuilder.createClassField(type, name, value));
     }
 

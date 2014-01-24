@@ -106,6 +106,13 @@ public interface AndroidSourceSet {
     String getPackageConfigurationName();
 
     /**
+     * Returns the name of the compiled-only configuration for this source set.
+     * @return The provided configuration name
+     */
+    @NonNull
+    String getProvidedConfigurationName();
+
+    /**
      * The Android Manifest file for this source set.
      *
      * @return the manifest. Never returns null.
@@ -224,6 +231,26 @@ public interface AndroidSourceSet {
      */
     @NonNull
     AndroidSourceSet jni(Closure configureClosure);
+
+    /**
+     * The Android JNI libs directory for this source set.
+     *
+     * @return the libs. Never returns null.
+     */
+    @NonNull
+    AndroidSourceDirectorySet getJniLibs();
+
+    /**
+     * Configures the location of the Android JNI libs for this set.
+     *
+     * <p>The given closure is used to configure the {@link AndroidSourceDirectorySet}
+     * which contains the JNI libs.
+     *
+     * @param configureClosure The closure to use to configure the JNI libs.
+     * @return this
+     */
+    @NonNull
+    AndroidSourceSet jniLibs(Closure configureClosure);
 
     /**
      * Sets the root of the source sets to a given path.

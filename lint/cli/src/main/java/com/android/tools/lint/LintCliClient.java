@@ -43,6 +43,7 @@ import com.android.tools.lint.detector.api.Severity;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
 
 import java.io.File;
@@ -116,8 +117,17 @@ public class LintCliClient extends LintClient {
 
         Collections.sort(mWarnings);
 
+        boolean hasConsoleOutput = false;
         for (Reporter reporter : mFlags.getReporters()) {
             reporter.write(mErrorCount, mWarningCount, mWarnings);
+            if (reporter instanceof TextReporter && ((TextReporter)reporter).isWriteToConsole()) {
+                hasConsoleOutput = true;
+            }
+        }
+
+        if (!mFlags.isQuiet() && !hasConsoleOutput) {
+            System.out.println(String.format(
+                    "Lint found %1$d errors and %2$d warnings", mErrorCount, mWarningCount));
         }
 
         return mFlags.isSetExitCode() ? (mHasErrors ? ERRNO_ERRORS : ERRNO_SUCCESS) : ERRNO_SUCCESS;
@@ -156,7 +166,7 @@ public class LintCliClient extends LintClient {
 
     @Override
     public Configuration getConfiguration(@NonNull Project project) {
-        return new CliConfiguration(getConfiguration(), project);
+        return new CliConfiguration(getConfiguration(), project, mFlags.isFatalOnly());
     }
 
     /** File content cache */
@@ -175,7 +185,7 @@ public class LintCliClient extends LintClient {
 
     @Override
     public IJavaParser getJavaParser() {
-        return new LombokParser();
+        return new EcjParser(this);
     }
 
     @Override
@@ -374,12 +384,17 @@ public class LintCliClient extends LintClient {
      * flags supplied on the command line
      */
     class CliConfiguration extends DefaultConfiguration {
-        CliConfiguration(@NonNull Configuration parent, @NonNull Project project) {
+        private boolean mFatalOnly;
+
+        CliConfiguration(@NonNull Configuration parent, @NonNull Project project,
+                boolean fatalOnly) {
             super(LintCliClient.this, project, parent);
+            mFatalOnly = fatalOnly;
         }
 
-        CliConfiguration(File lintFile) {
+        CliConfiguration(File lintFile, boolean fatalOnly) {
             super(LintCliClient.this, null /*project*/, null /*parent*/, lintFile);
+            mFatalOnly = fatalOnly;
         }
 
         @NonNull
@@ -387,7 +402,11 @@ public class LintCliClient extends LintClient {
         public Severity getSeverity(@NonNull Issue issue) {
             Severity severity = computeSeverity(issue);
 
-            if (mFlags.isWarningsAsErrors() && severity != Severity.IGNORE) {
+            if (mFatalOnly && severity != Severity.FATAL) {
+                return Severity.IGNORE;
+            }
+
+            if (mFlags.isWarningsAsErrors() && severity.compareTo(Severity.ERROR) < 0) {
                 severity = Severity.ERROR;
             }
 
@@ -576,14 +595,22 @@ public class LintCliClient extends LintClient {
         return mDriver;
     }
 
+    private static Set<File> sAlreadyWarned;
+
     /** Returns the configuration used by this client */
     Configuration getConfiguration() {
         if (mConfiguration == null) {
             File configFile = mFlags.getDefaultConfiguration();
             if (configFile != null) {
                 if (!configFile.exists()) {
-                    log(Severity.ERROR, null, "Warning: Configuration file %1$s does not exist",
-                            configFile);
+                    if (sAlreadyWarned == null || !sAlreadyWarned.contains(configFile)) {
+                        log(Severity.ERROR, null,
+                                "Warning: Configuration file %1$s does not exist", configFile);
+                    }
+                    if (sAlreadyWarned == null) {
+                        sAlreadyWarned = Sets.newHashSet();
+                    }
+                    sAlreadyWarned.add(configFile);
                 }
                 mConfiguration = createConfigurationFromFile(configFile);
             }
@@ -598,7 +625,7 @@ public class LintCliClient extends LintClient {
     }
 
     public Configuration createConfigurationFromFile(File file) {
-        return new CliConfiguration(file);
+        return new CliConfiguration(file, mFlags.isFatalOnly());
     }
 
     @SuppressWarnings("resource") // Eclipse doesn't know about Closeables.closeQuietly

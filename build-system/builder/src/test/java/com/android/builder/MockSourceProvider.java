@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.builder.model.SourceProvider;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
@@ -80,5 +81,11 @@ class MockSourceProvider implements SourceProvider {
     @NonNull
     public Set<File> getJniDirectories() {
         return Collections.singleton(new File(mRoot, "jni"));
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getJniLibsDirectories() {
+        return Collections.singleton(new File(mRoot, "jniLibs"));
     }
 }
