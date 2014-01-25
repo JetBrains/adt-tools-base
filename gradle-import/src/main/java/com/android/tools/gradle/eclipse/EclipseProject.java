@@ -186,7 +186,16 @@ class EclipseProject implements Comparable<EclipseProject> {
                 break;
             }
 
-            File libraryDir = new File(mDir, library).getCanonicalFile();
+            File path = new File(library.replace('/', File.separatorChar));
+            File joined = path.isAbsolute() ? path : new File(mDir, library);
+            File libraryDir = joined.getCanonicalFile();
+            if (!libraryDir.exists()) {
+                String message = "Library reference " + library + " could not be found";
+                if (!path.isAbsolute()) {
+                    message += "\nPath is " + joined + " which resolves to " + libraryDir.getPath();
+                }
+                mImporter.reportError(this, getProjectPropertiesFile(), message);
+            }
 
             EclipseProject libraryPrj = getProject(mImporter, libraryDir);
             mDirectLibraries.add(libraryPrj);
@@ -1009,7 +1018,7 @@ class EclipseProject implements Comparable<EclipseProject> {
 
     @NonNull
     public String getName() {
-        return mName;
+        return mName != null ? mName : mDir.getName();
     }
 
     public int getMinSdkVersion() {
