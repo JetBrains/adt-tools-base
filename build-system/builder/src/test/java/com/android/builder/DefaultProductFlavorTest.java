@@ -17,13 +17,17 @@
 package com.android.builder;
 
 import com.android.builder.model.ProductFlavor;
+
 import junit.framework.TestCase;
+
+import java.util.Collection;
 
 public class DefaultProductFlavorTest extends TestCase {
 
     private DefaultProductFlavor mDefault;
     private DefaultProductFlavor mDefault2;
     private DefaultProductFlavor mCustom;
+    private DefaultProductFlavor mCustom2;
 
     @Override
     protected void setUp() throws Exception {
@@ -41,6 +45,10 @@ public class DefaultProductFlavorTest extends TestCase {
         mCustom.setTestInstrumentationRunner("com.forty.two.test.Runner");
         mCustom.setTestHandleProfiling(true);
         mCustom.setTestFunctionalTest(true);
+        mCustom.addResourceConfiguration("hdpi");
+
+        mCustom2 = new DefaultProductFlavor("custom2");
+        mCustom2.addResourceConfigurations("ldpi", "hdpi");
     }
 
     public void testMergeOnDefault() {
@@ -86,5 +94,14 @@ public class DefaultProductFlavorTest extends TestCase {
         assertNull(flavor.getTestInstrumentationRunner());
         assertNull(flavor.getTestHandleProfiling());
         assertNull(flavor.getTestFunctionalTest());
+    }
+
+    public void testResourceConfigMerge() {
+        ProductFlavor productflavor = mCustom.mergeOver(mCustom2);
+
+        Collection<String> configs = productflavor.getResourceConfigurations();
+        assertEquals(2, configs.size());
+        assertTrue(configs.contains("hdpi"));
+        assertTrue(configs.contains("ldpi"));
     }
 }
