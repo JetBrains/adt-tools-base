@@ -301,10 +301,22 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             // When generating errors we'll look for these an rip them back out if
             // it looks like one of the two variations have been seen.
             if (handle != null) {
-                signature = signature.replace('$', '/');
-                mReferencedClasses.put(signature, handle);
-                if (folderType == LAYOUT && !tag.equals(VIEW_FRAGMENT)) {
-                    mCustomViews.add(signature);
+                // Assume that each successive $ is really a capitalized package name
+                // instead. In other words, for A$B$C$D (assumed to be class A with
+                // inner classes A.B, A.B.C and A.B.C.D) generate the following possible
+                // referenced classes A/B$C$D (class B in package A with inner classes C and C.D),
+                // A/B/C$D and A/B/C/D
+                while (true) {
+                    int index = signature.indexOf('$');
+                    if (index == -1) {
+                        break;
+                    }
+                    signature = signature.substring(0, index) + '/'
+                            + signature.substring(index + 1);
+                    mReferencedClasses.put(signature, handle);
+                    if (folderType == LAYOUT && !tag.equals(VIEW_FRAGMENT)) {
+                        mCustomViews.add(signature);
+                    }
                 }
             }
         }
@@ -379,7 +391,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
         String curr = classNode.name;
         if (mReferencedClasses != null && mReferencedClasses.containsKey(curr)) {
             boolean isCustomView = mCustomViews.contains(curr);
-            mReferencedClasses.remove(curr);
+            removeReferences(curr);
 
             // Ensure that the class is public, non static and has a null constructor!
 
@@ -430,6 +442,41 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                             ClassContext.createSignature(classNode.name, null, null)),
                         null);
             }
+        }
+    }
+
+    private void removeReferences(String curr) {
+        mReferencedClasses.remove(curr);
+
+        // Since "A.B.C" is ambiguous whether it's referencing a class in package A.B or
+        // an inner class C in package A, we insert multiple possible references when we
+        // encounter the A.B.C reference; now that we've seen the actual class we need to
+        // remove all the possible permutations we've added such that the permutations
+        // don't count as unreferenced classes.
+        int index = curr.lastIndexOf('/');
+        if (index == -1) {
+            return;
+        }
+        boolean hasCapitalizedPackageName = false;
+        for (int i = index - 1; i >= 0; i--) {
+            char c = curr.charAt(i);
+            if (Character.isUpperCase(c)) {
+                hasCapitalizedPackageName = true;
+                break;
+            }
+        }
+        if (!hasCapitalizedPackageName) {
+            // No path ambiguity
+            return;
+        }
+
+        while (true) {
+            index = curr.lastIndexOf('/');
+            if (index == -1) {
+                break;
+            }
+            curr = curr.substring(0, index) + '$' + curr.substring(index + 1);
+            mReferencedClasses.remove(curr);
         }
     }
 }

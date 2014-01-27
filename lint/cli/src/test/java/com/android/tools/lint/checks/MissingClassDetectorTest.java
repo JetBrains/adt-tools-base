@@ -443,6 +443,20 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+
+    public void testMissingClass() throws Exception {
+        mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
+        assertEquals(""
+                + "No warnings.",
+
+                lintProject(
+                        "bytecode/.classpath=>.classpath",
+                        "bytecode/user_prefs_fragment.xml=>res/layout/user_prefs_fragment.xml",
+                        "bytecode/ViewAndUpdatePreferencesActivity$UserPreferenceFragment.class.data=>bin/classes/course/examples/DataManagement/PreferenceActivity/ViewAndUpdatePreferencesActivity$UserPreferenceFragment.class"
+                ));
+    }
+
     public void testFragments() throws Exception {
         mScopes = Scope.MANIFEST_SCOPE;
         mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
