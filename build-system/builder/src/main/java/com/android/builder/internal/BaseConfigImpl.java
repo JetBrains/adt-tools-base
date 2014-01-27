@@ -34,6 +34,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     private static final long serialVersionUID = 1L;
 
     private final Map<String, ClassField> mBuildConfigFields = Maps.newTreeMap();
+    private final Map<String, ClassField> mResValues = Maps.newTreeMap();
     private final List<File> mProguardFiles = Lists.newArrayList();
     private final List<File> mConsumerProguardFiles = Lists.newArrayList();
 
@@ -41,10 +42,20 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mBuildConfigFields.put(field.getName(), field);
     }
 
+    public void addResValue(@NonNull ClassField field) {
+        mResValues.put(field.getName(), field);
+    }
+
     @Override
     @NonNull
     public Map<String, ClassField> getBuildConfigFields() {
         return mBuildConfigFields;
+    }
+
+    @NonNull
+    @Override
+    public Map<String, ClassField> getResValues() {
+        return mResValues;
     }
 
     @Override
@@ -62,6 +73,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
 
     protected void _initWith(@NonNull BaseConfig that) {
         setBuildConfigFields(that.getBuildConfigFields());
+        setResValues(that.getResValues());
 
         mProguardFiles.clear();
         mProguardFiles.addAll(that.getProguardFiles());
@@ -75,6 +87,11 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mBuildConfigFields.putAll(fields);
     }
 
+    private void setResValues(@NonNull Map<String, ClassField> fields) {
+        mResValues.clear();
+        mResValues.putAll(fields);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -83,6 +100,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         BaseConfigImpl that = (BaseConfigImpl) o;
 
         if (!mBuildConfigFields.equals(that.mBuildConfigFields)) return false;
+        if (!mResValues.equals(that.mResValues)) return false;
         if (!mProguardFiles.equals(that.mProguardFiles)) return false;
         if (!mConsumerProguardFiles.equals(that.mConsumerProguardFiles)) return false;
 
@@ -92,6 +110,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     @Override
     public int hashCode() {
         int result = mBuildConfigFields.hashCode();
+        result = 31 * result + mResValues.hashCode();
         result = 31 * result + mProguardFiles.hashCode();
         result = 31 * result + mConsumerProguardFiles.hashCode();
         return result;

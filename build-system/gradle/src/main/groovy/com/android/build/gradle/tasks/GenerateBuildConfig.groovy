@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 package com.android.build.gradle.tasks
-
-import com.android.build.gradle.internal.tasks.IncrementalTask
+import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.builder.compiling.BuildConfigGenerator
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
 
-public class GenerateBuildConfig extends IncrementalTask {
+public class GenerateBuildConfig extends BaseTask {
 
     // ----- PUBLIC TASK API -----
 
@@ -57,15 +57,15 @@ public class GenerateBuildConfig extends IncrementalTask {
     @Input
     List<Object> items;
 
-    @Override
-    protected void doFullTaskAction() {
+    @TaskAction
+    void generate() {
         // must clear the folder in case the packagename changed, otherwise,
         // there'll be two classes.
         File destinationDir = getSourceOutputDir()
         emptyFolder(destinationDir)
 
         BuildConfigGenerator generator = new BuildConfigGenerator(
-                getSourceOutputDir().absolutePath,
+                getSourceOutputDir(),
                 getBuildConfigPackageName());
 
         // Hack (see IDEA-100046): We want to avoid reporting "condition is always true"

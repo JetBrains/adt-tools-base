@@ -984,7 +984,7 @@ public class ResourceMergerTest extends BaseTestCase {
                 continue;
             }
 
-            ResourceType type = ValueResourceParser2.getType(node);
+            ResourceType type = ValueResourceParser2.getType(node, file);
             if (type != ResourceType.STRING) {
                 throw new IllegalArgumentException("Only String resources supported.");
             }
