@@ -23,7 +23,7 @@
      This also makes the assemble task depend on the new zipalign task, and wires variant.getOutputFile() to return the result of the zipalign task.
    * project.android.registerJavaArtifact() now receives a Configuration object to pass the dependencies to the IDE. See artifactApi sample.
 - New "lintVital" task, run automatically as part of assembling release variants, which checks only fatal-severity issues
-- Replace Java parser in lint with ECJ; must faster and fixes bug where lint could hang on certain source constructs
+- Replace Java parser in lint with ECJ; much faster and fixes bug where lint could hang on certain source constructs
 - Lint HTML report now writes links to source files and images as URLs relative to the report location
 
 0.7.3
