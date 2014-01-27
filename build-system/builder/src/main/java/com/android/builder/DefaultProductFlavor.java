@@ -311,6 +311,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mSigningConfig =
                 mSigningConfig != null ? mSigningConfig : base.mSigningConfig;
 
+        flavor.addResourceConfigurations(getResourceConfigurations());
         flavor.addResourceConfigurations(base.getResourceConfigurations());
 
         return flavor;
