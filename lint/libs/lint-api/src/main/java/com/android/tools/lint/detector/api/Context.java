@@ -410,7 +410,7 @@ public class Context {
      * Returns true if the given issue is suppressed at the given character offset
      * in the file's contents
      */
-    protected boolean isSuppressedWithComment(int startOffset, @NonNull Issue issue) {
+    public boolean isSuppressedWithComment(int startOffset, @NonNull Issue issue) {
         String prefix = getSuppressCommentPrefix();
         if (prefix == null) {
             return false;

@@ -18,12 +18,14 @@ package com.android.tools.lint.detector.api;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.DOT_CLASS;
+import static com.android.SdkConstants.DOT_GRADLE;
 import static com.android.SdkConstants.DOT_JAVA;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.FN_PROJECT_PROGUARD_FILE;
 import static com.android.SdkConstants.OLD_PROGUARD_FILE;
 import static com.android.SdkConstants.RES_FOLDER;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.google.common.annotations.Beta;
 
@@ -100,6 +102,9 @@ public enum Scope {
      */
     JAVA_LIBRARIES,
 
+    /** The analysis considers a Gradle build file */
+    GRADLE_FILE,
+
     /**
      * Scope for other files. Issues that specify a custom scope will be called unconditionally.
      * This will call {@link Detector#run(Context)}} on the detectors unconditionally.
@@ -172,6 +177,8 @@ public enum Scope {
                         scope.add(JAVA_FILE);
                     } else if (name.endsWith(DOT_CLASS)) {
                         scope.add(CLASS_FILE);
+                    } else if (name.endsWith(DOT_GRADLE)) {
+                        scope.add(GRADLE_FILE);
                     } else if (name.equals(OLD_PROGUARD_FILE)
                             || name.equals(FN_PROJECT_PROGUARD_FILE)) {
                         scope.add(PROGUARD_FILE);
@@ -197,6 +204,8 @@ public enum Scope {
     public static final EnumSet<Scope> JAVA_FILE_SCOPE = EnumSet.of(JAVA_FILE);
     /** Scope-set used for detectors which are affected by a single Java class file */
     public static final EnumSet<Scope> CLASS_FILE_SCOPE = EnumSet.of(CLASS_FILE);
+    /** Scope-set used for detectors which are affected by a single Gradle build file */
+    public static final EnumSet<Scope> GRADLE_SCOPE = EnumSet.of(GRADLE_FILE);
     /** Scope-set used for detectors which are affected by the manifest only */
     public static final EnumSet<Scope> MANIFEST_SCOPE = EnumSet.of(MANIFEST);
     /** Scope-set used for detectors which correspond to some other context */

@@ -31,6 +31,7 @@ import static com.android.SdkConstants.RES_FOLDER;
 import static com.android.SdkConstants.TAG_USES_SDK;
 import static com.android.SdkConstants.VALUE_TRUE;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidLibrary;
@@ -46,6 +47,7 @@ import com.google.common.annotations.Beta;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
@@ -98,6 +100,7 @@ public class Project {
      */
     protected List<File> mFiles;
     protected List<File> mProguardFiles;
+    protected List<File> mGradleFiles;
     protected List<File> mManifestFiles;
     protected List<File> mJavaSourceFolders;
     protected List<File> mJavaClassFolders;
@@ -135,6 +138,15 @@ public class Project {
         }
 
         return mGradleProject;
+    }
+
+    /**
+     * Returns true if this project is an Android project.
+     *
+     * @return true if this project is an Android project.
+     */
+    public boolean isAndroidProject() {
+        return true;
     }
 
     /**
@@ -762,6 +774,32 @@ public class Project {
             mProguardFiles = files;
         }
         return mProguardFiles;
+    }
+
+    /**
+     * Returns the Gradle build script files configured for this project, if any
+     *
+     * @return the Gradle files, if any
+     */
+    @NonNull
+    public List<File> getGradleBuildScripts() {
+        if (mGradleFiles == null) {
+            if (isGradleProject()) {
+                mGradleFiles = Lists.newArrayListWithExpectedSize(2);
+                File build = new File(mDir, SdkConstants.FN_BUILD_GRADLE);
+                if (build.exists()) {
+                    mGradleFiles.add(build);
+                }
+                File settings = new File(mDir, SdkConstants.FN_SETTINGS_GRADLE);
+                if (settings.exists()) {
+                    mGradleFiles.add(settings);
+                }
+            } else {
+                mGradleFiles = Collections.emptyList();
+            }
+        }
+
+        return mGradleFiles;
     }
 
     /**
