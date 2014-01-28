@@ -303,6 +303,9 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             if (handle != null) {
                 signature = signature.replace('$', '/');
                 mReferencedClasses.put(signature, handle);
+                if (folderType == LAYOUT && !tag.equals(VIEW_FRAGMENT)) {
+                    mCustomViews.add(signature);
+                }
             }
         }
     }
