@@ -665,12 +665,19 @@ public abstract class BasePlugin {
         }
     }
 
-    protected void createProcessResTask(BaseVariantData variantData) {
-        createProcessResTask(variantData, "$project.buildDir/symbols/${variantData.variantConfiguration.dirName}")
+    protected void createProcessResTask(
+            @NonNull BaseVariantData variantData,
+            boolean generateResourcePackage) {
+        createProcessResTask(variantData,
+                "$project.buildDir/symbols/${variantData.variantConfiguration.dirName}",
+                generateResourcePackage)
     }
 
-    protected void createProcessResTask(BaseVariantData variantData, final String symbolLocation) {
-        def processResources = project.tasks.create(
+    protected void createProcessResTask(
+            @NonNull BaseVariantData variantData,
+            @NonNull final String symbolLocation,
+            boolean generateResourcePackage) {
+        ProcessAndroidResources processResources = project.tasks.create(
                 "process${variantData.variantConfiguration.fullName.capitalize()}Resources",
                 ProcessAndroidResources)
         variantData.processResourcesTask = processResources
@@ -709,9 +716,11 @@ public abstract class BasePlugin {
         processResources.conventionMapping.textSymbolOutputDir = {
             project.file(symbolLocation)
         }
-        processResources.conventionMapping.packageOutputFile = {
-            project.file(
-                    "$project.buildDir/libs/${project.archivesBaseName}-${variantData.variantConfiguration.baseName}.ap_")
+        if (generateResourcePackage) {
+            processResources.conventionMapping.packageOutputFile = {
+                project.file(
+                        "$project.buildDir/libs/${project.archivesBaseName}-${variantData.variantConfiguration.baseName}.ap_")
+            }
         }
         if (variantConfiguration.buildType.runProguard) {
             processResources.conventionMapping.proguardOutputFile = {
@@ -927,7 +936,7 @@ public abstract class BasePlugin {
         createBuildConfigTask(variantData)
 
         // Add a task to generate resource source files
-        createProcessResTask(variantData)
+        createProcessResTask(variantData, true /*generateResourcePackage*/)
 
         // process java resources
         createProcessJavaResTask(variantData)

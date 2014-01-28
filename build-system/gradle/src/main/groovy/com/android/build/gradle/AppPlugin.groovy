@@ -596,7 +596,7 @@ class AppPlugin extends com.android.build.gradle.BasePlugin implements Plugin<Pr
         createBuildConfigTask(variant)
 
         // Add a task to generate resource source files
-        createProcessResTask(variant)
+        createProcessResTask(variant, true /*generateResourcePackage*/)
 
         // Add a task to process the java resources
         createProcessJavaResTask(variant)
