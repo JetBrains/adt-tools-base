@@ -354,10 +354,13 @@ public class WrongIdDetector extends LayoutDetector {
         mGlobalIds.add(id);
 
         if (id.startsWith("@+") && !id.startsWith(NEW_ID_PREFIX) //$NON-NLS-1$
-                && !id.startsWith("@+android:id/")) {//$NON-NLS-1$
+                && !id.startsWith("@+android:id/")  //$NON-NLS-1$
+                || id.startsWith(NEW_ID_PREFIX)
+                && id.indexOf('/', NEW_ID_PREFIX.length()) != -1) {
+            int nameStart = id.startsWith(NEW_ID_PREFIX) ? NEW_ID_PREFIX.length() : 2;
+            String suggested = NEW_ID_PREFIX + id.substring(nameStart).replace('/', '_');
             String message = String.format(
-                    "ID definitions *must* be of the form @+id/name; try using %1$s",
-                    NEW_ID_PREFIX + id.substring(2).replace('/', '_'));
+                    "ID definitions *must* be of the form @+id/name; try using %1$s", suggested);
             context.report(INVALID, attribute, context.getLocation(attribute), message, null);
         }
     }
