@@ -167,6 +167,7 @@ public class ManifestMerger {
             "activity/name",
             "activity/parentActivityName",
             "activity-alias/name",
+            "activity-alias/targetActivity",
             "receiver/name",
             "service/name",
             "provider/name",
