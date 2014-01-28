@@ -493,7 +493,7 @@ public class TranslationDetector extends ResourceXmlDetector {
             if (mMissingLocations != null && mMissingLocations.containsKey(name)) {
                 String language = getLanguage(context.file.getParentFile().getName());
                 if (language == null) {
-                    if (context.getDriver().isSuppressed(MISSING, element)) {
+                    if (context.getDriver().isSuppressed(context, MISSING, element)) {
                         mMissingLocations.remove(name);
                         return;
                     }
@@ -505,7 +505,7 @@ public class TranslationDetector extends ResourceXmlDetector {
                 }
             }
             if (mExtraLocations != null && mExtraLocations.containsKey(name)) {
-                if (context.getDriver().isSuppressed(EXTRA, element)) {
+                if (context.getDriver().isSuppressed(context, EXTRA, element)) {
                     mExtraLocations.remove(name);
                     return;
                 }

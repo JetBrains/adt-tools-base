@@ -183,7 +183,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                             if (xmlContext.document != null
                                     && xmlContext.document.getDocumentElement() != null) {
                                 Element root = xmlContext.document.getDocumentElement();
-                                if (xmlContext.getDriver().isSuppressed(ISSUE, root)) {
+                                if (xmlContext.getDriver().isSuppressed(xmlContext, ISSUE, root)) {
                                     //  Also remove it from consideration such that even the
                                     // presence of this field in the R file is ignored.
                                     mUnused.remove(resource);
@@ -408,7 +408,8 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                     } else {
                         assert context.getPhase() == 2;
                         if (mUnused.containsKey(resource)) {
-                            if (context.getDriver().isSuppressed(getIssue(resource), item)) {
+                            if (context.getDriver().isSuppressed(context, getIssue(resource),
+                                    item)) {
                                 mUnused.remove(resource);
                                 continue;
                             }
@@ -491,7 +492,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
             if (context.getPhase() == 1) {
                 mDeclarations.add(resource);
             } else if (mUnused.containsKey(resource)) {
-                if (context.getDriver().isSuppressed(getIssue(resource), attribute)) {
+                if (context.getDriver().isSuppressed(context, getIssue(resource), attribute)) {
                     mUnused.remove(resource);
                     return;
                 }

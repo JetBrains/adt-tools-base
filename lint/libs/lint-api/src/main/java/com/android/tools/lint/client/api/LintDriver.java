@@ -33,7 +33,6 @@ import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.tools.lint.detector.api.LintUtils.isAnonymousClass;
 import static org.objectweb.asm.Opcodes.ASM4;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -63,7 +62,6 @@ import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 
-import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
@@ -109,6 +107,7 @@ import lombok.ast.Expression;
 import lombok.ast.MethodDeclaration;
 import lombok.ast.Modifiers;
 import lombok.ast.Node;
+import lombok.ast.Statement;
 import lombok.ast.StrictListAccessor;
 import lombok.ast.StringLiteral;
 import lombok.ast.TypeReference;
@@ -128,6 +127,8 @@ public class LintDriver {
      */
     private static final int MAX_PHASES = 3;
     private static final String SUPPRESS_LINT_VMSIG = '/' + SUPPRESS_LINT + ';';
+    /** Prefix used by the comment suppress mechanism in Studio/IntelliJ */
+    private static final String STUDIO_ID_PREFIX = "AndroidLint";
 
     private final LintClient mClient;
     private LintRequest mRequest;
@@ -1975,6 +1976,11 @@ public class LintDriver {
             log(Severity.WARNING, null, "Too late to register projects");
             mDelegate.registerProject(dir, project);
         }
+
+        @Override
+        public boolean checkForSuppressComments() {
+            return mDelegate.checkForSuppressComments();
+        }
     }
 
     /**
@@ -2060,7 +2066,7 @@ public class LintDriver {
     private static MethodInsnNode findConstructorInvocation(
             @NonNull MethodNode method,
             @NonNull String className) {
-        InsnList nodes = ((MethodNode) method).instructions;
+        InsnList nodes = method.instructions;
         for (int i = 0, n = nodes.size(); i < n; i++) {
             AbstractInsnNode instruction = nodes.get(i);
             if (instruction.getOpcode() == Opcodes.INVOKESPECIAL) {
@@ -2198,8 +2204,7 @@ public class LintDriver {
                             Object value = annotation.values.get(i + 1);
                             if (value instanceof String) {
                                 String id = (String) value;
-                                if (id.equalsIgnoreCase(SUPPRESS_ALL) ||
-                                        issue != null && id.equalsIgnoreCase(issue.getId())) {
+                                if (matches(issue, id)) {
                                     return true;
                                 }
                             } else if (value instanceof List) {
@@ -2208,8 +2213,7 @@ public class LintDriver {
                                 for (Object v : list) {
                                     if (v instanceof String) {
                                         String id = (String) v;
-                                        if (id.equalsIgnoreCase(SUPPRESS_ALL) || (issue != null
-                                                && id.equalsIgnoreCase(issue.getId()))) {
+                                        if (matches(issue, id)) {
                                             return true;
                                         }
                                     }
@@ -2224,15 +2228,39 @@ public class LintDriver {
         return false;
     }
 
+    private static boolean matches(@Nullable Issue issue, @NonNull String id) {
+        if (id.equalsIgnoreCase(SUPPRESS_ALL)) {
+            return true;
+        }
+
+        if (issue != null) {
+            String issueId = issue.getId();
+            if (id.equalsIgnoreCase(issueId)) {
+                return true;
+            }
+            if (id.startsWith(STUDIO_ID_PREFIX)
+                && id.regionMatches(true, STUDIO_ID_PREFIX.length(), issueId, 0, issueId.length())
+                && id.substring(STUDIO_ID_PREFIX.length()).equalsIgnoreCase(issueId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Returns whether the given issue is suppressed in the given parse tree node.
      *
+     * @param context the context for the source being scanned
      * @param issue the issue to be checked, or null to just check for "all"
      * @param scope the AST node containing the issue
      * @return true if there is a suppress annotation covering the specific
      *         issue in this class
      */
-    public boolean isSuppressed(@NonNull Issue issue, @Nullable Node scope) {
+    public boolean isSuppressed(@Nullable JavaContext context, @NonNull Issue issue,
+            @Nullable Node scope) {
+        boolean checkComments = mClient.checkForSuppressComments() &&
+                context != null && context.containsCommentSuppress();
         while (scope != null) {
             Class<? extends Node> type = scope.getClass();
             // The Lombok AST uses a flat hierarchy of node type implementation classes
@@ -2265,6 +2293,10 @@ public class LintDriver {
                 }
             }
 
+            if (checkComments && context.isSuppressed(scope, issue)) {
+                return true;
+            }
+
             scope = scope.getParent();
         }
 
@@ -2289,9 +2321,7 @@ public class LintDriver {
             return false;
         }
 
-        Iterator<Annotation> iterator = annotations.iterator();
-        while (iterator.hasNext()) {
-            Annotation annotation = iterator.next();
+        for (Annotation annotation : annotations) {
             TypeReference t = annotation.astAnnotationTypeReference();
             String typeName = t.getTypeName();
             if (typeName.endsWith(SUPPRESS_LINT)
@@ -2299,9 +2329,7 @@ public class LintDriver {
                 StrictListAccessor<AnnotationElement, Annotation> values =
                         annotation.astElements();
                 if (values != null) {
-                    Iterator<AnnotationElement> valueIterator = values.iterator();
-                    while (valueIterator.hasNext()) {
-                        AnnotationElement element = valueIterator.next();
+                    for (AnnotationElement element : values) {
                         AnnotationValue valueNode = element.astValue();
                         if (valueNode == null) {
                             continue;
@@ -2309,8 +2337,7 @@ public class LintDriver {
                         if (valueNode instanceof StringLiteral) {
                             StringLiteral literal = (StringLiteral) valueNode;
                             String value = literal.astValue();
-                            if (value.equalsIgnoreCase(SUPPRESS_ALL) ||
-                                    issue != null && issue.getId().equalsIgnoreCase(value)) {
+                            if (matches(issue, value)) {
                                 return true;
                             }
                         } else if (valueNode instanceof ArrayInitializer) {
@@ -2320,13 +2347,10 @@ public class LintDriver {
                             if (expressions == null) {
                                 continue;
                             }
-                            Iterator<Expression> arrayIterator = expressions.iterator();
-                            while (arrayIterator.hasNext()) {
-                                Expression arrayElement = arrayIterator.next();
+                            for (Expression arrayElement : expressions) {
                                 if (arrayElement instanceof StringLiteral) {
                                     String value = ((StringLiteral) arrayElement).astValue();
-                                    if (value.equalsIgnoreCase(SUPPRESS_ALL) || (issue != null
-                                            && issue.getId().equalsIgnoreCase(value))) {
+                                    if (matches(issue, value)) {
                                         return true;
                                     }
                                 }
@@ -2348,28 +2372,31 @@ public class LintDriver {
      * @return true if there is a suppress annotation covering the specific
      *         issue in this class
      */
-    public boolean isSuppressed(@NonNull Issue issue, @Nullable org.w3c.dom.Node node) {
+    public boolean isSuppressed(@Nullable XmlContext context, @NonNull Issue issue,
+            @Nullable org.w3c.dom.Node node) {
         if (node instanceof Attr) {
             node = ((Attr) node).getOwnerElement();
         }
+        boolean checkComments = mClient.checkForSuppressComments()
+                && context != null && context.containsCommentSuppress();
         while (node != null) {
             if (node.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
                 Element element = (Element) node;
                 if (element.hasAttributeNS(TOOLS_URI, ATTR_IGNORE)) {
                     String ignore = element.getAttributeNS(TOOLS_URI, ATTR_IGNORE);
                     if (ignore.indexOf(',') == -1) {
-                        if (ignore.equalsIgnoreCase(SUPPRESS_ALL) || (issue != null
-                                && issue.getId().equalsIgnoreCase(ignore))) {
+                        if (matches(issue, ignore)) {
                             return true;
                         }
                     } else {
                         for (String id : ignore.split(",")) { //$NON-NLS-1$
-                            if (id.equalsIgnoreCase(SUPPRESS_ALL) || (issue != null
-                                    && issue.getId().equalsIgnoreCase(id))) {
+                            if (matches(issue, id)) {
                                 return true;
                             }
                         }
                     }
+                } else if (checkComments && context.isSuppressed(node, issue)) {
+                    return true;
                 }
             }
 

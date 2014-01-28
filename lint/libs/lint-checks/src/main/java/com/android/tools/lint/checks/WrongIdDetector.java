@@ -316,7 +316,7 @@ public class WrongIdDetector extends LayoutDetector {
         Location location = handle.resolve();
         Object clientData = handle.getClientData();
         if (clientData instanceof Node) {
-            if (context.getDriver().isSuppressed(issue, (Node) clientData)) {
+            if (context.getDriver().isSuppressed(null, issue, (Node) clientData)) {
                 return;
             }
         }

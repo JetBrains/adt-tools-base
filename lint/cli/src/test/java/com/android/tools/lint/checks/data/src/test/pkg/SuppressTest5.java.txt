@@ -49,6 +49,12 @@ public class SuppressTest5 {
 		@SuppressWarnings("SdCardPath")
 		String string2 = "/sdcard/mypath7";
 
+		@SuppressWarnings("AndroidLintSdCardPath")
+		String string3 = "/sdcard/mypath9";
+
+		//noinspection AndroidLintSdCardPath
+		String string4 = "/sdcard/mypath9";
+
 		return string;
 	}
 
