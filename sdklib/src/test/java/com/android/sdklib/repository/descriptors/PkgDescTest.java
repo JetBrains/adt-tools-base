@@ -607,11 +607,6 @@ public class PkgDescTest extends TestCase {
         assertTrue (p19_2.compareTo(p18_1) > 0);
 
         // does not update a different vendor
-        final IPkgDesc p19_2c = PkgDesc.newSysImg(api19, "ppc", rev2);
-        assertFalse(p19_2c.isUpdateFor(p19_1));
-        assertTrue (p19_2c.compareTo(p19_1) > 0);
-
-        // does not update a different vendor
         final IPkgDesc a19_2  = PkgDesc.newAddon(api19, rev2, "auctrix", "addon_name");
         assertFalse(a19_2.isUpdateFor(p19_1));
         assertTrue (a19_2.compareTo(p19_1) < 0);
@@ -625,7 +620,8 @@ public class PkgDescTest extends TestCase {
     //----
 
     public final void testPkgDescSysImg() throws Exception {
-        IPkgDesc p = PkgDesc.newSysImg(new AndroidVersion("19"), "eabi", new MajorRevision(1));
+        IdDisplay tag = new IdDisplay("tag", "My Tag");
+        IPkgDesc p = PkgDesc.newSysImg(new AndroidVersion("19"), tag, "eabi", new MajorRevision(1));
 
         assertEquals(PkgType.PKG_SYS_IMAGES, p.getType());
 
@@ -647,14 +643,17 @@ public class PkgDescTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull (p.getMinPlatformToolsRev());
 
-        assertEquals("<PkgDesc Type=sys_images Android=API 19 Path=eabi MajorRev=1>", p.toString());
+        assertEquals(
+                "<PkgDesc Type=sys_images Android=API 19 Tag=tag [My Tag] Path=eabi MajorRev=1>",
+                p.toString());
     }
 
     public final void testPkgDescSysImg_Update() throws Exception {
+        IdDisplay tag1 = new IdDisplay("tag1", "My Tag 1");
         final AndroidVersion api19 = new AndroidVersion("19");
         final MajorRevision rev1 = new MajorRevision(1);
-        final IPkgDesc p19_1  = PkgDesc.newSysImg(api19, "eabi", rev1);
-        final IPkgDesc p19_1b = PkgDesc.newSysImg(api19, "eabi", rev1);
+        final IPkgDesc p19_1  = PkgDesc.newSysImg(api19, tag1, "eabi", rev1);
+        final IPkgDesc p19_1b = PkgDesc.newSysImg(api19, tag1, "eabi", rev1);
 
         // can't update itself
         assertFalse(p19_1 .isUpdateFor(p19_1b));
@@ -663,20 +662,26 @@ public class PkgDescTest extends TestCase {
         assertTrue (p19_1b.compareTo(p19_1 ) == 0);
 
         // updates a lesser revision of the same API
-        final IPkgDesc p19_2  = PkgDesc.newSysImg(api19, "eabi", new MajorRevision(2));
+        final IPkgDesc p19_2  = PkgDesc.newSysImg(api19, tag1, "eabi", new MajorRevision(2));
         assertTrue (p19_2.isUpdateFor(p19_1));
         assertTrue (p19_2.compareTo(p19_1) > 0);
 
         // does not update a different API
-        final IPkgDesc p18_1  = PkgDesc.newSysImg(new AndroidVersion("18"), "eabi", rev1);
+        final IPkgDesc p18_1  = PkgDesc.newSysImg(new AndroidVersion("18"), tag1, "eabi", rev1);
         assertFalse(p19_2.isUpdateFor(p18_1));
         assertFalse(p18_1.isUpdateFor(p19_2));
         assertTrue (p19_2.compareTo(p18_1) > 0);
 
         // does not update a different ABI
-        final IPkgDesc p19_2c = PkgDesc.newSysImg(api19, "ppc", new MajorRevision(2));
+        final IPkgDesc p19_2c = PkgDesc.newSysImg(api19, tag1, "ppc", new MajorRevision(2));
         assertFalse(p19_2c.isUpdateFor(p19_1));
         assertTrue (p19_2c.compareTo(p19_1) > 0);
+
+        // does not update a different tag
+        IdDisplay tag2 = new IdDisplay("tag2", "My Tag 2");
+        final IPkgDesc p19_t2 = PkgDesc.newSysImg(api19, tag2, "eabi", new MajorRevision(2));
+        assertFalse(p19_t2.isUpdateFor(p19_1));
+        assertTrue (p19_t2.compareTo(p19_1) > 0);
     }
 
 }

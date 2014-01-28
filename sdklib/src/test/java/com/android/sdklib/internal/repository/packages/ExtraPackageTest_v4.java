@@ -51,8 +51,8 @@ public class ExtraPackageTest_v4 extends ExtraPackageTest_Base {
     }
 
     @Override
-    protected Properties createProps() {
-        Properties props = super.createProps();
+    protected Properties createExpectedProps() {
+        Properties props = super.createExpectedProps();
 
         // ExtraPackage properties
         props.setProperty(PkgProps.EXTRA_VENDOR_ID, "the_vendor");
@@ -86,7 +86,7 @@ public class ExtraPackageTest_v4 extends ExtraPackageTest_Base {
 
     @Override
     public final void testCreate() {
-        Properties props = createProps();
+        Properties props = createExpectedProps();
         ExtraPackage p = createExtraPackage(props);
 
         testCreatedExtraPackage(p);
@@ -94,17 +94,17 @@ public class ExtraPackageTest_v4 extends ExtraPackageTest_Base {
 
     @Override
     public void testSaveProperties() {
-        Properties props = createProps();
-        ExtraPackage p = createExtraPackage(props);
+        Properties expected = createExpectedProps();
+        ExtraPackage p = createExtraPackage(expected);
 
-        Properties props2 = new Properties();
-        p.saveProperties(props2);
+        Properties actual = new Properties();
+        p.saveProperties(actual);
 
-        assertEquals(props2, props);
+        assertEquals(expected, actual);
     }
 
     public void testSameItemAs() {
-        Properties props1 = createProps();
+        Properties props1 = createExpectedProps();
         ExtraPackage p1 = createExtraPackage(props1);
         assertTrue(p1.sameItemAs(p1));
 
@@ -154,7 +154,7 @@ public class ExtraPackageTest_v4 extends ExtraPackageTest_Base {
     }
 
     public void testInstallId() {
-        Properties props = createProps();
+        Properties props = createExpectedProps();
         ExtraPackage p = createExtraPackage(props);
 
         assertEquals("extra-the_vendor-the_path", p.installId());

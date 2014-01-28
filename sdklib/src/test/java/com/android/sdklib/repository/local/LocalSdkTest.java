@@ -433,8 +433,13 @@ public class LocalSdkTest extends TestCase {
         mFOp.recordExistingFolder("/sdk/system-images/android-18/armeabi-v7a");
         mFOp.recordExistingFolder("/sdk/system-images/android-18/x86");
         mFOp.recordExistingFolder("/sdk/system-images/android-42");
+        mFOp.recordExistingFolder("/sdk/system-images/android-42/armeabi");
         mFOp.recordExistingFolder("/sdk/system-images/android-42/x86");
         mFOp.recordExistingFolder("/sdk/system-images/android-42/mips");
+        mFOp.recordExistingFolder("/sdk/system-images/android-42/somedir/armeabi-v7a");
+        mFOp.recordExistingFolder("/sdk/system-images/android-42/tag-1/x86");
+        mFOp.recordExistingFolder("/sdk/system-images/android-42/tag-2/mips");
+        // without tags
         mFOp.recordExistingFile("/sdk/system-images/android-18/armeabi-v7a/source.properties",
                 "Pkg.Revision=1\n" +
                 "SystemImage.Abi=armeabi-v7a\n" +
@@ -463,11 +468,49 @@ public class LocalSdkTest extends TestCase {
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Os=ANY\n" +
                 "Archive.Arch=ANY\n");
+        mFOp.recordExistingFile("/sdk/system-images/android-42/armeabi-v7a/source.properties",
+                "Pkg.Revision=5\n" +
+                "SystemImage.Abi=armeabi-v7a\n" +
+                "AndroidVersion.ApiLevel=42\n" +
+                "Pkg.LicenseRef=android-sdk-license\n" +
+                "Archive.Os=ANY\n" +
+                "Archive.Arch=ANY\n");
+        // with tags
+        mFOp.recordExistingFile("/sdk/system-images/android-42/somedir/armeabi-v7a/source.properties",
+                "Pkg.Revision=6\n" +
+                "SystemImage.TagId=default\n" +  // Prop TagId is used instead of the "somedir" name
+                "SystemImage.Abi=armeabi-v7a\n" +
+                "AndroidVersion.ApiLevel=42\n" +
+                "Pkg.LicenseRef=android-sdk-license\n" +
+                "Archive.Os=ANY\n" +
+                "Archive.Arch=ANY\n");
+        mFOp.recordExistingFile("/sdk/system-images/android-42/tag-1/x86/source.properties",
+                "Pkg.Revision=7\n" +
+                "SystemImage.TagId=tag-1\n" +
+                "SystemImage.TagDisplay=My Tag 1\n" +
+                "SystemImage.Abi=x86\n" +
+                "AndroidVersion.ApiLevel=42\n" +
+                "Pkg.LicenseRef=android-sdk-license\n" +
+                "Archive.Os=ANY\n" +
+                "Archive.Arch=ANY\n");
+        mFOp.recordExistingFile("/sdk/system-images/android-42/tag-2/mips/source.properties",
+                "Pkg.Revision=8\n" +
+                "SystemImage.TagId=tag-2\n" +
+                "SystemImage.TagDisplay=My Tag 2\n" +
+                "SystemImage.Abi=mips\n" +
+                "AndroidVersion.ApiLevel=42\n" +
+                "Pkg.LicenseRef=android-sdk-license\n" +
+                "Archive.Os=ANY\n" +
+                "Archive.Arch=ANY\n");
 
-        assertEquals("[<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 18 Path=armeabi-v7a MajorRev=1>>, " +
-                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 18 Path=x86 MajorRev=2>>, " +
-                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 42 Path=mips MajorRev=4>>, " +
-                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 42 Path=x86 MajorRev=3>>]",
+        assertEquals("[<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 18 Tag=default [Default] Path=armeabi-v7a MajorRev=1>>, " +
+                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 18 Tag=default [Default] Path=x86 MajorRev=2>>, " +
+                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 42 Tag=default [Default] Path=armeabi-v7a MajorRev=6>>, " +
+                      // Tag=default Path=armeabi-v7a MajorRev=5 is overriden by the MajorRev=6 above
+                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 42 Tag=default [Default] Path=mips MajorRev=4>>, " +
+                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 42 Tag=default [Default] Path=x86 MajorRev=3>>, " +
+                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 42 Tag=tag-1 [My Tag 1] Path=x86 MajorRev=7>>, " +
+                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 42 Tag=tag-2 [My Tag 2] Path=mips MajorRev=8>>]",
                      Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGES)));
 
         LocalPkgInfo pi = mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGES)[0];

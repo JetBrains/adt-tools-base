@@ -96,7 +96,7 @@ public class PackageTest extends TestCase {
     }
 
     public void testCreate() throws Exception {
-        Properties props = createProps();
+        Properties props = createExpectedProps();
 
         Package p = new MockPackage(
                 null, //source
@@ -114,11 +114,11 @@ public class PackageTest extends TestCase {
     }
 
     public void testSaveProperties() throws Exception {
-        Properties props = createProps();
+        Properties expected = createExpectedProps();
 
         Package p = new MockPackage(
                 null, //source
-                props,
+                expected,
                 -1, //revision
                 null, //license
                 null, //description
@@ -128,10 +128,10 @@ public class PackageTest extends TestCase {
                 LOCAL_ARCHIVE_PATH //archiveOsPath
                 );
 
-        Properties props2 = new Properties();
-        p.saveProperties(props2);
+        Properties actual = new Properties();
+        p.saveProperties(actual);
 
-        assertEquals(props2, props);
+        assertEquals(expected, actual);
     }
 
     /**
@@ -140,23 +140,23 @@ public class PackageTest extends TestCase {
      * This is protected and used by derived classes to perform
      * a similar creation test.
      */
-    protected Properties createProps() {
+    protected Properties createExpectedProps() {
         Properties props = new Properties();
 
         // Package properties
-        props.setProperty(PkgProps.PKG_REVISION, "42");
-        props.setProperty(PkgProps.PKG_LICENSE, "The License");
-        props.setProperty(PkgProps.PKG_DESC, "Some description.");
-        props.setProperty(PkgProps.PKG_DESC_URL, "http://description/url");
+        props.setProperty(PkgProps.PKG_REVISION,     "42");
+        props.setProperty(PkgProps.PKG_LICENSE,      "The License");
+        props.setProperty(PkgProps.PKG_DESC,         "Some description.");
+        props.setProperty(PkgProps.PKG_DESC_URL,     "http://description/url");
         props.setProperty(PkgProps.PKG_RELEASE_NOTE, "Release Note");
-        props.setProperty(PkgProps.PKG_RELEASE_URL, "http://release/note");
-        props.setProperty(PkgProps.PKG_SOURCE_URL, "http://source/url");
-        props.setProperty(PkgProps.PKG_OBSOLETE, "true");
+        props.setProperty(PkgProps.PKG_RELEASE_URL,  "http://release/note");
+        props.setProperty(PkgProps.PKG_SOURCE_URL,   "http://source/url");
+        props.setProperty(PkgProps.PKG_OBSOLETE,     "true");
         return props;
     }
 
     /**
-     * Tests the values set via {@link #createProps()} after the
+     * Tests the values set via {@link #createExpectedProps()} after the
      * package has been created in {@link #testCreate()}.
      * This is protected and used by derived classes to perform
      * a similar creation test.

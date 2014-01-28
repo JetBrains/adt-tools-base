@@ -149,9 +149,26 @@ public class PackageParserUtils {
      *         is missing or empty, so you can't tell the difference.
      */
     public static String getXmlString(Node node, String xmlLocalName) {
-        Node child = findChildElement(node, xmlLocalName);
+        return getXmlString(node, xmlLocalName, "");                    //$NON-NLS-1$
+    }
 
-        return child == null ? "" : child.getTextContent();  //$NON-NLS-1$
+    /**
+     * Retrieves the value of that XML element as a string.
+     * Returns the defaultValue if the element is missing or empty.
+     * <p/>
+     * Note: use {@link #getOptionalXmlString(Node, String)} if you need to know when the
+     * element is missing versus empty.
+     *
+     * @param node The XML <em>parent</em> node to parse.
+     * @param xmlLocalName The XML local name to find in the parent node.
+     * @param defaultValue A default value to return if the element is missing.
+     * @return The text content of the element
+     *         or the defaultValue if the element is missing or empty.
+     */
+    public static String getXmlString(Node node, String xmlLocalName, String defaultValue) {
+        Node child = findChildElement(node, xmlLocalName);
+        String content = child == null ? null : child.getTextContent();
+        return content == null || content.isEmpty() ? defaultValue : content;
     }
 
     /**
@@ -169,7 +186,6 @@ public class PackageParserUtils {
      */
     public static String getOptionalXmlString(Node node, String xmlLocalName) {
         Node child = findChildElement(node, xmlLocalName);
-
         return child == null ? null : child.getTextContent();  //$NON-NLS-1$
     }
 
