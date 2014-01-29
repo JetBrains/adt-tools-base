@@ -153,6 +153,8 @@ public class NamespaceDetector extends LayoutDetector {
                         }
                         mUnusedNamespaces.put(item.getNodeName().substring(XMLNS_PREFIX.length()),
                                 attribute);
+                    } else if (value.startsWith("urn:")) { //$NON-NLS-1$
+                        continue;
                     } else if (!value.startsWith("http://")) { //$NON-NLS-1$
                         if (context.isEnabled(TYPO)) {
                             context.report(TYPO, attribute, context.getLocation(attribute),
