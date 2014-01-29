@@ -3,6 +3,10 @@
   You can now use 'resValue <type>,<name>,<value>' on build types and product flavors
   the same way you can use buildConfigField.
 - Fixed package renaming in activity-alias:targetActivity
+- Variant API improvements:
+   * packageName returns the variant's package name
+   * versionCode returns the (app/test) variant's versionCode
+   * versionName returns the (app/test/) variant's versionName. Can return null.
 
 0.8.0
 

@@ -118,6 +118,12 @@ public interface BaseVariant {
     void setOutputFile(@NonNull File outputFile);
 
     /**
+     * Returns the package name of the variant.
+     */
+    @NonNull
+    String getPackageName();
+
+    /**
      * Returns the pre-build anchor task
      */
     @NonNull

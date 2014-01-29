@@ -45,6 +45,18 @@ public interface ApkVariant extends BaseVariant {
     List<DefaultProductFlavor> getProductFlavors();
 
     /**
+     * Return the app versionCode. Even the value is not found, then 1 is returned as this
+     * is the implicit value that the platform would use.
+     */
+    int getVersionCode();
+
+    /**
+     * Return the app versionName or null if none found.
+     */
+    @Nullable
+    String getVersionName();
+
+    /**
      * Returns the {@link SigningConfig} for this build variant,
      * if one has been specified.
      */
