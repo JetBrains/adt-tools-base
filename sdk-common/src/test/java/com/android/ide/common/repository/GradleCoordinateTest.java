@@ -15,6 +15,9 @@
  */
 package com.android.ide.common.repository;
 
+import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_HIGHER;
+import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_LOWER;
+
 import com.android.ide.common.res2.BaseTestCase;
 import com.google.common.collect.Lists;
 
@@ -101,35 +104,97 @@ public class GradleCoordinateTest extends BaseTestCase {
         assertFalse(b.isSameArtifact(a));
     }
 
-    public void testCompareTo() throws Exception {
+    public void testCompareVersions() {
+        // Requirements order
         GradleCoordinate a = new GradleCoordinate("a.b.c", "package", 5, 4, 2);
         GradleCoordinate b = new GradleCoordinate("a.b.c", "package", 5, 5, 5);
-        assertTrue(a.compareTo(b) < 0);
-        assertTrue(b.compareTo(a) > 0);
+        assertTrue(COMPARE_PLUS_HIGHER.compare(a, b) < 0);
+        assertTrue(COMPARE_PLUS_HIGHER.compare(b, a) > 0);
 
         a = new GradleCoordinate("a.b.c", "package", 5, 4, 10);
         b = new GradleCoordinate("a.b.c", "package", 5, 4, GradleCoordinate.PLUS_REV);
-        assertTrue(a.compareTo(b) > 0);
+        assertTrue(COMPARE_PLUS_HIGHER.compare(a, b) < 0);
 
         a = new GradleCoordinate("a.b.c", "package", 5, 6, GradleCoordinate.PLUS_REV);
         b = new GradleCoordinate("a.b.c", "package", 6, 0, 0);
-        assertTrue(a.compareTo(b) < 0);
+        assertTrue(COMPARE_PLUS_HIGHER.compare(a, b) < 0);
 
         a = new GradleCoordinate("a.b.c", "package", 5, 6, 0);
         b = new GradleCoordinate("a.b.c", "package", 5, 6, 0);
-        assertTrue(a.compareTo(b) == 0);
+        assertTrue(COMPARE_PLUS_HIGHER.compare(a, b) == 0);
 
         a = new GradleCoordinate("a.b.c", "package", 5, 4, 2);
         b = new GradleCoordinate("a.b.c", "feature", 5, 4, 2);
 
-        assertTrue((a.compareTo(b) < 0) == ("package".compareTo("feature") < 0));
+        assertTrue((COMPARE_PLUS_HIGHER.compare(a, b) < 0) == ("package".compareTo("feature") < 0));
 
         a = new GradleCoordinate("a.b.c", "package", 5, 6, 0);
         b = new GradleCoordinate("a.b.c", "package", 5, 6, GradleCoordinate.PLUS_REV);
-        assertTrue(a.compareTo(b) > 0);
+        assertTrue(COMPARE_PLUS_HIGHER.compare(a, b) < 0);
 
         a = new GradleCoordinate("a.b.c", "package", 5, 6, 0);
         b = new GradleCoordinate("a.b.c", "package", 5, GradleCoordinate.PLUS_REV);
-        assertTrue(a.compareTo(b) > 0);
+        assertTrue(COMPARE_PLUS_HIGHER.compare(a, b) < 0);
+
+        a = GradleCoordinate.parseCoordinateString("a.b.c:package:5.4.2");
+        b = GradleCoordinate.parseCoordinateString("a.b.c:package:5.4.+");
+        assert a != null;
+        assert b != null;
+        assertTrue(COMPARE_PLUS_HIGHER.compare(a, b) < 0);
+        assertTrue(COMPARE_PLUS_HIGHER.compare(b, a) > 0);
+
+        a = GradleCoordinate.parseCoordinateString("a.b.c:package:5");
+        b = GradleCoordinate.parseCoordinateString("a.b.c:package:+");
+        assert a != null;
+        assert b != null;
+        assertTrue(COMPARE_PLUS_HIGHER.compare(a, b) < 0);
+        assertTrue(COMPARE_PLUS_HIGHER.compare(b, a) > 0);
+    }
+
+    public void testCompareSpecificity() {
+        // Order of specificity
+        GradleCoordinate a = new GradleCoordinate("a.b.c", "package", 5, 4, 2);
+        GradleCoordinate b = new GradleCoordinate("a.b.c", "package", 5, 5, 5);
+        assertTrue(COMPARE_PLUS_LOWER.compare(a, b) < 0);
+        assertTrue(COMPARE_PLUS_LOWER.compare(b, a) > 0);
+
+        a = new GradleCoordinate("a.b.c", "package", 5, 4, 10);
+        b = new GradleCoordinate("a.b.c", "package", 5, 4, GradleCoordinate.PLUS_REV);
+        assertTrue(COMPARE_PLUS_LOWER.compare(a, b) > 0);
+
+        a = new GradleCoordinate("a.b.c", "package", 5, 6, GradleCoordinate.PLUS_REV);
+        b = new GradleCoordinate("a.b.c", "package", 6, 0, 0);
+        assertTrue(COMPARE_PLUS_LOWER.compare(a, b) < 0);
+
+        a = new GradleCoordinate("a.b.c", "package", 5, 6, 0);
+        b = new GradleCoordinate("a.b.c", "package", 5, 6, 0);
+        assertTrue(COMPARE_PLUS_LOWER.compare(a, b) == 0);
+
+        a = new GradleCoordinate("a.b.c", "package", 5, 4, 2);
+        b = new GradleCoordinate("a.b.c", "feature", 5, 4, 2);
+
+        assertTrue((COMPARE_PLUS_LOWER.compare(a, b) < 0) == ("package".compareTo("feature") < 0));
+
+        a = new GradleCoordinate("a.b.c", "package", 5, 6, 0);
+        b = new GradleCoordinate("a.b.c", "package", 5, 6, GradleCoordinate.PLUS_REV);
+        assertTrue(COMPARE_PLUS_LOWER.compare(a, b) > 0);
+
+        a = new GradleCoordinate("a.b.c", "package", 5, 6, 0);
+        b = new GradleCoordinate("a.b.c", "package", 5, GradleCoordinate.PLUS_REV);
+        assertTrue(COMPARE_PLUS_LOWER.compare(a, b) > 0);
+
+        a = GradleCoordinate.parseCoordinateString("a.b.c:package:5.4.2");
+        b = GradleCoordinate.parseCoordinateString("a.b.c:package:5.4.+");
+        assert a != null;
+        assert b != null;
+        assertTrue(COMPARE_PLUS_LOWER.compare(a, b) > 0);
+        assertTrue(COMPARE_PLUS_LOWER.compare(b, a) < 0);
+    }
+
+    public void testGetVersions() {
+        GradleCoordinate c = new GradleCoordinate("a.b.c", "package", 5, 4, 2);
+        assertEquals(5, c.getMajorVersion());
+        assertEquals(4, c.getMinorVersion());
+        assertEquals(2, c.getMicroVersion());
     }
 }

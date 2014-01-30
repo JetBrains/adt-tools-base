@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
+import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
@@ -56,6 +57,7 @@ public abstract class BaseVariantData {
     public Task preBuildTask;
     public PrepareDependenciesTask prepareDependenciesTask;
     public Task sourceGenTask;
+    public Task resourceGenTask;
     public CheckManifest checkManifestTask;
 
     public ProcessManifest processManifestTask;
@@ -65,6 +67,7 @@ public abstract class BaseVariantData {
     public MergeAssets mergeAssetsTask;
     public ProcessAndroidResources processResourcesTask;
     public GenerateBuildConfig generateBuildConfigTask;
+    public GenerateResValues generateResValuesTask;
 
     public JavaCompile javaCompileTask;
     public ProGuardTask proguardTask;

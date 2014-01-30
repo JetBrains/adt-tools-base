@@ -114,7 +114,7 @@ public class WrongIdDetectorTest extends AbstractCheckTest {
                 lintFiles("res/layout/siblings.xml"));
     }
 
-    public void testInvalidIds() throws Exception {
+    public void testInvalidIds1() throws Exception {
         // See https://code.google.com/p/android/issues/detail?id=56029
         assertEquals(""
                 + "res/layout/invalid_ids.xml:23: Error: ID definitions *must* be of the form @+id/name; try using @+id/menu_Reload [InvalidId]\n"
@@ -132,5 +132,16 @@ public class WrongIdDetectorTest extends AbstractCheckTest {
                 + "4 errors, 0 warnings\n",
 
                 lintFiles("res/layout/invalid_ids.xml"));
+    }
+
+    public void testInvalidIds2() throws Exception {
+        // https://code.google.com/p/android/issues/detail?id=65244
+        assertEquals(""
+                + "res/layout/invalid_ids2.xml:8: Error: ID definitions *must* be of the form @+id/name; try using @+id/btn_skip [InvalidId]\n"
+                + "        android:id=\"@+id/btn/skip\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintFiles("res/layout/invalid_ids2.xml"));
     }
 }

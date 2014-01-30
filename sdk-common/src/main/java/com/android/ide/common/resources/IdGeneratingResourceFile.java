@@ -26,6 +26,7 @@ import com.android.resources.ResourceType;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -56,9 +57,7 @@ public final class IdGeneratingResourceFile extends ResourceFile
         mFileType = type;
 
         // Set up our resource types
-        mResourceTypeList = new HashSet<ResourceType>();
-        mResourceTypeList.add(mFileType);
-        mResourceTypeList.add(ResourceType.ID);
+        mResourceTypeList = EnumSet.of(mFileType, ResourceType.ID);
 
         // compute the resource name
         mFileName = getFileName(type);

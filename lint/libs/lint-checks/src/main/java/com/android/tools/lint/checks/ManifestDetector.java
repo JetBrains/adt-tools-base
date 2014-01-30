@@ -484,12 +484,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                     "Should set android:versionCode to specify the application version", null);
         }
         Attr nameNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_VERSION_NAME);
-        if (nameNode != null && nameNode.getValue().startsWith(PREFIX_RESOURCE_REF)
-                && context.isEnabled(ILLEGAL_REFERENCE)) {
-            context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
-                    "The android:versionName cannot be a resource url, it must be "
-                            + "a literal string", null);
-        } else if (nameNode == null && context.isEnabled(SET_VERSION)
+        if (nameNode == null && context.isEnabled(SET_VERSION)
                 // Not required in Gradle projects; typically defined in build.gradle instead
                 // and inserted at build time
                 && !context.getMainProject().isGradleProject()) {
@@ -762,13 +757,13 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             mSeenApplication = true;
             boolean recordLocation = false;
             if (element.hasAttributeNS(ANDROID_URI, ATTR_ALLOW_BACKUP)
-                    || context.getDriver().isSuppressed(ALLOW_BACKUP, element)) {
+                    || context.getDriver().isSuppressed(context, ALLOW_BACKUP, element)) {
                 mSeenAllowBackup = true;
             } else {
                 recordLocation = true;
             }
             if (element.hasAttributeNS(ANDROID_URI, ATTR_ICON)
-                    || context.getDriver().isSuppressed(APPLICATION_ICON, element)) {
+                    || context.getDriver().isSuppressed(context, APPLICATION_ICON, element)) {
                 mSeenAppIcon = true;
             } else {
                 recordLocation = true;

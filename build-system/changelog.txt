@@ -1,3 +1,13 @@
+0.8.1:
+- Added the ability to create resource values through the DSL.
+  You can now use 'resValue <type>,<name>,<value>' on build types and product flavors
+  the same way you can use buildConfigField.
+- Fixed package renaming in activity-alias:targetActivity
+- Variant API improvements:
+   * packageName returns the variant's package name
+   * versionCode returns the (app/test) variant's versionCode
+   * versionName returns the (app/test/) variant's versionName. Can return null.
+
 0.8.0
 
 - Support for Gradle 1.10
@@ -18,7 +28,7 @@
      This also makes the assemble task depend on the new zipalign task, and wires variant.getOutputFile() to return the result of the zipalign task.
    * project.android.registerJavaArtifact() now receives a Configuration object to pass the dependencies to the IDE. See artifactApi sample.
 - New "lintVital" task, run automatically as part of assembling release variants, which checks only fatal-severity issues
-- Replace Java parser in lint with ECJ; must faster and fixes bug where lint could hang on certain source constructs
+- Replace Java parser in lint with ECJ; much faster and fixes bug where lint could hang on certain source constructs
 - Lint HTML report now writes links to source files and images as URLs relative to the report location
 
 0.7.3

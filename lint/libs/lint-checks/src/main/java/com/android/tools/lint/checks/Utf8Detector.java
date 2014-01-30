@@ -20,8 +20,8 @@ import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
-import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
@@ -33,9 +33,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Checks that the encoding used in resource files is always UTF-8.
+ * Checks that the encoding used in resource files is always UTF-8
  */
-public class Utf8Detector extends LayoutDetector {
+public class Utf8Detector extends ResourceXmlDetector {
+
     /** Detects non-utf8 encodings */
     public static final Issue ISSUE = Issue.create(
             "EnforceUTF8", //$NON-NLS-1$
@@ -46,7 +47,7 @@ public class Utf8Detector extends LayoutDetector {
             "apps use UTF-8, so by using UTF-8 you can protect yourself against subtle " +
             "bugs when using non-ASCII characters.",
             Category.I18N,
-            2,
+            5,
             Severity.WARNING,
             new Implementation(
                     Utf8Detector.class,
@@ -63,7 +64,7 @@ public class Utf8Detector extends LayoutDetector {
     @NonNull
     @Override
     public Speed getSpeed() {
-        return Speed.FAST;
+        return Speed.NORMAL;
     }
 
     @Override

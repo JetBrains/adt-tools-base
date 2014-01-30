@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import java.io.File;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -70,6 +71,15 @@ import java.util.Set;
  *          htmlReport true
  *          // optional path to report (default will be lint-results.html in the builddir)
  *          htmlOutput file("lint-report.html")
+ *          // Set the severity of the given issues to fatal (which means they will be
+ *          // checked during release builds (even if the lint target is not included)
+ *          fatal 'NewApi', 'InlineApi'
+ *          // Set the severity of the given issues to error
+ *          error 'Wakelock', 'TextViewEdits'
+ *          // Set the severity of the given issues to warning
+ *          warning 'ResourceAsColor'
+ *          // Set the severity of the given issues to ignore (same as disabling the check)
+ *          ignore 'TypographyQuotes'
  *     }
  * }
  * </pre>
@@ -171,4 +181,18 @@ public interface LintOptions {
      * If issues with severity "fatal" are found, the release build is aborted.
      */
     public boolean isCheckReleaseBuilds();
+
+    /**
+     * An optional map of severity overrides. The map maps from issue id's to the corresponding
+     * severity to use, which must be "fatal", "error", "warning", or "ignore".
+     *
+     * @return a map of severity overrides, or null
+     */
+    @Nullable
+    public Map<String, Severity> getSeverityOverrides();
+
+    /** A severity for Lint. Corresponds to com.android.tools.lint.detector.api.Severity. */
+    public enum Severity {
+        FATAL, ERROR, WARNING, INFORMATIONAL, IGNORE
+    }
 }

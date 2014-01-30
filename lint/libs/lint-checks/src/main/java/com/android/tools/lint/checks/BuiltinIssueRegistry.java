@@ -36,7 +36,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
     static {
-        final int initialCapacity = 164;
+        final int initialCapacity = 172;
         List<Issue> issues = new ArrayList<Issue>(initialCapacity);
 
         issues.add(AccessibilityDetector.ISSUE);
@@ -97,6 +97,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(PluralsDetector.EXTRA);
         issues.add(HardcodedValuesDetector.ISSUE);
         issues.add(Utf8Detector.ISSUE);
+        issues.add(ByteOrderMarkDetector.BOM);
         issues.add(DosLineEndingDetector.ISSUE);
         issues.add(CommentDetector.EASTER_EGG);
         issues.add(CommentDetector.STOP_SHIP);
@@ -203,6 +204,13 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(RtlDetector.ENABLED);
         issues.add(RtlDetector.SYMMETRY);
         issues.add(RtlDetector.USE_START);
+        issues.add(WebViewDetector.ISSUE);
+        issues.add(GradleDetector.DEPENDENCY);
+        issues.add(GradleDetector.IDE_SUPPORT);
+        issues.add(GradleDetector.PATH);
+        issues.add(GradleDetector.GRADLE_GETTER);
+        issues.add(GradleDetector.PLUS);
+        issues.add(GradleDetector.COMPATIBILITY);
 
         assert initialCapacity >= issues.size() : issues.size();
 

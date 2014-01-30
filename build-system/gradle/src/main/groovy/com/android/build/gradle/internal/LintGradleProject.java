@@ -460,11 +460,16 @@ public class LintGradleProject extends Project {
         @Override
         public List<File> getJavaLibraries() {
             if (mJavaLibraries == null) {
+                mJavaLibraries = Lists.newArrayList();
                 File jarFile = mLibrary.getJarFile();
                 if (jarFile.exists()) {
-                    mJavaLibraries = Collections.singletonList(jarFile);
-                } else {
-                    mJavaLibraries = Collections.emptyList();
+                    mJavaLibraries.add(jarFile);
+                }
+
+                for (File local : mLibrary.getLocalJars()) {
+                    if (local.exists()) {
+                        mJavaLibraries.add(local);
+                    }
                 }
             }
 

@@ -16,8 +16,6 @@
 
 package com.android.tools.lint.client.api;
 
-import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
-import static com.android.SdkConstants.BIN_FOLDER;
 import static com.android.SdkConstants.CLASS_FOLDER;
 import static com.android.SdkConstants.DOT_AAR;
 import static com.android.SdkConstants.DOT_JAR;
@@ -830,5 +828,13 @@ public abstract class LintClient {
     @SuppressWarnings("MethodMayBeStatic") // Intentionally instance method so it can be overridden
     public boolean isProjectDirectory(@NonNull File dir) {
         return LintUtils.isManifestFolder(dir) || Project.isAospFrameworksProject(dir);
+    }
+
+    /**
+     * Returns whether lint should look for suppress comments. Tools that already do
+     * this on their own can return false here to avoid doing unnecessary work.
+     */
+    public boolean checkForSuppressComments() {
+        return true;
     }
 }

@@ -186,6 +186,29 @@ public class LintCliXmlParser extends PositionXmlParser implements IDomParser {
     public void dispose(@NonNull XmlContext context, @NonNull Document document) {
     }
 
+    @Override
+    public int getNodeStartOffset(@NonNull XmlContext context, @NonNull Node node) {
+        OffsetPosition pos = (OffsetPosition) getPosition(node, -1, -1);
+        if (pos != null) {
+            return pos.getOffset();
+        }
+
+        return -1;
+    }
+
+    @Override
+    public int getNodeEndOffset(@NonNull XmlContext context, @NonNull Node node) {
+        OffsetPosition pos = (OffsetPosition) getPosition(node, -1, -1);
+        if (pos != null) {
+            Position end = pos.getEnd();
+            if (end != null) {
+                return end.getOffset();
+            }
+        }
+
+        return -1;
+    }
+
     /* Handle for creating DOM positions cheaply and returning full fledged locations later */
     private class LocationHandle implements Handle {
         private final File mFile;

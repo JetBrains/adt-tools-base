@@ -20,6 +20,7 @@ import com.android.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -27,8 +28,12 @@ import java.util.regex.Pattern;
 
 /**
  * This class represents a maven coordinate and allows for comparison at any level.
+ * <p>
+ * This class does not directly implement {@link java.lang.Comparable}; instead,
+ * you should use one of the specific {@link java.util.Comparator} constants based
+ * on what type of ordering you need.
  */
-public class GradleCoordinate implements Comparable<GradleCoordinate> {
+public class GradleCoordinate {
 
     /**
      * Maven coordinates take the following form: groupId:artifactId:packaging:classifier:version
@@ -215,6 +220,30 @@ public class GradleCoordinate implements Comparable<GradleCoordinate> {
     }
 
     /**
+     * Returns the major version (X in X.2.3), which can be {@link #PLUS_REV}, or Integer.MIN_VALUE
+     * if it is not available
+     */
+    public int getMajorVersion() {
+        return myRevisions.isEmpty() ? Integer.MIN_VALUE : myRevisions.get(0);
+    }
+
+    /**
+     * Returns the minor version (X in 1.X.3), which can be {@link #PLUS_REV}, or Integer.MIN_VALUE
+     * if it is not available
+     */
+    public int getMinorVersion() {
+        return myRevisions.size() < 2 ? Integer.MIN_VALUE : myRevisions.get(1);
+    }
+
+    /**
+     * Returns the major version (X in 1.2.X), which can be {@link #PLUS_REV}, or Integer.MIN_VALUE
+     * if it is not available
+     */
+    public int getMicroVersion() {
+        return myRevisions.size() < 3 ? Integer.MIN_VALUE : myRevisions.get(2);
+    }
+
+    /**
      * Returns true if and only if the given coordinate refers to the same group and artifact.
      *
      * @param o the coordinate to compare with
@@ -268,26 +297,74 @@ public class GradleCoordinate implements Comparable<GradleCoordinate> {
         return result;
     }
 
-    @Override
-    public int compareTo(@NonNull GradleCoordinate that) {
-        // Make sure we're comparing apples to apples. If not, compare artifactIds
-        if (!this.isSameArtifact(that)) {
-            return this.myArtifactId.compareTo(that.myArtifactId);
-        }
+    /**
+     * Comparator which compares Gradle versions - and treats a + version as lower
+     * than a specific number in the same place. This is typically useful when trying
+     * to for example order coordinates by "most specific".
+     */
+    public static final Comparator<GradleCoordinate> COMPARE_PLUS_LOWER =
+            new Comparator<GradleCoordinate>() {
+                @Override
+                public int compare(@NonNull GradleCoordinate a, @NonNull GradleCoordinate b) {
+                    // Make sure we're comparing apples to apples. If not, compare artifactIds
+                    if (!a.isSameArtifact(b)) {
+                        return a.myArtifactId.compareTo(b.myArtifactId);
+                    }
 
-        // Specific version should beat "any version"
-        if (myIsAnyRevision) {
-            return -1;
-        } else if (that.myIsAnyRevision) {
-            return 1;
-        }
+                    // Specific version should beat "any version"
+                    if (a.myIsAnyRevision) {
+                        return -1;
+                    } else if (b.myIsAnyRevision) {
+                        return 1;
+                    }
 
-        for (int i = 0; i < myRevisions.size(); ++i) {
-            int delta = myRevisions.get(i) - that.myRevisions.get(i);
-            if (delta != 0) {
-                return delta;
-            }
-        }
-        return 0;
-    }
+                    for (int i = 0; i < a.myRevisions.size(); ++i) {
+                        int delta = a.myRevisions.get(i) - b.myRevisions.get(i);
+                        if (delta != 0) {
+                            return delta;
+                        }
+                    }
+                    return 0;
+                }
+            };
+
+    /**
+     * Comparator which compares Gradle versions - and treats a + version as higher
+     * than a specific number. This is typically useful when seeing if a dependency
+     * is met, e.g. if you require version 0.7.3, comparing it with 0.7.+ would consider
+     * 0.7.+ higher and therefore satisfying the version requirement.
+     */
+    public static final Comparator<GradleCoordinate> COMPARE_PLUS_HIGHER =
+            new Comparator<GradleCoordinate>() {
+                @Override
+                public int compare(@NonNull GradleCoordinate a, @NonNull GradleCoordinate b) {
+                    // Make sure we're comparing apples to apples. If not, compare artifactIds
+                    if (!a.isSameArtifact(b)) {
+                        return a.myArtifactId.compareTo(b.myArtifactId);
+                    }
+
+                    // Plus is always highest
+                    if (a.myIsAnyRevision) {
+                        return 1;
+                    } else if (b.myIsAnyRevision) {
+                        return -1;
+                    }
+
+                    for (int i = 0; i < a.myRevisions.size(); ++i) {
+                        int revision1 = a.myRevisions.get(i);
+                        if (revision1 == PLUS_REV) {
+                            revision1 = Integer.MAX_VALUE;
+                        }
+                        int revision2 = b.myRevisions.get(i);
+                        if (revision2 == PLUS_REV) {
+                            revision2 = Integer.MAX_VALUE;
+                        }
+                        int delta = revision1 - revision2;
+                        if (delta != 0) {
+                            return delta;
+                        }
+                    }
+                    return 0;
+                }
+            };
 }

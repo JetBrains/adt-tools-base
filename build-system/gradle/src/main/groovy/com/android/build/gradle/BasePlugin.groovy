@@ -60,6 +60,7 @@ import com.android.build.gradle.internal.variant.TestedVariantData
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.Dex
 import com.android.build.gradle.tasks.GenerateBuildConfig
+import com.android.build.gradle.tasks.GenerateResValues
 import com.android.build.gradle.tasks.Lint
 import com.android.build.gradle.tasks.MergeAssets
 import com.android.build.gradle.tasks.MergeResources
@@ -478,6 +479,7 @@ public abstract class BasePlugin {
         ProductFlavor mergedFlavor = config.mergedFlavor
         boolean ndkMode = mergedFlavor.renderscriptNdkMode
 
+        variantData.resourceGenTask.dependsOn renderscriptTask
         // only put this dependency if rs will generate Java code
         if (!ndkMode) {
             variantData.sourceGenTask.dependsOn renderscriptTask
@@ -537,7 +539,7 @@ public abstract class BasePlugin {
                 "$taskNamePrefix${variantData.variantConfiguration.fullName.capitalize()}Resources",
                 MergeResources)
 
-        mergeResourcesTask.dependsOn variantData.prepareDependenciesTask, variantData.renderscriptCompileTask
+        mergeResourcesTask.dependsOn variantData.prepareDependenciesTask, variantData.resourceGenTask
         mergeResourcesTask.plugin = this
         mergeResourcesTask.variant = variantData
         mergeResourcesTask.incrementalFolder = project.file(
@@ -547,7 +549,8 @@ public abstract class BasePlugin {
 
         mergeResourcesTask.conventionMapping.inputResourceSets = {
             variantData.variantConfiguration.getResourceSets(
-                    variantData.renderscriptCompileTask.getResOutputDir(),
+                    [ variantData.renderscriptCompileTask.getResOutputDir(),
+                            variantData.generateResValuesTask.getResOutputDir() ],
                     includeDependencies)
         }
 
@@ -641,12 +644,40 @@ public abstract class BasePlugin {
         }
     }
 
-    protected void createProcessResTask(BaseVariantData variantData) {
-        createProcessResTask(variantData, "$project.buildDir/symbols/${variantData.variantConfiguration.dirName}")
+    protected void createGenerateResValuesTask(BaseVariantData variantData) {
+        GenerateResValues generateResValuesTask = project.tasks.create(
+                "generate${variantData.variantConfiguration.fullName.capitalize()}ResValues",
+                GenerateResValues)
+        variantData.generateResValuesTask = generateResValuesTask
+        variantData.resourceGenTask.dependsOn generateResValuesTask
+
+        VariantConfiguration variantConfiguration = variantData.variantConfiguration
+
+        generateResValuesTask.plugin = this
+        generateResValuesTask.variant = variantData
+
+        generateResValuesTask.conventionMapping.items = {
+            variantConfiguration.resValues
+        }
+
+        generateResValuesTask.conventionMapping.resOutputDir = {
+            project.file("$project.buildDir/res/generated/${variantData.variantConfiguration.dirName}")
+        }
     }
 
-    protected void createProcessResTask(BaseVariantData variantData, final String symbolLocation) {
-        def processResources = project.tasks.create(
+    protected void createProcessResTask(
+            @NonNull BaseVariantData variantData,
+            boolean generateResourcePackage) {
+        createProcessResTask(variantData,
+                "$project.buildDir/symbols/${variantData.variantConfiguration.dirName}",
+                generateResourcePackage)
+    }
+
+    protected void createProcessResTask(
+            @NonNull BaseVariantData variantData,
+            @NonNull final String symbolLocation,
+            boolean generateResourcePackage) {
+        ProcessAndroidResources processResources = project.tasks.create(
                 "process${variantData.variantConfiguration.fullName.capitalize()}Resources",
                 ProcessAndroidResources)
         variantData.processResourcesTask = processResources
@@ -685,9 +716,11 @@ public abstract class BasePlugin {
         processResources.conventionMapping.textSymbolOutputDir = {
             project.file(symbolLocation)
         }
-        processResources.conventionMapping.packageOutputFile = {
-            project.file(
-                    "$project.buildDir/libs/${project.archivesBaseName}-${variantData.variantConfiguration.baseName}.ap_")
+        if (generateResourcePackage) {
+            processResources.conventionMapping.packageOutputFile = {
+                project.file(
+                        "$project.buildDir/libs/${project.archivesBaseName}-${variantData.variantConfiguration.baseName}.ap_")
+            }
         }
         if (variantConfiguration.buildType.runProguard) {
             processResources.conventionMapping.proguardOutputFile = {
@@ -879,6 +912,9 @@ public abstract class BasePlugin {
         // Add a task to process the manifest
         createProcessTestManifestTask(variantData, "manifests")
 
+        // Add a task to create the res values
+        createGenerateResValuesTask(variantData)
+
         // Add a task to compile renderscript files.
         createRenderscriptTask(variantData)
 
@@ -900,7 +936,7 @@ public abstract class BasePlugin {
         createBuildConfigTask(variantData)
 
         // Add a task to generate resource source files
-        createProcessResTask(variantData)
+        createProcessResTask(variantData, true /*generateResourcePackage*/)
 
         // process java resources
         createProcessJavaResTask(variantData)
@@ -1686,6 +1722,9 @@ public abstract class BasePlugin {
         // also create sourceGenTask
         variantData.sourceGenTask = project.tasks.create(
                 "generate${variantData.variantConfiguration.fullName.capitalize()}Sources")
+        // and resGenTask
+        variantData.resourceGenTask = project.tasks.create(
+                "generate${variantData.variantConfiguration.fullName.capitalize()}Resources")
     }
 
     protected void createCheckManifestTask(@NonNull BaseVariantData variantData) {

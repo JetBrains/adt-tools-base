@@ -580,6 +580,9 @@ class AppPlugin extends com.android.build.gradle.BasePlugin implements Plugin<Pr
         // Add a task to process the manifest(s)
         createProcessManifestTask(variant, "manifests")
 
+        // Add a task to create the res values
+        createGenerateResValuesTask(variant)
+
         // Add a task to compile renderscript files.
         createRenderscriptTask(variant)
 
@@ -593,7 +596,7 @@ class AppPlugin extends com.android.build.gradle.BasePlugin implements Plugin<Pr
         createBuildConfigTask(variant)
 
         // Add a task to generate resource source files
-        createProcessResTask(variant)
+        createProcessResTask(variant, true /*generateResourcePackage*/)
 
         // Add a task to process the java resources
         createProcessJavaResTask(variant)

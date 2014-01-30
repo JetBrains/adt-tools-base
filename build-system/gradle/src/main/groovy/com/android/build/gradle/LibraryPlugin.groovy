@@ -204,6 +204,9 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
 
         createCheckManifestTask(variantData)
 
+        // Add a task to create the res values
+        createGenerateResValuesTask(variantData)
+
         // Add a task to process the manifest(s)
         createProcessManifestTask(variantData, DIR_BUNDLES)
 
@@ -214,7 +217,7 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
         // generate the R.txt file with all the symbols, including the ones from the dependencies.
         createMergeResourcesTask(variantData, false /*process9Patch*/)
 
-        // Create another merge task to only merge the resources from this libraries and not
+        // Create another merge task to only merge the resources from this library and not
         // the dependencies. This is what gets packaged in the aar.
         MergeResources packageRes = basicCreateMergeResourcesTask(variantData,
                 "package",
@@ -233,7 +236,8 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
         // Add a task to generate resource source files, directing the location
         // of the r.txt file to be directly in the bundle.
         createProcessResTask(variantData,
-                "$project.buildDir/$DIR_BUNDLES/${variantData.variantConfiguration.dirName}")
+                "$project.buildDir/$DIR_BUNDLES/${variantData.variantConfiguration.dirName}",
+                false /*generateResourcePackage*/)
 
         // process java resources
         createProcessJavaResTask(variantData)

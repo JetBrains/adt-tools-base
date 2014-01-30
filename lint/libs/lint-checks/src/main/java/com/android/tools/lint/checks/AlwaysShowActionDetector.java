@@ -184,7 +184,7 @@ public class AlwaysShowActionDetector extends ResourceXmlDetector implements Jav
 
     @Override
     public void visitAttribute(@NonNull XmlContext context, @NonNull Attr attribute) {
-        if (context.getDriver().isSuppressed(ISSUE, attribute)) {
+        if (context.getDriver().isSuppressed(context, ISSUE, attribute)) {
             mIgnoreFile = true;
             return;
         }
@@ -223,7 +223,7 @@ public class AlwaysShowActionDetector extends ResourceXmlDetector implements Jav
             if ((isIfRoom || isAlways)
                     && node.astOperand().toString().equals("MenuItem")) { //$NON-NLS-1$
                 if (isAlways) {
-                    if (mContext.getDriver().isSuppressed(ISSUE, node)) {
+                    if (mContext.getDriver().isSuppressed(mContext, ISSUE, node)) {
                         return super.visitSelect(node);
                     }
                     if (mAlwaysFields == null) {

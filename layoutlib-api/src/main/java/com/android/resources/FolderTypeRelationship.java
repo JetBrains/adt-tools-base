@@ -19,7 +19,7 @@ package com.android.resources;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,10 +30,10 @@ import java.util.Map;
 public final class FolderTypeRelationship {
 
     private static final Map<ResourceType, List<ResourceFolderType>> mTypeToFolderMap =
-        new HashMap<ResourceType, List<ResourceFolderType>>();
+        new EnumMap<ResourceType, List<ResourceFolderType>>(ResourceType.class);
 
     private static final Map<ResourceFolderType, List<ResourceType>> mFolderToTypeMap =
-        new HashMap<ResourceFolderType, List<ResourceType>>();
+        new EnumMap<ResourceFolderType, List<ResourceType>>(ResourceFolderType.class);
 
     static {
         // generate the relationships in a temporary map
