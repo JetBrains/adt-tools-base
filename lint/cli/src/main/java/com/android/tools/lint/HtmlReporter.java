@@ -29,6 +29,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Position;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
@@ -333,8 +334,10 @@ public class HtmlReporter extends Reporter {
         mWriter.write("\n</body>\n</html>");                             //$NON-NLS-1$
         mWriter.close();
 
-        String path = mOutput.getAbsolutePath();
-        System.out.println(String.format("Wrote HTML report to %1$s", path));
+        if (mDisplayEmpty || errorCount > 0 || warningCount > 0) {
+            String url = SdkUtils.fileToUrlString(mOutput.getAbsoluteFile());
+            System.out.println(String.format("Wrote HTML report to %1$s", url));
+        }
     }
 
     private void writeIssueMetadata(Issue issue, Severity severity, String disabledBy)

@@ -406,7 +406,7 @@ public class LintCliClient extends LintClient {
                 return Severity.IGNORE;
             }
 
-            if (mFlags.isWarningsAsErrors() && severity.compareTo(Severity.ERROR) < 0) {
+            if (mFlags.isWarningsAsErrors() && severity.compareTo(Severity.ERROR) > 0) {
                 severity = Severity.ERROR;
             }
 

@@ -161,8 +161,10 @@ public class XmlReporter extends Reporter {
         mWriter.write("\n</issues>\n");       //$NON-NLS-1$
         mWriter.close();
 
-        String path = mOutput.getAbsolutePath();
-        System.out.println(String.format("Wrote XML report to %1$s", path));
+        if (mDisplayEmpty || errorCount > 0 || warningCount > 0) {
+            String path = mOutput.getAbsolutePath();
+            System.out.println(String.format("Wrote XML report to %1$s", path));
+        }
     }
 
     private static void writeAttribute(Writer writer, int indent, String name, String value)

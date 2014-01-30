@@ -74,9 +74,11 @@ public class TextReporter extends Reporter {
 
         StringBuilder output = new StringBuilder(issues.size() * 200);
         if (issues.isEmpty()) {
-            mWriter.write("No issues found.");
-            mWriter.write('\n');
-            mWriter.flush();
+            if (mDisplayEmpty) {
+                mWriter.write("No issues found.");
+                mWriter.write('\n');
+                mWriter.flush();
+            }
         } else {
             for (Warning warning : issues) {
                 int startLength = output.length();
@@ -119,6 +121,7 @@ public class TextReporter extends Reporter {
 
                 if (warning.location != null && warning.location.getSecondary() != null) {
                     Location location = warning.location.getSecondary();
+                    boolean omitted = false;
                     while (location != null) {
                         if (location.getMessage() != null
                                 && !location.getMessage().isEmpty()) {
@@ -144,19 +147,21 @@ public class TextReporter extends Reporter {
                             }
 
                             output.append('\n');
+                        } else {
+                            omitted = true;
                         }
 
                         location = location.getSecondary();
                     }
 
-                    if (!abbreviate) {
+                    if (!abbreviate && omitted) {
                         location = warning.location.getSecondary();
                         StringBuilder sb = new StringBuilder(100);
                         sb.append("Also affects: ");
                         int begin = sb.length();
                         while (location != null) {
                             if (location.getMessage() == null
-                                    || !location.getMessage().isEmpty()) {
+                                    || location.getMessage().isEmpty()) {
                                 if (sb.length() > begin) {
                                     sb.append(", ");
                                 }

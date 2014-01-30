@@ -71,7 +71,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                     Severity.WARNING, project, null);
             warning2.line = 11;
             warning2.file = new File("/foo/bar/Foo/res/layout/main.xml");
-            warning2.errorLine = " (java.lang.String)         android:text=\"Fooo\" />\n" +
+            warning2.errorLine = "        android:text=\"Fooo\" />\n" +
                           "        ~~~~~~~~~~~~~~~~~~~\n";
             warning2.path = "res/layout/main.xml";
             warning2.location = Location.create(warning2.file,
@@ -120,7 +120,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 "* The application cannot be translated to other languages by just adding new translations for existing string resources.\n" +
                 "\n" +
                 "In Eclipse there is a quickfix to automatically extract this hardcoded string into a resource lookup.\"\n" +
-                "        errorLine1=\" (java.lang.String)         android:text=&quot;Fooo&quot; />\"\n" +
+                "        errorLine1=\"        android:text=&quot;Fooo&quot; />\"\n" +
                 "        errorLine2=\"        ~~~~~~~~~~~~~~~~~~~\">\n" +
                 "        <location\n" +
                 "            file=\"res/layout/main.xml\"\n" +
@@ -175,7 +175,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                     Severity.WARNING, project, null);
             warning2.line = 11;
             warning2.file = new File("/foo/bar/Foo/res/layout/main.xml");
-            warning2.errorLine = " (java.lang.String)         android:text=\"Fooo\" />\n" +
+            warning2.errorLine = "        android:text=\"Fooo\" />\n" +
                           "        ~~~~~~~~~~~~~~~~~~~\n";
             warning2.path = "res/layout/main.xml";
             warning2.location = Location.create(warning2.file,
@@ -224,7 +224,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 "* The application cannot be translated to other languages by just adding new translations for existing string resources.\n" +
                 "\n" +
                 "In Eclipse there is a quickfix to automatically extract this hardcoded string into a resource lookup.\"\n" +
-                "        errorLine1=\" (java.lang.String)         android:text=&quot;Fooo&quot; />\"\n" +
+                "        errorLine1=\"        android:text=&quot;Fooo&quot; />\"\n" +
                 "        errorLine2=\"        ~~~~~~~~~~~~~~~~~~~\">\n" +
                 "        <location\n" +
                 "            file=\"/foo/bar/Foo/res/layout/main.xml\"\n" +
