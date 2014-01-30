@@ -147,6 +147,33 @@ public class ProjectTest extends AbstractCheckTest {
         }
     }
 
+    public void testDependsOn1() throws Exception {
+        File dir = getProjectDir("MyProject",
+                "multiproject/main-manifest.xml=>AndroidManifest.xml",
+                "multiproject/main.properties=>project.properties",
+                "multiproject/MainCode.java.txt=>src/foo/main/MainCode.java",
+                "bytecode/classes.jar=>libs/android-support-v4.jar"
+        );
+        TestClient client = new TestClient();
+        TestProject project1 = new TestProject(client, dir);
+        client.registerProject(dir, project1);
+        assertNull(project1.dependsOn("unknown:library"));
+        assertTrue(project1.dependsOn("com.android.support:support-v4"));
+    }
+
+    public void testDependsOn2() throws Exception {
+        File dir = getProjectDir("MyProject",
+                "multiproject/main-manifest.xml=>AndroidManifest.xml",
+                "multiproject/main.properties=>project.properties",
+                "multiproject/MainCode.java.txt=>src/foo/main/MainCode.java",
+                "bytecode/classes.jar=>libs/support-v4-13.0.0-f5279ca6f213451a9dfb870f714ce6e6.jar"
+        );
+        TestClient client = new TestClient();
+        TestProject project1 = new TestProject(client, dir);
+        client.registerProject(dir, project1);
+        assertNull(project1.dependsOn("unknown:library"));
+        assertTrue(project1.dependsOn("com.android.support:support-v4"));
+    }
     @Override
     protected Detector getDetector() {
         return new UnusedResourceDetector();

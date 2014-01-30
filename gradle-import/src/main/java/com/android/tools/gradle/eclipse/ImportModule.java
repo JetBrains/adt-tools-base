@@ -35,10 +35,12 @@ import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.SdkConstants.FN_PROJECT_PROPERTIES;
 import static com.android.SdkConstants.GEN_FOLDER;
 import static com.android.SdkConstants.LIBS_FOLDER;
+import static com.android.SdkConstants.SUPPORT_LIB_ARTIFACT;
 import static com.android.tools.gradle.eclipse.GradleImport.ECLIPSE_DOT_CLASSPATH;
 import static com.android.tools.gradle.eclipse.GradleImport.ECLIPSE_DOT_PROJECT;
 import static java.io.File.separator;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
@@ -62,7 +64,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
 
     private static final String APPCOMPAT_DEP = "com.android.support:appcompat-v7:" + LATEST;
     private static final String GRID_LAYOUT_DEP = "com.android.support:gridlayout-v7:" + LATEST;
-    private static final String SUPPORT_LIB_DEP = "com.android.support:support-v4:" + LATEST;
+    private static final String SUPPORT_LIB_DEP = SUPPORT_LIB_ARTIFACT + ":" + LATEST;
     @SuppressWarnings("SpellCheckingInspection")
     private static final String SHERLOCK_DEP = "com.actionbarsherlock:actionbarsherlock:4.4.0@aar";
     private static final String PLAY_SERVICES_DEP = "com.google.android.gms:play-services:+";
