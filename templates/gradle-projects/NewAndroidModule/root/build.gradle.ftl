@@ -68,4 +68,5 @@ dependencies {
     compile '${dependency}'
     </#list>
     </#if>
+    compile fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
 }
