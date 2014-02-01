@@ -90,6 +90,7 @@ import com.android.builder.model.SourceProviderContainer
 import com.android.builder.testing.ConnectedDeviceProvider
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
+import com.android.ide.common.internal.ExecutorSingleton
 import com.android.utils.ILogger
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.ListMultimap
@@ -230,6 +231,10 @@ public abstract class BasePlugin {
 
         project.afterEvaluate {
             createAndroidTasks(false)
+        }
+
+        project.gradle.buildFinished {
+            ExecutorSingleton.shutdown()
         }
     }
 
