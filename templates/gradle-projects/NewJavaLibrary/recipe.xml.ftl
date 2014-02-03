@@ -10,4 +10,6 @@
     <copy from="gitignore"
             to="${escapeXmlAttribute(projectOut)}/.gitignore" />
 </#if>
+
+	<mkdir at="${escapeXmlAttribute(projectOut)}/libs" />
 </recipe>
