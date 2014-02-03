@@ -17,6 +17,7 @@ package com.android.build.gradle.tasks
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.builder.compiling.BuildConfigGenerator
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
@@ -54,7 +55,7 @@ public class GenerateBuildConfig extends BaseTask {
     @Input
     int versionCode
 
-    @Input
+    @Input @Nested
     List<Object> items;
 
     @TaskAction
