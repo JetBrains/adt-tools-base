@@ -15,21 +15,21 @@
         id="projectName"
         name="Library name"
         type="string"
-        constraints="nonempty"
-        default="MyLibrary"/>
+        constraints="nonempty|module|unique"
+        default="lib"/>
 
     <parameter
         id="packageName"
         name="Java package name"
         type="string"
-        constraints="nonempty"
+        constraints="nonempty|package"
         default="com.example"/>
 
     <parameter
         id="className"
         name="Java class name"
         type="string"
-        constraints="nonempty"
+        constraints="nonempty|class"
         default="MyClass"/>
 
     <parameter
