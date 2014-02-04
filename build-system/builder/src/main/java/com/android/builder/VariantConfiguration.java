@@ -36,13 +36,19 @@ import com.android.builder.model.SourceProvider;
 import com.android.builder.testing.TestData;
 import com.android.ide.common.res2.AssetSet;
 import com.android.ide.common.res2.ResourceSet;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -385,6 +391,111 @@ public class VariantConfiguration implements TestData {
         computeNdkConfig();
 
         return this;
+    }
+
+    /**
+     * Checks the SourceProviders to ensure that they don't use the same folders.
+     *
+     * This can't be allowed as it can break incremental support, or
+     * generate dup files in resulting APK.
+     *
+     * @throws java.lang.RuntimeException if a dup is found.
+     */
+    public void checkSourceProviders() {
+        List<SourceProvider> providers = Lists.newArrayListWithExpectedSize(4 + mFlavorSourceProviders.size());
+
+        providers.add(mDefaultSourceProvider);
+        if (mBuildTypeSourceProvider != null) {
+            providers.add(mBuildTypeSourceProvider);
+        }
+
+        providers.addAll(mFlavorSourceProviders);
+        if (mVariantSourceProvider != null) {
+            providers.add(mVariantSourceProvider);
+        }
+        if (mMultiFlavorSourceProvider != null) {
+            providers.add(mMultiFlavorSourceProvider);
+        }
+
+        try {
+            checkFileSourceSet(providers, SourceProvider.class.getMethod("getManifestFile"), "manifest");
+            checkFileCollectionSourceSet(providers,
+                    SourceProvider.class.getMethod("getJavaDirectories"), "java");
+            checkFileCollectionSourceSet(providers,
+                    SourceProvider.class.getMethod("getResourcesDirectories"), "resources");
+            checkFileCollectionSourceSet(providers,
+                    SourceProvider.class.getMethod("getAidlDirectories"), "aidl");
+            checkFileCollectionSourceSet(providers,
+                    SourceProvider.class.getMethod("getRenderscriptDirectories"), "rs");
+            checkFileCollectionSourceSet(providers,
+                    SourceProvider.class.getMethod("getJniDirectories"), "jni");
+            checkFileCollectionSourceSet(providers,
+                    SourceProvider.class.getMethod("getResDirectories"), "res");
+            checkFileCollectionSourceSet(providers,
+                    SourceProvider.class.getMethod("getAssetsDirectories"), "assets");
+            checkFileCollectionSourceSet(providers,
+                    SourceProvider.class.getMethod("getJniLibsDirectories"), "jniLibs");
+
+        } catch (NoSuchMethodException ignored) {
+        } catch (InvocationTargetException ignored) {
+        } catch (IllegalAccessException ignored) {
+        }
+    }
+
+    private static void checkFileSourceSet(
+            List<SourceProvider> providers,
+            Method m,
+            @NonNull String name)
+            throws IllegalAccessException, InvocationTargetException {
+        Map<String, File> map = Maps.newHashMap();
+        for (SourceProvider sourceProvider : providers) {
+            File file = (File) m.invoke(sourceProvider);
+
+            if (!map.isEmpty()) {
+                for (Map.Entry<String, File> entry : map.entrySet()) {
+                    if (file.equals(entry.getValue())) {
+                        throw new RuntimeException(String.format(
+                                "SourceSets '%s' and '%s' use the same file for '%s': %s",
+                                sourceProvider.getName(),
+                                entry.getKey(),
+                                name,
+                                file));
+                    }
+                }
+            }
+
+            map.put(sourceProvider.getName(), file);
+        }
+    }
+
+    private static void checkFileCollectionSourceSet(
+            List<SourceProvider> providers,
+            Method m,
+            @NonNull String name)
+            throws IllegalAccessException, InvocationTargetException {
+        Multimap<String, File> map = ArrayListMultimap.create();
+        for (SourceProvider sourceProvider : providers) {
+            //noinspection unchecked
+            Collection<File> list = (Collection<File>) m.invoke(sourceProvider);
+
+            if (!map.isEmpty()) {
+                for (Map.Entry<String, Collection<File>> entry : map.asMap().entrySet()) {
+                    Collection<File> existingFiles = entry.getValue();
+                    for (File f : list) {
+                        if (existingFiles.contains(f)) {
+                            throw new RuntimeException(String.format(
+                                    "SourceSets '%s' and '%s' use the same file/folder for '%s': %s",
+                                    sourceProvider.getName(),
+                                    entry.getKey(),
+                                    name,
+                                    f));
+                        }
+                    }
+                }
+            }
+
+            map.putAll(sourceProvider.getName(), list);
+        }
     }
 
     /**
@@ -1008,7 +1119,7 @@ public class VariantConfiguration implements TestData {
             Collection<File> flavorResDirs = sourceProvider.getResDirectories();
             // we need the same of the flavor config, but it's in a different list.
             // This is fine as both list are parallel collections with the same number of items.
-            resourceSet = new ResourceSet(mFlavorConfigs.get(n).getName());
+            resourceSet = new ResourceSet(sourceProvider.getName());
             resourceSet.addSources(flavorResDirs);
             resourceSets.add(resourceSet);
         }
