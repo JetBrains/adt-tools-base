@@ -795,7 +795,7 @@ public abstract class BasePlugin {
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Java",
                 JavaCompile)
         variantData.javaCompileTask = compileTask
-        compileTask.dependsOn variantData.sourceGenTask, variantData.variantDependency.compileConfiguration
+        compileTask.dependsOn variantData.sourceGenTask
 
         VariantConfiguration config = variantData.variantConfiguration
 
@@ -833,7 +833,7 @@ public abstract class BasePlugin {
 
         // TODO - dependency information for the compile classpath is being lost.
         // Add a temporary approximation
-        compileTask.dependsOn project.configurations.compile.buildDependencies
+        compileTask.dependsOn variantData.variantDependency.compileConfiguration.buildDependencies
 
         compileTask.conventionMapping.destinationDir = {
             project.file("$project.buildDir/classes/${variantData.variantConfiguration.dirName}")
@@ -1303,7 +1303,7 @@ public abstract class BasePlugin {
                 def preDexTaskName = "preDex${variantData.variantConfiguration.fullName.capitalize()}"
                 preDexTask = project.tasks.create(preDexTaskName, PreDex)
 
-                preDexTask.dependsOn variantData.javaCompileTask, variantData.variantDependency.packageConfiguration
+                preDexTask.dependsOn variantData.javaCompileTask, variantData.variantDependency.packageConfiguration.buildDependencies
                 preDexTask.plugin = this
                 preDexTask.dexOptions = extension.dexOptions
 
@@ -1317,9 +1317,10 @@ public abstract class BasePlugin {
             }
 
             // then dexing task
-            dexTask.dependsOn variantData.javaCompileTask
             if (runPreDex) {
                 dexTask.dependsOn preDexTask
+            } else {
+                dexTask.dependsOn variantData.javaCompileTask, variantData.variantDependency.packageConfiguration.buildDependencies
             }
 
             dexTask.conventionMapping.inputFiles = { variantData.javaCompileTask.outputs.files.files }
@@ -1504,7 +1505,7 @@ public abstract class BasePlugin {
         def proguardTask = project.tasks.create(
                 "proguard${variantData.variantConfiguration.fullName.capitalize()}",
                 ProGuardTask)
-        proguardTask.dependsOn variantData.javaCompileTask, variantData.variantDependency.packageConfiguration
+        proguardTask.dependsOn variantData.javaCompileTask, variantData.variantDependency.packageConfiguration.buildDependencies
 
         if (testedVariantData != null) {
             proguardTask.dependsOn testedVariantData.proguardTask
