@@ -17,6 +17,8 @@
 package com.android.sdklib;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 
 import java.util.List;
 import java.util.Map;
@@ -249,13 +251,15 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     public ISystemImage[] getSystemImages();
 
     /**
-     * Returns the system image information for the given {@code abiType}.
+     * Returns the system image information for the given {@code tag} and {@code abiType}.
      *
+     * @param tag A tag id-display.
      * @param abiType An ABI type string.
      * @return An existing {@link ISystemImage} for the requested {@code abiType}
      *         or null if none exists for this type.
      */
-    public ISystemImage getSystemImage(String abiType);
+    @Nullable
+    public ISystemImage getSystemImage(@NonNull IdDisplay tag, @NonNull String abiType);
 
     /**
      * Returns whether the given target is compatible with the receiver.

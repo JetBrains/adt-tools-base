@@ -18,11 +18,13 @@ package com.android.sdklib.internal.androidTarget;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -156,9 +158,10 @@ public final class AddOnTarget implements IAndroidTarget {
     }
 
     @Override
-    public ISystemImage getSystemImage(String abiType) {
+    @Nullable
+    public ISystemImage getSystemImage(@NonNull IdDisplay tag, @NonNull String abiType) {
         for (ISystemImage sysImg : mSystemImages) {
-            if (sysImg.getAbiType().equals(abiType)) {
+            if (sysImg.getTag().equals(tag) && sysImg.getAbiType().equals(abiType)) {
                 return sysImg;
             }
         }
