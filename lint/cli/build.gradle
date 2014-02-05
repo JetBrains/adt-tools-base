@@ -18,8 +18,16 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
-sdkPackaging {
-    launcherScripts = ['etc/lint', 'etc/lint.bat']
+sdk {
+    linux {
+        path('etc/lint') { executable true }
+    }
+    mac {
+        path('etc/lint') { executable true }
+    }
+    windows {
+        path 'etc/lint.bat'
+    }
 }
 
 // configure the manifest of the sdkJar task.

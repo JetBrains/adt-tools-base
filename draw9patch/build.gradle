@@ -13,8 +13,16 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
-sdkPackaging {
-    launcherScripts = ['etc/draw9patch', 'etc/draw9patch.bat']
+sdk {
+    linux {
+        path('etc/draw9patch') { executable true}
+    }
+    mac {
+        path('etc/draw9patch') { executable true}
+    }
+    windows {
+        path 'etc/draw9patch.bat'
+    }
 }
 
 sdkJar.manifest.attributes("Main-Class": "com.android.draw9patch.Application")

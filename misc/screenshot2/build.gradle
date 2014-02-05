@@ -8,8 +8,13 @@ dependencies {
     compile project(':ddmlib')
 }
 
-sdkPackaging {
-    launcherScripts = ['etc/screenshot2']
+sdk {
+    linux {
+        path('etc/screenshot2') { executable true }
+    }
+    mac {
+        path('etc/screenshot2') { executable true }
+    }
 }
 
 // configure the manifest of the sdkJar task.

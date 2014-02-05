@@ -11,8 +11,17 @@ archivesBaseName = 'jobb'
 // configure the manifest of the sdkJar task
 sdkJar.manifest.attributes("Main-Class": "com.android.jobb.Main")
 
-sdkPackaging {
-    launcherScripts = ['etc/jobb', 'etc/jobb.bat']
+sdk {
+    linux {
+        path('etc/jobb') { executable true }
+    }
+    mac {
+        path('etc/jobb') { executable true }
+    }
+    windows {
+        path 'etc/jobb.bat'
+    }
 }
+
 
 apply from: "$rootDir/buildSrc/base/baseVersion.gradle"
