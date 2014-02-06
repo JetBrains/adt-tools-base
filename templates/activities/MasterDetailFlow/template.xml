@@ -12,8 +12,6 @@
         <thumb>template_master_detail.png</thumb>
     </thumbs>
 
-    <category value="Flows" />
-
     <parameter
         id="objectKind"
         name="Object Kind"

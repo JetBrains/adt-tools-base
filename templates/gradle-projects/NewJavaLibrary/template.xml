@@ -9,8 +9,6 @@
         <thumb>template_new_project.png</thumb>
     </thumbs>
 
-    <category value="Applications" />
-
     <parameter
         id="projectName"
         name="Library name"
