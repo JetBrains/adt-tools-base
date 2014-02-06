@@ -18,7 +18,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBar','')}Activity<#if navType == 'tabs'> implements ActionBar.TabListener</#if> {
+public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBar','')}Activity<#if features == 'tabs'> implements ActionBar.TabListener</#if> {
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -40,7 +40,7 @@ public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBa
         super.onCreate(savedInstanceState);
         setContentView(R.layout.${layoutName});
 
-        <#if navType == 'tabs'>
+        <#if features == 'tabs'>
         // Set up the action bar.
         final ActionBar actionBar = get${Support}ActionBar();
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);</#if>
@@ -53,7 +53,7 @@ public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBa
         mViewPager = (ViewPager) findViewById(R.id.pager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
-        <#if navType == 'tabs'>
+        <#if features == 'tabs'>
         // When swiping between different sections, select the corresponding
         // tab. We can also use ActionBar.Tab#select() to do this if we have
         // a reference to the Tab.
@@ -80,7 +80,7 @@ public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBa
 
     <#include "include_options_menu.java.ftl">
 
-    <#if navType == 'tabs'>@Override
+    <#if features == 'tabs'>@Override
     public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
         // When the given tab is selected, switch to the corresponding page in
         // the ViewPager.

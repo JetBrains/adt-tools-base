@@ -35,7 +35,7 @@
             </#if>
             return rootView;
         }
-<#if navType == 'drawer'>
+<#if features == 'drawer'>
 
         @Override
         public void onAttach(Activity activity) {
