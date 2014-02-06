@@ -10,7 +10,7 @@
     <#else>
     <string name="hello_world">Hello world!</string>
     </#if>
-    <#if navType == 'drawer'>
+    <#if features == 'drawer'>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
