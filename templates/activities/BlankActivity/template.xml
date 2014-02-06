@@ -7,8 +7,6 @@
     minBuildApi="14"
     description="Creates a new blank activity, with an action bar and optional navigational elements such as tabs or horizontal swipe.">
 
-    <category value="Activities" />
-
     <parameter
         id="activityClass"
         name="Activity Name"
@@ -61,16 +59,17 @@
         help="The hierarchical parent activity, used to provide a default implementation for the 'Up' button" />
 
     <parameter
-        id="navType"
-        name="Navigation Type"
+        id="features"
+        name="Additional Features"
         type="enum"
         default="none"
-        help="The type of navigation to use for the activity" >
-        <option id="none" default="true">None</option>
+        help="Additional features to include, such as a fragment, swipe views, or a navigation drawer" >
+        <option id="none">None</option>
+        <option id="fragment">Include Blank Fragment</option>
         <option id="pager">Swipe Views (ViewPager)</option>
+        <option id="drawer">Navigation Drawer</option>
         <option id="tabs">Action Bar Tabs (with ViewPager)</option>
         <option id="spinner">Action Bar Spinner</option>
-        <option id="drawer">Navigation Drawer</option>
     </parameter>
 
     <parameter
@@ -85,11 +84,12 @@
         <!-- default thumbnail is required -->
         <thumb>template_blank_activity.png</thumb>
         <!-- attributes act as selectors based on chosen parameters -->
-        <thumb navType="none">template_blank_activity.png</thumb>
-        <thumb navType="tabs">template_blank_activity_tabs.png</thumb>
-        <thumb navType="pager">template_blank_activity_pager.png</thumb>
-        <thumb navType="spinner">template_blank_activity_dropdown.png</thumb>
-        <thumb navType="drawer">template_blank_activity_drawer.png</thumb>
+        <thumb features="none">template_blank_activity.png</thumb>
+        <thumb features="fragment">template_blank_activity_fragment.png</thumb>
+        <thumb features="tabs">template_blank_activity_tabs.png</thumb>
+        <thumb features="pager">template_blank_activity_pager.png</thumb>
+        <thumb features="spinner">template_blank_activity_dropdown.png</thumb>
+        <thumb features="drawer">template_blank_activity_drawer.png</thumb>
     </thumbs>
 
     <globals file="globals.xml.ftl" />
