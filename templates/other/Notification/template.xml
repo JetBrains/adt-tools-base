@@ -2,13 +2,11 @@
 <template
     format="4"
     revision="2"
-    name="New Notification"
+    name="Notification"
     description="Creates a new helper class that can show or cancel a status bar notification."
     minApi="4">
 
     <dependency name="android-support-v4" revision="10" />
-
-    <category value="Other" />
 
     <parameter
         id="className"
@@ -25,7 +23,7 @@
         default="text"
         help="The expanded notification style to use for devices running Android 4.1 or later." >
         <option id="none">None</option>
-        <option id="text" default="true">More text</option>
+        <option id="text">More text</option>
         <option id="picture">Picture</option>
         <option id="list">List</option>
     </parameter>
