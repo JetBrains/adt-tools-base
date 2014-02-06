@@ -2,14 +2,12 @@
 <template
     format="4"
     revision="2"
-    name="New Blank Fragment"
+    name="Fragment (Blank)"
     description="Creates a blank fragment that is compatible back to API level 4."
     minApi="7"
     minBuildApi="8">
 
     <dependency name="android-support-v4" revision="8" />
-
-    <category value="Other" />
 
     <parameter
         id="className"
