@@ -22,12 +22,16 @@ import static com.android.SdkConstants.ATTR_LAYOUT;
 import static com.android.SdkConstants.ATTR_LAYOUT_ABOVE;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_BASELINE;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_BOTTOM;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_END;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_LEFT;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_BOTTOM;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_END;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_LEFT;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_RIGHT;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_START;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_TOP;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_RIGHT;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_START;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_TOP;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_WITH_PARENT_MISSING;
 import static com.android.SdkConstants.ATTR_LAYOUT_BELOW;
@@ -40,15 +44,19 @@ import static com.android.SdkConstants.ATTR_LAYOUT_GRAVITY;
 import static com.android.SdkConstants.ATTR_LAYOUT_HEIGHT;
 import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN;
 import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN_BOTTOM;
+import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN_END;
 import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN_LEFT;
 import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN_RIGHT;
+import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN_START;
 import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN_TOP;
 import static com.android.SdkConstants.ATTR_LAYOUT_RESOURCE_PREFIX;
 import static com.android.SdkConstants.ATTR_LAYOUT_ROW;
 import static com.android.SdkConstants.ATTR_LAYOUT_ROW_SPAN;
 import static com.android.SdkConstants.ATTR_LAYOUT_SPAN;
+import static com.android.SdkConstants.ATTR_LAYOUT_TO_END_OF;
 import static com.android.SdkConstants.ATTR_LAYOUT_TO_LEFT_OF;
 import static com.android.SdkConstants.ATTR_LAYOUT_TO_RIGHT_OF;
+import static com.android.SdkConstants.ATTR_LAYOUT_TO_START_OF;
 import static com.android.SdkConstants.ATTR_LAYOUT_WEIGHT;
 import static com.android.SdkConstants.ATTR_LAYOUT_WIDTH;
 import static com.android.SdkConstants.ATTR_LAYOUT_X;
@@ -148,7 +156,9 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
 
         // From ViewGroup.MarginLayoutParams
         VALID.add(ATTR_LAYOUT_MARGIN_LEFT);
+        VALID.add(ATTR_LAYOUT_MARGIN_START);
         VALID.add(ATTR_LAYOUT_MARGIN_RIGHT);
+        VALID.add(ATTR_LAYOUT_MARGIN_END);
         VALID.add(ATTR_LAYOUT_MARGIN_TOP);
         VALID.add(ATTR_LAYOUT_MARGIN_BOTTOM);
         VALID.add(ATTR_LAYOUT_MARGIN);
@@ -179,20 +189,26 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
 
         // Relative Layout
         PARAM_TO_VIEW.put(ATTR_LAYOUT_ALIGN_LEFT, RELATIVE_LAYOUT);
+        PARAM_TO_VIEW.put(ATTR_LAYOUT_ALIGN_START, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_ALIGN_RIGHT, RELATIVE_LAYOUT);
+        PARAM_TO_VIEW.put(ATTR_LAYOUT_ALIGN_END, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_ALIGN_TOP, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_ALIGN_BOTTOM, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_ALIGN_PARENT_TOP, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_ALIGN_PARENT_BOTTOM, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_ALIGN_PARENT_LEFT, RELATIVE_LAYOUT);
+        PARAM_TO_VIEW.put(ATTR_LAYOUT_ALIGN_PARENT_START, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_ALIGN_PARENT_RIGHT, RELATIVE_LAYOUT);
+        PARAM_TO_VIEW.put(ATTR_LAYOUT_ALIGN_PARENT_END, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_ALIGN_WITH_PARENT_MISSING, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_ALIGN_BASELINE, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_CENTER_IN_PARENT, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_CENTER_VERTICAL, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_CENTER_HORIZONTAL, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_TO_RIGHT_OF, RELATIVE_LAYOUT);
+        PARAM_TO_VIEW.put(ATTR_LAYOUT_TO_END_OF, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_TO_LEFT_OF, RELATIVE_LAYOUT);
+        PARAM_TO_VIEW.put(ATTR_LAYOUT_TO_START_OF, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_BELOW, RELATIVE_LAYOUT);
         PARAM_TO_VIEW.put(ATTR_LAYOUT_ABOVE, RELATIVE_LAYOUT);
     }
