@@ -32,8 +32,13 @@ import java.util.List;
 
 import lombok.ast.Assert;
 import lombok.ast.AstVisitor;
+import lombok.ast.BinaryExpression;
+import lombok.ast.BinaryOperator;
+import lombok.ast.BooleanLiteral;
+import lombok.ast.Expression;
 import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.Node;
+import lombok.ast.NullLiteral;
 
 /**
  * Looks for assertion usages.
@@ -50,7 +55,14 @@ public class AssertDetector extends Detector implements Detector.JavaScanner {
             "many places and can not be relied upon. Instead, perform conditional checking " +
             "inside `if (BuildConfig.DEBUG) { }` blocks. That constant is a static final boolean " +
             "which is true in debug builds and false in release builds, and the Java compiler " +
-            "completely removes all code inside the if-body from the app.",
+            "completely removes all code inside the if-body from the app.\n" +
+            "\n" +
+            "For example, you can replace `assert speed > 0` with " +
+            "`if (BuildConfig.DEBUG && !(speed > 0)) { throw new AssertionError() }`.\n" +
+            "\n" +
+            "(Note: This lint check does not flag assertions purely asserting nullness or " +
+            "non-nullness; these are typically more intended for tools usage than runtime " +
+            "checks.)",
 
             Category.CORRECTNESS,
             6,
@@ -82,10 +94,47 @@ public class AssertDetector extends Detector implements Detector.JavaScanner {
         return new ForwardingAstVisitor() {
             @Override
             public boolean visitAssert(Assert node) {
-                String message = "Assertions are unreliable. Use BuildConfig.DEBUG conditional checks instead.";
+                Expression assertion = node.astAssertion();
+                // Allow "assert true"; it's basically a no-op
+                if (assertion instanceof BooleanLiteral) {
+                    Boolean b = ((BooleanLiteral) assertion).astValue();
+                    if (b != null && b) {
+                        return false;
+                    }
+                } else {
+                    // Allow assertions of the form "assert foo != null" because they are often used
+                    // to make statements to tools about known nullness properties. For example,
+                    // findViewById() may technically return null in some cases, but a developer
+                    // may know that it won't be when it's called correctly, so the assertion helps
+                    // to clear nullness warnings.
+                    if (isNullCheck(assertion)) {
+                        return false;
+                    }
+                }
+                String message
+                        = "Assertions are unreliable. Use BuildConfig.DEBUG conditional checks instead.";
                 context.report(ISSUE, node, context.getLocation(node), message, null);
                 return false;
             }
         };
+    }
+
+    /**
+     * Checks whether the given expression is purely a non-null check, e.g. it will return
+     * true for expressions like "a != null" and "a != null && b != null" and
+     * "b == null || c != null".
+     */
+    private static boolean isNullCheck(Expression expression) {
+        if (expression instanceof BinaryExpression) {
+            BinaryExpression binExp = (BinaryExpression) expression;
+            if (binExp.astLeft() instanceof NullLiteral ||
+                    binExp.astRight() instanceof NullLiteral) {
+                return true;
+            } else {
+                return isNullCheck(binExp.astLeft()) && isNullCheck(binExp.astRight());
+            }
+        } else {
+            return false;
+        }
     }
 }
