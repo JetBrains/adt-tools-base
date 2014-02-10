@@ -17,8 +17,8 @@
 package com.android.ddmlib;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.ddmlib.Log.LogLevel;
+import com.google.common.base.Joiner;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -30,6 +30,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,8 +59,11 @@ public final class AndroidDebugBridge {
     private static final String SERVER_PORT_ENV_VAR = "ANDROID_ADB_SERVER_PORT"; //$NON-NLS-1$
 
     // Where to find the ADB bridge.
-    static final String ADB_HOST = "127.0.0.1"; //$NON-NLS-1$
-    static final int ADB_PORT = 5037;
+    static final String DEFAULT_ADB_HOST = "127.0.0.1"; //$NON-NLS-1$
+    static final int DEFAULT_ADB_PORT = 5037;
+
+    /** Port where adb server will be started **/
+    private static int sAdbServerPort = 0;
 
     private static InetAddress sHostAddr;
     private static InetSocketAddress sSocketAddr;
@@ -70,9 +74,6 @@ public final class AndroidDebugBridge {
 
     /** Full path to adb. */
     private String mAdbOsLocation = null;
-
-    /** Port where adb server will be started **/
-    private static String sAdbServerPort = null;
 
     private boolean mVersionCheck;
 
@@ -571,8 +572,8 @@ public final class AndroidDebugBridge {
     }
 
     /**
-     * Queries adb for its version number and checks it against {@link #MIN_VERSION_NUMBER} and
-     * {@link #MAX_VERSION_NUMBER}
+     * Queries adb for its version number and checks it against {@link #ADB_VERSION_MICRO_MIN} and
+     * {@link #ADB_VERSION_MICRO_MAX}
      */
     private void checkAdbVersion() {
         // default is bad check
@@ -711,7 +712,7 @@ public final class AndroidDebugBridge {
      * @return true if success.
      */
     boolean start() {
-        if (mAdbOsLocation != null && sAdbServerPort != null && (!mVersionCheck || !startAdb())) {
+        if (mAdbOsLocation != null && sAdbServerPort != 0 && (!mVersionCheck || !startAdb())) {
             return false;
         }
 
@@ -759,7 +760,7 @@ public final class AndroidDebugBridge {
             return false;
         }
 
-        if (sAdbServerPort == null) {
+        if (sAdbServerPort == 0) {
             Log.e(ADB, "ADB server port for restarting AndroidDebugBridge is not set."); //$NON-NLS-1$
             return false;
         }
@@ -901,7 +902,7 @@ public final class AndroidDebugBridge {
      * For this reason, any call to this method from a method of {@link DeviceMonitor},
      * {@link IDevice} which is also inside a synchronized block, should first synchronize on
      * the {@link AndroidDebugBridge} lock. Access to this lock is done through {@link #getLock()}.
-     * @param device the modified <code>Client</code>.
+     * @param client the modified <code>Client</code>.
      * @param changeMask the mask indicating what changed in the <code>Client</code>
      * @see #getLock()
      */
@@ -947,7 +948,7 @@ public final class AndroidDebugBridge {
             return false;
         }
 
-        if (sAdbServerPort == null) {
+        if (sAdbServerPort == 0) {
             Log.w(ADB, "ADB server port for starting AndroidDebugBridge is not set."); //$NON-NLS-1$
             return false;
         }
@@ -955,15 +956,10 @@ public final class AndroidDebugBridge {
         Process proc;
         int status = -1;
 
+        String[] command = getAdbLaunchCommand("start-server");
+        String commandString = Joiner.on(',').join(command);
         try {
-            String[] command = new String[4];
-            command[0] = mAdbOsLocation;
-            command[1] = "-P"; //$NON-NLS-1$
-            command[2] = sAdbServerPort;
-            command[3] = "start-server"; //$NON-NLS-1$
-            Log.d(DDMS,
-                String.format("Launching '%1$s %2$s %3$s %4$s' to ensure ADB is running.", //$NON-NLS-1$
-                    mAdbOsLocation, command[1], command[2], command[3]));
+            Log.d(DDMS, String.format("Launching '%1$s' to ensure ADB is running.", commandString));
             ProcessBuilder processBuilder = new ProcessBuilder(command);
             if (DdmPreferences.getUseAdbHost()) {
                 String adbHostValue = DdmPreferences.getAdbHostValue();
@@ -977,27 +973,34 @@ public final class AndroidDebugBridge {
 
             ArrayList<String> errorOutput = new ArrayList<String>();
             ArrayList<String> stdOutput = new ArrayList<String>();
-            status = grabProcessOutput(proc, errorOutput, stdOutput,
-                    false /* waitForReaders */);
-
+            status = grabProcessOutput(proc, errorOutput, stdOutput, false /* waitForReaders */);
         } catch (IOException ioe) {
-            Log.d(DDMS, "Unable to run 'adb': " + ioe.getMessage()); //$NON-NLS-1$
+            Log.e(DDMS, "Unable to run 'adb': " + ioe.getMessage()); //$NON-NLS-1$
             // we'll return false;
         } catch (InterruptedException ie) {
-            Log.d(DDMS, "Unable to run 'adb': " + ie.getMessage()); //$NON-NLS-1$
+            Log.e(DDMS, "Unable to run 'adb': " + ie.getMessage()); //$NON-NLS-1$
             // we'll return false;
         }
 
         if (status != 0) {
-            Log.w(DDMS,
-                String.format("'adb -P %1$s start-server' failed -- run manually if necessary", //$NON-NLS-1$
-                    sAdbServerPort));
+            Log.e(DDMS,
+                String.format("'%1$s' failed -- run manually if necessary", commandString)); //$NON-NLS-1$
             return false;
+        } else {
+            Log.d(DDMS, String.format("'%1$s' succeeded", commandString)); //$NON-NLS-1$
+            return true;
         }
+    }
 
-        Log.d(DDMS, String.format("'adb -P %1$s start-server' succeeded", sAdbServerPort)); //$NON-NLS-1$
-
-        return true;
+    private String[] getAdbLaunchCommand(String option) {
+        List<String> command = new ArrayList<String>(4);
+        command.add(mAdbOsLocation);
+        if (sAdbServerPort != DEFAULT_ADB_PORT) {
+            command.add("-P"); //$NON-NLS-1$
+            command.add(Integer.toString(sAdbServerPort));
+        }
+        command.add(option);
+        return command.toArray(new String[command.size()]);
     }
 
     /**
@@ -1008,25 +1011,20 @@ public final class AndroidDebugBridge {
     private synchronized boolean stopAdb() {
         if (mAdbOsLocation == null) {
             Log.e(ADB,
-                "Cannot stop adb when AndroidDebugBridge is created without the location of adb."); //$NON-NLS-1$
+                "Cannot stop adb when AndroidDebugBridge is created without the location of adb.");
             return false;
         }
 
-        if (sAdbServerPort == null) {
-            Log.e(ADB,
-                "ADB server port for restarting AndroidDebugBridge is not set"); //$NON-NLS-1$
+        if (sAdbServerPort == 0) {
+            Log.e(ADB, "ADB server port for restarting AndroidDebugBridge is not set");
             return false;
         }
 
         Process proc;
         int status = -1;
 
+        String[] command = getAdbLaunchCommand("kill-server"); //$NON-NLS-1$
         try {
-            String[] command = new String[4];
-            command[0] = mAdbOsLocation;
-            command[1] = "-P"; //$NON-NLS-1$
-            command[2] = sAdbServerPort;
-            command[3] = "kill-server"; //$NON-NLS-1$
             proc = Runtime.getRuntime().exec(command);
             status = proc.waitFor();
         }
@@ -1037,15 +1035,14 @@ public final class AndroidDebugBridge {
             // we'll return false;
         }
 
+        String commandString = Joiner.on(',').join(command);
         if (status != 0) {
-            Log.w(DDMS,
-                String.format("'adb -P %1$s kill-server' failed -- run manually if necessary", //$NON-NLS-1$
-                    sAdbServerPort));
+            Log.w(DDMS, String.format("'%1$s' failed -- run manually if necessary", commandString));
             return false;
+        } else {
+            Log.d(DDMS, String.format("'%1$s' succeeded", commandString));
+            return true;
         }
-
-        Log.d(DDMS, String.format("'adb -P %1$s kill-server' succeeded", sAdbServerPort)); //$NON-NLS-1$
-        return true;
     }
 
     /**
@@ -1146,42 +1143,45 @@ public final class AndroidDebugBridge {
      */
     private static void initAdbSocketAddr() {
         try {
-            int adb_port = determineAndValidateAdbPort();
-            sHostAddr = InetAddress.getByName(ADB_HOST);
-            sSocketAddr = new InetSocketAddress(sHostAddr, adb_port);
+            sAdbServerPort = getAdbServerPort();
+            sHostAddr = InetAddress.getByName(DEFAULT_ADB_HOST);
+            sSocketAddr = new InetSocketAddress(sHostAddr, sAdbServerPort);
         } catch (UnknownHostException e) {
             // localhost should always be known.
         }
     }
 
     /**
-     * Determines port where ADB is expected by looking at system property and after that at env
-     * variable. When system property ANDROID_ADB_SERVER_PORT exists, it is parsed and when valid,
-     * it is used. When system property is not set, we take a look at env variable of the same name.
-     * When none is specified or valid, {@code ADB_PORT} is taken as a default.
+     * Returns the port where adb server should be launched. This looks at:
+     * <ol>
+     *     <li>The system property ANDROID_ADB_SERVER_PORT</li>
+     *     <li>The environment variable ANDROID_ADB_SERVER_PORT</li>
+     *     <li>Defaults to {@link #DEFAULT_ADB_PORT} if neither the system property nor the env var
+     *     are set.</li>
+     * </ol>
      *
      * @return The port number where the host's adb should be expected or started.
      */
-    private static int determineAndValidateAdbPort() {
-        int result = ADB_PORT;
-
-        try {
-            Integer portEnvVar = Integer.getInteger(SERVER_PORT_ENV_VAR);
-            if (portEnvVar != null) {
-                result = validateAdbServerPort(portEnvVar.toString(), "system property variable ");
+    private static int getAdbServerPort() {
+        // check system property
+        Integer prop = Integer.getInteger(SERVER_PORT_ENV_VAR);
+        if (prop != null) {
+            try {
+                return validateAdbServerPort(prop.toString());
+            } catch (IllegalArgumentException e) {
+                String msg = String.format(
+                        "Invalid value (%1$s) for ANDROID_ADB_SERVER_PORT system property.",
+                        prop);
+                Log.w(DDMS, msg);
             }
-        } catch (SecurityException ex) {
-            Log.w(DDMS,
-                    "No access to system property variables allowed by current security manager. " //$NON-NLS-1$
-                    + "If you've set ANDROID_ADB_SERVER_PORT system property: it's being ignored."); //$NON-NLS-1$
-        } catch (IllegalArgumentException ex) {
-            Log.w(DDMS, ex.getMessage());
         }
 
-        // when system property is not set, parse environment property
+        // when system property is not set or is invalid, parse environment property
         try {
-            result = validateAdbServerPort(System.getenv(SERVER_PORT_ENV_VAR),
-                    "environment variable ");
+            String env = System.getenv(SERVER_PORT_ENV_VAR);
+            if (env != null) {
+                return validateAdbServerPort(env);
+            }
         } catch (SecurityException ex) {
             // A security manager has been installed that doesn't allow access to env vars.
             // So an environment variable might have been set, but we can't tell.
@@ -1193,46 +1193,37 @@ public final class AndroidDebugBridge {
             // thing seems to be to continue using the default port, as forking is likely to
             // fail later on in the scenario of the security manager.
             Log.w(DDMS,
-                    "No access to env variables allowed by current security manager. " //$NON-NLS-1$
-                    + "If you've set ANDROID_ADB_SERVER_PORT: it's being ignored."); //$NON-NLS-1$
-        } catch (IllegalArgumentException ex) {
-            Log.w(DDMS, ex.getMessage());
-        } catch (RuntimeException ex) {
-            // environment property is not set
+                    "No access to env variables allowed by current security manager. "
+                            + "If you've set ANDROID_ADB_SERVER_PORT: it's being ignored.");
+        } catch (IllegalArgumentException e) {
+            String msg = String.format(
+                    "Invalid value (%1$s) for ANDROID_ADB_SERVER_PORT environment variable (%2$s).",
+                    prop, e.getMessage());
+            Log.w(DDMS, msg);
         }
 
-        sAdbServerPort = Integer.toString(result);
-        return result;
+        // use default port if neither are set
+        return DEFAULT_ADB_PORT;
     }
 
     /**
-     *
+     * Returns the integer port value if it is a valid value for adb server port
      * @param adbServerPort adb server port to validate
-     * @param variablePrefix prefix for exception message noting if it is system or env property
-     *                       which is being validated
      * @return {@code adbServerPort} as a parsed integer
-     * @throws IllegalArgumentException when {@code adbServerPort} is not bigger then 0 or it is
+     * @throws IllegalArgumentException when {@code adbServerPort} is not bigger than 0 or it is
      * not a number at all
      */
-    private static int validateAdbServerPort(@Nullable String adbServerPort, @NonNull String
-            variablePrefix) throws IllegalArgumentException {
-        int port;
-
-        if (adbServerPort == null) {
-            throw new IllegalArgumentException("ADB port cannot be null.");
-        }
-
+    private static int validateAdbServerPort(@NonNull String adbServerPort)
+            throws IllegalArgumentException {
         try {
             // C tools (adb, emulator) accept hex and octal port numbers, so need to accept them too
-            port = Integer.decode(adbServerPort);
-            if (port <= 0) {
-                throw new IllegalArgumentException(variablePrefix + SERVER_PORT_ENV_VAR
-                        + ": must be >=0, got " + adbServerPort);
+            int port = Integer.decode(adbServerPort);
+            if (port <= 0 || port >= 65535) {
+                throw new IllegalArgumentException("Should be > 0 and < 65535");
             }
             return port;
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(variablePrefix + SERVER_PORT_ENV_VAR
-                    + ": illegal value '" + adbServerPort + "'");
+            throw new IllegalArgumentException("Not a valid port number");
         }
     }
 
