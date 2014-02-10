@@ -16,11 +16,16 @@
 
 package com.android.tools.lint;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Position;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,7 +52,8 @@ public class TextReporter extends Reporter {
      * @param writer the writer to write into
      * @param close whether the writer should be closed when done
      */
-    public TextReporter(LintCliClient client, LintCliFlags flags, Writer writer, boolean close) {
+    public TextReporter(@NonNull LintCliClient client, @NonNull LintCliFlags flags,
+            @NonNull Writer writer, boolean close) {
         this(client, flags, null, writer, close);
     }
 
@@ -60,8 +66,8 @@ public class TextReporter extends Reporter {
      * @param writer the writer to write into
      * @param close whether the writer should be closed when done
      */
-    public TextReporter(LintCliClient client, LintCliFlags flags, File file, Writer writer,
-            boolean close) {
+    public TextReporter(@NonNull LintCliClient client, @NonNull LintCliFlags flags,
+            @Nullable File file, @NonNull Writer writer, boolean close) {
         super(client, file);
         mFlags = flags;
         mWriter = writer;
@@ -80,7 +86,12 @@ public class TextReporter extends Reporter {
                 mWriter.flush();
             }
         } else {
+            Issue lastIssue = null;
             for (Warning warning : issues) {
+                if (warning.issue != lastIssue) {
+                    explainIssue(output, lastIssue);
+                    lastIssue = warning.issue;
+                }
                 int startLength = output.length();
 
                 if (warning.path != null) {
@@ -200,6 +211,7 @@ public class TextReporter extends Reporter {
                     output.append('\n');
                 }
             }
+            explainIssue(output, lastIssue);
 
             mWriter.write(output.toString());
 
@@ -215,6 +227,43 @@ public class TextReporter extends Reporter {
                     System.out.println(String.format("Wrote text report to %1$s", path));
                 }
             }
+        }
+    }
+
+    private void explainIssue(@NonNull StringBuilder output, @Nullable Issue issue)
+            throws IOException {
+        if (issue == null || !mFlags.isExplainIssues()) {
+            return;
+        }
+
+        String explanation = issue.getExplanation(Issue.OutputFormat.TEXT);
+        if (explanation.trim().isEmpty()) {
+            return;
+        }
+
+        String indent = "   ";
+        String formatted = SdkUtils.wrap(explanation, Main.MAX_LINE_WIDTH - indent.length(), null);
+        output.append('\n');
+        output.append(indent);
+        output.append("Explanation for issues of type \"").append(issue.getId()).append("\":\n");
+        for (String line : Splitter.on('\n').split(formatted)) {
+            if (!line.isEmpty()) {
+                output.append(indent);
+                output.append(line);
+            }
+            output.append('\n');
+        }
+        List<String> moreInfo = issue.getMoreInfo();
+        if (!moreInfo.isEmpty()) {
+            for (String url : moreInfo) {
+                if (formatted.contains(url)) {
+                    continue;
+                }
+                output.append(indent);
+                output.append(url);
+                output.append('\n');
+            }
+            output.append('\n');
         }
     }
 
