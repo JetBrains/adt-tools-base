@@ -17,12 +17,9 @@
 package com.android.sdklib.repository;
 
 import com.android.annotations.Nullable;
-
+import junit.framework.TestCase;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-
-import java.io.InputStream;
-import java.io.StringReader;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
@@ -30,8 +27,8 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-
-import junit.framework.TestCase;
+import java.io.InputStream;
+import java.io.StringReader;
 
 /**
  * Tests local validation of an SDK Repository sample XMLs using an XML Schema validator.
@@ -41,11 +38,11 @@ import junit.framework.TestCase;
  */
 public class ValidateRepositoryXmlTest extends TestCase {
 
-    private static String OPEN_TAG_REPO =
+    private static final String OPEN_TAG_REPO =
         "<r:sdk-repository xmlns:r=\"http://schemas.android.com/sdk/android/repository/" +
         Integer.toString(SdkRepoConstants.NS_LATEST_VERSION) +
         "\">";
-    private static String CLOSE_TAG_REPO = "</r:sdk-repository>";
+    private static final String CLOSE_TAG_REPO = "</r:sdk-repository>";
 
     // --- Helpers ------------
 

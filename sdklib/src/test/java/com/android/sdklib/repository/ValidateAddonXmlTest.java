@@ -17,12 +17,9 @@
 package com.android.sdklib.repository;
 
 import com.android.annotations.Nullable;
-
+import junit.framework.TestCase;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-
-import java.io.InputStream;
-import java.io.StringReader;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
@@ -30,19 +27,19 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-
-import junit.framework.TestCase;
+import java.io.InputStream;
+import java.io.StringReader;
 
 /**
  * Tests local validation of an SDK Addon sample XMLs using an XML Schema validator.
  */
 public class ValidateAddonXmlTest extends TestCase {
 
-    private static String OPEN_TAG_ADDON =
+    private static final String OPEN_TAG_ADDON =
         "<r:sdk-addon xmlns:r=\"http://schemas.android.com/sdk/android/addon/" +
         Integer.toString(SdkAddonConstants.NS_LATEST_VERSION) +
         "\">";
-    private static String CLOSE_TAG_ADDON = "</r:sdk-addon>";
+    private static final String CLOSE_TAG_ADDON = "</r:sdk-addon>";
 
     // --- Helpers ------------
 
