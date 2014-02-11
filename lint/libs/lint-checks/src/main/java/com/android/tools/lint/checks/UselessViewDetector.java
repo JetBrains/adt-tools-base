@@ -20,6 +20,13 @@ import static com.android.SdkConstants.ABSOLUTE_LAYOUT;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_BACKGROUND;
 import static com.android.SdkConstants.ATTR_ID;
+import static com.android.SdkConstants.ATTR_PADDING;
+import static com.android.SdkConstants.ATTR_PADDING_BOTTOM;
+import static com.android.SdkConstants.ATTR_PADDING_END;
+import static com.android.SdkConstants.ATTR_PADDING_LEFT;
+import static com.android.SdkConstants.ATTR_PADDING_RIGHT;
+import static com.android.SdkConstants.ATTR_PADDING_START;
+import static com.android.SdkConstants.ATTR_PADDING_TOP;
 import static com.android.SdkConstants.ATTR_STYLE;
 import static com.android.SdkConstants.FRAME_LAYOUT;
 import static com.android.SdkConstants.GRID_LAYOUT;
@@ -196,6 +203,18 @@ public class UselessViewDetector extends LayoutDetector {
         // Certain parents are special - such as the TabHost and the GestureOverlayView -
         // where we want to leave things alone.
         if (!CONTAINERS.contains(parentTag)) {
+            return;
+        }
+
+        // If we define a padding, and the parent provides a background, then
+        // this view is not *necessarily* useless.
+        if (parentHasBackground && element.hasAttributeNS(ANDROID_URI, ATTR_PADDING)
+                || element.hasAttributeNS(ANDROID_URI, ATTR_PADDING_LEFT)
+                || element.hasAttributeNS(ANDROID_URI, ATTR_PADDING_RIGHT)
+                || element.hasAttributeNS(ANDROID_URI, ATTR_PADDING_TOP)
+                || element.hasAttributeNS(ANDROID_URI, ATTR_PADDING_BOTTOM)
+                || element.hasAttributeNS(ANDROID_URI, ATTR_PADDING_START)
+                || element.hasAttributeNS(ANDROID_URI, ATTR_PADDING_END)) {
             return;
         }
 
