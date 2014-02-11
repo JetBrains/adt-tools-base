@@ -495,7 +495,8 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Dependency project path", ":lib", androidLibrary.getProject());
 
         // TODO: right now we can only test the folder name efficiently
-        assertEquals("TictactoeLibUnspecified.aar", androidLibrary.getFolder().getName());
+        assertTrue(androidLibrary.getFolder().isDirectory());
+        assertTrue(androidLibrary.getFolder().getPath().endsWith("/tictactoe/lib/unspecified"));
     }
 
     public void testFlavorLib() throws Exception {
@@ -524,7 +525,8 @@ public class AndroidProjectTest extends TestCase {
         AndroidLibrary androidLibrary = libs.iterator().next();
         assertNotNull(androidLibrary);
         // TODO: right now we can only test the folder name efficiently
-        assertEquals("FlavorlibLib1Unspecified.aar", androidLibrary.getFolder().getName());
+        assertTrue(androidLibrary.getFolder().isDirectory());
+        assertTrue(androidLibrary.getFolder().getPath().endsWith("/flavorlib/lib1/unspecified"));
 
         ProductFlavorContainer flavor2 = getProductFlavor(productFlavors, "flavor2");
         assertNotNull(flavor2);
@@ -540,7 +542,8 @@ public class AndroidProjectTest extends TestCase {
         androidLibrary = libs.iterator().next();
         assertNotNull(androidLibrary);
         // TODO: right now we can only test the folder name efficiently
-        assertEquals("FlavorlibLib2Unspecified.aar", androidLibrary.getFolder().getName());
+        assertTrue(androidLibrary.getFolder().isDirectory());
+        assertTrue(androidLibrary.getFolder().getPath().endsWith("/flavorlib/lib2/unspecified"));
     }
 
     public void testMultiproject() throws Exception {
