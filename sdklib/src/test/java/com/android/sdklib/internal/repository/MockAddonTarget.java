@@ -28,6 +28,7 @@ import com.android.sdklib.SystemImage;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -59,7 +60,7 @@ public class MockAddonTarget implements IAndroidTarget {
     }
 
     @Override
-    public String getDefaultSkin() {
+    public File getDefaultSkin() {
         return null;
     }
 
@@ -80,7 +81,8 @@ public class MockAddonTarget implements IAndroidTarget {
                     FileOp.append(getLocation(), SdkConstants.OS_IMAGES_FOLDER),
                     LocationType.IN_PLATFORM_LEGACY,
                     SystemImage.DEFAULT_TAG,
-                    SdkConstants.ABI_ARMEABI);
+                    SdkConstants.ABI_ARMEABI,
+                    FileOp.EMPTY_FILE_ARRAY);
             mSystemImages = new SystemImage[] { si };
         }
         return mSystemImages;
@@ -113,6 +115,11 @@ public class MockAddonTarget implements IAndroidTarget {
     @Override
     public String getPath(int pathId) {
         throw new UnsupportedOperationException("Implement this as needed for tests");
+    }
+
+    @Override
+    public File getFile(int pathId) {
+        return new File(getPath(pathId));
     }
 
     @Override
@@ -156,8 +163,8 @@ public class MockAddonTarget implements IAndroidTarget {
     }
 
     @Override
-    public String[] getSkins() {
-        return null;
+    public File[] getSkins() {
+        return FileOp.EMPTY_FILE_ARRAY;
     }
 
     @Override

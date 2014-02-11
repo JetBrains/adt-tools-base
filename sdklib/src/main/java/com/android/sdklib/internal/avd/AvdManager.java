@@ -32,6 +32,7 @@ import com.android.sdklib.devices.DeviceManager;
 import com.android.sdklib.devices.DeviceManager.DeviceStatus;
 import com.android.sdklib.internal.avd.AvdInfo.AvdStatus;
 import com.android.sdklib.internal.project.ProjectProperties;
+import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.local.LocalSdk;
 import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
@@ -606,7 +607,9 @@ public class AvdManager {
      * @param target the target of the AVD
      * @param tag the tag of the AVD
      * @param abiType the abi type of the AVD
+     * @param skinFolder the skin folder path to use, if specified. Can be null.
      * @param skinName the name of the skin. Can be null. Must have been verified by caller.
+     *          Can be a size in the form "NNNxMMM" or a directory name matching skinFolder.
      * @param sdcard the parameter value for the sdCard. Can be null. This is either a path to
      *        an existing sdcard image or a sdcard size (\d+, \d+K, \dM).
      * @param hardwareConfig the hardware setup for the AVD. Can be null to use defaults.
@@ -624,6 +627,7 @@ public class AvdManager {
             IAndroidTarget target,
             IdDisplay tag,
             String abiType,
+            File skinFolder,
             String skinName,
             String sdcard,
             Map<String,String> hardwareConfig,
@@ -763,28 +767,46 @@ public class AvdManager {
             }
 
             // Now the skin.
-            if (skinName == null || skinName.length() == 0) {
-                skinName = target.getDefaultSkin();
+            String skinPath = null;
+
+            if (skinFolder == null && skinName == null) {
+                // Nothing specified. Use the default from the target.
+                skinFolder = target.getDefaultSkin();
             }
 
-            if (NUMERIC_SKIN_SIZE.matcher(skinName).matches()) {
-                // Skin name is an actual screen resolution.
-                // Set skin.name for display purposes in the AVD manager and
-                // set skin.path for use by the emulator.
-                values.put(AVD_INI_SKIN_NAME, skinName);
-                values.put(AVD_INI_SKIN_PATH, skinName);
-            } else {
-                // get the path of the skin (relative to the SDK)
-                // assume skin name is valid
-                String skinPath = getSkinRelativePath(skinName, target, log);
-                if (skinPath == null) {
-                    log.error(null, "Missing skinpath in the AVD folder.");
-                    needCleanup = true;
+            if (skinFolder == null && skinName != null &&
+                    NUMERIC_SKIN_SIZE.matcher(skinName).matches()) {
+                // Numeric skin size. Set both skinPath and skinName to the same size.
+                skinPath = skinName;
+
+            } else if (skinFolder != null && skinName == null) {
+                // Skin folder is specified, but not skin name. Adjust it.
+                skinName = skinFolder.getName();
+
+            } else if (skinFolder == null && skinName != null) {
+                // skin folder is not specified, but there's a non-numeric skin name.
+                // check whether the skin is in the target.
+                skinFolder = getSkinFolder(skinName, target);
+            }
+
+            if (skinFolder != null) {
+                // skin does not exist!
+                if (!skinFolder.exists()) {
+                    log.error(null, "Skin '%1$s' does not exist.", skinName);
                     return null;
                 }
 
-                values.put(AVD_INI_SKIN_PATH, skinPath);
+                // skinPath is the skin folder path relative to the SDK directory
+                skinPath = FileOp.makeRelative(myLocalSdk.getLocation(), skinFolder);
+            }
+
+            // Set skin.name for display purposes in the AVD manager and
+            // set skin.path for use by the emulator.
+            if (skinName != null) {
                 values.put(AVD_INI_SKIN_NAME, skinName);
+            }
+            if (skinPath != null) {
+                values.put(AVD_INI_SKIN_PATH, skinPath);
             }
 
             if (sdcard != null && sdcard.length() > 0) {
@@ -883,15 +905,16 @@ public class AvdManager {
             }
 
             // get the hardware properties for this skin
-            File skinFolder = getSkinPath(skinName, target);
-            FileWrapper skinHardwareFile = new FileWrapper(skinFolder, AvdManager.HARDWARE_INI);
-            if (skinHardwareFile.isFile()) {
-                Map<String, String> skinHardwareConfig = ProjectProperties.parsePropertyFile(
-                        skinHardwareFile, log);
+            if (skinFolder != null) {
+                FileWrapper skinHardwareFile = new FileWrapper(skinFolder, AvdManager.HARDWARE_INI);
+                if (skinHardwareFile.isFile()) {
+                    Map<String, String> skinHardwareConfig =
+                        ProjectProperties.parsePropertyFile(skinHardwareFile, log);
 
-                if (skinHardwareConfig != null) {
-                    finalHardwareValues.putAll(skinHardwareConfig);
-                    values.putAll(skinHardwareConfig);
+                    if (skinHardwareConfig != null) {
+                        finalHardwareValues.putAll(skinHardwareConfig);
+                        values.putAll(skinHardwareConfig);
+                    }
                 }
             }
 
@@ -1080,13 +1103,13 @@ public class AvdManager {
      * @param target The target where to find the skin.
      * @param log the log object to receive action logs. Cannot be null.
      */
-    public String getSkinRelativePath(String skinName, IAndroidTarget target, ILogger log) {
+    private String getSkinRelativePath(String skinName, IAndroidTarget target, ILogger log) {
         if (log == null) {
             throw new IllegalArgumentException("log cannot be null");
         }
 
         // first look to see if the skin is in the target
-        File skin = getSkinPath(skinName, target);
+        File skin = getSkinFolder(skinName, target);
 
         // skin really does not exist!
         if (skin.exists() == false) {
@@ -1098,6 +1121,7 @@ public class AvdManager {
         String path = skin.getAbsolutePath();
 
         // make this path relative to the SDK location
+
         String sdkLocation = myLocalSdk.getPath();
         if (path.startsWith(sdkLocation) == false) {
             // this really really should not happen.
@@ -1119,7 +1143,7 @@ public class AvdManager {
      * @param target The target where to find the skin.
      * @return a {@link File} that may or may not actually exist.
      */
-    public File getSkinPath(String skinName, IAndroidTarget target) {
+    private File getSkinFolder(String skinName, IAndroidTarget target) {
         String path = target.getPath(IAndroidTarget.SKINS);
         File skin = new File(path, skinName);
 
