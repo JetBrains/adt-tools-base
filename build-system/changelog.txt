@@ -1,3 +1,8 @@
+0.8.3:
+
+0.8.2:
+- Fix incremental issue with build config fields and generated res values.
+
 0.8.1:
 - Added the ability to create resource values through the DSL.
   You can now use 'resValue <type>,<name>,<value>' on build types and product flavors
