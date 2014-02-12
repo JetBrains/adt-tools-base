@@ -192,13 +192,21 @@ public interface LintOptions {
      * An optional map of severity overrides. The map maps from issue id's to the corresponding
      * severity to use, which must be "fatal", "error", "warning", or "ignore".
      *
-     * @return a map of severity overrides, or null
+     * @return a map of severity overrides, or null. The severities are one of the constants
+     *  {@link #SEVERITY_FATAL}, {@link #SEVERITY_ERROR}, {@link #SEVERITY_WARNING},
+     *  {@link #SEVERITY_INFORMATIONAL}, {@link #SEVERITY_IGNORE}
      */
     @Nullable
-    public Map<String, Severity> getSeverityOverrides();
+    public Map<String, Integer> getSeverityOverrides();
 
-    /** A severity for Lint. Corresponds to com.android.tools.lint.detector.api.Severity. */
-    public enum Severity {
-        FATAL, ERROR, WARNING, INFORMATIONAL, IGNORE
-    }
+    /** A severity for Lint. Corresponds to com.android.tools.lint.detector.api.Severity#FATAL */
+    public static final int SEVERITY_FATAL         = 1;
+    /** A severity for Lint. Corresponds to com.android.tools.lint.detector.api.Severity#ERROR */
+    public static final int SEVERITY_ERROR         = 2;
+    /** A severity for Lint. Corresponds to com.android.tools.lint.detector.api.Severity#WARNING */
+    public static final int SEVERITY_WARNING       = 3;
+    /** A severity for Lint. Corresponds to com.android.tools.lint.detector.api.Severity#INFORMATIONAL */
+    public static final int SEVERITY_INFORMATIONAL = 4;
+    /** A severity for Lint. Corresponds to com.android.tools.lint.detector.api.Severity#IGNORE */
+    public static final int SEVERITY_IGNORE        = 5;
 }
