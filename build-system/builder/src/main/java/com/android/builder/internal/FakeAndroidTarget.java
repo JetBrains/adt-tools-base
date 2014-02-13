@@ -22,6 +22,7 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.utils.SparseArray;
 import com.google.common.collect.Lists;
 
@@ -213,7 +214,7 @@ public class FakeAndroidTarget implements IAndroidTarget {
     }
 
     @Override
-    public ISystemImage getSystemImage(String abiType) {
+    public ISystemImage getSystemImage(IdDisplay tag, String abiType) {
         return null;
     }
 
