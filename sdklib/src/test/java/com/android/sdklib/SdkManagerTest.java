@@ -21,6 +21,7 @@ import com.android.SdkConstants;
 import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.SdkManager.LayoutlibVersion;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
+import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.google.common.collect.Sets;
@@ -57,7 +58,7 @@ public class SdkManagerTest extends SdkManagerTestCase {
             v = Sets.newTreeSet(v);
         }
 
-        assertEquals("[]", getLog().toString());  // no errors in the logger
+        assertEquals("", getLog().toString());  // no errors in the logger
         assertEquals("[3.0.0, 3.0.1, 18.3.4 rc5]", Arrays.toString(v.toArray()));
 
         assertEquals(new FullRevision(18, 3, 4, 5),
@@ -119,11 +120,13 @@ public class SdkManagerTest extends SdkManagerTestCase {
         makeSystemImageFolder(new SystemImage(sdkman, t,
                 LocationType.IN_PLATFORM_SUBFOLDER,
                 SystemImage.DEFAULT_TAG,
-                SdkConstants.ABI_ARMEABI_V7A));
+                SdkConstants.ABI_ARMEABI_V7A,
+                FileOp.EMPTY_FILE_ARRAY));
         makeSystemImageFolder(new SystemImage(sdkman, t,
                 LocationType.IN_PLATFORM_SUBFOLDER,
                 SystemImage.DEFAULT_TAG,
-                SdkConstants.ABI_INTEL_ATOM));
+                SdkConstants.ABI_INTEL_ATOM,
+                FileOp.EMPTY_FILE_ARRAY));
 
         sdkman.reloadSdk(getLog());
         assertEquals("[PlatformTarget API 0 rev 1]", Arrays.toString(sdkman.getTargets()));
@@ -142,11 +145,13 @@ public class SdkManagerTest extends SdkManagerTestCase {
         makeSystemImageFolder(new SystemImage(sdkman, t,
                 LocationType.IN_SYSTEM_IMAGE,
                 SystemImage.DEFAULT_TAG,
-                SdkConstants.ABI_ARMEABI));
+                SdkConstants.ABI_ARMEABI,
+                FileOp.EMPTY_FILE_ARRAY));
         makeSystemImageFolder(new SystemImage(sdkman, t,
                 LocationType.IN_SYSTEM_IMAGE,
                 SystemImage.DEFAULT_TAG,
-                SdkConstants.ABI_ARMEABI_V7A));
+                SdkConstants.ABI_ARMEABI_V7A,
+                FileOp.EMPTY_FILE_ARRAY));
 
         sdkman.reloadSdk(getLog());
         assertEquals("[PlatformTarget API 0 rev 1]", Arrays.toString(sdkman.getTargets()));
@@ -163,7 +168,8 @@ public class SdkManagerTest extends SdkManagerTestCase {
         makeSystemImageFolder(new SystemImage(sdkman, t,
                 LocationType.IN_SYSTEM_IMAGE,
                 new IdDisplay("tag-1", "My Tag 1"),
-                SdkConstants.ABI_ARMEABI_V7A));
+                SdkConstants.ABI_ARMEABI_V7A,
+                FileOp.EMPTY_FILE_ARRAY));
 
         sdkman.reloadSdk(getLog());
         assertEquals("[PlatformTarget API 0 rev 1]", Arrays.toString(sdkman.getTargets()));
@@ -196,7 +202,8 @@ public class SdkManagerTest extends SdkManagerTestCase {
         makeSystemImageFolder(new SystemImage(sdkman, t,
                 LocationType.IN_SYSTEM_IMAGE,
                 SystemImage.DEFAULT_TAG,
-                SdkConstants.ABI_INTEL_ATOM));
+                SdkConstants.ABI_INTEL_ATOM,
+                FileOp.EMPTY_FILE_ARRAY));
 
         sdkman.reloadSdk(getLog());
         assertEquals("[PlatformTarget API 0 rev 1]", Arrays.toString(sdkman.getTargets()));
@@ -213,7 +220,8 @@ public class SdkManagerTest extends SdkManagerTestCase {
         makeSystemImageFolder(new SystemImage(sdkman, t,
                 LocationType.IN_SYSTEM_IMAGE,
                 SystemImage.DEFAULT_TAG,
-                SdkConstants.ABI_ARMEABI));
+                SdkConstants.ABI_ARMEABI,
+                FileOp.EMPTY_FILE_ARRAY));
 
 
         sdkman.reloadSdk(getLog());

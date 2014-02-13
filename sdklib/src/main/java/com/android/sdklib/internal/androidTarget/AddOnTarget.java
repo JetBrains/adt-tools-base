@@ -85,8 +85,8 @@ public final class AddOnTarget implements IAndroidTarget {
     private final boolean mHasRenderingLibrary;
     private final boolean mHasRenderingResources;
 
-    private String[] mSkins;
-    private String mDefaultSkin;
+    private File[] mSkins;
+    private File mDefaultSkin;
     private IOptionalLibrary[] mLibraries;
     private int mVendorId = NO_USB_ID;
 
@@ -276,6 +276,11 @@ public final class AddOnTarget implements IAndroidTarget {
     }
 
     @Override
+    public File getFile(int pathId) {
+        return new File(getPath(pathId));
+    }
+
+    @Override
     public BuildToolInfo getBuildToolInfo() {
         return mBasePlatform.getBuildToolInfo();
     }
@@ -290,13 +295,15 @@ public final class AddOnTarget implements IAndroidTarget {
         return mHasRenderingLibrary || mHasRenderingResources;
     }
 
+    @NonNull
     @Override
-    public String[] getSkins() {
+    public File[] getSkins() {
         return mSkins;
     }
 
+    @Nullable
     @Override
-    public String getDefaultSkin() {
+    public File getDefaultSkin() {
         return mDefaultSkin;
     }
 
@@ -454,15 +461,15 @@ public final class AddOnTarget implements IAndroidTarget {
 
     // ---- local methods.
 
-    public void setSkins(String[] skins, String defaultSkin) {
+    public void setSkins(@NonNull File[] skins, @NonNull File defaultSkin) {
         mDefaultSkin = defaultSkin;
 
         // we mix the add-on and base platform skins
-        HashSet<String> skinSet = new HashSet<String>();
+        HashSet<File> skinSet = new HashSet<File>();
         skinSet.addAll(Arrays.asList(skins));
         skinSet.addAll(Arrays.asList(mBasePlatform.getSkins()));
 
-        mSkins = skinSet.toArray(new String[skinSet.size()]);
+        mSkins = skinSet.toArray(new File[skinSet.size()]);
     }
 
     /**

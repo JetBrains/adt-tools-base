@@ -77,4 +77,13 @@ public interface ISystemImage extends Comparable<ISystemImage> {
      */
     @NonNull
     public String getAbiType();
+
+    /**
+     * Returns the skins embedded in the system image. <br/>
+     * Only supported by system images using {@link LocationType#IN_SYSTEM_IMAGE}. <br/>
+     * The skins listed here are merged in the {@link IAndroidTarget#getSkins()} list.
+     * @return A non-null skin list, possibly empty.
+     */
+    @NonNull
+    public File[] getSkins();
 }
