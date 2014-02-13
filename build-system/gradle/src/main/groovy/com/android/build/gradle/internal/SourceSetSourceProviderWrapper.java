@@ -41,6 +41,12 @@ public class SourceSetSourceProviderWrapper implements SourceProvider {
 
     @NonNull
     @Override
+    public String getName() {
+        return sourceSet.getName();
+    }
+
+    @NonNull
+    @Override
     public File getManifestFile() {
         throw new IllegalAccessError("Shouldn't access manifest from SourceSetSourceProviderWrapper");
     }

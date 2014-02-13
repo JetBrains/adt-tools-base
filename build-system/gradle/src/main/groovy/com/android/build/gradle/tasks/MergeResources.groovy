@@ -15,7 +15,6 @@
  */
 package com.android.build.gradle.tasks
 
-import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.internal.tasks.IncrementalTask
 import com.android.ide.common.res2.FileStatus
 import com.android.ide.common.res2.FileValidity

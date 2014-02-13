@@ -179,7 +179,7 @@ public class TranslationDetector extends ResourceXmlDetector {
     public void afterCheckFile(@NonNull Context context) {
         if (context.getPhase() == 1) {
             // Store this layout's set of ids for full project analysis in afterCheckProject
-            if (context.getProject().getReportIssues() && mNames != null) {
+            if (context.getProject().getReportIssues() && mNames != null && !mNames.isEmpty()) {
                 mFileToNames.put(context.file, mNames);
 
                 Element root = ((XmlContext) context).document.getDocumentElement();
@@ -315,25 +315,25 @@ public class TranslationDetector extends ResourceXmlDetector {
         Set<String> defaultStrings = languageToStrings.get(defaultLanguage);
         if (defaultStrings == null) {
             defaultStrings = new HashSet<String>();
+        }
 
-            // See if it looks like the user has named a specific locale as the base language
-            // (this impacts whether we report strings as "extra" or "missing")
-            if (mFileToLocale != null) {
-                Set<String> specifiedLocales = Sets.newHashSet();
-                for (Map.Entry<File, String> entry : mFileToLocale.entrySet()) {
-                    String locale = entry.getValue();
-                    int index = locale.indexOf('-');
-                    if (index != -1) {
-                        locale = locale.substring(0, index);
-                    }
-                    specifiedLocales.add(locale);
+        // See if it looks like the user has named a specific locale as the base language
+        // (this impacts whether we report strings as "extra" or "missing")
+        if (mFileToLocale != null) {
+            Set<String> specifiedLocales = Sets.newHashSet();
+            for (Map.Entry<File, String> entry : mFileToLocale.entrySet()) {
+                String locale = entry.getValue();
+                int index = locale.indexOf('-');
+                if (index != -1) {
+                    locale = locale.substring(0, index);
                 }
-                if (specifiedLocales.size() == 1) {
-                    String first = specifiedLocales.iterator().next();
-                    Set<String> languageStrings = languageToStrings.get(first);
-                    assert languageStrings != null;
-                    defaultStrings.addAll(languageStrings);
-                }
+                specifiedLocales.add(locale);
+            }
+            if (specifiedLocales.size() == 1) {
+                String first = specifiedLocales.iterator().next();
+                Set<String> languageStrings = languageToStrings.get(first);
+                assert languageStrings != null;
+                defaultStrings.addAll(languageStrings);
             }
         }
 

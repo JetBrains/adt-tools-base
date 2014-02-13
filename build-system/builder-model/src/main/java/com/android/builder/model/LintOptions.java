@@ -56,6 +56,8 @@ import java.util.Set;
  *          noLines true
  *          // if true, show all locations for an error, do not truncate lists, etc.
  *          showAll true
+ *          // whether lint should include full issue explanations in the text error output
+ *          explainIssues false
  *          // Fallback lint configuration (default severities, etc.)
  *          lintConfig file("default-lint.xml")
  *          // if true, generate a text report of issues (false by default)
@@ -136,6 +138,10 @@ public interface LintOptions {
 
     /** Returns whether lint should treat all warnings as errors */
     public boolean isWarningsAsErrors();
+
+    /** Returns whether lint should include explanations for issue errors. (Note that
+     * HTML and XML reports intentionally do this unconditionally, ignoring this setting.) */
+    public boolean isExplainIssues();
 
     /**
      * Returns whether lint should include all output (e.g. include all alternate

@@ -171,26 +171,27 @@ public final class RawImage {
      */
     public int getARGB(int index) {
         int value;
+        int r, g, b, a;
         if (bpp == 16) {
             value = data[index] & 0x00FF;
             value |= (data[index+1] << 8) & 0x0FF00;
+            // RGB565 to RGB888
+            // Multiply by 255/31 to convert from 5 bits (31 max) to 8 bits (255)
+            r = ((value >>> 11) & 0x1f) * 255/31;
+            g = ((value >>> 5)  & 0x3f) * 255/63;
+            b = ((value)        & 0x1f) * 255/31;
+            a = 0xFF; // force alpha to opaque if there's no alpha value in the framebuffer.
         } else if (bpp == 32) {
             value = data[index] & 0x00FF;
             value |= (data[index+1] & 0x00FF) << 8;
             value |= (data[index+2] & 0x00FF) << 16;
             value |= (data[index+3] & 0x00FF) << 24;
+            r = ((value >>> red_offset) & getMask(red_length)) << (8 - red_length);
+            g = ((value >>> green_offset) & getMask(green_length)) << (8 - green_length);
+            b = ((value >>> blue_offset) & getMask(blue_length)) << (8 - blue_length);
+            a = ((value >>> alpha_offset) & getMask(alpha_length)) << (8 - alpha_length);
         } else {
             throw new UnsupportedOperationException("RawImage.getARGB(int) only works in 16 and 32 bit mode.");
-        }
-
-        int r = ((value >>> red_offset) & getMask(red_length)) << (8 - red_length);
-        int g = ((value >>> green_offset) & getMask(green_length)) << (8 - green_length);
-        int b = ((value >>> blue_offset) & getMask(blue_length)) << (8 - blue_length);
-        int a;
-        if (alpha_length == 0) {
-            a = 0xFF; // force alpha to opaque if there's no alpha value in the framebuffer.
-        } else {
-            a = ((value >>> alpha_offset) & getMask(alpha_length)) << (8 - alpha_length);
         }
 
         return a << 24 | r << 16 | g << 8 | b;

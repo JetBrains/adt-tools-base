@@ -36,10 +36,11 @@ public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
     static {
-        final int initialCapacity = 172;
+        final int initialCapacity = 174;
         List<Issue> issues = new ArrayList<Issue>(initialCapacity);
 
         issues.add(AccessibilityDetector.ISSUE);
+        issues.add(AssertDetector.ISSUE);
         issues.add(LabelForDetector.ISSUE);
         issues.add(MathDetector.ISSUE);
         issues.add(FieldGetterDetector.ISSUE);
@@ -182,6 +183,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(NamespaceDetector.RES_AUTO);
         issues.add(AlwaysShowActionDetector.ISSUE);
         issues.add(TitleDetector.ISSUE);
+        issues.add(NfcTechListDetector.ISSUE);
         issues.add(ColorUsageDetector.ISSUE);
         issues.add(JavaPerformanceDetector.PAINT_ALLOC);
         issues.add(JavaPerformanceDetector.USE_VALUE_OF);

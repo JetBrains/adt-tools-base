@@ -82,6 +82,7 @@ public abstract class BaseVariantData {
 
     public BaseVariantData(@NonNull VariantConfiguration variantConfiguration) {
         this.variantConfiguration = variantConfiguration;
+        variantConfiguration.checkSourceProviders();
     }
 
     @NonNull

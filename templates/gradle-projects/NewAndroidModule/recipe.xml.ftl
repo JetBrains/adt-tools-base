@@ -8,6 +8,8 @@
     <mkdir at="${escapeXmlAttribute(srcOut)}" />
 </#if>
 
+    <mkdir at="${escapeXmlAttribute(projectOut)}/libs" />
+
     <merge from="settings.gradle.ftl"
              to="${escapeXmlAttribute(topOut)}/settings.gradle" />
     <instantiate from="build.gradle.ftl"

@@ -3,7 +3,7 @@ buildscript {
         maven { url '../../../../../out/host/gradle/repo' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.8.1-SNAPSHOT'
+        classpath 'com.android.tools.build:gradle:0.8.3-SNAPSHOT'
     }
 }
 
@@ -92,7 +92,11 @@ public class SourceProviderImpl implements SourceProvider, Serializable {
     SourceProviderImpl(String name) {
         this.name = name
     }
-    
+
+    String getName() {
+        return name
+    }
+
     File getManifestFile() {
         return new File(name)
     }

@@ -28,6 +28,14 @@ import java.util.Collection;
 public interface SourceProvider {
 
     /**
+     * Returns the name of this source set.
+     *
+     * @return The name. Never returns null.
+     */
+    @NonNull
+    String getName();
+
+    /**
      * Returns the manifest file.
      *
      * @return the manifest file. It may not exist.

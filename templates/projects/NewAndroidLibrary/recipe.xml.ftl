@@ -18,7 +18,7 @@
                    to="${escapeXmlAttribute(resOut)}/values-v11/styles.xml" />
 </#if>
 <#if buildApi gte 14 && baseTheme?contains("darkactionbar")>
-    <copy from="res/values-v14/styles_ics.xml"
+    <instantiate from="res/values-v14/styles_ics.xml.ftl"
             to="${escapeXmlAttribute(resOut)}/values-v14/styles.xml" />
 </#if>
 
