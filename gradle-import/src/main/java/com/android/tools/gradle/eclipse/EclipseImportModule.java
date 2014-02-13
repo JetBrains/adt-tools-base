@@ -141,6 +141,12 @@ class EclipseImportModule extends ImportModule {
         return mAllDependencies;
     }
 
+    @NonNull
+    @Override
+    public File getDir() {
+        return mProject.getDir();
+    }
+
     @Override
     protected boolean isAndroidProject() {
         return mProject.isAndroidProject();
