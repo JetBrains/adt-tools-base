@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 The Android Open Source Project
+ * Copyright (C) 2013 The Android Open Source Project
  *
  * Licensed under the Eclipse Public License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package com.android.manifmerger;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.manifmerger.IMergerLog.FileAndLine;
 import com.android.sdklib.mock.MockLog;
 
+import junit.framework.ComparisonFailure;
 import junit.framework.TestCase;
 
 import org.w3c.dom.Document;
@@ -169,7 +171,7 @@ public class ManifestMergerSourceLinkTest extends TestCase {
         boolean ok = merger.process(mainDoc, library1, library2, library3);
         assertTrue(ok);
         String actual = MergerXmlUtils.printXmlString(mainDoc, mergerLog);
-        assertEquals("Encountered unexpected errors/warnings", "[]", log.toString());
+        assertEquals("Encountered unexpected errors/warnings", "", log.toString());
         String expected = ""
             + "<!-- From: file:/path/to/main/doc -->\n"
             + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\" android:versionCode=\"100\" android:versionName=\"1.0.0\" package=\"com.example.app1\">\n"
@@ -228,15 +230,29 @@ public class ManifestMergerSourceLinkTest extends TestCase {
             + "\n"
             + "</manifest>\n";
 
-        if (!expected.equals(actual)) {
+        if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS) {
+            // Adjust mock paths & EOLs for windows
+            actual = actual.replace("\r\n", "\n");
+            expected = expected.replace("file:/path/to/", "file:/C:/path/to/");
+        }
+
+        try {
+            assertEquals(expected, actual);
+
+        } catch (Exception originalFailure) {
             // DOM implementations vary slightly whether they'll insert a newline for comment
             // inserted outside document
             // JDK 7 doesn't, JDK 6 does
             int index = expected.indexOf('\n');
             assertTrue(index != -1);
             expected = expected.substring(0, index) + expected.substring(index + 1);
+            try {
+                assertEquals(expected, actual);
+            } catch (Throwable ignore) {
+                // If the second test fails too, throw the *original* exception,
+                // before we tried to tweak the EOL.
+                throw originalFailure;
+            }
         }
-
-        assertEquals(expected, actual);
     }
 }
