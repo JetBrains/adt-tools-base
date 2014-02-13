@@ -94,10 +94,14 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
         // This disables the "legacy" mode but it still doesn't create any system image package
 
         IAndroidTarget t = sdkman.getTargets()[0];
-        makeSystemImageFolder(new SystemImage(
-                sdkman, t, LocationType.IN_PLATFORM_SUBFOLDER, SdkConstants.ABI_ARMEABI_V7A));
-        makeSystemImageFolder(new SystemImage(
-                sdkman, t, LocationType.IN_PLATFORM_SUBFOLDER, SdkConstants.ABI_INTEL_ATOM));
+        makeSystemImageFolder(new SystemImage(sdkman, t,
+                LocationType.IN_PLATFORM_SUBFOLDER,
+                SystemImage.DEFAULT_TAG,
+                SdkConstants.ABI_ARMEABI_V7A));
+        makeSystemImageFolder(new SystemImage(sdkman, t,
+                LocationType.IN_PLATFORM_SUBFOLDER,
+                SystemImage.DEFAULT_TAG,
+                SdkConstants.ABI_INTEL_ATOM));
 
         sdkman.reloadSdk(getLog());
         t = sdkman.getTargets()[0];
@@ -114,12 +118,16 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
 
         // Now add arm + arm v7a images using the new SDK/system-images.
         // The local parser will find the 2 system image packages which are associated
-        // with the PlatformTarger in the SdkManager.
+        // with the PlatformTarget in the SdkManager.
 
-        makeSystemImageFolder(new SystemImage(
-                sdkman, t, LocationType.IN_SYSTEM_IMAGE, SdkConstants.ABI_ARMEABI));
-        makeSystemImageFolder(new SystemImage(
-                sdkman, t, LocationType.IN_SYSTEM_IMAGE, SdkConstants.ABI_ARMEABI_V7A));
+        makeSystemImageFolder(new SystemImage(sdkman, t,
+                LocationType.IN_SYSTEM_IMAGE,
+                SystemImage.DEFAULT_TAG,
+                SdkConstants.ABI_ARMEABI));
+        makeSystemImageFolder(new SystemImage(sdkman, t,
+                LocationType.IN_SYSTEM_IMAGE,
+                SystemImage.DEFAULT_TAG,
+                SdkConstants.ABI_ARMEABI_V7A));
 
         sdkman.reloadSdk(getLog());
 
@@ -139,8 +147,10 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
         // Now this time we do NOT reload the SdkManager instance. Instead the parser
         // will find an unused system image and load it as a "broken package".
 
-        makeSystemImageFolder(new SystemImage(
-                sdkman, t, LocationType.IN_SYSTEM_IMAGE, SdkConstants.ABI_INTEL_ATOM));
+        makeSystemImageFolder(new SystemImage(sdkman, t,
+                LocationType.IN_SYSTEM_IMAGE,
+                SystemImage.DEFAULT_TAG,
+                SdkConstants.ABI_INTEL_ATOM));
 
         assertEquals(
                 "[Android SDK Tools, revision 1.0.1, " +

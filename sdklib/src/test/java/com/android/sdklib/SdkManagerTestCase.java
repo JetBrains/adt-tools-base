@@ -178,7 +178,7 @@ public class SdkManagerTestCase extends TestCase {
         File targetDir = makeFakeTargetInternal(platformsDir);
 
         File imagesDir = new File(targetDir, "images");
-        makeFakeSysImgInternal(imagesDir, SdkConstants.ABI_ARMEABI);
+        makeFakeSysImgInternal(imagesDir, "default", SdkConstants.ABI_ARMEABI);
 
         makeFakeSkinInternal(targetDir);
         makeFakeSourceInternal(sdkDir);
@@ -195,7 +195,7 @@ public class SdkManagerTestCase extends TestCase {
         File imagesDir = systemImage.getLocation();
         imagesDir.mkdirs();
 
-        makeFakeSysImgInternal(imagesDir, systemImage.getAbiType());
+        makeFakeSysImgInternal(imagesDir, systemImage.getTag().getId(), systemImage.getAbiType());
     }
 
     //----
@@ -243,13 +243,15 @@ public class SdkManagerTestCase extends TestCase {
     }
 
     /** Utility to create a fake sys image in the given folder. */
-    private void makeFakeSysImgInternal(File imagesDir, String abiType) throws IOException {
+    private void makeFakeSysImgInternal(File imagesDir, String tag, String abiType)
+            throws IOException {
         imagesDir.mkdirs();
         new File(imagesDir, "userdata.img").createNewFile();
 
         createSourceProps(imagesDir,
                 PkgProps.PKG_REVISION, "0",
                 PkgProps.VERSION_API_LEVEL, "0",
+                PkgProps.SYS_IMG_TAG_ID, tag,
                 PkgProps.SYS_IMG_ABI, abiType);
     }
 

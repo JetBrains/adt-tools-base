@@ -121,6 +121,7 @@ public class RepoConstants {
     /** A license reference. */
     public static final String ATTR_REF = "ref";                                //$NON-NLS-1$
 
+
     /** Type of a sha1 checksum. */
     public static final String SHA1_TYPE = "sha1";                              //$NON-NLS-1$
 

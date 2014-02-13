@@ -15,7 +15,7 @@
  * limitations under the License.
 -->
 <sdk:sdk-sys-img
-    xmlns:sdk="http://schemas.android.com/sdk/android/sys-img/1">
+    xmlns:sdk="http://schemas.android.com/sdk/android/sys-img/2">
 
     <!-- Define a couple of licenses. These will be referenced by uses-license later. -->
 
@@ -31,6 +31,7 @@
     <sdk:system-image>
         <sdk:api-level>2</sdk:api-level>
         <sdk:revision>1</sdk:revision>
+        <sdk:tag-id>default</sdk:tag-id>
         <sdk:abi>x86</sdk:abi>
         <sdk:archives>
             <sdk:archive os="any">
@@ -44,6 +45,23 @@
     <sdk:system-image>
         <sdk:api-level>2</sdk:api-level>
         <sdk:revision>2</sdk:revision>
+        <sdk:tag-id>default</sdk:tag-id>
+        <sdk:tag-display>Ignored in description for default tag</sdk:tag-display>
+        <sdk:abi>armeabi-v7a</sdk:abi>
+        <sdk:archives>
+            <sdk:archive os="any">
+                <sdk:size>65534</sdk:size>
+                <sdk:checksum type="sha1">1234ae37115ebf13412bbef91339ee0d94541234</sdk:checksum>
+                <sdk:url>http://www.example.com/plat1/armv7/image2.zip</sdk:url>
+            </sdk:archive>
+        </sdk:archives>
+    </sdk:system-image>
+
+    <sdk:system-image>
+        <sdk:api-level>2</sdk:api-level>
+        <sdk:revision>2</sdk:revision>
+        <sdk:tag-id>other</sdk:tag-id>
+        <sdk:tag-display>Another tag name</sdk:tag-display>
         <sdk:abi>armeabi-v7a</sdk:abi>
         <sdk:archives>
             <sdk:archive os="any">
@@ -57,6 +75,7 @@
     <sdk:system-image>
         <sdk:api-level>42</sdk:api-level>
         <sdk:revision>12</sdk:revision>
+        <sdk:tag-id>default</sdk:tag-id>
         <sdk:abi>armeabi</sdk:abi>
         <sdk:archives>
             <sdk:archive os="any">
@@ -70,6 +89,36 @@
     <sdk:system-image>
         <sdk:api-level>42</sdk:api-level>
         <sdk:revision>12</sdk:revision>
+        <sdk:tag-id>default</sdk:tag-id>
+        <sdk:abi>mips</sdk:abi>
+        <sdk:archives>
+            <sdk:archive os="any">
+                <sdk:size>12345</sdk:size>
+                <sdk:checksum type="sha1">12345637115ebf13412bbef91339ee0d94541234</sdk:checksum>
+                <sdk:url>http://www.example.com/plat42/mips/image12.zip</sdk:url>
+            </sdk:archive>
+        </sdk:archives>
+    </sdk:system-image>
+
+    <sdk:system-image>
+        <sdk:api-level>44</sdk:api-level>
+        <sdk:revision>14</sdk:revision>
+        <sdk:tag-id>mips-only</sdk:tag-id>
+        <sdk:tag-display>This is an arbitrary string,</sdk:tag-display>
+        <sdk:abi>mips</sdk:abi>
+        <sdk:archives>
+            <sdk:archive os="any">
+                <sdk:size>12345</sdk:size>
+                <sdk:checksum type="sha1">12345637115ebf13412bbef91339ee0d94541234</sdk:checksum>
+                <sdk:url>http://www.example.com/plat42/mips/image12.zip</sdk:url>
+            </sdk:archive>
+        </sdk:archives>
+    </sdk:system-image>
+
+    <sdk:system-image>
+        <sdk:api-level>45</sdk:api-level>
+        <sdk:revision>15</sdk:revision>
+        <sdk:tag-id>tag-name---is-Sanitized----if-Display-is-Missing</sdk:tag-id>
         <sdk:abi>mips</sdk:abi>
         <sdk:archives>
             <sdk:archive os="any">

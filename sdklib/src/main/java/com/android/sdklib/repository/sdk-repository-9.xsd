@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (C) 2014 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
  * limitations under the License.
 -->
 <xsd:schema
-    targetNamespace="http://schemas.android.com/sdk/android/repository/8"
+    targetNamespace="http://schemas.android.com/sdk/android/repository/9"
     xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-    xmlns:sdk="http://schemas.android.com/sdk/android/repository/8"
+    xmlns:sdk="http://schemas.android.com/sdk/android/repository/9"
     elementFormDefault="qualified"
     attributeFormDefault="unqualified"
     version="1">
@@ -76,11 +76,14 @@
               <revision> -> <preview> and is only for <tool> and <platform-tool> packages.
             - <min-tools-rev> and <min-platform-tools-rev> also become a full revision element.
 
-         - v8 is used by the SDK Manager in Tools r22:
+         - v8 is used by the SDK Manager in Tools r22.0:
             - It introduces the new <build-tool> repository type, which contains build-specific
               tools that were before placed in either <tool> or <platform-tool> (e.g. ant,
               aapt, aidl, etc.)
             - <tool> has a new "min-build-tool" attribute.
+
+         - v9 is used by the SDK Manager in Tools r22.6:
+            - It introduces a sub-tag for the <system-image> repository type.
     -->
 
     <xsd:element name="sdk-repository" type="sdk:repositoryType" />
@@ -103,6 +106,7 @@
             <xsd:element name="license"         type="sdk:licenseType"      />
         </xsd:choice>
     </xsd:complexType>
+
 
     <!-- The definition of an SDK platform package. -->
 
@@ -184,6 +188,10 @@
             </xsd:documentation>
         </xsd:annotation>
         <xsd:all>
+            <!-- Implementation detail:
+                 any change here must be synchronized within a new sdk-sys-img-N.xsd
+            -->
+
             <!-- api-level + codename identifies the platform to which this system image belongs. -->
 
             <!-- The Android API Level for the platform. An int > 0. -->
@@ -194,6 +202,11 @@
             <!-- The revision, an int > 0, incremented each time a new
                  package is generated. -->
             <xsd:element name="revision"  type="xsd:positiveInteger" />
+
+            <!-- The tag of the system emulated by this image. -->
+            <xsd:element name="tag-id"      type="sdk:idType" />
+            <!-- The displayed tag of the system emulated by this image. Optional. -->
+            <xsd:element name="tag-display" type="xsd:normalizedString" minOccurs="0" />
 
             <!-- The ABI of the system emulated by this image. -->
             <xsd:element name="abi"       type="sdk:abiType" />
@@ -218,6 +231,18 @@
             <xsd:element name="obsolete"  type="xsd:string" minOccurs="0" />
         </xsd:all>
     </xsd:complexType>
+
+
+    <xsd:simpleType name="idType">
+        <xsd:annotation>
+            <xsd:documentation>
+                An tag string for a system image can only be simple alphanumeric string.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:token">
+            <xsd:pattern value="[a-zA-Z0-9_-]+"/>
+        </xsd:restriction>
+    </xsd:simpleType>
 
 
     <!-- The definition of the ABI supported by a platform's system image. -->

@@ -98,4 +98,6 @@ public class PkgProps {
     // SystemImagePackage
 
     public static final String SYS_IMG_ABI              = "SystemImage.Abi";        //$NON-NLS-1$
+    public static final String SYS_IMG_TAG_ID           = "SystemImage.TagId";      //$NON-NLS-1$
+    public static final String SYS_IMG_TAG_DISPLAY      = "SystemImage.TagDisplay"; //$NON-NLS-1$
 }

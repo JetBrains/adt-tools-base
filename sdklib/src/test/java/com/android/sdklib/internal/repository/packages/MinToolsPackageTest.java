@@ -88,7 +88,7 @@ public class MinToolsPackageTest extends PackageTest {
 
     @Override
     public void testCreate() {
-        Properties props = createProps();
+        Properties props = createExpectedProps();
 
         MockMinToolsPackage p = new MockMinToolsPackage(
                 null, //source
@@ -107,11 +107,11 @@ public class MinToolsPackageTest extends PackageTest {
 
     @Override
     public void testSaveProperties() {
-        Properties props = createProps();
+        Properties expected = createExpectedProps();
 
         MockMinToolsPackage p = new MockMinToolsPackage(
                 null, //source
-                props,
+                expected,
                 -1, //revision
                 null, //license
                 null, //description
@@ -121,15 +121,15 @@ public class MinToolsPackageTest extends PackageTest {
                 LOCAL_ARCHIVE_PATH
                 );
 
-        Properties props2 = new Properties();
-        p.saveProperties(props2);
+        Properties actual = new Properties();
+        p.saveProperties(actual);
 
-        assertEquals(props2, props);
+        assertEquals(expected, actual);
     }
 
     @Override
-    protected Properties createProps() {
-        Properties props = super.createProps();
+    protected Properties createExpectedProps() {
+        Properties props = super.createExpectedProps();
 
         // MinToolsPackage properties
         props.setProperty(PkgProps.MIN_TOOLS_REV, "3.0.1");

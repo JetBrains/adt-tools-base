@@ -17,6 +17,8 @@
 package com.android.sdklib;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 
 import java.io.File;
 
@@ -56,10 +58,16 @@ public interface ISystemImage extends Comparable<ISystemImage> {
     }
 
     /** Returns the actual location of an installed system image. */
-    public abstract File getLocation();
+    @NonNull
+    public File getLocation();
 
     /** Indicates the location strategy for this system image in the SDK. */
-    public abstract LocationType getLocationType();
+    @NonNull
+    public LocationType getLocationType();
+
+    /** Returns the tag of the system image. */
+    @NonNull
+    public IdDisplay getTag();
 
     /**
      * Returns the ABI type. For example, one of {@link SdkConstants#ABI_ARMEABI},
@@ -67,5 +75,6 @@ public interface ISystemImage extends Comparable<ISystemImage> {
      * {@link SdkConstants#ABI_MIPS}.
      * Cannot be null nor empty.
      */
-    public abstract String getAbiType();
+    @NonNull
+    public String getAbiType();
 }

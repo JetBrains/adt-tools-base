@@ -66,8 +66,8 @@ public class SourcePackageTest extends PackageTest {
     }
 
     @Override
-    protected Properties createProps() {
-        Properties props = super.createProps();
+    protected Properties createExpectedProps() {
+        Properties props = super.createExpectedProps();
 
         // SourcePackageTest properties
         props.setProperty(PkgProps.VERSION_API_LEVEL, "5");
@@ -86,7 +86,7 @@ public class SourcePackageTest extends PackageTest {
 
     @Override
     public final void testCreate() throws Exception {
-        Properties props = createProps();
+        Properties props = createExpectedProps();
         SourcePackage p = createSourcePackageTest(props);
 
         testCreatedSourcePackageTest(p);
@@ -94,17 +94,17 @@ public class SourcePackageTest extends PackageTest {
 
     @Override
     public void testSaveProperties() throws Exception {
-        Properties props = createProps();
-        SourcePackage p = createSourcePackageTest(props);
+        Properties expected = createExpectedProps();
+        SourcePackage p = createSourcePackageTest(expected);
 
-        Properties props2 = new Properties();
-        p.saveProperties(props2);
+        Properties actual = new Properties();
+        p.saveProperties(actual);
 
-        assertEquals(props2, props);
+        assertEquals(expected, actual);
     }
 
     public void testSameItemAs() throws Exception {
-        Properties props1 = createProps();
+        Properties props1 = createExpectedProps();
         SourcePackage p1 = createSourcePackageTest(props1);
         assertTrue(p1.sameItemAs(p1));
 
@@ -117,7 +117,7 @@ public class SourcePackageTest extends PackageTest {
     }
 
     public void testInstallId() throws Exception {
-        Properties props = createProps();
+        Properties props = createExpectedProps();
         SourcePackage p = createSourcePackageTest(props);
 
         assertEquals("source-5", p.installId());

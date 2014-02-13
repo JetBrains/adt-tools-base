@@ -34,8 +34,14 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.TreeMultimap;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -307,42 +313,48 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                                                    File platformDir,
                                                    AndroidVersion apiVersion) {
         Set<ISystemImage> found = new TreeSet<ISystemImage>();
-        Set<String> abiFound = new HashSet<String>();
+        SetMultimap<IdDisplay, String> tagToAbiFound = TreeMultimap.create();
 
-        // First look in the SDK/system-image/platform-n/abi folders.
+
+        // Look in the SDK/system-image/platform-n/tag/abi folders.
+        // Look in the SDK/system-image/platform-n/abi folders.
         // If we find multiple occurrences of the same platform/abi, the first one read wins.
 
         for (LocalPkgInfo pkg : getLocalSdk().getPkgsInfos(PkgType.PKG_SYS_IMAGES)) {
             if (pkg instanceof LocalSysImgPkgInfo &&
                     apiVersion.equals(pkg.getDesc().getAndroidVersion())) {
-                String abi = ((LocalSysImgPkgInfo)pkg).getDesc().getPath();
-                if (abi != null && !abiFound.contains(abi)) {
+                IdDisplay tag = pkg.getDesc().getTag();
+                String abi = pkg.getDesc().getPath();
+                if (tag != null && abi != null && !tagToAbiFound.containsEntry(tag, abi)) {
                     found.add(new SystemImage(
                             pkg.getLocalDir(),
                             LocationType.IN_SYSTEM_IMAGE,
+                            tag,
                             abi));
-                    abiFound.add(abi);
+                    tagToAbiFound.put(tag, abi);
                 }
             }
         }
 
-        // Then look in either the platform/images/abi or the legacy folder
+        // Look in either the platform/images/abi or the legacy folder
         File imgDir = new File(platformDir, SdkConstants.OS_IMAGES_FOLDER);
         File[] files =  fileOp.listFiles(imgDir);
         boolean useLegacy = true;
         boolean hasImgFiles = false;
+        final IdDisplay defaultTag = SystemImage.DEFAULT_TAG;
 
         // Look for sub-directories
         for (File file : files) {
             if (fileOp.isDirectory(file)) {
                 useLegacy = false;
                 String abi = file.getName();
-                if (!abiFound.contains(abi)) {
+                if (!tagToAbiFound.containsEntry(defaultTag, abi)) {
                     found.add(new SystemImage(
                             file,
                             LocationType.IN_PLATFORM_SUBFOLDER,
+                            defaultTag,
                             abi));
-                    abiFound.add(abi);
+                    tagToAbiFound.put(defaultTag, abi);
                 }
             } else if (!hasImgFiles && fileOp.isFile(file)) {
                 if (file.getName().endsWith(".img")) {      //$NON-NLS-1$
@@ -354,12 +366,13 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
         if (useLegacy &&
                 hasImgFiles &&
                 fileOp.isDirectory(imgDir) &&
-                !abiFound.contains(SdkConstants.ABI_ARMEABI)) {
+                !tagToAbiFound.containsEntry(defaultTag, SdkConstants.ABI_ARMEABI)) {
             // We found no sub-folder system images but it looks like the top directory
             // has some img files in it. It must be a legacy ARM EABI system image folder.
             found.add(new SystemImage(
                     imgDir,
                     LocationType.IN_PLATFORM_LEGACY,
+                    defaultTag,
                     SdkConstants.ABI_ARMEABI));
         }
 

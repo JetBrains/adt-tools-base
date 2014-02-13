@@ -75,6 +75,7 @@ public class MockPlatformTarget implements IAndroidTarget {
             SystemImage si = new SystemImage(
                     FileOp.append(getLocation(), SdkConstants.OS_IMAGES_FOLDER),
                     LocationType.IN_PLATFORM_LEGACY,
+                    SystemImage.DEFAULT_TAG,
                     SdkConstants.ABI_ARMEABI);
             mSystemImages = new SystemImage[] { si };
         }

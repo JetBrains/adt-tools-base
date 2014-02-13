@@ -44,9 +44,13 @@ import com.google.common.collect.TreeMultimap;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
-
-import java.util.zip.Adler32;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * This class keeps information on the current locally installed SDK.
@@ -468,6 +472,7 @@ public class LocalSdk {
      * Retrieve all the info about the requested package type.
      * This is used for the package types that have one or more instances, each with different
      * versions.
+     * The resulting array is sorted according to the PkgInfo's sort order.
      * <p/>
      * Note: you can use this with {@link PkgType#PKG_TOOLS}, {@link PkgType#PKG_PLATFORM_TOOLS} and
      * {@link PkgType#PKG_DOCS} but since there can only be one package of these types, it is
@@ -485,6 +490,7 @@ public class LocalSdk {
      * Retrieve all the info about the requested package types.
      * This is used for the package types that have one or more instances, each with different
      * versions.
+     * The resulting array is sorted according to the PkgInfo's sort order.
      * <p/>
      * To force the LocalSdk parser to load <b>everything</b>, simply call this method
      * with the {@link PkgType#PKG_ALL} argument to load all the known package types.
@@ -562,6 +568,7 @@ public class LocalSdk {
             }
         }
 
+        Collections.sort(list);
         return list.toArray(new LocalPkgInfo[list.size()]);
     }
 
@@ -653,7 +660,8 @@ public class LocalSdk {
     /**
      * Returns the targets (platforms & addons) that are available in the SDK.
      * The target list is created on demand the first time then cached.
-     * It will not refreshed unless {@link #reloadSdk(com.android.utils.ILogger)} is called.
+     * It will not refreshed unless {@link #clearLocalPkg} is called to clear platforms
+     * and/or add-ons.
      * <p/>
      * The array can be empty but not null.
      */
@@ -872,6 +880,10 @@ public class LocalSdk {
     }
 
     private void scanSysImages(File collectionDir, Collection<LocalPkgInfo> outCollection) {
+        List<File> propFiles = Lists.newArrayList();
+
+        // Create a list of sys-img/target/tag/abi or sys-img/target/abi folders
+        // that contain a source.properties file.
         for (File platformDir : mFileOp.listFiles(collectionDir)) {
             if (!mFileOp.isDirectory(platformDir) ||
                     mVisitedDirs.containsEntry(PkgType.PKG_SYS_IMAGES, platformDir)) {
@@ -879,30 +891,54 @@ public class LocalSdk {
             }
             mVisitedDirs.put(PkgType.PKG_SYS_IMAGES, new LocalDirInfo(mFileOp, platformDir));
 
-            for (File abiDir : mFileOp.listFiles(platformDir)) {
-                if (!mFileOp.isDirectory(abiDir) ||
-                        mVisitedDirs.containsEntry(PkgType.PKG_SYS_IMAGES, abiDir)) {
+            for (File dir1 : mFileOp.listFiles(platformDir)) {
+                // dir1 might be either a tag or an abi folder.
+                if (!mFileOp.isDirectory(dir1) ||
+                        mVisitedDirs.containsEntry(PkgType.PKG_SYS_IMAGES, dir1)) {
                     continue;
                 }
-                mVisitedDirs.put(PkgType.PKG_SYS_IMAGES, new LocalDirInfo(mFileOp, abiDir));
+                mVisitedDirs.put(PkgType.PKG_SYS_IMAGES, new LocalDirInfo(mFileOp, dir1));
 
-                Properties props = parseProperties(new File(abiDir, SdkConstants.FN_SOURCE_PROP));
-                MajorRevision rev =
-                    PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
-                if (rev == null) {
-                    continue; // skip, no revision
+                File prop1 = new File(dir1, SdkConstants.FN_SOURCE_PROP);
+                if (mFileOp.isFile(prop1)) {
+                    // dir1 was a legacy abi folder.
+                    propFiles.add(prop1);
+                } else {
+                    File[] dir1Files = mFileOp.listFiles(dir1);
+                    for (File dir2 : dir1Files) {
+                        // dir2 should be an abi folder in a tag folder.
+                        if (!mFileOp.isDirectory(dir2) ||
+                                mVisitedDirs.containsEntry(PkgType.PKG_SYS_IMAGES, dir2)) {
+                            continue;
+                        }
+                        mVisitedDirs.put(PkgType.PKG_SYS_IMAGES, new LocalDirInfo(mFileOp, dir2));
+
+                        File prop2 = new File(dir2, SdkConstants.FN_SOURCE_PROP);
+                        if (mFileOp.isFile(prop2)) {
+                            propFiles.add(prop2);
+                        }
+                    }
                 }
+            }
+        }
 
-                try {
-                    AndroidVersion vers = new AndroidVersion(props);
+        for (File propFile : propFiles) {
+            Properties props = parseProperties(propFile);
+            MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
+            if (rev == null) {
+                continue; // skip, no revision
+            }
 
-                    LocalSysImgPkgInfo pkgInfo =
-                        new LocalSysImgPkgInfo(this, abiDir, props, vers, abiDir.getName(), rev);
-                    outCollection.add(pkgInfo);
+            try {
+                AndroidVersion vers = new AndroidVersion(props);
 
-                } catch (AndroidVersionException e) {
-                    continue; // skip invalid or missing android version.
-                }
+                File abiDir = propFile.getParentFile();
+                LocalSysImgPkgInfo pkgInfo =
+                    new LocalSysImgPkgInfo(this, abiDir, props, vers, abiDir.getName(), rev);
+                outCollection.add(pkgInfo);
+
+            } catch (AndroidVersionException e) {
+                continue; // skip invalid or missing android version.
             }
         }
     }
