@@ -79,4 +79,11 @@ public class ActionBarCallback {
     public HomeButtonStyle getHomeButtonStyle() {
         return HomeButtonStyle.NONE;
     }
+
+    /**
+     * Returns whether to draw the overflow menu popup.
+     */
+    public boolean isOverflowPopupNeeded() {
+        return false;
+    }
 }
