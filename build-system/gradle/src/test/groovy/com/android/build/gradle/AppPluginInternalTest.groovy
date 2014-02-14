@@ -52,10 +52,10 @@ public class AppPluginInternalTest extends BaseTest {
         AppPlugin plugin = AppPlugin.pluginHolder.plugin
         plugin.createAndroidTasks(true /*force*/)
 
-        assertEquals(2, plugin.buildTypes.size())
-        assertNotNull(plugin.buildTypes.get(BuilderConstants.DEBUG))
-        assertNotNull(plugin.buildTypes.get(BuilderConstants.RELEASE))
-        assertEquals(0, plugin.productFlavors.size())
+        assertEquals(2, plugin.variantManager.buildTypes.size())
+        assertNotNull(plugin.variantManager.buildTypes.get(BuilderConstants.DEBUG))
+        assertNotNull(plugin.variantManager.buildTypes.get(BuilderConstants.RELEASE))
+        assertEquals(0, plugin.variantManager.productFlavors.size())
 
 
         List<BaseVariantData> variants = plugin.variantDataList
@@ -131,7 +131,7 @@ public class AppPluginInternalTest extends BaseTest {
         AppPlugin plugin = AppPlugin.pluginHolder.plugin
         plugin.createAndroidTasks(true /*force*/)
 
-        assertEquals(3, plugin.buildTypes.size())
+        assertEquals(3, plugin.variantManager.buildTypes.size())
 
         List<BaseVariantData> variants = plugin.variantDataList
         assertEquals(4, variants.size()) // includes the test variant(s)
@@ -170,7 +170,7 @@ public class AppPluginInternalTest extends BaseTest {
         AppPlugin plugin = AppPlugin.pluginHolder.plugin
         plugin.createAndroidTasks(true /*force*/)
 
-        assertEquals(2, plugin.productFlavors.size())
+        assertEquals(2, plugin.variantManager.productFlavors.size())
 
         List<BaseVariantData> variants = plugin.variantDataList
         assertEquals(6, variants.size()) // includes the test variant(s)
@@ -219,7 +219,7 @@ public class AppPluginInternalTest extends BaseTest {
         AppPlugin plugin = AppPlugin.pluginHolder.plugin
         plugin.createAndroidTasks(true /*force*/)
 
-        assertEquals(5, plugin.productFlavors.size())
+        assertEquals(5, plugin.variantManager.productFlavors.size())
 
         List<BaseVariantData> variants = plugin.variantDataList
         assertEquals(18, variants.size())   // includes the test variant(s)
@@ -370,9 +370,9 @@ public class AppPluginInternalTest extends BaseTest {
         AppPlugin plugin = AppPlugin.pluginHolder.plugin
 
         // check that the debug buildType has the updated debug signing config.
-        DefaultBuildType buildType = plugin.buildTypes.get(BuilderConstants.DEBUG).buildType
+        DefaultBuildType buildType = plugin.variantManager.buildTypes.get(BuilderConstants.DEBUG).buildType
         SigningConfig signingConfig = buildType.signingConfig
-        assertEquals(plugin.signingConfigs.get(BuilderConstants.DEBUG), signingConfig)
+        assertEquals(plugin.variantManager.signingConfigs.get(BuilderConstants.DEBUG), signingConfig)
         assertEquals("foo", signingConfig.storePassword)
     }
 
@@ -392,8 +392,8 @@ public class AppPluginInternalTest extends BaseTest {
 
         AppPlugin plugin = AppPlugin.pluginHolder.plugin
 
-        SigningConfig debugSC = plugin.signingConfigs.get(BuilderConstants.DEBUG)
-        SigningConfig fooSC = plugin.signingConfigs.get("foo")
+        SigningConfig debugSC = plugin.variantManager.signingConfigs.get(BuilderConstants.DEBUG)
+        SigningConfig fooSC = plugin.variantManager.signingConfigs.get("foo")
 
         assertNotNull(fooSC);
 

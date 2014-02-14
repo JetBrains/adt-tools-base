@@ -116,12 +116,12 @@ public class ModelBuilder implements ToolingModelBuilder {
                         basePlugin.getExtraFlavorSourceProviders(basePlugin.defaultConfigData.productFlavor.name)))
 
         if (appPlugin != null) {
-            for (BuildTypeData btData : appPlugin.buildTypes.values()) {
+            for (BuildTypeData btData : appPlugin.variantManager.buildTypes.values()) {
                 androidProject.addBuildType(BuildTypeContainerImpl.createBTC(
                         btData,
                         basePlugin.getExtraBuildTypeSourceProviders(btData.buildType.name)))
             }
-            for (ProductFlavorData pfData : appPlugin.productFlavors.values()) {
+            for (ProductFlavorData pfData : appPlugin.variantManager.productFlavors.values()) {
                 androidProject.addProductFlavors(ProductFlavorContainerImpl.createPFC(
                         pfData,
                         basePlugin.getExtraFlavorSourceProviders(pfData.productFlavor.name)))
