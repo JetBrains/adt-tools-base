@@ -14,56 +14,27 @@
  * limitations under the License.
  */
 package com.android.build.gradle
-
 import com.android.build.gradle.api.LibraryVariant
-import com.android.build.gradle.internal.dsl.BuildTypeDsl
-import com.android.build.gradle.internal.dsl.SigningConfigDsl
-import com.android.builder.BuilderConstants
 import com.android.builder.DefaultBuildType
+import com.android.builder.DefaultProductFlavor
 import com.android.builder.model.SigningConfig
-import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.internal.reflect.Instantiator
-
 /**
  * Extension for 'library' project.
  */
 public class LibraryExtension extends BaseExtension {
 
-    final DefaultBuildType debug
-    final DefaultBuildType release
-    final SigningConfig debugSigningConfig
-
     private final DefaultDomainObjectSet<LibraryVariant> libraryVariantList =
         new DefaultDomainObjectSet<LibraryVariant>(LibraryVariant.class)
 
-    LibraryExtension(BasePlugin plugin, ProjectInternal project, Instantiator instantiator) {
-        super(plugin, project, instantiator)
-
-        debugSigningConfig = instantiator.newInstance(SigningConfigDsl.class,
-                BuilderConstants.DEBUG)
-        debugSigningConfig.initDebug()
-
-        debug = instantiator.newInstance(BuildTypeDsl.class,
-                BuilderConstants.DEBUG, project.fileResolver, instantiator, project.getLogger())
-        debug.init(debugSigningConfig)
-
-        release = instantiator.newInstance(BuildTypeDsl.class,
-                BuilderConstants.RELEASE, project.fileResolver, instantiator, project.getLogger())
-        release.init(null)
-    }
-
-    void debug(Action<DefaultBuildType> action) {
-        action.execute(debug);
-    }
-
-    void release(Action<DefaultBuildType> action) {
-        action.execute(release);
-    }
-
-    void debugSigningConfig(Action<SigningConfig> action) {
-        action.execute(debugSigningConfig)
+    LibraryExtension(BasePlugin plugin, ProjectInternal project, Instantiator instantiator,
+            NamedDomainObjectContainer<DefaultBuildType> buildTypes,
+            NamedDomainObjectContainer<DefaultProductFlavor> productFlavors,
+            NamedDomainObjectContainer<SigningConfig> signingConfigs) {
+        super(plugin, project, instantiator, buildTypes, productFlavors, signingConfigs)
     }
 
     public DefaultDomainObjectSet<LibraryVariant> getLibraryVariants() {

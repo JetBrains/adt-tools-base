@@ -16,7 +16,10 @@ android {
         proguardFile 'config.pro'
         consumerProguardFiles 'consumerRules.pro'
     }
-    release {
-        runProguard true
+
+    buildTypes {
+        release {
+            runProguard true
+        }
     }
 }
