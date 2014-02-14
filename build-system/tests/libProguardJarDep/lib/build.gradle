@@ -21,10 +21,12 @@ android {
         proguardFile 'config.pro'
         consumerProguardFiles 'config.pro'
     }
-    debug {
-        runProguard true
-    }
-    release {
-        runProguard true
+    buildTypes {
+        debug {
+            runProguard true
+        }
+        release {
+            runProguard true
+        }
     }
 }

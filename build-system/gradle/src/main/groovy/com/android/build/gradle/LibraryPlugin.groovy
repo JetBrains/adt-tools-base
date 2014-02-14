@@ -21,10 +21,16 @@ import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
-import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
+import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.api.LibraryVariantImpl
 import com.android.build.gradle.internal.api.TestVariantImpl
 import com.android.build.gradle.internal.dependency.VariantDependencies
+import com.android.build.gradle.internal.dsl.BuildTypeDsl
+import com.android.build.gradle.internal.dsl.BuildTypeFactory
+import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl
+import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
+import com.android.build.gradle.internal.dsl.SigningConfigDsl
+import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.tasks.MergeFileTask
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.LibraryVariantData
@@ -39,6 +45,7 @@ import com.android.builder.dependency.LibraryBundle
 import com.android.builder.dependency.LibraryDependency
 import com.android.builder.dependency.ManifestDependency
 import com.android.builder.model.AndroidLibrary
+import com.android.builder.model.SigningConfig
 import com.google.common.collect.Maps
 import com.google.common.collect.Sets
 import org.gradle.api.Plugin
@@ -54,14 +61,16 @@ import org.gradle.tooling.BuildException
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 import javax.inject.Inject
+
+import static com.android.builder.BuilderConstants.DEBUG
+import static com.android.builder.BuilderConstants.RELEASE
 /**
  * Gradle plugin class for 'library' projects.
  */
 public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
 
     LibraryExtension extension
-    BuildTypeData debugBuildTypeData
-    BuildTypeData releaseBuildTypeData
+    VariantManager variantManager
 
     @Inject
     public LibraryPlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
@@ -74,26 +83,58 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
     }
 
     @Override
+    public VariantManager getVariantManager() {
+        return variantManager
+    }
+
+    @Override
     void apply(Project project) {
         super.apply(project)
 
+        def buildTypeContainer = project.container(DefaultBuildType,
+                new BuildTypeFactory(instantiator,  project.fileResolver, project.getLogger()))
+        def productFlavorContainer = project.container(GroupableProductFlavorDsl,
+                new GroupableProductFlavorFactory(instantiator, project.fileResolver, project.getLogger()))
+        def signingConfigContainer = project.container(SigningConfig,
+                new SigningConfigFactory(instantiator))
+
         extension = project.extensions.create('android', LibraryExtension,
-                this, (ProjectInternal) project, instantiator)
+                this, (ProjectInternal) project, instantiator,
+                buildTypeContainer, productFlavorContainer, signingConfigContainer)
         setBaseExtension(extension);
 
-        // create the source sets for the build type.
-        // the ones for the main product flavors are handled by the base plugin.
-        DefaultAndroidSourceSet debugSourceSet =
-            (DefaultAndroidSourceSet) extension.sourceSetsContainer.maybeCreate(BuilderConstants.DEBUG)
-        DefaultAndroidSourceSet releaseSourceSet =
-            (DefaultAndroidSourceSet) extension.sourceSetsContainer.maybeCreate(BuilderConstants.RELEASE)
+        variantManager = new VariantManager(project, this, extension)
 
-        debugBuildTypeData = new BuildTypeData(extension.debug, debugSourceSet, project)
-        releaseBuildTypeData = new BuildTypeData(extension.release, releaseSourceSet, project)
-        project.tasks.assemble.dependsOn debugBuildTypeData.assembleTask
-        project.tasks.assemble.dependsOn releaseBuildTypeData.assembleTask
+        // map the whenObjectAdded callbacks on the containers.
+        signingConfigContainer.whenObjectAdded { SigningConfig signingConfig ->
+            variantManager.addSigningConfig((SigningConfigDsl) signingConfig)
+        }
 
-        createConfigurations(releaseSourceSet)
+        buildTypeContainer.whenObjectAdded { DefaultBuildType buildType ->
+            variantManager.addBuildType((BuildTypeDsl) buildType)
+        }
+
+        productFlavorContainer.whenObjectAdded { GroupableProductFlavorDsl productFlavor ->
+            variantManager.addProductFlavor(productFlavor)
+        }
+
+        // create default Objects, signingConfig first as its used by the BuildTypes.
+        signingConfigContainer.create(DEBUG)
+        buildTypeContainer.create(DEBUG)
+        buildTypeContainer.create(RELEASE)
+
+        // map whenObjectRemoved on the containers to throw an exception.
+        signingConfigContainer.whenObjectRemoved {
+            throw new UnsupportedOperationException("Removing signingConfigs is not supported.")
+        }
+        buildTypeContainer.whenObjectRemoved {
+            throw new UnsupportedOperationException("Removing build types is not supported.")
+        }
+        productFlavorContainer.whenObjectRemoved {
+            throw new UnsupportedOperationException("Removing product flavors is not supported.")
+        }
+
+        createConfigurations(variantManager.buildTypes.get(RELEASE).getSourceSet())
     }
 
     void createConfigurations(AndroidSourceSet releaseSourceSet) {
@@ -126,18 +167,19 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
         ProductFlavorData defaultConfigData = getDefaultConfigData()
         VariantDependencies variantDep
 
-        LibraryVariantData debugVariantData = createLibVariant(defaultConfigData,
-                debugBuildTypeData)
-        LibraryVariantData releaseVariantData = createLibVariant(defaultConfigData,
-                releaseBuildTypeData)
+        BuildTypeData debugBuildTypeData = variantManager.getBuildTypes().get(DEBUG)
+        BuildTypeData releaseBuildTypeData = variantManager.getBuildTypes().get(RELEASE)
+
+        LibraryVariantData debugVariantData = createLibVariant(defaultConfigData, debugBuildTypeData)
+        LibraryVariantData releaseVariantData = createLibVariant(defaultConfigData, releaseBuildTypeData)
 
         // Add a compile lint task before library is bundled
         createLintCompileTask()
 
         // Need to create the tasks for these before doing the test variant as it
         // references the debug variant and its output
-        createLibraryVariant(debugVariantData, false)
-        createLibraryVariant(releaseVariantData, true)
+        createLibraryVariant(debugVariantData, debugBuildTypeData, false)
+        createLibraryVariant(releaseVariantData, releaseBuildTypeData, true)
 
         VariantConfiguration testVariantConfig = new VariantConfiguration(
                 defaultConfigData.productFlavor,
@@ -193,6 +235,7 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
     }
 
     private void createLibraryVariant(@NonNull LibraryVariantData variantData,
+                                      @NonNull BuildTypeData buildTypeData,
                                       boolean publishArtifact) {
         resolveDependencies(variantData.variantDependency)
         variantData.variantConfiguration.setDependencies(variantData.variantDependency)
@@ -354,7 +397,7 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
         bundle.setDescription("Assembles a bundle containing the library in ${variantData.variantConfiguration.fullName.capitalize()}.");
         bundle.destinationDir = project.file("$project.buildDir/libs")
         bundle.extension = BuilderConstants.EXT_LIB_ARCHIVE
-        if (variantData.variantConfiguration.baseName != BuilderConstants.RELEASE) {
+        if (!RELEASE.equals(variantData.variantConfiguration.baseName)) {
             bundle.classifier = variantData.variantConfiguration.baseName
         }
         bundle.from(project.file("$project.buildDir/$DIR_BUNDLES/${variantData.variantConfiguration.dirName}"))
@@ -365,10 +408,8 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
         if (publishArtifact) {
             // add the artifact that will be published
             project.artifacts.add("default", bundle)
-            releaseBuildTypeData.assembleTask.dependsOn bundle
-        } else {
-            debugBuildTypeData.assembleTask.dependsOn bundle
         }
+        buildTypeData.assembleTask.dependsOn bundle
 
         variantData.assembleTask = bundle
 

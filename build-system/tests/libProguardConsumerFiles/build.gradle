@@ -22,11 +22,13 @@ android {
         consumerProguardFiles 'A.txt'
     }
 
-    debug {
-    }
+    buildTypes {
+        debug {
+        }
 
-    release {
-        runProguard true
-        consumerProguardFiles 'B.txt', 'C.txt'
+        release {
+            runProguard true
+            consumerProguardFiles 'B.txt', 'C.txt'
+        }
     }
 }
