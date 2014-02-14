@@ -1163,6 +1163,7 @@ public abstract class BasePlugin {
                                 "${testServer.name}${"upload".capitalize()}${baseVariantData.variantConfiguration.fullName}" :
                                 "${testServer.name}${"upload".capitalize()}",
                             TestServerTask)
+
                     serverTask.description = "Uploads APKs for Build '${baseVariantData.variantConfiguration.fullName}' to Test Server '${testServer.name.capitalize()}'."
                     serverTask.group = JavaBasePlugin.VERIFICATION_GROUP
                     serverTask.dependsOn testVariantData.assembleTask, baseVariantData.assembleTask
