@@ -2,12 +2,10 @@
 <template
     format="4"
     revision="2"
-    name="New App Widget"
+    name="App Widget"
     description="Creates a new App Widget"
     minApi="4"
     minBuildApi="16">
-
-    <category value="Other" />
 
     <parameter
         id="className"
@@ -24,7 +22,7 @@
             default="homescreen"
             help="Make the widget available on the Home-screen and/or on the Keyguard. Keyguard placement is only supported in Android 4.2 and above; this setting is ignored on earlier versions and defaults to Home-screen.">
             <option id="both">Home-screen and Keyguard</option>
-            <option id="homescreen" default="true" >Home-screen only</option>
+            <option id="homescreen">Home-screen only</option>
             <option id="keyguard" >Keyguard only (API 17+)</option>
         </parameter>
 
@@ -34,7 +32,7 @@
             type="enum"
             default="both"
             help="Allow the user to resize the widget. Feature only available on Android 3.1 and above.">
-            <option id="both" default="true">Horizontally and vertically</option>
+            <option id="both">Horizontally and vertically</option>
             <option id="horizontal">Only horizontally</option>
             <option id="vertical" >Only vertically</option>
             <option id="none">Not resizable</option>
@@ -45,7 +43,7 @@
         name="Minimum Width (cells)"
         type="enum"
         default="1">
-        <option id="1" default="true">1</option>
+        <option id="1">1</option>
         <option id="2" >2</option>
         <option id="3" >3</option>
         <option id="4" >4</option>
@@ -56,7 +54,7 @@
         name="Minimum Height (cells)"
         type="enum"
         default="1">
-        <option id="1" default="true">1</option>
+        <option id="1">1</option>
         <option id="2" >2</option>
         <option id="3" >3</option>
         <option id="4" >4</option>
