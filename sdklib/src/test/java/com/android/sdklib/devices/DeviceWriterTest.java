@@ -31,7 +31,27 @@ import java.util.Map;
 @SuppressWarnings("javadoc")
 public class DeviceWriterTest extends TestCase {
 
-    public void testWriteIsValid() throws Exception {
+    public void testWriteIsValid_Minimal() throws Exception {
+        InputStream devicesFile =
+            DeviceSchemaTest.class.getResourceAsStream("devices_minimal.xml");
+        List<Device> devices = DeviceParser.parse(devicesFile);
+        assertEquals("Parsed devices contained an un expected number of devices",
+                1, devices.size());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DeviceWriter.writeToXml(baos, devices);
+        String written = baos.toString();
+        List<Device> writtenDevices = DeviceParser.parse(
+                new ByteArrayInputStream(written.getBytes()));
+        assertEquals("Writing and reparsing returns a different number of devices",
+                devices.size(), writtenDevices.size());
+        for (int i = 0; i < devices.size(); i++) {
+            assertEquals(
+                    "Device " + i + " differs in XML " + written,
+                    "\n" + devices.get(i), "\n" + writtenDevices.get(i));
+        }
+    }
+
+    public void testWriteIsValid_Full() throws Exception {
         InputStream devicesFile =
             DeviceSchemaTest.class.getResourceAsStream("devices.xml");
         List<Device> devices = DeviceParser.parse(devicesFile);
@@ -39,12 +59,15 @@ public class DeviceWriterTest extends TestCase {
                 2, devices.size());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DeviceWriter.writeToXml(baos, devices);
+        String written = baos.toString();
         List<Device> writtenDevices = DeviceParser.parse(
-                new ByteArrayInputStream(baos.toString().getBytes()));
+                new ByteArrayInputStream(written.getBytes()));
         assertEquals("Writing and reparsing returns a different number of devices",
                 devices.size(), writtenDevices.size());
         for (int i = 0; i < devices.size(); i++) {
-            assertEquals(devices.get(i), writtenDevices.get(i));
+            assertEquals(
+                    "Device " + i + " differs in XML " + written,
+                    "\n" + devices.get(i), "\n" + writtenDevices.get(i));
         }
     }
 

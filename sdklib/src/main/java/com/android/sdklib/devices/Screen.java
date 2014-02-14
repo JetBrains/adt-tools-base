@@ -186,4 +186,33 @@ public class Screen {
         hash = 31 * hash + mScreenType.ordinal();
         return hash;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Screen [mScreenSize=");
+        sb.append(mScreenSize);
+        sb.append(", mDiagonalLength=");
+        sb.append(mDiagonalLength);
+        sb.append(", mPixelDensity=");
+        sb.append(mPixelDensity);
+        sb.append(", mScreenRatio=");
+        sb.append(mScreenRatio);
+        sb.append(", mXDimension=");
+        sb.append(mXDimension);
+        sb.append(", mYDimension=");
+        sb.append(mYDimension);
+        sb.append(", mXdpi=");
+        sb.append(mXdpi);
+        sb.append(", mYdpi=");
+        sb.append(mYdpi);
+        sb.append(", mMultitouch=");
+        sb.append(mMultitouch);
+        sb.append(", mMechanism=");
+        sb.append(mMechanism);
+        sb.append(", mScreenType=");
+        sb.append(mScreenType);
+        sb.append("]");
+        return sb.toString();
+    }
 }
