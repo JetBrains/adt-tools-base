@@ -41,6 +41,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -69,14 +70,17 @@ public class DeviceManager {
     private final List<DevicesChangedListener> sListeners = new ArrayList<DevicesChangedListener>();
     private final String mOsSdkPath;
 
-    /** getDevices() flag to list user devices. */
-    public static final int USER_DEVICES    = 1;
-    /** getDevices() flag to list default devices. */
-    public static final int DEFAULT_DEVICES = 2;
-    /** getDevices() flag to list vendor devices. */
-    public static final int VENDOR_DEVICES  = 4;
+    public enum DeviceFilter {
+        /** getDevices() flag to list user devices. */
+        USER,
+        /** getDevices() flag to list default devices. */
+        DEFAULT,
+        /** getDevices() flag to list vendor devices. */
+        VENDOR
+    }
+
     /** getDevices() flag to list all devices. */
-    public static final int ALL_DEVICES  = USER_DEVICES | DEFAULT_DEVICES | VENDOR_DEVICES;
+    public static final EnumSet<DeviceFilter> ALL_DEVICES  = EnumSet.allOf(DeviceFilter.class);
 
     public enum DeviceStatus {
         /**
@@ -166,15 +170,25 @@ public class DeviceManager {
     @Nullable
     public Device getDevice(@NonNull String id, @NonNull String manufacturer) {
         initDevicesLists();
-        for (List<?> devices :
-                new List<?>[] { mUserDevices, mDefaultDevices, mVendorDevices } ) {
-            if (devices != null) {
-                @SuppressWarnings("unchecked") List<Device> devicesList = (List<Device>) devices;
-                for (Device d : devicesList) {
-                    if (d.getId().equals(id) && d.getManufacturer().equals(manufacturer)) {
-                        return d;
-                    }
-                }
+        Device d = getDeviceImpl(mUserDevices, id, manufacturer);
+        if (d != null) {
+            return d;
+        }
+        d = getDeviceImpl(mDefaultDevices, id, manufacturer);
+        if (d != null) {
+            return d;
+        }
+        d = getDeviceImpl(mVendorDevices, id, manufacturer);
+        return d;
+    }
+
+    @Nullable
+    private Device getDeviceImpl(@NonNull List<Device> devicesList,
+                                @NonNull String id,
+                                @NonNull String manufacturer) {
+        for (Device d : devicesList) {
+            if (d.getId().equals(id) && d.getManufacturer().equals(manufacturer)) {
+                return d;
             }
         }
         return null;
@@ -188,16 +202,16 @@ public class DeviceManager {
      * @return A copy of the list of {@link Device}s. Can be empty but not null.
      */
     @NonNull
-    public List<Device> getDevices(int deviceFilter) {
+    public List<Device> getDevices(EnumSet<DeviceFilter> deviceFilter) {
         initDevicesLists();
         List<Device> devices = new ArrayList<Device>();
-        if (mUserDevices != null && (deviceFilter & USER_DEVICES) != 0) {
+        if (mUserDevices != null && (deviceFilter.contains(DeviceFilter.USER))) {
             devices.addAll(mUserDevices);
         }
-        if (mDefaultDevices != null && (deviceFilter & DEFAULT_DEVICES) != 0) {
+        if (mDefaultDevices != null && (deviceFilter.contains(DeviceFilter.DEFAULT))) {
             devices.addAll(mDefaultDevices);
         }
-        if (mVendorDevices != null && (deviceFilter & VENDOR_DEVICES) != 0) {
+        if (mVendorDevices != null && (deviceFilter.contains(DeviceFilter.VENDOR))) {
             devices.addAll(mVendorDevices);
         }
         return Collections.unmodifiableList(devices);
