@@ -1389,17 +1389,17 @@ public class VariantConfiguration implements TestData {
     }
 
     /**
-     * Returns the list of provided jars for this config.
+     * Returns the list of provided-only jars for this config.
      *
      * @return a non null, but possibly empty list.
      */
     @NonNull
-    public List<File> getProvidedJars() {
+    public List<File> getProvidedOnlyJars() {
         Set<File> jars = Sets.newHashSetWithExpectedSize(mJars.size());
 
         for (JarDependency jar : mJars) {
             File jarFile = jar.getJarFile();
-            if (!jar.isPackaged() && jarFile.exists()) {
+            if (jar.isCompiled() && !jar.isPackaged() && jarFile.exists()) {
                 jars.add(jarFile);
             }
         }
