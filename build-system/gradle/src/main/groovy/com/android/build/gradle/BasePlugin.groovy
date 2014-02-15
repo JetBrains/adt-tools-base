@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.api.AndroidSourceSet
@@ -32,7 +31,12 @@ import com.android.build.gradle.internal.dependency.LibraryDependencyImpl
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl
 import com.android.build.gradle.internal.dependency.VariantDependencies
+import com.android.build.gradle.internal.dsl.BuildTypeDsl
+import com.android.build.gradle.internal.dsl.BuildTypeFactory
+import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl
+import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
 import com.android.build.gradle.internal.dsl.SigningConfigDsl
+import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.model.ArtifactMetaDataImpl
 import com.android.build.gradle.internal.model.JavaArtifactImpl
 import com.android.build.gradle.internal.model.ModelBuilder
@@ -74,6 +78,7 @@ import com.android.build.gradle.tasks.ProcessTestManifest
 import com.android.build.gradle.tasks.RenderscriptCompile
 import com.android.build.gradle.tasks.ZipAlign
 import com.android.builder.AndroidBuilder
+import com.android.builder.DefaultBuildType
 import com.android.builder.DefaultProductFlavor
 import com.android.builder.SdkParser
 import com.android.builder.VariantConfiguration
@@ -112,6 +117,7 @@ import org.gradle.api.artifacts.result.DependencyResult
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.artifacts.result.UnresolvedDependencyResult
+import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPlugin
@@ -131,6 +137,7 @@ import java.util.jar.Attributes
 import java.util.jar.Manifest
 
 import static com.android.builder.BuilderConstants.CONNECTED
+import static com.android.builder.BuilderConstants.DEBUG
 import static com.android.builder.BuilderConstants.DEVICE
 import static com.android.builder.BuilderConstants.EXT_LIB_ARCHIVE
 import static com.android.builder.BuilderConstants.FD_FLAVORS
@@ -139,9 +146,9 @@ import static com.android.builder.BuilderConstants.FD_INSTRUMENT_RESULTS
 import static com.android.builder.BuilderConstants.FD_INSTRUMENT_TESTS
 import static com.android.builder.BuilderConstants.FD_REPORTS
 import static com.android.builder.BuilderConstants.INSTRUMENT_TEST
+import static com.android.builder.BuilderConstants.RELEASE
 import static com.android.builder.VariantConfiguration.Type.TEST
 import static java.io.File.separator
-
 /**
  * Base class for all Android plugins
  */
@@ -157,6 +164,9 @@ public abstract class BasePlugin {
 
     protected Instantiator instantiator
     private ToolingModelBuilderRegistry registry
+
+    private BaseExtension extension
+    private VariantManager variantManager
 
     private final Map<Object, AndroidBuilder> builders = Maps.newIdentityHashMap()
 
@@ -197,12 +207,20 @@ public abstract class BasePlugin {
         }
     }
 
-    public abstract BaseExtension getExtension()
-    public abstract VariantManager getVariantManager()
+    protected abstract Class<? extends BaseExtension> getExtensionClass()
+
     protected abstract void doCreateAndroidTasks()
 
     public Instantiator getInstantiator() {
         return instantiator
+    }
+
+    public VariantManager getVariantManager() {
+        return variantManager
+    }
+
+    BaseExtension getExtension() {
+        return extension
     }
 
     protected void apply(Project project) {
@@ -216,8 +234,51 @@ public abstract class BasePlugin {
         // Register a builder for the custom tooling model
         registry.register(new ModelBuilder());
 
+        def buildTypeContainer = project.container(DefaultBuildType,
+                new BuildTypeFactory(instantiator,  project.fileResolver, project.getLogger()))
+        def productFlavorContainer = project.container(GroupableProductFlavorDsl,
+                new GroupableProductFlavorFactory(instantiator, project.fileResolver, project.getLogger()))
+        def signingConfigContainer = project.container(SigningConfig,
+                new SigningConfigFactory(instantiator))
+
+        extension = project.extensions.create('android', getExtensionClass(),
+                this, (ProjectInternal) project, instantiator,
+                buildTypeContainer, productFlavorContainer, signingConfigContainer)
+        setBaseExtension(extension)
+
+        variantManager = new VariantManager(project, this, extension)
+
+        // map the whenObjectAdded callbacks on the containers.
+        signingConfigContainer.whenObjectAdded { SigningConfig signingConfig ->
+            variantManager.addSigningConfig((SigningConfigDsl) signingConfig)
+        }
+
+        buildTypeContainer.whenObjectAdded { DefaultBuildType buildType ->
+            variantManager.addBuildType((BuildTypeDsl) buildType)
+        }
+
+        productFlavorContainer.whenObjectAdded { GroupableProductFlavorDsl productFlavor ->
+            variantManager.addProductFlavor(productFlavor)
+        }
+
+        // create default Objects, signingConfig first as its used by the BuildTypes.
+        signingConfigContainer.create(DEBUG)
+        buildTypeContainer.create(DEBUG)
+        buildTypeContainer.create(RELEASE)
+
+        // map whenObjectRemoved on the containers to throw an exception.
+        signingConfigContainer.whenObjectRemoved {
+            throw new UnsupportedOperationException("Removing signingConfigs is not supported.")
+        }
+        buildTypeContainer.whenObjectRemoved {
+            throw new UnsupportedOperationException("Removing build types is not supported.")
+        }
+        productFlavorContainer.whenObjectRemoved {
+            throw new UnsupportedOperationException("Removing product flavors is not supported.")
+        }
+
         project.tasks.assemble.description =
-            "Assembles all variants of all applications and secondary packages."
+                "Assembles all variants of all applications and secondary packages."
 
         uninstallAll = project.tasks.create("uninstallAll")
         uninstallAll.description = "Uninstall all applications."
@@ -232,8 +293,7 @@ public abstract class BasePlugin {
         connectedCheck.group = JavaBasePlugin.VERIFICATION_GROUP
 
         mainPreBuild = project.tasks.create("preBuild", PreBuildTask)
-        mainPreBuild.conventionMapping.extension =  { getExtension() }
-
+        mainPreBuild.extension =  extension
 
         project.afterEvaluate {
             createAndroidTasks(false)
@@ -244,7 +304,7 @@ public abstract class BasePlugin {
         }
     }
 
-    protected void setBaseExtension(@NonNull BaseExtension extension) {
+    private void setBaseExtension(@NonNull BaseExtension extension) {
         sdk.setExtension(extension)
         mainSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(extension.defaultConfig.name)
         testSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(INSTRUMENT_TEST)
