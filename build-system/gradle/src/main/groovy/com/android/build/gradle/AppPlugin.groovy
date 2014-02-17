@@ -17,12 +17,15 @@
 package com.android.build.gradle
 
 import com.android.build.gradle.internal.test.PluginHolder
+import com.android.build.gradle.internal.variant.ApplicationVariantFactory
+import com.android.build.gradle.internal.variant.VariantFactory
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 import javax.inject.Inject
+
 /**
  * Gradle plugin class for 'application' projects.
  */
@@ -55,5 +58,10 @@ class AppPlugin extends BasePlugin implements Plugin<Project> {
     @Override
     protected void doCreateAndroidTasks() {
         variantManager.createAndroidTasks()
+    }
+
+    @Override
+    protected VariantFactory getVariantFactory() {
+        return new ApplicationVariantFactory(this)
     }
 }
