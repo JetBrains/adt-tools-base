@@ -29,7 +29,7 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
  * implementation of the {@link ApplicationVariant} interface around an
  * {@link ApplicationVariantData} object.
  */
-public class ApplicationVariantImpl extends ApkVariantImpl implements ApplicationVariant {
+public class ApplicationVariantImpl extends ApkVariantImpl implements ApplicationVariant, TestedVariant {
 
     @NonNull
     private final ApplicationVariantData variantData;
@@ -55,6 +55,7 @@ public class ApplicationVariantImpl extends ApkVariantImpl implements Applicatio
         return variantData;
     }
 
+    @Override
     public void setTestVariant(@Nullable TestVariant testVariant) {
         this.testVariant = testVariant;
     }
