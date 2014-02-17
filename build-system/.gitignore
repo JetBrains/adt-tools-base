@@ -9,6 +9,7 @@ tests/3rdPartyTests/*/build
 tests/dependencies/jarProject/build
 tests/dependencies/jarProject2/build
 tests/flavorlib/*/build
+tests/flavoredlib/*/build
 tests/flavorlibWithFailedTests/*/build
 tests/libProguardJarDep/*/build
 tests/libProguardLibDep/*/build

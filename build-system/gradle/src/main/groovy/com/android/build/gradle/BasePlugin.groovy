@@ -83,6 +83,7 @@ import com.android.builder.DefaultBuildType
 import com.android.builder.DefaultProductFlavor
 import com.android.builder.SdkParser
 import com.android.builder.VariantConfiguration
+import com.android.builder.dependency.DependencyContainer
 import com.android.builder.dependency.JarDependency
 import com.android.builder.dependency.LibraryDependency
 import com.android.builder.model.AndroidArtifact
@@ -154,7 +155,7 @@ import static java.io.File.separator
  * Base class for all Android plugins
  */
 public abstract class BasePlugin {
-    protected final static String DIR_BUNDLES = "bundles";
+    public final static String DIR_BUNDLES = "bundles";
 
     public static final String GRADLE_MIN_VERSION = "1.10"
     public static final String[] GRADLE_SUPPORTED_VERSIONS = [ GRADLE_MIN_VERSION, "1.11" ]
@@ -193,7 +194,8 @@ public abstract class BasePlugin {
     protected Task assembleTest
     protected Task deviceCheck
     protected Task connectedCheck
-    protected Task lintCompile
+
+    public Task lintCompile
     protected Task lintAll
     protected Task lintVital
 
@@ -633,7 +635,7 @@ public abstract class BasePlugin {
         variantData.mergeResourcesTask = mergeResourcesTask
     }
 
-    protected MergeResources basicCreateMergeResourcesTask(
+    public MergeResources basicCreateMergeResourcesTask(
             @NonNull BaseVariantData variantData,
             @NonNull String taskNamePrefix,
             @NonNull String outputLocation,
@@ -777,7 +779,7 @@ public abstract class BasePlugin {
                 generateResourcePackage)
     }
 
-    protected void createProcessResTask(
+    public void createProcessResTask(
             @NonNull BaseVariantData variantData,
             @NonNull final String symbolLocation,
             boolean generateResourcePackage) {
@@ -1363,7 +1365,7 @@ public abstract class BasePlugin {
      *                assembleTask is always set in the Variant.
      */
     public void addPackageTasks(@NonNull ApkVariantData variantData,
-                                   @Nullable Task assembleTask) {
+                                @Nullable Task assembleTask) {
         VariantConfiguration variantConfig = variantData.variantConfiguration
 
         boolean runProguard = variantConfig.buildType.runProguard &&
@@ -1540,9 +1542,7 @@ public abstract class BasePlugin {
 
         // Add an assemble task
         if (assembleTask == null) {
-            assembleTask = project.tasks.create("assemble${variantData.variantConfiguration.fullName.capitalize()}")
-            assembleTask.description = "Assembles the " + variantData.description
-            assembleTask.group = org.gradle.api.plugins.BasePlugin.BUILD_GROUP
+            assembleTask = createAssembleTask(variantData)
         }
         assembleTask.dependsOn appTask
         variantData.assembleTask = assembleTask
@@ -1563,6 +1563,14 @@ public abstract class BasePlugin {
 
         variantData.uninstallTask = uninstallTask
         uninstallAll.dependsOn uninstallTask
+    }
+
+    public Task createAssembleTask(BaseVariantData variantData) {
+        Task assembleTask = project.tasks.
+                create("assemble${variantData.variantConfiguration.fullName.capitalize()}")
+        assembleTask.description = "Assembles the " + variantData.description
+        assembleTask.group = org.gradle.api.plugins.BasePlugin.BUILD_GROUP
+        return assembleTask
     }
 
     /**
@@ -1598,7 +1606,8 @@ public abstract class BasePlugin {
      * @return outFile file outputted by proguard
      */
     @NonNull
-    protected File createProguardTasks(@NonNull BaseVariantData variantData,
+    public
+    File createProguardTasks(@NonNull BaseVariantData variantData,
                                        @Nullable BaseVariantData testedVariantData) {
         VariantConfiguration variantConfig = variantData.variantConfiguration
 
@@ -1681,7 +1690,7 @@ public abstract class BasePlugin {
                 Set<File> packagedJars = getAndroidBuilder(variantData).getPackagedJars(variantConfig)
 
                 // injar: the local dependencies, filter out local jars from packagedJars
-                Object[] jars = LibraryPlugin.getLocalJarFileList(variantData.variantDependency)
+                Object[] jars = getLocalJarFileList(variantData.variantDependency)
                 for (Object inJar : jars) {
                     if (packagedJars.contains(inJar)) {
                         packagedJars.remove(inJar);
@@ -1955,11 +1964,21 @@ public abstract class BasePlugin {
         extraJavaArtifacts.put(variant.name, artifact)
     }
 
+    public static Object[] getLocalJarFileList(DependencyContainer dependencyContainer) {
+        Set<File> files = Sets.newHashSet()
+        for (JarDependency jarDependency : dependencyContainer.localDependencies) {
+            files.add(jarDependency.jarFile)
+        }
+
+        return files.toArray()
+    }
+
+
     //----------------------------------------------------------------------------------------------
     //------------------------------ START DEPENDENCY STUFF ----------------------------------------
     //----------------------------------------------------------------------------------------------
 
-    def addDependencyToPrepareTask(@NonNull BaseVariantData variantData,
+    private void addDependencyToPrepareTask(@NonNull BaseVariantData variantData,
                                    @NonNull PrepareDependenciesTask prepareDependenciesTask,
                                    @NonNull LibraryDependencyImpl lib) {
         def prepareLibTask = prepareTaskMap.get(lib)
@@ -1973,7 +1992,7 @@ public abstract class BasePlugin {
         }
     }
 
-    def resolveDependencies(VariantDependencies variantDeps) {
+    public void resolveDependencies(VariantDependencies variantDeps) {
         Map<ModuleVersionIdentifier, List<LibraryDependencyImpl>> modules = [:]
         Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = [:]
         Multimap<LibraryDependency, VariantDependencies> reverseMap = ArrayListMultimap.create()
@@ -1988,7 +2007,7 @@ public abstract class BasePlugin {
 
                 String bundleName = GUtil.toCamelCase(androidDependency.name.replaceAll("\\:", " "))
 
-                def prepareLibraryTask = prepareTaskMap.get(androidDependency)
+                Task prepareLibraryTask = prepareTaskMap.get(androidDependency)
                 if (prepareLibraryTask == null) {
                     prepareLibraryTask = project.tasks.create("prepare${bundleName}Library",
                             PrepareLibraryTask)
@@ -2011,7 +2030,7 @@ public abstract class BasePlugin {
         }
     }
 
-    def resolveDependencyForConfig(
+    private void resolveDependencyForConfig(
             VariantDependencies variantDeps,
             Map<ModuleVersionIdentifier, List<LibraryDependencyImpl>> modules,
             Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
@@ -2029,11 +2048,14 @@ public abstract class BasePlugin {
         Set<String> currentUnresolvedDependencies = Sets.newHashSet()
 
         // TODO - defer downloading until required -- This is hard to do as we need the info to build the variant config.
+        collectArtifacts(compileClasspath, artifacts)
+        collectArtifacts(packageClasspath, artifacts)
+
         List<LibraryDependencyImpl> bundles = []
         Map<File, JarDependency> jars = [:]
         Map<File, JarDependency> localJars = [:]
-        collectArtifacts(compileClasspath, artifacts)
-        def dependencies = compileClasspath.incoming.resolutionResult.root.dependencies
+
+        Set<DependencyResult> dependencies = compileClasspath.incoming.resolutionResult.root.dependencies
         dependencies.each { DependencyResult dep ->
             if (dep instanceof ResolvedDependencyResult) {
                 addDependency(dep.selected, variantDeps, bundles, jars, modules, artifacts, reverseMap)
@@ -2099,17 +2121,21 @@ public abstract class BasePlugin {
         configureBuild(variantDeps)
     }
 
-    def ensureConfigured(Configuration config) {
+    protected void ensureConfigured(Configuration config) {
         config.allDependencies.withType(ProjectDependency).each { dep ->
             project.evaluationDependsOn(dep.dependencyProject.path)
             ensureConfigured(dep.projectConfiguration)
         }
     }
 
-    static def collectArtifacts(Configuration configuration, Map<ModuleVersionIdentifier,
-                         List<ResolvedArtifact>> artifacts) {
-        boolean buildModelOnly = Boolean.getBoolean(AndroidProject.BUILD_MODEL_ONLY_SYSTEM_PROPERTY);
-        def allArtifacts
+    private static void collectArtifacts(
+            Configuration configuration,
+            Map<ModuleVersionIdentifier,
+            List<ResolvedArtifact>> artifacts) {
+
+        boolean buildModelOnly = Boolean.getBoolean(AndroidProject.BUILD_MODEL_ONLY_SYSTEM_PROPERTY)
+
+        Set<ResolvedArtifact> allArtifacts
         if (buildModelOnly) {
             allArtifacts = configuration.resolvedConfiguration.lenientConfiguration.getArtifacts(Specs.satisfyAll())
         } else {
@@ -2117,19 +2143,23 @@ public abstract class BasePlugin {
         }
 
         allArtifacts.each { ResolvedArtifact artifact ->
-            def id = artifact.moduleVersion.id
-            List<ResolvedArtifact> moduleArtifacts = artifacts[id]
+            ModuleVersionIdentifier id = artifact.moduleVersion.id
+            List<ResolvedArtifact> moduleArtifacts = artifacts.get(id)
+
             if (moduleArtifacts == null) {
-                moduleArtifacts = []
-                artifacts[id] = moduleArtifacts
+                moduleArtifacts = Lists.newArrayList()
+                artifacts.put(id, moduleArtifacts)
             }
-            moduleArtifacts << artifact
+
+            if (!moduleArtifacts.contains(artifact)) {
+                moduleArtifacts.add(artifact)
+            }
         }
     }
 
     def addDependency(ResolvedComponentResult moduleVersion,
                       VariantDependencies configDependencies,
-                      Collection<LibraryDependencyImpl> bundles,
+                      Collection<LibraryDependency> bundles,
                       Map<File, JarDependency> jars,
                       Map<ModuleVersionIdentifier, List<LibraryDependencyImpl>> modules,
                       Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
@@ -2139,13 +2169,14 @@ public abstract class BasePlugin {
             return
         }
 
-        List<LibraryDependencyImpl> bundlesForThisModule = modules[id]
+        List<LibraryDependencyImpl> bundlesForThisModule = modules.get(id)
         if (bundlesForThisModule == null) {
-            bundlesForThisModule = []
-            modules[id] = bundlesForThisModule
+            bundlesForThisModule = Lists.newArrayList()
+            modules.put(id, bundlesForThisModule)
 
-            def nestedBundles = []
-            def dependencies = moduleVersion.dependencies
+            List<LibraryDependency> nestedBundles = Lists.newArrayList()
+
+            Set<DependencyResult> dependencies = moduleVersion.dependencies
             dependencies.each { DependencyResult dep ->
                 if (dep instanceof ResolvedDependencyResult) {
                     addDependency(dep.selected, configDependencies, nestedBundles,
@@ -2153,14 +2184,20 @@ public abstract class BasePlugin {
                 }
             }
 
-            def moduleArtifacts = artifacts[id]
+            List<ResolvedArtifact> moduleArtifacts = artifacts.get(id)
+
             moduleArtifacts?.each { artifact ->
                 if (artifact.type == EXT_LIB_ARCHIVE) {
+                    String path = "$id.group/$id.name/$id.version"
+                    String name = "$id.group:$id.name:$id.version"
+                    if (artifact.classifier != null) {
+                        path += "/$artifact.classifier"
+                        name += ":$artifact.classifier"
+                    }
                     def explodedDir = project.file(
-                            "$project.buildDir/exploded-aar/$id.group/$id.name/$id.version")
+                            "$project.buildDir/exploded-aar/$path")
                     LibraryDependencyImpl adep = new LibraryDependencyImpl(
-                            artifact.file, explodedDir, nestedBundles,
-                            id.group + ":" + id.name + ":" + id.version)
+                            artifact.file, explodedDir, nestedBundles, name)
                     bundlesForThisModule << adep
                     reverseMap.put(adep, configDependencies)
                 } else {
