@@ -28,16 +28,17 @@ import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.api.BaseVariant;
-import com.android.build.gradle.internal.api.ApplicationVariantImpl;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.build.gradle.internal.api.TestVariantImpl;
+import com.android.build.gradle.internal.api.TestedVariant;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.BuildTypeDsl;
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl;
 import com.android.build.gradle.internal.dsl.SigningConfigDsl;
-import com.android.build.gradle.internal.variant.ApplicationVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
+import com.android.build.gradle.internal.variant.TestedVariantData;
+import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.builder.DefaultProductFlavor;
 import com.android.builder.VariantConfiguration;
 import com.android.builder.model.SigningConfig;
@@ -64,6 +65,8 @@ public class VariantManager {
     private final BasePlugin basePlugin;
     @NonNull
     private final BaseExtension extension;
+    @NonNull
+    private final VariantFactory variantFactory;
 
     private final Map<String, BuildTypeData> buildTypes = Maps.newHashMap();
     private final Map<String, ProductFlavorData<GroupableProductFlavorDsl>> productFlavors = Maps.newHashMap();
@@ -72,10 +75,12 @@ public class VariantManager {
     public VariantManager(
             @NonNull Project project,
             @NonNull BasePlugin basePlugin,
-            @NonNull BaseExtension extension) {
+            @NonNull BaseExtension extension,
+            @NonNull VariantFactory variantFactory) {
         this.extension = extension;
         this.basePlugin = basePlugin;
         this.project = project;
+        this.variantFactory = variantFactory;
     }
 
     @NonNull
@@ -217,22 +222,21 @@ public class VariantManager {
      * in extension.flavorGroupList), creating all possible combination.
      *
      * @param datas the arrays to fill
-     * @param i the current index to fill
+     * @param index the current index to fill
      * @param map the map of group -> list(ProductFlavor)
-     * @return
      */
     private void createTasksForMultiFlavoredBuilds(
             ProductFlavorData[] datas,
-            int i,
+            int index,
             ListMultimap<String, ? extends ProductFlavorData> map) {
-        if (i == datas.length) {
+        if (index == datas.length) {
             createTasksForFlavoredBuild(datas);
             return;
         }
 
         // fill the array at the current index.
         // get the group name that matches the index we are filling.
-        String group = extension.getFlavorGroupList().get(i);
+        String group = extension.getFlavorGroupList().get(index);
 
         // from our map, get all the possible flavors in that group.
         List<? extends ProductFlavorData> flavorList = map.get(group);
@@ -240,8 +244,8 @@ public class VariantManager {
         // loop on all the flavors to add them to the current index and recursively fill the next
         // indices.
         for (ProductFlavorData flavor : flavorList) {
-            datas[i] = flavor;
-            createTasksForMultiFlavoredBuilds(datas, (int) i + 1, map);
+            datas[index] = flavor;
+            createTasksForMultiFlavoredBuilds(datas, index + 1, map);
         }
     }
 
@@ -257,7 +261,7 @@ public class VariantManager {
                     "Test Build Type '%1$s' does not exist.", extension.getTestBuildType()));
         }
 
-        ApplicationVariantData testedVariantData = null;
+        BaseVariantData testedVariantData = null;
 
         ProductFlavorData defaultConfigData = basePlugin.getDefaultConfigData();
 
@@ -266,19 +270,21 @@ public class VariantManager {
                     defaultConfigData.getProductFlavor(),
                     defaultConfigData.getSourceSet(),
                     buildTypeData.getBuildType(),
-                    buildTypeData.getSourceSet());
+                    buildTypeData.getSourceSet(),
+                    variantFactory.getVariantConfigurationType());
 
             // create the variant and get its internal storage object.
-            ApplicationVariantData appVariantData = new ApplicationVariantData(variantConfig);
+            BaseVariantData variantData = variantFactory.createVariantData(variantConfig);
+            // create its dependencies. They'll be resolved below.
             VariantDependencies variantDep = VariantDependencies.compute(
                     project, variantConfig.getFullName(),
                     buildTypeData, defaultConfigData.getMainProvider());
-            appVariantData.setVariantDependency(variantDep);
+            variantData.setVariantDependency(variantDep);
 
-            basePlugin.getVariantDataList().add(appVariantData);
+            basePlugin.getVariantDataList().add(variantData);
 
             if (buildTypeData == testData) {
-                testedVariantData = appVariantData;
+                testedVariantData = variantData;
             }
         }
 
@@ -292,20 +298,19 @@ public class VariantManager {
                 null,
                 VariantConfiguration.Type.TEST, testedVariantData.getVariantConfiguration());
 
-        // create the internal storage for this variant.
-        TestVariantData testVariantData = new TestVariantData(testVariantConfig, testedVariantData);
+        // create the internal storage for this test variant.
+        TestVariantData testVariantData = new TestVariantData(testVariantConfig, (TestedVariantData) testedVariantData);
         basePlugin.getVariantDataList().add(testVariantData);
         // link the testVariant to the tested variant in the other direction
-        testedVariantData.setTestVariantData(testVariantData);
+        ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
 
-        // dependencies for the test variant
+        // dependencies for the test variant, they'll be resolved below
         VariantDependencies variantDep = VariantDependencies.compute(
                 project, testVariantConfig.getFullName(),
                 defaultConfigData.getTestProvider());
         testVariantData.setVariantDependency(variantDep);
 
-        // now loop on the VariantDependency and resolve them, and create the tasks
-        // for each variant
+        // now loop all the variants, resolve their dependencies, and then create the tasks
         for (BaseVariantData variantData : basePlugin.getVariantDataList()) {
             VariantConfiguration variantConfig = variantData.getVariantConfiguration();
             VariantDependencies variantDeps = variantData.getVariantDependency();
@@ -313,15 +318,13 @@ public class VariantManager {
             basePlugin.resolveDependencies(variantDeps);
             variantConfig.setDependencies(variantDeps);
 
-            if (variantData instanceof ApplicationVariantData) {
-                createApplicationVariant(
-                        (ApplicationVariantData) variantData,
-                        buildTypes.get(variantConfig.getBuildType().getName()).getAssembleTask());
-
-            } else if (variantData instanceof TestVariantData) {
+            if (variantData instanceof TestVariantData) {
                 testVariantData = (TestVariantData) variantData;
                 basePlugin.createTestApkTasks(testVariantData,
                         (BaseVariantData) testVariantData.getTestedVariantData());
+            } else {
+                variantFactory.createTasks(variantData,
+                        buildTypes.get(variantConfig.getBuildType().getName()).getAssembleTask());
             }
         }
     }
@@ -343,7 +346,7 @@ public class VariantManager {
         // of the variantData only for this call.
         final List<BaseVariantData> localVariantDataList = Lists.newArrayListWithCapacity(buildTypes.size());
 
-        ApplicationVariantData testedVariantData = null;
+        BaseVariantData testedVariantData = null;
 
         // assembleTask for this flavor(group)
         Task assembleTask = createAssembleTask(flavorDataList);
@@ -360,7 +363,8 @@ public class VariantManager {
                     extension.getDefaultConfig(),
                     basePlugin.getDefaultConfigData().getSourceSet(),
                     buildTypeData.getBuildType(),
-                    buildTypeData.getSourceSet());
+                    buildTypeData.getSourceSet(),
+                    variantFactory.getVariantConfigurationType());
 
             for (ProductFlavorData data : flavorDataList) {
                 String dimensionName = "";
@@ -381,7 +385,7 @@ public class VariantManager {
             variantProviders.add(basePlugin.getDefaultConfigData().getMainProvider());
 
             // create the variant and get its internal storage object.
-            ApplicationVariantData appVariantData = new ApplicationVariantData(variantConfig);
+            BaseVariantData appVariantData = variantFactory.createVariantData(variantConfig);
 
             NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer = extension
                     .getSourceSetsContainer();
@@ -445,10 +449,10 @@ public class VariantManager {
         testVariantProviders.add(basePlugin.getDefaultConfigData().getTestProvider());
 
         // create the internal storage for this variant.
-        TestVariantData testVariantData = new TestVariantData(testVariantConfig, testedVariantData);
+        TestVariantData testVariantData = new TestVariantData(testVariantConfig, (TestedVariantData) testedVariantData);
         localVariantDataList.add(testVariantData);
         // link the testVariant to the tested variant in the other direction
-        testedVariantData.setTestVariantData(testVariantData);
+        ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
 
         // dependencies for the test variant
         VariantDependencies variantDep = VariantDependencies.compute(
@@ -465,69 +469,20 @@ public class VariantManager {
             basePlugin.resolveDependencies(variantDeps);
             variantConfig.setDependencies(variantDeps);
 
-            if (variantData instanceof ApplicationVariantData) {
-                BuildTypeData buildTypeData = buildTypes.get(variantConfig.getBuildType().getName());
-                createApplicationVariant((ApplicationVariantData) variantData, null);
-
-                buildTypeData.getAssembleTask().dependsOn(variantData.assembleTask);
-                assembleTask.dependsOn(variantData.assembleTask);
-
-            } else if (variantData instanceof TestVariantData) {
+            if (variantData instanceof TestVariantData) {
                 testVariantData = (TestVariantData) variantData;
                 basePlugin.createTestApkTasks(testVariantData,
                         (BaseVariantData) testVariantData.getTestedVariantData());
+            } else {
+                BuildTypeData buildTypeData = buildTypes.get(variantConfig.getBuildType().getName());
+                variantFactory.createTasks(variantData, null);
+
+                buildTypeData.getAssembleTask().dependsOn(variantData.assembleTask);
+                assembleTask.dependsOn(variantData.assembleTask);
             }
 
             basePlugin.getVariantDataList().add(variantData);
         }
-    }
-
-    /**
-     * Creates the tasks for a given ApplicationVariantData.
-     * @param variantData the non-null ApplicationVariantData.
-     * @param assembleTask an optional assembleTask to be used. If null, a new one is created.
-     */
-    private void createApplicationVariant(
-            @NonNull ApplicationVariantData variantData,
-            @Nullable Task assembleTask) {
-
-        basePlugin.createAnchorTasks(variantData);
-
-        basePlugin.createCheckManifestTask(variantData);
-
-        // Add a task to process the manifest(s)
-        basePlugin.createProcessManifestTask(variantData, "manifests");
-
-        // Add a task to create the res values
-        basePlugin.createGenerateResValuesTask(variantData);
-
-        // Add a task to compile renderscript files.
-        basePlugin.createRenderscriptTask(variantData);
-
-        // Add a task to merge the resource folders
-        basePlugin.createMergeResourcesTask(variantData, true /*process9Patch*/);
-
-        // Add a task to merge the asset folders
-        basePlugin.createMergeAssetsTask(variantData, null /*default location*/, true /*includeDependencies*/);
-
-        // Add a task to create the BuildConfig class
-        basePlugin.createBuildConfigTask(variantData);
-
-        // Add a task to generate resource source files
-        basePlugin.createProcessResTask(variantData, true /*generateResourcePackage*/);
-
-        // Add a task to process the java resources
-        basePlugin.createProcessJavaResTask(variantData);
-
-        basePlugin.createAidlTask(variantData);
-
-        // Add a compile task
-        basePlugin.createCompileTask(variantData, null/*testedVariant*/);
-
-        // Add NDK tasks
-        basePlugin.createNdkTasks(variantData);
-
-        basePlugin.addPackageTasks(variantData, assembleTask);
     }
 
     @NonNull
@@ -552,45 +507,45 @@ public class VariantManager {
                 continue;
             }
 
-            if (variantData instanceof ApplicationVariantData) {
-                ApplicationVariantData appVariantData = (ApplicationVariantData) variantData;
-                createVariantApiObjects(map, appVariantData, appVariantData.getTestVariantData());
-
-            } else if (variantData instanceof TestVariantData) {
+            if (variantData instanceof TestVariantData) {
                 TestVariantData testVariantData = (TestVariantData) variantData;
-                createVariantApiObjects(map,
-                        (ApplicationVariantData) testVariantData.getTestedVariantData(),
+                createVariantApiObjects(
+                        map,
+                        (BaseVariantData) testVariantData.getTestedVariantData(),
                         testVariantData);
+            } else {
+                createVariantApiObjects(
+                        map,
+                        variantData,
+                        ((TestedVariantData) variantData).getTestVariantData());
             }
         }
     }
 
     private void createVariantApiObjects(
             @NonNull Map<BaseVariantData, BaseVariant> map,
-            @NonNull ApplicationVariantData appVariantData,
+            @NonNull BaseVariantData variantData,
             @Nullable TestVariantData testVariantData) {
-        ApplicationVariantImpl appVariant = basePlugin.getInstantiator().newInstance(
-                ApplicationVariantImpl.class, appVariantData, basePlugin);
+        BaseVariant variantApi = variantFactory.createVariantApi(variantData);
 
         TestVariantImpl testVariant = null;
         if (testVariantData != null) {
             testVariant = basePlugin.getInstantiator().newInstance(TestVariantImpl.class, testVariantData, basePlugin);
         }
 
-        if (appVariant != null && testVariant != null) {
-            appVariant.setTestVariant(testVariant);
-            testVariant.setTestedVariant(appVariant);
+        if (testVariant != null) {
+            ((TestedVariant) variantApi).setTestVariant(testVariant);
+            testVariant.setTestedVariant(variantApi);
         }
 
-        ((AppExtension) extension).addApplicationVariant(appVariant);
-        map.put(appVariantData, appVariant);
+        extension.addVariant(variantApi);
+        map.put(variantData, variantApi);
 
         if (testVariant != null) {
             extension.addTestVariant(testVariant);
             map.put(testVariantData, testVariant);
         }
     }
-
 
     private static void checkName(@NonNull String name, @NonNull String displayName) {
         if (name.startsWith(INSTRUMENT_TEST)) {
