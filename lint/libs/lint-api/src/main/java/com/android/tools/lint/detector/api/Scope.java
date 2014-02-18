@@ -218,6 +218,9 @@ public enum Scope {
     /** Scope-set used for analyzing individual class files and all resource files */
     public static final EnumSet<Scope> CLASS_AND_ALL_RESOURCE_FILES =
             EnumSet.of(ALL_RESOURCE_FILES, CLASS_FILE);
+    /** Scope-set used for analyzing all class files, including those in libraries */
+    public static final EnumSet<Scope> ALL_CLASSES_AND_LIBRARIES =
+            EnumSet.of(Scope.ALL_CLASS_FILES, Scope.JAVA_LIBRARIES);
     /** Scope-set used for detectors which are affected by Java libraries */
     public static final EnumSet<Scope> JAVA_LIBRARY_SCOPE = EnumSet.of(JAVA_LIBRARIES);
 }
