@@ -913,7 +913,10 @@ public class GradleImportTest extends TestCase {
                 Arrays.asList(lib1Src, lib1Gen),
                 Collections.<File>emptyList());
         createProjectProperties(lib1, "android-19", null, true, null,
-                Collections.singletonList(new File(".." + separator + javaLibRelative)));
+                // Using \ instead of File.separator deliberately to test path conversion
+                // handling: you can import a Windows relative path on a non-Windows system
+                // and vice versa
+                Collections.singletonList(new File(".." + '\\' + javaLibRelative)));
         createAndroidManifest(lib1, lib1Pkg, -1, -1, "<application/>");
 
         String lib2Name = "Lib2";
@@ -929,7 +932,9 @@ public class GradleImportTest extends TestCase {
                 Arrays.asList(lib2Src, lib2Gen),
                 Collections.<File>emptyList());
         createProjectProperties(lib2, "android-18", null, true, null,
-                Collections.singletonList(new File(".." + separator + lib1Name)));
+                // Deliberately using / instead of Files.separator, for opposite
+                // test of file separator for lib1 above
+                Collections.singletonList(new File(".." + '/' + lib1Name)));
         createAndroidManifest(lib2, lib2Pkg, 7, -1, "<application/>");
 
         // Main app project, depends on library1, library2 and java lib
