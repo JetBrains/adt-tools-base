@@ -32,7 +32,8 @@
         constraints="layout|unique|nonempty"
         suggest="fragment_${classToResource(activityClass)}"
         default="fragment_main"
-        help="The name of the layout to create for the activity's content fragment" />
+        help="The name of the layout to create for the activity's content fragment"
+        visibility="features != 'none'" />
 
     <parameter
         id="activityTitle"
