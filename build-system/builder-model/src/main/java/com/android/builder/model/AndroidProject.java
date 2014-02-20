@@ -163,4 +163,10 @@ public interface AndroidProject {
      */
     @NonNull
     JavaCompileOptions getJavaCompileOptions();
+
+    /**
+     * @return the build folder of this project.
+     */
+    @NonNull
+    File getBuildFolder();
 }
