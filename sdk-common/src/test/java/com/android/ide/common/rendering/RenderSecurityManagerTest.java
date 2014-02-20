@@ -726,4 +726,15 @@ public class RenderSecurityManagerTest extends TestCase {
             manager.dispose(myCredential);
         }
     }
+
+    public void testAppTempDir() throws Exception {
+        RenderSecurityManager manager = new RenderSecurityManager(null, null);
+        try {
+            manager.setAppTempDir("/random/path/");
+            manager.setActive(true, myCredential);
+            manager.checkPermission(new FilePermission("/random/path/myfile.tmp", "read,write"));
+        } finally {
+            manager.dispose(myCredential);
+        }
+    }
 }
