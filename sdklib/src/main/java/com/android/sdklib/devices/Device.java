@@ -20,12 +20,15 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.dvlib.DeviceSchema;
 import com.android.resources.ScreenOrientation;
+import com.android.sdklib.devices.Device.Builder;
 
 import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Instances of this class contain the specifications for a device. Use the
@@ -61,6 +64,14 @@ public final class Device {
     /** Default state of the device */
     @NonNull
     private final State mDefaultState;
+
+    /** Optional tag-id of the device. */
+    @Nullable
+    private String mTagId;
+
+    /** Optional boot.props of the device. */
+    @NonNull
+    private Map<String, String> mBootProps;
 
     /**
      * Returns the name of the {@link Device}. This is intended to be displayed by the user and
@@ -234,6 +245,25 @@ public final class Device {
         return new Dimension(screenWidth, screenHeight);
     }
 
+    /**
+     * Returns the optional tag-id of the device.
+     *
+     * @return the optional tag-id of the device. Can be null.
+     */
+    @Nullable
+    public String getTagId() {
+        return mTagId;
+    }
+
+    /**
+     * Returns the optional boot.props of the device.
+     *
+     * @return the optional boot.props of the device. Can be null or empty.
+     */
+    public Map<String, String> getBootProps() {
+        return mBootProps;
+    }
+
     public static class Builder {
         private String mName;
         private String mId;
@@ -242,10 +272,13 @@ public final class Device {
         private final List<State> mState = new ArrayList<State>();
         private Meta mMeta;
         private State mDefaultState;
+        private String mTagId;
+        private final Map<String, String> mBootProps = new TreeMap<String, String>();
 
         public Builder() { }
 
         public Builder(Device d) {
+            mTagId = null;
             mName = d.getDisplayName();
             mId = d.getId();
             mManufacturer = d.getManufacturer();
@@ -267,6 +300,14 @@ public final class Device {
 
         public void setId(@NonNull String id) {
             mId = id;
+        }
+
+        public void setTagId(@Nullable String tagId) {
+            mTagId = tagId;
+        }
+
+        public void addBootProp(@NonNull String propName, @NonNull String propValue) {
+            mBootProps.put(propName, propValue);
         }
 
         public void setManufacturer(@NonNull String manufacturer) {
@@ -361,6 +402,8 @@ public final class Device {
         mState = Collections.unmodifiableList(b.mState);
         mMeta = b.mMeta;
         mDefaultState = b.mDefaultState;
+        mTagId = b.mTagId;
+        mBootProps = Collections.unmodifiableMap(b.mBootProps);
     }
 
     @Override
@@ -372,12 +415,25 @@ public final class Device {
             return false;
         }
         Device d = (Device) o;
-        return mName.equals(d.getDisplayName())
+        boolean ok = mName.equals(d.getDisplayName())
                 && mManufacturer.equals(d.getManufacturer())
                 && mSoftware.equals(d.getAllSoftware())
                 && mState.equals(d.getAllStates())
                 && mMeta.equals(d.getMeta())
                 && mDefaultState.equals(d.getDefaultState());
+        if (!ok) {
+            return false;
+        }
+
+        ok = (mTagId == null && d.mTagId == null) ||
+             (mTagId != null && mTagId.equals(d.mTagId));
+        if (!ok) {
+            return false;
+        }
+
+        ok = (mBootProps == null && d.mBootProps == null) ||
+             (mBootProps != null && mBootProps.equals(d.mBootProps));
+        return ok;
     }
 
     @Override
@@ -390,6 +446,8 @@ public final class Device {
         hash = 31 * hash + mState.hashCode();
         hash = 31 * hash + mMeta.hashCode();
         hash = 31 * hash + mDefaultState.hashCode();
+        hash = 31 * hash + (mTagId == null ? 0 : mTagId.hashCode());
+        hash = 31 * hash + (mBootProps == null ? 0 : mBootProps.hashCode());
         return hash;
     }
 
@@ -411,6 +469,10 @@ public final class Device {
         sb.append(mMeta);
         sb.append(", mDefaultState=");
         sb.append(mDefaultState);
+        sb.append(", mTagId=");
+        sb.append(mTagId);
+        sb.append(", mBootProps=");
+        sb.append(mBootProps);
         sb.append("]");
         return sb.toString();
     }

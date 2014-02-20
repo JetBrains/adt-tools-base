@@ -236,7 +236,7 @@
     <xsd:simpleType name="idType">
         <xsd:annotation>
             <xsd:documentation>
-                An tag string for a system image can only be simple alphanumeric string.
+                A tag string for a system image can only be a simple alphanumeric string.
             </xsd:documentation>
         </xsd:annotation>
         <xsd:restriction base="xsd:token">
