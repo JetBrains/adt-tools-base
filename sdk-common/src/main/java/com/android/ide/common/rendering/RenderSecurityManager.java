@@ -86,6 +86,7 @@ public class RenderSecurityManager extends SecurityManager {
     private String mTempDir;
     private String mNormalizedTempDir;
     private String mCanonicalTempDir;
+    private String mAppTempDir;
     private SecurityManager myPreviousSecurityManager;
     private ILogger mLogger;
 
@@ -137,6 +138,12 @@ public class RenderSecurityManager extends SecurityManager {
     /** Sets an optional logger. Returns this for constructor chaining. */
     public RenderSecurityManager setLogger(@Nullable ILogger logger) {
         mLogger = logger;
+        return this;
+    }
+
+    /** Sets an optional application temp directory. Returns this for constructor chaining. */
+    public RenderSecurityManager setAppTempDir(@Nullable String appTempDir) {
+        mAppTempDir = appTempDir;
         return this;
     }
 
@@ -361,6 +368,10 @@ public class RenderSecurityManager extends SecurityManager {
 
     private boolean isTempDirPath(String path) {
         if (path.startsWith(mTempDir) || path.startsWith(mNormalizedTempDir)) {
+            return true;
+        }
+
+        if (mAppTempDir != null && path.startsWith(mAppTempDir)) {
             return true;
         }
 
