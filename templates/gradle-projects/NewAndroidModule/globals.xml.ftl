@@ -2,7 +2,7 @@
 <globals>
     <global id="topOut" value="." />
     <global id="projectOut" value="." />
-    <global id="appCompat" value="${(minApiLevel lt 14)?string('1','')}" />
+    <global id="appCompat" value="${(minApiLevel lt 14 && minApiLevel gte 7)?string('1','')}" />
     <global id="manifestOut" value="${manifestDir}" />
     <global id="srcOut" value="${srcDir}/${slashedPackageName(packageName)}" />
     <global id="resOut" value="${resDir}" />
