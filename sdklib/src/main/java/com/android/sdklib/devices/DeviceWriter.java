@@ -29,6 +29,7 @@ import java.awt.Point;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -97,6 +98,29 @@ public class DeviceWriter {
             }
             for (State s : device.getAllStates()) {
                 deviceNode.appendChild(generateStateNode(s, doc, device.getDefaultHardware()));
+            }
+
+            String tagId = device.getTagId();
+            if (tagId != null) {
+                Element e = doc.createElement(PREFIX + DeviceSchema.NODE_TAG_ID);
+                e.appendChild(doc.createTextNode(tagId));
+                deviceNode.appendChild(e);
+            }
+
+            Map<String, String> bootProps = device.getBootProps();
+            if (bootProps != null && !bootProps.isEmpty()) {
+                Element props = doc.createElement(PREFIX + DeviceSchema.NODE_BOOT_PROPS);
+                for (Map.Entry<String, String> bootProp : bootProps.entrySet()) {
+                    Element prop = doc.createElement(PREFIX + DeviceSchema.NODE_BOOT_PROP);
+                    Element propName = doc.createElement(PREFIX + DeviceSchema.NODE_PROP_NAME);
+                    propName.appendChild(doc.createTextNode(bootProp.getKey()));
+                    Element propValue = doc.createElement(PREFIX + DeviceSchema.NODE_PROP_VALUE);
+                    propValue.appendChild(doc.createTextNode(bootProp.getValue()));
+                    prop.appendChild(propName);
+                    prop.appendChild(propValue);
+                    props.appendChild(prop);
+                }
+                deviceNode.appendChild(props);
             }
         }
 
