@@ -41,11 +41,11 @@ import java.util.Set;
 
 public class DeviceParserTest extends TestCase {
 
-    public void testValidDevices() throws Exception {
+    public void testValidDevicesMinimal() throws Exception {
         InputStream devicesFile = DeviceSchemaTest.class.getResourceAsStream("devices_minimal.xml");
         List<Device> devices = DeviceParser.parse(devicesFile);
-        assertEquals("Parsing devices_minimal.xml produces the wrong number of devices", 1,
-                devices.size());
+        assertEquals("Parsing devices_minimal.xml produces the wrong number of devices",
+                1, devices.size());
 
         Device device = devices.get(0);
         assertEquals("Galaxy Nexus", device.getDisplayName());
@@ -137,6 +137,13 @@ public class DeviceParserTest extends TestCase {
         assertEquals("Landscape", s.getName());
         assertFalse(s.isDefaultState());
         assertEquals(ScreenOrientation.LANDSCAPE, s.getOrientation());
+    }
+
+    public void testValidDevicesFull() throws Exception {
+        InputStream devicesFile = DeviceSchemaTest.class.getResourceAsStream("devices.xml");
+        List<Device> devices = DeviceParser.parse(devicesFile);
+        assertEquals("Parsing devices.xml produces the wrong number of devices",
+                2, devices.size());
     }
 
     public void testApiRange() throws Exception {

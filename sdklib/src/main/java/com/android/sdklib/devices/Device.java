@@ -393,8 +393,25 @@ public final class Device {
         return hash;
     }
 
+    /** toString value suitable for debugging only. */
     @Override
     public String toString() {
-        return mName;
+        StringBuilder sb = new StringBuilder();
+        sb.append("Device [mName=");
+        sb.append(mName);
+        sb.append(", mId=");
+        sb.append(mId);
+        sb.append(", mManufacturer=");
+        sb.append(mManufacturer);
+        sb.append(", mSoftware=");
+        sb.append(mSoftware);
+        sb.append(", mState=");
+        sb.append(mState);
+        sb.append(", mMeta=");
+        sb.append(mMeta);
+        sb.append(", mDefaultState=");
+        sb.append(mDefaultState);
+        sb.append("]");
+        return sb.toString();
     }
 }

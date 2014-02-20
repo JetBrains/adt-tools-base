@@ -339,4 +339,43 @@ public class Hardware {
 
         return hash;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Hardware <mScreen=");
+        sb.append(mScreen);
+        sb.append(", mNetworking=");
+        sb.append(mNetworking);
+        sb.append(", mSensors=");
+        sb.append(mSensors);
+        sb.append(", mMic=");
+        sb.append(mMic);
+        sb.append(", mCameras=");
+        sb.append(mCameras);
+        sb.append(", mKeyboard=");
+        sb.append(mKeyboard);
+        sb.append(", mNav=");
+        sb.append(mNav);
+        sb.append(", mRam=");
+        sb.append(mRam);
+        sb.append(", mButtons=");
+        sb.append(mButtons);
+        sb.append(", mInternalStorage=");
+        sb.append(mInternalStorage);
+        sb.append(", mRemovableStorage=");
+        sb.append(mRemovableStorage);
+        sb.append(", mCpu=");
+        sb.append(mCpu);
+        sb.append(", mGpu=");
+        sb.append(mGpu);
+        sb.append(", mAbis=");
+        sb.append(mAbis);
+        sb.append(", mUiModes=");
+        sb.append(mUiModes);
+        sb.append(", mPluggedIn=");
+        sb.append(mPluggedIn);
+        sb.append(">");
+        return sb.toString();
+    }
 }
