@@ -22,6 +22,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
+import com.android.prefs.AndroidLocation.EnvVar;
 import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.internal.avd.AvdManager;
 import com.android.sdklib.io.FileOp;
@@ -50,6 +51,8 @@ public class SdkManagerTestCase extends TestCase {
     private SdkManager mSdkManager;
     private TmpAvdManager mAvdManager;
     private int mRepoXsdLevel;
+    private String mOldAndroidHomeProp;
+    private File mAndroidHome;
 
     /** Returns the {@link MockLog} for this test case. */
     public MockLog getLog() {
@@ -73,7 +76,8 @@ public class SdkManagerTestCase extends TestCase {
     public void setUp(int repoXsdLevel) throws Exception {
         mRepoXsdLevel = repoXsdLevel;
         mLog = new MockLog();
-        mFakeSdk = makeFakeSdk();
+        makeFakeAndroidHome();
+        makeFakeSdk();
         mSdkManager = SdkManager.createManager(mFakeSdk.getAbsolutePath(), mLog);
         assertNotNull("SdkManager location was invalid", mSdkManager);
 
@@ -94,7 +98,8 @@ public class SdkManagerTestCase extends TestCase {
      */
     @Override
     public void tearDown() throws Exception {
-        deleteDir(mFakeSdk);
+        tearDownSdk();
+        tearDownAndroidHome();
     }
 
     /**
@@ -140,51 +145,83 @@ public class SdkManagerTestCase extends TestCase {
         }
     }
 
+    private void makeFakeAndroidHome() throws IOException {
+        // First we create a temp file to "reserve" the temp directory name we want to use.
+        mAndroidHome = File.createTempFile(
+                "androidhome_" + this.getClass().getSimpleName() + '_' + this.getName(), null);
+        // Then erase the file and make the directory
+        mAndroidHome.delete();
+        mAndroidHome.mkdirs();
+
+        //Set the system property that will force AndroidLocation to use this
+        mOldAndroidHomeProp = System.getProperty(EnvVar.ANDROID_SDK_HOME.getName());
+        System.setProperty(EnvVar.ANDROID_SDK_HOME.getName(), mAndroidHome.getAbsolutePath());
+        AndroidLocation.resetFolder();
+    }
+
+    private void tearDownAndroidHome() {
+        if (mOldAndroidHomeProp == null) {
+            System.clearProperty(EnvVar.ANDROID_SDK_HOME.getName());
+        } else {
+            System.setProperty(EnvVar.ANDROID_SDK_HOME.getName(), mOldAndroidHomeProp);
+        }
+        AndroidLocation.resetFolder();
+        deleteDir(mAndroidHome);
+    }
+
+    /** Clear the .android home folder and reconstruct it empty. */
+    protected void clearAndroidHome() {
+        deleteDir(mAndroidHome);
+        mAndroidHome.mkdirs();
+        AndroidLocation.resetFolder();
+    }
+
     /**
      * Build enough of a skeleton SDK to make the tests pass.
      * <p/>
      * Ideally this wouldn't touch the file system but the current
      * structure of the SdkManager and AvdManager makes this difficult.
      *
-     * @return Path to the temporary SDK root
      * @throws IOException
      */
-    private File makeFakeSdk() throws IOException {
+    private void makeFakeSdk() throws IOException {
         // First we create a temp file to "reserve" the temp directory name we want to use.
-        File sdkDir = File.createTempFile(
-                this.getClass().getSimpleName() + '_' + this.getName(), null);
+        mFakeSdk = File.createTempFile(
+                "sdk_" + this.getClass().getSimpleName() + '_' + this.getName(), null);
         // Then erase the file and make the directory
-        sdkDir.delete();
-        sdkDir.mkdirs();
+        mFakeSdk.delete();
+        mFakeSdk.mkdirs();
 
-        AndroidLocation.resetFolder();
-        File addonsDir = new File(sdkDir, SdkConstants.FD_ADDONS);
+        File addonsDir = new File(mFakeSdk, SdkConstants.FD_ADDONS);
         addonsDir.mkdir();
 
-        File toolsDir = new File(sdkDir, SdkConstants.OS_SDK_TOOLS_FOLDER);
+        File toolsDir = new File(mFakeSdk, SdkConstants.OS_SDK_TOOLS_FOLDER);
         toolsDir.mkdir();
         createSourceProps(toolsDir, PkgProps.PKG_REVISION, "1.0.1");
         new File(toolsDir, SdkConstants.androidCmdName()).createNewFile();
         new File(toolsDir, SdkConstants.FN_EMULATOR).createNewFile();
 
-        makePlatformTools(new File(sdkDir, SdkConstants.FD_PLATFORM_TOOLS));
+        makePlatformTools(new File(mFakeSdk, SdkConstants.FD_PLATFORM_TOOLS));
 
         if (mRepoXsdLevel >= 8) {
-            makeBuildTools(new File(sdkDir, SdkConstants.FD_BUILD_TOOLS));
+            makeBuildTools(new File(mFakeSdk, SdkConstants.FD_BUILD_TOOLS));
         }
 
-        File toolsLibEmuDir = new File(sdkDir, SdkConstants.OS_SDK_TOOLS_LIB_FOLDER + "emulator");
+        File toolsLibEmuDir = new File(mFakeSdk, SdkConstants.OS_SDK_TOOLS_LIB_FOLDER + "emulator");
         toolsLibEmuDir.mkdirs();
         new File(toolsLibEmuDir, "snapshots.img").createNewFile();
-        File platformsDir = new File(sdkDir, SdkConstants.FD_PLATFORMS);
+        File platformsDir = new File(mFakeSdk, SdkConstants.FD_PLATFORMS);
 
         // Creating a fake target here on down
         File targetDir = makeFakeTargetInternal(platformsDir);
         makeFakeLegacySysImg(targetDir, SdkConstants.ABI_ARMEABI);
 
         makeFakeSkin(targetDir, "HVGA");
-        makeFakeSourceInternal(sdkDir);
-        return sdkDir;
+        makeFakeSourceInternal(mFakeSdk);
+    }
+
+    private void tearDownSdk() {
+        deleteDir(mFakeSdk);
     }
 
     /**
