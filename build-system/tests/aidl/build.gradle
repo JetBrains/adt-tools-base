@@ -10,6 +10,6 @@ apply plugin: 'android'
 
 android {
     compileSdkVersion 15
-    buildToolsVersion "19.0.1"
+    buildToolsVersion "19.0.2"
 
 }
