@@ -32,6 +32,7 @@ import com.google.android.gms.common.SignInButton;
 </#if>
 import java.util.ArrayList;
 import java.util.List;
+<#if applicationPackage??>import ${applicationPackage}.R;</#if>
 
 /**
  * A login screen that offers login via email/password<#if includeGooglePlus> and via Google+ sign in</#if>.
