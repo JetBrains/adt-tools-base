@@ -436,8 +436,16 @@ public final class Device {
         return ok;
     }
 
+    /** A hash that's stable across JVM instances.
+     *
+     * TODO this API must be deprecated. hashCodes are not designed to be "stable across JVMs"
+     * as made in the original assumption. It would be fine if compared in memory in the same
+     * JVM implementation, but here these hash codes are then serialized to disk when saving
+     * AVDs and reloading them under a different JVM might result in incorrect hash codes.
+     * The proper fix to be done later is to replace this by a proper stable serialization
+     * mechanism (e.g. generate a property string and then use an MD5 or SHA1 checksum.)
+     */
     @Override
-    /** A hash that's stable across JVM instances */
     public int hashCode() {
         int hash = 17;
         hash = 31 * hash + mName.hashCode();
@@ -446,8 +454,15 @@ public final class Device {
         hash = 31 * hash + mState.hashCode();
         hash = 31 * hash + mMeta.hashCode();
         hash = 31 * hash + mDefaultState.hashCode();
-        hash = 31 * hash + (mTagId == null ? 0 : mTagId.hashCode());
-        hash = 31 * hash + (mBootProps == null ? 0 : mBootProps.hashCode());
+
+        // tag-id and boot-props are optional and should not change a device's hashcode
+        // which did not have them before.
+        if (mTagId != null) {
+            hash = 31 * hash + mTagId.hashCode();
+        }
+        if (mBootProps != null && !mBootProps.isEmpty()) {
+            hash = 31 * hash + mBootProps.hashCode();
+        }
         return hash;
     }
 
