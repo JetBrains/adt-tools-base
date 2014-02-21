@@ -170,23 +170,29 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     }
 
     @SuppressWarnings("UnusedDeclaration")
-    protected static boolean isInterestingBlock(@NonNull String parent) {
+    protected static boolean isInterestingBlock(
+            @NonNull String parent,
+            @Nullable String parentParent) {
         return parent.equals("defaultConfig")
                 || parent.equals("android")
-                || parent.equals("dependencies");
+                || parent.equals("dependencies")
+                || parentParent != null && parentParent.equals("buildTypes");
     }
 
     @SuppressWarnings("UnusedDeclaration")
-    protected static boolean isInterestingProperty(@NonNull String property,
-            @SuppressWarnings("UnusedParameters") @NonNull String parent) {
+    protected static boolean isInterestingProperty(
+            @NonNull String property,
+            @SuppressWarnings("UnusedParameters")
+            @NonNull String parent,
+            @Nullable String parentParent) {
         return property.equals("targetSdkVersion")
                 || property.equals("buildToolsVersion")
-                || property.equals("compile")
-                || property.equals("debugCompile")
+                || property.equals("compile") || property.endsWith("Compile")
                 || property.equals("classpath")
                 || property.equals("versionName")
                 || property.equals("versionCode")
-                || property.equals("compileSdkVersion");
+                || property.equals("compileSdkVersion")
+                || property.equals("packageNameSuffix");
     }
 
     /** Called with for example "android", "defaultConfig", "minSdkVersion", "7"  */
@@ -196,6 +202,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         @NonNull String property,
         @NonNull String value,
         @NonNull String parent,
+        @Nullable String parentParent,
         @NonNull Object cookie) {
         if (parent.equals("defaultConfig")) {
             if (property.equals("targetSdkVersion")) {
@@ -246,7 +253,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             }
         } else if (parent.equals("dependencies") &&
                 (property.equals("compile")
-                        || property.equals("debugCompile")
+                        || property.endsWith("Compile")
                         || property.equals("classpath"))) {
             if (value.startsWith("files('") && value.endsWith("')")) {
                 String path = value.substring("files('".length(), value.length() - 2);
@@ -275,6 +282,12 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                     }
                 }
             }
+        } else if (property.equals("packageNameSuffix")) {
+            String suffix = getStringLiteralValue(value);
+            if (suffix != null && !suffix.startsWith(".")) {
+                String message = "Package suffix should probably start with a \".\"";
+                report(context, cookie, PATH, message);
+            }
         }
     }
 
@@ -297,7 +310,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
             List<FullRevision> revisions = Lists.newArrayList();
             if (major == 19) {
-                revisions.add(new FullRevision(19, 0, 1));
+                revisions.add(new FullRevision(19, 0, 2));
             } else if (major == 18) {
                 revisions.add(new FullRevision(18, 1, 1));
             }
@@ -382,12 +395,12 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         boolean isObsolete = false;
         if ("com.android.tools.build".equals(dependency.getGroupId()) &&
                 "gradle".equals(dependency.getArtifactId())) {
-            if (isOlderThan(dependency, 0, 7, 3)) {
+            if (isOlderThan(dependency, 0, 8, 3)) {
                 isObsolete = true;
             }
         } else if ("com.google.guava".equals(dependency.getGroupId()) &&
                 "guava".equals(dependency.getArtifactId())) {
-            if (isOlderThan(dependency, 15, 0, 0)) {
+            if (isOlderThan(dependency, 16, 0, 1)) {
                 isObsolete = true;
             }
         } else if ("com.google.code.gson".equals(dependency.getGroupId()) &&
@@ -397,7 +410,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             }
         } else if ("org.apache.httpcomponents".equals(dependency.getGroupId()) &&
                 "httpclient".equals(dependency.getArtifactId())) {
-            if (isOlderThan(dependency, 4, 3, 1)) {
+            if (isOlderThan(dependency, 4, 3, 2)) {
                 isObsolete = true;
             }
         }
