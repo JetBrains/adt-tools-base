@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 <#if !includeLayout>import android.widget.TextView;</#if>
+<#if applicationPackage??>import ${applicationPackage}.R;</#if>
 
 /**
  * A simple {@link android.support.v4.app.Fragment} subclass.

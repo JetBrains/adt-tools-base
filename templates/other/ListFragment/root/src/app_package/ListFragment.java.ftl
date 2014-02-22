@@ -21,6 +21,7 @@ import android.widget.TextView;
 <#else>
 import android.widget.ListView;
 </#if>
+<#if applicationPackage??>import ${applicationPackage}.R;</#if>
 
 import ${packageName}.dummy.DummyContent;
 
