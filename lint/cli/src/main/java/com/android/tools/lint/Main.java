@@ -98,6 +98,7 @@ public class Main {
     private static final String PROP_WORK_DIR = "com.android.tools.lint.workdir"; //$NON-NLS-1$
 
     private LintCliFlags mFlags = new LintCliFlags();
+    private IssueRegistry mGlobalRegistry;
 
     /** Creates a CLI driver */
     public Main() {
@@ -124,7 +125,6 @@ public class Main {
             System.exit(ERRNO_USAGE);
         }
 
-        IssueRegistry registry = new BuiltinIssueRegistry();
 
         // When running lint from the command line, warn if the project is a Gradle project
         // since those projects may have custom project configuration that the command line
@@ -174,6 +174,7 @@ public class Main {
                 printUsage(System.out);
                 System.exit(ERRNO_HELP);
             } else if (arg.equals(ARG_LIST_IDS)) {
+                IssueRegistry registry = getGlobalRegistry(client);
                 // Did the user provide a category list?
                 if (index < args.length - 1 && !args[index + 1].startsWith("-")) { //$NON-NLS-1$
                     String[] ids = args[++index].split(",");
@@ -200,6 +201,7 @@ public class Main {
                 }
                 System.exit(ERRNO_SUCCESS);
             } else if (arg.equals(ARG_SHOW)) {
+                IssueRegistry registry = getGlobalRegistry(client);
                 // Show specific issues?
                 if (index < args.length - 1 && !args[index + 1].startsWith("-")) { //$NON-NLS-1$
                     String[] ids = args[++index].split(",");
@@ -355,6 +357,7 @@ public class Main {
                 boolean closeWriter;
                 String outputName = args[++index];
                 if (outputName.equals("stdout")) { //$NON-NLS-1$
+                    //noinspection IOResourceOpenedButNotSafelyClosed
                     writer = new PrintWriter(System.out, true);
                     closeWriter = false;
                 } else {
@@ -376,6 +379,7 @@ public class Main {
                         System.exit(ERRNO_EXISTS);
                     }
                     try {
+                        //noinspection IOResourceOpenedButNotSafelyClosed
                         writer = new BufferedWriter(new FileWriter(output));
                     } catch (IOException e) {
                         log(e, null);
@@ -389,6 +393,7 @@ public class Main {
                     System.err.println("Missing categories or id's to disable");
                     System.exit(ERRNO_INVALID_ARGS);
                 }
+                IssueRegistry registry = getGlobalRegistry(client);
                 String[] ids = args[++index].split(",");
                 for (String id : ids) {
                     if (registry.isCategoryName(id)) {
@@ -415,6 +420,7 @@ public class Main {
                     System.err.println("Missing categories or id's to enable");
                     System.exit(ERRNO_INVALID_ARGS);
                 }
+                IssueRegistry registry = getGlobalRegistry(client);
                 String[] ids = args[++index].split(",");
                 for (String id : ids) {
                     if (registry.isCategoryName(id)) {
@@ -444,6 +450,7 @@ public class Main {
                     checkedIds = new HashSet<String>();
                     mFlags.setExactCheckedIds(checkedIds);
                 }
+                IssueRegistry registry = getGlobalRegistry(client);
                 String[] ids = args[++index].split(",");
                 for (String id : ids) {
                     if (registry.isCategoryName(id)) {
@@ -620,12 +627,22 @@ public class Main {
         }
 
         try {
-            int exitCode = client.run(registry, files);
+            // Not using mGlobalRegistry; LintClient will do its own registry merging
+            // also including project rules.
+            int exitCode = client.run(new BuiltinIssueRegistry(), files);
             System.exit(exitCode);
         } catch (IOException e) {
             log(e, null);
             System.exit(ERRNO_INVALID_ARGS);
         }
+    }
+
+    private IssueRegistry getGlobalRegistry(LintCliClient client) {
+        if (mGlobalRegistry == null) {
+            mGlobalRegistry = client.addCustomLintRules(new BuiltinIssueRegistry());
+        }
+
+        return mGlobalRegistry;
     }
 
     /**

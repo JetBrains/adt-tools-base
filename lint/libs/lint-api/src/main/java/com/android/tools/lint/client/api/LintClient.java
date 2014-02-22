@@ -41,6 +41,7 @@ import com.android.tools.lint.detector.api.Severity;
 import com.android.utils.StdLogger;
 import com.android.utils.StdLogger.Level;
 import com.google.common.annotations.Beta;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
@@ -836,5 +837,34 @@ public abstract class LintClient {
      */
     public boolean checkForSuppressComments() {
         return true;
+    }
+
+    /**
+     * Adds in any custom lint rules and returns the result as a new issue registry,
+     * or the same one if no custom rules were found
+     *
+     * @param registry the main registry to add rules to
+     * @return a new registry containing the passed in rules plus any custom rules,
+     *   or the original registry if no custom rules were found
+     */
+    public IssueRegistry addCustomLintRules(@NonNull IssueRegistry registry) {
+        List<File> jarFiles = findGlobalRuleJars();
+
+        if (!jarFiles.isEmpty()) {
+            List<IssueRegistry> registries = Lists.newArrayListWithExpectedSize(jarFiles.size());
+            registries.add(registry);
+            for (File jarFile : jarFiles) {
+                try {
+                    registries.add(JarFileIssueRegistry.get(this, jarFile));
+                } catch (Throwable e) {
+                    log(e, "Could not load custom rule jar file %1$s", jarFile);
+                }
+            }
+            if (registries.size() > 1) { // the first item is the passed in registry itself
+                return new CompositeIssueRegistry(registries);
+            }
+        }
+
+        return registry;
     }
 }
