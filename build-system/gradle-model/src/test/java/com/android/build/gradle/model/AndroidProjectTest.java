@@ -791,6 +791,35 @@ public class AndroidProjectTest extends TestCase {
         }
     }
 
+    public void testCustomArtifact() throws Exception {
+        // Load the custom model for the projects
+        Map<String, ProjectData> map = getModelForMultiProject("customArtifactDep");
+
+        ProjectData appModelData = map.get(":app");
+        assertNotNull("Module app null-check", appModelData);
+        AndroidProject model = appModelData.model;
+
+        Collection<Variant> variants = model.getVariants();
+        assertEquals("Variant count", 2, variants.size());
+
+        Variant variant = getVariant(variants, "release");
+        assertNotNull("release variant null-check", variant);
+
+        AndroidArtifact mainInfo = variant.getMainArtifact();
+        assertNotNull("Main Artifact null-check", mainInfo);
+
+        Dependencies dependencies = mainInfo.getDependencies();
+        assertNotNull("Dependencies null-check", dependencies);
+
+        Collection<String> projects = dependencies.getProjects();
+        assertNotNull("project dep list null-check", projects);
+        assertTrue("project dep empty check", projects.isEmpty());
+
+        Collection<File> jars = dependencies.getJars();
+        assertNotNull("jar dep list null-check", jars);
+        assertEquals("jar dep count", 1, jars.size());
+    }
+
     /**
      * Returns the SDK folder as built from the Android source tree.
      * @return the SDK
