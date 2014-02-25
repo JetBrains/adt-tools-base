@@ -5,6 +5,7 @@ tests/applibtest/*/build
 tests/assets/*/build
 tests/attrOrder/*/build
 tests/basic/lint-report*
+tests/customArtifactDep/*/build
 tests/3rdPartyTests/*/build
 tests/dependencies/jarProject/build
 tests/dependencies/jarProject2/build
