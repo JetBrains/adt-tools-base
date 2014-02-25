@@ -69,7 +69,7 @@ public class ViewTagDetector extends Detector implements ClassScanner {
             Severity.WARNING,
             new Implementation(
                     ViewTagDetector.class,
-                    Scope.CLASS_AND_ALL_RESOURCE_FILES));
+                    Scope.CLASS_FILE_SCOPE));
 
     /** Constructs a new {@link ViewTagDetector} */
     public ViewTagDetector() {

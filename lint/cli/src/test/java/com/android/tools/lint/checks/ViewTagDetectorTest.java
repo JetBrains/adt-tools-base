@@ -46,8 +46,6 @@ public class ViewTagDetectorTest extends AbstractCheckTest {
 
             lintProject(
                     "bytecode/.classpath=>.classpath",
-                    "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
-                    "res/layout/onclick.xml=>res/layout/onclick.xml",
                     "bytecode/ViewTagTest.java.txt=>src/test/pkg/ViewTagTest.java",
                     "bytecode/ViewTagTest.class.data=>bin/classes/test/pkg/ViewTagTest.class"
                     ));
@@ -60,7 +58,6 @@ public class ViewTagDetectorTest extends AbstractCheckTest {
             lintProject(
                     "bytecode/.classpath=>.classpath",
                     "apicheck/minsdk14.xml=>AndroidManifest.xml",
-                    "res/layout/onclick.xml=>res/layout/onclick.xml",
                     "bytecode/ViewTagTest.java.txt=>src/test/pkg/ViewTagTest.java",
                     "bytecode/ViewTagTest.class.data=>bin/classes/test/pkg/ViewTagTest.class"
                     ));

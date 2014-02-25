@@ -168,7 +168,8 @@ public class IconDetectorTest extends AbstractCheckTest {
             "    res/drawable-hdpi/frame.png: <No location-specific message\n" +
             "    res/drawable-mdpi/frame.png: <No location-specific message\n" +
             "    res/drawable-ldpi/frame.png: <No location-specific message\n" +
-            "res/drawable-xhdpi/frame.png: Warning: The following unrelated icon files have identical contents: frame.png, frame.png, frame.png, file1.png, file2.png, frame.png [IconDuplicates]\n" +
+            "res/drawable-xxhdpi/frame.png: Warning: The following unrelated icon files have identical contents: frame.png, frame.png, frame.png, file1.png, file2.png, frame.png, frame.png [IconDuplicates]\n" +
+            "    res/drawable-xhdpi/frame.png: <No location-specific message\n" +
             "    res/drawable-nodpi/file2.png: <No location-specific message\n" +
             "    res/drawable-nodpi/file1.png: <No location-specific message\n" +
             "    res/drawable-mdpi/frame.png: <No location-specific message\n" +
@@ -182,6 +183,7 @@ public class IconDetectorTest extends AbstractCheckTest {
                     "res/drawable-mdpi/frame.png=>res/drawable-hdpi/frame.png",
                     "res/drawable-mdpi/frame.png=>res/drawable-ldpi/frame.png",
                     "res/drawable-mdpi/frame.png=>res/drawable-xhdpi/frame.png",
+                    "res/drawable-mdpi/frame.png=>res/drawable-xxhdpi/frame.png",
                     "res/drawable-mdpi/frame.png=>res/drawable-nodpi/file1.png",
                     "res/drawable-mdpi/frame.png=>res/drawable-nodpi/file2.png"));
     }
