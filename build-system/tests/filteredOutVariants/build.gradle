@@ -1,0 +1,42 @@
+buildscript {
+    repositories {
+        maven { url '../../../../../out/host/gradle/repo' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.8.4-SNAPSHOT'
+    }
+}
+
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "19.0.2"
+
+    variantFilter {
+        String abi = it.flavors.get(0).name
+        if ("cupcake".equals(it.flavors.get(1).name) && ("x86".equals(abi) || "mips".equals(abi))) {
+            it.ignore = true
+        }
+    }
+
+    flavorGroups "abi", "api"
+
+    productFlavors {
+        x86 {
+            flavorGroup "abi"
+        }
+        mips {
+            flavorGroup "abi"
+        }
+        arm {
+            flavorGroup "abi"
+        }
+        cupcake {
+            flavorGroup "api"
+        }
+        gingerbread {
+            flavorGroup "api"
+        }
+    }
+}

@@ -73,6 +73,8 @@ public abstract class BaseExtension {
     List<String> flavorGroupList
     String testBuildType = "debug"
 
+    private Closure<Void> variantFilter
+
     private final DefaultDomainObjectSet<TestVariant> testVariantList =
         new DefaultDomainObjectSet<TestVariant>(TestVariant.class)
 
@@ -80,7 +82,6 @@ public abstract class BaseExtension {
     private final List<TestServer> testServerList = Lists.newArrayList();
 
     protected final BasePlugin plugin
-
 
     /**
      * The source sets container.
@@ -244,6 +245,14 @@ public abstract class BaseExtension {
     void deviceProvider(DeviceProvider deviceProvider) {
         plugin.checkTasksAlreadyCreated();
         deviceProviderList.add(deviceProvider)
+    }
+
+    void variantFilter(Closure<Void> filter) {
+        variantFilter = filter
+    }
+
+    public Closure<Void> getVariantFilter() {
+        return variantFilter;
     }
 
     @NonNull
