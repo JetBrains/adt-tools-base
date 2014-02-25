@@ -61,13 +61,15 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
         Set<Configuration> apkConfigs = Sets.newHashSetWithExpectedSize(providers.length)
 
         for (ConfigurationProvider provider : providers) {
-            compileConfigs.add(provider.compileConfiguration)
-            if (provider.providedConfiguration != null) {
-                compileConfigs.add(provider.providedConfiguration)
-            }
+            if (provider != null) {
+                compileConfigs.add(provider.compileConfiguration)
+                if (provider.providedConfiguration != null) {
+                    compileConfigs.add(provider.providedConfiguration)
+                }
 
-            apkConfigs.add(provider.compileConfiguration)
-            apkConfigs.add(provider.packageConfiguration)
+                apkConfigs.add(provider.compileConfiguration)
+                apkConfigs.add(provider.packageConfiguration)
+            }
         }
 
         Configuration compile = project.configurations.create("_${name}Compile")
