@@ -80,7 +80,7 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
 
         Configuration publish = null;
         if (publishVariant) {
-            publish = project.configurations.create("variant${name.capitalize()}")
+            publish = project.configurations.create(name)
             publish.description = "Publishing Configuration for Variant ${name}"
             publish.setExtendsFrom(compileConfigs)
         }
