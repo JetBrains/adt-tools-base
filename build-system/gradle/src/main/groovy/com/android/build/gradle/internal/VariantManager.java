@@ -309,13 +309,14 @@ public class VariantManager {
         }
 
         if (testedVariantData != null) {
+            VariantConfiguration testedConfig = testedVariantData.getVariantConfiguration();
             // handle the test variant
             VariantConfiguration testVariantConfig = new VariantConfiguration(
                     defaultConfig,
                     defaultConfigData.getTestSourceSet(),
                     testData.getBuildType(),
                     null,
-                    VariantConfiguration.Type.TEST, testedVariantData.getVariantConfiguration());
+                    VariantConfiguration.Type.TEST, testedConfig);
 
             // create the internal storage for this test variant.
             TestVariantData testVariantData = new TestVariantData(testVariantConfig, (TestedVariantData) testedVariantData);
@@ -326,7 +327,9 @@ public class VariantManager {
             VariantDependencies variantDep = VariantDependencies.compute(
                     project, testVariantConfig.getFullName(),
                     false /*publishVariant*/,
-                    defaultConfigData.getTestProvider());
+                    defaultConfigData.getTestProvider(),
+                    testedConfig.getType() == VariantConfiguration.Type.LIBRARY ?
+                            testedVariantData.getVariantDependency() : null);
             testVariantData.setVariantDependency(variantDep);
 
             basePlugin.resolveDependencies(variantDep);
@@ -457,6 +460,8 @@ public class VariantManager {
         }
 
         if (testedVariantData != null) {
+            VariantConfiguration testedConfig = testedVariantData.getVariantConfiguration();
+
             // handle test variant
             VariantConfiguration testVariantConfig = new VariantConfiguration(
                     defaultConfig,
@@ -493,6 +498,10 @@ public class VariantManager {
             localVariantDataList.add(testVariantData);
             // link the testVariant to the tested variant in the other direction
             ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
+
+            if (testedConfig.getType() == VariantConfiguration.Type.LIBRARY) {
+                testVariantProviders.add(testedVariantData.getVariantDependency());
+            }
 
             // dependencies for the test variant
             VariantDependencies variantDep = VariantDependencies.compute(
