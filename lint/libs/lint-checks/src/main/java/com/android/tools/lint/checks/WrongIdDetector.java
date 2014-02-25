@@ -21,22 +21,31 @@ import static com.android.SdkConstants.ATTR_ID;
 import static com.android.SdkConstants.ATTR_LAYOUT_RESOURCE_PREFIX;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_TYPE;
+import static com.android.SdkConstants.FD_RES_VALUES;
 import static com.android.SdkConstants.ID_PREFIX;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
 import static com.android.SdkConstants.RELATIVE_LAYOUT;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.VALUE_ID;
+import static com.android.tools.lint.detector.api.LintUtils.editDistance;
+import static com.android.tools.lint.detector.api.LintUtils.getChildren;
+import static com.android.tools.lint.detector.api.LintUtils.isSameResourceFile;
 import static com.android.tools.lint.detector.api.LintUtils.stripIdPrefix;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.ide.common.res2.AbstractResourceRepository;
+import com.android.ide.common.res2.ResourceFile;
+import com.android.ide.common.res2.ResourceItem;
 import com.android.resources.ResourceFolderType;
+import com.android.resources.ResourceType;
 import com.android.tools.lint.client.api.IDomParser;
+import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
-import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Location.Handle;
 import com.android.tools.lint.detector.api.Scope;
@@ -54,6 +63,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -90,6 +100,7 @@ public class WrongIdDetector extends LayoutDetector {
     private List<Element> mRelativeLayouts;
 
     /** Reference to an unknown id */
+    @SuppressWarnings("unchecked")
     public static final Issue UNKNOWN_ID = Issue.create(
             "UnknownId", //$NON-NLS-1$
             "Reference to an unknown id",
@@ -105,7 +116,8 @@ public class WrongIdDetector extends LayoutDetector {
             Severity.FATAL,
             new Implementation(
                     WrongIdDetector.class,
-                    Scope.ALL_RESOURCES_SCOPE));
+                    Scope.ALL_RESOURCES_SCOPE,
+                    Scope.RESOURCE_FILE_SCOPE));
 
     /** Reference to an id that is not a sibling */
     public static final Issue NOT_SIBLING = Issue.create(
@@ -198,7 +210,7 @@ public class WrongIdDetector extends LayoutDetector {
             }
 
             for (Element layout : mRelativeLayouts) {
-                List<Element> children = LintUtils.getChildren(layout);
+                List<Element> children = getChildren(layout);
                 Set<String> ids = Sets.newHashSetWithExpectedSize(children.size());
                 for (Element child : children) {
                     String id = child.getAttributeNS(ANDROID_URI, ATTR_ID);
@@ -260,23 +272,46 @@ public class WrongIdDetector extends LayoutDetector {
         }
 
         mFileIds = null;
+
+        if (!context.getScope().contains(Scope.ALL_RESOURCE_FILES)) {
+            checkHandles(context);
+        }
     }
 
     @Override
     public void afterCheckProject(@NonNull Context context) {
+        if (context.getScope().contains(Scope.ALL_RESOURCE_FILES)) {
+            checkHandles(context);
+        }
+    }
+
+    private void checkHandles(@NonNull Context context) {
         if (mHandles != null) {
             boolean checkSameLayout = context.isEnabled(UNKNOWN_ID_LAYOUT);
             boolean checkExists = context.isEnabled(UNKNOWN_ID);
             boolean projectScope = context.getScope().contains(Scope.ALL_RESOURCE_FILES);
             for (Pair<String, Handle> pair : mHandles) {
                 String id = pair.getFirst();
-                boolean isBound = idDefined(mGlobalIds, id);
-                if (!isBound && checkExists && projectScope) {
+                boolean isBound = projectScope ? idDefined(mGlobalIds, id) :
+                        idDefined(context, id, context.file);
+                LintClient client = context.getClient();
+                if (!isBound && checkExists
+                        && (projectScope || client.supportsProjectResources())) {
                     Handle handle = pair.getSecond();
                     boolean isDeclared = idDefined(mDeclaredIds, id);
                     id = stripIdPrefix(id);
                     String suggestionMessage;
-                    List<String> suggestions = getSpellingSuggestions(id, mGlobalIds);
+                    Set<String> spellingDictionary = mGlobalIds;
+                    if (!projectScope && client.supportsProjectResources()) {
+                        AbstractResourceRepository resources =
+                                client.getProjectResources(context.getProject(), true);
+                        if (resources != null) {
+                            spellingDictionary = Sets.newHashSet(
+                                    resources.getItemsOfType(ResourceType.ID));
+                            spellingDictionary.remove(id);
+                        }
+                    }
+                    List<String> suggestions = getSpellingSuggestions(id, spellingDictionary);
                     if (suggestions.size() > 1) {
                         suggestionMessage = String.format(" Did you mean one of {%2$s} ?",
                                 id, Joiner.on(", ").join(suggestions));
@@ -383,6 +418,41 @@ public class WrongIdDetector extends LayoutDetector {
         return definedLocally;
     }
 
+    private boolean idDefined(@NonNull Context context, @NonNull String id,
+            @Nullable File notIn) {
+        AbstractResourceRepository resources =
+                context.getClient().getProjectResources(context.getProject(), true);
+        if (resources != null) {
+            List<ResourceItem> items = resources.getResourceItem(ResourceType.ID,
+                    stripIdPrefix(id));
+            if (items == null || items.isEmpty()) {
+                return false;
+            }
+            for (ResourceItem item : items) {
+                ResourceFile source = item.getSource();
+                if (source != null) {
+                    File file = source.getFile();
+                    if (file.getParentFile().getName().startsWith(FD_RES_VALUES)) {
+                        if (mDeclaredIds == null) {
+                            mDeclaredIds = Sets.newHashSet();
+                        }
+                        mDeclaredIds.add(id);
+                        continue;
+                    }
+
+                    // Ignore definitions in the given file. This is used to ignore
+                    // matches in the same file as the reference, since the reference
+                    // is often expressed as a definition
+                    if (!isSameResourceFile(file, notIn)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     private static List<String> getSpellingSuggestions(String id, Collection<String> ids) {
         int maxDistance = id.length() >= 4 ? 2 : 1;
 
@@ -398,7 +468,7 @@ public class WrongIdDetector extends LayoutDetector {
                     // O(n*m) storage and O(n*m) speed, where n and m are the string lengths)
                     continue;
                 }
-                int distance = LintUtils.editDistance(id, matchWith);
+                int distance = editDistance(id, matchWith);
                 if (distance <= maxDistance) {
                     matches.put(distance, matchWith);
                 }

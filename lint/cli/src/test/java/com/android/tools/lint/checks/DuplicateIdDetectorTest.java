@@ -27,11 +27,11 @@ public class DuplicateIdDetectorTest extends AbstractCheckTest {
 
     public void testDuplicate() throws Exception {
         assertEquals(
-                "res/layout/duplicate.xml:5: Warning: Duplicate id @+id/android_logo, already defined earlier in this layout [DuplicateIds]\n" +
+                "res/layout/duplicate.xml:5: Error: Duplicate id @+id/android_logo, already defined earlier in this layout [DuplicateIds]\n" +
                 "    <ImageButton android:id=\"@+id/android_logo\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\" android:src=\"@drawable/android_button\" android:focusable=\"false\" android:clickable=\"false\" android:layout_weight=\"1.0\" />\n" +
                 "                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
                 "    res/layout/duplicate.xml:4: @+id/android_logo originally defined here\n" +
-                "0 errors, 1 warnings\n" +
+                "1 errors, 0 warnings\n" +
                 "",
                 lintFiles("res/layout/duplicate.xml"));
     }

@@ -68,4 +68,23 @@ public class ArraySizeDetectorTest extends AbstractCheckTest {
                  "res/values/arrays.xml",
                  "res/values-land/arrays_ignore.xml=>res/values-land/arrays.xml"));
     }
+
+    public void testArraySizesIncremental() throws Exception {
+        assertEquals(""
+            + "res/values/arrays.xml:3: Warning: Array security_questions has an inconsistent number of items (4 in values/arrays.xml, 3 in values-nl-rNL/arrays.xml) [InconsistentArrays]\n"
+            + "    <string-array name=\"security_questions\">\n"
+            + "    ^\n"
+            + "res/values/arrays.xml:10: Warning: Array signal_strength has an inconsistent number of items (5 in values/arrays.xml, 6 in values-land/arrays.xml) [InconsistentArrays]\n"
+            + "    <array name=\"signal_strength\">\n"
+            + "    ^\n"
+            + "0 errors, 2 warnings\n",
+
+            lintProjectIncrementally("res/values/arrays.xml",
+                    "res/values/arrays.xml",
+                    "res/values-cs/arrays.xml",
+                    "res/values-land/arrays.xml",
+                    "res/values-nl-rNL/arrays.xml",
+                    "res/values-es/strings.xml"));
+    }
+
 }

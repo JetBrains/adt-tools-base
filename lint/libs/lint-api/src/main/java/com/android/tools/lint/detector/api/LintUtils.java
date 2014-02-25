@@ -17,13 +17,22 @@
 package com.android.tools.lint.detector.api;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static com.android.SdkConstants.ANDROID_PREFIX;
+import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.BIN_FOLDER;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.ID_PREFIX;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.rendering.api.ResourceValue;
+import com.android.ide.common.rendering.api.StyleResourceValue;
+import com.android.ide.common.res2.AbstractResourceRepository;
+import com.android.ide.common.res2.ResourceItem;
+import com.android.ide.common.res2.ResourceRepository;
+import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
@@ -32,6 +41,9 @@ import com.android.utils.PositionXmlParser;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -44,8 +56,12 @@ import org.w3c.dom.NodeList;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 import lombok.ast.ImportDeclaration;
 
@@ -773,5 +789,174 @@ public class LintUtils {
         }
 
         return imported;
+    }
+
+    /**
+     * Looks up the resource values for the given attribute given a style. Note that
+     * this only looks project-level style values, it does not resume into the framework
+     * styles.
+     */
+    @Nullable
+    public static List<ResourceValue> getStyleAttributes(
+            @NonNull Project project, @NonNull LintClient client,
+            @NonNull String styleUrl, @NonNull String namespace, @NonNull String attribute) {
+        if (!client.supportsProjectResources()) {
+            return null;
+        }
+
+        AbstractResourceRepository resources = client.getProjectResources(project, true);
+        if (resources == null) {
+            return null;
+        }
+
+        ResourceUrl style = ResourceUrl.parse(styleUrl);
+        if (style == null || style.framework) {
+            return null;
+        }
+
+        List<ResourceValue> result = null;
+
+        Queue<ResourceValue> queue = new ArrayDeque<ResourceValue>();
+        queue.add(new ResourceValue(style.type, style.name, false));
+        Set<String> seen = Sets.newHashSet();
+        int count = 0;
+        boolean isFrameworkAttribute = ANDROID_URI.equals(namespace);
+        while (count < 30 && !queue.isEmpty()) {
+            ResourceValue front = queue.remove();
+            String name = front.getName();
+            seen.add(name);
+            List<ResourceItem> items = resources.getResourceItem(front.getResourceType(), name);
+            if (items != null) {
+                for (ResourceItem item : items) {
+                    ResourceValue rv = item.getResourceValue(false);
+                    if (rv instanceof StyleResourceValue) {
+                        StyleResourceValue srv = (StyleResourceValue) rv;
+                        ResourceValue value = srv.findValue(attribute, isFrameworkAttribute);
+                        if (value != null) {
+                            if (result == null) {
+                                result = Lists.newArrayList();
+                            }
+                            if (!result.contains(value)) {
+                                result.add(value);
+                            }
+                        }
+
+                        String parent = srv.getParentStyle();
+                        if (parent != null && !parent.startsWith(ANDROID_PREFIX)) {
+                            ResourceUrl p = ResourceUrl.parse(parent);
+                            if (p != null && !p.framework && !seen.contains(p.name)) {
+                                seen.add(p.name);
+                                queue.add(new ResourceValue(ResourceType.STYLE, p.name,
+                                        false));
+                            }
+                        }
+
+                        int index = name.lastIndexOf('.');
+                        if (index > 0) {
+                            String parentName = name.substring(0, index);
+                            if (!seen.contains(parentName)) {
+                                seen.add(parentName);
+                                queue.add(new ResourceValue(ResourceType.STYLE, parentName,
+                                        false));
+                            }
+                        }
+                    }
+                }
+            }
+
+            count++;
+        }
+
+        return result;
+    }
+
+    @Nullable
+    public static List<StyleResourceValue> getInheritedStyles(
+            @NonNull Project project, @NonNull LintClient client,
+            @NonNull String styleUrl) {
+        if (!client.supportsProjectResources()) {
+            return null;
+        }
+
+        AbstractResourceRepository resources = client.getProjectResources(project, true);
+        if (resources == null) {
+            return null;
+        }
+
+        ResourceUrl style = ResourceUrl.parse(styleUrl);
+        if (style == null || style.framework) {
+            return null;
+        }
+
+        List<StyleResourceValue> result = null;
+
+        Queue<ResourceValue> queue = new ArrayDeque<ResourceValue>();
+        queue.add(new ResourceValue(style.type, style.name, false));
+        Set<String> seen = Sets.newHashSet();
+        int count = 0;
+        while (count < 30 && !queue.isEmpty()) {
+            ResourceValue front = queue.remove();
+            String name = front.getName();
+            seen.add(name);
+            List<ResourceItem> items = resources.getResourceItem(front.getResourceType(), name);
+            if (items != null) {
+                for (ResourceItem item : items) {
+                    ResourceValue rv = item.getResourceValue(false);
+                    if (rv instanceof StyleResourceValue) {
+                        StyleResourceValue srv = (StyleResourceValue) rv;
+                        if (result == null) {
+                            result = Lists.newArrayList();
+                        }
+                        result.add(srv);
+
+                        String parent = srv.getParentStyle();
+                        if (parent != null && !parent.startsWith(ANDROID_PREFIX)) {
+                            ResourceUrl p = ResourceUrl.parse(parent);
+                            if (p != null && !p.framework && !seen.contains(p.name)) {
+                                seen.add(p.name);
+                                queue.add(new ResourceValue(ResourceType.STYLE, p.name,
+                                        false));
+                            }
+                        }
+
+                        int index = name.lastIndexOf('.');
+                        if (index > 0) {
+                            String parentName = name.substring(0, index);
+                            if (!seen.contains(parentName)) {
+                                seen.add(parentName);
+                                queue.add(new ResourceValue(ResourceType.STYLE, parentName,
+                                        false));
+                            }
+                        }
+                    }
+                }
+            }
+
+            count++;
+        }
+
+        return result;
+    }
+
+    /** Returns true if the given two paths point to the same logical resource file within
+     * a source set. This means that it only checks the parent folder name and individual
+     * file name, not the path outside the parent folder.
+     *
+     * @param file1 the first file to compare
+     * @param file2 the second file to compare
+     * @return true if the two files have the same parent and file names
+     */
+    public static boolean isSameResourceFile(@Nullable File file1, @Nullable File file2) {
+        if (file1 != null && file2 != null
+                && file1.getName().equals(file2.getName())) {
+            File parent1 = file1.getParentFile();
+            File parent2 = file2.getParentFile();
+            if (parent1 != null && parent2 != null &&
+                    parent1.getName().equals(parent2.getName())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

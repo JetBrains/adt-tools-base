@@ -267,4 +267,45 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
             )
         );
     }
+
+    public void testIncremental() throws Exception {
+        assertEquals(
+                "src/test/pkg/StringFormatActivity.java:13: Error: Wrong argument type for formatting argument '#1' in hello: conversion is 'd', received String [StringFormatMatches]\n" +
+                "        String output1 = String.format(hello, target);\n" +
+                "                                              ~~~~~~\n" +
+                "    res/values-es/formatstrings.xml: Conflicting argument declaration here\n" +
+                "src/test/pkg/StringFormatActivity.java:15: Error: Wrong argument count, format string hello2 requires 3 but format call supplies 2 [StringFormatMatches]\n" +
+                "        String output2 = String.format(hello2, target, \"How are you\");\n" +
+                "                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+                "    res/values-es/formatstrings.xml: This definition requires 3 arguments\n" +
+                "src/test/pkg/StringFormatActivity.java:24: Error: Wrong argument count, format string hello2 requires 3 but format call supplies 2 [StringFormatMatches]\n" +
+                "        String.format(getResources().getString(R.string.hello2), target, \"How are you\");\n" +
+                "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+                "    res/values-es/formatstrings.xml: This definition requires 3 arguments\n" +
+                "src/test/pkg/StringFormatActivity.java:25: Error: Wrong argument count, format string hello2 requires 3 but format call supplies 2 [StringFormatMatches]\n" +
+                "        getResources().getString(hello2, target, \"How are you\");\n" +
+                "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+                "    res/values-es/formatstrings.xml: This definition requires 3 arguments\n" +
+                "src/test/pkg/StringFormatActivity.java:26: Error: Wrong argument count, format string hello2 requires 3 but format call supplies 2 [StringFormatMatches]\n" +
+                "        getResources().getString(R.string.hello2, target, \"How are you\");\n" +
+                "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+                "    res/values-es/formatstrings.xml: This definition requires 3 arguments\n" +
+                "src/test/pkg/StringFormatActivity.java:33: Error: Wrong argument type for formatting argument '#1' in hello: conversion is 'd', received String [StringFormatMatches]\n" +
+                "        String output1 = String.format(hello, target);\n" +
+                "                                              ~~~~~~\n" +
+                "    res/values-es/formatstrings.xml: Conflicting argument declaration here\n" +
+                "res/values-es/formatstrings.xml: Error: Inconsistent formatting types for argument #1 in format string hello ('%1$d'): Found both 's' and 'd' (in values/formatstrings.xml) [StringFormatMatches]\n" +
+                "    res/values/formatstrings.xml: Conflicting argument type here\n" +
+                "res/values/formatstrings.xml: Warning: Inconsistent number of arguments in formatting string hello2; found both 3 and 2 [StringFormatCount]\n" +
+                "    res/values-es/formatstrings.xml: Conflicting number of arguments here\n" +
+                "7 errors, 1 warnings\n",
+
+        lintProjectIncrementally(
+                "src/test/pkg/StringFormatActivity.java",
+                "res/values/formatstrings.xml",
+                "res/values-es/formatstrings.xml",
+                // Java files must be renamed in source tree
+                "src/test/pkg/StringFormatActivity.java.txt=>src/test/pkg/StringFormatActivity.java"
+        ));
+    }
 }

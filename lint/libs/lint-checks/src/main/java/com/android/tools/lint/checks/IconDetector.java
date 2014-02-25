@@ -31,6 +31,7 @@ import static com.android.SdkConstants.DRAWABLE_LDPI;
 import static com.android.SdkConstants.DRAWABLE_MDPI;
 import static com.android.SdkConstants.DRAWABLE_PREFIX;
 import static com.android.SdkConstants.DRAWABLE_XHDPI;
+import static com.android.SdkConstants.DRAWABLE_XXHDPI;
 import static com.android.SdkConstants.MENU_TYPE;
 import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.R_DRAWABLE_PREFIX;
@@ -135,7 +136,8 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             "-ldpi",  //$NON-NLS-1$
             "-mdpi",  //$NON-NLS-1$
             "-hdpi",  //$NON-NLS-1$
-            "-xhdpi"  //$NON-NLS-1$
+            "-xhdpi", //$NON-NLS-1$
+            "-xxhdpi",//$NON-NLS-1$
     };
 
     /** Scope needed to detect the types of icons (which involves scanning .java files,
@@ -890,6 +892,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         // should also define -hdpi and -xhdpi.
         if (context.isEnabled(ICON_MISSING_FOLDER)) {
             List<String> missing = new ArrayList<String>();
+            // TODO: If it's a launcher icon, also insist on xxhdpi!
             for (String density : REQUIRED_DENSITIES) {
                 if (!definedDensities.contains(density)) {
                     missing.add(density);

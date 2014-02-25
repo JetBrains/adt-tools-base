@@ -23,7 +23,14 @@ import static com.android.SdkConstants.TAG_INTEGER_ARRAY;
 import static com.android.SdkConstants.TAG_STRING_ARRAY;
 
 import com.android.annotations.NonNull;
+import com.android.ide.common.rendering.api.ArrayResourceValue;
+import com.android.ide.common.rendering.api.ResourceValue;
+import com.android.ide.common.res2.AbstractResourceRepository;
+import com.android.ide.common.res2.ResourceFile;
+import com.android.ide.common.res2.ResourceItem;
 import com.android.resources.ResourceFolderType;
+import com.android.resources.ResourceType;
+import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -31,6 +38,7 @@ import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -81,7 +89,7 @@ public class ArraySizeDetector extends ResourceXmlDetector {
             Severity.WARNING,
             new Implementation(
                     ArraySizeDetector.class,
-                    Scope.ALL_RESOURCES_SCOPE));
+                    Scope.RESOURCE_FILE_SCOPE));
 
     private Multimap<File, Pair<String, Integer>> mFileToArrayCount;
 
@@ -119,6 +127,11 @@ public class ArraySizeDetector extends ResourceXmlDetector {
     @Override
     public void afterCheckProject(@NonNull Context context) {
         if (context.getPhase() == 1) {
+            boolean haveAllResources = context.getScope().contains(Scope.ALL_RESOURCE_FILES);
+            if (!haveAllResources) {
+                return;
+            }
+
             // Check that all arrays for the same name have the same number of translations
 
             Set<String> alreadyReported = new HashSet<String>();
@@ -165,6 +178,7 @@ public class ArraySizeDetector extends ResourceXmlDetector {
                 }
             }
 
+            //noinspection VariableNotUsedInsideIf
             if (mLocations != null) {
                 // Request another scan through the resources such that we can
                 // gather the actual locations
@@ -245,6 +259,13 @@ public class ArraySizeDetector extends ResourceXmlDetector {
             if (phase == 1) {
                 if (context.getProject().getReportIssues()) {
                     int childCount = LintUtils.getChildCount(element);
+
+                    if (!context.getScope().contains(Scope.ALL_RESOURCE_FILES) &&
+                            context.getClient().supportsProjectResources()) {
+                        incrementalCheckCount(context, element, name, childCount);
+                        return;
+                    }
+
                     mFileToArrayCount.put(context.file, Pair.of(name, childCount));
                 }
             } else {
@@ -259,6 +280,44 @@ public class ArraySizeDetector extends ResourceXmlDetector {
                                     LintUtils.getChildCount(element)));
                     location.setSecondary(mLocations.get(name));
                     mLocations.put(name, location);
+                }
+            }
+        }
+    }
+
+    private static void incrementalCheckCount(@NonNull XmlContext context, @NonNull Element element,
+            @NonNull String name, int childCount) {
+        LintClient client = context.getClient();
+        Project project = context.getMainProject();
+        AbstractResourceRepository resources = client.getProjectResources(project, true);
+        if (resources == null) {
+            return;
+        }
+        List<ResourceItem> items = resources.getResourceItem(ResourceType.ARRAY, name);
+        if (items != null) {
+            for (ResourceItem item : items) {
+                ResourceFile source = item.getSource();
+                if (source != null && LintUtils.isSameResourceFile(context.file,
+                                                                   source.getFile())) {
+                    continue;
+                }
+                ResourceValue rv = item.getResourceValue(false);
+                if (rv instanceof ArrayResourceValue) {
+                    ArrayResourceValue arv = (ArrayResourceValue) rv;
+                    if (childCount != arv.getElementCount()) {
+                        String thisName = context.file.getParentFile().getName() + File.separator
+                                + context.file.getName();
+                        assert source != null;
+                        File otherFile = source.getFile();
+                        String otherName = otherFile.getParentFile().getName() + File.separator
+                                + otherFile.getName();
+                        String message = String.format(
+                                "Array %1$s has an inconsistent number of items (%2$d in %3$s, %4$d in %5$s)",
+                                name, childCount, thisName, arv.getElementCount(), otherName);
+
+                        context.report(INCONSISTENT, element, context.getLocation(element),
+                                message, null);
+                    }
                 }
             }
         }
