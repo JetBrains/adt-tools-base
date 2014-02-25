@@ -25,6 +25,16 @@
         help="Generate a layout XML for the fragment" />
 
     <parameter
+        id="fragmentName"
+        name="Fragment Layout Name"
+        type="string"
+        constraints="layout|nonempty|unique"
+        default="fragment_blank"
+        visibility="includeLayout"
+        suggest="fragment_${classToResource(className)}"
+        help="The name of the layout to create" />
+
+    <parameter
         id="includeFactory"
         name="Include fragment factory methods?"
         type="boolean"
