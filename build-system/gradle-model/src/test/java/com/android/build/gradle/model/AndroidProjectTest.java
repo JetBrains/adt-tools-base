@@ -53,6 +53,7 @@ import java.net.URL;
 import java.security.CodeSource;
 import java.security.KeyStore;
 import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -427,6 +428,36 @@ public class AndroidProjectTest extends TestCase {
             assertEquals("Output file for " + variant.getName(),
                     new File(buildDir, variant.getName() + ".apk"),
                     mainInfo.getOutputFile());
+        }
+    }
+
+    public void testFilteredOutBuildType() {
+        // Load the custom model for the project
+        ProjectData projectData = getModelForProject("filteredOutBuildType");
+
+        AndroidProject model = projectData.model;
+
+        assertEquals("Variant Count", 1, model.getVariants().size());
+        Variant variant = model.getVariants().iterator().next();
+        assertEquals("Variant name", "release", variant.getBuildType());
+    }
+
+    public void testFilteredOutVariants() {
+        // Load the custom model for the project
+        ProjectData projectData = getModelForProject("filteredOutVariants");
+
+        AndroidProject model = projectData.model;
+
+        Collection<Variant> variants = model.getVariants();
+        // check we have the right number of variants:
+        // arm/cupcake, arm/gingerbread, x86/gingerbread, mips/gingerbread
+        // all 4 in release and debug
+        assertEquals("Variant Count", 8, variants.size());
+
+        for (Variant variant : variants) {
+            List<String> flavors = variant.getProductFlavors();
+            assertFalse("check ignored x86/cupcake", flavors.contains("x68") && flavors.contains("cupcake"));
+            assertFalse("check ignored mips/cupcake", flavors.contains("mips") && flavors.contains("cupcake"));
         }
     }
 

@@ -42,6 +42,7 @@ public class AutomatedBuildTest extends BuildTest {
             "basic",
             "dependencies",
             "dependencyChecker",
+            "filteredOutBuildType",
             "flavored",
             "flavorlib",
             "flavoredlib",

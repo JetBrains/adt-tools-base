@@ -40,6 +40,7 @@ import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.builder.DefaultProductFlavor;
 import com.android.builder.VariantConfiguration;
+import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
@@ -52,6 +53,8 @@ import org.gradle.api.Task;
 
 import java.util.List;
 import java.util.Map;
+
+import groovy.lang.Closure;
 
 /**
  * Class to create, manage variants.
@@ -70,6 +73,8 @@ public class VariantManager {
     private final Map<String, BuildTypeData> buildTypes = Maps.newHashMap();
     private final Map<String, ProductFlavorData<GroupableProductFlavorDsl>> productFlavors = Maps.newHashMap();
     private final Map<String, SigningConfig> signingConfigs = Maps.newHashMap();
+
+    private final VariantFilterImpl variantFilter = new VariantFilterImpl();
 
     public VariantManager(
             @NonNull Project project,
@@ -260,62 +265,76 @@ public class VariantManager {
 
         ProductFlavorData defaultConfigData = basePlugin.getDefaultConfigData();
 
+        DefaultProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
+        DefaultAndroidSourceSet defaultConfigSourceSet = defaultConfigData.getSourceSet();
+
+        Closure<Void> variantFilterClosure = basePlugin.getExtension().getVariantFilter();
+
         for (BuildTypeData buildTypeData : buildTypes.values()) {
-            VariantConfiguration variantConfig = new VariantConfiguration(
-                    defaultConfigData.getProductFlavor(),
-                    defaultConfigData.getSourceSet(),
-                    buildTypeData.getBuildType(),
-                    buildTypeData.getSourceSet(),
-                    variantFactory.getVariantConfigurationType());
-
-            // create the variant and get its internal storage object.
-            BaseVariantData variantData = variantFactory.createVariantData(variantConfig);
-            // create its dependencies. They'll be resolved below.
-            VariantDependencies variantDep = VariantDependencies.compute(
-                    project, variantConfig.getFullName(),
-                    variantFactory.isVariantPublished(),
-                    buildTypeData, defaultConfigData.getMainProvider());
-            variantData.setVariantDependency(variantDep);
-
-            if (buildTypeData == testData) {
-                testedVariantData = variantData;
+            boolean ignore = false;
+            if (variantFilterClosure != null) {
+                variantFilter.reset(defaultConfig, buildTypeData.getBuildType(), null);
+                variantFilterClosure.call(variantFilter);
+                ignore = variantFilter.isIgnore();
             }
 
-            basePlugin.resolveDependencies(variantDep);
-            variantConfig.setDependencies(variantDep);
+            if (!ignore) {
+                VariantConfiguration variantConfig = new VariantConfiguration(
+                        defaultConfig,
+                        defaultConfigSourceSet,
+                        buildTypeData.getBuildType(),
+                        buildTypeData.getSourceSet(),
+                        variantFactory.getVariantConfigurationType());
 
-            basePlugin.getVariantDataList().add(variantData);
-            variantFactory.createTasks(variantData,
-                    buildTypes.get(variantConfig.getBuildType().getName()).getAssembleTask());
+                // create the variant and get its internal storage object.
+                BaseVariantData variantData = variantFactory.createVariantData(variantConfig);
+                // create its dependencies. They'll be resolved below.
+                VariantDependencies variantDep = VariantDependencies.compute(
+                        project, variantConfig.getFullName(),
+                        variantFactory.isVariantPublished(),
+                        buildTypeData, defaultConfigData.getMainProvider());
+                variantData.setVariantDependency(variantDep);
+
+                if (buildTypeData == testData) {
+                    testedVariantData = variantData;
+                }
+
+                basePlugin.resolveDependencies(variantDep);
+                variantConfig.setDependencies(variantDep);
+
+                basePlugin.getVariantDataList().add(variantData);
+                variantFactory.createTasks(variantData,
+                        buildTypes.get(variantConfig.getBuildType().getName()).getAssembleTask());
+            }
         }
 
-        assert testedVariantData != null;
+        if (testedVariantData != null) {
+            // handle the test variant
+            VariantConfiguration testVariantConfig = new VariantConfiguration(
+                    defaultConfig,
+                    defaultConfigData.getTestSourceSet(),
+                    testData.getBuildType(),
+                    null,
+                    VariantConfiguration.Type.TEST, testedVariantData.getVariantConfiguration());
 
-        // handle the test variant
-        VariantConfiguration testVariantConfig = new VariantConfiguration(
-                defaultConfigData.getProductFlavor(),
-                defaultConfigData.getTestSourceSet(),
-                testData.getBuildType(),
-                null,
-                VariantConfiguration.Type.TEST, testedVariantData.getVariantConfiguration());
+            // create the internal storage for this test variant.
+            TestVariantData testVariantData = new TestVariantData(testVariantConfig, (TestedVariantData) testedVariantData);
+            // link the testVariant to the tested variant in the other direction
+            ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
 
-        // create the internal storage for this test variant.
-        TestVariantData testVariantData = new TestVariantData(testVariantConfig, (TestedVariantData) testedVariantData);
-        // link the testVariant to the tested variant in the other direction
-        ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
+            // dependencies for the test variant, they'll be resolved below
+            VariantDependencies variantDep = VariantDependencies.compute(
+                    project, testVariantConfig.getFullName(),
+                    false /*publishVariant*/,
+                    defaultConfigData.getTestProvider());
+            testVariantData.setVariantDependency(variantDep);
 
-        // dependencies for the test variant, they'll be resolved below
-        VariantDependencies variantDep = VariantDependencies.compute(
-                project, testVariantConfig.getFullName(),
-                false /*publishVariant*/,
-                defaultConfigData.getTestProvider());
-        testVariantData.setVariantDependency(variantDep);
+            basePlugin.resolveDependencies(variantDep);
+            testVariantConfig.setDependencies(variantDep);
 
-        basePlugin.resolveDependencies(variantDep);
-        testVariantConfig.setDependencies(variantDep);
-
-        basePlugin.getVariantDataList().add(testVariantData);
-        basePlugin.createTestApkTasks(testVariantData, testedVariantData);
+            basePlugin.getVariantDataList().add(testVariantData);
+            basePlugin.createTestApkTasks(testVariantData, testedVariantData);
+        }
     }
 
     /**
@@ -337,23 +356,120 @@ public class VariantManager {
 
         BaseVariantData testedVariantData = null;
 
-        // assembleTask for this flavor(group)
-        Task assembleTask = createAssembleTask(flavorDataList);
-        project.getTasks().getByName("assemble").dependsOn(assembleTask);
+        // assembleTask for this flavor(group), created on demand if needed.
+        Task assembleTask = null;
+
+        ProductFlavorData defaultConfigData = basePlugin.getDefaultConfigData();
+        DefaultProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
+        DefaultAndroidSourceSet defaultConfigSourceSet = defaultConfigData.getSourceSet();
+
+        final List<ConfigurationProvider> variantProviders = Lists.newArrayListWithCapacity(flavorDataList.length + 2);
+
+        Closure<Void> variantFilterClosure = basePlugin.getExtension().getVariantFilter();
+        final List<ProductFlavor> productFlavorList = (variantFilterClosure != null) ? Lists.<ProductFlavor>newArrayListWithCapacity(flavorDataList.length) : null;
 
         for (BuildTypeData buildTypeData : buildTypes.values()) {
+            boolean ignore = false;
+            if (variantFilterClosure != null) {
+                productFlavorList.clear();
+                for (ProductFlavorData data : flavorDataList) {
+                    productFlavorList.add(data.getProductFlavor());
+                }
+                variantFilter.reset(defaultConfig, buildTypeData.getBuildType(), productFlavorList);
+                variantFilterClosure.call(variantFilter);
+                ignore = variantFilter.isIgnore();
+            }
+
+            if (!ignore) {
+                if (assembleTask == null) {
+                    assembleTask = createAssembleTask(flavorDataList);
+                    project.getTasks().getByName("assemble").dependsOn(assembleTask);
+                }
+
+                /// add the container of dependencies
+                // the order of the libraries is important. In descending order:
+                // build types, flavors, defaultConfig.
+                variantProviders.clear();
+                variantProviders.add(buildTypeData);
+
+                VariantConfiguration variantConfig = new VariantConfiguration(
+                        defaultConfig,
+                        defaultConfigSourceSet,
+                        buildTypeData.getBuildType(),
+                        buildTypeData.getSourceSet(),
+                        variantFactory.getVariantConfigurationType());
+
+                for (ProductFlavorData data : flavorDataList) {
+                    String dimensionName = "";
+                    DefaultProductFlavor productFlavor = data.getProductFlavor();
+
+                    if (productFlavor instanceof GroupableProductFlavorDsl) {
+                        dimensionName = ((GroupableProductFlavorDsl) productFlavor).getFlavorGroup();
+                    }
+                    variantConfig.addProductFlavor(
+                            productFlavor,
+                            data.getSourceSet(),
+                            dimensionName
+                    );
+                    variantProviders.add(data.getMainProvider());
+                }
+
+                // now add the defaultConfig
+                variantProviders.add(basePlugin.getDefaultConfigData().getMainProvider());
+
+                // create the variant and get its internal storage object.
+                BaseVariantData variantData = variantFactory.createVariantData(variantConfig);
+
+                NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer = extension
+                        .getSourceSetsContainer();
+
+                DefaultAndroidSourceSet variantSourceSet = (DefaultAndroidSourceSet) sourceSetsContainer.maybeCreate(
+                        variantConfig.getFullName());
+                variantConfig.setVariantSourceProvider(variantSourceSet);
+                // TODO: hmm this won't work
+                //variantProviders.add(new ConfigurationProviderImpl(project, variantSourceSet))
+
+                if (flavorDataList.length > 1) {
+                    DefaultAndroidSourceSet multiFlavorSourceSet = (DefaultAndroidSourceSet) sourceSetsContainer.maybeCreate(variantConfig.getFlavorName());
+                    variantConfig.setMultiFlavorSourceProvider(multiFlavorSourceSet);
+                    // TODO: hmm this won't work
+                    //variantProviders.add(new ConfigurationProviderImpl(project, multiFlavorSourceSet))
+                }
+
+                VariantDependencies variantDep = VariantDependencies.compute(
+                        project, variantConfig.getFullName(),
+                        variantFactory.isVariantPublished(),
+                        variantProviders.toArray(new ConfigurationProvider[variantProviders.size()]));
+                variantData.setVariantDependency(variantDep);
+
+                localVariantDataList.add(variantData);
+
+                if (buildTypeData == testData) {
+                    testedVariantData = variantData;
+                }
+
+                basePlugin.resolveDependencies(variantDep);
+                variantConfig.setDependencies(variantDep);
+
+                basePlugin.getVariantDataList().add(variantData);
+                variantFactory.createTasks(variantData, buildTypeData.getAssembleTask());
+            }
+        }
+
+        if (testedVariantData != null) {
+            // handle test variant
+            VariantConfiguration testVariantConfig = new VariantConfiguration(
+                    defaultConfig,
+                    defaultConfigData.getTestSourceSet(),
+                    testData.getBuildType(),
+                    null,
+                    VariantConfiguration.Type.TEST,
+                    testedVariantData.getVariantConfiguration());
+
             /// add the container of dependencies
             // the order of the libraries is important. In descending order:
-            // build types, flavors, defaultConfig.
-            List<ConfigurationProvider> variantProviders = Lists.newArrayList();
-            variantProviders.add(buildTypeData);
-
-            VariantConfiguration variantConfig = new VariantConfiguration(
-                    extension.getDefaultConfig(),
-                    basePlugin.getDefaultConfigData().getSourceSet(),
-                    buildTypeData.getBuildType(),
-                    buildTypeData.getSourceSet(),
-                    variantFactory.getVariantConfigurationType());
+            // flavors, defaultConfig. No build type for tests
+            List<ConfigurationProvider> testVariantProviders = Lists.newArrayListWithExpectedSize(1 + flavorDataList.length);
 
             for (ProductFlavorData data : flavorDataList) {
                 String dimensionName = "";
@@ -362,107 +478,36 @@ public class VariantManager {
                 if (productFlavor instanceof GroupableProductFlavorDsl) {
                     dimensionName = ((GroupableProductFlavorDsl) productFlavor).getFlavorGroup();
                 }
-                variantConfig.addProductFlavor(
+                testVariantConfig.addProductFlavor(
                         productFlavor,
-                        data.getSourceSet(),
-                        dimensionName
-                );
-                variantProviders.add(data.getMainProvider());
+                        data.getTestSourceSet(),
+                        dimensionName);
+                testVariantProviders.add(data.getTestProvider());
             }
 
-            // now add the defaultConfig
-            variantProviders.add(basePlugin.getDefaultConfigData().getMainProvider());
+            // now add the default config
+            testVariantProviders.add(basePlugin.getDefaultConfigData().getTestProvider());
 
-            // create the variant and get its internal storage object.
-            BaseVariantData variantData = variantFactory.createVariantData(variantConfig);
+            // create the internal storage for this variant.
+            TestVariantData testVariantData = new TestVariantData(testVariantConfig, (TestedVariantData) testedVariantData);
+            localVariantDataList.add(testVariantData);
+            // link the testVariant to the tested variant in the other direction
+            ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
 
-            NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer = extension
-                    .getSourceSetsContainer();
-
-            DefaultAndroidSourceSet variantSourceSet = (DefaultAndroidSourceSet) sourceSetsContainer.maybeCreate(
-                    variantConfig.getFullName());
-            variantConfig.setVariantSourceProvider(variantSourceSet);
-            // TODO: hmm this won't work
-            //variantProviders.add(new ConfigurationProviderImpl(project, variantSourceSet))
-
-            if (flavorDataList.length > 1) {
-                DefaultAndroidSourceSet multiFlavorSourceSet = (DefaultAndroidSourceSet) sourceSetsContainer.maybeCreate(variantConfig.getFlavorName());
-                variantConfig.setMultiFlavorSourceProvider(multiFlavorSourceSet);
-                // TODO: hmm this won't work
-                //variantProviders.add(new ConfigurationProviderImpl(project, multiFlavorSourceSet))
-            }
-
+            // dependencies for the test variant
             VariantDependencies variantDep = VariantDependencies.compute(
-                    project, variantConfig.getFullName(),
-                    variantFactory.isVariantPublished(),
-                    variantProviders.toArray(new ConfigurationProvider[variantProviders.size()]));
-            variantData.setVariantDependency(variantDep);
-
-            localVariantDataList.add(variantData);
-
-            if (buildTypeData == testData) {
-                testedVariantData = variantData;
-            }
+                    project, testVariantData.getVariantConfiguration().getFullName(),
+                    false /*publishVariant*/,
+                    testVariantProviders.toArray(new ConfigurationProvider[testVariantProviders.size()]));
+            testVariantData.setVariantDependency(variantDep);
 
             basePlugin.resolveDependencies(variantDep);
-            variantConfig.setDependencies(variantDep);
+            testVariantConfig.setDependencies(variantDep);
 
-            basePlugin.getVariantDataList().add(variantData);
-            variantFactory.createTasks(variantData, buildTypeData.getAssembleTask());
+            basePlugin.getVariantDataList().add(testVariantData);
+            basePlugin.createTestApkTasks(testVariantData,
+                    (BaseVariantData) testVariantData.getTestedVariantData());
         }
-
-        assert testedVariantData != null;
-
-        // handle test variant
-        VariantConfiguration testVariantConfig = new VariantConfiguration(
-                extension.getDefaultConfig(),
-                basePlugin.getDefaultConfigData().getTestSourceSet(),
-                testData.getBuildType(),
-                null,
-                VariantConfiguration.Type.TEST,
-                testedVariantData.getVariantConfiguration());
-
-        /// add the container of dependencies
-        // the order of the libraries is important. In descending order:
-        // flavors, defaultConfig. No build type for tests
-        List<ConfigurationProvider> testVariantProviders = Lists.newArrayListWithExpectedSize(1 + flavorDataList.length);
-
-        for (ProductFlavorData data : flavorDataList) {
-            String dimensionName = "";
-            DefaultProductFlavor productFlavor = data.getProductFlavor();
-
-            if (productFlavor instanceof GroupableProductFlavorDsl) {
-                dimensionName = ((GroupableProductFlavorDsl) productFlavor).getFlavorGroup();
-            }
-            testVariantConfig.addProductFlavor(
-                    productFlavor,
-                    data.getTestSourceSet(),
-                    dimensionName);
-            testVariantProviders.add(data.getTestProvider());
-        }
-
-        // now add the default config
-        testVariantProviders.add(basePlugin.getDefaultConfigData().getTestProvider());
-
-        // create the internal storage for this variant.
-        TestVariantData testVariantData = new TestVariantData(testVariantConfig, (TestedVariantData) testedVariantData);
-        localVariantDataList.add(testVariantData);
-        // link the testVariant to the tested variant in the other direction
-        ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
-
-        // dependencies for the test variant
-        VariantDependencies variantDep = VariantDependencies.compute(
-                project, testVariantData.getVariantConfiguration().getFullName(),
-                false /*publishVariant*/,
-                testVariantProviders.toArray(new ConfigurationProvider[testVariantProviders.size()]));
-        testVariantData.setVariantDependency(variantDep);
-
-        basePlugin.resolveDependencies(variantDep);
-        testVariantConfig.setDependencies(variantDep);
-
-        basePlugin.getVariantDataList().add(testVariantData);
-        basePlugin.createTestApkTasks(testVariantData,
-                (BaseVariantData) testVariantData.getTestedVariantData());
     }
 
     @NonNull

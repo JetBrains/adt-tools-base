@@ -216,6 +216,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     }
 
     @Override
+    @NonNull
     public File getBuildFolder() {
         return buildFolder;
     }
