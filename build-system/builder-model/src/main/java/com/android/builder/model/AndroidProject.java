@@ -29,7 +29,7 @@ public interface AndroidProject {
     String BUILD_MODEL_ONLY_SYSTEM_PROPERTY =  "android.build.model.only";
 
     public static final String ARTIFACT_MAIN = "_main_";
-    public static final String ARTIFACT_INSTRUMENT_TEST = "_instrument_test_";
+    public static final String ARTIFACT_ANDROID_TEST = "_android_test_";
 
     /**
      * Returns the model version. This is a string in the format X.Y.Z
