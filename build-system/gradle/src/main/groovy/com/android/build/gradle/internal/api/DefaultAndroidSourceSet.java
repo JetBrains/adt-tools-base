@@ -44,6 +44,8 @@ import groovy.lang.Closure;
 public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider {
     @NonNull
     private final String name;
+    private final boolean isLibrary;
+
     private final SourceDirectorySet javaSource;
     private final SourceDirectorySet allJavaSource;
     private final SourceDirectorySet javaResources;
@@ -57,8 +59,10 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
     private final String displayName;
     private final SourceDirectorySet allSource;
 
-    public DefaultAndroidSourceSet(@NonNull String name, @NonNull FileResolver fileResolver) {
+    public DefaultAndroidSourceSet(@NonNull String name, @NonNull FileResolver fileResolver,
+            boolean isLibrary) {
         this.name = name;
+        this.isLibrary = isLibrary;
         displayName = GUtil.toWords(this.name);
 
         String javaSrcDisplayName = String.format("%s Java source", displayName);
@@ -135,6 +139,14 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
     @Override
     @NonNull
     public String getPackageConfigurationName() {
+        if (isLibrary) {
+            if (name.equals(SourceSet.MAIN_SOURCE_SET_NAME)) {
+                return "publish";
+            } else {
+                return String.format("%sPublish", name);
+            }
+        }
+
         if (name.equals(SourceSet.MAIN_SOURCE_SET_NAME)) {
             return "apk";
         } else {

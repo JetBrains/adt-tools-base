@@ -292,6 +292,7 @@ public class VariantManager {
                 VariantDependencies variantDep = VariantDependencies.compute(
                         project, variantConfig.getFullName(),
                         variantFactory.isVariantPublished(),
+                        variantFactory.isLibrary(),
                         buildTypeData, defaultConfigData.getMainProvider());
                 variantData.setVariantDependency(variantDep);
 
@@ -327,6 +328,7 @@ public class VariantManager {
             VariantDependencies variantDep = VariantDependencies.compute(
                     project, testVariantConfig.getFullName(),
                     false /*publishVariant*/,
+                    variantFactory.isLibrary(),
                     defaultConfigData.getTestProvider(),
                     testedConfig.getType() == VariantConfiguration.Type.LIBRARY ?
                             testedVariantData.getVariantDependency() : null);
@@ -384,7 +386,7 @@ public class VariantManager {
             }
 
             if (!ignore) {
-                if (assembleTask == null) {
+                if (assembleTask == null && flavorDataList.length > 1) {
                     assembleTask = createAssembleTask(flavorDataList);
                     project.getTasks().getByName("assemble").dependsOn(assembleTask);
                 }
@@ -442,6 +444,7 @@ public class VariantManager {
                 VariantDependencies variantDep = VariantDependencies.compute(
                         project, variantConfig.getFullName(),
                         variantFactory.isVariantPublished(),
+                        variantFactory.isLibrary(),
                         variantProviders.toArray(new ConfigurationProvider[variantProviders.size()]));
                 variantData.setVariantDependency(variantDep);
 
@@ -455,7 +458,20 @@ public class VariantManager {
                 variantConfig.setDependencies(variantDep);
 
                 basePlugin.getVariantDataList().add(variantData);
-                variantFactory.createTasks(variantData, buildTypeData.getAssembleTask());
+                variantFactory.createTasks(variantData, null);
+
+                // setup the task dependencies
+                // build type
+                buildTypeData.getAssembleTask().dependsOn(variantData.assembleTask);
+                // each flavor
+                for (ProductFlavorData data : flavorDataList) {
+                    data.getAssembleTask().dependsOn(variantData.assembleTask);
+                }
+
+                // flavor combo
+                if (assembleTask != null) {
+                    assembleTask.dependsOn(variantData.assembleTask);
+                }
             }
         }
 
@@ -507,6 +523,7 @@ public class VariantManager {
             VariantDependencies variantDep = VariantDependencies.compute(
                     project, testVariantData.getVariantConfiguration().getFullName(),
                     false /*publishVariant*/,
+                    variantFactory.isLibrary(),
                     testVariantProviders.toArray(new ConfigurationProvider[testVariantProviders.size()]));
             testVariantData.setVariantDependency(variantDep);
 
@@ -524,7 +541,7 @@ public class VariantManager {
         String name = ProductFlavorData.getFlavoredName(flavorDataList, true);
 
         Task assembleTask = project.getTasks().create("assemble" + name);
-        assembleTask.setDescription("Assembles all builds for flavor " + name);
+        assembleTask.setDescription("Assembles all builds for flavor combination: " + name);
         assembleTask.setGroup("Build");
 
         return assembleTask;

@@ -28,6 +28,8 @@
         @NonNull
         public List<ProductFlavor> getFlavors();
   To skip a variant, call setIgnore(false)
+- Library dependency scopes are now 'provided', 'compile', 'publish'.
+  The 'publish' and 'apk' configurations don't extend 'compile' anymore but the composite configurations are still properly setup.
 - Fix issue where variant specific source folders where not used for java compilation.
 - Lots of misc fixes.
 
