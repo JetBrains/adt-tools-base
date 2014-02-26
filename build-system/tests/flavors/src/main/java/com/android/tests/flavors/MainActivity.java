@@ -24,5 +24,8 @@ public class MainActivity extends Activity {
 
         tv = (TextView) findViewById(R.id.codeoverlay2);
         tv.setText(com.android.tests.flavors.group2.SomeClass.getString());
+
+        tv = (TextView) findViewById(R.id.codeoverlay3);
+        tv.setText(com.android.tests.flavors.CustomizedClass.getString());
     }
 }

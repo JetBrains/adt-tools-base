@@ -28,7 +28,7 @@
         @NonNull
         public List<ProductFlavor> getFlavors();
   To skip a variant, call setIgnore(false)
-
+- Fix issue where variant specific source folders where not used for java compilation.
 - Lots of misc fixes.
 
 0.8.3:
