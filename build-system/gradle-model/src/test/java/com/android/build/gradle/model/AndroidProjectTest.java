@@ -556,9 +556,10 @@ public class AndroidProjectTest extends TestCase {
         assertEquals(1, libs.size());
         AndroidLibrary androidLibrary = libs.iterator().next();
         assertNotNull(androidLibrary);
+        assertEquals(":lib1", androidLibrary.getProject());
         // TODO: right now we can only test the folder name efficiently
-        assertTrue(androidLibrary.getFolder().isDirectory());
-        assertTrue(androidLibrary.getFolder().getPath().endsWith("/flavorlib/lib1/unspecified"));
+        assertTrue("lib1 folder check", androidLibrary.getFolder().isDirectory());
+        assertTrue(androidLibrary.getFolder().getPath(), androidLibrary.getFolder().getPath().endsWith("/flavorlib/lib1/unspecified"));
 
         ProductFlavorContainer flavor2 = getProductFlavor(productFlavors, "flavor2");
         assertNotNull(flavor2);
@@ -573,9 +574,61 @@ public class AndroidProjectTest extends TestCase {
         assertEquals(1, libs.size());
         androidLibrary = libs.iterator().next();
         assertNotNull(androidLibrary);
+        assertEquals(":lib2", androidLibrary.getProject());
         // TODO: right now we can only test the folder name efficiently
-        assertTrue(androidLibrary.getFolder().isDirectory());
-        assertTrue(androidLibrary.getFolder().getPath().endsWith("/flavorlib/lib2/unspecified"));
+        assertTrue("lib2 folder check", androidLibrary.getFolder().isDirectory());
+        assertTrue(androidLibrary.getFolder().getPath(), androidLibrary.getFolder().getPath().endsWith("/flavorlib/lib2/unspecified"));
+    }
+
+    public void testFlavoredLib() throws Exception {
+        Map<String, ProjectData> map = getModelForMultiProject("flavoredlib");
+
+        ProjectData appModelData = map.get(":app");
+        assertNotNull("Module app null-check", appModelData);
+        AndroidProject model = appModelData.model;
+
+        assertFalse("Library Project", model.isLibrary());
+
+        Collection<Variant> variants = model.getVariants();
+        Collection<ProductFlavorContainer> productFlavors = model.getProductFlavors();
+
+        ProductFlavorContainer flavor1 = getProductFlavor(productFlavors, "flavor1");
+        assertNotNull(flavor1);
+
+        Variant flavor1Debug = getVariant(variants, "flavor1Debug");
+        assertNotNull(flavor1Debug);
+
+        Dependencies dependencies = flavor1Debug.getMainArtifact().getDependencies();
+        assertNotNull(dependencies);
+        Collection<AndroidLibrary> libs = dependencies.getLibraries();
+        assertNotNull(libs);
+        assertEquals(1, libs.size());
+        AndroidLibrary androidLibrary = libs.iterator().next();
+        assertNotNull(androidLibrary);
+        assertEquals(":lib", androidLibrary.getProject());
+        assertEquals("flavor1Release", androidLibrary.getProjectVariant());
+        assertTrue("lib folder check", androidLibrary.getFolder().isDirectory());
+        // TODO: right now we can only test the folder name efficiently
+        assertTrue(androidLibrary.getFolder().getPath(), androidLibrary.getFolder().getPath().endsWith("/flavoredlib/lib/unspecified/flavor1Release"));
+
+        ProductFlavorContainer flavor2 = getProductFlavor(productFlavors, "flavor2");
+        assertNotNull(flavor2);
+
+        Variant flavor2Debug = getVariant(variants, "flavor2Debug");
+        assertNotNull(flavor2Debug);
+
+        dependencies = flavor2Debug.getMainArtifact().getDependencies();
+        assertNotNull(dependencies);
+        libs = dependencies.getLibraries();
+        assertNotNull(libs);
+        assertEquals(1, libs.size());
+        androidLibrary = libs.iterator().next();
+        assertNotNull(androidLibrary);
+        assertEquals(":lib", androidLibrary.getProject());
+        assertEquals("flavor2Release", androidLibrary.getProjectVariant());
+        assertTrue("lib folder check", androidLibrary.getFolder().isDirectory());
+        // TODO: right now we can only test the folder name efficiently
+        assertTrue(androidLibrary.getFolder().getPath(), androidLibrary.getFolder().getPath().endsWith("/flavoredlib/lib/unspecified/flavor2Release"));
     }
 
     public void testMultiproject() throws Exception {
