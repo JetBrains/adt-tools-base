@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal;
 
 import static com.android.builder.BuilderConstants.DEBUG;
-import static com.android.builder.BuilderConstants.INSTRUMENT_TEST;
+import static com.android.builder.BuilderConstants.ANDROID_TEST;
 import static com.android.builder.BuilderConstants.LINT;
 import static com.android.builder.BuilderConstants.UI_TEST;
 
@@ -145,7 +145,7 @@ public class VariantManager {
 
         DefaultAndroidSourceSet mainSourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(
                 productFlavor.getName());
-        String testName = INSTRUMENT_TEST + StringHelper.capitalize(productFlavor.getName());
+        String testName = ANDROID_TEST + StringHelper.capitalize(productFlavor.getName());
         DefaultAndroidSourceSet testSourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(
                 testName);
 
@@ -582,9 +582,9 @@ public class VariantManager {
     }
 
     private static void checkName(@NonNull String name, @NonNull String displayName) {
-        if (name.startsWith(INSTRUMENT_TEST)) {
+        if (name.startsWith(ANDROID_TEST)) {
             throw new RuntimeException(String.format(
-                    "%1$s names cannot start with '%2$s'", displayName, INSTRUMENT_TEST));
+                    "%1$s names cannot start with '%2$s'", displayName, ANDROID_TEST));
         }
 
         if (name.startsWith(UI_TEST)) {

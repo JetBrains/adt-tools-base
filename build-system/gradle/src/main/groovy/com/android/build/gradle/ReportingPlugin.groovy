@@ -24,7 +24,7 @@ import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.tasks.TaskCollection
 
 import static com.android.builder.BuilderConstants.REPORTS
-import static com.android.builder.BuilderConstants.FD_INSTRUMENT_RESULTS
+import static com.android.builder.BuilderConstants.FD_ANDROID_RESULTS
 import static com.android.builder.BuilderConstants.INSTRUMENTATION_TESTS
 /**
  * Gradle plugin class for 'reporting' projects.
@@ -52,7 +52,7 @@ class ReportingPlugin implements org.gradle.api.Plugin<Project> {
 
         mergeReportsTask.conventionMapping.resultsDir = {
             String location = extension.resultsDir != null ?
-                extension.resultsDir : "$project.buildDir/$FD_INSTRUMENT_RESULTS"
+                extension.resultsDir : "$project.buildDir/$FD_ANDROID_RESULTS"
 
             project.file(location)
         }

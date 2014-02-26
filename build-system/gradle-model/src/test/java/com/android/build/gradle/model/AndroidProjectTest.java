@@ -16,7 +16,8 @@
 
 package com.android.build.gradle.model;
 
-import static com.android.builder.model.AndroidProject.ARTIFACT_INSTRUMENT_TEST;
+import static com.android.builder.BuilderConstants.ANDROID_TEST;
+import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -212,13 +213,13 @@ public class AndroidProjectTest extends TestCase {
 
             assertEquals(1, pfContainer.getExtraSourceProviders().size());
             SourceProviderContainer container = getSourceProviderContainer(
-                    pfContainer.getExtraSourceProviders(), ARTIFACT_INSTRUMENT_TEST);
+                    pfContainer.getExtraSourceProviders(), ARTIFACT_ANDROID_TEST);
             assertNotNull(container);
 
             new SourceProviderTester(
                     model.getName(),
                     projectDir,
-                    "instrumentTest" + StringHelper.capitalize(name),
+                    ANDROID_TEST + StringHelper.capitalize(name),
                     container.getSourceProvider())
                 .test();
         }
@@ -242,11 +243,11 @@ public class AndroidProjectTest extends TestCase {
 
         // test the main instrumentTest source provider
         SourceProviderContainer testSourceProviders = getSourceProviderContainer(
-                defaultConfig.getExtraSourceProviders(), ARTIFACT_INSTRUMENT_TEST);
+                defaultConfig.getExtraSourceProviders(), ARTIFACT_ANDROID_TEST);
         assertNotNull("InstrumentTest source Providers null-check", testSourceProviders);
 
         new SourceProviderTester(model.getName(), projectDir,
-                "instrumentTest", testSourceProviders.getSourceProvider())
+                ANDROID_TEST, testSourceProviders.getSourceProvider())
             .test();
 
         // test the source provider for the build types
@@ -301,7 +302,7 @@ public class AndroidProjectTest extends TestCase {
 
         // this variant is tested.
         AndroidArtifact debugTestInfo = getAndroidArtifact(debugExtraAndroidArtifacts,
-                ARTIFACT_INSTRUMENT_TEST);
+                ARTIFACT_ANDROID_TEST);
         assertNotNull("Test info null-check", debugTestInfo);
         assertEquals("Test package name", "com.android.tests.basic.debug.test",
                 debugTestInfo.getPackageName());
@@ -325,7 +326,7 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Release javaCompileTask", "compileReleaseJava", relMainInfo.getJavaCompileTaskName());
 
         Collection<AndroidArtifact> releaseExtraAndroidArtifacts = releaseVariant.getExtraAndroidArtifacts();
-        AndroidArtifact relTestInfo = getAndroidArtifact(releaseExtraAndroidArtifacts, ARTIFACT_INSTRUMENT_TEST);
+        AndroidArtifact relTestInfo = getAndroidArtifact(releaseExtraAndroidArtifacts, ARTIFACT_ANDROID_TEST);
         assertNull("Release test info null-check", relTestInfo);
 
         // check debug dependencies
@@ -388,11 +389,11 @@ public class AndroidProjectTest extends TestCase {
                 .test();
 
         SourceProviderContainer testSourceProviderContainer = getSourceProviderContainer(
-                defaultConfig.getExtraSourceProviders(), ARTIFACT_INSTRUMENT_TEST);
+                defaultConfig.getExtraSourceProviders(), ARTIFACT_ANDROID_TEST);
         assertNotNull("InstrumentTest source Providers null-check", testSourceProviderContainer);
 
         new SourceProviderTester(model.getName(), projectDir,
-                "instrumentTest", testSourceProviderContainer.getSourceProvider())
+                ANDROID_TEST, testSourceProviderContainer.getSourceProvider())
                 .setJavaDir("tests/java")
                 .setResourcesDir("tests/resources")
                 .setAidlDir("tests/aidl")
@@ -479,11 +480,11 @@ public class AndroidProjectTest extends TestCase {
                 .test();
 
         SourceProviderContainer testSourceProviderContainer = getSourceProviderContainer(
-                defaultConfig.getExtraSourceProviders(), ARTIFACT_INSTRUMENT_TEST);
+                defaultConfig.getExtraSourceProviders(), ARTIFACT_ANDROID_TEST);
         assertNotNull("InstrumentTest source Providers null-check", testSourceProviderContainer);
 
         new SourceProviderTester(model.getName(), projectDir,
-                "instrumentTest", testSourceProviderContainer.getSourceProvider())
+                ANDROID_TEST, testSourceProviderContainer.getSourceProvider())
                 .test();
 
         Collection<BuildTypeContainer> buildTypes = model.getBuildTypes();
@@ -619,7 +620,7 @@ public class AndroidProjectTest extends TestCase {
 
         Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts();
         AndroidArtifact testArtifact = getAndroidArtifact(extraAndroidArtifact,
-                ARTIFACT_INSTRUMENT_TEST);
+                ARTIFACT_ANDROID_TEST);
         assertNotNull(testArtifact);
 
         Dependencies testDependencies = testArtifact.getDependencies();
@@ -638,7 +639,7 @@ public class AndroidProjectTest extends TestCase {
 
         Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts();
         AndroidArtifact testArtifact = getAndroidArtifact(extraAndroidArtifact,
-                ARTIFACT_INSTRUMENT_TEST);
+                ARTIFACT_ANDROID_TEST);
         assertNotNull(testArtifact);
 
         Dependencies testDependencies = testArtifact.getDependencies();
@@ -754,7 +755,7 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Extra artifact size check", 2, extraArtifacts.size());
 
         assertNotNull("instrument test metadata null-check",
-                getArtifactMetaData(extraArtifacts, ARTIFACT_INSTRUMENT_TEST));
+                getArtifactMetaData(extraArtifacts, ARTIFACT_ANDROID_TEST));
 
         // get the custom one.
         ArtifactMetaData extraArtifactMetaData = getArtifactMetaData(extraArtifacts, "__test__");
@@ -804,7 +805,7 @@ public class AndroidProjectTest extends TestCase {
 
             assertNotNull(
                     "Extra source provider container for product flavor '" + name + "': instTest check",
-                    getSourceProviderContainer(extraSourceProviderContainers, ARTIFACT_INSTRUMENT_TEST));
+                    getSourceProviderContainer(extraSourceProviderContainers, ARTIFACT_ANDROID_TEST));
 
 
             SourceProviderContainer sourceProviderContainer = getSourceProviderContainer(
