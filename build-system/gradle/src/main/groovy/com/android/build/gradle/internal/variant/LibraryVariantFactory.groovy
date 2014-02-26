@@ -83,6 +83,11 @@ public class LibraryVariantFactory implements VariantFactory {
     }
 
     @Override
+    boolean isLibrary() {
+        return true
+    }
+
+    @Override
     public void createTasks(@NonNull BaseVariantData variantData, @Nullable Task assembleTask) {
         LibraryVariantData libVariantData = variantData as LibraryVariantData
         VariantConfiguration variantConfig = variantData.variantConfiguration
@@ -252,7 +257,7 @@ public class LibraryVariantFactory implements VariantFactory {
         variantData.outputFile = bundle.archivePath
 
         if (extension.defaultPublishConfig.equals(fullName)) {
-            setupDefaultConfig(project, variantData.variantDependency.compileConfiguration)
+            setupDefaultConfig(project, variantData.variantDependency.packageConfiguration)
 
             // add the artifact that will be published
             project.artifacts.add("default", bundle)

@@ -18,6 +18,7 @@ package com.android.build.gradle.internal
 
 import com.android.annotations.NonNull
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
+import com.android.builder.BuilderConstants
 import com.android.builder.DefaultProductFlavor
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -64,7 +65,7 @@ public class ProductFlavorData<T extends DefaultProductFlavor> {
     final ConfigurationProvider mainProvider
     final ConfigurationProvider testProvider
 
-    Task assembleTask
+    final Task assembleTask
 
     ProductFlavorData(T productFlavor,
                       DefaultAndroidSourceSet sourceSet, DefaultAndroidSourceSet testSourceSet,
@@ -74,6 +75,13 @@ public class ProductFlavorData<T extends DefaultProductFlavor> {
         this.testSourceSet = testSourceSet
         mainProvider = new ConfigurationProviderImpl(project, sourceSet)
         testProvider = new ConfigurationProviderImpl(project, testSourceSet)
+
+        if (!BuilderConstants.MAIN.equals(sourceSet.name)) {
+            assembleTask = project.tasks.create("assemble${sourceSet.name.capitalize()}")
+            assembleTask.setGroup("Build")
+        } else {
+            assembleTask = null
+        }
     }
 
     public static String getFlavoredName(ProductFlavorData[] flavorDataArray, boolean capitalized) {

@@ -34,14 +34,19 @@ public class AndroidSourceSetFactory implements NamedDomainObjectFactory<Android
     @NonNull
     private final FileResolver fileResolver;
 
+    private final boolean isLibrary;
+
     public AndroidSourceSetFactory(@NonNull Instantiator instantiator,
-                                   @NonNull FileResolver fileResolver) {
+                                   @NonNull FileResolver fileResolver,
+                                            boolean isLibrary) {
         this.instantiator = instantiator;
         this.fileResolver = fileResolver;
+        this.isLibrary = isLibrary;
     }
 
     @Override
     public AndroidSourceSet create(String name) {
-        return instantiator.newInstance(DefaultAndroidSourceSet.class, name, fileResolver);
+        return instantiator.newInstance(DefaultAndroidSourceSet.class,
+                name, fileResolver, isLibrary);
     }
 }
