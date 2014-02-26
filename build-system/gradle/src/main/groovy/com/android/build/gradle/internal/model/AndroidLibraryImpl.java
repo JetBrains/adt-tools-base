@@ -31,6 +31,8 @@ public class AndroidLibraryImpl implements AndroidLibrary, Serializable {
 
     @Nullable
     private final String project;
+    @Nullable
+    private final String variant;
     @NonNull
     private final File bundle;
     @NonNull
@@ -60,7 +62,8 @@ public class AndroidLibraryImpl implements AndroidLibrary, Serializable {
 
     AndroidLibraryImpl(@NonNull LibraryDependency libraryDependency,
                        @NonNull List<AndroidLibrary> dependencies,
-                       @Nullable String project) {
+                       @Nullable String project,
+                       @Nullable String variant) {
         this.dependencies = dependencies;
         bundle = libraryDependency.getBundle();
         folder = libraryDependency.getFolder();
@@ -76,12 +79,19 @@ public class AndroidLibraryImpl implements AndroidLibrary, Serializable {
         lintJar = libraryDependency.getLintJar();
 
         this.project = project;
+        this.variant = variant;
     }
 
     @Nullable
     @Override
     public String getProject() {
         return project;
+    }
+
+    @Nullable
+    @Override
+    public String getProjectVariant() {
+        return variant;
     }
 
     @NonNull

@@ -154,7 +154,8 @@ public class DependenciesImpl implements Dependencies, Serializable {
         }
 
         return new AndroidLibraryImpl(libImpl, clonedDeps,
-                projectMatch != null ? projectMatch.getPath() : null);
+                projectMatch != null ? projectMatch.getPath() : null,
+                libImpl.getProjectVariant());
     }
 
     @Nullable

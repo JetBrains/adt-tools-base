@@ -71,6 +71,12 @@ public abstract class LibraryBundle implements LibraryDependency {
         return null;
     }
 
+    @Nullable
+    @Override
+    public String getProjectVariant() {
+        return null;
+    }
+
     @Override
     @NonNull
     public File getManifest() {
