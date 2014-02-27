@@ -527,7 +527,6 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Dependency project path", ":lib", androidLibrary.getProject());
 
         // TODO: right now we can only test the folder name efficiently
-        assertTrue(androidLibrary.getFolder().isDirectory());
         assertTrue(androidLibrary.getFolder().getPath().endsWith("/tictactoe/lib/unspecified"));
     }
 
@@ -558,7 +557,6 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull(androidLibrary);
         assertEquals(":lib1", androidLibrary.getProject());
         // TODO: right now we can only test the folder name efficiently
-        assertTrue("lib1 folder check", androidLibrary.getFolder().isDirectory());
         assertTrue(androidLibrary.getFolder().getPath(), androidLibrary.getFolder().getPath().endsWith("/flavorlib/lib1/unspecified"));
 
         ProductFlavorContainer flavor2 = getProductFlavor(productFlavors, "flavor2");
@@ -576,7 +574,6 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull(androidLibrary);
         assertEquals(":lib2", androidLibrary.getProject());
         // TODO: right now we can only test the folder name efficiently
-        assertTrue("lib2 folder check", androidLibrary.getFolder().isDirectory());
         assertTrue(androidLibrary.getFolder().getPath(), androidLibrary.getFolder().getPath().endsWith("/flavorlib/lib2/unspecified"));
     }
 
@@ -607,7 +604,6 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull(androidLibrary);
         assertEquals(":lib", androidLibrary.getProject());
         assertEquals("flavor1Release", androidLibrary.getProjectVariant());
-        assertTrue("lib folder check", androidLibrary.getFolder().isDirectory());
         // TODO: right now we can only test the folder name efficiently
         assertTrue(androidLibrary.getFolder().getPath(), androidLibrary.getFolder().getPath().endsWith("/flavoredlib/lib/unspecified/flavor1Release"));
 
@@ -626,7 +622,6 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull(androidLibrary);
         assertEquals(":lib", androidLibrary.getProject());
         assertEquals("flavor2Release", androidLibrary.getProjectVariant());
-        assertTrue("lib folder check", androidLibrary.getFolder().isDirectory());
         // TODO: right now we can only test the folder name efficiently
         assertTrue(androidLibrary.getFolder().getPath(), androidLibrary.getFolder().getPath().endsWith("/flavoredlib/lib/unspecified/flavor2Release"));
     }
