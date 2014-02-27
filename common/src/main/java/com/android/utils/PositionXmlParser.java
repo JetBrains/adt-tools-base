@@ -694,7 +694,7 @@ public class PositionXmlParser {
         return new DefaultPosition(line, column, offset);
     }
 
-    protected interface Position {
+    public interface Position {
         /**
          * Linked position: for a begin position this will point to the
          * corresponding end position. For an end position this will be null.
