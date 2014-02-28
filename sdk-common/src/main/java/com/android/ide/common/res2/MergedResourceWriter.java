@@ -25,7 +25,7 @@ import static com.android.utils.SdkUtils.createPathComment;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.internal.AaptRunner;
+import com.android.ide.common.internal.PngCruncher;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
@@ -60,7 +60,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     public static final String FILENAME_PREFIX = "From: ";
 
     @Nullable
-    private final AaptRunner mAaptRunner;
+    private final PngCruncher mCruncher;
 
     private boolean mInsertSourceMarkers = true;
 
@@ -76,9 +76,9 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
      */
     private Set<String> mQualifierWithDeletedValues;
 
-    public MergedResourceWriter(@NonNull File rootFolder, @Nullable AaptRunner aaptRunner) {
+    public MergedResourceWriter(@NonNull File rootFolder, @Nullable PngCruncher pngRunner) {
         super(rootFolder);
-        mAaptRunner = aaptRunner;
+        mCruncher = pngRunner;
     }
 
     /**
@@ -180,10 +180,9 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                             if (itemType == ResourceType.RAW) {
                                 // Don't crunch, don't insert source comments, etc - leave alone.
                                 Files.copy(file, outFile);
-                            } else if (mAaptRunner != null && filename.endsWith(DOT_PNG)) {
-                                // run aapt in single crunch mode on the original file to write the
-                                // destination file.
-                                mAaptRunner.crunchPng(file, outFile);
+                            } else if (mCruncher != null && filename.endsWith(DOT_PNG)) {
+                                // Crunch the the PNG file.
+                                mCruncher.crunchPng(file, outFile);
                             } else if (mInsertSourceMarkers && filename.endsWith(DOT_XML)) {
                                 SdkUtils.copyXmlWithSourceReference(file, outFile);
                             } else {

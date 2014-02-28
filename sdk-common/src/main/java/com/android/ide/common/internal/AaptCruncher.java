@@ -17,21 +17,19 @@
 package com.android.ide.common.internal;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * Instances of this class are able to run aapt command.
  */
-public class AaptRunner {
+public class AaptCruncher implements PngCruncher {
 
     private final String mAaptLocation;
     private final CommandLineRunner mCommandLineRunner;
 
-    public AaptRunner(@NonNull String aaptLocation, @NonNull CommandLineRunner commandLineRunner) {
+    public AaptCruncher(@NonNull String aaptLocation, @NonNull CommandLineRunner commandLineRunner) {
         mAaptLocation = aaptLocation;
         mCommandLineRunner = commandLineRunner;
     }
@@ -44,30 +42,18 @@ public class AaptRunner {
      * @throws InterruptedException
      * @throws LoggedErrorException
      */
+    @Override
     public void crunchPng(File from, File to)
             throws InterruptedException, LoggedErrorException, IOException {
-        crunchPng(from, to, null);
-    }
-
-    /**
-     * Runs the aapt crunch command on a single file
-     * @param from the file to crunch
-     * @param to the output file
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws LoggedErrorException
-     */
-    public void crunchPng(File from, File to, @Nullable Map<String, String> envVariableMap)
-            throws IOException, InterruptedException, LoggedErrorException {
         String[] command = new String[] {
-            mAaptLocation,
-            "s",
-            "-i",
-            from.getAbsolutePath(),
-            "-o",
-            to.getAbsolutePath()
+                mAaptLocation,
+                "s",
+                "-i",
+                from.getAbsolutePath(),
+                "-o",
+                to.getAbsolutePath()
         };
 
-        mCommandLineRunner.runCmdLine(command, envVariableMap);
+        mCommandLineRunner.runCmdLine(command, null);
     }
 }
