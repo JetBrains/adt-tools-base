@@ -3,15 +3,15 @@ buildscript {
         maven { url '../../../../../out/host/gradle/repo' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.8.3-SNAPSHOT'
+        classpath 'com.android.tools.build:gradle:0.9.0-SNAPSHOT'
     }
 }
 
 apply plugin: 'android-library'
 
 android {
-    compileSdkVersion 15
-    buildToolsVersion "19.0.1"
+    compileSdkVersion 19
+    buildToolsVersion "19.0.2"
 
     defaultConfig {
         versionCode 12
@@ -22,11 +22,13 @@ android {
         consumerProguardFiles 'A.txt'
     }
 
-    debug {
-    }
+    buildTypes {
+        debug {
+        }
 
-    release {
-        runProguard true
-        consumerProguardFiles 'B.txt', 'C.txt'
+        release {
+            runProguard true
+            consumerProguardFiles 'B.txt', 'C.txt'
+        }
     }
 }

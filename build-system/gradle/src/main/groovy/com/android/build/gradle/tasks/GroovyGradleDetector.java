@@ -24,6 +24,7 @@ import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.utils.Pair;
+import com.google.common.collect.Lists;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
@@ -71,8 +72,10 @@ public class GroovyGradleDetector extends GradleDetector {
 
         List<ASTNode> astNodes = new AstBuilder().buildFromString(source);
         GroovyCodeVisitor visitor = new CodeVisitorSupport() {
+            private List<MethodCallExpression> mMethodCallStack = Lists.newArrayList();
             @Override
             public void visitMethodCallExpression(MethodCallExpression expression) {
+                mMethodCallStack.add(expression);
                 super.visitMethodCallExpression(expression);
                 Expression arguments = expression.getArguments();
                 if (arguments instanceof ArgumentListExpression) {
@@ -81,7 +84,8 @@ public class GroovyGradleDetector extends GradleDetector {
                     if (expressions.size() == 1 &&
                             expressions.get(0) instanceof ClosureExpression) {
                         String parent = expression.getMethodAsString();
-                        if (isInterestingBlock(parent)) {
+                        String parentParent = getParentParent();
+                        if (isInterestingBlock(parent, parentParent)) {
                             ClosureExpression closureExpression =
                                     (ClosureExpression)expressions.get(0);
                             Statement block = closureExpression.getCode();
@@ -92,14 +96,16 @@ public class GroovyGradleDetector extends GradleDetector {
                                         ExpressionStatement e = (ExpressionStatement)statement;
                                         if (e.getExpression() instanceof MethodCallExpression) {
                                             checkDslProperty(parent,
-                                                    (MethodCallExpression)e.getExpression());
+                                                    (MethodCallExpression)e.getExpression(),
+                                                    parentParent);
                                         }
                                     } else if (statement instanceof ReturnStatement) {
                                         // Single item in block
                                         ReturnStatement e = (ReturnStatement)statement;
                                         if (e.getExpression() instanceof MethodCallExpression) {
                                             checkDslProperty(parent,
-                                                    (MethodCallExpression)e.getExpression());
+                                                    (MethodCallExpression)e.getExpression(),
+                                                    parentParent);
                                         }
                                     }
                                 }
@@ -107,13 +113,34 @@ public class GroovyGradleDetector extends GradleDetector {
                         }
                     }
                 }
+                assert !mMethodCallStack.isEmpty();
+                assert mMethodCallStack.get(mMethodCallStack.size() - 1) == expression;
+                mMethodCallStack.remove(mMethodCallStack.size() - 1);
             }
 
-            private void checkDslProperty(String parent, MethodCallExpression c) {
+            private String getParentParent() {
+                for (int i = mMethodCallStack.size() - 2; i >= 0; i--) {
+                    MethodCallExpression expression = mMethodCallStack.get(i);
+                    Expression arguments = expression.getArguments();
+                    if (arguments instanceof ArgumentListExpression) {
+                        ArgumentListExpression ale = (ArgumentListExpression)arguments;
+                        List<Expression> expressions = ale.getExpressions();
+                        if (expressions.size() == 1 &&
+                                expressions.get(0) instanceof ClosureExpression) {
+                            return expression.getMethodAsString();
+                        }
+                    }
+                }
+
+                return null;
+            }
+
+            private void checkDslProperty(String parent, MethodCallExpression c,
+                    String parentParent) {
                 String property = c.getMethodAsString();
-                if (isInterestingProperty(property, parent)) {
+                if (isInterestingProperty(property, parent, getParentParent())) {
                     String value = getText(c.getArguments());
-                    checkDslPropertyAssignment(context, property, value, parent, c);
+                    checkDslPropertyAssignment(context, property, value, parent, parentParent, c);
                 }
             }
 

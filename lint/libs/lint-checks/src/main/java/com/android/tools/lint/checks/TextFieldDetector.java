@@ -30,11 +30,15 @@ import static com.android.SdkConstants.NEW_ID_PREFIX;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
+import com.android.ide.common.rendering.api.ResourceValue;
+import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
+import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
@@ -42,9 +46,11 @@ import com.android.tools.lint.detector.api.XmlContext;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Checks for usability problems in text fields: omitting inputType, or omitting a hint.
@@ -94,19 +100,45 @@ public class TextFieldDetector extends LayoutDetector {
 
     @Override
     public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
-        String style = element.getAttribute(ATTR_STYLE);
-        if (style != null && !style.isEmpty()) {
-            // The input type might be specified via a style. This will require
-            // us to track these (similar to what is done for the
-            // RequiredAttributeDetector to track layout_width and layout_height
-            // in style declarations). For now, simply ignore these elements
-            // to avoid producing false positives.
-            return;
+        Node inputTypeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_INPUT_TYPE);
+        String inputType = "";
+        if (inputTypeNode != null) {
+            inputType = inputTypeNode.getNodeValue();
         }
 
-        Attr inputTypeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_INPUT_TYPE);
-        if (inputTypeNode == null &&
-                !element.hasAttributeNS(ANDROID_URI, ATTR_HINT)) {
+        boolean haveHint = false;
+        if (inputTypeNode == null) {
+            haveHint = element.hasAttributeNS(ANDROID_URI, ATTR_HINT);
+            String style = element.getAttribute(ATTR_STYLE);
+            if (style != null && !style.isEmpty()) {
+                LintClient client = context.getClient();
+                if (client.supportsProjectResources()) {
+                    Project project = context.getMainProject();
+                    List<ResourceValue> styles = LintUtils.getStyleAttributes(project, client,
+                            style, ANDROID_URI, ATTR_INPUT_TYPE);
+                    if (styles != null && !styles.isEmpty()) {
+                        ResourceValue value = styles.get(0);
+                        inputType = value.getValue();
+                        inputTypeNode = element;
+                    } else if (!haveHint) {
+                        styles = LintUtils.getStyleAttributes(project, client, style,
+                                ANDROID_URI, ATTR_HINT);
+                        if (styles != null && !styles.isEmpty()) {
+                            haveHint = true;
+                        }
+                    }
+                } else {
+                    // The input type might be specified via a style. This will require
+                    // us to track these (similar to what is done for the
+                    // RequiredAttributeDetector to track layout_width and layout_height
+                    // in style declarations). For now, simply ignore these elements
+                    // to avoid producing false positives.
+                    return;
+                }
+            }
+        }
+
+        if (inputTypeNode == null && !haveHint) {
             // Also make sure the EditText does not set an inputMethod in which case
             // an inputType might be provided from the input.
             if (element.hasAttributeNS(ANDROID_URI, ATTR_INPUT_METHOD)) {
@@ -128,11 +160,6 @@ public class TextFieldDetector extends LayoutDetector {
         if (id.startsWith("editText")) { //$NON-NLS-1$
             // Just the default label
             return;
-        }
-
-        String inputType = "";
-        if (inputTypeNode != null) {
-            inputType = inputTypeNode.getValue();
         }
 
         // TODO: See if the name is just the default names (button1, editText1 etc)
@@ -208,7 +235,7 @@ public class TextFieldDetector extends LayoutDetector {
         }
     }
 
-    private static void reportMismatch(XmlContext context, Attr idNode, Attr inputTypeNode,
+    private static void reportMismatch(XmlContext context, Attr idNode, Node inputTypeNode,
             String message) {
         Location location;
         if (inputTypeNode != null) {

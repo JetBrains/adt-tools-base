@@ -143,6 +143,22 @@ public class State {
 
     @Override
     public String toString() {
-        return mName;
+        StringBuilder sb = new StringBuilder();
+        sb.append("State <mDefaultState=");
+        sb.append(mDefaultState);
+        sb.append(", mName=");
+        sb.append(mName);
+        sb.append(", mDescription=");
+        sb.append(mDescription);
+        sb.append(", mOrientation=");
+        sb.append(mOrientation);
+        sb.append(", mKeyState=");
+        sb.append(mKeyState);
+        sb.append(", mNavState=");
+        sb.append(mNavState);
+        sb.append(", mHardwareOverride=");
+        sb.append(mHardwareOverride);
+        sb.append(">");
+        return sb.toString();
     }
 }

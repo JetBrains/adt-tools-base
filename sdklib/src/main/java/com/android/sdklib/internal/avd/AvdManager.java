@@ -27,11 +27,15 @@ import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SdkManager;
+import com.android.sdklib.SystemImage;
 import com.android.sdklib.devices.DeviceManager;
 import com.android.sdklib.devices.DeviceManager.DeviceStatus;
 import com.android.sdklib.internal.avd.AvdInfo.AvdStatus;
 import com.android.sdklib.internal.project.ProjectProperties;
+import com.android.sdklib.io.FileOp;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.local.LocalSdk;
+import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
 import com.android.sdklib.util.GrabProcessOutput;
 import com.android.sdklib.util.GrabProcessOutput.IProcessOutput;
 import com.android.sdklib.util.GrabProcessOutput.Wait;
@@ -104,20 +108,27 @@ public class AvdManager {
     public static final String AVD_INFO_TARGET = "target";     //$NON-NLS-1$
 
     /**
+     * AVD/config.ini key name representing the tag id of the specific avd
+     */
+    public static final String AVD_INI_TAG_ID = "tag.id"; //$NON-NLS-1$
+
+    /**
+     * AVD/config.ini key name representing the tag display of the specific avd
+     */
+    public static final String AVD_INI_TAG_DISPLAY = "tag.display"; //$NON-NLS-1$
+
+    /**
      * AVD/config.ini key name representing the abi type of the specific avd
-     *
      */
     public static final String AVD_INI_ABI_TYPE = "abi.type"; //$NON-NLS-1$
 
     /**
      * AVD/config.ini key name representing the CPU architecture of the specific avd
-     *
      */
     public static final String AVD_INI_CPU_ARCH = "hw.cpu.arch"; //$NON-NLS-1$
 
     /**
      * AVD/config.ini key name representing the CPU architecture of the specific avd
-     *
      */
     public static final String AVD_INI_CPU_MODEL = "hw.cpu.model"; //$NON-NLS-1$
 
@@ -231,6 +242,7 @@ public class AvdManager {
     public static final Pattern NUMERIC_SKIN_SIZE = Pattern.compile("([0-9]{2,})x([0-9]{2,})"); //$NON-NLS-1$
 
     private static final String USERDATA_IMG = "userdata.img"; //$NON-NLS-1$
+    private static final String BOOT_PROP = "boot.prop"; //$NON-NLS-1$
     static final String CONFIG_INI = "config.ini"; //$NON-NLS-1$
     private static final String SDCARD_IMG = "sdcard.img"; //$NON-NLS-1$
     private static final String SNAPSHOTS_IMG = "snapshots.img"; //$NON-NLS-1$
@@ -594,11 +606,15 @@ public class AvdManager {
      *   {@code AvdManager.AvdInfo.getAvdFolder}.
      * @param avdName the name of the AVD
      * @param target the target of the AVD
+     * @param tag the tag of the AVD
      * @param abiType the abi type of the AVD
+     * @param skinFolder the skin folder path to use, if specified. Can be null.
      * @param skinName the name of the skin. Can be null. Must have been verified by caller.
+     *          Can be a size in the form "NNNxMMM" or a directory name matching skinFolder.
      * @param sdcard the parameter value for the sdCard. Can be null. This is either a path to
      *        an existing sdcard image or a sdcard size (\d+, \d+K, \dM).
      * @param hardwareConfig the hardware setup for the AVD. Can be null to use defaults.
+     * @param bootProps the optional boot properties for the AVD. Can be null.
      * @param createSnapshot If true copy a blank snapshot image into the AVD.
      * @param removePrevious If true remove any previous files.
      * @param editExisting If true, edit an existing AVD, changing only the minimum required.
@@ -611,10 +627,13 @@ public class AvdManager {
             File avdFolder,
             String avdName,
             IAndroidTarget target,
+            IdDisplay tag,
             String abiType,
+            File skinFolder,
             String skinName,
             String sdcard,
-            Map<String,String> hardwareConfig,
+            @Nullable Map<String,String> hardwareConfig,
+            @Nullable Map<String,String> bootProps,
             boolean createSnapshot,
             boolean removePrevious,
             boolean editExisting,
@@ -659,7 +678,7 @@ public class AvdManager {
 
             // Look for a system image in the add-on.
             // If we don't find one there, look in the base platform.
-            ISystemImage systemImage = target.getSystemImage(abiType);
+            ISystemImage systemImage = target.getSystemImage(tag, abiType);
 
             if (systemImage != null) {
                 File imageFolder = systemImage.getLocation();
@@ -669,7 +688,7 @@ public class AvdManager {
             if ((userdataSrc == null || !userdataSrc.exists()) && !target.isPlatform()) {
                 // If we don't find a system-image in the add-on, look into the platform.
 
-                systemImage = target.getParent().getSystemImage(abiType);
+                systemImage = target.getParent().getSystemImage(tag, abiType);
                 if (systemImage != null) {
                     File imageFolder = systemImage.getLocation();
                     userdataSrc = new File(imageFolder, USERDATA_IMG);
@@ -699,7 +718,7 @@ public class AvdManager {
             // Config file.
             HashMap<String, String> values = new HashMap<String, String>();
 
-           if (setImagePathProperties(target, abiType, values, log) == false) {
+           if (setImagePathProperties(target, tag, abiType, values, log) == false) {
                log.error(null, "Failed to set image path properties in the AVD folder.");
                needCleanup = true;
                return null;
@@ -728,8 +747,10 @@ public class AvdManager {
                 values.put(AVD_INI_SNAPSHOT_PRESENT, "true");
             }
 
-            // Now the abi type
-            values.put(AVD_INI_ABI_TYPE, abiType);
+            // Now the tag & abi type
+            values.put(AVD_INI_TAG_ID,      tag.getId());
+            values.put(AVD_INI_TAG_DISPLAY, tag.getDisplay());
+            values.put(AVD_INI_ABI_TYPE,    abiType);
 
             // and the cpu arch.
             if (SdkConstants.ABI_ARMEABI.equals(abiType)) {
@@ -749,28 +770,46 @@ public class AvdManager {
             }
 
             // Now the skin.
-            if (skinName == null || skinName.length() == 0) {
-                skinName = target.getDefaultSkin();
+            String skinPath = null;
+
+            if (skinFolder == null && skinName == null) {
+                // Nothing specified. Use the default from the target.
+                skinFolder = target.getDefaultSkin();
             }
 
-            if (NUMERIC_SKIN_SIZE.matcher(skinName).matches()) {
-                // Skin name is an actual screen resolution.
-                // Set skin.name for display purposes in the AVD manager and
-                // set skin.path for use by the emulator.
-                values.put(AVD_INI_SKIN_NAME, skinName);
-                values.put(AVD_INI_SKIN_PATH, skinName);
-            } else {
-                // get the path of the skin (relative to the SDK)
-                // assume skin name is valid
-                String skinPath = getSkinRelativePath(skinName, target, log);
-                if (skinPath == null) {
-                    log.error(null, "Missing skinpath in the AVD folder.");
-                    needCleanup = true;
+            if (skinFolder == null && skinName != null &&
+                    NUMERIC_SKIN_SIZE.matcher(skinName).matches()) {
+                // Numeric skin size. Set both skinPath and skinName to the same size.
+                skinPath = skinName;
+
+            } else if (skinFolder != null && skinName == null) {
+                // Skin folder is specified, but not skin name. Adjust it.
+                skinName = skinFolder.getName();
+
+            } else if (skinFolder == null && skinName != null) {
+                // skin folder is not specified, but there's a non-numeric skin name.
+                // check whether the skin is in the target.
+                skinFolder = getSkinFolder(skinName, target);
+            }
+
+            if (skinFolder != null) {
+                // skin does not exist!
+                if (!skinFolder.exists()) {
+                    log.error(null, "Skin '%1$s' does not exist.", skinName);
                     return null;
                 }
 
-                values.put(AVD_INI_SKIN_PATH, skinPath);
+                // skinPath is the skin folder path relative to the SDK directory
+                skinPath = FileOp.makeRelative(myLocalSdk.getLocation(), skinFolder);
+            }
+
+            // Set skin.name for display purposes in the AVD manager and
+            // set skin.path for use by the emulator.
+            if (skinName != null) {
                 values.put(AVD_INI_SKIN_NAME, skinName);
+            }
+            if (skinPath != null) {
+                values.put(AVD_INI_SKIN_PATH, skinPath);
             }
 
             if (sdcard != null && sdcard.length() > 0) {
@@ -869,15 +908,16 @@ public class AvdManager {
             }
 
             // get the hardware properties for this skin
-            File skinFolder = getSkinPath(skinName, target);
-            FileWrapper skinHardwareFile = new FileWrapper(skinFolder, AvdManager.HARDWARE_INI);
-            if (skinHardwareFile.isFile()) {
-                Map<String, String> skinHardwareConfig = ProjectProperties.parsePropertyFile(
-                        skinHardwareFile, log);
+            if (skinFolder != null) {
+                FileWrapper skinHardwareFile = new FileWrapper(skinFolder, AvdManager.HARDWARE_INI);
+                if (skinHardwareFile.isFile()) {
+                    Map<String, String> skinHardwareConfig =
+                        ProjectProperties.parsePropertyFile(skinHardwareFile, log);
 
-                if (skinHardwareConfig != null) {
-                    finalHardwareValues.putAll(skinHardwareConfig);
-                    values.putAll(skinHardwareConfig);
+                    if (skinHardwareConfig != null) {
+                        finalHardwareValues.putAll(skinHardwareConfig);
+                        values.putAll(skinHardwareConfig);
+                    }
                 }
             }
 
@@ -888,7 +928,12 @@ public class AvdManager {
             }
 
             File configIniFile = new File(avdFolder, CONFIG_INI);
-            writeIniFile(configIniFile, values);
+            writeIniFile(configIniFile, values, true);
+
+            if (bootProps != null && !bootProps.isEmpty()) {
+                File bootPropsFile = new File(avdFolder, BOOT_PROP);
+                writeIniFile(bootPropsFile, bootProps, false);
+            }
 
             // Generate the log report first because we want to control where line breaks
             // are located when generating the hardware config list.
@@ -911,7 +956,7 @@ public class AvdManager {
                             target.getName(), target.getVendor()));
                 }
             }
-            report.append(String.format(", %s processor", AvdInfo.getPrettyAbiType(abiType)));
+            report.append(String.format(", %s processor", AvdInfo.getPrettyAbiType(tag, abiType)));
 
             // display the chosen hardware config
             if (finalHardwareValues.size() > 0) {
@@ -931,7 +976,9 @@ public class AvdManager {
                     iniFile,
                     avdFolder.getAbsolutePath(),
                     target.hashString(),
-                    target, abiType, values);
+                    target,
+                    tag, abiType,
+                    values);
 
             AvdInfo oldAvdInfo = getAvd(avdName, false /*validAvdOnly*/);
 
@@ -1010,10 +1057,10 @@ public class AvdManager {
      * is not empty. If the image folder is empty or does not exist, <code>null</code> is returned.
      * @throws InvalidTargetPathException if the target image folder is not in the current SDK.
      */
-    private String getImageRelativePath(IAndroidTarget target, String abiType)
+    private String getImageRelativePath(IAndroidTarget target, IdDisplay tag, String abiType)
             throws InvalidTargetPathException {
 
-        ISystemImage systemImage = target.getSystemImage(abiType);
+        ISystemImage systemImage = target.getSystemImage(tag, abiType);
         if (systemImage == null) {
             // ABI Type is unknown for target
             return null;
@@ -1064,13 +1111,13 @@ public class AvdManager {
      * @param target The target where to find the skin.
      * @param log the log object to receive action logs. Cannot be null.
      */
-    public String getSkinRelativePath(String skinName, IAndroidTarget target, ILogger log) {
+    private String getSkinRelativePath(String skinName, IAndroidTarget target, ILogger log) {
         if (log == null) {
             throw new IllegalArgumentException("log cannot be null");
         }
 
         // first look to see if the skin is in the target
-        File skin = getSkinPath(skinName, target);
+        File skin = getSkinFolder(skinName, target);
 
         // skin really does not exist!
         if (skin.exists() == false) {
@@ -1082,6 +1129,7 @@ public class AvdManager {
         String path = skin.getAbsolutePath();
 
         // make this path relative to the SDK location
+
         String sdkLocation = myLocalSdk.getPath();
         if (path.startsWith(sdkLocation) == false) {
             // this really really should not happen.
@@ -1103,7 +1151,7 @@ public class AvdManager {
      * @param target The target where to find the skin.
      * @return a {@link File} that may or may not actually exist.
      */
-    public File getSkinPath(String skinName, IAndroidTarget target) {
+    private File getSkinFolder(String skinName, IAndroidTarget target) {
         String path = target.getPath(IAndroidTarget.SKINS);
         File skin = new File(path, skinName);
 
@@ -1158,7 +1206,7 @@ public class AvdManager {
         }
         values.put(AVD_INFO_ABS_PATH, absPath);
         values.put(AVD_INFO_TARGET, target.hashString());
-        writeIniFile(iniFile, values);
+        writeIniFile(iniFile, values, true);
 
         return iniFile;
     }
@@ -1270,6 +1318,7 @@ public class AvdManager {
                         paramFolderPath,
                         avdInfo.getTargetHash(),
                         avdInfo.getTarget(),
+                        avdInfo.getTag(),
                         avdInfo.getAbiType(),
                         avdInfo.getProperties());
                 replaceAvd(avdInfo, info);
@@ -1296,6 +1345,7 @@ public class AvdManager {
                         avdInfo.getDataFolderPath(),
                         avdInfo.getTargetHash(),
                         avdInfo.getTarget(),
+                        avdInfo.getTag(),
                         avdInfo.getAbiType(),
                         avdInfo.getProperties());
                 replaceAvd(avdInfo, info);
@@ -1456,6 +1506,17 @@ public class AvdManager {
             name = matcher.group(1);
         }
 
+        // get tag
+        IdDisplay tag = SystemImage.DEFAULT_TAG;
+        String tagId   = properties == null ? null : properties.get(AVD_INI_TAG_ID);
+        if (tagId != null) {
+            String tagDisp = properties == null ? null : properties.get(AVD_INI_TAG_DISPLAY);
+            if (tagDisp == null || tagDisp.isEmpty()) {
+                tagDisp = LocalSysImgPkgInfo.tagIdToDisplay(tagId);
+            }
+            tag = new IdDisplay(tagId, tagDisp);
+        }
+
         // get abi type
         String abiType = properties == null ? null : properties.get(AVD_INI_ABI_TYPE);
         // for the avds created previously without enhancement, i.e. They are created based
@@ -1528,6 +1589,7 @@ public class AvdManager {
                 avdPath,
                 targetHash,
                 target,
+                tag,
                 abiType,
                 properties,
                 status);
@@ -1540,17 +1602,21 @@ public class AvdManager {
      * The file should be read back later by {@link #parseIniFile(IAbstractFile, ILogger)}.
      *
      * @param iniFile The file to generate.
-     * @param values THe properties to place in the ini file.
+     * @param values The properties to place in the ini file.
+     * @param addEncoding When true, add a property {@link #AVD_INI_ENCODING} indicating the
+     *                    encoding used to write the file.
      * @throws IOException if {@link FileWriter} fails to open, write or close the file.
      */
-    private static void writeIniFile(File iniFile, Map<String, String> values)
+    private static void writeIniFile(File iniFile, Map<String, String> values, boolean addEncoding)
             throws IOException {
 
         Charset charset = Charsets.ISO_8859_1;
         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(iniFile), charset);
 
-        // Write down the charset used in case we want to use it later.
-        writer.write(String.format("%1$s=%2$s\n", AVD_INI_ENCODING, charset.name()));
+        if (addEncoding) {
+            // Write down the charset used in case we want to use it later.
+            writer.write(String.format("%1$s=%2$s\n", AVD_INI_ENCODING, charset.name()));
+        }
 
         for (Entry<String, String> entry : values.entrySet()) {
             writer.write(String.format("%1$s=%2$s\n", entry.getKey(), entry.getValue()));
@@ -1781,7 +1847,11 @@ public class AvdManager {
         AvdStatus status;
 
         // create the path to the new system images.
-        if (setImagePathProperties(avd.getTarget(), avd.getAbiType(), properties, log)) {
+        if (setImagePathProperties(avd.getTarget(),
+                                   avd.getTag(),
+                                   avd.getAbiType(),
+                                   properties,
+                                   log)) {
             if (properties.containsKey(AVD_INI_IMAGES_1)) {
                 log.info("Updated '%1$s' with value '%2$s'\n", AVD_INI_IMAGES_1,
                         properties.get(AVD_INI_IMAGES_1));
@@ -1808,7 +1878,7 @@ public class AvdManager {
             ILogger log) throws IOException {
         // now write the config file
         File configIniFile = new File(avd.getDataFolderPath(), CONFIG_INI);
-        writeIniFile(configIniFile, newProperties);
+        writeIniFile(configIniFile, newProperties, true);
 
         // finally create a new AvdInfo for this unbroken avd and add it to the list.
         // instead of creating the AvdInfo object directly we reparse it, to detect other possible
@@ -1820,6 +1890,7 @@ public class AvdManager {
                 avd.getDataFolderPath(),
                 avd.getTargetHash(),
                 avd.getTarget(),
+                avd.getTag(),
                 avd.getAbiType(),
                 newProperties);
 
@@ -1837,6 +1908,7 @@ public class AvdManager {
      * @return true if success, false if some path are missing.
      */
     private boolean setImagePathProperties(IAndroidTarget target,
+            IdDisplay tag,
             String abiType,
             Map<String, String> properties,
             ILogger log) {
@@ -1847,7 +1919,7 @@ public class AvdManager {
             String property = AVD_INI_IMAGES_1;
 
             // First the image folders of the target itself
-            String imagePath = getImageRelativePath(target, abiType);
+            String imagePath = getImageRelativePath(target, tag, abiType);
             if (imagePath != null) {
                 properties.put(property, imagePath);
                 property = AVD_INI_IMAGES_2;
@@ -1856,7 +1928,7 @@ public class AvdManager {
             // If the target is an add-on we need to add the Platform image as a backup.
             IAndroidTarget parent = target.getParent();
             if (parent != null) {
-                imagePath = getImageRelativePath(parent, abiType);
+                imagePath = getImageRelativePath(parent, tag, abiType);
                 if (imagePath != null) {
                     properties.put(property, imagePath);
                 }

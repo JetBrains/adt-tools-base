@@ -105,7 +105,7 @@ public class RenderScriptProcessor {
     private final boolean mSupportMode;
 
     private final File mRsLib;
-    private final File mLibClCore;
+    private final Map<String, File> mLibClCore = Maps.newHashMap();
 
     public interface CommandLineLauncher {
         void launch(
@@ -144,9 +144,12 @@ public class RenderScriptProcessor {
         if (supportMode) {
             File rs = new File(mBuildToolInfo.getLocation(), "renderscript");
             mRsLib = new File(rs, "lib");
-            mLibClCore = new File(mRsLib, "libclcore.bc");
+            File bcFolder = new File(mRsLib, "bc");
+            for (Abi abi : ABIS) {
+                mLibClCore.put(abi.mDevice,
+                        new File(bcFolder, abi.mDevice + File.separatorChar + "libclcore.bc"));
+            }
         } else {
-            mLibClCore = null;
             mRsLib = null;
         }
     }
@@ -317,7 +320,7 @@ public class RenderScriptProcessor {
         args.add("-shared");
 
         args.add("-rt-path");
-        args.add(mLibClCore.getAbsolutePath());
+        args.add(mLibClCore.get(abi.mDevice).getAbsolutePath());
 
         args.add("-mtriple");
         args.add(abi.mToolchain);

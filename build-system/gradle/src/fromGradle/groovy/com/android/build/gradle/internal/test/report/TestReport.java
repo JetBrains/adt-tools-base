@@ -58,9 +58,12 @@ public class TestReport {
     private AllTestResults loadModel() {
         AllTestResults model = new AllTestResults();
         if (resultDir.exists()) {
-            for (File file : resultDir.listFiles()) {
-                if (file.getName().startsWith("TEST-") && file.getName().endsWith(".xml")) {
-                    mergeFromFile(file, model);
+            File[] files = resultDir.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.getName().startsWith("TEST-") && file.getName().endsWith(".xml")) {
+                        mergeFromFile(file, model);
+                    }
                 }
             }
         }

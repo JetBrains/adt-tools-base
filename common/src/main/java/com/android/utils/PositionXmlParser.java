@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import org.w3c.dom.Attr;
+import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -28,7 +29,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
+import org.xml.sax.XMLReader;
+import org.xml.sax.ext.DefaultHandler2;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -137,6 +139,11 @@ public class PositionXmlParser {
             factory.setFeature(NAMESPACE_PREFIX_FEATURE, true);
             SAXParser parser = factory.newSAXParser();
             DomBuilder handler = new DomBuilder(xml);
+            XMLReader xmlReader = parser.getXMLReader();
+            xmlReader.setProperty(
+                    "http://xml.org/sax/properties/lexical-handler",
+                    handler
+            );
             parser.parse(input, handler);
             return handler.getDocument();
         } catch (SAXException e) {
@@ -468,7 +475,7 @@ public class PositionXmlParser {
      * information is attached to the DOM nodes by setting user data with the
      * {@link POS_KEY} key.
      */
-    private final class DomBuilder extends DefaultHandler {
+    private final class DomBuilder extends DefaultHandler2 {
         private final String mXml;
         private final Document mDocument;
         private Locator mLocator;
@@ -530,35 +537,7 @@ public class PositionXmlParser {
                 // the beginning since pos.offset will typically point to the first character
                 // AFTER the element open tag, which could be a closing tag or a child open
                 // tag
-
-                for (int offset = pos.getOffset() - 1; offset >= 0; offset--) {
-                    char c = mXml.charAt(offset);
-                    // < cannot appear in attribute values or anywhere else within
-                    // an element open tag, so we know the first occurrence is the real
-                    // element start
-                    if (c == '<') {
-                        // Adjust line position
-                        int line = pos.getLine();
-                        for (int i = offset, n = pos.getOffset(); i < n; i++) {
-                            if (mXml.charAt(i) == '\n') {
-                                line--;
-                            }
-                        }
-
-                        // Compute new column position
-                        int column = 0;
-                        for (int i = offset - 1; i >= 0; i--, column++) {
-                            if (mXml.charAt(i) == '\n') {
-                                break;
-                            }
-                        }
-
-                        pos = createPosition(line, column, offset);
-                        break;
-                    }
-                }
-
-                element.setUserData(POS_KEY, pos, null);
+                element.setUserData(POS_KEY, findOpeningTag(pos), null);
                 mStack.add(element);
             } catch (Exception t) {
                 throw new SAXException(t);
@@ -574,15 +553,77 @@ public class PositionXmlParser {
             assert pos != null;
             pos.setEnd(getCurrentPosition());
 
-            if (mStack.isEmpty()) {
-                mDocument.appendChild(element);
+            addNodeToParent(element);
+        }
+
+        @Override
+        public void comment(char[] chars, int start, int length) throws SAXException {
+
+            String comment = new String(chars, start, length);
+            Comment domComment = mDocument.createComment(comment);
+
+            // current position is the closing comment tag.
+            Position currentPosition = getCurrentPosition();
+            Position startPosition = findOpeningTag(currentPosition);
+            startPosition.setEnd(currentPosition);
+
+            domComment.setUserData(POS_KEY, startPosition, null);
+            addNodeToParent(domComment);
+        }
+
+        /**
+         * Adds a node to the current parent element being visited, or to the document if there is
+         * no parent in context.
+         * @param nodeToAdd xml node to add.
+         */
+        private void addNodeToParent(Node nodeToAdd) {
+            if (mStack.isEmpty()){
+                mDocument.appendChild(nodeToAdd);
             } else {
                 Element parent = mStack.get(mStack.size() - 1);
-                parent.appendChild(element);
+                parent.appendChild(nodeToAdd);
             }
         }
 
         /**
+         * Find opening tags from the current position.
+         * < cannot appear in attribute values or anywhere else within
+         * an element open tag, so we know the first occurrence is the real
+         * element start
+         * For comments, it is not legal to put < in a comment, however we are not
+         * validating so we will return an invalid column in that case.
+         * @param startingPosition the position to walk backwards until < is reached.
+         * @return the opening tag position or startPosition if cannot be found.
+         */
+        private Position findOpeningTag(Position startingPosition) {
+            for (int offset = startingPosition.getOffset() - 1; offset >= 0; offset--) {
+                char c = mXml.charAt(offset);
+
+                if (c == '<') {
+                    // Adjust line position
+                    int line = startingPosition.getLine();
+                    for (int i = offset, n = startingPosition.getOffset(); i < n; i++) {
+                        if (mXml.charAt(i) == '\n') {
+                            line--;
+                        }
+                    }
+
+                    // Compute new column position
+                    int column = 0;
+                    for (int i = offset - 1; i >= 0; i--, column++) {
+                        if (mXml.charAt(i) == '\n') {
+                            break;
+                        }
+                    }
+
+                    return createPosition(line, column, offset);
+                }
+            }
+            // we did not find it, approximate.
+            return startingPosition;
+        }
+
+            /**
          * Returns a position holder for the current position. The most
          * important part of this function is to incrementally compute the
          * offset as well, by counting forwards until it reaches the new line

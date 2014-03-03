@@ -18,6 +18,7 @@ package com.android.sdklib.internal.repository;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
@@ -25,7 +26,9 @@ import com.android.sdklib.ISystemImage;
 import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.SystemImage;
 import com.android.sdklib.io.FileOp;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -57,7 +60,7 @@ public class MockAddonTarget implements IAndroidTarget {
     }
 
     @Override
-    public String getDefaultSkin() {
+    public File getDefaultSkin() {
         return null;
     }
 
@@ -77,15 +80,18 @@ public class MockAddonTarget implements IAndroidTarget {
             SystemImage si = new SystemImage(
                     FileOp.append(getLocation(), SdkConstants.OS_IMAGES_FOLDER),
                     LocationType.IN_PLATFORM_LEGACY,
-                    SdkConstants.ABI_ARMEABI);
+                    SystemImage.DEFAULT_TAG,
+                    SdkConstants.ABI_ARMEABI,
+                    FileOp.EMPTY_FILE_ARRAY);
             mSystemImages = new SystemImage[] { si };
         }
         return mSystemImages;
     }
 
     @Override
-    public ISystemImage getSystemImage(String abiType) {
-        if (SdkConstants.ABI_ARMEABI.equals(abiType)) {
+    @Nullable
+    public ISystemImage getSystemImage(@NonNull IdDisplay tag, @NonNull String abiType) {
+        if (SystemImage.DEFAULT_TAG.equals(tag) && SdkConstants.ABI_ARMEABI.equals(abiType)) {
             return getSystemImages()[0];
         }
         return null;
@@ -109,6 +115,11 @@ public class MockAddonTarget implements IAndroidTarget {
     @Override
     public String getPath(int pathId) {
         throw new UnsupportedOperationException("Implement this as needed for tests");
+    }
+
+    @Override
+    public File getFile(int pathId) {
+        return new File(getPath(pathId));
     }
 
     @Override
@@ -152,8 +163,8 @@ public class MockAddonTarget implements IAndroidTarget {
     }
 
     @Override
-    public String[] getSkins() {
-        return null;
+    public File[] getSkins() {
+        return FileOp.EMPTY_FILE_ARRAY;
     }
 
     @Override

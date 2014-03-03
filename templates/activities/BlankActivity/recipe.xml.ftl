@@ -3,7 +3,7 @@
 
     <#if appCompat?has_content><dependency mavenUrl="com.android.support:appcompat-v7:+"/></#if>
     <#if !appCompat?has_content && hasViewPager?has_content><dependency mavenUrl="com.android.support:support-v13:+"/></#if>
-    <#if !appCompat?has_content && navType == 'drawer'><dependency mavenUrl="com.android.support:support-v4:+"/></#if>
+    <#if !appCompat?has_content && features == 'drawer'><dependency mavenUrl="com.android.support:support-v4:+"/></#if>
 
     <merge from="AndroidManifest.xml.ftl"
              to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
@@ -20,7 +20,7 @@
              to="${escapeXmlAttribute(resOut)}/values-w820dp/dimens.xml" />
 
     <!-- TODO: switch on Holo Dark v. Holo Light -->
-    <#if navType == 'drawer'>
+    <#if features == 'drawer'>
         <copy from="res/drawable-hdpi"
                 to="${escapeXmlAttribute(resOut)}/drawable-hdpi" />
         <copy from="res/drawable-mdpi"
@@ -40,11 +40,15 @@
         <instantiate from="res/layout/activity_pager.xml.ftl"
                        to="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
 
-    <#elseif navType == 'drawer'>
+    <#elseif features == 'drawer'>
         <instantiate from="res/layout/activity_drawer.xml.ftl"
                        to="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
         <instantiate from="res/layout/fragment_navigation_drawer.xml.ftl"
                        to="${escapeXmlAttribute(resOut)}/layout/fragment_navigation_drawer.xml" />
+
+    <#elseif features == 'none'>
+        <instantiate from="res/layout/activity_simple.xml.ftl"
+                       to="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
 
     <#else>
         <instantiate from="res/layout/activity_fragment_container.xml.ftl"
@@ -52,26 +56,28 @@
 
     </#if>
 
-    <!-- Always add the simple/placeholder fragment -->
-    <instantiate from="res/layout/fragment_simple.xml.ftl"
-                   to="${escapeXmlAttribute(resOut)}/layout/${fragmentLayoutName}.xml" />
+    <#if features != 'none'>
+        <!-- Always add the simple/placeholder fragment -->
+        <instantiate from="res/layout/fragment_simple.xml.ftl"
+                       to="${escapeXmlAttribute(resOut)}/layout/${fragmentLayoutName}.xml" />
+    </#if>
 
     <!-- Decide which activity code to add -->
-    <#if navType == "none">
+    <#if features == "none" || features == "fragment">
         <instantiate from="src/app_package/SimpleActivity.java.ftl"
                        to="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
 
-    <#elseif navType == "tabs" || navType == "pager">
+    <#elseif features == "tabs" || features == "pager">
         <instantiate from="src/app_package/TabsAndPagerActivity.java.ftl"
                        to="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
 
-    <#elseif navType == "drawer">
+    <#elseif features == "drawer">
         <instantiate from="src/app_package/DrawerActivity.java.ftl"
                        to="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
         <instantiate from="src/app_package/NavigationDrawerFragment.java.ftl"
                        to="${escapeXmlAttribute(srcOut)}/NavigationDrawerFragment.java" />
 
-    <#elseif navType == "spinner">
+    <#elseif features == "spinner">
         <instantiate from="src/app_package/DropdownActivity.java.ftl"
                        to="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
 

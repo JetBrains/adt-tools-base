@@ -18,12 +18,14 @@ package com.android.sdklib.internal.androidTarget;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SdkManager.LayoutlibVersion;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.utils.SparseArray;
 
 import java.io.File;
@@ -50,7 +52,7 @@ public final class PlatformTarget implements IAndroidTarget {
     private final int mRevision;
     private final Map<String, String> mProperties;
     private final SparseArray<String> mPaths = new SparseArray<String>();
-    private String[] mSkins;
+    private File[] mSkins;
     private final ISystemImage[] mSystemImages;
     private final LayoutlibVersion mLayoutlibVersion;
     private final BuildToolInfo mBuildToolInfo;
@@ -67,7 +69,6 @@ public final class PlatformTarget implements IAndroidTarget {
      * @param systemImages list of supported system images
      * @param properties the platform properties
      */
-    @SuppressWarnings("deprecation")
     public PlatformTarget(
             String sdkOsPath,
             String platformOSPath,
@@ -134,9 +135,10 @@ public final class PlatformTarget implements IAndroidTarget {
     }
 
     @Override
-    public ISystemImage getSystemImage(String abiType) {
+    @Nullable
+    public ISystemImage getSystemImage(@NonNull IdDisplay tag, @NonNull String abiType) {
         for (ISystemImage sysImg : mSystemImages) {
-            if (sysImg.getAbiType().equals(abiType)) {
+            if (sysImg.getTag().equals(tag) && sysImg.getAbiType().equals(abiType)) {
                 return sysImg;
             }
         }
@@ -228,6 +230,12 @@ public final class PlatformTarget implements IAndroidTarget {
     }
 
     @Override
+    public File getFile(int pathId) {
+        return new File(getPath(pathId));
+    }
+
+
+    @Override
     public BuildToolInfo getBuildToolInfo() {
         return mBuildToolInfo;
     }
@@ -245,14 +253,15 @@ public final class PlatformTarget implements IAndroidTarget {
         return true;
     }
 
-
+    @NonNull
     @Override
-    public String[] getSkins() {
+    public File[] getSkins() {
         return mSkins;
     }
 
+    @Nullable
     @Override
-    public String getDefaultSkin() {
+    public File getDefaultSkin() {
         // only one skin? easy.
         if (mSkins.length == 1) {
             return mSkins[0];
@@ -260,17 +269,17 @@ public final class PlatformTarget implements IAndroidTarget {
 
         // look for the skin name in the platform props
         String skinName = mProperties.get(SdkConstants.PROP_SDK_DEFAULT_SKIN);
-        if (skinName != null) {
-            return skinName;
+        if (skinName == null) {
+            // otherwise try to find a good default.
+            if (mVersion.getApiLevel() >= 4) {
+                // at this time, this is the default skin for all older platforms that had 2+ skins.
+                skinName = "WVGA800";                                       //$NON-NLS-1$
+            } else {
+                skinName = "HVGA"; // this is for 1.5 and earlier.          //$NON-NLS-1$
+            }
         }
 
-        // otherwise try to find a good default.
-        if (mVersion.getApiLevel() >= 4) {
-            // at this time, this is the default skin for all older platforms that had 2+ skins.
-            return "WVGA800";
-        }
-
-        return "HVGA"; // this is for 1.5 and earlier.
+        return new File(getFile(IAndroidTarget.SKINS), skinName);
     }
 
     /**
@@ -421,7 +430,7 @@ public final class PlatformTarget implements IAndroidTarget {
 
     // ---- platform only methods.
 
-    public void setSkins(String[] skins) {
+    public void setSkins(@NonNull File[] skins) {
         mSkins = skins;
     }
 

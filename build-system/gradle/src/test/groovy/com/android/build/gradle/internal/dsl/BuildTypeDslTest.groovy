@@ -40,7 +40,7 @@ public class BuildTypeDslTest extends BaseTest {
 
         AppPlugin plugin = AppPlugin.pluginHolder.plugin
 
-        DefaultBuildType type = plugin.buildTypes.get(BuilderConstants.DEBUG).buildType
+        DefaultBuildType type = plugin.variantManager.buildTypes.get(BuilderConstants.DEBUG).buildType
 
         assertTrue(type.isDebuggable())
         assertFalse(type.isJniDebugBuild())
@@ -62,7 +62,7 @@ public class BuildTypeDslTest extends BaseTest {
 
         AppPlugin plugin = AppPlugin.pluginHolder.plugin
 
-        DefaultBuildType type = plugin.buildTypes.get(BuilderConstants.RELEASE).buildType
+        DefaultBuildType type = plugin.variantManager.buildTypes.get(BuilderConstants.RELEASE).buildType
 
         assertFalse(type.isDebuggable())
         assertFalse(type.isJniDebugBuild())

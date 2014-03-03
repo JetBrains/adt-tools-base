@@ -26,6 +26,7 @@ import com.android.resources.KeyboardState;
 import com.android.resources.Navigation;
 import com.android.sdklib.internal.avd.AvdManager;
 import com.android.sdklib.internal.avd.HardwareProperties;
+import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.PkgProps;
 import com.android.utils.ILogger;
 
@@ -41,6 +42,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -63,20 +65,27 @@ public class DeviceManager {
         Pattern.compile('^' + PkgProps.EXTRA_PATH + '=' + DEVICE_PROFILES_PROP + '$');
     private ILogger mLog;
     private List<Device> mVendorDevices;
+    private List<Device> mSysImgDevices;
     private List<Device> mUserDevices;
     private List<Device> mDefaultDevices;
     private final Object mLock = new Object();
     private final List<DevicesChangedListener> sListeners = new ArrayList<DevicesChangedListener>();
     private final String mOsSdkPath;
 
-    /** getDevices() flag to list user devices. */
-    public static final int USER_DEVICES    = 1;
-    /** getDevices() flag to list default devices. */
-    public static final int DEFAULT_DEVICES = 2;
-    /** getDevices() flag to list vendor devices. */
-    public static final int VENDOR_DEVICES  = 4;
+    public enum DeviceFilter {
+        /** getDevices() flag to list default devices from the bundled devices.xml definitions. */
+        DEFAULT,
+        /** getDevices() flag to list user devices saved in the .android home folder. */
+        USER,
+        /** getDevices() flag to list vendor devices -- the bundled nexus.xml devices
+         *  as well as all those coming from extra packages. */
+        VENDOR,
+        /** getDevices() flag to list devices from system-images/platform-N/tag/abi/devices.xml */
+        SYSTEM_IMAGES,
+    }
+
     /** getDevices() flag to list all devices. */
-    public static final int ALL_DEVICES  = USER_DEVICES | DEFAULT_DEVICES | VENDOR_DEVICES;
+    public static final EnumSet<DeviceFilter> ALL_DEVICES  = EnumSet.allOf(DeviceFilter.class);
 
     public enum DeviceStatus {
         /**
@@ -96,7 +105,8 @@ public class DeviceManager {
     /**
      * Creates a new instance of DeviceManager.
      *
-     * @param sdkLocation Path to the current SDK. If null or invalid, vendor devices are ignored.
+     * @param sdkLocation Path to the current SDK. If null or invalid, vendor and system images
+     *                    devices are ignored.
      * @param log SDK logger instance. Should be non-null.
      */
     public static DeviceManager createInstance(@Nullable File sdkLocation, @NonNull ILogger log) {
@@ -166,15 +176,29 @@ public class DeviceManager {
     @Nullable
     public Device getDevice(@NonNull String id, @NonNull String manufacturer) {
         initDevicesLists();
-        for (List<?> devices :
-                new List<?>[] { mUserDevices, mDefaultDevices, mVendorDevices } ) {
-            if (devices != null) {
-                @SuppressWarnings("unchecked") List<Device> devicesList = (List<Device>) devices;
-                for (Device d : devicesList) {
-                    if (d.getId().equals(id) && d.getManufacturer().equals(manufacturer)) {
-                        return d;
-                    }
-                }
+        Device d = getDeviceImpl(mUserDevices, id, manufacturer);
+        if (d != null) {
+            return d;
+        }
+        d = getDeviceImpl(mSysImgDevices, id, manufacturer);
+        if (d != null) {
+            return d;
+        }
+        d = getDeviceImpl(mDefaultDevices, id, manufacturer);
+        if (d != null) {
+            return d;
+        }
+        d = getDeviceImpl(mVendorDevices, id, manufacturer);
+        return d;
+    }
+
+    @Nullable
+    private Device getDeviceImpl(@NonNull List<Device> devicesList,
+                                 @NonNull String id,
+                                 @NonNull String manufacturer) {
+        for (Device d : devicesList) {
+            if (d.getId().equals(id) && d.getManufacturer().equals(manufacturer)) {
+                return d;
             }
         }
         return null;
@@ -183,22 +207,36 @@ public class DeviceManager {
     /**
      * Returns the known {@link Device} list.
      *
-     * @param deviceFilter A combination of USER_DEVICES, VENDOR_DEVICES and DEFAULT_DEVICES
-     *                     or the constant ALL_DEVICES.
+     * @param deviceFilter One of the {@link DeviceFilter} constants.
      * @return A copy of the list of {@link Device}s. Can be empty but not null.
      */
     @NonNull
-    public List<Device> getDevices(int deviceFilter) {
+    public List<Device> getDevices(@NonNull DeviceFilter deviceFilter) {
+        return getDevices(EnumSet.of(deviceFilter));
+    }
+
+    /**
+     * Returns the known {@link Device} list.
+     *
+     * @param deviceFilter A combination of the {@link DeviceFilter} constants
+     *                     or the constant {@link DeviceManager#ALL_DEVICES}.
+     * @return A copy of the list of {@link Device}s. Can be empty but not null.
+     */
+    @NonNull
+    public List<Device> getDevices(@NonNull EnumSet<DeviceFilter> deviceFilter) {
         initDevicesLists();
         List<Device> devices = new ArrayList<Device>();
-        if (mUserDevices != null && (deviceFilter & USER_DEVICES) != 0) {
+        if (mUserDevices != null && (deviceFilter.contains(DeviceFilter.USER))) {
             devices.addAll(mUserDevices);
         }
-        if (mDefaultDevices != null && (deviceFilter & DEFAULT_DEVICES) != 0) {
+        if (mDefaultDevices != null && (deviceFilter.contains(DeviceFilter.DEFAULT))) {
             devices.addAll(mDefaultDevices);
         }
-        if (mVendorDevices != null && (deviceFilter & VENDOR_DEVICES) != 0) {
+        if (mVendorDevices != null && (deviceFilter.contains(DeviceFilter.VENDOR))) {
             devices.addAll(mVendorDevices);
+        }
+        if (mSysImgDevices != null && (deviceFilter.contains(DeviceFilter.SYSTEM_IMAGES))) {
+            devices.addAll(mSysImgDevices);
         }
         return Collections.unmodifiableList(devices);
     }
@@ -206,6 +244,7 @@ public class DeviceManager {
     private void initDevicesLists() {
         boolean changed = initDefaultDevices();
         changed |= initVendorDevices();
+        changed |= initSysImgDevices();
         changed |= initUserDevices();
         if (changed) {
             notifyListeners();
@@ -218,57 +257,108 @@ public class DeviceManager {
      */
     private boolean initDefaultDevices() {
         synchronized (mLock) {
-            if (mDefaultDevices == null) {
-                try {
-                    mDefaultDevices = DeviceParser.parse(
-                            DeviceManager.class.getResourceAsStream(SdkConstants.FN_DEVICES_XML));
-                    return true;
-                } catch (IllegalStateException e) {
-                    // The device builders can throw IllegalStateExceptions if
-                    // build gets called before everything is properly setup
-                    mLog.error(e, null);
-                    mDefaultDevices = new ArrayList<Device>();
-                } catch (Exception e) {
-                    mLog.error(e, "Error reading default devices");
-                    mDefaultDevices = new ArrayList<Device>();
-                }
+            if (mDefaultDevices != null) {
+                return false;
+            }
+            try {
+                mDefaultDevices = DeviceParser.parse(
+                        DeviceManager.class.getResourceAsStream(SdkConstants.FN_DEVICES_XML));
+                return true;
+            } catch (IllegalStateException e) {
+                // The device builders can throw IllegalStateExceptions if
+                // build gets called before everything is properly setup
+                mLog.error(e, null);
+                mDefaultDevices = new ArrayList<Device>();
+            } catch (Exception e) {
+                mLog.error(e, "Error reading default devices");
+                mDefaultDevices = new ArrayList<Device>();
             }
         }
         return false;
     }
 
     /**
-     * Initializes all vendor-provided {@link Device}s.
+     * Initializes all vendor-provided {@link Device}s: the bundled nexus.xml devices
+     * as well as all those coming from extra packages.
      * @return True if the list has changed.
      */
     private boolean initVendorDevices() {
         synchronized (mLock) {
-            if (mVendorDevices == null) {
-                mVendorDevices = new ArrayList<Device>();
+            if (mVendorDevices != null) {
+                return false;
+            }
 
-                // Load builtin devices
-                try {
-                    InputStream stream = DeviceManager.class.getResourceAsStream("nexus.xml");
-                    mVendorDevices.addAll(DeviceParser.parse(stream));
-                } catch (Exception e) {
-                    mLog.error(e, null, "Could not load devices");
-                }
+            mVendorDevices = new ArrayList<Device>();
 
-                if (mOsSdkPath != null) {
-                    // Load devices from vendor extras
-                    File extrasFolder = new File(mOsSdkPath, SdkConstants.FD_EXTRAS);
-                    List<File> deviceDirs = getExtraDirs(extrasFolder);
-                    for (File deviceDir : deviceDirs) {
-                        File deviceXml = new File(deviceDir, SdkConstants.FN_DEVICES_XML);
-                        if (deviceXml.isFile()) {
-                            mVendorDevices.addAll(loadDevices(deviceXml));
-                        }
+            // Load builtin devices
+            try {
+                InputStream stream = DeviceManager.class.getResourceAsStream("nexus.xml");
+                mVendorDevices.addAll(DeviceParser.parse(stream));
+            } catch (Exception e) {
+                mLog.error(e, null, "Could not load devices");
+            }
+
+            if (mOsSdkPath != null) {
+                // Load devices from vendor extras
+                File extrasFolder = new File(mOsSdkPath, SdkConstants.FD_EXTRAS);
+                List<File> deviceDirs = getExtraDirs(extrasFolder);
+                for (File deviceDir : deviceDirs) {
+                    File deviceXml = new File(deviceDir, SdkConstants.FN_DEVICES_XML);
+                    if (deviceXml.isFile()) {
+                        mVendorDevices.addAll(loadDevices(deviceXml));
                     }
-                    return true;
                 }
+                return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Initializes all system-image provided {@link Device}s.
+     * @return True if the list has changed.
+     */
+    private boolean initSysImgDevices() {
+        synchronized (mLock) {
+            if (mSysImgDevices != null) {
+                return false;
+            }
+            mSysImgDevices = new ArrayList<Device>();
+
+            if (mOsSdkPath == null) {
+                return false;
+            }
+
+            // Load devices from tagged system-images
+            // Path pattern is /sdk/system-images/<platform-N>/<tag>/<abi>/devices.xml
+
+            FileOp fop = new FileOp();
+            File sysImgFolder = new File(mOsSdkPath, SdkConstants.FD_SYSTEM_IMAGES);
+
+            for (File platformFolder : fop.listFiles(sysImgFolder)) {
+                if (!fop.isDirectory(platformFolder)) {
+                    continue;
+                }
+
+                for (File tagFolder : fop.listFiles(platformFolder)) {
+                    if (!fop.isDirectory(tagFolder)) {
+                        continue;
+                    }
+
+                    for (File abiFolder : fop.listFiles(tagFolder)) {
+                        if (!fop.isDirectory(abiFolder)) {
+                            continue;
+                        }
+
+                        File deviceXml = new File(abiFolder, SdkConstants.FN_DEVICES_XML);
+                        if (fop.isFile(deviceXml)) {
+                            mSysImgDevices.addAll(loadDevices(deviceXml));
+                        }
+                    }
+                }
+            }
+            return true;
+        }
     }
 
     /**
@@ -277,42 +367,43 @@ public class DeviceManager {
      */
     private boolean initUserDevices() {
         synchronized (mLock) {
-            if (mUserDevices == null) {
-                // User devices should be saved out to
-                // $HOME/.android/devices.xml
-                mUserDevices = new ArrayList<Device>();
-                File userDevicesFile = null;
-                try {
-                    userDevicesFile = new File(
-                            AndroidLocation.getFolder(),
-                            SdkConstants.FN_DEVICES_XML);
-                    if (userDevicesFile.exists()) {
-                        mUserDevices.addAll(DeviceParser.parse(userDevicesFile));
-                        return true;
-                    }
-                } catch (AndroidLocationException e) {
-                    mLog.warning("Couldn't load user devices: %1$s", e.getMessage());
-                } catch (SAXException e) {
-                    // Probably an old config file which we don't want to overwrite.
-                    if (userDevicesFile != null) {
-                        String base = userDevicesFile.getAbsoluteFile() + ".old";
-                        File renamedConfig = new File(base);
-                        int i = 0;
-                        while (renamedConfig.exists()) {
-                            renamedConfig = new File(base + '.' + (i++));
-                        }
-                        mLog.error(e, "Error parsing %1$s, backing up to %2$s",
-                                userDevicesFile.getAbsolutePath(),
-                                renamedConfig.getAbsolutePath());
-                        userDevicesFile.renameTo(renamedConfig);
-                    }
-                } catch (ParserConfigurationException e) {
-                    mLog.error(e, "Error parsing %1$s",
-                            userDevicesFile == null ? "(null)" : userDevicesFile.getAbsolutePath());
-                } catch (IOException e) {
-                    mLog.error(e, "Error parsing %1$s",
-                            userDevicesFile == null ? "(null)" : userDevicesFile.getAbsolutePath());
+            if (mUserDevices != null) {
+                return false;
+            }
+            // User devices should be saved out to
+            // $HOME/.android/devices.xml
+            mUserDevices = new ArrayList<Device>();
+            File userDevicesFile = null;
+            try {
+                userDevicesFile = new File(
+                        AndroidLocation.getFolder(),
+                        SdkConstants.FN_DEVICES_XML);
+                if (userDevicesFile.exists()) {
+                    mUserDevices.addAll(DeviceParser.parse(userDevicesFile));
+                    return true;
                 }
+            } catch (AndroidLocationException e) {
+                mLog.warning("Couldn't load user devices: %1$s", e.getMessage());
+            } catch (SAXException e) {
+                // Probably an old config file which we don't want to overwrite.
+                if (userDevicesFile != null) {
+                    String base = userDevicesFile.getAbsoluteFile() + ".old";
+                    File renamedConfig = new File(base);
+                    int i = 0;
+                    while (renamedConfig.exists()) {
+                        renamedConfig = new File(base + '.' + (i++));
+                    }
+                    mLog.error(e, "Error parsing %1$s, backing up to %2$s",
+                            userDevicesFile.getAbsolutePath(),
+                            renamedConfig.getAbsolutePath());
+                    userDevicesFile.renameTo(renamedConfig);
+                }
+            } catch (ParserConfigurationException e) {
+                mLog.error(e, "Error parsing %1$s",
+                        userDevicesFile == null ? "(null)" : userDevicesFile.getAbsolutePath());
+            } catch (IOException e) {
+                mLog.error(e, "Error parsing %1$s",
+                        userDevicesFile == null ? "(null)" : userDevicesFile.getAbsolutePath());
             }
         }
         return false;

@@ -2,11 +2,9 @@
 <template
     format="4"
     revision="2"
-    name="New Daydream"
+    name="Daydream"
     description="Creates a new Daydream service component, for use on devices running Android 4.2 and later."
     minBuildApi="17">
-
-    <category value="Other" />
 
     <parameter
         id="className"

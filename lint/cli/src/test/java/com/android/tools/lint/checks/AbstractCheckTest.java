@@ -16,8 +16,23 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.ATTR_ID;
+import static com.android.SdkConstants.FD_RES_VALUES;
+import static com.android.SdkConstants.NEW_ID_PREFIX;
+
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.res2.AbstractResourceRepository;
+import com.android.ide.common.res2.DuplicateDataException;
+import com.android.ide.common.res2.MergingException;
+import com.android.ide.common.res2.ResourceFile;
+import com.android.ide.common.res2.ResourceItem;
+import com.android.ide.common.res2.ResourceMerger;
+import com.android.ide.common.res2.ResourceRepository;
+import com.android.ide.common.res2.ResourceSet;
+import com.android.resources.ResourceType;
 import com.android.testutils.SdkTestCase;
 import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.LintCliFlags;
@@ -33,11 +48,27 @@ import com.android.tools.lint.client.api.LintRequest;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
+import com.android.utils.StdLogger;
+import com.android.utils.XmlUtils;
+import com.google.common.base.Charsets;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Sets;
+import com.google.common.io.Files;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -51,9 +82,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.CodeSource;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /** Common utility methods for the various lint check tests */
 @SuppressWarnings("javadoc")
@@ -114,8 +148,12 @@ public abstract class AbstractCheckTest extends SdkTestCase {
     }
 
     protected String checkLint(List<File> files) throws Exception {
-        mOutput = new StringBuilder();
         TestLintClient lintClient = createClient();
+        return checkLint(lintClient, files);
+    }
+
+    protected String checkLint(TestLintClient lintClient, List<File> files) throws Exception {
+        mOutput = new StringBuilder();
         String result = lintClient.analyze(files);
 
         // The output typically contains a few directory/filenames.
@@ -151,6 +189,16 @@ public abstract class AbstractCheckTest extends SdkTestCase {
     protected String lintProject(String... relativePaths) throws Exception {
         File projectDir = getProjectDir(null, relativePaths);
         return checkLint(Collections.singletonList(projectDir));
+    }
+
+    protected String lintProjectIncrementally(String currentFile, String... relativePaths)
+            throws Exception {
+        File projectDir = getProjectDir(null, relativePaths);
+        File current = new File(projectDir, currentFile.replace('/', File.separatorChar));
+        assertTrue(current.exists());
+        TestLintClient client = createClient();
+        client.setIncremental(current);
+        return checkLint(client, Collections.singletonList(projectDir));
     }
 
     @Override
@@ -264,6 +312,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
 
     public class TestLintClient extends LintCliClient {
         private StringWriter mWriter = new StringWriter();
+        private File mIncrementalCheck;
 
         public TestLintClient() {
             super(new LintCliFlags());
@@ -283,7 +332,18 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         public String analyze(List<File> files) throws Exception {
             mDriver = new LintDriver(new CustomIssueRegistry(), this);
             configureDriver(mDriver);
-            mDriver.analyze(new LintRequest(this, files).setScope(getLintScope(files)));
+            LintRequest request = new LintRequest(this, files);
+            if (mIncrementalCheck != null) {
+                assertEquals(1, files.size());
+                File projectDir = files.get(0);
+                assertTrue(isProjectDirectory(projectDir));
+                Project project = createProject(projectDir, projectDir);
+                project.addFile(mIncrementalCheck);
+                List<Project> projects = Collections.singletonList(project);
+                request.setProjects(projects);
+            }
+
+            mDriver.analyze(request.setScope(getLintScope(files)));
 
             // Check compare contract
             Warning prev = null;
@@ -458,6 +518,121 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         public List<File> findGlobalRuleJars() {
             // Don't pick up random custom rules in ~/.android/lint when running unit tests
             return Collections.emptyList();
+        }
+
+        public void setIncremental(File currentFile) {
+            mIncrementalCheck = currentFile;
+        }
+
+        @Override
+        public boolean supportsProjectResources() {
+            return mIncrementalCheck != null;
+        }
+
+        @Nullable
+        @Override
+        public AbstractResourceRepository getProjectResources(Project project,
+                boolean includeDependencies) {
+            if (mIncrementalCheck == null) {
+                return null;
+            }
+
+            ResourceRepository repository = new ResourceRepository(false);
+            ILogger logger = new StdLogger(StdLogger.Level.INFO);
+            ResourceMerger merger = new ResourceMerger();
+
+            ResourceSet resourceSet = new ResourceSet(getName()) {
+                @Override
+                protected void checkItems() throws DuplicateDataException {
+                    // No checking in ProjectResources; duplicates can happen, but
+                    // the project resources shouldn't abort initialization
+                }
+            };
+            // Only support 1 resource folder in test setup right now
+            assertEquals(1, project.getResourceFolders().size());
+            resourceSet.addSource(project.getResourceFolders().get(0));
+            try {
+                resourceSet.loadFromFiles(logger);
+                merger.addDataSet(resourceSet);
+                merger.mergeData(repository.createMergeConsumer(), true);
+
+                // Workaround: The repository does not insert ids from layouts! We need
+                // to do that here.
+                Map<ResourceType,ListMultimap<String,ResourceItem>> items = repository.getItems();
+                ListMultimap<String, ResourceItem> layouts = items
+                        .get(ResourceType.LAYOUT);
+                if (layouts != null) {
+                    for (ResourceItem item : layouts.values()) {
+                        ResourceFile source = item.getSource();
+                        if (source == null) {
+                            continue;
+                        }
+                        File file = source.getFile();
+                        try {
+                            String xml = Files.toString(file, Charsets.UTF_8);
+                            Document document = XmlUtils.parseDocumentSilently(xml, true);
+                            assertNotNull(document);
+                            Set<String> ids = Sets.newHashSet();
+                            addIds(ids, document); // TODO: pull parser
+                            if (!ids.isEmpty()) {
+                                ListMultimap<String, ResourceItem> idMap =
+                                        items.get(ResourceType.ID);
+                                if (idMap == null) {
+                                    idMap = ArrayListMultimap.create();
+                                    items.put(ResourceType.ID, idMap);
+                                }
+                                for (String id : ids) {
+                                    ResourceItem idItem = new ResourceItem(id, ResourceType.ID,
+                                            null);
+                                    String qualifiers = file.getParentFile().getName();
+                                    if (qualifiers.startsWith("layout-")) {
+                                        qualifiers = qualifiers.substring("layout-".length());
+                                    } else if (qualifiers.equals("layout")) {
+                                        qualifiers = "";
+                                    }
+                                    idItem.setSource(new ResourceFile(file, item, qualifiers));
+                                    idMap.put(id, idItem);
+                                }
+                            }
+                        } catch (IOException e) {
+                            fail(e.toString());
+                        }
+                    }
+                }
+            }
+            catch (DuplicateDataException e) {
+                fail(e.getMessage());
+            }
+            catch (MergingException e) {
+                fail(e.getMessage());
+            }
+
+            return repository;
+        }
+
+        private void addIds(Set<String> ids, Node node) {
+            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                Element element = (Element) node;
+                String id = element.getAttributeNS(ANDROID_URI, ATTR_ID);
+                if (id != null && !id.isEmpty()) {
+                    ids.add(LintUtils.stripIdPrefix(id));
+                }
+
+                NamedNodeMap attributes = element.getAttributes();
+                for (int i = 0, n = attributes.getLength(); i < n; i++) {
+                    Attr attribute = (Attr) attributes.item(i);
+                    String value = attribute.getValue();
+                    if (value.startsWith(NEW_ID_PREFIX)) {
+                        ids.add(value.substring(NEW_ID_PREFIX.length()));
+                    }
+                }
+            }
+
+            NodeList children = node.getChildNodes();
+            for (int i = 0, n = children.getLength(); i < n; i++) {
+                Node child = children.item(i);
+                addIds(ids, child);
+            }
         }
     }
 

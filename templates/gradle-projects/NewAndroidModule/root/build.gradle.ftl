@@ -46,19 +46,12 @@ android {
     }
 </#if>
 <#if enableProGuard>
-    <#if isLibraryProject>
-    release {
-        runProguard false
-        proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
-    }
-    <#else>
     buildTypes {
         release {
             runProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
-    </#if>
 </#if>
 }
 
@@ -68,5 +61,5 @@ dependencies {
     compile '${dependency}'
     </#list>
     </#if>
-    compile fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
+    compile fileTree(dir: 'libs', include: ['*.jar'])
 }

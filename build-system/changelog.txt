@@ -1,4 +1,43 @@
+0.9.0:
+- Compatible with Gradle 1.10 and 1.11
+- BREAKING CHANGES:
+   * DSL for Library Projects is now the same as for app projects, meaning you can create more Build Types, as well as ProductFlavors.
+   * instrumentTest (both default folders and DSL objects) renamed androidTest
+
+- In preparation for a final variant publishing mechanism, flavors in Libraries can be published alongside the default configuration.
+  The default publishing configuration is configured with
+    android.defaultPublishConfig
+  Default Value is "release", but can be changed to be the name of any variant.
+  To enable publication all the variants, use:
+    android.publishNonDefault = true
+  To use from another project:
+    compile project(path: ':project', configuration: 'flavor1Debug')
+  See 'FlavoredLib' sample.
+  Note that this does not really solve the issue with library being published with 'release' mode always. This is because you would have to manually
+  specify which variant you want to reference in each of the configuration of the app project. A better mechanism will come later.
+- Ability to skip some variants. Create a closure to control which variants should be created.
+     android.variantFilter { variant ->
+        ...
+     }
+
+  The object passed to the closure implements the following methods:
+        public void setIgnore(boolean ignore);
+        @NonNull
+        public ProductFlavor getDefaultConfig();
+        @NonNull
+        public BuildType getBuildType();
+        @NonNull
+        public List<ProductFlavor> getFlavors();
+  To skip a variant, call setIgnore(false)
+- Library dependency scopes are now 'provided', 'compile', 'publish'.
+  The 'publish' and 'apk' configurations don't extend 'compile' anymore but the composite configurations are still properly setup.
+- Fix issue where variant specific source folders where not used for java compilation.
+- Fix for some Renderscript support mode compatibility issues. Requires Build Tools 19.0.3
+- Lots of misc fixes.
+
 0.8.3:
+
+- Fix Studio integration regression.
 
 0.8.2:
 - Fix incremental issue with build config fields and generated res values.

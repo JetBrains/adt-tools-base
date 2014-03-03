@@ -29,19 +29,25 @@ import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.packages.PlatformPackage;
+import com.android.sdklib.io.FileOp;
 import com.android.sdklib.io.IFileOp;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.TreeMultimap;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -270,9 +276,15 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                 platformProp,
                 sdk.getLatestBuildTool());
 
-        // add the skins.
-        String[] skins = parseSkinFolder(pt.getPath(IAndroidTarget.SKINS));
-        pt.setSkins(skins);
+        // add the skins from the platform. Make a copy to not modify the original collection.
+        List<File> skins = new ArrayList<File>(parseSkinFolder(pt.getFile(IAndroidTarget.SKINS)));
+
+        // add the system-image specific skins, if any.
+        for (ISystemImage systemImage : systemImages) {
+            skins.addAll(Arrays.asList(systemImage.getSkins()));
+        }
+
+        pt.setSkins(skins.toArray(new File[skins.size()]));
 
         // add path to the non-legacy samples package if it exists
         LocalPkgInfo samples = sdk.getPkgInfo(PkgType.PKG_SAMPLES, getDesc().getAndroidVersion());
@@ -307,42 +319,58 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                                                    File platformDir,
                                                    AndroidVersion apiVersion) {
         Set<ISystemImage> found = new TreeSet<ISystemImage>();
-        Set<String> abiFound = new HashSet<String>();
+        SetMultimap<IdDisplay, String> tagToAbiFound = TreeMultimap.create();
 
-        // First look in the SDK/system-image/platform-n/abi folders.
+
+        // Look in the SDK/system-image/platform-n/tag/abi folders.
+        // Look in the SDK/system-image/platform-n/abi folders.
         // If we find multiple occurrences of the same platform/abi, the first one read wins.
 
-        for (LocalPkgInfo pkg : getLocalSdk().getPkgsInfos(PkgType.PKG_SYS_IMAGES)) {
+        LocalPkgInfo[] sysImgInfos = getLocalSdk().getPkgsInfos(PkgType.PKG_SYS_IMAGES);
+        for (LocalPkgInfo pkg : sysImgInfos) {
             if (pkg instanceof LocalSysImgPkgInfo &&
                     apiVersion.equals(pkg.getDesc().getAndroidVersion())) {
-                String abi = ((LocalSysImgPkgInfo)pkg).getDesc().getPath();
-                if (abi != null && !abiFound.contains(abi)) {
+                IdDisplay tag = pkg.getDesc().getTag();
+                String abi = pkg.getDesc().getPath();
+                if (tag != null && abi != null && !tagToAbiFound.containsEntry(tag, abi)) {
+                    List<File> parsedSkins = parseSkinFolder(
+                            new File(pkg.getLocalDir(), SdkConstants.FD_SKINS));
+                    File[] skins = FileOp.EMPTY_FILE_ARRAY;
+                    if (!parsedSkins.isEmpty()) {
+                        skins = parsedSkins.toArray(new File[parsedSkins.size()]);
+                    }
+
                     found.add(new SystemImage(
                             pkg.getLocalDir(),
                             LocationType.IN_SYSTEM_IMAGE,
-                            abi));
-                    abiFound.add(abi);
+                            tag,
+                            abi,
+                            skins));
+                    tagToAbiFound.put(tag, abi);
                 }
             }
         }
 
-        // Then look in either the platform/images/abi or the legacy folder
+        // Look in either the platform/images/abi or the legacy folder
         File imgDir = new File(platformDir, SdkConstants.OS_IMAGES_FOLDER);
         File[] files =  fileOp.listFiles(imgDir);
         boolean useLegacy = true;
         boolean hasImgFiles = false;
+        final IdDisplay defaultTag = SystemImage.DEFAULT_TAG;
 
         // Look for sub-directories
         for (File file : files) {
             if (fileOp.isDirectory(file)) {
                 useLegacy = false;
                 String abi = file.getName();
-                if (!abiFound.contains(abi)) {
+                if (!tagToAbiFound.containsEntry(defaultTag, abi)) {
                     found.add(new SystemImage(
                             file,
                             LocationType.IN_PLATFORM_SUBFOLDER,
-                            abi));
-                    abiFound.add(abi);
+                            defaultTag,
+                            abi,
+                            FileOp.EMPTY_FILE_ARRAY));
+                    tagToAbiFound.put(defaultTag, abi);
                 }
             } else if (!hasImgFiles && fileOp.isFile(file)) {
                 if (file.getName().endsWith(".img")) {      //$NON-NLS-1$
@@ -354,13 +382,15 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
         if (useLegacy &&
                 hasImgFiles &&
                 fileOp.isDirectory(imgDir) &&
-                !abiFound.contains(SdkConstants.ABI_ARMEABI)) {
+                !tagToAbiFound.containsEntry(defaultTag, SdkConstants.ABI_ARMEABI)) {
             // We found no sub-folder system images but it looks like the top directory
             // has some img files in it. It must be a legacy ARM EABI system image folder.
             found.add(new SystemImage(
                     imgDir,
                     LocationType.IN_PLATFORM_LEGACY,
-                    SdkConstants.ABI_ARMEABI));
+                    defaultTag,
+                    SdkConstants.ABI_ARMEABI,
+                    FileOp.EMPTY_FILE_ARRAY));
         }
 
         return found.toArray(new ISystemImage[found.size()]);
@@ -368,15 +398,14 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
 
     /**
      * Parses the skin folder and builds the skin list.
-     * @param osPath The path of the skin root folder.
+     * @param skinRootFolder The path to the skin root folder.
      */
     @NonNull
-    protected String[] parseSkinFolder(@NonNull String osPath) {
+    protected List<File> parseSkinFolder(@NonNull File skinRootFolder) {
         IFileOp fileOp = getLocalSdk().getFileOp();
-        File skinRootFolder = new File(osPath);
 
         if (fileOp.isDirectory(skinRootFolder)) {
-            ArrayList<String> skinList = new ArrayList<String>();
+            ArrayList<File> skinList = new ArrayList<File>();
 
             File[] files = fileOp.listFiles(skinRootFolder);
 
@@ -388,15 +417,15 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                     if (fileOp.isFile(layout)) {
                         // for now we don't parse the content of the layout and
                         // simply add the directory to the list.
-                        skinList.add(skinFolder.getName());
+                        skinList.add(skinFolder);
                     }
                 }
             }
 
-            return skinList.toArray(new String[skinList.size()]);
+            return skinList;
         }
 
-        return new String[0];
+        return Collections.emptyList();
     }
 
 

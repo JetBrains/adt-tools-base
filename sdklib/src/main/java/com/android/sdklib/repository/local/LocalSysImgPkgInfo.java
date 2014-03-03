@@ -18,11 +18,15 @@ package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.SystemImage;
 import com.android.sdklib.repository.MajorRevision;
+import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 
 import java.io.File;
+import java.util.Locale;
 import java.util.Properties;
 
 /**
@@ -43,13 +47,59 @@ public class LocalSysImgPkgInfo extends LocalPkgInfo {
                               @NonNull String abi,
                               @NonNull MajorRevision revision) {
         super(localSdk, localDir, sourceProps);
-        mDesc = PkgDesc.newSysImg(version, abi, revision);
+        IdDisplay tag = extractTagFromProps(sourceProps);
+        mDesc = PkgDesc.newSysImg(version, tag, abi, revision);
     }
 
     @NonNull
     @Override
     public IPkgDesc getDesc() {
         return mDesc;
+    }
+
+    /**
+     * Extracts the tag id & display from the properties.
+     * If missing, uses the "default" tag id.
+     */
+    @NonNull
+    public static IdDisplay extractTagFromProps(Properties props) {
+        if (props != null) {
+            String tagId   = props.getProperty(PkgProps.SYS_IMG_TAG_ID,
+                                               SystemImage.DEFAULT_TAG.getId());
+            String tagDisp = props.getProperty(PkgProps.SYS_IMG_TAG_DISPLAY, "");      //$NON-NLS-1$
+            if (tagDisp == null || tagDisp.isEmpty()) {
+                tagDisp = tagIdToDisplay(tagId);
+            }
+            assert tagId   != null;
+            assert tagDisp != null;
+            return new IdDisplay(tagId, tagDisp);
+        }
+        return SystemImage.DEFAULT_TAG;
+    }
+
+    /**
+     * Computes a display-friendly tag string based on the tag id.
+     * This is typically used when there's no tag-display attribute.
+     *
+     * @param tagId A non-null tag id to sanitize for display.
+     * @return The tag id with all non-alphanum symbols replaced by spaces and trimmed.
+     */
+    @NonNull
+    public static String tagIdToDisplay(@NonNull String tagId) {
+        String name;
+        name = tagId.replaceAll("[^A-Za-z0-9]+", " ");      //$NON-NLS-1$ //$NON-NLS-2$
+        name = name.replaceAll(" +", " ");                  //$NON-NLS-1$ //$NON-NLS-2$
+        name = name.trim();
+
+        if (name.length() > 0) {
+            char c = name.charAt(0);
+            if (!Character.isUpperCase(c)) {
+                StringBuilder sb = new StringBuilder(name);
+                sb.replace(0, 1, String.valueOf(c).toUpperCase(Locale.US));
+                name = sb.toString();
+            }
+        }
+        return name;
     }
 
     // TODO create package on demand if needed. This might not be needed

@@ -69,7 +69,7 @@ public class FrameworkResources extends ResourceRepository {
      * {@link ResourceItem} matching a given {@link ResourceType}.
      *
      * @param type the type of the resources to return
-     * @return a collection of items, possible empty.
+     * @return a collection of items, possibly empty.
      */
     @Override
     @NonNull

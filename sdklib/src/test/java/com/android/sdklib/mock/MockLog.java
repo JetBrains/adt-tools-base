@@ -63,7 +63,26 @@ public class MockLog implements ILogger {
 
     @Override
     public String toString() {
-        return mMessages.toString();
+        StringBuilder sb = new StringBuilder();
+        // Each line starts with [WPVE] + space + actual content.
+        // When writing the types, collapse the W/P/V/E qualifiers and only specify one per line.
+        char lastType = 0;
+        for (String s : mMessages) {
+            if (s.isEmpty()) {
+                continue;
+            }
+            char type = s.charAt(0);
+            if (type != lastType) {
+                sb.append(s);
+                lastType = type;
+            } else if (s.length() > 2) {
+                sb.append(s.substring(2));
+            }
+            if (s.endsWith("\n")) {
+                lastType = 0;
+            }
+        }
+        return sb.toString();
     }
 
     @NonNull

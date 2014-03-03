@@ -1,7 +1,7 @@
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        <#if navType == 'drawer'>if (!mNavigationDrawerFragment.isDrawerOpen()) {
+        <#if features == 'drawer'>if (!mNavigationDrawerFragment.isDrawerOpen()) {
             // Only show items in the action bar relevant to this screen
             // if the drawer is not showing. Otherwise, let the drawer
             // decide what to show in the action bar.

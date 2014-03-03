@@ -126,6 +126,9 @@ public class WakelockDetector extends Detector implements ClassScanner {
         if (call.owner.equals(WAKELOCK_OWNER)) {
             String name = call.name;
             if (name.equals(ACQUIRE_METHOD)) {
+                if (call.desc.equals("(J)V")) { // acquire(long timeout) does not require a corresponding release
+                    return;
+                }
                 mHasAcquire = true;
 
                 if (context.getDriver().getPhase() == 2) {

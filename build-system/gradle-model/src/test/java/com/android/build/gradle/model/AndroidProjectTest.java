@@ -16,7 +16,8 @@
 
 package com.android.build.gradle.model;
 
-import static com.android.builder.model.AndroidProject.ARTIFACT_INSTRUMENT_TEST;
+import static com.android.builder.BuilderConstants.ANDROID_TEST;
+import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -53,12 +54,13 @@ import java.net.URL;
 import java.security.CodeSource;
 import java.security.KeyStore;
 import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 public class AndroidProjectTest extends TestCase {
 
-    private static final String MODEL_VERSION = "0.8.3-SNAPSHOT";
+    private static final String MODEL_VERSION = "0.9.0-SNAPSHOT";
 
     private static final Map<String, ProjectData> sProjectModelMap = Maps.newHashMap();
 
@@ -162,7 +164,7 @@ public class AndroidProjectTest extends TestCase {
         AndroidProject model = projectData.model;
 
         assertFalse("Library Project", model.isLibrary());
-        assertEquals("Compile Target", "android-15", model.getCompileTarget());
+        assertEquals("Compile Target", "android-19", model.getCompileTarget());
         assertFalse("Non empty bootclasspath", model.getBootClasspath().isEmpty());
 
         JavaCompileOptions javaCompileOptions = model.getJavaCompileOptions();
@@ -211,13 +213,13 @@ public class AndroidProjectTest extends TestCase {
 
             assertEquals(1, pfContainer.getExtraSourceProviders().size());
             SourceProviderContainer container = getSourceProviderContainer(
-                    pfContainer.getExtraSourceProviders(), ARTIFACT_INSTRUMENT_TEST);
+                    pfContainer.getExtraSourceProviders(), ARTIFACT_ANDROID_TEST);
             assertNotNull(container);
 
             new SourceProviderTester(
                     model.getName(),
                     projectDir,
-                    "instrumentTest" + StringHelper.capitalize(name),
+                    ANDROID_TEST + StringHelper.capitalize(name),
                     container.getSourceProvider())
                 .test();
         }
@@ -241,11 +243,11 @@ public class AndroidProjectTest extends TestCase {
 
         // test the main instrumentTest source provider
         SourceProviderContainer testSourceProviders = getSourceProviderContainer(
-                defaultConfig.getExtraSourceProviders(), ARTIFACT_INSTRUMENT_TEST);
+                defaultConfig.getExtraSourceProviders(), ARTIFACT_ANDROID_TEST);
         assertNotNull("InstrumentTest source Providers null-check", testSourceProviders);
 
         new SourceProviderTester(model.getName(), projectDir,
-                "instrumentTest", testSourceProviders.getSourceProvider())
+                ANDROID_TEST, testSourceProviders.getSourceProvider())
             .test();
 
         // test the source provider for the build types
@@ -300,7 +302,7 @@ public class AndroidProjectTest extends TestCase {
 
         // this variant is tested.
         AndroidArtifact debugTestInfo = getAndroidArtifact(debugExtraAndroidArtifacts,
-                ARTIFACT_INSTRUMENT_TEST);
+                ARTIFACT_ANDROID_TEST);
         assertNotNull("Test info null-check", debugTestInfo);
         assertEquals("Test package name", "com.android.tests.basic.debug.test",
                 debugTestInfo.getPackageName());
@@ -324,7 +326,7 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Release javaCompileTask", "compileReleaseJava", relMainInfo.getJavaCompileTaskName());
 
         Collection<AndroidArtifact> releaseExtraAndroidArtifacts = releaseVariant.getExtraAndroidArtifacts();
-        AndroidArtifact relTestInfo = getAndroidArtifact(releaseExtraAndroidArtifacts, ARTIFACT_INSTRUMENT_TEST);
+        AndroidArtifact relTestInfo = getAndroidArtifact(releaseExtraAndroidArtifacts, ARTIFACT_ANDROID_TEST);
         assertNull("Release test info null-check", relTestInfo);
 
         // check debug dependencies
@@ -387,11 +389,11 @@ public class AndroidProjectTest extends TestCase {
                 .test();
 
         SourceProviderContainer testSourceProviderContainer = getSourceProviderContainer(
-                defaultConfig.getExtraSourceProviders(), ARTIFACT_INSTRUMENT_TEST);
+                defaultConfig.getExtraSourceProviders(), ARTIFACT_ANDROID_TEST);
         assertNotNull("InstrumentTest source Providers null-check", testSourceProviderContainer);
 
         new SourceProviderTester(model.getName(), projectDir,
-                "instrumentTest", testSourceProviderContainer.getSourceProvider())
+                ANDROID_TEST, testSourceProviderContainer.getSourceProvider())
                 .setJavaDir("tests/java")
                 .setResourcesDir("tests/resources")
                 .setAidlDir("tests/aidl")
@@ -430,6 +432,36 @@ public class AndroidProjectTest extends TestCase {
         }
     }
 
+    public void testFilteredOutBuildType() {
+        // Load the custom model for the project
+        ProjectData projectData = getModelForProject("filteredOutBuildType");
+
+        AndroidProject model = projectData.model;
+
+        assertEquals("Variant Count", 1, model.getVariants().size());
+        Variant variant = model.getVariants().iterator().next();
+        assertEquals("Variant name", "release", variant.getBuildType());
+    }
+
+    public void testFilteredOutVariants() {
+        // Load the custom model for the project
+        ProjectData projectData = getModelForProject("filteredOutVariants");
+
+        AndroidProject model = projectData.model;
+
+        Collection<Variant> variants = model.getVariants();
+        // check we have the right number of variants:
+        // arm/cupcake, arm/gingerbread, x86/gingerbread, mips/gingerbread
+        // all 4 in release and debug
+        assertEquals("Variant Count", 8, variants.size());
+
+        for (Variant variant : variants) {
+            List<String> flavors = variant.getProductFlavors();
+            assertFalse("check ignored x86/cupcake", flavors.contains("x68") && flavors.contains("cupcake"));
+            assertFalse("check ignored mips/cupcake", flavors.contains("mips") && flavors.contains("cupcake"));
+        }
+    }
+
     public void testFlavors() {
         // Load the custom model for the project
         ProjectData projectData = getModelForProject("flavors");
@@ -448,11 +480,11 @@ public class AndroidProjectTest extends TestCase {
                 .test();
 
         SourceProviderContainer testSourceProviderContainer = getSourceProviderContainer(
-                defaultConfig.getExtraSourceProviders(), ARTIFACT_INSTRUMENT_TEST);
+                defaultConfig.getExtraSourceProviders(), ARTIFACT_ANDROID_TEST);
         assertNotNull("InstrumentTest source Providers null-check", testSourceProviderContainer);
 
         new SourceProviderTester(model.getName(), projectDir,
-                "instrumentTest", testSourceProviderContainer.getSourceProvider())
+                ANDROID_TEST, testSourceProviderContainer.getSourceProvider())
                 .test();
 
         Collection<BuildTypeContainer> buildTypes = model.getBuildTypes();
@@ -495,7 +527,6 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Dependency project path", ":lib", androidLibrary.getProject());
 
         // TODO: right now we can only test the folder name efficiently
-        assertTrue(androidLibrary.getFolder().isDirectory());
         assertTrue(androidLibrary.getFolder().getPath().endsWith("/tictactoe/lib/unspecified"));
     }
 
@@ -524,9 +555,9 @@ public class AndroidProjectTest extends TestCase {
         assertEquals(1, libs.size());
         AndroidLibrary androidLibrary = libs.iterator().next();
         assertNotNull(androidLibrary);
+        assertEquals(":lib1", androidLibrary.getProject());
         // TODO: right now we can only test the folder name efficiently
-        assertTrue(androidLibrary.getFolder().isDirectory());
-        assertTrue(androidLibrary.getFolder().getPath().endsWith("/flavorlib/lib1/unspecified"));
+        assertTrue(androidLibrary.getFolder().getPath(), androidLibrary.getFolder().getPath().endsWith("/flavorlib/lib1/unspecified"));
 
         ProductFlavorContainer flavor2 = getProductFlavor(productFlavors, "flavor2");
         assertNotNull(flavor2);
@@ -541,9 +572,58 @@ public class AndroidProjectTest extends TestCase {
         assertEquals(1, libs.size());
         androidLibrary = libs.iterator().next();
         assertNotNull(androidLibrary);
+        assertEquals(":lib2", androidLibrary.getProject());
         // TODO: right now we can only test the folder name efficiently
-        assertTrue(androidLibrary.getFolder().isDirectory());
-        assertTrue(androidLibrary.getFolder().getPath().endsWith("/flavorlib/lib2/unspecified"));
+        assertTrue(androidLibrary.getFolder().getPath(), androidLibrary.getFolder().getPath().endsWith("/flavorlib/lib2/unspecified"));
+    }
+
+    public void testFlavoredLib() throws Exception {
+        Map<String, ProjectData> map = getModelForMultiProject("flavoredlib");
+
+        ProjectData appModelData = map.get(":app");
+        assertNotNull("Module app null-check", appModelData);
+        AndroidProject model = appModelData.model;
+
+        assertFalse("Library Project", model.isLibrary());
+
+        Collection<Variant> variants = model.getVariants();
+        Collection<ProductFlavorContainer> productFlavors = model.getProductFlavors();
+
+        ProductFlavorContainer flavor1 = getProductFlavor(productFlavors, "flavor1");
+        assertNotNull(flavor1);
+
+        Variant flavor1Debug = getVariant(variants, "flavor1Debug");
+        assertNotNull(flavor1Debug);
+
+        Dependencies dependencies = flavor1Debug.getMainArtifact().getDependencies();
+        assertNotNull(dependencies);
+        Collection<AndroidLibrary> libs = dependencies.getLibraries();
+        assertNotNull(libs);
+        assertEquals(1, libs.size());
+        AndroidLibrary androidLibrary = libs.iterator().next();
+        assertNotNull(androidLibrary);
+        assertEquals(":lib", androidLibrary.getProject());
+        assertEquals("flavor1Release", androidLibrary.getProjectVariant());
+        // TODO: right now we can only test the folder name efficiently
+        assertTrue(androidLibrary.getFolder().getPath(), androidLibrary.getFolder().getPath().endsWith("/flavoredlib/lib/unspecified/flavor1Release"));
+
+        ProductFlavorContainer flavor2 = getProductFlavor(productFlavors, "flavor2");
+        assertNotNull(flavor2);
+
+        Variant flavor2Debug = getVariant(variants, "flavor2Debug");
+        assertNotNull(flavor2Debug);
+
+        dependencies = flavor2Debug.getMainArtifact().getDependencies();
+        assertNotNull(dependencies);
+        libs = dependencies.getLibraries();
+        assertNotNull(libs);
+        assertEquals(1, libs.size());
+        androidLibrary = libs.iterator().next();
+        assertNotNull(androidLibrary);
+        assertEquals(":lib", androidLibrary.getProject());
+        assertEquals("flavor2Release", androidLibrary.getProjectVariant());
+        // TODO: right now we can only test the folder name efficiently
+        assertTrue(androidLibrary.getFolder().getPath(), androidLibrary.getFolder().getPath().endsWith("/flavoredlib/lib/unspecified/flavor2Release"));
     }
 
     public void testMultiproject() throws Exception {
@@ -588,11 +668,34 @@ public class AndroidProjectTest extends TestCase {
 
         Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts();
         AndroidArtifact testArtifact = getAndroidArtifact(extraAndroidArtifact,
-                ARTIFACT_INSTRUMENT_TEST);
+                ARTIFACT_ANDROID_TEST);
         assertNotNull(testArtifact);
 
         Dependencies testDependencies = testArtifact.getDependencies();
         assertEquals(1, testDependencies.getJars().size());
+    }
+
+    public void testLibTestDep() {
+        // Load the custom model for the project
+        ProjectData projectData = getModelForProject("libTestDep");
+
+        AndroidProject model = projectData.model;
+
+        Collection<Variant> variants = model.getVariants();
+        Variant debugVariant = getVariant(variants, "debug");
+        assertNotNull(debugVariant);
+
+        Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts();
+        AndroidArtifact testArtifact = getAndroidArtifact(extraAndroidArtifact,
+                ARTIFACT_ANDROID_TEST);
+        assertNotNull(testArtifact);
+
+        Dependencies testDependencies = testArtifact.getDependencies();
+        Collection<File> jars = testDependencies.getJars();
+        assertEquals(2, jars.size());
+        for (File f : jars) {
+            assertTrue(f.getName().equals("guava-11.0.2.jar") || f.getName().equals("jsr305-1.3.9.jar"));
+        }
     }
 
     public void testRsSupportMode() throws Exception {
@@ -700,7 +803,7 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Extra artifact size check", 2, extraArtifacts.size());
 
         assertNotNull("instrument test metadata null-check",
-                getArtifactMetaData(extraArtifacts, ARTIFACT_INSTRUMENT_TEST));
+                getArtifactMetaData(extraArtifacts, ARTIFACT_ANDROID_TEST));
 
         // get the custom one.
         ArtifactMetaData extraArtifactMetaData = getArtifactMetaData(extraArtifacts, "__test__");
@@ -750,7 +853,7 @@ public class AndroidProjectTest extends TestCase {
 
             assertNotNull(
                     "Extra source provider container for product flavor '" + name + "': instTest check",
-                    getSourceProviderContainer(extraSourceProviderContainers, ARTIFACT_INSTRUMENT_TEST));
+                    getSourceProviderContainer(extraSourceProviderContainers, ARTIFACT_ANDROID_TEST));
 
 
             SourceProviderContainer sourceProviderContainer = getSourceProviderContainer(
@@ -789,6 +892,35 @@ public class AndroidProjectTest extends TestCase {
             assertNotNull("java artifact deps null-check", deps);
             assertFalse(deps.getJars().isEmpty());
         }
+    }
+
+    public void testCustomArtifact() throws Exception {
+        // Load the custom model for the projects
+        Map<String, ProjectData> map = getModelForMultiProject("customArtifactDep");
+
+        ProjectData appModelData = map.get(":app");
+        assertNotNull("Module app null-check", appModelData);
+        AndroidProject model = appModelData.model;
+
+        Collection<Variant> variants = model.getVariants();
+        assertEquals("Variant count", 2, variants.size());
+
+        Variant variant = getVariant(variants, "release");
+        assertNotNull("release variant null-check", variant);
+
+        AndroidArtifact mainInfo = variant.getMainArtifact();
+        assertNotNull("Main Artifact null-check", mainInfo);
+
+        Dependencies dependencies = mainInfo.getDependencies();
+        assertNotNull("Dependencies null-check", dependencies);
+
+        Collection<String> projects = dependencies.getProjects();
+        assertNotNull("project dep list null-check", projects);
+        assertTrue("project dep empty check", projects.isEmpty());
+
+        Collection<File> jars = dependencies.getJars();
+        assertNotNull("jar dep list null-check", jars);
+        assertEquals("jar dep count", 1, jars.size());
     }
 
     /**

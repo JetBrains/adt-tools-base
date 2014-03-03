@@ -18,11 +18,13 @@ package com.android.sdklib.internal.androidTarget;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -83,8 +85,8 @@ public final class AddOnTarget implements IAndroidTarget {
     private final boolean mHasRenderingLibrary;
     private final boolean mHasRenderingResources;
 
-    private String[] mSkins;
-    private String mDefaultSkin;
+    private File[] mSkins;
+    private File mDefaultSkin;
     private IOptionalLibrary[] mLibraries;
     private int mVendorId = NO_USB_ID;
 
@@ -156,9 +158,10 @@ public final class AddOnTarget implements IAndroidTarget {
     }
 
     @Override
-    public ISystemImage getSystemImage(String abiType) {
+    @Nullable
+    public ISystemImage getSystemImage(@NonNull IdDisplay tag, @NonNull String abiType) {
         for (ISystemImage sysImg : mSystemImages) {
-            if (sysImg.getAbiType().equals(abiType)) {
+            if (sysImg.getTag().equals(tag) && sysImg.getAbiType().equals(abiType)) {
                 return sysImg;
             }
         }
@@ -273,6 +276,11 @@ public final class AddOnTarget implements IAndroidTarget {
     }
 
     @Override
+    public File getFile(int pathId) {
+        return new File(getPath(pathId));
+    }
+
+    @Override
     public BuildToolInfo getBuildToolInfo() {
         return mBasePlatform.getBuildToolInfo();
     }
@@ -287,13 +295,15 @@ public final class AddOnTarget implements IAndroidTarget {
         return mHasRenderingLibrary || mHasRenderingResources;
     }
 
+    @NonNull
     @Override
-    public String[] getSkins() {
+    public File[] getSkins() {
         return mSkins;
     }
 
+    @Nullable
     @Override
-    public String getDefaultSkin() {
+    public File getDefaultSkin() {
         return mDefaultSkin;
     }
 
@@ -451,15 +461,15 @@ public final class AddOnTarget implements IAndroidTarget {
 
     // ---- local methods.
 
-    public void setSkins(String[] skins, String defaultSkin) {
+    public void setSkins(@NonNull File[] skins, @NonNull File defaultSkin) {
         mDefaultSkin = defaultSkin;
 
         // we mix the add-on and base platform skins
-        HashSet<String> skinSet = new HashSet<String>();
+        HashSet<File> skinSet = new HashSet<File>();
         skinSet.addAll(Arrays.asList(skins));
         skinSet.addAll(Arrays.asList(mBasePlatform.getSkins()));
 
-        mSkins = skinSet.toArray(new String[skinSet.size()]);
+        mSkins = skinSet.toArray(new File[skinSet.size()]);
     }
 
     /**

@@ -9,8 +9,6 @@
         <thumb>template_new_project.png</thumb>
     </thumbs>
 
-    <category value="Projects" />
-
     <parameter
         id="makeIgnore"
         name="Create .gitignore file"

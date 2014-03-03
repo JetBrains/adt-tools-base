@@ -56,6 +56,12 @@ public interface IPkgCapabilities {
     public boolean hasPath();
 
     /**
+     * Indicates whether this package type has a tag.
+     * @return True if this package type has a tag id-display tuple.
+     */
+    public boolean hasTag();
+
+    /**
      * Indicates whether this package type has a vendor id.
      * @return True if this package type has a vendor id.
      */

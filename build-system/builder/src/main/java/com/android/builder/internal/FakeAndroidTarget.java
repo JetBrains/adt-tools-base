@@ -22,9 +22,11 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.utils.SparseArray;
 import com.google.common.collect.Lists;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -83,6 +85,11 @@ public class FakeAndroidTarget implements IAndroidTarget {
     @Override
     public String getPath(int pathId) {
         return mPaths.get(pathId);
+    }
+
+    @Override
+    public File getFile(int pathId) {
+        return new File(getPath(pathId));
     }
 
     @Override
@@ -163,12 +170,12 @@ public class FakeAndroidTarget implements IAndroidTarget {
     }
 
     @Override
-    public String[] getSkins() {
-        return new String[0];
+    public File[] getSkins() {
+        return new File[0];
     }
 
     @Override
-    public String getDefaultSkin() {
+    public File getDefaultSkin() {
         return null;
     }
 
@@ -213,7 +220,7 @@ public class FakeAndroidTarget implements IAndroidTarget {
     }
 
     @Override
-    public ISystemImage getSystemImage(String abiType) {
+    public ISystemImage getSystemImage(IdDisplay tag, String abiType) {
         return null;
     }
 

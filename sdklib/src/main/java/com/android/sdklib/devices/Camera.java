@@ -26,7 +26,7 @@ public class Camera {
 
     /**
      * Creates a {@link Camera} with reasonable defaults.
-     * 
+     *
      * The resulting {@link Camera} with be on the {@link CameraLocation#BACK} with both autofocus
      * and flash.
      */
@@ -109,4 +109,19 @@ public class Camera {
         hash = 31 * hash + (mFlash ? 1 : 0);
         return hash;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Camera <mLocation=");
+        sb.append(mLocation);
+        sb.append(", mAutofocus=");
+        sb.append(mAutofocus);
+        sb.append(", mFlash=");
+        sb.append(mFlash);
+        sb.append(">");
+        return sb.toString();
+    }
+
+
 }

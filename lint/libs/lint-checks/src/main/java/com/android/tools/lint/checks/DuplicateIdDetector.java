@@ -86,7 +86,7 @@ public class DuplicateIdDetector extends LayoutDetector {
             "return an unexpected view.",
             Category.CORRECTNESS,
             7,
-            Severity.WARNING,
+            Severity.FATAL,
             IMPLEMENTATION);
 
     /** The main issue discovered by this detector */

@@ -186,6 +186,16 @@ public class DeviceSchema {
 
     public static final String NODE_MANUFACTURER = "manufacturer";
 
+    public static final String NODE_TAG_ID = "tag-id";
+
+    public static final String NODE_BOOT_PROPS = "boot-props";
+
+    public static final String NODE_BOOT_PROP = "boot-prop";
+
+    public static final String NODE_PROP_NAME = "prop-name";
+
+    public static final String NODE_PROP_VALUE = "prop-value";
+
     public static final String ATTR_DEFAULT = "default";
 
     public static final String ATTR_UNIT = "unit";

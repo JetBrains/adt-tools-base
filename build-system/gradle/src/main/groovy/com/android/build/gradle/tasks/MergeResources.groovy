@@ -16,6 +16,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.tasks.IncrementalTask
+import com.android.ide.common.internal.PngCruncher
 import com.android.ide.common.res2.FileStatus
 import com.android.ide.common.res2.FileValidity
 import com.android.ide.common.res2.MergedResourceWriter
@@ -72,9 +73,11 @@ public class MergeResources extends IncrementalTask {
                 merger.addDataSet(resourceSet)
             }
 
+            PngCruncher cruncher = builder.aaptCruncher
+
             // get the merged set and write it down.
             MergedResourceWriter writer = new MergedResourceWriter(
-                    destinationDir, getProcess9Patch() ? builder.aaptRunner : null)
+                    destinationDir, getProcess9Patch() ? cruncher : null)
             writer.setInsertSourceMarkers(builder.isInsertSourceMarkers())
 
             merger.mergeData(writer, false /*doCleanUp*/)
@@ -132,8 +135,10 @@ public class MergeResources extends IncrementalTask {
                 }
             }
 
+            PngCruncher cruncher = builder.aaptCruncher
+
             MergedResourceWriter writer = new MergedResourceWriter(
-                    getOutputDir(), getProcess9Patch() ? builder.aaptRunner : null)
+                    getOutputDir(), getProcess9Patch() ? cruncher : null)
             writer.setInsertSourceMarkers(builder.isInsertSourceMarkers())
             merger.mergeData(writer, false /*doCleanUp*/)
             // No exception? Write the known state.

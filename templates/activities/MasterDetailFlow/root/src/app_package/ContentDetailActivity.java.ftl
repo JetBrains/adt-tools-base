@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.NavUtils;
 import android.view.MenuItem;
+<#if applicationPackage??>import ${applicationPackage}.R;</#if>
 
 /**
  * An activity representing a single ${objectKind} detail screen. This

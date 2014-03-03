@@ -505,6 +505,7 @@ public final class SdkConstants {
         "android.test.InstrumentationTestRunner"; //$NON-NLS-1$
     public static final String CLASS_BUNDLE = "android.os.Bundle"; //$NON-NLS-1$
     public static final String CLASS_R = "android.R"; //$NON-NLS-1$
+    public static final String CLASS_R_PREFIX = CLASS_R + "."; //$NON-NLS-1$
     public static final String CLASS_MANIFEST_PERMISSION = "android.Manifest$permission"; //$NON-NLS-1$
     public static final String CLASS_INTENT = "android.content.Intent"; //$NON-NLS-1$
     public static final String CLASS_CONTEXT = "android.content.Context"; //$NON-NLS-1$
@@ -1056,6 +1057,7 @@ public final class SdkConstants {
 
     public static final String DRAWABLE_FOLDER = "drawable";           //$NON-NLS-1$
     public static final String DRAWABLE_XHDPI = "drawable-xhdpi";      //$NON-NLS-1$
+    public static final String DRAWABLE_XXHDPI = "drawable-xxhdpi";    //$NON-NLS-1$
     public static final String DRAWABLE_HDPI = "drawable-hdpi";        //$NON-NLS-1$
     public static final String DRAWABLE_MDPI = "drawable-mdpi";        //$NON-NLS-1$
     public static final String DRAWABLE_LDPI = "drawable-ldpi";        //$NON-NLS-1$
@@ -1302,4 +1304,5 @@ public final class SdkConstants {
     public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "0.7.0";
     public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.8.+";
     public static final String SUPPORT_LIB_ARTIFACT = "com.android.support:support-v4";
+    public static final String APPCOMPAT_LIB_ARTIFACT = "com.android.support:appcompat-v7";
 }

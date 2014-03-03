@@ -49,15 +49,52 @@
                 <xsd:complexType>
                     <xsd:sequence>
                         <xsd:element name="name"         type= "xsd:token" />
-                        <xsd:element name="id"           type= "xsd:token"      minOccurs="0" />
+                        <xsd:element name="id"           type= "xsd:token"       minOccurs="0" />
                         <xsd:element name="manufacturer" type= "xsd:token" />
-                        <xsd:element name="meta"         type= "c:metaType"     minOccurs="0" />
+                        <xsd:element name="meta"         type= "c:metaType"      minOccurs="0" />
                         <xsd:element name="hardware"     type= "c:hardwareType" />
                         <xsd:element name="software"     type= "c:softwareType"
                                      maxOccurs="unbounded" />
                         <xsd:element name="state"        type= "c:stateType"
                                      maxOccurs="unbounded" />
+                        <xsd:element name="tag-id"       type= "c:idType"        minOccurs="0" />
+                        <xsd:element name="boot-props"   type= "c:bootPropsType" minOccurs="0" />
                     </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:simpleType name="idType">
+        <xsd:annotation>
+            <xsd:documentation>
+                A tag string for a system image can only be a simple alphanumeric string.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:token">
+            <xsd:pattern value="[a-zA-Z0-9_-]+"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="bootPropsType" >
+        <xsd:annotation>
+            <xsd:documentation>
+                List of boot properties.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="boot-prop">
+                <xsd:complexType>
+                    <xsd:all>
+                        <xsd:element name="prop-name">
+                            <xsd:simpleType>
+                                <xsd:restriction base="xsd:token">
+                                    <xsd:pattern value="[^\n\r\t =]+"/>
+                                </xsd:restriction>
+                            </xsd:simpleType>
+                        </xsd:element>
+                        <xsd:element name="prop-value" type= "xsd:string" />
+                    </xsd:all>
                 </xsd:complexType>
             </xsd:element>
         </xsd:sequence>

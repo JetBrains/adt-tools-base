@@ -31,9 +31,11 @@ import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.build.gradle.internal.dsl.ProductFlavorDsl
 import com.android.build.gradle.internal.test.TestOptions
 import com.android.builder.BuilderConstants
+import com.android.builder.DefaultBuildType
 import com.android.builder.DefaultProductFlavor
 import com.android.builder.model.BuildType
 import com.android.builder.model.ProductFlavor
+import com.android.builder.model.SigningConfig
 import com.android.builder.model.SourceProvider
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
@@ -64,6 +66,15 @@ public abstract class BaseExtension {
     final CompileOptions compileOptions
     final PackagingOptionsImpl packagingOptions
 
+    final NamedDomainObjectContainer<DefaultProductFlavor> productFlavors
+    final NamedDomainObjectContainer<DefaultBuildType> buildTypes
+    final NamedDomainObjectContainer<SigningConfig> signingConfigs
+
+    List<String> flavorGroupList
+    String testBuildType = "debug"
+
+    private Closure<Void> variantFilter
+
     private final DefaultDomainObjectSet<TestVariant> testVariantList =
         new DefaultDomainObjectSet<TestVariant>(TestVariant.class)
 
@@ -72,14 +83,23 @@ public abstract class BaseExtension {
 
     protected final BasePlugin plugin
 
-
     /**
      * The source sets container.
      */
     final NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer
 
-    BaseExtension(BasePlugin plugin, ProjectInternal project, Instantiator instantiator) {
+    BaseExtension(
+            @NonNull BasePlugin plugin,
+            @NonNull ProjectInternal project,
+            @NonNull Instantiator instantiator,
+            @NonNull NamedDomainObjectContainer<DefaultBuildType> buildTypes,
+            @NonNull NamedDomainObjectContainer<DefaultProductFlavor> productFlavors,
+            @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
+                     final boolean isLibrary) {
         this.plugin = plugin
+        this.buildTypes = buildTypes
+        this.productFlavors = productFlavors
+        this.signingConfigs = signingConfigs
 
         defaultConfig = instantiator.newInstance(ProductFlavorDsl.class, BuilderConstants.MAIN,
                 project.fileResolver, instantiator, project.getLogger())
@@ -92,7 +112,7 @@ public abstract class BaseExtension {
         packagingOptions = instantiator.newInstance(PackagingOptionsImpl.class)
 
         sourceSetsContainer = project.container(AndroidSourceSet,
-                new AndroidSourceSetFactory(instantiator, project.fileResolver))
+                new AndroidSourceSetFactory(instantiator, project.fileResolver, isLibrary))
 
         sourceSetsContainer.whenObjectAdded { AndroidSourceSet sourceSet ->
             ConfigurationContainer configurations = project.getConfigurations()
@@ -112,10 +132,15 @@ public abstract class BaseExtension {
                 packageConfiguration = configurations.create(sourceSet.getPackageConfigurationName())
             }
             packageConfiguration.setVisible(false)
-            packageConfiguration.extendsFrom(compileConfiguration)
-            packageConfiguration.setDescription(
-                    String.format("Classpath packaged with the compiled %s classes.",
-                            sourceSet.getName()));
+            if (isLibrary) {
+                packageConfiguration.setDescription(
+                        String.format("Classpath only used for publishing.",
+                                sourceSet.getName()));
+            } else {
+                packageConfiguration.setDescription(
+                        String.format("Classpath packaged with the compiled %s classes.",
+                                sourceSet.getName()));
+            }
 
             Configuration providedConfiguration = configurations.findByName(
                     sourceSet.getProvidedConfigurationName())
@@ -157,6 +182,26 @@ public abstract class BaseExtension {
     void setBuildToolsVersion(String version) {
         plugin.checkTasksAlreadyCreated();
         buildToolsVersion(version)
+    }
+
+    void buildTypes(Action<? super NamedDomainObjectContainer<DefaultBuildType>> action) {
+        plugin.checkTasksAlreadyCreated();
+        action.execute(buildTypes)
+    }
+
+    void productFlavors(Action<? super NamedDomainObjectContainer<DefaultProductFlavor>> action) {
+        plugin.checkTasksAlreadyCreated();
+        action.execute(productFlavors)
+    }
+
+    void signingConfigs(Action<? super NamedDomainObjectContainer<SigningConfig>> action) {
+        plugin.checkTasksAlreadyCreated();
+        action.execute(signingConfigs)
+    }
+
+    public void flavorGroups(String... groups) {
+        plugin.checkTasksAlreadyCreated();
+        flavorGroupList = Arrays.asList(groups)
     }
 
     void sourceSets(Action<NamedDomainObjectContainer<AndroidSourceSet>> action) {
@@ -208,6 +253,14 @@ public abstract class BaseExtension {
         deviceProviderList.add(deviceProvider)
     }
 
+    void variantFilter(Closure<Void> filter) {
+        variantFilter = filter
+    }
+
+    public Closure<Void> getVariantFilter() {
+        return variantFilter;
+    }
+
     @NonNull
     List<DeviceProvider> getDeviceProviders() {
         return deviceProviderList
@@ -227,6 +280,8 @@ public abstract class BaseExtension {
     public DefaultDomainObjectSet<TestVariant> getTestVariants() {
         return testVariantList
     }
+
+    abstract void addVariant(BaseVariant variant)
 
     void addTestVariant(TestVariant testVariant) {
         testVariantList.add(testVariant)

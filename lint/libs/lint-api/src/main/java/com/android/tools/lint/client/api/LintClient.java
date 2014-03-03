@@ -27,6 +27,8 @@ import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.res2.AbstractResourceRepository;
+import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.prefs.AndroidLocation;
 import com.android.sdklib.IAndroidTarget;
@@ -41,6 +43,7 @@ import com.android.tools.lint.detector.api.Severity;
 import com.android.utils.StdLogger;
 import com.android.utils.StdLogger.Level;
 import com.google.common.annotations.Beta;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
@@ -836,5 +839,68 @@ public abstract class LintClient {
      */
     public boolean checkForSuppressComments() {
         return true;
+    }
+
+    /**
+     * Adds in any custom lint rules and returns the result as a new issue registry,
+     * or the same one if no custom rules were found
+     *
+     * @param registry the main registry to add rules to
+     * @return a new registry containing the passed in rules plus any custom rules,
+     *   or the original registry if no custom rules were found
+     */
+    public IssueRegistry addCustomLintRules(@NonNull IssueRegistry registry) {
+        List<File> jarFiles = findGlobalRuleJars();
+
+        if (!jarFiles.isEmpty()) {
+            List<IssueRegistry> registries = Lists.newArrayListWithExpectedSize(jarFiles.size());
+            registries.add(registry);
+            for (File jarFile : jarFiles) {
+                try {
+                    registries.add(JarFileIssueRegistry.get(this, jarFile));
+                } catch (Throwable e) {
+                    log(e, "Could not load custom rule jar file %1$s", jarFile);
+                }
+            }
+            if (registries.size() > 1) { // the first item is the passed in registry itself
+                return new CompositeIssueRegistry(registries);
+            }
+        }
+
+        return registry;
+    }
+
+    /**
+     * Returns true if this client supports project resource repository lookup via
+     * {@link #getProjectResources(Project,boolean)}
+     *
+     * @return true if the client can provide project resources
+     */
+    public boolean supportsProjectResources() {
+        return false;
+    }
+
+    /**
+     * Returns the project resources, if available
+     *
+     * @param includeDependencies if true, include merged view of all dependencies
+     * @return the project resources, or null if not available
+     */
+    @Nullable
+    public AbstractResourceRepository getProjectResources(Project project,
+            boolean includeDependencies) {
+        return null;
+    }
+
+    /**
+     * For a lint client which supports resource items (via {@link #supportsProjectResources()})
+     * return a handle for a resource item
+     *
+     * @param item the resource item to look up a location handle for
+     * @return a corresponding handle
+     */
+    @NonNull
+    public Location.Handle createResourceItemHandle(@NonNull ResourceItem item) {
+        return new Location.ResourceItemHandle(item);
     }
 }

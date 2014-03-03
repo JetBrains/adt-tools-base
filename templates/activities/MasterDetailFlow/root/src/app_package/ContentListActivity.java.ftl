@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 <#if parentActivityClass != "">import android.support.v4.app.NavUtils;
 import android.view.MenuItem;</#if>
+<#if applicationPackage??>import ${applicationPackage}.R;</#if>
 
 /**
  * An activity representing a list of ${objectKindPlural}. This activity

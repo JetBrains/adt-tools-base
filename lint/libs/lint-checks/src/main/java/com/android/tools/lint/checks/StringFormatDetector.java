@@ -27,8 +27,13 @@ import static com.android.SdkConstants.TAG_STRING;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.ide.common.rendering.api.ResourceValue;
+import com.android.ide.common.res2.AbstractResourceRepository;
+import com.android.ide.common.res2.ResourceItem;
 import com.android.resources.ResourceFolderType;
+import com.android.resources.ResourceType;
 import com.android.tools.lint.client.api.IJavaParser;
+import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -44,7 +49,9 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.Pair;
+import com.google.common.collect.Lists;
 
+import com.google.common.collect.Maps;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -89,14 +96,15 @@ import lombok.ast.VariableReference;
  * TODO: Handle Resources.getQuantityString as well
  */
 public class StringFormatDetector extends ResourceXmlDetector implements Detector.JavaScanner {
-
     private static final Implementation IMPLEMENTATION_XML = new Implementation(
             StringFormatDetector.class,
             Scope.ALL_RESOURCES_SCOPE);
 
+    @SuppressWarnings("unchecked")
     private static final Implementation IMPLEMENTATION_XML_AND_JAVA = new Implementation(
             StringFormatDetector.class,
-            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.JAVA_FILE));
+            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.JAVA_FILE),
+            Scope.JAVA_FILE_SCOPE);
 
 
     /** Whether formatting strings are invalid */
@@ -872,7 +880,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     @Override
     public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
             @NonNull MethodInvocation node) {
-        if (mFormatStrings == null) {
+        if (mFormatStrings == null && !context.getClient().supportsProjectResources()) {
             return;
         }
 
@@ -980,7 +988,66 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                         && !(first instanceof StringLiteral));
         }
 
-        List<Pair<Handle, String>> list = mFormatStrings.get(name);
+        List<Pair<Handle, String>> list = mFormatStrings != null ? mFormatStrings.get(name) : null;
+        if (list == null) {
+            LintClient client = context.getClient();
+            if (client.supportsProjectResources() &&
+                    !context.getScope().contains(Scope.RESOURCE_FILE)) {
+                AbstractResourceRepository resources = client
+                        .getProjectResources(context.getMainProject(), true);
+                List<ResourceItem> items = resources
+                        .getResourceItem(ResourceType.STRING, name);
+                if (items != null) {
+                    for (final ResourceItem item : items) {
+                        ResourceValue v = item.getResourceValue(false);
+                        if (v != null) {
+                            String value = v.getValue();
+                            if (value != null) {
+                                // Make sure it's really a formatting string,
+                                // not for example "Battery remaining: 90%"
+                                boolean isFormattingString = true;
+                                for (int j = 0, m = value.length(); j < m; j++) {
+                                    char c = value.charAt(j);
+                                    if (c == '\\') {
+                                        j++;
+                                    } else if (c == '%') {
+                                        Matcher matcher = FORMAT.matcher(value);
+                                        if (!matcher.find(j)) {
+                                            isFormattingString = false;
+                                        }
+                                        String conversion = matcher.group(6);
+                                        int conversionClass = getConversionClass(
+                                                conversion.charAt(0));
+                                        if (conversionClass == CONVERSION_CLASS_UNKNOWN
+                                                || matcher.group(5) != null) {
+                                            // Some date format etc - don't process
+                                            return;
+                                        }
+                                        j++; // Don't process second % in a %%
+                                    }
+                                    // If the user marked the string with
+                                }
+
+                                if (isFormattingString) {
+                                    if (list == null) {
+                                        list = Lists.newArrayList();
+                                        if (mFormatStrings == null) {
+                                            mFormatStrings = Maps.newHashMap();
+                                        }
+                                        mFormatStrings.put(name, list);
+                                    }
+                                    Handle handle = client.createResourceItemHandle(item);
+                                    list.add(Pair.of(handle, value));
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                return;
+            }
+        }
+
         if (list != null) {
             for (Pair<Handle, String> pair : list) {
                 String s = pair.getSecond();

@@ -106,7 +106,7 @@ public class LintOptionsImpl implements LintOptions, Serializable {
             boolean showAll,
             boolean explainIssues,
             boolean checkReleaseBuilds,
-            Map<String,LintOptions.Severity> severityOverrides) {
+            Map<String,Integer> severityOverrides) {
         this.disable = disable
         this.enable = enable
         this.check = check
@@ -129,7 +129,7 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         this.checkReleaseBuilds = checkReleaseBuilds
 
         if (severityOverrides != null) {
-            for (Map.Entry<String,LintOptions.Severity> entry : severityOverrides.entrySet()) {
+            for (Map.Entry<String,Integer> entry : severityOverrides.entrySet()) {
                 severities.put(entry.key, convert(entry.value))
             }
         }
@@ -538,12 +538,12 @@ public class LintOptionsImpl implements LintOptions, Serializable {
 
     @Override
     @Nullable
-    public Map<String, LintOptions.Severity> getSeverityOverrides() {
+    public Map<String, Integer> getSeverityOverrides() {
         if (severities == null) {
             return null
         }
 
-        Map<String, LintOptions.Severity> map =
+        Map<String, Integer> map =
                 Maps.newHashMapWithExpectedSize(severities.size())
         for (Map.Entry<String,Severity> entry : severities.entrySet()) {
             map.put(entry.key, convert(entry.value))
@@ -635,33 +635,38 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         }
     }
 
-    private static LintOptions.Severity convert(Severity s) {
+    // Without these qualifiers, Groovy compilation will fail with "Apparent variable
+    // 'SEVERITY_FATAL' was found in a static scope but doesn't refer to a local variable,
+    // static field or class"
+    @SuppressWarnings("UnnecessaryQualifiedReference")
+    private static int convert(Severity s) {
         switch (s) {
             case Severity.FATAL:
-                return LintOptions.Severity.FATAL
+                return LintOptions.SEVERITY_FATAL
             case Severity.ERROR:
-                return LintOptions.Severity.ERROR
+                return LintOptions.SEVERITY_ERROR
             case Severity.WARNING:
-                return LintOptions.Severity.WARNING
+                return LintOptions.SEVERITY_WARNING
             case Severity.INFORMATIONAL:
-                return LintOptions.Severity.INFORMATIONAL
+                return LintOptions.SEVERITY_INFORMATIONAL
             case Severity.IGNORE:
             default:
-                return LintOptions.Severity.IGNORE
+                return LintOptions.SEVERITY_IGNORE
         }
     }
 
-    private static Severity convert(LintOptions.Severity s) {
+    @SuppressWarnings("UnnecessaryQualifiedReference")
+    private static Severity convert(int s) {
         switch (s) {
-            case LintOptions.Severity.FATAL:
+            case LintOptions.SEVERITY_FATAL:
                 return Severity.FATAL
-            case LintOptions.Severity.ERROR:
+            case LintOptions.SEVERITY_ERROR:
                 return Severity.ERROR
-            case LintOptions.Severity.WARNING:
+            case LintOptions.SEVERITY_WARNING:
                 return Severity.WARNING
-            case LintOptions.Severity.INFORMATIONAL:
+            case LintOptions.SEVERITY_INFORMATIONAL:
                 return Severity.INFORMATIONAL
-            case LintOptions.Severity.IGNORE:
+            case LintOptions.SEVERITY_IGNORE:
             default:
                 return Severity.IGNORE
         }

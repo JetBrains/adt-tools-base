@@ -16,11 +16,14 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.annotations.concurrency.GuardedBy;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.InvalidParameterException;
@@ -169,8 +172,11 @@ public final class EmulatorConsole {
     private static final Pattern sMinLatencyRegexp = Pattern.compile(
             "\\s+minimum\\s+latency:\\s+(\\d+)\\s+ms", Pattern.CASE_INSENSITIVE); //$NON-NLS-1$
 
+    @GuardedBy(value = "sEmulators")
     private static final HashMap<Integer, EmulatorConsole> sEmulators =
         new HashMap<Integer, EmulatorConsole>();
+
+    private static final String LOG_TAG = "EmulatorConsole";
 
     /** Gsm Status class */
     public static class GsmStatus {
@@ -200,33 +206,21 @@ public final class EmulatorConsole {
      * @param d The device that the console links to.
      * @return an <code>EmulatorConsole</code> object or <code>null</code> if the connection failed.
      */
-    public static synchronized EmulatorConsole getConsole(IDevice d) {
+    @Nullable
+    public static EmulatorConsole getConsole(IDevice d) {
         // we need to make sure that the device is an emulator
         // get the port number. This is the console port.
         Integer port = getEmulatorPort(d.getSerialNumber());
         if (port == null) {
+            Log.w(LOG_TAG, "Failed to find emulator port from serial: " + d.getSerialNumber());
             return null;
         }
 
-        EmulatorConsole console = sEmulators.get(port);
+        EmulatorConsole console = retrieveConsole(port);
 
-        if (console != null) {
-            // if the console exist, we ping the emulator to check the connection.
-            if (!console.ping()) {
-                RemoveConsole(console.mPort);
-                console = null;
-            }
-        }
-
-        if (console == null) {
-            // no console object exists for this port so we create one, and start
-            // the connection.
-            console = new EmulatorConsole(port);
-            if (console.start()) {
-                sEmulators.put(port, console);
-            } else {
-                console = null;
-            }
+        if (!console.checkConnection()) {
+            removeConsole(console.mPort);
+            console = null;
         }
 
         return console;
@@ -258,11 +252,30 @@ public final class EmulatorConsole {
     }
 
     /**
+     * Retrieve a console object for this port, creating if necessary.
+     */
+    @NonNull
+    private static EmulatorConsole retrieveConsole(int port) {
+        synchronized (sEmulators) {
+            EmulatorConsole console = sEmulators.get(port);
+            if (console == null) {
+                Log.v(LOG_TAG, "Creating emulator console for " + Integer.toString(port));
+                console = new EmulatorConsole(port);
+                sEmulators.put(port, console);
+            }
+            return console;
+        }
+    }
+
+    /**
      * Removes the console object associated with a port from the map.
      * @param port The port of the console to remove.
      */
-    private static synchronized void RemoveConsole(int port) {
-        sEmulators.remove(port);
+    private static void removeConsole(int port) {
+        synchronized (sEmulators) {
+            Log.v(LOG_TAG, "Removing emulator console for " + Integer.toString(port));
+            sEmulators.remove(port);
+        }
     }
 
     private EmulatorConsole(int port) {
@@ -271,29 +284,28 @@ public final class EmulatorConsole {
     }
 
     /**
-     * Starts the connection of the console.
+     * Determine if connection to emulator console is functioning. Starts the connection if
+     * necessary
      * @return true if success.
      */
-    private boolean start() {
-
-        InetSocketAddress socketAddr;
-        try {
-            InetAddress hostAddr = InetAddress.getByName(HOST);
-            socketAddr = new InetSocketAddress(hostAddr, mPort);
-        } catch (UnknownHostException e) {
-            return false;
+    private synchronized boolean checkConnection() {
+        if (mSocketChannel == null) {
+            // connection not established, try to connect
+            InetSocketAddress socketAddr;
+            try {
+                InetAddress hostAddr = InetAddress.getByName(HOST);
+                socketAddr = new InetSocketAddress(hostAddr, mPort);
+                mSocketChannel = SocketChannel.open(socketAddr);
+                mSocketChannel.configureBlocking(false);
+                // read initial output from console
+                readLines();
+            } catch (IOException e) {
+                Log.w(LOG_TAG, "Failed to start Emulator console for " + Integer.toString(mPort));
+                return false;
+            }
         }
 
-        try {
-            mSocketChannel = SocketChannel.open(socketAddr);
-        } catch (IOException e1) {
-            return false;
-        }
-
-        // read some stuff from it
-        readLines();
-
-        return true;
+        return ping();
     }
 
     /**
@@ -315,7 +327,12 @@ public final class EmulatorConsole {
      */
     public synchronized void kill() {
         if (sendCommand(COMMAND_KILL)) {
-            RemoveConsole(mPort);
+            removeConsole(mPort);
+            try {
+                mSocketChannel.close();
+            } catch (IOException e) {
+                Log.w(LOG_TAG, "Failed to close EmulatorConsole channel");
+            }
         }
     }
 
@@ -330,6 +347,10 @@ public final class EmulatorConsole {
                 Matcher m = RE_KO.matcher(result[result.length-1]);
                 if (m.matches()) {
                     return m.group(1);
+                }
+                Log.w(LOG_TAG, "avd name result did not match expected");
+                for (int i=0; i < result.length; i++) {
+                    Log.d(LOG_TAG, result[i]);
                 }
             }
         }
@@ -553,6 +574,8 @@ public final class EmulatorConsole {
             try {
                 bCommand = command.getBytes(DEFAULT_ENCODING);
             } catch (UnsupportedEncodingException e) {
+                Log.w(LOG_TAG, "wrong encoding when sending " + command + " to " +
+                        Integer.toString(mPort));
                 // wrong encoding...
                 return result;
             }
@@ -562,11 +585,13 @@ public final class EmulatorConsole {
 
             result = true;
         } catch (Exception e) {
+            Log.d(LOG_TAG, "Exception sending command " + command + " to " +
+                Integer.toString(mPort));
             return false;
         } finally {
             if (!result) {
                 // FIXME connection failed somehow, we need to disconnect the console.
-                RemoveConsole(mPort);
+                removeConsole(mPort);
             }
         }
 
@@ -643,6 +668,7 @@ public final class EmulatorConsole {
             String msg = new String(mBuffer, 0, buf.position(), DEFAULT_ENCODING);
             return msg.split("\r\n"); //$NON-NLS-1$
         } catch (IOException e) {
+            Log.d(LOG_TAG, "Exception reading lines for " + Integer.toString(mPort));
             return null;
         }
     }

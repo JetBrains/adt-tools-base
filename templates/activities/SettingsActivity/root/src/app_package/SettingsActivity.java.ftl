@@ -20,6 +20,7 @@ import android.text.TextUtils;
 import android.view.MenuItem;
 import android.support.v4.app.NavUtils;
 </#if>
+<#if applicationPackage??>import ${applicationPackage}.R;</#if>
 
 import java.util.List;
 

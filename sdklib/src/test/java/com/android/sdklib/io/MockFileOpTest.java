@@ -17,6 +17,7 @@
 package com.android.sdklib.io;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
 
@@ -187,5 +188,62 @@ public class MockFileOpTest extends TestCase {
                  "</dir1/dir2/utf-8 test: 'nihongo in UTF-8: 日本語'>, " +
                  "</dir1/dir2/forgot to close: (stream not closed properly)>]",
                 Arrays.toString(m.getOutputStreams()));
+    }
+
+    public void testMakeRelative() throws Exception {
+        assertEquals("dir3",
+            FileOp.makeRelativeImpl("/dir1/dir2",
+                                    "/dir1/dir2/dir3",
+                                    false, "/"));
+
+        assertEquals("../../../dir3",
+                FileOp.makeRelativeImpl("/dir1/dir2/dir4/dir5/dir6",
+                                        "/dir1/dir2/dir3",
+                                        false, "/"));
+
+        assertEquals("dir3/dir4/dir5/dir6",
+                FileOp.makeRelativeImpl("/dir1/dir2/",
+                                        "/dir1/dir2/dir3/dir4/dir5/dir6",
+                                        false, "/"));
+
+        // case-sensitive on non-Windows.
+        assertEquals("../DIR2/dir3/DIR4/dir5/DIR6",
+                FileOp.makeRelativeImpl("/dir1/dir2/",
+                                        "/dir1/DIR2/dir3/DIR4/dir5/DIR6",
+                                        false, "/"));
+
+        // same path: empty result.
+        assertEquals("",
+                FileOp.makeRelativeImpl("/dir1/dir2/dir3",
+                                        "/dir1/dir2/dir3",
+                                        false, "/"));
+
+        // same drive letters on Windows
+        assertEquals("..\\..\\..\\dir3",
+                FileOp.makeRelativeImpl("C:\\dir1\\dir2\\dir4\\dir5\\dir6",
+                                        "C:\\dir1\\dir2\\dir3",
+                                        true, "\\"));
+
+        // not case-sensitive on Windows, results will be mixed.
+        assertEquals("dir3/DIR4/dir5/DIR6",
+                FileOp.makeRelativeImpl("/DIR1/dir2/",
+                                        "/dir1/DIR2/dir3/DIR4/dir5/DIR6",
+                                        true, "/"));
+
+        // UNC path on Windows
+        assertEquals("..\\..\\..\\dir3",
+                FileOp.makeRelativeImpl("\\\\myserver.domain\\dir1\\dir2\\dir4\\dir5\\dir6",
+                                        "\\\\myserver.domain\\dir1\\dir2\\dir3",
+                                        true, "\\"));
+
+        // different drive letters are not supported
+        try {
+            FileOp.makeRelativeImpl("C:\\dir1\\dir2\\dir4\\dir5\\dir6",
+                                    "D:\\dir1\\dir2\\dir3",
+                                    true, "\\");
+            fail("Expected: IOException. Actual: no exception.");
+        } catch (IOException e) {
+            assertEquals("makeRelative: incompatible drive letters", e.getMessage());
+        }
     }
 }
