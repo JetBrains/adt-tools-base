@@ -32,6 +32,7 @@ import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.res2.ResourceMerger;
 import com.android.ide.common.res2.ResourceRepository;
 import com.android.ide.common.res2.ResourceSet;
+import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.testutils.SdkTestCase;
 import com.android.tools.lint.LintCliClient;
@@ -84,6 +85,7 @@ import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -141,6 +143,20 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             assertNotNull(file);
             files.add(file);
         }
+
+        Collections.sort(files, new Comparator<File>() {
+            @Override
+            public int compare(File file1, File file2) {
+                ResourceFolderType folder1 = ResourceFolderType.getFolderType(
+                        file1.getParentFile().getName());
+                ResourceFolderType folder2 = ResourceFolderType.getFolderType(
+                        file2.getParentFile().getName());
+                if (folder1 != null && folder2 != null && folder1 != folder2) {
+                    return folder1.compareTo(folder2);
+                }
+                return file1.compareTo(file2);
+            }
+        });
 
         addManifestFile(targetDir);
 

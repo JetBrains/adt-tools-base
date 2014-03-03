@@ -19,6 +19,8 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ATTR_LAYOUT_HEIGHT;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_TEXT_SIZE;
+import static com.android.SdkConstants.DIMEN_PREFIX;
+import static com.android.SdkConstants.TAG_DIMEN;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_STYLE;
 import static com.android.SdkConstants.UNIT_DIP;
@@ -30,11 +32,19 @@ import static com.android.SdkConstants.UNIT_SP;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.rendering.api.ResourceValue;
+import com.android.ide.common.res2.AbstractResourceRepository;
+import com.android.ide.common.res2.ResourceFile;
+import com.android.ide.common.res2.ResourceItem;
+import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.ResourceFolderType;
+import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
+import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
@@ -45,8 +55,11 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * Check for px dimensions instead of dp dimensions.
@@ -133,6 +146,8 @@ public class PxUsageDetector extends LayoutDetector {
             Severity.WARNING,
             IMPLEMENTATION);
 
+    private HashMap<String, Location.Handle> mTextSizeUsage;
+
 
     /** Constructs a new {@link PxUsageDetector} */
     public PxUsageDetector() {
@@ -164,6 +179,30 @@ public class PxUsageDetector extends LayoutDetector {
     @Override
     public void visitAttribute(@NonNull XmlContext context, @NonNull Attr attribute) {
         if (context.getResourceFolderType() != ResourceFolderType.LAYOUT) {
+            assert context.getResourceFolderType() == ResourceFolderType.VALUES;
+            if (mTextSizeUsage != null
+                    && attribute.getOwnerElement().getTagName().equals(TAG_DIMEN)) {
+                Element element = attribute.getOwnerElement();
+                String name = element.getAttribute(ATTR_NAME);
+                if (name != null && mTextSizeUsage.containsKey(name)
+                        && context.isEnabled(DP_ISSUE)) {
+                    NodeList children = element.getChildNodes();
+                    for (int i = 0, n = children.getLength(); i < n; i++) {
+                        Node child = children.item(i);
+                        if (child.getNodeType() == Node.TEXT_NODE &&
+                                isDpUnit(child.getNodeValue())) {
+                            String message = "This dimension is used as a text size: "
+                                    + "Should use \"sp\" instead of \"dp\"";
+                            Location location = context.getLocation(child);
+                            Location secondary = mTextSizeUsage.get(name).resolve();
+                            secondary.setMessage("Dimension used as a text size here");
+                            location.setSecondary(secondary);
+                            context.report(DP_ISSUE, attribute, location, message, null);
+                            break;
+                        }
+                    }
+                }
+            }
             return;
         }
 
@@ -202,14 +241,62 @@ public class PxUsageDetector extends LayoutDetector {
                         String.format("Avoid using sizes smaller than 12sp: %1$s", value),
                         null);
             }
-        } else if (ATTR_TEXT_SIZE.equals(attribute.getLocalName())
-                && (value.endsWith(UNIT_DP) || value.endsWith(UNIT_DIP))
-                && (value.matches("\\d+di?p"))) { //$NON-NLS-1$
-            if (context.isEnabled(DP_ISSUE)) {
-                context.report(DP_ISSUE, attribute, context.getLocation(attribute),
-                    "Should use \"sp\" instead of \"dp\" for text sizes", null);
+        } else if (ATTR_TEXT_SIZE.equals(attribute.getLocalName())) {
+            if (isDpUnit(value)) { //$NON-NLS-1$
+                if (context.isEnabled(DP_ISSUE)) {
+                    context.report(DP_ISSUE, attribute, context.getLocation(attribute),
+                            "Should use \"sp\" instead of \"dp\" for text sizes", null);
+                }
+            } else if (value.startsWith(DIMEN_PREFIX)) {
+                if (context.getClient().supportsProjectResources()) {
+                    LintClient client = context.getClient();
+                    Project project = context.getProject();
+                    AbstractResourceRepository resources = client.getProjectResources(project,
+                            true);
+                    ResourceUrl url = ResourceUrl.parse(value);
+                    if (resources != null && url != null) {
+                        List<ResourceItem> items = resources.getResourceItem(url.type, url.name);
+                        if (items != null) {
+                            for (ResourceItem item : items) {
+                                ResourceValue resourceValue = item.getResourceValue(false);
+                                if (resourceValue != null) {
+                                    String dimenValue = resourceValue.getValue();
+                                    if (dimenValue != null && isDpUnit(dimenValue)
+                                            && context.isEnabled(DP_ISSUE)) {
+                                        ResourceFile sourceFile = item.getSource();
+                                        assert sourceFile != null;
+                                        String message = String.format(
+                                                "Should use \"sp\" instead of \"dp\" for text sizes (%1$s is defined as %2$s in %3$s",
+                                                value, dimenValue, sourceFile.getFile());
+                                        context.report(DP_ISSUE, attribute,
+                                                context.getLocation(attribute),
+                                                message,
+                                                null
+                                        );
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    ResourceUrl url = ResourceUrl.parse(value);
+                    if (url != null) {
+                        if (mTextSizeUsage == null) {
+                            mTextSizeUsage = new HashMap<String, Location.Handle>();
+                        }
+                        Location.Handle handle = context.parser.createLocationHandle(context,
+                                attribute);
+                        mTextSizeUsage.put(url.name, handle);
+                    }
+                }
             }
         }
+    }
+
+    private static boolean isDpUnit(String value) {
+        return (value.endsWith(UNIT_DP) || value.endsWith(UNIT_DIP))
+                && (value.matches("\\d+di?p"));
     }
 
     private static int getSize(String text) {
