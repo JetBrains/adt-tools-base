@@ -395,7 +395,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         boolean isObsolete = false;
         if ("com.android.tools.build".equals(dependency.getGroupId()) &&
                 "gradle".equals(dependency.getArtifactId())) {
-            if (isOlderThan(dependency, 0, 8, 3)) {
+            if (isOlderThan(dependency, 0, 9, 0)) {
                 isObsolete = true;
             }
         } else if ("com.google.guava".equals(dependency.getGroupId()) &&
@@ -410,7 +410,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             }
         } else if ("org.apache.httpcomponents".equals(dependency.getGroupId()) &&
                 "httpclient".equals(dependency.getArtifactId())) {
-            if (isOlderThan(dependency, 4, 3, 2)) {
+            if (isOlderThan(dependency, 4, 3, 3)) {
                 isObsolete = true;
             }
         }

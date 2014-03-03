@@ -22,6 +22,7 @@ import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.SdkConstants.FN_PROJECT_PROPERTIES;
 import static com.android.tools.gradle.eclipse.GradleImport.ANDROID_GRADLE_PLUGIN;
+import static com.android.tools.gradle.eclipse.GradleImport.CURRENT_BUILD_TOOLS_VERSION;
 import static com.android.tools.gradle.eclipse.GradleImport.DECLARE_GLOBAL_REPOSITORIES;
 import static com.android.tools.gradle.eclipse.GradleImport.IMPORT_SUMMARY_TXT;
 import static com.android.tools.gradle.eclipse.GradleImport.MAVEN_REPOSITORY;
@@ -490,7 +491,7 @@ public class GradleImportTest extends TestCase {
                 + "* src/com/example/android/apis/app/IRemoteService.aidl => app/src/main/aidl/com/example/android/apis/app/IRemoteService.aidl\n"
                 + "* src/com/example/android/apis/app/IRemoteServiceCallback.aidl => app/src/main/aidl/com/example/android/apis/app/IRemoteServiceCallback.aidl\n"
                 + "* src/com/example/android/apis/app/ISecondary.aidl => app/src/main/aidl/com/example/android/apis/app/ISecondary.aidl\n"
-                + "* tests/src/ => app/src/instrumentTest/java/\n"
+                + "* tests/src/ => app/src/androidTest/java/\n"
                 + MSG_FOOTER,
                 true /* checkBuild */);
 
@@ -1429,8 +1430,8 @@ public class GradleImportTest extends TestCase {
                 + "* res/ => Test2/src/main/res/\n"
                 + "* src/ => Test2/src/main/java/\n"
                 + "* tests/libs/myTestSupportLib.jar => Test2/libs/myTestSupportLib.jar\n"
-                + "* tests/res/ => Test2/src/instrumentTest/res/\n"
-                + "* tests/src/ => Test2/src/instrumentTest/java/\n"
+                + "* tests/res/ => Test2/src/androidTest/res/\n"
+                + "* tests/src/ => Test2/src/androidTest/java/\n"
                 + MSG_FOOTER,
                 false /* checkBuild */,
                 new ImportCustomizer() {
@@ -1447,7 +1448,7 @@ public class GradleImportTest extends TestCase {
                 + "  libs\n"
                 + "    myTestSupportLib.jar\n"
                 + "  src\n"
-                + "    instrumentTest\n"
+                + "    androidTest\n"
                 + "      java\n"
                 + "        mytestpkg\n"
                 + "          MyUnitTest.java\n"
@@ -1512,7 +1513,7 @@ public class GradleImportTest extends TestCase {
                 + "}\n"
                 + "\n"
                 + "dependencies {\n"
-                + "    instrumentTestCompile files('libs/myTestSupportLib.jar')\n"
+                + "    androidTestCompile files('libs/myTestSupportLib.jar')\n"
                 + "}\n",
                 Files.toString(new File(imported, "Test2" + separator + "build.gradle"), UTF_8)
                         .replace(NL, "\n"));
@@ -1578,8 +1579,8 @@ public class GradleImportTest extends TestCase {
                 + "* res/ => app/src/main/res/\n"
                 + "* src/ => app/src/main/java/\n"
                 + "* $ROOT_PARENT/tests/libs/myTestSupportLib.jar => app/libs/myTestSupportLib.jar\n"
-                + "* $ROOT_PARENT/tests/res/ => app/src/instrumentTest/res/\n"
-                + "* $ROOT_PARENT/tests/src/ => app/src/instrumentTest/java/\n"
+                + "* $ROOT_PARENT/tests/res/ => app/src/androidTest/res/\n"
+                + "* $ROOT_PARENT/tests/src/ => app/src/androidTest/java/\n"
                 + MSG_FOOTER,
                 false /* checkBuild */,
                 new ImportCustomizer() {
@@ -3508,7 +3509,7 @@ public class GradleImportTest extends TestCase {
 
     private static final String BUILD_TOOLS_VERSION;
     static {
-        String candidate = "19.0.1";
+        String candidate = CURRENT_BUILD_TOOLS_VERSION;
         String sdkLocation = getTestSdkPath();
         if (sdkLocation != null) {
             ILogger logger = new StdLogger(StdLogger.Level.INFO);
