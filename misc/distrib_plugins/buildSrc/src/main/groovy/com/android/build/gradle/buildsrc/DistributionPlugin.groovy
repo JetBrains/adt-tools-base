@@ -125,7 +125,7 @@ class DistributionPlugin implements org.gradle.api.Plugin<Project> {
         Set<ResolvedArtifact> artifacts = configuration.resolvedConfiguration.resolvedArtifacts
         for (ResolvedArtifact artifact : artifacts) {
             def group = artifact.moduleVersion.id.group
-            if (group.startsWith('com.android.tools') || group == 'base' || group == 'swt') {
+            if (BaseTask.isAndroidArtifact(artifact.moduleVersion.id) || group == 'base' || group == 'swt') {
                 // add the shorter name for the android dependencies
                 sb.append(' ').append(artifact.moduleVersion.id.name + ".jar")
             } else {
