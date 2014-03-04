@@ -2,10 +2,11 @@
 
 buildscript {
     repositories {
-<#if mavenUrl == "mavenCentral">
         mavenCentral()
-<#else>
-        maven { url '${mavenUrl}' }
+<#if mavenUrl != "mavenCentral">
+        maven {
+            url '${mavenUrl}'
+        }
 </#if>
     }
     dependencies {
@@ -15,10 +16,11 @@ buildscript {
 
 allprojects {
     repositories {
-<#if mavenUrl == "mavenCentral">
         mavenCentral()
-<#else>
-        maven { url '${mavenUrl}' }
+<#if mavenUrl != "mavenCentral">
+        maven {
+            url '${mavenUrl}'
+        }
 </#if>
     }
 }
