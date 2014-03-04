@@ -17,9 +17,14 @@
 package com.android.ide.common.resources.configuration;
 
 import com.android.resources.ResourceFolderType;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+
 import junit.framework.TestCase;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class FolderConfigurationTest extends TestCase {
@@ -62,6 +67,7 @@ public class FolderConfigurationTest extends TestCase {
                 "w540dp");
     }
 
+    @SuppressWarnings("ConstantConditions")
     public void testAddQualifier() {
         FolderConfiguration defaultConfig = new FolderConfiguration();
         defaultConfig.createDefault();
@@ -80,6 +86,7 @@ public class FolderConfigurationTest extends TestCase {
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     public void testGetConfig1() {
         FolderConfiguration configForFolder =
                 FolderConfiguration.getConfig(new String[] { "values", "en", "rUS" });
@@ -90,6 +97,7 @@ public class FolderConfigurationTest extends TestCase {
         assertNull(configForFolder.getLayoutDirectionQualifier());
     }
 
+    @SuppressWarnings("ConstantConditions")
     public void testGetConfig2() {
         FolderConfiguration configForFolder =
                 FolderConfiguration.getConfigForFolder("values-en-rUS");
@@ -111,7 +119,7 @@ public class FolderConfigurationTest extends TestCase {
 
     // --- helper methods
 
-    private final static class MockConfigurable implements Configurable {
+    private static final class MockConfigurable implements Configurable {
 
         private final FolderConfiguration mConfig;
 
@@ -130,7 +138,7 @@ public class FolderConfigurationTest extends TestCase {
         }
     }
 
-    private void runConfigMatchTest(String refConfig, int resultIndex, String... configs) {
+    private static void runConfigMatchTest(String refConfig, int resultIndex, String... configs) {
         FolderConfiguration reference = FolderConfiguration.getConfig(getFolderSegments(refConfig));
         assertNotNull(reference);
 
@@ -140,7 +148,7 @@ public class FolderConfigurationTest extends TestCase {
         assertEquals(resultIndex, list.indexOf(match));
     }
 
-    private List<? extends Configurable> getConfigurable(String... configs) {
+    private static List<? extends Configurable> getConfigurable(String... configs) {
         ArrayList<MockConfigurable> list = new ArrayList<MockConfigurable>();
 
         for (String config : configs) {
@@ -151,6 +159,51 @@ public class FolderConfigurationTest extends TestCase {
     }
 
     private static String[] getFolderSegments(String config) {
-        return (config.length() > 0 ? "foo-" + config : "foo").split("-");
+        return (!config.isEmpty() ? "foo-" + config : "foo").split("-");
+    }
+
+    public void testSort1() {
+        List<FolderConfiguration> configs = Lists.newArrayList();
+        FolderConfiguration f1 = FolderConfiguration.getConfigForFolder("values-hdpi");
+        FolderConfiguration f2 = FolderConfiguration.getConfigForFolder("values-v11");
+        FolderConfiguration f3 = FolderConfiguration.getConfigForFolder("values-sp");
+        FolderConfiguration f4 = FolderConfiguration.getConfigForFolder("values-v4");
+        configs.add(f1);
+        configs.add(f2);
+        configs.add(f3);
+        configs.add(f4);
+        assertEquals(Arrays.asList(f1, f2, f3, f4), configs);
+        Collections.sort(configs);
+        assertEquals(Arrays.asList(f2, f4, f1, f3), configs);
+    }
+
+    public void testSort2() {
+        // Test case from
+        // http://developer.android.com/guide/topics/resources/providing-resources.html#BestMatch
+        List<FolderConfiguration> configs = Lists.newArrayList();
+        for (String name : new String[] {
+                "drawable",
+                "drawable-en",
+                "drawable-fr-rCA",
+                "drawable-en-port",
+                "drawable-en-notouch-12key",
+                "drawable-port-ldpi",
+                "drawable-port-notouch-12key"
+         }) {
+            FolderConfiguration config = FolderConfiguration.getConfigForFolder(name);
+            assertNotNull(name, config);
+            configs.add(config);
+        }
+        Collections.sort(configs);
+        Collections.reverse(configs);
+        //assertEquals("", configs.get(0).toDisplayString());
+
+        List<String> strings = Lists.newArrayList();
+        for (FolderConfiguration config : configs) {
+            strings.add(config.getUniqueKey());
+        }
+        assertEquals("-fr-rCA,-en-port,-en-notouch-12key,-en,-port-ldpi,-port-notouch-12key,",
+                Joiner.on(",").skipNulls().join(strings));
+
     }
 }

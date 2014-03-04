@@ -36,6 +36,7 @@ import java.util.List;
  */
 public final class FolderConfiguration implements Comparable<FolderConfiguration> {
 
+    @NonNull
     private static final ResourceQualifier[] DEFAULT_QUALIFIERS;
 
     static {
@@ -52,7 +53,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
     private static final int INDEX_NETWORK_CODE          = 1;
     private static final int INDEX_LANGUAGE              = 2;
     private static final int INDEX_REGION                = 3;
-    private static final int INDEX_LAYOUTDIR             = 4;
+    private static final int INDEX_LAYOUT_DIR            = 4;
     private static final int INDEX_SMALLEST_SCREEN_WIDTH = 5;
     private static final int INDEX_SCREEN_WIDTH          = 6;
     private static final int INDEX_SCREEN_HEIGHT         = 7;
@@ -188,7 +189,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      *
      * @see #set(FolderConfiguration, boolean)
      */
-    public void set(FolderConfiguration config) {
+    public void set(@Nullable FolderConfiguration config) {
         set(config, false /*nonFakeValuesOnly*/);
     }
 
@@ -200,7 +201,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      *
      * @see ResourceQualifier#hasFakeValue()
      */
-    public void set(FolderConfiguration config, boolean nonFakeValuesOnly) {
+    public void set(@Nullable FolderConfiguration config, boolean nonFakeValuesOnly) {
         if (config != null) {
             for (int i = 0 ; i < INDEX_COUNT ; i++) {
                 ResourceQualifier q = config.mQualifiers[i];
@@ -225,7 +226,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      * Removes the qualifiers from the receiver if they are present (and valid)
      * in the given configuration.
      */
-    public void substract(FolderConfiguration config) {
+    public void substract(@NonNull FolderConfiguration config) {
         for (int i = 0 ; i < INDEX_COUNT ; i++) {
             if (config.mQualifiers[i] != null && config.mQualifiers[i].isValid()) {
                 mQualifiers[i] = null;
@@ -237,7 +238,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      * Adds the non-qualifiers from the given config.
      * Qualifiers that are null in the given config do not change in the receiver.
      */
-    public void add(FolderConfiguration config) {
+    public void add(@NonNull FolderConfiguration config) {
         for (int i = 0 ; i < INDEX_COUNT ; i++) {
             if (config.mQualifiers[i] != null) {
                 mQualifiers[i] = config.mQualifiers[i];
@@ -249,6 +250,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      * Returns the first invalid qualifier, or <code>null<code> if they are all valid (or if none
      * exists).
      */
+    @Nullable
     public ResourceQualifier getInvalidQualifier() {
         for (int i = 0 ; i < INDEX_COUNT ; i++) {
             if (mQualifiers[i] != null && !mQualifiers[i].isValid()) {
@@ -277,7 +279,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      * Adds a qualifier to the {@link FolderConfiguration}
      * @param qualifier the {@link ResourceQualifier} to add.
      */
-    public void addQualifier(ResourceQualifier qualifier) {
+    public void addQualifier(@Nullable ResourceQualifier qualifier) {
         if (qualifier instanceof CountryCodeQualifier) {
             mQualifiers[INDEX_COUNTRY_CODE] = qualifier;
 
@@ -291,7 +293,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
             mQualifiers[INDEX_REGION] = qualifier;
 
         } else if (qualifier instanceof LayoutDirectionQualifier) {
-            mQualifiers[INDEX_LAYOUTDIR] = qualifier;
+            mQualifiers[INDEX_LAYOUT_DIR] = qualifier;
 
         } else if (qualifier instanceof SmallestScreenWidthQualifier) {
             mQualifiers[INDEX_SMALLEST_SCREEN_WIDTH] = qualifier;
@@ -348,7 +350,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      * Removes a given qualifier from the {@link FolderConfiguration}.
      * @param qualifier the {@link ResourceQualifier} to remove.
      */
-    public void removeQualifier(ResourceQualifier qualifier) {
+    public void removeQualifier(@NonNull ResourceQualifier qualifier) {
         for (int i = 0 ; i < INDEX_COUNT ; i++) {
             if (mQualifiers[i] == qualifier) {
                 mQualifiers[i] = null;
@@ -363,6 +365,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      * @param index the index of the qualifier to return.
      * @return the qualifier or null if there are none at the index.
      */
+    @Nullable
     public ResourceQualifier getQualifier(int index) {
         return mQualifiers[index];
     }
@@ -371,6 +374,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_COUNTRY_CODE] = qualifier;
     }
 
+    @Nullable
     public CountryCodeQualifier getCountryCodeQualifier() {
         return (CountryCodeQualifier)mQualifiers[INDEX_COUNTRY_CODE];
     }
@@ -379,6 +383,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_NETWORK_CODE] = qualifier;
     }
 
+    @Nullable
     public NetworkCodeQualifier getNetworkCodeQualifier() {
         return (NetworkCodeQualifier)mQualifiers[INDEX_NETWORK_CODE];
     }
@@ -387,6 +392,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_LANGUAGE] = qualifier;
     }
 
+    @Nullable
     public LanguageQualifier getLanguageQualifier() {
         return (LanguageQualifier)mQualifiers[INDEX_LANGUAGE];
     }
@@ -395,22 +401,25 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_REGION] = qualifier;
     }
 
+    @Nullable
     public RegionQualifier getRegionQualifier() {
         return (RegionQualifier)mQualifiers[INDEX_REGION];
     }
 
     public void setLayoutDirectionQualifier(LayoutDirectionQualifier qualifier) {
-        mQualifiers[INDEX_LAYOUTDIR] = qualifier;
+        mQualifiers[INDEX_LAYOUT_DIR] = qualifier;
     }
 
+    @Nullable
     public LayoutDirectionQualifier getLayoutDirectionQualifier() {
-        return (LayoutDirectionQualifier)mQualifiers[INDEX_LAYOUTDIR];
+        return (LayoutDirectionQualifier)mQualifiers[INDEX_LAYOUT_DIR];
     }
 
     public void setSmallestScreenWidthQualifier(SmallestScreenWidthQualifier qualifier) {
         mQualifiers[INDEX_SMALLEST_SCREEN_WIDTH] = qualifier;
     }
 
+    @Nullable
     public SmallestScreenWidthQualifier getSmallestScreenWidthQualifier() {
         return (SmallestScreenWidthQualifier) mQualifiers[INDEX_SMALLEST_SCREEN_WIDTH];
     }
@@ -419,6 +428,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_SCREEN_WIDTH] = qualifier;
     }
 
+    @Nullable
     public ScreenWidthQualifier getScreenWidthQualifier() {
         return (ScreenWidthQualifier) mQualifiers[INDEX_SCREEN_WIDTH];
     }
@@ -427,6 +437,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_SCREEN_HEIGHT] = qualifier;
     }
 
+    @Nullable
     public ScreenHeightQualifier getScreenHeightQualifier() {
         return (ScreenHeightQualifier) mQualifiers[INDEX_SCREEN_HEIGHT];
     }
@@ -435,6 +446,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_SCREEN_LAYOUT_SIZE] = qualifier;
     }
 
+    @Nullable
     public ScreenSizeQualifier getScreenSizeQualifier() {
         return (ScreenSizeQualifier)mQualifiers[INDEX_SCREEN_LAYOUT_SIZE];
     }
@@ -443,6 +455,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_SCREEN_RATIO] = qualifier;
     }
 
+    @Nullable
     public ScreenRatioQualifier getScreenRatioQualifier() {
         return (ScreenRatioQualifier)mQualifiers[INDEX_SCREEN_RATIO];
     }
@@ -451,6 +464,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_SCREEN_ORIENTATION] = qualifier;
     }
 
+    @Nullable
     public ScreenOrientationQualifier getScreenOrientationQualifier() {
         return (ScreenOrientationQualifier)mQualifiers[INDEX_SCREEN_ORIENTATION];
     }
@@ -459,6 +473,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_UI_MODE] = qualifier;
     }
 
+    @Nullable
     public UiModeQualifier getUiModeQualifier() {
         return (UiModeQualifier)mQualifiers[INDEX_UI_MODE];
     }
@@ -467,6 +482,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_NIGHT_MODE] = qualifier;
     }
 
+    @Nullable
     public NightModeQualifier getNightModeQualifier() {
         return (NightModeQualifier)mQualifiers[INDEX_NIGHT_MODE];
     }
@@ -475,6 +491,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_PIXEL_DENSITY] = qualifier;
     }
 
+    @Nullable
     public DensityQualifier getDensityQualifier() {
         return (DensityQualifier)mQualifiers[INDEX_PIXEL_DENSITY];
     }
@@ -483,6 +500,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_TOUCH_TYPE] = qualifier;
     }
 
+    @Nullable
     public TouchScreenQualifier getTouchTypeQualifier() {
         return (TouchScreenQualifier)mQualifiers[INDEX_TOUCH_TYPE];
     }
@@ -491,6 +509,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_KEYBOARD_STATE] = qualifier;
     }
 
+    @Nullable
     public KeyboardStateQualifier getKeyboardStateQualifier() {
         return (KeyboardStateQualifier)mQualifiers[INDEX_KEYBOARD_STATE];
     }
@@ -499,6 +518,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_TEXT_INPUT_METHOD] = qualifier;
     }
 
+    @Nullable
     public TextInputMethodQualifier getTextInputMethodQualifier() {
         return (TextInputMethodQualifier)mQualifiers[INDEX_TEXT_INPUT_METHOD];
     }
@@ -507,6 +527,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_NAVIGATION_STATE] = qualifier;
     }
 
+    @Nullable
     public NavigationStateQualifier getNavigationStateQualifier() {
         return (NavigationStateQualifier)mQualifiers[INDEX_NAVIGATION_STATE];
     }
@@ -515,6 +536,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_NAVIGATION_METHOD] = qualifier;
     }
 
+    @Nullable
     public NavigationMethodQualifier getNavigationMethodQualifier() {
         return (NavigationMethodQualifier)mQualifiers[INDEX_NAVIGATION_METHOD];
     }
@@ -523,6 +545,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_SCREEN_DIMENSION] = qualifier;
     }
 
+    @Nullable
     public ScreenDimensionQualifier getScreenDimensionQualifier() {
         return (ScreenDimensionQualifier)mQualifiers[INDEX_SCREEN_DIMENSION];
     }
@@ -531,6 +554,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_VERSION] = qualifier;
     }
 
+    @Nullable
     public VersionQualifier getVersionQualifier() {
         return (VersionQualifier)mQualifiers[INDEX_VERSION];
     }
@@ -640,7 +664,8 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
     /**
      * Returns the name of a folder with the configuration.
      */
-    public String getFolderName(ResourceFolderType folder) {
+    @NonNull
+    public String getFolderName(@NonNull ResourceFolderType folder) {
         StringBuilder result = new StringBuilder(folder.getName());
 
         for (ResourceQualifier qualifier : mQualifiers) {
@@ -659,6 +684,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
   /**
    * Returns the folder configuration as a unique key
    */
+  @NonNull
   public String getUniqueKey() {
     StringBuilder result = new StringBuilder(100);
 
@@ -678,6 +704,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
   /**
      * Returns {@link #toDisplayString()}.
      */
+    @NonNull
     @Override
     public String toString() {
         return toDisplayString();
@@ -686,6 +713,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
     /**
      * Returns a string valid for display purpose.
      */
+    @NonNull
     public String toDisplayString() {
         if (isDefault()) {
             return "default";
@@ -693,7 +721,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
 
         StringBuilder result = null;
         int index = 0;
-        ResourceQualifier qualifier = null;
+        ResourceQualifier qualifier;
 
         // pre- language/region qualifiers
         while (index < INDEX_LANGUAGE) {
@@ -738,12 +766,13 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
             }
         }
 
-        return result == null ? null : result.toString();
+        return result == null ? "" : result.toString();
     }
 
     /**
      * Returns a string for display purposes which uses only the short names of the qualifiers
      */
+    @NonNull
     public String toShortDisplayString() {
         if (isDefault()) {
             return "default";
@@ -767,7 +796,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
     }
 
     @Override
-    public int compareTo(FolderConfiguration folderConfig) {
+    public int compareTo(@NonNull FolderConfiguration folderConfig) {
         // default are always at the top.
         if (isDefault()) {
             if (folderConfig.isDefault()) {
@@ -782,9 +811,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
             ResourceQualifier qualifier2 = folderConfig.mQualifiers[i];
 
             if (qualifier1 == null) {
-                if (qualifier2 == null) {
-                    continue;
-                } else {
+                if (qualifier2 != null) {
                     return -1;
                 }
             } else {
@@ -816,7 +843,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      * See http://d.android.com/guide/topics/resources/resources-i18n.html#best-match
      */
     @Nullable
-    public Configurable findMatchingConfigurable(List<? extends Configurable> configurables) {
+    public Configurable findMatchingConfigurable(@Nullable List<? extends Configurable> configurables) {
         if (configurables == null) {
             return null;
         }
@@ -848,7 +875,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         }
 
         // 2. Loop on the qualifiers, and eliminate matches
-        final int count = FolderConfiguration.getQualifierCount();
+        final int count = getQualifierCount();
         for (int q = 0 ; q < count ; q++) {
             // look to see if one configurable has this qualifier.
             // At the same time also record the best match value for the qualifier (if applicable).
@@ -896,7 +923,8 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
                         matchingConfigurables.remove(configurable);
                     } else {
                         // looks like we keep this resource, move on to the next one.
-                        i++;
+                      //noinspection AssignmentToForLoopParameter
+                      i++;
                     }
                 }
 
@@ -929,7 +957,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      * @param referenceConfig The reference configuration to test against.
      * @return true if the configuration matches.
      */
-    public boolean isMatchFor(FolderConfiguration referenceConfig) {
+    public boolean isMatchFor(@Nullable FolderConfiguration referenceConfig) {
         if (referenceConfig == null) {
             return false;
         }
@@ -973,7 +1001,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_NETWORK_CODE] = new NetworkCodeQualifier();
         mQualifiers[INDEX_LANGUAGE] = new LanguageQualifier();
         mQualifiers[INDEX_REGION] = new RegionQualifier();
-        mQualifiers[INDEX_LAYOUTDIR] = new LayoutDirectionQualifier();
+        mQualifiers[INDEX_LAYOUT_DIR] = new LayoutDirectionQualifier();
         mQualifiers[INDEX_SMALLEST_SCREEN_WIDTH] = new SmallestScreenWidthQualifier();
         mQualifiers[INDEX_SCREEN_WIDTH] = new ScreenWidthQualifier();
         mQualifiers[INDEX_SCREEN_HEIGHT] = new ScreenHeightQualifier();
@@ -995,6 +1023,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
     /**
      * Returns an array of all the non null qualifiers.
      */
+    @NonNull
     public ResourceQualifier[] getQualifiers() {
         int count = 0;
         for (int i = 0 ; i < INDEX_COUNT ; i++) {
