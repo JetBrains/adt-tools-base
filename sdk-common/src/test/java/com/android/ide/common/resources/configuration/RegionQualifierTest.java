@@ -45,9 +45,17 @@ public class RegionQualifierTest extends TestCase {
         assertEquals("rUS", config.getRegionQualifier().toString()); //$NON-NLS-1$
     }
 
+    public void testCheckCaseInsensitive() {
+        assertEquals(true, rq.checkAndSet("rus", config));//$NON-NLS-1$
+        assertTrue(config.getRegionQualifier() != null);
+        assertEquals("US", config.getRegionQualifier().getValue()); //$NON-NLS-1$
+        assertEquals("rUS", config.getRegionQualifier().toString()); //$NON-NLS-1$
+        assertEquals("rUS", config.getRegionQualifier().toString()); //$NON-NLS-1$
+        assertEquals("rUS", RegionQualifier.getFolderSegment("us"));
+    }
+
     public void testFailures() {
         assertEquals(false, rq.checkAndSet("", config));//$NON-NLS-1$
-        assertEquals(false, rq.checkAndSet("rus", config));//$NON-NLS-1$
         assertEquals(false, rq.checkAndSet("rUSA", config));//$NON-NLS-1$
         assertEquals(false, rq.checkAndSet("abc", config));//$NON-NLS-1$
     }
