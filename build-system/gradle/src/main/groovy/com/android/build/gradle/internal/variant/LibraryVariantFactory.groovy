@@ -201,7 +201,7 @@ public class LibraryVariantFactory implements VariantFactory {
                 "bundle${fullName.capitalize()}",
                 Zip)
 
-        if (variantConfig.buildType.runProguard) {
+        if (buildType.runProguard) {
             // run proguard on output of compile task
             basePlugin.createProguardTasks(variantData, null)
 

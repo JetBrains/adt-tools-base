@@ -3,6 +3,7 @@
 - BREAKING CHANGES:
    * DSL for Library Projects is now the same as for app projects, meaning you can create more Build Types, as well as ProductFlavors.
    * instrumentTest (both default folders and DSL objects) renamed androidTest
+
 - In preparation for a final variant publishing mechanism, flavors in Libraries can be published alongside the default configuration.
   The default publishing configuration is configured with
     android.defaultPublishConfig
@@ -29,6 +30,7 @@
         public List<ProductFlavor> getFlavors();
   To skip a variant, call setIgnore(false)
 - Fix issue where variant specific source folders where not used for java compilation.
+- Fix for some Renderscript support mode compatibility issues. Requires Build Tools 19.0.3
 - Lots of misc fixes.
 
 0.8.3:
