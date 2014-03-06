@@ -636,7 +636,7 @@ public final class SdkConstants {
     public static final String ANDROID_NS_NAME_PREFIX = "android:";          //$NON-NLS-1$
     public static final int ANDROID_NS_NAME_PREFIX_LEN = ANDROID_NS_NAME_PREFIX.length();
 
-  /** The default prefix used for the app */
+    /** The default prefix used for the app */
     public static final String APP_PREFIX = "app";                          //$NON-NLS-1$
     /** The entity for the ampersand character */
     public static final String AMP_ENTITY = "&amp;";                         //$NON-NLS-1$
