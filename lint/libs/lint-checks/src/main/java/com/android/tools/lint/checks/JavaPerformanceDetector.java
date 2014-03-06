@@ -16,6 +16,8 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.SUPPORT_LIB_ARTIFACT;
+
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -133,6 +135,7 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
     private static final String INTEGER = "Integer";                        //$NON-NLS-1$
     private static final String BOOL = "boolean";                           //$NON-NLS-1$
     private static final String BOOLEAN = "Boolean";                        //$NON-NLS-1$
+    private static final String BYTE = "Byte";                              //$NON-NLS-1$
     private static final String LONG = "Long";                              //$NON-NLS-1$
     private static final String CHARACTER = "Character";                    //$NON-NLS-1$
     private static final String DOUBLE = "Double";                          //$NON-NLS-1$
@@ -222,7 +225,8 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                         || typeName.equals(FLOAT)
                         || typeName.equals(CHARACTER)
                         || typeName.equals(LONG)
-                        || typeName.equals(DOUBLE))
+                        || typeName.equals(DOUBLE)
+                        || typeName.equals(BYTE))
                         && node.astTypeReference().astParts().size() == 1
                         && node.astArguments().size() == 1) {
                     String argument = node.astArguments().first().toString();
@@ -496,28 +500,37 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
             if (types != null && types.size() == 2) {
                 TypeReference first = types.first();
                 String typeName = first.getTypeName();
-                if (typeName.equals(INTEGER)) {
+                int minSdk = mContext.getMainProject().getMinSdk();
+                if (typeName.equals(INTEGER) || typeName.equals(BYTE)) {
                     String valueType = types.last().getTypeName();
                     if (valueType.equals(INTEGER)) {
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                             "Use new SparseIntArray(...) instead for better performance",
                             null);
+                    } else if (valueType.equals(LONG) && minSdk >= 18) {
+                        mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
+                                "Use new SparseLongArray(...) instead for better performance",
+                                null);
                     } else if (valueType.equals(BOOLEAN)) {
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                                 "Use new SparseBooleanArray(...) instead for better performance",
                                 null);
                     } else {
-                        // Don't suggest SparseLongArray; it is marked @hide
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                             String.format(
                                 "Use new SparseArray<%1$s>(...) instead for better performance",
                               valueType),
                             null);
                     }
-                } else if (typeName.equals(LONG) && mContext.getProject().getMinSdk() >= 17) {
+                } else if (typeName.equals(LONG) && (minSdk >= 16 ||
+                        Boolean.TRUE == mContext.getMainProject().dependsOn(
+                                SUPPORT_LIB_ARTIFACT))) {
+                    boolean useBuiltin = minSdk >= 16;
+                    String message = useBuiltin ?
+                            "Use new LongSparseArray(...) instead for better performance" :
+                            "Use new android.support.v4.util.LongSparseArray(...) instead for better performance";
                     mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
-                            "Use new LongSparseArray(...) instead for better performance",
-                            null);
+                            message, null);
                 }
             }
         }
