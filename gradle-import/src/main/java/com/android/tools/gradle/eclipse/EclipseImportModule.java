@@ -16,9 +16,6 @@
 
 package com.android.tools.gradle.eclipse;
 
-import static com.android.SdkConstants.LIBS_FOLDER;
-
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
