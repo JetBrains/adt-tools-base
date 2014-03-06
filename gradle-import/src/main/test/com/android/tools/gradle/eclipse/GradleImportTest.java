@@ -2700,14 +2700,14 @@ public class GradleImportTest extends TestCase {
         File projectDir = createProject("PathChars", "test.pkg");
 
         final File destDir = new File(root, "My Code" + separator + "Source & Data" +
-                separator + "\"Foo's Bar\"");
+                separator + "Foo's Bar");
         destDir.mkdirs();
 
         checkProject(projectDir, ""
                 + MSG_HEADER
                 + MSG_RISKY_PROJECT_LOCATION
-                + "$DESTDIR/My Code/Source & Data/\"Foo's Bar\"\n"
-                + "           -           ---     -   - -   -\n"
+                + "$DESTDIR/My Code/Source & Data/Foo's Bar\n"
+                + "           -           ---        - -   \n"
                 + MSG_FOLDER_STRUCTURE
                 + "* AndroidManifest.xml => app/src/main/AndroidManifest.xml\n"
                 + "* res/ => app/src/main/res/\n"
