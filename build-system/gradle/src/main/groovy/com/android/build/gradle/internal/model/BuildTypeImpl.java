@@ -120,6 +120,12 @@ class BuildTypeImpl implements BuildType, Serializable {
 
     @NonNull
     @Override
+    public Map<String, ClassField> getResValues() {
+        return Collections.emptyMap();
+    }
+
+    @NonNull
+    @Override
     public List<File> getProguardFiles() {
         return Collections.emptyList();
     }

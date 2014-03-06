@@ -1,3 +1,8 @@
+0.8.1:
+- Added the ability to create resource values through the DSL.
+  You can now use 'resValue <type>,<name>,<value>' on build types and product flavors
+  the same way you can use buildConfigField.
+
 0.8.0
 
 - Support for Gradle 1.10

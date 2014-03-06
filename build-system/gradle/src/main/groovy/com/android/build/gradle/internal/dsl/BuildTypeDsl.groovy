@@ -103,6 +103,18 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
         addBuildConfigField(AndroidBuilder.createClassField(type, name, value));
     }
 
+    public void resValue(
+            @NonNull String type,
+            @NonNull String name,
+            @NonNull String value) {
+        ClassField alreadyPresent = getResValues().get(name);
+        if (alreadyPresent != null) {
+            logger.info(
+                    "BuildType(${getName()}): resValue '$name' value is being replaced: ${alreadyPresent.value} -> $value");
+        }
+        addResValue(AndroidBuilder.createClassField(type, name, value));
+    }
+
     @NonNull
     public BuildTypeDsl proguardFile(Object proguardFile) {
         proguardFiles.add(fileResolver.resolve(proguardFile));
