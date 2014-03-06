@@ -2,6 +2,7 @@
 
 - Add packagingOptions support in Library projects
 - Solve issue with local jar when testing library projects.
+- Fix bug with variant.addJavaSourceFoldersToModel
 
 0.7.1
 
