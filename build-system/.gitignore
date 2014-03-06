@@ -18,6 +18,7 @@ tests/ndkJniLib/*/build
 tests/proguardLib/*/build
 tests/renderscriptInLib/*/build
 tests/repo/*/build
+tests/mavenLocal/*/build
 tests/sameNamedLibs/*/build
 tests/sameNamedLibs/*/*/build
 tests/tictactoe/*/build
