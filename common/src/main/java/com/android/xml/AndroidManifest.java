@@ -94,6 +94,10 @@ public final class AndroidManifest {
     public static final String ATTRIBUTE_BACKUP_AGENT = "backupAgent";
     public static final String ATTRIBUTE_PARENT_ACTIVITY_NAME = "parentActivityName";
     public static final String ATTRIBUTE_SUPPORTS_RTL = "supportsRtl";
+    public static final String ATTRIBUTE_UI_OPTIONS = "uiOptions";
+    public static final String ATTRIBUTE_VALUE = "value";
+
+    public static final String VALUE_PARENT_ACTIVITY = SdkConstants.ANDROID_SUPPORT_PKG_PREFIX + "PARENT_ACTIVITY";
 
     /**
      * Returns an {@link IAbstractFile} object representing the manifest for the given project.
