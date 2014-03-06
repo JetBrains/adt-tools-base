@@ -227,12 +227,12 @@ public class XmlUtils {
      */
     @NonNull
     public static String fromXmlAttributeValue(@NonNull String escapedAttrValue) {
-      String workingString = escapedAttrValue.replace(QUOT_ENTITY, "\"");
-      workingString = workingString.replace(LT_ENTITY, "<");
-      workingString = workingString.replace(APOS_ENTITY, "'");
-      workingString = workingString.replace(AMP_ENTITY, "&");
+        String workingString = escapedAttrValue.replace(QUOT_ENTITY, "\"");
+        workingString = workingString.replace(LT_ENTITY, "<");
+        workingString = workingString.replace(APOS_ENTITY, "'");
+        workingString = workingString.replace(AMP_ENTITY, "&");
 
-      return workingString;
+        return workingString;
     }
 
     /**

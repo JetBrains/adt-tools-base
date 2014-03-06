@@ -105,15 +105,15 @@ public class XmlUtilsTest extends TestCase {
     }
 
     public void testFromXmlAttributeValue() throws Exception {
-      assertEquals("", XmlUtils.fromXmlAttributeValue(""));
-      assertEquals("foo", XmlUtils.fromXmlAttributeValue("foo"));
-      assertEquals("foo<bar", XmlUtils.fromXmlAttributeValue("foo&lt;bar"));
-      assertEquals("foo>bar", XmlUtils.fromXmlAttributeValue("foo>bar"));
+        assertEquals("", XmlUtils.fromXmlAttributeValue(""));
+        assertEquals("foo", XmlUtils.fromXmlAttributeValue("foo"));
+        assertEquals("foo<bar", XmlUtils.fromXmlAttributeValue("foo&lt;bar"));
+        assertEquals("foo>bar", XmlUtils.fromXmlAttributeValue("foo>bar"));
 
-      assertEquals("\"", XmlUtils.fromXmlAttributeValue("&quot;"));
-      assertEquals("'", XmlUtils.fromXmlAttributeValue("&apos;"));
-      assertEquals("foo\"b''ar", XmlUtils.fromXmlAttributeValue("foo&quot;b&apos;&apos;ar"));
-      assertEquals("<\"'>&", XmlUtils.fromXmlAttributeValue("&lt;&quot;&apos;>&amp;"));
+        assertEquals("\"", XmlUtils.fromXmlAttributeValue("&quot;"));
+        assertEquals("'", XmlUtils.fromXmlAttributeValue("&apos;"));
+        assertEquals("foo\"b''ar", XmlUtils.fromXmlAttributeValue("foo&quot;b&apos;&apos;ar"));
+        assertEquals("<\"'>&", XmlUtils.fromXmlAttributeValue("&lt;&quot;&apos;>&amp;"));
     }
 
     public void testAppendXmlAttributeValue() throws Exception {
