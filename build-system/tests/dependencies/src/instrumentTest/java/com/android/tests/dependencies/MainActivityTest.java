@@ -37,8 +37,18 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
     }
 
     @SmallTest
-    public void testValues() {
+    public void testPackageOnly() {
         assertEquals("Foo-helper", mTextView.getText());
+    }
+
+    public void testProvided() {
+        boolean exception = false;
+        try {
+             getActivity().getString2("foo");
+        } catch (Throwable t) {
+            exception = true;
+        }
+        assertTrue(exception);
     }
 }
 

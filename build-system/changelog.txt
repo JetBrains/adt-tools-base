@@ -5,6 +5,8 @@
 - Fixed issue 64094: buildConfigField can now replace previous values inside the same type/flavors.
 - Add support for NDK prebuilts in library projects.
 - Parallelize pre-dexing to speed up clean builds.
+- Added 'provided' dependency scope for compile only (not packaged) dependencies.
+  Additional scope per buildtype and flavors are also available (debugProvided, myFlavorProvided,etc...)
 - Variant API improvements:
    * getPreBuild() returns the prebuild task for the variant
    * getSourceSets() returns the sorted sourcesets for the task, from lower to higher priority

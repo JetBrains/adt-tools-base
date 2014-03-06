@@ -117,6 +117,15 @@ public abstract class BaseExtension {
                     String.format("Classpath packaged with the compiled %s classes.",
                             sourceSet.getName()));
 
+            Configuration providedConfiguration = configurations.findByName(
+                    sourceSet.getProvidedConfigurationName())
+            if (providedConfiguration == null) {
+                providedConfiguration = configurations.create(sourceSet.getProvidedConfigurationName())
+            }
+            providedConfiguration.setVisible(false);
+            providedConfiguration.setDescription(
+                    String.format("Classpath for only compiling the %s sources.", sourceSet.getName()))
+
             sourceSet.setRoot(String.format("src/%s", sourceSet.getName()))
         }
     }

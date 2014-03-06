@@ -27,7 +27,7 @@ public class JarDependency {
 
     private final File mJarFile;
     private final boolean mCompiled;
-    private final boolean mPackaged;
+    private boolean mPackaged;
     private final boolean mProguarded;
 
     public JarDependency(@NonNull File jarFile, boolean compiled, boolean packaged,
@@ -38,9 +38,6 @@ public class JarDependency {
         mProguarded = proguarded;
     }
 
-    public JarDependency(@NonNull File jarFile) {
-        this(jarFile, true, true, true);
-    }
 
     public JarDependency(@NonNull File jarFile, boolean compiled, boolean packaged) {
         this(jarFile, compiled, packaged, true);
@@ -59,7 +56,21 @@ public class JarDependency {
         return mPackaged;
     }
 
+    public void setPackaged(boolean packaged) {
+        mPackaged = packaged;
+    }
+
     public boolean isProguarded() {
         return mProguarded;
+    }
+
+    @Override
+    public String toString() {
+        return "JarDependency{" +
+                "mJarFile=" + mJarFile +
+                ", mCompiled=" + mCompiled +
+                ", mPackaged=" + mPackaged +
+                ", mProguarded=" + mProguarded +
+                '}';
     }
 }
