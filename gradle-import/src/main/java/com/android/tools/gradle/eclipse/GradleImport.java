@@ -822,6 +822,7 @@ public class GradleImport {
         return sb.toString();
     }
 
+    @Nullable
     public String resolvePathVariable(@NonNull String name) throws IOException {
         Properties properties = getJdkSettingsProperties(true);
         assert properties != null; // because mustExist=true, otherwise throws error
