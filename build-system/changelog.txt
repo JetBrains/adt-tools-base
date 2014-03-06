@@ -1,5 +1,7 @@
 0.8.3:
 
+- Fix Studio integration regression.
+
 0.8.2:
 - Fix incremental issue with build config fields and generated res values.
 
