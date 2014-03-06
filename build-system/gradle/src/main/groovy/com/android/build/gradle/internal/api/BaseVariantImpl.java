@@ -41,6 +41,7 @@ import java.util.List;
 
 abstract class BaseVariantImpl implements BaseVariant {
 
+    @NonNull
     protected abstract BaseVariantData getVariantData();
 
     @Override
