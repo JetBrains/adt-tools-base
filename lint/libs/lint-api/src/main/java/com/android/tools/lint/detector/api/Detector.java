@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A detector is able to find a particular problem. It might also be thought of as enforcing
@@ -372,6 +373,11 @@ public abstract class Detector {
         // We want to distinguish this from just an *empty* list returned by the caller!
     }
 
+    /** Specialized interface for detectors that scan Gradle files */
+    public interface GradleScanner {
+        void visitBuildScript(@NonNull Context context, Map<String, Object> sharedData);
+    }
+
     /** Specialized interface for detectors that scan other files */
     public interface OtherFileScanner {
         /**
@@ -607,5 +613,10 @@ public abstract class Detector {
     @NonNull
     public EnumSet<Scope> getApplicableFiles() {
         return Scope.OTHER_SCOPE;
+    }
+
+    // ---- Dummy implementations to make implementing an GradleScanner easier: ----
+
+    public void visitBuildScript(@NonNull Context context, Map<String, Object> sharedData) {
     }
 }
