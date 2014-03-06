@@ -100,9 +100,9 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
         // The library artifact is published for the "default" configuration so we make
         // sure "default" extends from the actual configuration used for building.
         project.configurations["default"].extendsFrom(
-                project.configurations[mainSourceSet.getPackageConfigurationName()])
+                project.configurations[mainSourceSet.getCompileConfigurationName()])
         project.configurations["default"].extendsFrom(
-                project.configurations[releaseSourceSet.getPackageConfigurationName()])
+                project.configurations[releaseSourceSet.getCompileConfigurationName()])
 
         project.plugins.withType(MavenPlugin) {
             project.conf2ScopeMappings.addMapping(300,
