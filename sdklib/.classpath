@@ -13,7 +13,5 @@
 	<classpathentry exported="true" kind="var" path="ANDROID_SRC/prebuilts/tools/common/m2/repository/org/apache/httpcomponents/httpmime/4.1/httpmime-4.1.jar" sourcepath="/ANDROID_SRC/prebuilts/tools/common/m2/repository/org/apache/httpcomponents/httpmime/4.1/httpmime-4.1-sources.jar"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/dvlib"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/layoutlib-api"/>
-	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/m2/repository/org/bouncycastle/bcpkix-jdk15on/1.48/bcpkix-jdk15on-1.48.jar" sourcepath="/ANDROID_SRC/prebuilts/tools/common/m2/repository/org/bouncycastle/bcpkix-jdk15on/1.48/bcpkix-jdk15on-1.48-sources.jar"/>
-	<classpathentry kind="var" path="ANDROID_SRC/prebuilts/tools/common/m2/repository/org/bouncycastle/bcprov-jdk15on/1.48/bcprov-jdk15on-1.48.jar" sourcepath="/ANDROID_SRC/prebuilts/tools/common/m2/repository/org/bouncycastle/bcprov-jdk15on/1.48/bcprov-jdk15on-1.48-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
