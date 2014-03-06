@@ -16,6 +16,7 @@
     <orderEntry type="library" scope="TEST" name="JUnit3" level="project" />
     <orderEntry type="module" module-name="builder-model" exported="" />
     <orderEntry type="library" name="easymock-tools" level="project" />
+    <orderEntry type="library" name="ecj" level="project" />
   </component>
 </module>
 
