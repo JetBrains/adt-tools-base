@@ -68,9 +68,6 @@ public class SdkManager {
     /** Embedded reference to the new local SDK object. */
     private final LocalSdk mLocalSdk;
 
-    /** Cache of targets from local sdk. See {@link #getTargets()}. */
-    private IAndroidTarget[] mCachedTargets;
-
     /**
      * Create a new {@link SdkManager} instance.
      * External users should use {@link #createManager(String, ILogger)}.
@@ -115,7 +112,6 @@ public class SdkManager {
      * @param log the ILogger object receiving warning/error from the parsing.
      */
     public void reloadSdk(@NonNull ILogger log) {
-        mCachedTargets = null;
         mLocalSdk.clearLocalPkg(PkgType.PKG_ALL);
     }
 
@@ -164,24 +160,7 @@ public class SdkManager {
      */
     @NonNull
     public IAndroidTarget[] getTargets() {
-        if (mCachedTargets == null) {
-            LocalPkgInfo[] pkgsInfos = mLocalSdk.getPkgsInfos(
-                    EnumSet.of(PkgType.PKG_PLATFORMS, PkgType.PKG_ADDONS));
-            int n = pkgsInfos.length;
-            List<IAndroidTarget> targets = new ArrayList<IAndroidTarget>(n);
-            for (int i = 0; i < n; i++) {
-                LocalPkgInfo info = pkgsInfos[i];
-                assert info instanceof LocalPlatformPkgInfo;
-                if (info instanceof LocalPlatformPkgInfo) {
-                    IAndroidTarget target = ((LocalPlatformPkgInfo) info).getAndroidTarget();
-                    if (target != null) {
-                        targets.add(target);
-                    }
-                }
-            }
-            mCachedTargets = targets.toArray(new IAndroidTarget[targets.size()]);
-        }
-        return mCachedTargets;
+        return mLocalSdk.getTargets();
     }
 
     /**

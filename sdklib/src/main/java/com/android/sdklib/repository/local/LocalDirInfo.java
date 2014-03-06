@@ -78,7 +78,7 @@ class LocalDirInfo {
         }
         mPropsModifiedTS = propsModifiedTS;
         mPropsChecksum = propsChecksum;
-        mDirChecksum = getDirChecksum(mDir, 0);
+        mDirChecksum = getDirChecksum(mDir);
     }
 
     /**
@@ -120,7 +120,7 @@ class LocalDirInfo {
         }
 
         // Has the deep directory checksum changed?
-        if (mDirChecksum != getDirChecksum(mDir, 0)) {
+        if (mDirChecksum != getDirChecksum(mDir)) {
             return true;
         }
 
@@ -154,12 +154,19 @@ class LocalDirInfo {
     }
 
     /**
-     * Computes a "deep" checksum using the last-modified attributes of all
-     * the files and directories in this root directory.
+     * Computes a checksum using the last-modified attributes of all
+     * the files and <em>first-level</em>directories in this root directory.
+     * <p/>
+     * Heuristic: the SDK Manager updates package by replacing whole directories
+     * so we don't need to do a recursive deep-first checksum of all files. Only
+     * the top-level of the package directory should be sufficient to detect
+     * SDK updates.
      */
-    private long getDirChecksum(@NonNull File dir, long checksum) {
-        checksum = 31 * checksum | mFileOp.lastModified(dir);
+    private long getDirChecksum(@NonNull File dir) {
+        long checksum = mFileOp.lastModified(dir);
 
+        // Get the file & directory list sorted by case-insensitive name
+        // to make the checksum more consistent.
         File[] files = mFileOp.listFiles(dir);
         Arrays.sort(files, new Comparator<File>() {
             @Override
@@ -168,11 +175,7 @@ class LocalDirInfo {
             }
         });
         for (File file : files) {
-            if (mFileOp.isDirectory(file)) {
-                checksum = getDirChecksum(file, checksum);
-            } else {
-                checksum = 31 * checksum | mFileOp.lastModified(file);
-            }
+            checksum = 31 * checksum | mFileOp.lastModified(file);
         }
         return checksum;
     }
