@@ -17,6 +17,7 @@
 package com.android.ddmlib;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.ddmlib.Log.LogLevel;
 
 import java.io.BufferedReader;
@@ -1154,10 +1155,10 @@ public final class AndroidDebugBridge {
     }
 
     /**
-     * Determines port where ADB is expected by looking at system property and after that at env variable.
-     * When system property ANDROID_ADB_SERVER_PORT exists, it is parsed and when valid, it is used. When
-     * system property is not set, we take a look at env variable of the same name. When none is specified
-     * or valid, {@code ADB_PORT} is taken as a default.
+     * Determines port where ADB is expected by looking at system property and after that at env
+     * variable. When system property ANDROID_ADB_SERVER_PORT exists, it is parsed and when valid,
+     * it is used. When system property is not set, we take a look at env variable of the same name.
+     * When none is specified or valid, {@code ADB_PORT} is taken as a default.
      *
      * @return The port number where the host's adb should be expected or started.
      */
@@ -1165,9 +1166,9 @@ public final class AndroidDebugBridge {
         int result = ADB_PORT;
 
         try {
-            Integer parsedPort = Integer.getInteger(SERVER_PORT_ENV_VAR);
-            if (parsedPort != null) {
-                result = validateAdbServerPort(parsedPort.toString(), "system property variable ");
+            Integer portEnvVar = Integer.getInteger(SERVER_PORT_ENV_VAR);
+            if (portEnvVar != null) {
+                result = validateAdbServerPort(portEnvVar.toString(), "system property variable ");
             }
         } catch (SecurityException ex) {
             Log.w(DDMS,
@@ -1179,7 +1180,8 @@ public final class AndroidDebugBridge {
 
         // when system property is not set, parse environment property
         try {
-            result = validateAdbServerPort(System.getenv(SERVER_PORT_ENV_VAR), "environment variable ");
+            result = validateAdbServerPort(System.getenv(SERVER_PORT_ENV_VAR),
+                    "environment variable ");
         } catch (SecurityException ex) {
             // A security manager has been installed that doesn't allow access to env vars.
             // So an environment variable might have been set, but we can't tell.
@@ -1206,23 +1208,31 @@ public final class AndroidDebugBridge {
     /**
      *
      * @param adbServerPort adb server port to validate
-     * @param variablePrefix prefix for exception message noting if it is system or env property which is being validated
+     * @param variablePrefix prefix for exception message noting if it is system or env property
+     *                       which is being validated
      * @return {@code adbServerPort} as a parsed integer
-     * @throws IllegalArgumentException when {@code adbServerPort} is not bigger then 0 or it is not a number at all
+     * @throws IllegalArgumentException when {@code adbServerPort} is not bigger then 0 or it is
+     * not a number at all
      */
-    private static Integer validateAdbServerPort(@NonNull String adbServerPort, @NonNull String variablePrefix) throws IllegalArgumentException {
-
+    private static int validateAdbServerPort(@Nullable String adbServerPort, @NonNull String
+            variablePrefix) throws IllegalArgumentException {
         int port;
 
+        if (adbServerPort == null) {
+            throw new IllegalArgumentException("ADB port cannot be null.");
+        }
+
         try {
-            // C tools (adb, emulator) accept hex and octal port numbers, so need to accept them too.
+            // C tools (adb, emulator) accept hex and octal port numbers, so need to accept them too
             port = Integer.decode(adbServerPort);
             if (port <= 0) {
-                throw new IllegalArgumentException(variablePrefix + SERVER_PORT_ENV_VAR + ": must be >=0, got " + adbServerPort);
+                throw new IllegalArgumentException(variablePrefix + SERVER_PORT_ENV_VAR
+                        + ": must be >=0, got " + adbServerPort);
             }
             return port;
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(variablePrefix + SERVER_PORT_ENV_VAR + ": illegal value '" + adbServerPort + "'");
+            throw new IllegalArgumentException(variablePrefix + SERVER_PORT_ENV_VAR
+                    + ": illegal value '" + adbServerPort + "'");
         }
     }
 
