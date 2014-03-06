@@ -101,7 +101,7 @@ class EclipseImportModule extends ImportModule {
         }
 
         for (EclipseProject project : mProject.getAllLibraries()) {
-            if (pkg.equals(project.getPackage())) {
+            if (project.isAndroidProject() && pkg.equals(project.getPackage())) {
                 return true;
             }
         }
