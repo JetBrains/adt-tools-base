@@ -38,6 +38,7 @@ import com.android.sdklib.internal.repository.packages.SamplePackage;
 import com.android.sdklib.internal.repository.packages.SourcePackage;
 import com.android.sdklib.internal.repository.packages.SystemImagePackage;
 import com.android.sdklib.internal.repository.packages.ToolPackage;
+import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.sdklib.repository.local.LocalAddonPkgInfo;
 import com.android.utils.ILogger;
@@ -790,8 +791,6 @@ public class LocalSdkParser {
         return null;
     }
 
-    private static final File[] EMPTY_FILE_LIST = new File[0];
-
     /**
      * Helper method that calls {@link File#listFiles()} and returns
      * a non-null empty list if the input is not a directory or has
@@ -805,6 +804,6 @@ public class LocalSdkParser {
                 return files;
             }
         }
-        return EMPTY_FILE_LIST;
+        return FileOp.EMPTY_FILE_ARRAY;
     }
 }

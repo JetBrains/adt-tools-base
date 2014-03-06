@@ -42,7 +42,7 @@ public class SdkManagerTest7 extends SdkManagerTestCase {
             v = Sets.newTreeSet(v);
         }
 
-        assertEquals("[]", getLog().toString());  // no errors in the logger
+        assertEquals("", getLog().toString());              // no errors in the logger
         assertEquals("[]", Arrays.toString(v.toArray()));
 
         assertNull(sdkman.getBuildTool(new FullRevision(1)));

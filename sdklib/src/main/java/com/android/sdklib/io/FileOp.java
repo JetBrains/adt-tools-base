@@ -31,6 +31,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 
 /**
@@ -39,6 +40,8 @@ import java.util.Properties;
  * This makes it possible to override/mock/stub some file operations in unit tests.
  */
 public class FileOp implements IFileOp {
+
+    public static final File[] EMPTY_FILE_ARRAY = new File[0];
 
     /**
      * Reflection method for File.setExecutable(boolean, boolean). Only present in Java 6.
@@ -337,7 +340,7 @@ public class FileOp implements IFileOp {
     public File[] listFiles(@NonNull File file) {
         File[] r = file.listFiles();
         if (r == null) {
-            return new File[0];
+            return EMPTY_FILE_ARRAY;
         } else {
             return r;
         }
@@ -365,7 +368,7 @@ public class FileOp implements IFileOp {
 
     @Override
     @NonNull
-    @SuppressWarnings("resource") // Eclipse doesn't understand Closeables.closeQuietly
+    @SuppressWarnings("deprecation") // Eclipse doesn't understand Closeables.closeQuietly
     public Properties loadProperties(@NonNull File file) {
         Properties props = new Properties();
         FileInputStream fis = null;
@@ -380,7 +383,7 @@ public class FileOp implements IFileOp {
     }
 
     @Override
-    @SuppressWarnings("resource") // Eclipse doesn't understand Closeables.closeQuietly
+    @SuppressWarnings("deprecation") // Eclipse doesn't understand Closeables.closeQuietly
     public boolean saveProperties(@NonNull File file, @NonNull Properties props,
             @NonNull String comments) {
         OutputStream fos = null;
@@ -400,5 +403,86 @@ public class FileOp implements IFileOp {
     @Override
     public long lastModified(@NonNull File file) {
         return file.lastModified();
+    }
+
+    /**
+     * Computes a relative path from "toBeRelative" relative to "baseDir".
+     *
+     * Rule:
+     * - let relative2 = makeRelative(path1, path2)
+     * - then pathJoin(path1 + relative2) == path2 after canonicalization.
+     *
+     * Principle:
+     * - let base         = /c1/c2.../cN/a1/a2../aN
+     * - let toBeRelative = /c1/c2.../cN/b1/b2../bN
+     * - result is removes the common paths, goes back from aN to cN then to bN:
+     * - result           =              ../..../../1/b2../bN
+     *
+     * @param baseDir The base directory to be relative to.
+     * @param toBeRelative The file or directory to make relative to the base.
+     * @return A path that makes toBeRelative relative to baseDir.
+     * @throws IOException If drive letters don't match on Windows or path canonicalization fails.
+     */
+    @NonNull
+    public static String makeRelative(@NonNull File baseDir, @NonNull File toBeRelative)
+            throws IOException {
+        return makeRelativeImpl(
+                baseDir.getCanonicalPath(),
+                toBeRelative.getCanonicalPath(),
+                SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS,
+                File.separator);
+    }
+
+    /**
+     * Implementation detail of makeRelative to make it testable
+     * Independently of the platform.
+     */
+    @NonNull
+    static String makeRelativeImpl(@NonNull String path1,
+                                   @NonNull String path2,
+                                   boolean isWindows,
+                                   @NonNull String dirSeparator)
+            throws IOException {
+        if (isWindows) {
+            // Check whether both path are on the same drive letter, if any.
+            String p1 = path1;
+            String p2 = path2;
+            char drive1 = (p1.length() >= 2 && p1.charAt(1) == ':') ? p1.charAt(0) : 0;
+            char drive2 = (p2.length() >= 2 && p2.charAt(1) == ':') ? p2.charAt(0) : 0;
+            if (drive1 != drive2) {
+                // Either a mix of UNC vs drive or not the same drives.
+                throw new IOException("makeRelative: incompatible drive letters");
+            }
+        }
+
+        String[] segments1 = path1.split(Pattern.quote(dirSeparator));
+        String[] segments2 = path2.split(Pattern.quote(dirSeparator));
+
+        int len1 = segments1.length;
+        int len2 = segments2.length;
+        int len = Math.min(len1, len2);
+        int start = 0;
+        for (; start < len; start++) {
+            // On Windows should compare in case-insensitive.
+            // Mac & Linux file systems can be both type, although their default
+            // is generally to have a case-sensitive file system.
+            if (( isWindows && !segments1[start].equalsIgnoreCase(segments2[start])) ||
+                (!isWindows && !segments1[start].equals(segments2[start]))) {
+                break;
+            }
+        }
+
+        StringBuilder result = new StringBuilder();
+        for (int i = start; i < len1; i++) {
+            result.append("..").append(dirSeparator);
+        }
+        while (start < len2) {
+            result.append(segments2[start]);
+            if (++start < len2) {
+                result.append(dirSeparator);
+            }
+        }
+
+        return result.toString();
     }
 }

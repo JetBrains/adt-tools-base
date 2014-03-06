@@ -41,6 +41,7 @@ public class SystemImage implements ISystemImage {
     private final IdDisplay mTag;
     private final String mAbiType;
     private final File mLocation;
+    private final File[] mSkins;
 
     /**
      * Creates a {@link SystemImage} description for an existing system image folder.
@@ -51,16 +52,19 @@ public class SystemImage implements ISystemImage {
      * @param abiType The ABI type. For example, one of {@link SdkConstants#ABI_ARMEABI},
      *          {@link SdkConstants#ABI_ARMEABI_V7A}, {@link SdkConstants#ABI_INTEL_ATOM} or
      *          {@link SdkConstants#ABI_MIPS}.
+     * @param skins A non-null, possibly empty list of skins specific to this system image.
      */
     public SystemImage(
             @NonNull File location,
             @NonNull LocationType locationType,
             @NonNull IdDisplay tag,
-            @NonNull String abiType) {
+            @NonNull String abiType,
+            @NonNull File[] skins) {
         mLocation = location;
         mLocationtype = locationType;
         mTag = tag;
         mAbiType = abiType;
+        mSkins = skins;
     }
 
     /**
@@ -73,6 +77,7 @@ public class SystemImage implements ISystemImage {
      * @param abiType The ABI type. For example, one of {@link SdkConstants#ABI_ARMEABI},
      *          {@link SdkConstants#ABI_ARMEABI_V7A}, {@link SdkConstants#ABI_INTEL_ATOM} or
      *          {@link SdkConstants#ABI_MIPS}.
+     * @param skins A non-null, possibly empty list of skins specific to this system image.
      * @throws IllegalArgumentException if the {@code target} used for
      *         {@link ISystemImage.LocationType#IN_SYSTEM_IMAGE} is not a {@link PlatformTarget}.
      */
@@ -81,10 +86,12 @@ public class SystemImage implements ISystemImage {
             @NonNull IAndroidTarget target,
             @NonNull LocationType locationType,
             @NonNull IdDisplay tag,
-            @NonNull String abiType) {
+            @NonNull String abiType,
+            @NonNull File[] skins) {
         mLocationtype = locationType;
         mTag = tag;
         mAbiType = abiType;
+        mSkins = skins;
 
         File location = null;
         switch(locationType) {
@@ -181,6 +188,11 @@ public class SystemImage implements ISystemImage {
     @NonNull
     public String getAbiType() {
         return mAbiType;
+    }
+
+    @Override
+    public File[] getSkins() {
+        return mSkins;
     }
 
     /**
