@@ -23,7 +23,6 @@ import static com.android.builder.BuilderConstants.UI_TEST;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.AndroidSourceSet;
@@ -156,9 +155,8 @@ public class VariantManager {
      * Task creation entry point.
      */
     public void createAndroidTasks() {
-        if (!(extension instanceof AppExtension)) {
-            throw new RuntimeException("Impossible to create task for libraries in VariantManager");
-        }
+        // Add a compile lint task
+        basePlugin.createLintCompileTask();
 
         if (productFlavors.isEmpty()) {
             createTasksForDefaultBuild();
@@ -201,9 +199,6 @@ public class VariantManager {
                 createTasksForMultiFlavoredBuilds(array, 0, map);
             }
         }
-
-        // Add a compile lint task
-        basePlugin.createLintCompileTask();
 
         // create the lint tasks.
         basePlugin.createLintTasks();
@@ -278,14 +273,20 @@ public class VariantManager {
             // create its dependencies. They'll be resolved below.
             VariantDependencies variantDep = VariantDependencies.compute(
                     project, variantConfig.getFullName(),
+                    variantFactory.isVariantPublished(),
                     buildTypeData, defaultConfigData.getMainProvider());
             variantData.setVariantDependency(variantDep);
-
-            basePlugin.getVariantDataList().add(variantData);
 
             if (buildTypeData == testData) {
                 testedVariantData = variantData;
             }
+
+            basePlugin.resolveDependencies(variantDep);
+            variantConfig.setDependencies(variantDep);
+
+            basePlugin.getVariantDataList().add(variantData);
+            variantFactory.createTasks(variantData,
+                    buildTypes.get(variantConfig.getBuildType().getName()).getAssembleTask());
         }
 
         assert testedVariantData != null;
@@ -300,33 +301,21 @@ public class VariantManager {
 
         // create the internal storage for this test variant.
         TestVariantData testVariantData = new TestVariantData(testVariantConfig, (TestedVariantData) testedVariantData);
-        basePlugin.getVariantDataList().add(testVariantData);
         // link the testVariant to the tested variant in the other direction
         ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
 
         // dependencies for the test variant, they'll be resolved below
         VariantDependencies variantDep = VariantDependencies.compute(
                 project, testVariantConfig.getFullName(),
+                false /*publishVariant*/,
                 defaultConfigData.getTestProvider());
         testVariantData.setVariantDependency(variantDep);
 
-        // now loop all the variants, resolve their dependencies, and then create the tasks
-        for (BaseVariantData variantData : basePlugin.getVariantDataList()) {
-            VariantConfiguration variantConfig = variantData.getVariantConfiguration();
-            VariantDependencies variantDeps = variantData.getVariantDependency();
+        basePlugin.resolveDependencies(variantDep);
+        testVariantConfig.setDependencies(variantDep);
 
-            basePlugin.resolveDependencies(variantDeps);
-            variantConfig.setDependencies(variantDeps);
-
-            if (variantData instanceof TestVariantData) {
-                testVariantData = (TestVariantData) variantData;
-                basePlugin.createTestApkTasks(testVariantData,
-                        (BaseVariantData) testVariantData.getTestedVariantData());
-            } else {
-                variantFactory.createTasks(variantData,
-                        buildTypes.get(variantConfig.getBuildType().getName()).getAssembleTask());
-            }
-        }
+        basePlugin.getVariantDataList().add(testVariantData);
+        basePlugin.createTestApkTasks(testVariantData, testedVariantData);
     }
 
     /**
@@ -385,7 +374,7 @@ public class VariantManager {
             variantProviders.add(basePlugin.getDefaultConfigData().getMainProvider());
 
             // create the variant and get its internal storage object.
-            BaseVariantData appVariantData = variantFactory.createVariantData(variantConfig);
+            BaseVariantData variantData = variantFactory.createVariantData(variantConfig);
 
             NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer = extension
                     .getSourceSetsContainer();
@@ -405,14 +394,21 @@ public class VariantManager {
 
             VariantDependencies variantDep = VariantDependencies.compute(
                     project, variantConfig.getFullName(),
+                    variantFactory.isVariantPublished(),
                     variantProviders.toArray(new ConfigurationProvider[variantProviders.size()]));
-            appVariantData.setVariantDependency(variantDep);
+            variantData.setVariantDependency(variantDep);
 
-            localVariantDataList.add(appVariantData);
+            localVariantDataList.add(variantData);
 
             if (buildTypeData == testData) {
-                testedVariantData = appVariantData;
+                testedVariantData = variantData;
             }
+
+            basePlugin.resolveDependencies(variantDep);
+            variantConfig.setDependencies(variantDep);
+
+            basePlugin.getVariantDataList().add(variantData);
+            variantFactory.createTasks(variantData, buildTypeData.getAssembleTask());
         }
 
         assert testedVariantData != null;
@@ -457,32 +453,16 @@ public class VariantManager {
         // dependencies for the test variant
         VariantDependencies variantDep = VariantDependencies.compute(
                 project, testVariantData.getVariantConfiguration().getFullName(),
+                false /*publishVariant*/,
                 testVariantProviders.toArray(new ConfigurationProvider[testVariantProviders.size()]));
         testVariantData.setVariantDependency(variantDep);
 
-        // now loop on the VariantDependency and resolve them, and create the tasks
-        // for each variant
-        for (BaseVariantData variantData : localVariantDataList) {
-            VariantConfiguration variantConfig = variantData.getVariantConfiguration();
-            VariantDependencies variantDeps = variantData.getVariantDependency();
+        basePlugin.resolveDependencies(variantDep);
+        testVariantConfig.setDependencies(variantDep);
 
-            basePlugin.resolveDependencies(variantDeps);
-            variantConfig.setDependencies(variantDeps);
-
-            if (variantData instanceof TestVariantData) {
-                testVariantData = (TestVariantData) variantData;
-                basePlugin.createTestApkTasks(testVariantData,
-                        (BaseVariantData) testVariantData.getTestedVariantData());
-            } else {
-                BuildTypeData buildTypeData = buildTypes.get(variantConfig.getBuildType().getName());
-                variantFactory.createTasks(variantData, null);
-
-                buildTypeData.getAssembleTask().dependsOn(variantData.assembleTask);
-                assembleTask.dependsOn(variantData.assembleTask);
-            }
-
-            basePlugin.getVariantDataList().add(variantData);
-        }
+        basePlugin.getVariantDataList().add(testVariantData);
+        basePlugin.createTestApkTasks(testVariantData,
+                (BaseVariantData) testVariantData.getTestedVariantData());
     }
 
     @NonNull

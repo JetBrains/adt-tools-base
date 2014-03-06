@@ -1,0 +1,14 @@
+apply plugin: 'android-library'
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "19.0.1"
+
+    defaultPublishConfig "flavor1Release"
+    publishNonDefault true
+
+    productFlavors {
+        flavor1 { }
+        flavor2 { }
+    }
+}
