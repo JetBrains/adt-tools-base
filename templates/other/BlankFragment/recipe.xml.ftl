@@ -6,9 +6,9 @@
 
     <#if includeLayout>
         <instantiate from="res/layout/fragment_blank.xml.ftl"
-                       to="${escapeXmlAttribute(resOut)}/layout/fragment_${classToResource(className)}.xml" />
+                       to="${escapeXmlAttribute(resOut)}/layout/${escapeXmlAttribute(fragmentName)}.xml" />
 
-        <open file="${escapeXmlAttribute(resOut)}/layout/fragment_${classToResource(className)}.xml" />
+        <open file="${escapeXmlAttribute(resOut)}/layout/${escapeXmlAttribute(fragmentName)}.xml" />
     </#if>
 
     <open file="${escapeXmlAttribute(srcOut)}/${className}.java" />
