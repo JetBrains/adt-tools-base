@@ -484,12 +484,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                     "Should set android:versionCode to specify the application version", null);
         }
         Attr nameNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_VERSION_NAME);
-        if (nameNode != null && nameNode.getValue().startsWith(PREFIX_RESOURCE_REF)
-                && context.isEnabled(ILLEGAL_REFERENCE)) {
-            context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
-                    "The android:versionName cannot be a resource url, it must be "
-                            + "a literal string", null);
-        } else if (nameNode == null && context.isEnabled(SET_VERSION)
+        if (nameNode == null && context.isEnabled(SET_VERSION)
                 // Not required in Gradle projects; typically defined in build.gradle instead
                 // and inserted at build time
                 && !context.getMainProject().isGradleProject()) {
