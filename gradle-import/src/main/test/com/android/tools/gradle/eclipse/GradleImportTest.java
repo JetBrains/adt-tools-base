@@ -2405,6 +2405,50 @@ public class GradleImportTest extends TestCase {
         deleteDir(imported);
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testModuleNamesFromDir() throws Exception {
+        // Regression test for issue where there is no .project file and
+        // the project name has to be inferred from the directory name instead
+        Pair<File,File> pair = createLibrary2(new File("Library1"));
+        File root = pair.getFirst();
+        File app = pair.getSecond();
+
+        File propertyFile = new File(app, ".project");
+        propertyFile.delete();
+
+        final AtomicReference<GradleImport> importReference = new AtomicReference<GradleImport>();
+        File imported = checkProject(app, ""
+                + MSG_HEADER
+                + MSG_MANIFEST
+                + MSG_UNHANDLED
+                + "* .gitignore\n"
+                + MSG_REPLACED_JARS
+                + "guava-13.0.1.jar => com.google.guava:guava:13.0.1\n"
+                + MSG_GUESSED_VERSIONS
+                + "guava-13.0.1.jar => version 13.0.1 in com.google.guava:guava:13.0.1\n"
+                + MSG_FOLDER_STRUCTURE
+                + "In Library1:\n"
+                + "* src/ => library1/src/main/java/\n"
+                + "In Library2:\n"
+                + "* src/ => library2/src/main/java/\n"
+                + "In AndroidLibrary:\n"
+                + "* AndroidManifest.xml => androidLibrary/src/main/AndroidManifest.xml\n"
+                + "* src/ => androidLibrary/src/main/java/\n"
+                + "In AndroidApp:\n"
+                + "* AndroidManifest.xml => androidApp/src/main/AndroidManifest.xml\n"
+                + "* res/ => androidApp/src/main/res/\n"
+                + "* src/ => androidApp/src/main/java/\n"
+                + MSG_FOOTER,
+                false /* checkBuild */, new ImportCustomizer() {
+            @Override
+            public void customize(GradleImport importer) {
+                importReference.set(importer);
+            }
+        });
+        deleteDir(root);
+        deleteDir(imported);
+    }
+
     private static String describePathMap(GradleImport importer) throws IOException {
         Map<String, File> map = importer.getPathMap();
         List<String> keys = Lists.newArrayList(map.keySet());
