@@ -63,6 +63,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
     private boolean showAll
     @Input
     private boolean checkReleaseBuilds = true;
+    @Input
+    private boolean explainIssues = true;
     @InputFile
     private File lintConfig
     @Input
@@ -102,6 +104,7 @@ public class LintOptionsImpl implements LintOptions, Serializable {
             boolean ignoreWarnings,
             boolean warningsAsErrors,
             boolean showAll,
+            boolean explainIssues,
             boolean checkReleaseBuilds,
             Map<String,LintOptions.Severity> severityOverrides) {
         this.disable = disable
@@ -122,6 +125,7 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         this.ignoreWarnings = ignoreWarnings
         this.warningsAsErrors = warningsAsErrors
         this.showAll = showAll
+        this.explainIssues = explainIssues
         this.checkReleaseBuilds = checkReleaseBuilds
 
         if (severityOverrides != null) {
@@ -152,6 +156,7 @@ public class LintOptionsImpl implements LintOptions, Serializable {
                 source.isIgnoreWarnings(),
                 source.isWarningsAsErrors(),
                 source.isShowAll(),
+                source.isExplainIssues(),
                 source.isCheckReleaseBuilds(),
                 source.getSeverityOverrides()
         )
@@ -296,6 +301,14 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         this.warningsAsErrors = allErrors
     }
 
+    public boolean isExplainIssues() {
+        return explainIssues
+    }
+
+    public void setExplainIssues(boolean explainIssues) {
+        this.explainIssues = explainIssues
+    }
+
     /**
      * Returns whether lint should include all output (e.g. include all alternate
      * locations, not truncating long messages, etc.)
@@ -415,6 +428,7 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         flags.setShowEverything(showAll)
         flags.setDefaultConfiguration(lintConfig)
         flags.setSeverityOverrides(severities)
+        flags.setExplainIssues(explainIssues)
 
         if (report || flags.isFatalOnly()) {
             if (textReport || flags.isFatalOnly()) {
