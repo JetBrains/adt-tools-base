@@ -24,6 +24,7 @@ import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.FD_ASSETS;
 import static com.android.SdkConstants.FD_RES;
+import static com.android.SdkConstants.FD_SOURCES;
 import static com.android.SdkConstants.FN_PROJECT_PROPERTIES;
 import static com.android.SdkConstants.GEN_FOLDER;
 import static com.android.SdkConstants.LIBS_FOLDER;
@@ -33,8 +34,12 @@ import static com.android.sdklib.internal.project.ProjectProperties.PROPERTY_SDK
 import static com.android.tools.gradle.eclipse.GradleImport.CURRENT_COMPILE_VERSION;
 import static com.android.tools.gradle.eclipse.GradleImport.ECLIPSE_DOT_CLASSPATH;
 import static com.android.tools.gradle.eclipse.GradleImport.ECLIPSE_DOT_PROJECT;
+import static com.android.tools.gradle.eclipse.GradleImport.isEclipseProjectDir;
+import static com.android.utils.SdkUtils.endsWithIgnoreCase;
 import static com.android.xml.AndroidManifest.ATTRIBUTE_MIN_SDK_VERSION;
+import static com.android.xml.AndroidManifest.ATTRIBUTE_TARGET_PACKAGE;
 import static com.android.xml.AndroidManifest.ATTRIBUTE_TARGET_SDK_VERSION;
+import static com.android.xml.AndroidManifest.NODE_INSTRUMENTATION;
 import static com.android.xml.AndroidManifest.NODE_USES_SDK;
 import static java.io.File.separator;
 import static java.io.File.separatorChar;
@@ -83,7 +88,6 @@ class EclipseProject implements Comparable<EclipseProject> {
     private boolean mNdkProject;
     private int mMinSdkVersion;
     private int mTargetSdkVersion;
-    private Document mClassPathDoc;
     private Document mProjectDoc;
     private Document mManifestDoc;
     private Properties mProjectProperties;
@@ -93,6 +97,7 @@ class EclipseProject implements Comparable<EclipseProject> {
     private List<EclipseProject> mDirectLibraries;
     private List<File> mSourcePaths;
     private List<File> mJarPaths;
+    private List<File> mInstrumentationJarPaths;
     private List<File> mNativeLibs;
     private File mNativeSources;
     private String mNativeModuleName;
@@ -104,6 +109,7 @@ class EclipseProject implements Comparable<EclipseProject> {
     private EclipseImportModule mModule;
     private Map<String,String> mProjectVariableMap;
     private Map<String,String> mLinkedResourceMap;
+    private File mInstrumentationDir;
 
     private EclipseProject(
             @NonNull GradleImport importer,
@@ -115,9 +121,6 @@ class EclipseProject implements Comparable<EclipseProject> {
         // Ensure that  the library references (which are canonicalized) find this project
         // if included from multiple locations
         mImporter.registerProject(this);
-
-        File file = getClassPathFile();
-        mClassPathDoc = mImporter.getXmlDocument(file, false);
 
         initProjectName();
         initAndroidProject();
@@ -131,6 +134,7 @@ class EclipseProject implements Comparable<EclipseProject> {
             initLibrary(properties);
             initPackage();
             initMinSdkVersion();
+            initInstrumentation();
         } else {
             mDirectLibraries = new ArrayList<EclipseProject>(4);
         }
@@ -315,71 +319,152 @@ class EclipseProject implements Comparable<EclipseProject> {
         }
     }
 
+    private void initInstrumentation() throws IOException {
+        // Find unit test projects pointing to this Gradle project. Where do we look?
+        // For now, in direct sub directories of the project, as well as sibling directories
+
+        File projectDir = findInstrumentationTests(mDir);
+        if (projectDir == null && mDir.getParentFile() != null) {
+            projectDir = findInstrumentationTests(mDir.getParentFile());
+        }
+
+        if (projectDir != null && !projectDir.equals(mDir)) {
+            mInstrumentationDir = projectDir;
+
+            File libs = new File(mInstrumentationDir, LIBS_FOLDER);
+            if (libs.exists()) {
+                File[] files = libs.listFiles();
+                if (files != null) {
+                    for (File file : files) {
+                        if (file.isFile() && endsWithIgnoreCase(file.getPath(), DOT_JAR)) {
+                            if (mInstrumentationJarPaths == null) {
+                                mInstrumentationJarPaths = Lists.newArrayList();
+                            }
+                            mInstrumentationJarPaths.add(file);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private File findInstrumentationTests(File parent) {
+        File[] files = parent.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    File manifest = new File(file, ANDROID_MANIFEST_XML);
+                    if (manifest.exists()) {
+                        try {
+                            String target = getInstrumentationTarget(mImporter, manifest);
+                            if (target != null && target.equals(mPackage)) {
+                                return file;
+                            }
+                        } catch (IOException e) {
+                            // Ignore this manifest
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private static String getInstrumentationTarget(
+            @NonNull GradleImport importer,
+            @NonNull File manifest) throws IOException {
+        Document doc = importer.getXmlDocument(manifest, true);
+        NodeList list = doc.getElementsByTagName(NODE_INSTRUMENTATION);
+        for (int i = 0; i < list.getLength(); i++) {
+            Element tag = (Element) list.item(i);
+            String target = tag.getAttributeNS(ANDROID_URI, ATTRIBUTE_TARGET_PACKAGE);
+            if (target != null && !target.isEmpty()) {
+                return target;
+            }
+        }
+
+        return null;
+    }
+
     private void initClassPathEntries() throws IOException {
         assert mSourcePaths == null && mJarPaths == null;
         mSourcePaths = Lists.newArrayList();
         mJarPaths = Lists.newArrayList();
-        Document document = getClassPathDocument();
-        NodeList entries = document.getElementsByTagName("classpathentry");
-        for (int i = 0; i < entries.getLength(); i++) {
-            Node entry = entries.item(i);
-            assert entry.getNodeType() == Node.ELEMENT_NODE;
-            Element element = (Element) entry;
-            String kind = element.getAttribute("kind");
-            String path = element.getAttribute("path");
-            if (kind.equals("var")) {
-                File resolved = resolveVariableExpression(path);
-                if (resolved != null) {
-                    mSourcePaths.add(resolved);
-                } else {
-                    mImporter.reportWarning(this, getClassPathFile(),
-                            "Could not resolve path variable " + path);
-                }
-            } else if (kind.equals("src") && !path.isEmpty()) {
-                if (!path.equals(GEN_FOLDER)) { // ignore special generated source folder
+
+        Document document = null;
+        File classPathFile = getClassPathFile();
+        if (!classPathFile.exists()) {
+            File src = new File(mDir, FD_SOURCES);
+            if (src.exists()) {
+                mSourcePaths.add(src);
+            }
+        } else {
+            document = mImporter.getXmlDocument(classPathFile, false);
+        }
+
+        if (document != null) {
+            NodeList entries = document.getElementsByTagName("classpathentry");
+            for (int i = 0; i < entries.getLength(); i++) {
+                Node entry = entries.item(i);
+                assert entry.getNodeType() == Node.ELEMENT_NODE;
+                Element element = (Element) entry;
+                String kind = element.getAttribute("kind");
+                String path = element.getAttribute("path");
+                if (kind.equals("var")) {
                     File resolved = resolveVariableExpression(path);
                     if (resolved != null) {
-                        if (path.startsWith("/") && GradleImport.isEclipseProjectDir(resolved)) {
-                            // It's pointing to another project. Just add a dependency.
-                            EclipseProject lib = getProject(mImporter, resolved);
-                            if (!mDirectLibraries.contains(lib)) {
-                                mDirectLibraries.add(lib);
-                                mAllLibraries = null; // force refresh if already consulted
+                        mSourcePaths.add(resolved);
+                    } else {
+                        mImporter.reportWarning(this, getClassPathFile(),
+                                "Could not resolve path variable " + path);
+                    }
+                } else if (kind.equals("src") && !path.isEmpty()) {
+                    if (!path.equals(GEN_FOLDER)) { // ignore special generated source folder
+                        File resolved = resolveVariableExpression(path);
+                        if (resolved != null) {
+                            if (path.startsWith("/") && isEclipseProjectDir(resolved)) {
+                                // It's pointing to another project. Just add a dependency.
+                                EclipseProject lib = getProject(mImporter, resolved);
+                                if (!mDirectLibraries.contains(lib)) {
+                                    mDirectLibraries.add(lib);
+                                    mAllLibraries = null; // force refresh if already consulted
+                                }
+                            } else {
+                                // It's some other source directory: just include as a source path
+                                mSourcePaths.add(resolved);
                             }
                         } else {
-                            // It's some other source directory: just include as a source path
-                            mSourcePaths.add(resolved);
+                            mImporter.reportWarning(this, getClassPathFile(),
+                                    "Could not resolve source path " + path + " in project "
+                                            + getName() + ": ignored. The project may not "
+                                            + "compile if the given source path provided "
+                                            + "source code.");
                         }
-                    } else {
-                        mImporter.reportWarning(this, getClassPathFile(),
-                                "Could not resolve source path " + path + " in project "
-                                        + getName() + ": ignored. The project may not "
-                                        + "compile if the given source path provided "
-                                        + "source code.");
+                    }
+                } else if (kind.equals("lib") && !path.isEmpty()) {
+                    // Java library dependency. In Android projects we don't need these since
+                    // we pick up the information from the project.properties file for library
+                    // dependencies and the libs/ folder for jar files.
+                    if (!isAndroidProject()) {
+                        File resolved = resolveVariableExpression(path);
+                        if (resolved != null) {
+                            mJarPaths.add(resolved);
+                        } else {
+                            mImporter.reportWarning(this, getClassPathFile(),
+                                "Absolute path in the path entry: If outside project, may not "
+                                        + "work correctly: " + path);
+                        }
+                    }
+                } else if (kind.equals("output") && !path.isEmpty()) {
+                    String relative = path.replace('/', separatorChar);
+                    File file = new File(relative);
+                    if (!file.isAbsolute()) {
+                        mOutputDir = file;
                     }
                 }
-            } else if (kind.equals("lib") && !path.isEmpty()) {
-                // Java library dependency. In Android projects we don't need these since
-                // we pick up the information from the project.properties file for library
-                // dependencies and the libs/ folder for jar files.
-                if (!isAndroidProject()) {
-                    File resolved = resolveVariableExpression(path);
-                    if (resolved != null) {
-                        mJarPaths.add(resolved);
-                    } else {
-                        mImporter.reportWarning(this, getClassPathFile(),
-                            "Absolute path in the path entry: If outside project, may not "
-                                    + "work correctly: " + path);
-                    }
-                }
-            } else if (kind.equals("output") && !path.isEmpty()) {
-                String relative = path.replace('/', separatorChar);
-                File file = new File(relative);
-                if (!file.isAbsolute()) {
-                    mOutputDir = file;
-                }
+                // else: ignore kind="con"
             }
-            // else: ignore kind="con"
         }
 
         // Automatically add in libraries in libs
@@ -406,7 +491,7 @@ class EclipseProject implements Comparable<EclipseProject> {
                     continue;
                 }
                 assert lib.isFile();
-                if (!SdkUtils.endsWithIgnoreCase(lib.getPath(), DOT_JAR)) {
+                if (!endsWithIgnoreCase(lib.getPath(), DOT_JAR)) {
                     continue;
                 }
                 File relative = new File(LIBS_FOLDER, lib.getName());
@@ -441,6 +526,9 @@ class EclipseProject implements Comparable<EclipseProject> {
             Document document;
             try {
                 document = getProjectDocument();
+                if (document == null) {
+                    return mProjectVariableMap;
+                }
             } catch (IOException e) {
                 return mProjectVariableMap;
             }
@@ -468,6 +556,9 @@ class EclipseProject implements Comparable<EclipseProject> {
             Document document;
             try {
                 document = getProjectDocument();
+                if (document == null) {
+                    return mProjectVariableMap;
+                }
             } catch (IOException e) {
                 return mLinkedResourceMap;
             }
@@ -670,6 +761,9 @@ class EclipseProject implements Comparable<EclipseProject> {
 
     private void initAndroidProject() throws IOException {
         mAndroidProject = hasNature("com.android.ide.eclipse.adt.AndroidNature");
+        if (!mAndroidProject && getProjectDocument() == null) {
+            mAndroidProject = GradleImport.isAdtProjectDir(mDir);
+        }
         mNdkProject = mAndroidProject && (
                 hasNature("org.eclipse.cdt.core.cnature") ||
                 hasNature("org.eclipse.cdt.core.ccnature") ||
@@ -725,17 +819,11 @@ class EclipseProject implements Comparable<EclipseProject> {
 
             Iterable<String> paths = LintUtils.splitPath(proguardConfig);
             for (String path : paths) {
-                // TODO: Support *arbitrary* files?
                 if (path.startsWith(SDK_PROPERTY_REF)) {
                     mSdkProguardFiles.add(new File(path.substring(SDK_PROPERTY_REF.length())
                             .replace('/', separatorChar)));
                 } else if (path.startsWith(HOME_PROPERTY_REF)) {
-                    // TODO: How do we deal with home files?
-                    //path = System.getProperty(HOME_PROPERTY) +
-                    //        path.substring(HOME_PROPERTY_REF.length());
-                    // For now just warn
-                    mImporter.reportWarning(this, getProjectPropertiesFile(),
-                            "Could not migrate Proguard config path " + path);
+                    mImporter.getSummary().reportIgnoredUserHomeProGuardFile(path);
                 } else {
                     File proguardConfigFile = new File(path.replace('/', separatorChar));
                     if (!proguardConfigFile.isAbsolute()) {
@@ -792,11 +880,6 @@ class EclipseProject implements Comparable<EclipseProject> {
     }
 
     @NonNull
-    public Document getClassPathDocument()  {
-        return mClassPathDoc;
-    }
-
-    @NonNull
     private File getClassPathFile() {
         return new File(mDir, ECLIPSE_DOT_CLASSPATH);
     }
@@ -826,9 +909,7 @@ class EclipseProject implements Comparable<EclipseProject> {
             if (file.exists()) {
                 mProjectProperties = GradleImport.getProperties(file);
             } else {
-                mImporter.reportError(this, mDir,
-                        "No project.project file found in " + mDir.getPath());
-                return null;
+                mProjectProperties = new Properties();
             }
         }
 
@@ -845,10 +926,6 @@ class EclipseProject implements Comparable<EclipseProject> {
             File file = new File(mDir, ECLIPSE_DOT_PROJECT);
             if (file.exists()) {
                 mProjectDoc = mImporter.getXmlDocument(file, false);
-            } else {
-                mImporter.reportError(this, mDir,
-                        "No Eclipse .project file found in " + mDir.getPath());
-                return null;
             }
         }
 
@@ -861,6 +938,11 @@ class EclipseProject implements Comparable<EclipseProject> {
 
     public boolean isNdkProject() {
         return mNdkProject;
+    }
+
+    @Nullable
+    public File getInstrumentationDir() {
+        return mInstrumentationDir;
     }
 
     @Nullable
@@ -891,6 +973,12 @@ class EclipseProject implements Comparable<EclipseProject> {
     @NonNull
     public List<File> getJarPaths() {
         return mJarPaths;
+    }
+
+    @NonNull
+    public List<File> getTestJarPaths() {
+        return mInstrumentationJarPaths != null
+                ? mInstrumentationJarPaths : Collections.<File>emptyList();
     }
 
     @NonNull

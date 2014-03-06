@@ -18,7 +18,9 @@ package com.android.tools.gradle.eclipse;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
+import static com.android.SdkConstants.FN_PROJECT_PROPERTIES;
 import static com.android.tools.gradle.eclipse.GradleImport.ANDROID_GRADLE_PLUGIN;
 import static com.android.tools.gradle.eclipse.GradleImport.DECLARE_GLOBAL_REPOSITORIES;
 import static com.android.tools.gradle.eclipse.GradleImport.IMPORT_SUMMARY_TXT;
@@ -35,7 +37,9 @@ import static com.android.tools.gradle.eclipse.ImportSummary.MSG_MISSING_REPO_1;
 import static com.android.tools.gradle.eclipse.ImportSummary.MSG_MISSING_REPO_2;
 import static com.android.tools.gradle.eclipse.ImportSummary.MSG_REPLACED_JARS;
 import static com.android.tools.gradle.eclipse.ImportSummary.MSG_REPLACED_LIBS;
+import static com.android.tools.gradle.eclipse.ImportSummary.MSG_RISKY_PROJECT_LOCATION;
 import static com.android.tools.gradle.eclipse.ImportSummary.MSG_UNHANDLED;
+import static com.android.tools.gradle.eclipse.ImportSummary.MSG_USER_HOME_PROGUARD;
 import static com.google.common.base.Charsets.UTF_8;
 import static java.io.File.separator;
 import static java.io.File.separatorChar;
@@ -66,22 +70,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
-
-// TODO:
-// -- Test what happens if we're missing a project.properties file
-// -- Test what happens when we have a broken AndroidManifest file
-// -- Test resolving classpath variables
-// -- Test resolving workspace paths
-// -- Test resolving compiler options (1.6 vs 1.7)
-// -- Test what happens when you have jars in libs as well as in .classpath
-// -- Test what happens with absolute paths in .classpath references
-// -- Test proguard
-// -- Test whether we can depend on a Java library which depends on another
-//    Java library (e.g. through only .classpath dependency, no project.properties file)
-// -- Resolve the gradle wrapper location issue, and hook up gradle-building these projects
-// -- Test version extraction for libraries like joda-time, guava-11.0.1.jar, etc
-// -- Test what happens if you depend on both play services and contain gcm.jar; should
-//    not repeat play services dependency
 
 public class GradleImportTest extends TestCase {
     private static File createProject(String name, String pkg) throws IOException {
@@ -290,6 +278,11 @@ public class GradleImportTest extends TestCase {
         new File(projectDir, "local.properties").createNewFile();
         new File(projectDir, "src" + separator + ".git").mkdir();
         new File(projectDir, "src" + separator + ".svn").mkdir();
+        File unhandled = new File(projectDir, "unhandledDir1" + separator + "unhandledDir2");
+        unhandled.mkdirs();
+        new File(unhandled, "unhandledFile").createNewFile();
+        new File(unhandled, "unhandledDir3").mkdirs();
+        new File(unhandled.getParentFile(), "unhandledDir4").mkdirs();
 
         // Project being imported
         assertEquals(""
@@ -315,7 +308,12 @@ public class GradleImportTest extends TestCase {
                 + "  .svn\n"
                 + "  test\n"
                 + "    pkg\n"
-                + "      MyActivity.java\n",
+                + "      MyActivity.java\n"
+                + "unhandledDir1\n"
+                + "  unhandledDir2\n"
+                + "    unhandledDir3\n"
+                + "    unhandledFile\n"
+                + "  unhandledDir4\n",
                 fileTree(projectDir, true));
 
         File imported = checkProject(projectDir, ""
@@ -324,6 +322,9 @@ public class GradleImportTest extends TestCase {
                 + "* Android.mk\n"
                 + "* build.properties\n"
                 + "* ic_launcher-web.png\n"
+                + "* unhandledDir1/\n"
+                + "* unhandledDir1/unhandledDir2/\n"
+                + "* unhandledDir1/unhandledDir2/unhandledFile\n"
                 + MSG_FOLDER_STRUCTURE
                 + DEFAULT_MOVED
                 + MSG_FOOTER,
@@ -420,6 +421,168 @@ public class GradleImportTest extends TestCase {
                 + "local.properties\n"
                 + "settings.gradle\n",
                 fileTree(imported, true));
+
+        deleteDir(projectDir);
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testImportAndroidSample() throws Exception {
+        String testSdkPath = getTestSdkPath();
+        if (testSdkPath == null) {
+            return;
+        }
+        File samples = new File(testSdkPath, "samples");
+        if (!samples.exists()) {
+            return;
+        }
+        File[] platforms = samples.listFiles();
+        if (platforms == null) {
+            return;
+        }
+        File projectDir = null;
+        for (File platform : platforms) {
+            if (platform.isDirectory()) {
+                File apiDemos = new File(platform, "legacy" + separator + "ApiDemos");
+                if (apiDemos.isDirectory()) {
+                    projectDir = apiDemos;
+                    break;
+                }
+            }
+        }
+        if (projectDir == null) {
+            return;
+        }
+
+        File imported = checkProject(projectDir, ""
+                + MSG_HEADER
+                + MSG_UNHANDLED
+                + "* README.txt\n"
+                + "* tests/\n"
+                + "* tests/build.properties\n"
+                + MSG_FOLDER_STRUCTURE
+                + "* AndroidManifest.xml => app/src/main/AndroidManifest.xml\n"
+                + "* assets/ => app/src/main/assets/\n"
+                + "* res/ => app/src/main/res/\n"
+                + "* src/ => app/src/main/java/\n"
+                + "* src/com/example/android/apis/app/IRemoteService.aidl => app/src/main/aidl/com/example/android/apis/app/IRemoteService.aidl\n"
+                + "* src/com/example/android/apis/app/IRemoteServiceCallback.aidl => app/src/main/aidl/com/example/android/apis/app/IRemoteServiceCallback.aidl\n"
+                + "* src/com/example/android/apis/app/ISecondary.aidl => app/src/main/aidl/com/example/android/apis/app/ISecondary.aidl\n"
+                + "* tests/src/ => app/src/instrumentTest/java/\n"
+                + MSG_FOOTER,
+                true /* checkBuild */);
+
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testNoProjectMetadata() throws Exception {
+        File projectDir = createProject("test1", "test.pkg");
+
+        // Add some files in there that we are ignoring
+        new File(projectDir, "ic_launcher-web.png").createNewFile();
+        new File(projectDir, "Android.mk").createNewFile();
+        new File(projectDir, "build.properties").createNewFile();
+        new File(projectDir, "local.properties").createNewFile();
+        new File(projectDir, "src" + separator + ".git").mkdir();
+        new File(projectDir, "src" + separator + ".svn").mkdir();
+        File unhandled = new File(projectDir, "unhandledDir1" + separator + "unhandledDir2");
+        unhandled.mkdirs();
+        new File(unhandled, "unhandledFile").createNewFile();
+        new File(unhandled, "unhandledDir3").mkdirs();
+        new File(unhandled.getParentFile(), "unhandledDir4").mkdirs();
+        new File(projectDir, ".classpath").delete();
+        new File(projectDir, ".project").delete();
+
+        // Project being imported
+        assertEquals(""
+                + "Android.mk\n"
+                + "AndroidManifest.xml\n"
+                + "build.properties\n"
+                + "gen\n"
+                + "  test\n"
+                + "    pkg\n"
+                + "      R.java\n"
+                + "ic_launcher-web.png\n"
+                + "local.properties\n"
+                + "project.properties\n"
+                + "res\n"
+                + "  drawable\n"
+                + "    ic_launcher.xml\n"
+                + "  values\n"
+                + "    strings.xml\n"
+                + "src\n"
+                + "  .git\n"
+                + "  .svn\n"
+                + "  test\n"
+                + "    pkg\n"
+                + "      MyActivity.java\n"
+                + "unhandledDir1\n"
+                + "  unhandledDir2\n"
+                + "    unhandledDir3\n"
+                + "    unhandledFile\n"
+                + "  unhandledDir4\n",
+                fileTree(projectDir, true));
+
+        File imported = checkProject(projectDir, ""
+                + MSG_HEADER
+                + MSG_UNHANDLED
+                + "* Android.mk\n"
+                + "* build.properties\n"
+                + "* ic_launcher-web.png\n"
+                + "* unhandledDir1/\n"
+                + "* unhandledDir1/unhandledDir2/\n"
+                + "* unhandledDir1/unhandledDir2/unhandledFile\n"
+                + MSG_FOLDER_STRUCTURE
+                + DEFAULT_MOVED
+                + MSG_FOOTER,
+                true /* checkBuild */);
+
+        // Imported contents
+        assertEquals(""
+                + "app\n"
+                + "  build.gradle\n"
+                + "  src\n"
+                + "    main\n"
+                + "      AndroidManifest.xml\n"
+                + "      java\n"
+                + "        test\n"
+                + "          pkg\n"
+                + "            MyActivity.java\n"
+                + "      res\n"
+                + "        drawable\n"
+                + "          ic_launcher.xml\n"
+                + "        values\n"
+                + "          strings.xml\n"
+                + "build.gradle\n"
+                + "import-summary.txt\n"
+                + "local.properties\n"
+                + "settings.gradle\n",
+                fileTree(imported, true));
+
+        deleteDir(projectDir);
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testNoProjectProperties() throws Exception {
+        // Missing project.properties
+        File projectDir = createProject("testError3", "test.pkg");
+
+        new File(projectDir, FN_PROJECT_PROPERTIES).delete();
+
+        final AtomicReference<GradleImport> importReference = new AtomicReference<GradleImport>();
+        File imported = checkProject(projectDir, ""
+                + MSG_HEADER
+                + MSG_FOLDER_STRUCTURE
+                + DEFAULT_MOVED
+                + MSG_FOOTER,
+                true /* checkBuild */, new ImportCustomizer() {
+            @Override
+            public void customize(GradleImport importer) {
+                importReference.set(importer);
+            }
+        });
 
         deleteDir(projectDir);
         deleteDir(imported);
@@ -643,7 +806,7 @@ public class GradleImportTest extends TestCase {
                 + "    compile project(':lib1')\n"
                 + "    compile project(':lib2')\n"
                 + "    compile project(':javaLib')\n"
-                + "}",
+                + "}\n",
                 Files.toString(new File(imported, "app" + separator + "build.gradle"), UTF_8)
                         .replace(NL,"\n"));
         //noinspection PointlessBooleanExpression,ConstantConditions
@@ -681,7 +844,7 @@ public class GradleImportTest extends TestCase {
                 + "\n"
                 + "dependencies {\n"
                 + "    compile project(':lib1')\n"
-                + "}",
+                + "}\n",
                 Files.toString(new File(imported, "lib2" + separator + "build.gradle"), UTF_8)
                         .replace(NL, "\n"));
         assertEquals(""
@@ -858,7 +1021,7 @@ public class GradleImportTest extends TestCase {
                 + "    compile 'com.android.support:support-v4:+'\n"
                 + "    compile 'com.android.support:appcompat-v7:+'\n"
                 + "    compile 'com.android.support:gridlayout-v7:+'\n"
-                + "}",
+                + "}\n",
                 Files.toString(new File(imported, "app" + separator + "build.gradle"), UTF_8)
                         .replace(NL, "\n"));
 
@@ -962,7 +1125,7 @@ public class GradleImportTest extends TestCase {
                 + "    compile files('libs/android-support-v4.jar')\n"
                 + "    compile files('libs/android-support-v7-appcompat.jar')\n"
                 + "    compile files('libs/android-support-v7-gridlayout.jar')\n"
-                + "}",
+                + "}\n",
                 Files.toString(new File(imported, "test1" + separator + "build.gradle"), UTF_8)
                         .replace(NL, "\n"));
 
@@ -1181,6 +1344,224 @@ public class GradleImportTest extends TestCase {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testInstrumentation1() throws Exception {
+        File root = Files.createTempDir();
+        File projectDir = new File(root, "project");
+        projectDir.mkdirs();
+        createProject(projectDir, "Test2", "test.pkg");
+        createDotProject(projectDir, "Test2", true, true);
+
+        File tests = new File(projectDir, "tests");
+        tests.mkdirs();
+        Files.write(""
+                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "  package=\"my.test.pkg.name\"\n"
+                + "  android:versionCode=\"1\"\n"
+                + "  android:versionName=\"1.0\" >\n"
+                + "\n"
+                + "  <instrumentation\n"
+                + "    android:name=\"android.test.InstrumentationTestRunner\"\n"
+                + "    android:targetPackage=\"test.pkg\""
+                + "    android:functionalTest=\"false\"\n"
+                + "    android:handleProfiling=\"true\" />\n"
+                + "\n"
+                + "  <uses-sdk\n"
+                + "    android:minSdkVersion=\"7\"\n"
+                + "    android:targetSdkVersion=\"15\" />\n"
+                + "\n"
+                + "  <application\n"
+                + "    android:icon=\"@android:drawable/sym_def_app_icon\"\n"
+                + "    android:label=\"My Unit Test Instrumentation Tests\" >\n"
+                + "    <uses-library android:name=\"android.test.runner\" />\n"
+                + "  </application>\n"
+                + "\n"
+                + "</manifest>",
+                new File(tests, FN_ANDROID_MANIFEST_XML), UTF_8);
+        File testSrc = new File(tests, "src");
+        testSrc.mkdirs();
+        File testPkg = new File(testSrc, "mytestpkg");
+        testPkg.mkdirs();
+        new File(testPkg, "MyUnitTest.java").createNewFile();
+        File testRes = new File(tests, "res");
+        testRes.mkdirs();
+        File testValues = new File(testRes, "values");
+        testValues.mkdirs();
+        new File(testValues, "strings.xml").createNewFile();
+        File testLibs = new File(tests, "libs");
+        testLibs.mkdirs();
+        new File(testLibs, "myTestSupportLib.jar").createNewFile();
+
+        File imported = checkProject(projectDir, ""
+                + MSG_HEADER
+                + MSG_FOLDER_STRUCTURE
+                + "* AndroidManifest.xml => Test2/src/main/AndroidManifest.xml\n"
+                + "* res/ => Test2/src/main/res/\n"
+                + "* src/ => Test2/src/main/java/\n"
+                + "* tests/libs/myTestSupportLib.jar => Test2/libs/myTestSupportLib.jar\n"
+                + "* tests/res/ => Test2/src/instrumentTest/res/\n"
+                + "* tests/src/ => Test2/src/instrumentTest/java/\n"
+                + MSG_FOOTER,
+                false /* checkBuild */,
+                new ImportCustomizer() {
+                    @Override
+                    public void customize(GradleImport importer) {
+                        importer.setGradleNameStyle(false);
+                    }
+                });
+
+        // Imported contents
+        assertEquals(""
+                + "Test2\n"
+                + "  build.gradle\n"
+                + "  libs\n"
+                + "    myTestSupportLib.jar\n"
+                + "  src\n"
+                + "    instrumentTest\n"
+                + "      java\n"
+                + "        mytestpkg\n"
+                + "          MyUnitTest.java\n"
+                + "      res\n"
+                + "        values\n"
+                + "          strings.xml\n"
+                + "    main\n"
+                + "      AndroidManifest.xml\n"
+                + "      java\n"
+                + "        test\n"
+                + "          pkg\n"
+                + "            MyActivity.java\n"
+                + "      res\n"
+                + "        drawable\n"
+                + "          ic_launcher.xml\n"
+                + "        values\n"
+                + "          strings.xml\n"
+                + "build.gradle\n"
+                + "import-summary.txt\n"
+                + "local.properties\n"
+                + "settings.gradle\n",
+                fileTree(imported, true));
+
+        //noinspection PointlessBooleanExpression,ConstantConditions
+        assertEquals(""
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                "buildscript {\n"
+                        + "    repositories {\n"
+                        + "        " + MAVEN_REPOSITORY + "\n"
+                        + "    }\n"
+                        + "    dependencies {\n"
+                        + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
+                        + "    }\n"
+                        + "}\n" : "")
+                + "apply plugin: 'android'\n"
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                "\n"
+                        + "repositories {\n"
+                        + "    " + MAVEN_REPOSITORY + "\n"
+                        + "}\n" : "")
+                + "\n"
+                + "android {\n"
+                + "    compileSdkVersion 17\n"
+                + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
+                + "\n"
+                + "    defaultConfig {\n"
+                + "        minSdkVersion 8\n"
+                + "        targetSdkVersion 16\n"
+                + "\n"
+                + "        testPackageName \"my.test.pkg.name\"\n"
+                + "        testInstrumentationRunner \"android.test.InstrumentationTestRunner\"\n"
+                + "        testFunctionalTest false\n"
+                + "        testHandlingProfiling true\n"
+                + "    }\n"
+                + "\n"
+                + "    buildTypes {\n"
+                + "        release {\n"
+                + "            runProguard false\n"
+                + "            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'\n"
+                + "        }\n"
+                + "    }\n"
+                + "}\n"
+                + "\n"
+                + "dependencies {\n"
+                + "    instrumentTestCompile files('libs/myTestSupportLib.jar')\n"
+                + "}\n",
+                Files.toString(new File(imported, "Test2" + separator + "build.gradle"), UTF_8)
+                        .replace(NL, "\n"));
+
+        deleteDir(root);
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testInstrumentation2() throws Exception {
+        // Like testInstrumentation1, but the unit test is found in a sibling directory
+        // (which also means various paths should be relative - ../ etc)
+        File root = Files.createTempDir();
+        File projectDir = new File(root, "project");
+        projectDir.mkdirs();
+        createProject(projectDir, "Test2", "test.pkg");
+        createDotProject(projectDir, "Test2", true, true);
+
+        File tests = new File(root, "tests");
+        tests.mkdirs();
+        Files.write(""
+                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "  package=\"my.test.pkg.name\"\n"
+                + "  android:versionCode=\"1\"\n"
+                + "  android:versionName=\"1.0\" >\n"
+                + "\n"
+                + "  <instrumentation\n"
+                + "    android:name=\"android.test.InstrumentationTestRunner\"\n"
+                + "    android:targetPackage=\"test.pkg\""
+                + "    android:functionalTest=\"false\"\n"
+                + "    android:handleProfiling=\"true\" />\n"
+                + "\n"
+                + "  <uses-sdk\n"
+                + "    android:minSdkVersion=\"7\"\n"
+                + "    android:targetSdkVersion=\"15\" />\n"
+                + "\n"
+                + "  <application\n"
+                + "    android:icon=\"@android:drawable/sym_def_app_icon\"\n"
+                + "    android:label=\"My Unit Test Instrumentation Tests\" >\n"
+                + "    <uses-library android:name=\"android.test.runner\" />\n"
+                + "  </application>\n"
+                + "\n"
+                + "</manifest>",
+                new File(tests, FN_ANDROID_MANIFEST_XML), UTF_8);
+        File testSrc = new File(tests, "src");
+        testSrc.mkdirs();
+        File testPkg = new File(testSrc, "mytestpkg");
+        testPkg.mkdirs();
+        new File(testPkg, "MyUnitTest.java").createNewFile();
+        File testRes = new File(tests, "res");
+        testRes.mkdirs();
+        File testValues = new File(testRes, "values");
+        testValues.mkdirs();
+        new File(testValues, "strings.xml").createNewFile();
+        File testLibs = new File(tests, "libs");
+        testLibs.mkdirs();
+        new File(testLibs, "myTestSupportLib.jar").createNewFile();
+
+        File imported = checkProject(projectDir, ""
+                + MSG_HEADER
+                + MSG_FOLDER_STRUCTURE
+                + "* AndroidManifest.xml => app/src/main/AndroidManifest.xml\n"
+                + "* res/ => app/src/main/res/\n"
+                + "* src/ => app/src/main/java/\n"
+                + "* $ROOT_PARENT/tests/libs/myTestSupportLib.jar => app/libs/myTestSupportLib.jar\n"
+                + "* $ROOT_PARENT/tests/res/ => app/src/instrumentTest/res/\n"
+                + "* $ROOT_PARENT/tests/src/ => app/src/instrumentTest/java/\n"
+                + MSG_FOOTER,
+                false /* checkBuild */,
+                new ImportCustomizer() {
+                    @Override
+                    public void customize(GradleImport importer) {
+                    }
+                });
+
+        deleteDir(root);
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public void testReplaceSourceLibraryProject() throws Exception {
         // Make a library project which looks like it can just be replaced by a project
 
@@ -1296,7 +1677,7 @@ public class GradleImportTest extends TestCase {
                 + "    compile project(':javaLib')\n"
                 + "    compile 'com.actionbarsherlock:actionbarsherlock:4.4.0@aar'\n"
                 + "    compile 'com.android.support:support-v4:+'\n"
-                + "}",
+                + "}\n",
                 Files.toString(new File(imported, "app" + separator + "build.gradle"), UTF_8)
                         .replace(NL, "\n"));
 
@@ -1365,6 +1746,28 @@ public class GradleImportTest extends TestCase {
                 importer.setSdkLocation(sdkLocation);
             }
         });
+
+        // Imported project: confirm that gcm.jar is not in the output tree
+        assertEquals(""
+                + "app\n"
+                + "  build.gradle\n"
+                + "  src\n"
+                + "    main\n"
+                + "      AndroidManifest.xml\n"
+                + "      java\n"
+                + "        test\n"
+                + "          pkg\n"
+                + "            MyActivity.java\n"
+                + "      res\n"
+                + "        drawable\n"
+                + "          ic_launcher.xml\n"
+                + "        values\n"
+                + "          strings.xml\n"
+                + "build.gradle\n"
+                + "import-summary.txt\n"
+                + "local.properties\n"
+                + "settings.gradle\n",
+                fileTree(imported, true));
 
         deleteDir(root);
         deleteDir(imported);
@@ -1735,7 +2138,7 @@ public class GradleImportTest extends TestCase {
                 + "\n"
                 + "dependencies {\n"
                 + "    compile 'com.google.guava:guava:13.0.1'\n"
-                + "}",
+                + "}\n",
                 Files.toString(new File(imported, "library1" + separator + "build.gradle"), UTF_8)
                         .replace(NL, "\n"));
         //noinspection PointlessBooleanExpression,ConstantConditions
@@ -1775,7 +2178,7 @@ public class GradleImportTest extends TestCase {
                 + "\n"
                 + "dependencies {\n"
                 + "    compile project(':androidLibrary')\n"
-                + "}",
+                + "}\n",
                 Files.toString(new File(imported, "androidApp" + separator + "build.gradle"), UTF_8)
                         .replace(NL,"\n"));
 
@@ -1815,7 +2218,7 @@ public class GradleImportTest extends TestCase {
                 + "dependencies {\n"
                 + "    compile project(':library1')\n"
                 + "    compile project(':library2')\n"
-                + "}",
+                + "}\n",
                 Files.toString(new File(imported, "androidLibrary" + separator + "build.gradle"), UTF_8)
                         .replace(NL,"\n"));
 
@@ -1831,7 +2234,7 @@ public class GradleImportTest extends TestCase {
                 + "\n"
                 + "dependencies {\n"
                 + "    compile 'com.google.guava:guava:13.0.1'\n"
-                + "}",
+                + "}\n",
                 Files.toString(new File(imported, "library1" + separator + "build.gradle"), UTF_8)
                         .replace(NL, "\n"));
         //noinspection PointlessBooleanExpression,ConstantConditions
@@ -1849,7 +2252,7 @@ public class GradleImportTest extends TestCase {
                 + "\n"
                 + "dependencies {\n"
                 + "    compile project(':library1')\n"
-                + "}",
+                + "}\n",
                 Files.toString(new File(imported, "library2" + separator + "build.gradle"), UTF_8)
                         .replace(NL, "\n"));
 
@@ -2089,8 +2492,9 @@ public class GradleImportTest extends TestCase {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public void testErrorHandling() throws Exception {
-        File projectDir = createProject("test1", "test.pkg");
+    public void testErrorHandling1() throws Exception {
+        // Broken .classpath file
+        File projectDir = createProject("testError1", "test.pkg");
 
         File classPath = new File(projectDir, ".classpath");
         Files.write(""
@@ -2109,10 +2513,8 @@ public class GradleImportTest extends TestCase {
                 + MSG_HEADER
                 + "\n"
                 + " * $ROOT/.classpath:\n"
-                + "   Invalid XML file:\n"
-                + "   $ROOT/.classpath:\n"
-                + "   Element type \"classpathentry\" must be followed by either attribute\n"
-                + "   specifications, \">\" or \"/>\".\n\n"
+                + "Invalid XML file: $ROOT/.classpath:\n"
+                + "Element type \"classpathentry\" must be followed by either attribute specifications, \">\" or \"/>\".\n"
                 + MSG_FOOTER,
                 false /* checkBuild */, new ImportCustomizer() {
             @Override
@@ -2133,6 +2535,186 @@ public class GradleImportTest extends TestCase {
         deleteDir(imported);
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testErrorHandling2() throws Exception {
+        // Broken manifest
+        File root = Files.createTempDir();
+        // Place project in a deep subdirectory such that it does not leave a broken
+        // sibling project for other unit tests to discover as an instrumentation test
+        File projectDir = new File(root, "sub1" + separator + "sub2" + separator + "sub3");
+        projectDir.mkdirs();
+        createProject(projectDir, "testError2", "test.pkg");
+
+        File manifest = new File(projectDir, "AndroidManifest.xml");
+        Files.write(""
+                + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<x>\n", manifest, UTF_8);
+
+        final AtomicReference<GradleImport> importReference = new AtomicReference<GradleImport>();
+        File imported = checkProject(projectDir, ""
+                + MSG_HEADER
+                + "\n"
+                + " * $ROOT/AndroidManifest.xml:\n"
+                + "Invalid XML file: $ROOT/AndroidManifest.xml:\n"
+                + "XML document structures must start and end within the same entity.\n"
+                + MSG_FOOTER,
+                false /* checkBuild */, new ImportCustomizer() {
+            @Override
+            public void customize(GradleImport importer) {
+                importReference.set(importer);
+            }
+        });
+
+        assertEquals("[$MANIFEST_FILE:\n"
+                + "Invalid XML file: $MANIFEST_FILE:\n"
+                + "XML document structures must start and end within the same entity.]",
+                importReference.get().getErrors().toString().replace(
+                        manifest.getPath(), "$MANIFEST_FILE").
+                        replace(manifest.getCanonicalPath(), "$MANIFEST_FILE"));
+
+        deleteDir(root);
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testProguardMigration() throws Exception {
+        // Check that ABI libs are copied to the right place
+        File projectDir = createProject("Test1", "test.pkg");
+        Files.write(""
+                + "proguard.config=${sdk.dir}/tools/proguard/proguard-android.txt:proguard-project.txt:proguard/proguard.pro:${user.home}/proguard/shared.pro\n"
+                + "\n"
+                + "# Indicates whether an apk should be generated for each density.\n"
+                + "split.density=false\n"
+                + "# Project target.\n"
+                + "target=android-16\n",
+                new File(projectDir, FN_PROJECT_PROPERTIES), UTF_8);
+
+        File proguard = new File(projectDir, "proguard");
+        proguard.mkdirs();
+        Files.write(""
+                + "-optimizationpasses 2\n"
+                + "-dontusemixedcaseclassnames\n"
+                + "-dontskipnonpubliclibraryclasses\n"
+                + "-dontpreverify\n",
+                new File(proguard, "proguard.pro"), UTF_8);
+        new File(projectDir, "proguard-project.txt").createNewFile();
+
+        File imported = checkProject(projectDir, ""
+                + MSG_HEADER
+                + MSG_FOLDER_STRUCTURE
+                + "* AndroidManifest.xml => app/src/main/AndroidManifest.xml\n"
+                + "* proguard-project.txt => app/proguard-project.txt\n"
+                + "* proguard/proguard.pro => app/proguard.pro\n"
+                + "* res/ => app/src/main/res/\n"
+                + "* src/ => app/src/main/java/\n"
+                + MSG_USER_HOME_PROGUARD
+                + "${user.home}/proguard/shared.pro\n"
+                + MSG_FOOTER,
+                false /* checkBuild */);
+
+        // Imported contents
+        assertEquals(""
+                + "app\n"
+                + "  build.gradle\n"
+                + "  proguard-project.txt\n"
+                + "  proguard.pro\n"
+                + "  src\n"
+                + "    main\n"
+                + "      AndroidManifest.xml\n"
+                + "      java\n"
+                + "        test\n"
+                + "          pkg\n"
+                + "            MyActivity.java\n"
+                + "      res\n"
+                + "        drawable\n"
+                + "          ic_launcher.xml\n"
+                + "        values\n"
+                + "          strings.xml\n"
+                + "build.gradle\n"
+                + "import-summary.txt\n"
+                + "local.properties\n"
+                + "settings.gradle\n",
+                fileTree(imported, true));
+
+        //noinspection PointlessBooleanExpression,ConstantConditions
+        assertEquals(""
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                "buildscript {\n"
+                + "    repositories {\n"
+                + "        " + MAVEN_REPOSITORY + "\n"
+                + "    }\n"
+                + "    dependencies {\n"
+                + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
+                + "    }\n"
+                + "}\n" : "")
+                + "apply plugin: 'android'\n"
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                "\n"
+                + "repositories {\n"
+                + "    " + MAVEN_REPOSITORY + "\n"
+                + "}\n" : "")
+                + "\n"
+                + "android {\n"
+                + "    compileSdkVersion 16\n"
+                + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
+                + "\n"
+                + "    defaultConfig {\n"
+                + "        minSdkVersion 8\n"
+                + "        targetSdkVersion 16\n"
+                + "    }\n"
+                + "\n"
+                + "    buildTypes {\n"
+                + "        release {\n"
+                + "            runProguard true\n"
+                + "            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-project.txt', 'proguard.pro'\n"
+                + "        }\n"
+                + "    }\n"
+                + "}\n",
+                Files.toString(new File(imported, "app" + separator + "build.gradle"), UTF_8)
+                        .replace(NL, "\n"));
+
+        deleteDir(projectDir);
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings({"ResultOfMethodCallIgnored", "SpellCheckingInspection"})
+    public void testRiskyPathChars() throws Exception {
+        File root = Files.createTempDir();
+        File projectDir = createProject("PathChars", "test.pkg");
+
+        final File destDir = new File(root, "My Code" + separator + "Source & Data" +
+                separator + "\"Foo's Bar\"");
+        destDir.mkdirs();
+
+        checkProject(projectDir, ""
+                + MSG_HEADER
+                + MSG_RISKY_PROJECT_LOCATION
+                + "$DESTDIR/My Code/Source & Data/\"Foo's Bar\"\n"
+                + "           -           ---     -   - -   -\n"
+                + MSG_FOLDER_STRUCTURE
+                + "* AndroidManifest.xml => app/src/main/AndroidManifest.xml\n"
+                + "* res/ => app/src/main/res/\n"
+                + "* src/ => app/src/main/java/\n"
+                + MSG_FOOTER,
+                false /* checkBuild */, null, destDir, root);
+
+        deleteDir(root);
+    }
+
+    @SuppressWarnings("SpellCheckingInspection")
+    public void testIgnoreFile() {
+        assertTrue(GradleImport.isIgnoredFile(new File(".git")));
+        assertTrue(GradleImport.isIgnoredFile(new File(".hg")));
+        assertTrue(GradleImport.isIgnoredFile(new File(".svn")));
+        assertTrue(GradleImport.isIgnoredFile(new File("foo" + File.separator + ".git")));
+        assertTrue(GradleImport.isIgnoredFile(new File("foo" + File.separator + ".hg")));
+        assertTrue(GradleImport.isIgnoredFile(new File("foo" + File.separator + ".svn")));
+        assertTrue(GradleImport.isIgnoredFile(new File("foo~")));
+        assertFalse(GradleImport.isIgnoredFile(new File(".gitt")));
+        assertFalse(GradleImport.isIgnoredFile(new File("~")));
+        assertFalse(GradleImport.isIgnoredFile(new File("~foo")));
+    }
+
     public void testSdkNdkSetters() {
         GradleImport importer = new GradleImport();
         File ndkLocation = new File("ndk");
@@ -2141,6 +2723,17 @@ public class GradleImportTest extends TestCase {
         importer.setSdkLocation(sdkLocation);
         assertSame(sdkLocation, importer.getSdkLocation());
         assertSame(ndkLocation, importer.getNdkLocation());
+
+        String sdkPath = getTestSdkPath();
+        if (sdkPath != null) {
+            ILogger logger = new StdLogger(StdLogger.Level.INFO);
+            SdkManager sdkManager = SdkManager.createManager(sdkPath, logger);
+            if (sdkManager != null) {
+                importer.setSdkManager(sdkManager);
+                assertSame(sdkManager, importer.getSdkManager());
+                assertEquals(new File(sdkPath), importer.getSdkLocation());
+            }
+        }
     }
 
     // --- Unit test infrastructure from this point on ----
@@ -2182,6 +2775,14 @@ public class GradleImportTest extends TestCase {
             String expectedSummary, boolean checkBuild,
             ImportCustomizer customizer) throws Exception {
         File destDir = Files.createTempDir();
+        return checkProject(adtProjectDir, expectedSummary, checkBuild, customizer, destDir,
+                destDir);
+    }
+
+    private static File checkProject(File adtProjectDir,
+            String expectedSummary, boolean checkBuild,
+            ImportCustomizer customizer,
+            File destDir, File rootDir) throws Exception {
         assertTrue(GradleImport.isAdtProjectDir(adtProjectDir));
         List<File> projects = Collections.singletonList(adtProjectDir);
         GradleImport importer = new GradleImport();
@@ -2200,10 +2801,13 @@ public class GradleImportTest extends TestCase {
             customizer.customize(importer);
         }
         importer.importProjects(projects);
+        importer.getSummary().setWrapErrorMessages(false);
 
         importer.exportProject(destDir, false);
         String summary = Files.toString(new File(destDir, IMPORT_SUMMARY_TXT), UTF_8);
         summary = summary.replace("\r", "");
+        summary = stripOutRiskyPathMessage(summary, rootDir);
+
         String testSdkPath = getTestSdkPath();
         if (testSdkPath != null) {
             summary = summary.replace(testSdkPath, "$ADT_TEST_SDK_PATH");
@@ -2222,6 +2826,20 @@ public class GradleImportTest extends TestCase {
         }
 
         return destDir;
+    }
+
+    private static String stripOutRiskyPathMessage(String summary, File rootDir) {
+        int index = summary.indexOf(MSG_RISKY_PROJECT_LOCATION);
+        if (index == -1) {
+            return summary;
+        }
+        index += MSG_RISKY_PROJECT_LOCATION.length();
+        String path = rootDir.getPath();
+        assertTrue(summary.startsWith(path, index));
+        int nextLineIndex = summary.indexOf('\n', index) + 1;
+        return summary.substring(0, index) + "$DESTDIR" +
+                summary.substring(index + path.length(), nextLineIndex) +
+                "        " + summary.substring(nextLineIndex + path.length());
     }
 
     @Nullable

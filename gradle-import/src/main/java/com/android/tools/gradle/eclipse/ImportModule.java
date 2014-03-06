@@ -30,6 +30,7 @@ import static com.android.SdkConstants.FD_MAIN;
 import static com.android.SdkConstants.FD_RENDERSCRIPT;
 import static com.android.SdkConstants.FD_RES;
 import static com.android.SdkConstants.FD_SOURCES;
+import static com.android.SdkConstants.FD_TEST;
 import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.SdkConstants.FN_PROJECT_PROPERTIES;
 import static com.android.SdkConstants.GEN_FOLDER;
@@ -38,7 +39,6 @@ import static com.android.tools.gradle.eclipse.GradleImport.ECLIPSE_DOT_CLASSPAT
 import static com.android.tools.gradle.eclipse.GradleImport.ECLIPSE_DOT_PROJECT;
 import static java.io.File.separator;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
@@ -69,7 +69,9 @@ abstract class ImportModule implements Comparable<ImportModule> {
 
     protected final GradleImport mImporter;
     protected final List<GradleCoordinate> mDependencies = Lists.newArrayList();
+    protected final List<GradleCoordinate> mTestDependencies = Lists.newArrayList();
     protected final List<File> mJarDependencies = Lists.newArrayList();
+    protected final List<File> mTestJarDependencies = Lists.newArrayList();
     protected List<GradleCoordinate> mReplaceWithDependencies;
     private String mModuleName;
 
@@ -89,6 +91,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
     @NonNull protected abstract String getOriginalName();
     @NonNull protected abstract List<File> getSourcePaths();
     @NonNull protected abstract List<File> getJarPaths();
+    @NonNull protected abstract List<File> getTestJarPaths();
     @NonNull protected abstract List<File> getNativeLibs();
     @NonNull protected abstract File resolveFile(@NonNull File file);
     @NonNull protected abstract File getCanonicalModuleDir();
@@ -104,6 +107,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
     @Nullable protected abstract File getAssetsDir();
     @Nullable protected abstract File getNativeSources();
     @Nullable protected abstract String getNativeModuleName();
+    @Nullable protected abstract File getInstrumentationDir();
 
     public void initialize() {
         initDependencies();
@@ -274,6 +278,28 @@ abstract class ImportModule implements Comparable<ImportModule> {
         return ':' + getModuleName();
     }
 
+    protected File getJarOutputRelativePath(File jar) {
+        if (jar.isAbsolute()) {
+            File relative;
+            try {
+                relative = GradleImport.computeRelativePath(getCanonicalModuleDir(), jar);
+            } catch (IOException ioe) {
+                relative = null;
+            }
+            if (relative != null) {
+                jar = relative;
+            } else {
+                jar = new File(LIBS_FOLDER, jar.getName());
+            }
+        }
+
+        return jar;
+    }
+
+    protected static File getTestJarOutputRelativePath(File jar) {
+        return new File(LIBS_FOLDER, jar.getName());
+    }
+
     public void copyInto(@NonNull File destDir) throws IOException {
         ImportSummary summary = mImporter.getSummary();
 
@@ -363,15 +389,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
 
         for (File jar : getJarPaths()) {
             File srcJar = resolveFile(jar);
-            if (jar.isAbsolute()) {
-                File relative = GradleImport.computeRelativePath(getCanonicalModuleDir(), jar);
-                if (relative != null) {
-                    jar = relative;
-                } else {
-                    jar = new File(LIBS_FOLDER, jar.getName());
-                }
-            }
-            File destJar = new File(destDir, jar.getPath());
+            File destJar = new File(destDir, getJarOutputRelativePath(jar).getPath());
             if (destJar.getParentFile() != null) {
                 mImporter.mkdirs(destJar.getParentFile());
             }
@@ -401,6 +419,49 @@ abstract class ImportModule implements Comparable<ImportModule> {
             mImporter.copyDir(srcJni, destJni, null);
             summary.reportMoved(this, srcJni, destJni);
             recordCopiedFile(copied, srcJni);
+        }
+
+        File instrumentation = getInstrumentationDir();
+        if (instrumentation != null) {
+            final File test = new File(destDir, FD_SOURCES + separator + FD_TEST);
+            mImporter.mkdirs(test);
+
+            // We should NOT copy the Android manifest file. Don't mark it as "ignored"
+            // either since we'll pull everything we need out of it and put it into the
+            // Gradle file.
+            recordCopiedFile(copied, new File(instrumentation, ANDROID_MANIFEST_XML));
+
+            File srcRes = new File(instrumentation, FD_RES);
+            if (srcRes.isDirectory()) {
+                File destRes = new File(test, FD_RES);
+                mImporter.mkdirs(destRes);
+                mImporter.copyDir(srcRes, destRes, null);
+                summary.reportMoved(this, srcRes, destRes);
+                recordCopiedFile(copied, srcRes);
+            }
+
+            File srcJava = new File(instrumentation, FD_SOURCES);
+            if (srcJava.isDirectory()) {
+                File destRes = new File(test, FD_JAVA);
+                mImporter.mkdirs(destRes);
+                mImporter.copyDir(srcJava, destRes, null);
+                summary.reportMoved(this, srcJava, destRes);
+                recordCopiedFile(copied, srcJava);
+            }
+
+            for (File jar : getTestJarPaths()) {
+                File srcJar = resolveFile(jar);
+                File destJar = new File(destDir, getTestJarOutputRelativePath(jar).getPath());
+                if (destJar.exists()) {
+                    continue;
+                }
+                if (destJar.getParentFile() != null) {
+                    mImporter.mkdirs(destJar.getParentFile());
+                }
+                Files.copy(srcJar, destJar);
+                summary.reportMoved(this, srcJar, destJar);
+                recordCopiedFile(copied, srcJar);
+            }
         }
 
         if (isAndroidProject()) {
@@ -454,34 +515,48 @@ abstract class ImportModule implements Comparable<ImportModule> {
         reportIgnored(canonicalDir, copied, 0);
     }
 
-    private void reportIgnored(@NonNull File file, @NonNull Set<File> copied, int depth)
+    /**
+     * Report ignored files. Returns true if the file (and all its children) were
+     * ignored too.
+     */
+    private boolean reportIgnored(@NonNull File file, @NonNull Set<File> copied, int depth)
             throws IOException {
-        if (depth > 0) {
-            if (copied.contains(file)) {
-                return;
-            }
-            File relative = GradleImport.computeRelativePath(getCanonicalModuleDir(), file);
-            if (relative == null) {
-                relative = file;
-            }
-            mImporter.getSummary().reportIgnored(getOriginalName(), relative);
+        if (depth > 0 && copied.contains(file)) {
+            return true;
         }
 
-        if (file.isDirectory()) {
+        boolean ignore = true;
+        boolean isDirectory = file.isDirectory();
+        if (isDirectory) {
             // Don't recursively list contents of .git etc
             if (depth == 1) {
-                String name = file.getName();
-                if (name.equals(".svn") || name.equals(".git")) {
-                    return;
+                if (GradleImport.isIgnoredFile(file)) {
+                    return false;
                 }
             }
             File[] files = file.listFiles();
             if (files != null) {
                 for (File child : files) {
-                    reportIgnored(child, copied, depth + 1);
+                    ignore &= reportIgnored(child, copied, depth + 1);
                 }
             }
+        } else {
+            ignore = false;
         }
+
+        if (depth > 0 && !ignore) {
+            File relative = GradleImport.computeRelativePath(getCanonicalModuleDir(), file);
+            if (relative == null) {
+                relative = file;
+            }
+            String path = relative.getPath();
+            if (isDirectory) {
+                path += separator;
+            }
+            mImporter.getSummary().reportIgnored(getOriginalName(), path);
+        }
+
+        return ignore;
     }
 
     public List<File> getJarDependencies() {
@@ -490,6 +565,14 @@ abstract class ImportModule implements Comparable<ImportModule> {
 
     public List<GradleCoordinate> getDependencies() {
         return mDependencies;
+    }
+
+    public List<File> getTestJarDependencies() {
+        return mTestJarDependencies;
+    }
+
+    public List<GradleCoordinate> getTestDependencies() {
+        return mTestDependencies;
     }
 
     @Nullable
