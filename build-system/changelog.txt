@@ -1,3 +1,34 @@
+0.9.0:
+- Compatible with Gradle 1.10 and 1.11
+- DSL for Library DSL is now the same as for app projects, meaning you can create more Build Types, as well as Flavors.
+- In preparation for a final variant publishing mechanism, flavors in Libraries can be published alongside the default configure.
+  The default publishing configuration is configured with
+    android.defaultPublishConfig
+  Default Value is "release"
+  To enable publication all the variants, use:
+    android.publishNonDefault = true
+  To use from another project:
+    compile project(path: ':project', configuration: 'variantFlavor1Debug')
+  See 'FlavoredLib' sample.
+  Note that this does not really solve the issue with library being published with 'release' mode always. This is because you have to manually
+  specify which variant you want to reference. A better mechanism will come later.
+- Ability to skip some variants. Create a closure to control which variants should be created.
+     android.variantFilter { variant ->
+        ...
+     }
+
+  The object passed to the closure implements the following methods:
+        public void setIgnore(boolean ignore);
+        @NonNull
+        public ProductFlavor getDefaultConfig();
+        @NonNull
+        public BuildType getBuildType();
+        @NonNull
+        public List<ProductFlavor> getFlavors();
+  To skip a variant, call setIgnore(false)
+
+- Lots of misc fixes.
+
 0.8.3:
 
 - Fix Studio integration regression.
