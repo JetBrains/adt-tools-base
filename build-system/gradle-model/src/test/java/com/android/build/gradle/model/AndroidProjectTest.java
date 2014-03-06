@@ -59,7 +59,7 @@ import java.util.Map;
 
 public class AndroidProjectTest extends TestCase {
 
-    private static final String MODEL_VERSION = "0.8.4-SNAPSHOT";
+    private static final String MODEL_VERSION = "0.9.0-SNAPSHOT";
 
     private static final Map<String, ProjectData> sProjectModelMap = Maps.newHashMap();
 
