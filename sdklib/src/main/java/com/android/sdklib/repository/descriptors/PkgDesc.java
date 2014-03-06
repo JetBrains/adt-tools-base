@@ -66,6 +66,11 @@ public abstract class PkgDesc implements IPkgDesc {
     }
 
     @Override
+    public final boolean hasTag() {
+        return getType().hasTag();
+    }
+
+    @Override
     public boolean hasVendorId() {
         return getType().hasVendorId();
     }
@@ -101,6 +106,12 @@ public abstract class PkgDesc implements IPkgDesc {
     @Nullable
     @Override
     public String getPath() {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public IdDisplay getTag() {
         return null;
     }
 
@@ -145,6 +156,11 @@ public abstract class PkgDesc implements IPkgDesc {
 
         // Packages that have a vendor id need the same vendor id on both sides
         if (hasVendorId() && !getVendorId().equals(existingDesc.getVendorId())) {
+            return false;
+        }
+
+        // Packages that have a tag id need the same tag id on both sides
+        if (hasTag() && !getTag().getId().equals(existingDesc.getTag().getId())) {
             return false;
         }
 
@@ -196,7 +212,7 @@ public abstract class PkgDesc implements IPkgDesc {
         int t1 = getType().getIntValue();
         int t2 = o.getType().getIntValue();
         if (t1 != t2) {
-            return t2 - t1;
+            return t1 - t2;
         }
 
         if (hasAndroidVersion() && o.hasAndroidVersion()) {
@@ -208,6 +224,13 @@ public abstract class PkgDesc implements IPkgDesc {
 
         if (hasVendorId() && o.hasVendorId()) {
             t1 = getVendorId().compareTo(o.getVendorId());
+            if (t1 != 0) {
+                return t1;
+            }
+        }
+
+        if (hasTag() && o.hasTag()) {
+            t1 = getTag().compareTo(o.getTag());
             if (t1 != 0) {
                 return t1;
             }
@@ -270,6 +293,10 @@ public abstract class PkgDesc implements IPkgDesc {
             builder.append(" Vendor=").append(getVendorId());                       //NON-NLS-1$
         }
 
+        if (hasTag()) {
+            builder.append(" Tag=").append(getTag());                               //NON-NLS-1$
+        }
+
         if (hasPath()) {
             builder.append(" Path=").append(getPath());                             //NON-NLS-1$
         }
@@ -300,6 +327,7 @@ public abstract class PkgDesc implements IPkgDesc {
         int result = 1;
         result = prime * result + (hasAndroidVersion() ? getAndroidVersion().hashCode() : 0);
         result = prime * result + (hasVendorId()       ? getVendorId()      .hashCode() : 0);
+        result = prime * result + (hasTag()            ? getTag()           .hashCode() : 0);
         result = prime * result + (hasPath()           ? getPath()          .hashCode() : 0);
         result = prime * result + (hasFullRevision()   ? getFullRevision()  .hashCode() : 0);
         result = prime * result + (hasMajorRevision()  ? getMajorRevision() .hashCode() : 0);
@@ -319,6 +347,13 @@ public abstract class PkgDesc implements IPkgDesc {
             return false;
         }
         if (hasAndroidVersion() && !getAndroidVersion().equals(rhs.getAndroidVersion())) {
+            return false;
+        }
+
+        if (hasTag() != rhs.hasTag()) {
+            return false;
+        }
+        if (hasTag() && !getTag().equals(rhs.getTag())) {
             return false;
         }
 
@@ -605,12 +640,14 @@ public abstract class PkgDesc implements IPkgDesc {
      * For system-images, {@link PkgDesc#getPath()} returns the ABI.
      *
      * @param version The android version of the system-image package.
+     * @param tag The tag of the system-image package.
      * @param abi The ABI of the system-image package.
      * @param revision The revision of the system-image package.
      * @return A {@link PkgDesc} describing this system-image package.
      */
     @NonNull
     public static IPkgDesc newSysImg(@NonNull final AndroidVersion version,
+                                     @NonNull final IdDisplay tag,
                                      @NonNull final String abi,
                                      @NonNull final MajorRevision revision) {
         return new PkgDesc() {
@@ -627,6 +664,11 @@ public abstract class PkgDesc implements IPkgDesc {
             @Override
             public AndroidVersion getAndroidVersion() {
                 return version;
+            }
+
+            @Override
+            public IdDisplay getTag() {
+                return tag;
             }
 
             @Override

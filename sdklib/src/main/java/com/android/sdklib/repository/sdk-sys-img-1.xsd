@@ -30,7 +30,7 @@
          file that conforms to this XML Schema.
 
          History:
-         - v1 is used by the SDK Updater in Tools r20. It is split out of the
+         - v1 is used by the SDK Updater in Tools r20.0. It is split out of the
            main SDK Repository XML Schema and can only contain <system-image> packages.
     -->
 
