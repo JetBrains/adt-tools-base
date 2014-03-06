@@ -6,5 +6,5 @@ repositories {
 }
 
 dependencies {
-    compile 'com.android.tools.build:builder-test-api:0.8.3-SNAPSHOT'
+    compile 'com.android.tools.build:builder-test-api:0.8.4-SNAPSHOT'
 }
