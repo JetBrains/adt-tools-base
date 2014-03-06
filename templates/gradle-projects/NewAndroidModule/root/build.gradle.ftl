@@ -1,10 +1,11 @@
 <#if !(perModuleRepositories??) || perModuleRepositories>
 buildscript {
     repositories {
-<#if mavenUrl == "mavenCentral">
         mavenCentral()
-<#else>
-        maven { url '${mavenUrl}' }
+<#if mavenUrl != "mavenCentral">
+        maven {
+            url '${mavenUrl}'
+        }
 </#if>
     }
     dependencies {
@@ -20,10 +21,11 @@ apply plugin: 'android'
 <#if !(perModuleRepositories??) || perModuleRepositories>
 
 repositories {
-<#if mavenUrl == "mavenCentral">
-    mavenCentral()
-<#else>
-    maven { url '${mavenUrl}' }
+        mavenCentral()
+<#if mavenUrl != "mavenCentral">
+        maven {
+            url '${mavenUrl}'
+        }
 </#if>
 }
 </#if>
