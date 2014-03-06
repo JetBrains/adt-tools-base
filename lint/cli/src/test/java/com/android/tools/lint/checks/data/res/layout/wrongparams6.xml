@@ -10,4 +10,9 @@
         android:layout_height="wrap_content"
         layout="@layout/wrongparams5" />
 
+    <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/include1"
+            android:layout_toEndOf="@+id/include1" />
 </LinearLayout>
