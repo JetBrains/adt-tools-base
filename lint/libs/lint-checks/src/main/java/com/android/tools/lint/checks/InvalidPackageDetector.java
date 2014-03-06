@@ -123,14 +123,12 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
             return;
         }
 
-        // Don't flag references from annotations and annotation processors
-        if ((classNode.access & Opcodes.ACC_ANNOTATION) != 0
-                || classNode.superName.startsWith("javax/annotation/")) {
-            return;
-        }
-
         if (classNode.name.startsWith(JAVAX_PKG_PREFIX)) {
             mJavaxLibraryClasses.add(classNode.name);
+        } else if ((classNode.access & Opcodes.ACC_ANNOTATION) != 0
+                || classNode.superName.startsWith("javax/annotation/")) {
+            // Don't flag references from annotations and annotation processors
+           return;
         }
 
         List methodList = classNode.methods;
