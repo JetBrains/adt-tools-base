@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 package com.android.build.gradle
-
-import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.LibraryVariant
 import com.android.builder.DefaultBuildType
 import com.android.builder.DefaultProductFlavor
@@ -43,8 +41,7 @@ public class LibraryExtension extends BaseExtension {
         return libraryVariantList
     }
 
-    @Override
-    void addVariant(BaseVariant variant) {
-        libraryVariantList.add((LibraryVariant) variant)
+    void addLibraryVariant(LibraryVariant libraryVariant) {
+        libraryVariantList.add(libraryVariant)
     }
 }

@@ -62,7 +62,6 @@ import com.android.build.gradle.internal.variant.DefaultSourceProviderContainer
 import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.TestedVariantData
-import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.Dex
 import com.android.build.gradle.tasks.GenerateBuildConfig
@@ -209,7 +208,7 @@ public abstract class BasePlugin {
     }
 
     protected abstract Class<? extends BaseExtension> getExtensionClass()
-    protected abstract VariantFactory getVariantFactory()
+
     protected abstract void doCreateAndroidTasks()
 
     public Instantiator getInstantiator() {
@@ -247,7 +246,7 @@ public abstract class BasePlugin {
                 buildTypeContainer, productFlavorContainer, signingConfigContainer)
         setBaseExtension(extension)
 
-        variantManager = new VariantManager(project, this, extension, getVariantFactory())
+        variantManager = new VariantManager(project, this, extension)
 
         // map the whenObjectAdded callbacks on the containers.
         signingConfigContainer.whenObjectAdded { SigningConfig signingConfig ->
