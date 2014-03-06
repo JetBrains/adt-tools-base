@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 package com.android.build.gradle.tasks
+
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.builder.compiling.ResValueGenerator
+import com.android.builder.model.ClassField
+import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
@@ -30,8 +32,26 @@ public class GenerateResValues extends BaseTask {
 
     // ----- PRIVATE TASK API -----
 
-    @Input @Nested
     List<Object> items
+
+    @Input
+    List<String> getItemValues() {
+        List<Object> resolvedItems = getItems()
+        List<String> list = Lists.newArrayListWithCapacity(resolvedItems.size() * 3)
+
+        for (Object object : resolvedItems) {
+            if (object instanceof String) {
+                list.add((String) object)
+            } else if (object instanceof ClassField) {
+                ClassField field = (ClassField) object
+                list.add(field.type)
+                list.add(field.name)
+                list.add(field.value)
+            }
+        }
+
+        return list
+    }
 
     @TaskAction
     void generate() {
