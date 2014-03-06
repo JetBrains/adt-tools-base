@@ -9,4 +9,12 @@
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">0dp</item>
     </style>
+
+    <style name="TextWithHint">
+        <item name="android:hint">Number</item>
+    </style>
+
+    <style name="TextWithInput">
+        <item name="android:hint">number</item>
+    </style>
 </resources>
