@@ -30,7 +30,7 @@ import java.io.File;
  * implementation of the {@link LibraryVariant} interface around a
  * {@link LibraryVariantData} object.
  */
-public class LibraryVariantImpl extends BaseVariantImpl implements LibraryVariant {
+public class LibraryVariantImpl extends BaseVariantImpl implements LibraryVariant, TestedVariant {
 
     @NonNull
     private final LibraryVariantData variantData;
@@ -47,6 +47,7 @@ public class LibraryVariantImpl extends BaseVariantImpl implements LibraryVarian
         return variantData;
     }
 
+    @Override
     public void setTestVariant(@Nullable TestVariant testVariant) {
         this.testVariant = testVariant;
     }

@@ -26,8 +26,10 @@ import com.android.build.gradle.internal.api.TestVariantImpl
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.tasks.MergeFileTask
 import com.android.build.gradle.internal.variant.BaseVariantData
+import com.android.build.gradle.internal.variant.LibraryVariantFactory
 import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
+import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.tasks.MergeResources
 import com.android.builder.BuilderConstants
 import com.android.builder.DefaultBuildType
@@ -68,6 +70,11 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
     @Override
     public Class<? extends BaseExtension> getExtensionClass() {
         return LibraryExtension.class
+    }
+
+    @Override
+    protected VariantFactory getVariantFactory() {
+        return new LibraryVariantFactory(this);
     }
 
     @Override
@@ -443,7 +450,7 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
             testVariant.setTestedVariant(libVariant)
         }
 
-        extension.addLibraryVariant(libVariant)
+        extension.addVariant(libVariant)
         map.put(libVariantData, libVariant)
 
         if (testVariant != null) {
