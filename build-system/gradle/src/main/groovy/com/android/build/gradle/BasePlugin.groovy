@@ -1607,9 +1607,8 @@ public abstract class BasePlugin {
      * @return outFile file outputted by proguard
      */
     @NonNull
-    public
-    File createProguardTasks(@NonNull BaseVariantData variantData,
-                                       @Nullable BaseVariantData testedVariantData) {
+    public File createProguardTasks(@NonNull BaseVariantData variantData,
+                                    @Nullable BaseVariantData testedVariantData) {
         VariantConfiguration variantConfig = variantData.variantConfiguration
 
         def proguardTask = project.tasks.create(

@@ -1,0 +1,21 @@
+buildscript {
+    repositories {
+        maven { url '../../../../../out/host/gradle/repo' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.8.4-SNAPSHOT'
+    }
+}
+
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "19.0.2"
+
+    variantFilter {
+        if (it.buildType.name.equals("debug")) {
+            it.ignore = true
+        }
+    }
+}
