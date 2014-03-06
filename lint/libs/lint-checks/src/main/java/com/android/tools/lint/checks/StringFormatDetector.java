@@ -130,14 +130,17 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     /** Whether formatting argument types are consistent across translations */
     public static final Issue ARG_COUNT = Issue.create(
             "StringFormatCount", //$NON-NLS-1$
-            "Formatting argument types inconsistent across translations",
-            "Ensures that all format strings are used and that the same number is defined "
-                + "across translations",
+            "Formatting argument types incomplete or inconsistent",
+            "Ensures that all format strings are used and that the same number is defined " +
+            "across translations",
 
             "When a formatted string takes arguments, it usually needs to reference the " +
-            "same arguments in all translations. There are cases where this is not the case, " +
-            "so this issue is a warning rather than an error by default. However, this usually " +
-            "happens when a language is not translated or updated correctly.",
+            "same arguments in all translations (or all arguments if there are no " +
+            "translations.\n" +
+            "\n" +
+            "There are cases where this is not the case, so this issue is a warning rather " +
+            "than an error by default. However, this usually happens when a language is not " +
+            "translated or updated correctly.",
             Category.MESSAGES,
             5,
             Severity.WARNING,
