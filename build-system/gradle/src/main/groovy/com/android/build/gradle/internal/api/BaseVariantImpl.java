@@ -29,12 +29,15 @@ import com.android.build.gradle.tasks.ProcessManifest;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.DefaultBuildType;
 import com.android.builder.DefaultProductFlavor;
+import com.android.builder.model.SourceProvider;
+
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 
 abstract class BaseVariantImpl implements BaseVariant {
 
@@ -80,6 +83,12 @@ abstract class BaseVariantImpl implements BaseVariant {
     @Override
     public DefaultProductFlavor getConfig() {
         return getVariantData().getVariantConfiguration().getDefaultConfig();
+    }
+
+    @NonNull
+    @Override
+    public List<SourceProvider> getSourceSets() {
+        return getVariantData().getVariantConfiguration().getSortedSourceProviders();
     }
 
     @Override
