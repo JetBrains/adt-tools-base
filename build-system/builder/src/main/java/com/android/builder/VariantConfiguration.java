@@ -207,8 +207,6 @@ public class VariantConfiguration implements TestData {
                 testedConfig.mOutput != null) {
             mDirectLibraries.add(testedConfig.mOutput);
         }
-
-        validate();
     }
 
     /**
@@ -238,7 +236,6 @@ public class VariantConfiguration implements TestData {
 
         return mFullName;
     }
-
 
     /**
      * Returns the flavor name of the variant, including all flavors in camel case (starting
@@ -1382,16 +1379,6 @@ public class VariantConfiguration implements TestData {
         }
 
         return fullList;
-    }
-
-    protected void validate() {
-        if (mType != Type.TEST) {
-            File manifest = mDefaultSourceProvider.getManifestFile();
-            if (!manifest.isFile()) {
-                throw new IllegalArgumentException(
-                        "Main Manifest missing from " + manifest.getAbsolutePath());
-            }
-        }
     }
 
     @NonNull

@@ -50,7 +50,7 @@ public class RenderscriptCompile extends NdkTask {
     List<File> importDirs
 
     @Input
-    int targetApi
+    Integer targetApi
 
     @Input
     boolean supportMode
