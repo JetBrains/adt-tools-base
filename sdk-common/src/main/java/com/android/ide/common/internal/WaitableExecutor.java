@@ -62,7 +62,8 @@ public class WaitableExecutor<T> {
      * Creates an executor that will use at most 1 thread per core.
      */
     public WaitableExecutor() {
-        this(0);
+        mExecutorService = null;
+        mCompletionService = new ExecutorCompletionService<T>(ExecutorSingleton.getExecutor());
     }
 
     /**
@@ -115,7 +116,9 @@ public class WaitableExecutor<T> {
                 throw new RuntimeException(cause);
             }
         } finally {
-            mExecutorService.shutdownNow();
+            if (mExecutorService != null) {
+                mExecutorService.shutdownNow();
+            }
         }
 
         return results;
@@ -173,7 +176,9 @@ public class WaitableExecutor<T> {
                 }
             }
         } finally {
-            mExecutorService.shutdownNow();
+            if (mExecutorService != null) {
+                mExecutorService.shutdownNow();
+            }
         }
 
         return results;
