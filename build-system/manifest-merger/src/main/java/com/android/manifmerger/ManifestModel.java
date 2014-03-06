@@ -158,7 +158,7 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/activity-element.html>
          *     Activity Xml documentation</a>}
          */
-        ACTIVITY(MergeType.RESPECT_TOOLS_INSTRUCTIONS, defaultNameAttributeResolver,
+        ACTIVITY(MergeType.MERGE, defaultNameAttributeResolver,
                 "parentActivityName", "name"),
 
         /**

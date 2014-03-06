@@ -99,6 +99,10 @@ public class XmlAttribute extends XmlNode {
         return mXml;
     }
 
+    XmlElement getOwnerElement() {
+        return mOwnerElement;
+    }
+
     /**
      * Returns the position of this attribute in the original xml file. This may return an invalid
      * location as this xml fragment does not exist in any xml file but is the temporary result
