@@ -18,9 +18,12 @@ package com.android.utils;
 
 import com.android.utils.PositionXmlParser.Position;
 
+import junit.framework.TestCase;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
@@ -32,8 +35,6 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-
-import junit.framework.TestCase;
 
 @SuppressWarnings("javadoc")
 public class PositionXmlParserTest extends TestCase {
@@ -318,5 +319,101 @@ public class PositionXmlParserTest extends TestCase {
         checkEncoding("MacRoman", false /*bom*/, true /*encoding*/, "\r\n");
         checkEncoding("ISO-8859-1", false /*bom*/, true /*encoding*/, "\r\n");
         checkEncoding("iso-8859-1", false /*bom*/, true /*encoding*/, "\r\n");
+    }
+
+    public void testOneLineComment() throws Exception {
+        String xml =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                        "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+                        "    android:layout_width=\"match_parent\"\n" +
+                        "    android:layout_height=\"wrap_content\"\n" +
+                        "    android:orientation=\"vertical\" >\n" +
+                        "\n" +
+                        "    <!-- this is a comment ! -->\n" +
+                        "    <Button\n" +
+                        "        android:id=\"@+id/button1\"\n" +
+                        "        android:layout_width=\"wrap_content\"\n" +
+                        "        android:layout_height=\"wrap_content\"\n" +
+                        "        android:text=\"Button\" />\n" +
+                        "          some text\n" +
+                        "\n" +
+                        "</LinearLayout>\n";
+        PositionXmlParser parser = new PositionXmlParser();
+        File file = File.createTempFile("parsertest", ".xml");
+        file.deleteOnExit();
+        Writer fw = new BufferedWriter(new FileWriter(file));
+        fw.write(xml);
+        fw.close();
+        Document document = parser.parse(new FileInputStream(file));
+        assertNotNull(document);
+
+        // Basic parsing heart beat tests
+        Element linearLayout = (Element) document.getElementsByTagName("LinearLayout").item(0);
+        assertNotNull(linearLayout);
+
+        // first child is a comment.
+        org.w3c.dom.Node commentNode = linearLayout.getFirstChild();
+        assertEquals(Node.COMMENT_NODE, commentNode.getNodeType());
+        Position position = parser.getPosition(commentNode);
+        assertNotNull(position);
+        assertEquals(6, position.getLine());
+        assertEquals(4, position.getColumn());
+        assertEquals(xml.indexOf("<!--"), position.getOffset());
+
+        // ensure that the next siblings' position start at the right location.
+        Element button = (Element) document.getElementsByTagName("Button").item(0);
+        Position buttonPosition = parser.getPosition(button);
+        assertNotNull(buttonPosition);
+        assertEquals(7, buttonPosition.getLine());
+        assertEquals(4, buttonPosition.getColumn());
+    }
+
+    public void testMultipleLineComment() throws Exception {
+        String xml =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                        "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+                        "    android:layout_width=\"match_parent\"\n" +
+                        "    android:layout_height=\"wrap_content\"\n" +
+                        "    android:orientation=\"vertical\" >\n" +
+                        "\n" +
+                        "    <!-- this is a more complicated \n" +
+                        "         which spans on multiple lines\n" +
+                        "         in the source xml -->\n" +
+                        "    <Button\n" +
+                        "        android:id=\"@+id/button1\"\n" +
+                        "        android:layout_width=\"wrap_content\"\n" +
+                        "        android:layout_height=\"wrap_content\"\n" +
+                        "        android:text=\"Button\" />\n" +
+                        "          some text\n" +
+                        "\n" +
+                        "</LinearLayout>\n";
+        PositionXmlParser parser = new PositionXmlParser();
+        File file = File.createTempFile("parsertest", ".xml");
+        file.deleteOnExit();
+        Writer fw = new BufferedWriter(new FileWriter(file));
+        fw.write(xml);
+        fw.close();
+        Document document = parser.parse(new FileInputStream(file));
+        assertNotNull(document);
+
+        // Basic parsing heart beat tests
+        Element linearLayout = (Element) document.getElementsByTagName("LinearLayout").item(0);
+        assertNotNull(linearLayout);
+
+        // first child is a comment.
+        Node commentNode = linearLayout.getFirstChild();
+        assertEquals(Node.COMMENT_NODE, commentNode.getNodeType());
+        Position position = parser.getPosition(commentNode);
+        assertNotNull(position);
+        assertEquals(6, position.getLine());
+        assertEquals(4, position.getColumn());
+
+
+        // ensure that the next siblings' position start at the right location.
+        Element button = (Element) document.getElementsByTagName("Button").item(0);
+        Position buttonPosition = parser.getPosition(button);
+        assertNotNull(buttonPosition);
+        assertEquals(9, buttonPosition.getLine());
+        assertEquals(4, buttonPosition.getColumn());
     }
 }
