@@ -34,6 +34,9 @@ import java.util.Set;
  *          quiet true
  *          // if true, stop the gradle build if errors are found
  *          abortOnError false
+ *          // set to true to have all release builds run lint on issues with severity=fatal
+ *          // and abort the build (controlled by abortOnError above) if fatal issues are found
+ *          checkReleaseBuilds true
  *          // if true, only report errors
  *          ignoreWarnings true
  *          // if true, emit full/absolute paths to files with errors (true by default)
@@ -163,4 +166,9 @@ public interface LintOptions {
     @Nullable
     public File getXmlOutput();
 
+    /**
+     * Returns whether lint should check for fatal errors during release builds. Default is true.
+     * If issues with severity "fatal" are found, the release build is aborted.
+     */
+    public boolean isCheckReleaseBuilds();
 }

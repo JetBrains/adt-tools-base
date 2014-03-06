@@ -156,7 +156,7 @@ public class LintCliClient extends LintClient {
 
     @Override
     public Configuration getConfiguration(@NonNull Project project) {
-        return new CliConfiguration(getConfiguration(), project);
+        return new CliConfiguration(getConfiguration(), project, mFlags.isFatalOnly());
     }
 
     /** File content cache */
@@ -374,12 +374,17 @@ public class LintCliClient extends LintClient {
      * flags supplied on the command line
      */
     class CliConfiguration extends DefaultConfiguration {
-        CliConfiguration(@NonNull Configuration parent, @NonNull Project project) {
+        private boolean mFatalOnly;
+
+        CliConfiguration(@NonNull Configuration parent, @NonNull Project project,
+                boolean fatalOnly) {
             super(LintCliClient.this, project, parent);
+            mFatalOnly = fatalOnly;
         }
 
-        CliConfiguration(File lintFile) {
+        CliConfiguration(File lintFile, boolean fatalOnly) {
             super(LintCliClient.this, null /*project*/, null /*parent*/, lintFile);
+            mFatalOnly = fatalOnly;
         }
 
         @NonNull
@@ -387,7 +392,11 @@ public class LintCliClient extends LintClient {
         public Severity getSeverity(@NonNull Issue issue) {
             Severity severity = computeSeverity(issue);
 
-            if (mFlags.isWarningsAsErrors() && severity != Severity.IGNORE) {
+            if (mFatalOnly && severity != Severity.FATAL) {
+                return Severity.IGNORE;
+            }
+
+            if (mFlags.isWarningsAsErrors() && severity.compareTo(Severity.ERROR) < 0) {
                 severity = Severity.ERROR;
             }
 
@@ -598,7 +607,7 @@ public class LintCliClient extends LintClient {
     }
 
     public Configuration createConfigurationFromFile(File file) {
-        return new CliConfiguration(file);
+        return new CliConfiguration(file, mFlags.isFatalOnly());
     }
 
     @SuppressWarnings("resource") // Eclipse doesn't know about Closeables.closeQuietly

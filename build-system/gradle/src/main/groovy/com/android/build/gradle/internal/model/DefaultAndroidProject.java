@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.CompileOptions;
-import com.android.build.gradle.internal.dsl.LintOptionsImpl;
 import com.android.builder.model.AaptOptions;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ArtifactMetaData;
