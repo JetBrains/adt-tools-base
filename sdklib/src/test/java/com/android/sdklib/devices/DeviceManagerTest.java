@@ -19,6 +19,7 @@ package com.android.sdklib.devices;
 import com.android.sdklib.SdkManagerTestCase;
 import com.android.sdklib.devices.Device.Builder;
 import com.android.sdklib.devices.DeviceManager.DeviceFilter;
+import com.android.sdklib.devices.DeviceManager.DeviceStatus;
 import com.android.sdklib.mock.MockLog;
 
 import java.io.File;
@@ -213,5 +214,29 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                  "Mock Tag 1 Device Name]",
                  listDisplayNames(dm.getDevices(DeviceManager.ALL_DEVICES)).toString());
         assertEquals("", log.toString());
+    }
+
+    public final void testGetDeviceStatus() {
+        // get a definition from the bundled devices.xml file
+        // Note: the recorded hash code of this device should not change in future implementations
+        // otherwise the AVD Manager will list existing AVDs as having changed.
+        assertEquals(DeviceStatus.EXISTS,
+                     dm.getDeviceStatus("7in WSVGA (Tablet)", "Generic", -1338842870));
+
+        // same device but with an invalid hash code
+        assertEquals(DeviceStatus.CHANGED,
+                     dm.getDeviceStatus("7in WSVGA (Tablet)", "Generic", 1));
+
+
+        // get a definition from the bundled oem file with its canonical hash code
+        assertEquals(DeviceStatus.EXISTS,
+                     dm.getDeviceStatus("Nexus One", "Google", -1812631727));
+
+        assertEquals(DeviceStatus.CHANGED,
+                     dm.getDeviceStatus("Nexus One", "Google", 2));
+
+        // try a device that does not exist
+        assertEquals(DeviceStatus.MISSING,
+                     dm.getDeviceStatus("My Device", "Custom OEM", 3));
     }
 }
