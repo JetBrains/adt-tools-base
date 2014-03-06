@@ -29,6 +29,7 @@ import com.android.resources.ScreenRatio;
 import com.android.resources.ScreenSize;
 import com.android.resources.TouchScreen;
 import com.android.resources.UiMode;
+import com.android.utils.Pair;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -61,6 +62,7 @@ public class DeviceParser {
         private Device.Builder mBuilder;
         private Camera mCamera;
         private Storage.Unit mUnit;
+        private String[] mBootProp;
 
         public DeviceHandler(@Nullable File parentFolder) {
             mParentFolder = parentFolder;
@@ -108,6 +110,8 @@ public class DeviceParser {
                 mMeta.setFrameOffsetPortrait(new Point());
             } else if (DeviceSchema.NODE_SCREEN.equals(localName)) {
                 mHardware.setScreen(new Screen());
+            } else if (DeviceSchema.NODE_BOOT_PROP.equals(localName)) {
+                mBootProp = new String[2];
             }
             mStringAccumulator.setLength(0);
         }
@@ -319,6 +323,20 @@ public class DeviceParser {
                 }
             } else if (DeviceSchema.NODE_STATUS_BAR.equals(localName)) {
                 mSoftware.setStatusBar(getBool(mStringAccumulator));
+
+            } else if (DeviceSchema.NODE_TAG_ID.equals(localName)) {
+                mBuilder.setTagId(getString(mStringAccumulator));
+            } else if (DeviceSchema.NODE_PROP_NAME.equals(localName)) {
+                assert mBootProp != null && mBootProp.length == 2;
+                mBootProp[0] = getString(mStringAccumulator);
+            } else if (DeviceSchema.NODE_PROP_VALUE.equals(localName)) {
+                assert mBootProp != null && mBootProp.length == 2;
+                mBootProp[1] = mStringAccumulator.toString();
+            } else if (DeviceSchema.NODE_BOOT_PROP.equals(localName)) {
+                assert mBootProp != null && mBootProp.length == 2 &&
+                       mBootProp[0] != null && mBootProp[1] != null;
+                mBuilder.addBootProp(mBootProp[0], mBootProp[1]);
+                mBootProp = null;
             }
         }
 

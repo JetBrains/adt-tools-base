@@ -326,7 +326,8 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
         // Look in the SDK/system-image/platform-n/abi folders.
         // If we find multiple occurrences of the same platform/abi, the first one read wins.
 
-        for (LocalPkgInfo pkg : getLocalSdk().getPkgsInfos(PkgType.PKG_SYS_IMAGES)) {
+        LocalPkgInfo[] sysImgInfos = getLocalSdk().getPkgsInfos(PkgType.PKG_SYS_IMAGES);
+        for (LocalPkgInfo pkg : sysImgInfos) {
             if (pkg instanceof LocalSysImgPkgInfo &&
                     apiVersion.equals(pkg.getDesc().getAndroidVersion())) {
                 IdDisplay tag = pkg.getDesc().getTag();

@@ -242,6 +242,7 @@ public class AvdManager {
     public static final Pattern NUMERIC_SKIN_SIZE = Pattern.compile("([0-9]{2,})x([0-9]{2,})"); //$NON-NLS-1$
 
     private static final String USERDATA_IMG = "userdata.img"; //$NON-NLS-1$
+    private static final String BOOT_PROP = "boot.prop"; //$NON-NLS-1$
     static final String CONFIG_INI = "config.ini"; //$NON-NLS-1$
     private static final String SDCARD_IMG = "sdcard.img"; //$NON-NLS-1$
     private static final String SNAPSHOTS_IMG = "snapshots.img"; //$NON-NLS-1$
@@ -613,6 +614,7 @@ public class AvdManager {
      * @param sdcard the parameter value for the sdCard. Can be null. This is either a path to
      *        an existing sdcard image or a sdcard size (\d+, \d+K, \dM).
      * @param hardwareConfig the hardware setup for the AVD. Can be null to use defaults.
+     * @param bootProps the optional boot properties for the AVD. Can be null.
      * @param createSnapshot If true copy a blank snapshot image into the AVD.
      * @param removePrevious If true remove any previous files.
      * @param editExisting If true, edit an existing AVD, changing only the minimum required.
@@ -630,7 +632,8 @@ public class AvdManager {
             File skinFolder,
             String skinName,
             String sdcard,
-            Map<String,String> hardwareConfig,
+            @Nullable Map<String,String> hardwareConfig,
+            @Nullable Map<String,String> bootProps,
             boolean createSnapshot,
             boolean removePrevious,
             boolean editExisting,
@@ -925,7 +928,12 @@ public class AvdManager {
             }
 
             File configIniFile = new File(avdFolder, CONFIG_INI);
-            writeIniFile(configIniFile, values);
+            writeIniFile(configIniFile, values, true);
+
+            if (bootProps != null && !bootProps.isEmpty()) {
+                File bootPropsFile = new File(avdFolder, BOOT_PROP);
+                writeIniFile(bootPropsFile, bootProps, false);
+            }
 
             // Generate the log report first because we want to control where line breaks
             // are located when generating the hardware config list.
@@ -1198,7 +1206,7 @@ public class AvdManager {
         }
         values.put(AVD_INFO_ABS_PATH, absPath);
         values.put(AVD_INFO_TARGET, target.hashString());
-        writeIniFile(iniFile, values);
+        writeIniFile(iniFile, values, true);
 
         return iniFile;
     }
@@ -1594,17 +1602,21 @@ public class AvdManager {
      * The file should be read back later by {@link #parseIniFile(IAbstractFile, ILogger)}.
      *
      * @param iniFile The file to generate.
-     * @param values THe properties to place in the ini file.
+     * @param values The properties to place in the ini file.
+     * @param addEncoding When true, add a property {@link #AVD_INI_ENCODING} indicating the
+     *                    encoding used to write the file.
      * @throws IOException if {@link FileWriter} fails to open, write or close the file.
      */
-    private static void writeIniFile(File iniFile, Map<String, String> values)
+    private static void writeIniFile(File iniFile, Map<String, String> values, boolean addEncoding)
             throws IOException {
 
         Charset charset = Charsets.ISO_8859_1;
         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(iniFile), charset);
 
-        // Write down the charset used in case we want to use it later.
-        writer.write(String.format("%1$s=%2$s\n", AVD_INI_ENCODING, charset.name()));
+        if (addEncoding) {
+            // Write down the charset used in case we want to use it later.
+            writer.write(String.format("%1$s=%2$s\n", AVD_INI_ENCODING, charset.name()));
+        }
 
         for (Entry<String, String> entry : values.entrySet()) {
             writer.write(String.format("%1$s=%2$s\n", entry.getKey(), entry.getValue()));
@@ -1866,7 +1878,7 @@ public class AvdManager {
             ILogger log) throws IOException {
         // now write the config file
         File configIniFile = new File(avd.getDataFolderPath(), CONFIG_INI);
-        writeIniFile(configIniFile, newProperties);
+        writeIniFile(configIniFile, newProperties, true);
 
         // finally create a new AvdInfo for this unbroken avd and add it to the list.
         // instead of creating the AvdInfo object directly we reparse it, to detect other possible

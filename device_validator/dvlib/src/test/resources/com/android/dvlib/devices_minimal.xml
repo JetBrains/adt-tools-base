@@ -131,5 +131,12 @@
             <d:keyboard-state>keyssoft</d:keyboard-state>
             <d:nav-state>nonav</d:nav-state>
         </d:state>
+        <d:tag-id>tag-id</d:tag-id>
+        <d:boot-props>
+            <d:boot-prop>
+                <d:prop-name>boot.prop.property</d:prop-name>
+                <d:prop-value>boot.prop.value</d:prop-value>
+            </d:boot-prop>
+        </d:boot-props>
     </d:device>
 </d:devices>

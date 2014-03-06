@@ -137,13 +137,34 @@ public class DeviceParserTest extends TestCase {
         assertEquals("Landscape", s.getName());
         assertFalse(s.isDefaultState());
         assertEquals(ScreenOrientation.LANDSCAPE, s.getOrientation());
+
+        // Test tag-id
+        assertEquals("tag-id", device.getTagId());
+
+        // Test boot-properties
+        assertEquals("{boot.prop.property=boot.prop.value}", device.getBootProps().toString());
     }
 
     public void testValidDevicesFull() throws Exception {
         InputStream devicesFile = DeviceSchemaTest.class.getResourceAsStream("devices.xml");
         List<Device> devices = DeviceParser.parse(devicesFile);
         assertEquals("Parsing devices.xml produces the wrong number of devices",
-                2, devices.size());
+                3, devices.size());
+
+        Device device0 = devices.get(0);
+        assertEquals(null, device0.getTagId());
+        assertEquals("{}", device0.getBootProps().toString());
+
+        Device device1 = devices.get(1);
+        assertEquals(null, device1.getTagId());
+        assertEquals("{}", device1.getBootProps().toString());
+
+        Device device2 = devices.get(2);
+        assertEquals("tag-1", device2.getTagId());
+        assertEquals("{ro-myservice-port=1234, " +
+                      "ro.RAM.Size=1024 MiB, " +
+                      "ro.build.display.id=sdk-eng 4.3 JB_MR2 774058 test-keys}",
+                     device2.getBootProps().toString());
     }
 
     public void testApiRange() throws Exception {
@@ -202,4 +223,5 @@ public class DeviceParserTest extends TestCase {
         assertEquals(new Dimension(1280, 720), device.getScreenSize(ScreenOrientation.LANDSCAPE));
         assertEquals(new Dimension(720, 1280), device.getScreenSize(ScreenOrientation.PORTRAIT));
     }
+
 }
