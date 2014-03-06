@@ -40,7 +40,7 @@
         name="Minimum API level"
         type="string"
         constraints="apilevel"
-        default="7" />
+        default="8" />
 
     <!--
       Usually the same as minApi, but when minApi is a code name this will be the corresponding
@@ -51,7 +51,7 @@
         name="Minimum API level"
         type="string"
         constraints="apilevel"
-        default="7" />
+        default="8" />
 
     <parameter
         id="targetApi"
