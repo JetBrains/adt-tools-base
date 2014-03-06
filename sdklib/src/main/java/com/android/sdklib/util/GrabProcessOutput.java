@@ -22,6 +22,7 @@ import com.google.common.io.Closeables;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 
 public class GrabProcessOutput {
@@ -90,8 +91,9 @@ public class GrabProcessOutput {
             @Override
             public void run() {
                 // create a buffer to read the stderr output
-                InputStreamReader is = new InputStreamReader(process.getErrorStream());
-                BufferedReader errReader = new BufferedReader(is);
+                InputStream is = process.getErrorStream();
+                InputStreamReader isr = new InputStreamReader(is);
+                BufferedReader errReader = new BufferedReader(isr);
 
                 try {
                     while (true) {
@@ -106,6 +108,8 @@ public class GrabProcessOutput {
                 } catch (IOException e) {
                     // do nothing.
                 } finally {
+                    Closeables.closeQuietly(is);
+                    Closeables.closeQuietly(isr);
                     Closeables.closeQuietly(errReader);
                 }
             }
@@ -114,8 +118,9 @@ public class GrabProcessOutput {
         Thread threadOut = new Thread("stdout") {
             @Override
             public void run() {
-                InputStreamReader is = new InputStreamReader(process.getInputStream());
-                BufferedReader outReader = new BufferedReader(is);
+                InputStream is = process.getInputStream();
+                InputStreamReader isr = new InputStreamReader(is);
+                BufferedReader outReader = new BufferedReader(isr);
 
                 try {
                     while (true) {
@@ -130,6 +135,8 @@ public class GrabProcessOutput {
                 } catch (IOException e) {
                     // do nothing.
                 } finally {
+                    Closeables.closeQuietly(is);
+                    Closeables.closeQuietly(isr);
                     Closeables.closeQuietly(outReader);
                 }
             }
