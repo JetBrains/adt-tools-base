@@ -59,6 +59,8 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     private final JavaCompileOptions javaCompileOptions;
     @NonNull
     private final LintOptions lintOptions;
+    @NonNull
+    private final File buildFolder;
     private final boolean isLibrary;
 
     private final Collection<BuildTypeContainer> buildTypes = Lists.newArrayList();
@@ -77,6 +79,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
                           @NonNull Collection<String> unresolvedDependencies,
                           @NonNull CompileOptions compileOptions,
                           @NonNull LintOptions lintOptions,
+                          @NonNull File buildFolder,
                           boolean isLibrary) {
         this.modelVersion = modelVersion;
         this.name = name;
@@ -88,6 +91,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
         this.unresolvedDependencies = unresolvedDependencies;
         javaCompileOptions = new DefaultJavaCompileOptions(compileOptions);
         this.lintOptions = lintOptions;
+        this.buildFolder = buildFolder;
         this.isLibrary = isLibrary;
     }
 
@@ -209,5 +213,10 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     @NonNull
     public JavaCompileOptions getJavaCompileOptions() {
         return javaCompileOptions;
+    }
+
+    @Override
+    public File getBuildFolder() {
+        return buildFolder;
     }
 }
