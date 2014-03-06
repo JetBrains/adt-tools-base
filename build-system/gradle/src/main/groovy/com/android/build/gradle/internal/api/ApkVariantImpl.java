@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.ApkVariant;
 import com.android.build.gradle.internal.variant.ApkVariantData;
@@ -48,6 +49,17 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
     @NonNull
     public List<DefaultProductFlavor> getProductFlavors() {
         return getVariantData().getVariantConfiguration().getFlavorConfigs();
+    }
+
+    @Override
+    @Nullable
+    public String getVersionName() {
+        return getApkVariantData().getVariantConfiguration().getVersionName();
+    }
+
+    @Override
+    public int getVersionCode() {
+        return getApkVariantData().getVariantConfiguration().getVersionCode();
     }
 
     @Override
