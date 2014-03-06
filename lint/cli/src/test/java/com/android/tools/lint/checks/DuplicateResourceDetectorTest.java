@@ -57,6 +57,22 @@ public class DuplicateResourceDetectorTest extends AbstractCheckTest {
                         "res/values/duplicate-strings.xml"));
     }
 
+    public void testStyleItems() throws Exception {
+        assertEquals(""
+                + "res/values/duplicate-items.xml:7: Error: android:textColor has already been defined in this <style> [DuplicateDefinition]\n"
+                + "        <item name=\"android:textColor\">#ff0000</item>\n"
+                + "              ~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/duplicate-items.xml:5: Previously defined here\n"
+                + "res/values/duplicate-items.xml:13: Error: contentId has already been defined in this <declare-styleable> [DuplicateDefinition]\n"
+                + "        <attr name=\"contentId\" format=\"integer\" />\n"
+                + "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/duplicate-items.xml:11: Previously defined here\n"
+                + "2 errors, 0 warnings\n",
+
+                lintProject(
+                        "res/values/duplicate-items.xml"));
+    }
+
     public void testOk() throws Exception {
         assertEquals(
         "No warnings.",
