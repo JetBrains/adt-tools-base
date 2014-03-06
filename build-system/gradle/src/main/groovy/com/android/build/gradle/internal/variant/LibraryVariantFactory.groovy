@@ -276,10 +276,16 @@ public class LibraryVariantFactory implements VariantFactory {
                 project.file("$project.buildDir/$DIR_BUNDLES/${dirName}"),
                 variantData.getName()) {
 
-            @Nullable
             @Override
+            @Nullable
             String getProject() {
                 return project.path
+            }
+
+            @Override
+            @Nullable
+            String getProjectVariant() {
+                return variantData.getName()
             }
 
             @NonNull

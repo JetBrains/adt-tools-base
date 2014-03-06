@@ -29,13 +29,20 @@ import java.util.List;
 public interface AndroidLibrary {
 
     /**
-     * Returns the project identifier if the library is output
+     * Returns an optional project identifier if the library is output
      * by a module.
      *
      * @return the project identifier
      */
     @Nullable
     String getProject();
+
+    /**
+     * Returns an optional configuration name if the library is output by a module
+     * that publishes more than one variant.
+     */
+    @Nullable
+    String getProjectVariant();
 
     /**
      * Returns the location of the library aar bundle.
