@@ -55,6 +55,7 @@ import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
@@ -1213,6 +1214,9 @@ public class GradleImportTest extends TestCase {
                 new ImportCustomizer() {
                     @Override
                     public void customize(GradleImport importer) {
+                        assertFalse(importer.isImportIntoExisting());
+                        assertFalse(importer.isPerModuleRepositories());
+
                         importer.setGradleNameStyle(false);
                         importer.setSdkLocation(null);
                         importer.setReplaceJars(false);
@@ -2405,6 +2409,119 @@ public class GradleImportTest extends TestCase {
         deleteDir(imported);
     }
 
+
+    @SuppressWarnings({"ResultOfMethodCallIgnored", "SpellCheckingInspection"})
+    public void testImportModule() throws Exception {
+        // Create a Gradle project that we'll be importing a new module into
+        File projectDir = createProject("test1", "test.pkg");
+        File imported = checkProject(projectDir, ""
+                        + MSG_HEADER
+                        + MSG_FOLDER_STRUCTURE
+                        + DEFAULT_MOVED
+                        + MSG_FOOTER,
+                false /* checkBuild */);
+        // Pre-module import state of the Gradle project:
+        assertEquals(""
+                        + "app\n"
+                        + "  build.gradle\n"
+                        + "  src\n"
+                        + "    main\n"
+                        + "      AndroidManifest.xml\n"
+                        + "      java\n"
+                        + "        test\n"
+                        + "          pkg\n"
+                        + "            MyActivity.java\n"
+                        + "      res\n"
+                        + "        drawable\n"
+                        + "          ic_launcher.xml\n"
+                        + "        values\n"
+                        + "          strings.xml\n"
+                        + "build.gradle\n"
+                        + "import-summary.txt\n"
+                        + (getTestSdkPath() != null ? "local.properties\n" : "")
+                        + "settings.gradle\n",
+                fileTree(imported, true));
+
+        // Now create a second project, and import that as a *module*
+        File moduleDir = createProject("test2", "test.my.pkg");
+        File destDir = new File(imported, "newmodule");
+        destDir.mkdirs();
+        checkImport(imported, moduleDir, ""
+                        + MSG_HEADER
+                        + MSG_FOLDER_STRUCTURE
+                        + "* AndroidManifest.xml => newmodule/src/main/AndroidManifest.xml\n"
+                        + "* res/ => newmodule/src/main/res/\n"
+                        + "* src/ => newmodule/src/main/java/\n"
+                        + MSG_FOOTER,
+                true /* checkBuild */, null, destDir, imported);
+
+        // Imported contents
+        assertEquals(""
+                        + "build.gradle\n"
+                        + "src\n"
+                        + "  main\n"
+                        + "    AndroidManifest.xml\n"
+                        + "    java\n"
+                        + "      test\n"
+                        + "        my\n"
+                        + "          pkg\n"
+                        + "            MyActivity.java\n"
+                        + "    res\n"
+                        + "      drawable\n"
+                        + "        ic_launcher.xml\n"
+                        + "      values\n"
+                        + "        strings.xml\n",
+                fileTree(destDir, true));
+
+        // Check that it's in the right place:
+        assertEquals(""
+                        + "app\n"
+                        + "  build.gradle\n"
+                        + "  src\n"
+                        + "    main\n"
+                        + "      AndroidManifest.xml\n"
+                        + "      java\n"
+                        + "        test\n"
+                        + "          pkg\n"
+                        + "            MyActivity.java\n"
+                        + "      res\n"
+                        + "        drawable\n"
+                        + "          ic_launcher.xml\n"
+                        + "        values\n"
+                        + "          strings.xml\n"
+                        + "build.gradle\n"
+                        + "import-summary.txt\n"
+                        + (getTestSdkPath() != null ? "local.properties\n" : "")
+                        + "newmodule\n"
+                        + "  build.gradle\n"
+                        + "  src\n"
+                        + "    main\n"
+                        + "      AndroidManifest.xml\n"
+                        + "      java\n"
+                        + "        test\n"
+                        + "          my\n"
+                        + "            pkg\n"
+                        + "              MyActivity.java\n"
+                        + "      res\n"
+                        + "        drawable\n"
+                        + "          ic_launcher.xml\n"
+                        + "        values\n"
+                        + "          strings.xml\n"
+                        + "settings.gradle\n",
+                fileTree(imported, true));
+
+        // Make sure that settings.gradle did the right thing
+        assertEquals(""
+                        + "include ':app'\n"
+                        + "include ':test2'\n",
+                Files.toString(new File(imported, "settings.gradle"), UTF_8)
+                        .replace(NL, "\n"));
+
+        deleteDir(moduleDir);
+        deleteDir(projectDir);
+        deleteDir(imported);
+    }
+
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void testModuleNamesFromDir() throws Exception {
         // Regression test for issue where there is no .project file and
@@ -2895,9 +3012,28 @@ public class GradleImportTest extends TestCase {
             String expectedSummary, boolean checkBuild,
             ImportCustomizer customizer,
             File destDir, File rootDir) throws Exception {
+        return checkImport(null, adtProjectDir, expectedSummary, checkBuild, customizer, destDir,
+                rootDir);
+    }
+
+    private static File checkImport(
+            @Nullable File gradleProjectDir,
+            @NonNull File adtProjectDir,
+            @NonNull String expectedSummary,
+            boolean checkBuild,
+            ImportCustomizer customizer,
+            @NonNull File destDir,
+            @NonNull File rootDir) throws Exception {
         assertTrue(GradleImport.isAdtProjectDir(adtProjectDir));
         List<File> projects = Collections.singletonList(adtProjectDir);
         GradleImport importer = new GradleImport();
+
+        boolean isImport = gradleProjectDir != null;
+        if (isImport) {
+            importer.setImportIntoExisting(true);
+        } else {
+            gradleProjectDir = destDir;
+        }
 
         String sdkPath = getTestSdkPath();
         if (sdkPath != null) {
@@ -2915,8 +3051,14 @@ public class GradleImportTest extends TestCase {
         importer.importProjects(projects);
         importer.getSummary().setWrapErrorMessages(false);
 
-        importer.exportProject(destDir, false);
-        String summary = Files.toString(new File(destDir, IMPORT_SUMMARY_TXT), UTF_8);
+        if (isImport) {
+            Map<File,File> map = Maps.newHashMap();
+            map.put(adtProjectDir, destDir);
+            importer.exportIntoProject(gradleProjectDir, true, true, map);
+        } else {
+            importer.exportProject(destDir, false);
+        }
+        String summary = Files.toString(new File(gradleProjectDir, IMPORT_SUMMARY_TXT), UTF_8);
         summary = summary.replace("\r", "");
         summary = stripOutRiskyPathMessage(summary, rootDir);
 
@@ -2934,10 +3076,10 @@ public class GradleImportTest extends TestCase {
         assertEquals(expectedSummary, summary);
 
         if (checkBuild) {
-            assertBuildsCleanly(destDir, true);
+            assertBuildsCleanly(gradleProjectDir, true);
         }
 
-        return destDir;
+        return gradleProjectDir;
     }
 
     private static String stripOutRiskyPathMessage(String summary, File rootDir) {

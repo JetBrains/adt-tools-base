@@ -83,6 +83,11 @@ import javax.xml.parsers.DocumentBuilderFactory;
  * It currently only supports importing ADT projects, so it will require
  * some tweaks to handle importing from other types of projects.
  * <p>
+ * The importer primarily imports complete ADT projects into complete (new) Gradle
+ * projects, but it can also be used to import one or more ADT projects into an
+ * existing Gradle project as new modules. See {@link #exportIntoProject} for
+ * details on how to do this.
+ * <p>
  * TODO:
  * <ul>
  *     <li>Migrate SDK folder from local.properties. If should make doubly sure that
@@ -94,8 +99,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
  *     <li>Allow migrating a project in-place?</li>
  *     <li>If I have a workspace, check to see if there are problem markers and if
  *     so warn that the project may not be buildable</li>
- *     <li>Read SDK home out of local.properties and ask whether to use it or the Studio one
- *     (if they differ), and if the former, ensure it has all the gradle repositories we need</li>
  *     <li>Optional:  at the end of the import, migrate Eclipse settings too --
  *      such as code styles, compiler flags (especially those for the
  *      project), ask about enabling eclipse key bindings, etc?</li>
@@ -103,7 +106,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
  *     replacements such that users don't forget and consider switching in the future</li>
  *     <li>Figure out if we can reuse fragments from the default freemarker templates for
  *     the code generation part.</li>
- *     <li>Allow option to preserve module nesting hierarchy</li>
+ *     <li>Allow option to preserve module nesting hierarchy. It currently flattens.</li>
  *     <li>Make it possible to use this wizard to migrate an already exported Eclipse project?</li>
  *     <li>Consider making the export create an HTML file and open in browser?</li>
  * </ul>
@@ -155,6 +158,13 @@ public class GradleImport {
     private boolean mReplaceJars = true;
     /** Whether we should try to replace libs with dependencies */
     private boolean mReplaceLibs = true;
+    /** Whether the importer is in "import into existing project" mode. In that case,
+     * some differente choices are made; for example, we don't rewrite the module name
+     * to "app" when importing a single project; we preserve the project name.*/
+    private boolean mImportIntoExisting;
+    /** Whether we should emit per-module repository definitions */
+    @SuppressWarnings("PointlessBooleanExpression")
+    private boolean mPerModuleRepositories = !DECLARE_GLOBAL_REPOSITORIES;
 
     private final List<String> mWarnings = Lists.newArrayList();
     private final List<String> mErrors = Lists.newArrayList();
@@ -327,6 +337,36 @@ public class GradleImport {
     public GradleImport setGradleNameStyle(boolean lowerCase) {
         mGradleNameStyle = lowerCase;
         return this;
+    }
+
+    /** Whether we're in "import into existing project" mode, or import complete new project
+     * mode (the default) */
+    public boolean isImportIntoExisting() {
+        return mImportIntoExisting;
+    }
+
+    /** Sets whether we're in "import into existing project" mode, or import complete new project
+     * mode (the default). When importing into existing projects some different behaviors are
+     * applied; for example, we don't change the module name to "app" when there is just one
+     * project being imported. */
+    public void setImportIntoExisting(boolean importIntoExisting) {
+        mImportIntoExisting = importIntoExisting;
+    }
+
+    /**
+     * Returns whether the importer emits the repository definitions in each module's build.gradle
+     * rather than at the top level in the shared build.gradle
+     */
+    public boolean isPerModuleRepositories() {
+        return mPerModuleRepositories;
+    }
+
+    /**
+     * Sets whether the importer emits the repository definitions in each module's build.gradle
+     * rather than at the top level in the shared build.gradle
+     */
+    public void setPerModuleRepositories(boolean perModuleRepositories) {
+        mPerModuleRepositories = perModuleRepositories;
     }
 
     /** Whether import should lower-case module names from ADT project names */
@@ -559,7 +599,7 @@ public class GradleImport {
         mSummary.setDestDir(destDir);
         createDestDir(destDir, allowNonEmpty);
         createProjectBuildGradle(new File(destDir, FN_BUILD_GRADLE));
-        createSettingsGradle(new File(destDir, FN_SETTINGS_GRADLE));
+        exportSettingsGradle(new File(destDir, FN_SETTINGS_GRADLE), false);
 
         exportGradleWrapper(destDir);
         exportLocalProperties(destDir);
@@ -569,6 +609,66 @@ public class GradleImport {
         }
 
         mSummary.write(new File(destDir, IMPORT_SUMMARY_TXT));
+    }
+
+    /**
+     * Like {@link #exportProject(java.io.File, boolean)}, but writes into an existing
+     * project instead of creating a new one.
+     * <p>
+     * <b>NOTE</b>: When performing an import into an existing project, note that
+     * you should call {@link #setImportIntoExisting(boolean)} before the call to
+     * read in projects ({@link #importProjects(java.util.List)}. Note also that
+     * you should call {@link #setPerModuleRepositories(boolean)} with a suitable
+     * value based on whether the existing project defines shared repositories.
+     * This is similar to how we pass the "perModuleRepositories" variable to
+     * our Freemarker templates (such as
+     * templates/gradle-projects/NewAndroidModule/root/build.gradle.ftl ) so it
+     * can decide whether to include this info in the new module. In Studio we
+     * set it based on whether $PROJECT/build.gradle contains "repositories" (this
+     * is done in NewModuleWizard).
+     * </p>
+     *
+     * @param projectDir the root directory containing the project to write into
+     * @param updateSettings whether the importer should attempt to update the settings.gradle
+     *                       file in the project or not. Clients such as Android Studio may
+     *                       wish to pass false here in order to handle this part
+     * @param writeSummary whether we should generate an import summary
+     * @param destDirMap optional map from ADT project dir to destination directory to
+     *                   write each module as.
+     * @return the list of imported module directories
+     */
+    @NonNull
+    public List<File> exportIntoProject(@NonNull File projectDir, boolean updateSettings,
+            boolean writeSummary, @Nullable Map<File,File> destDirMap) throws IOException {
+        mSummary.setDestDir(projectDir);
+
+        List<File> imported = Lists.newArrayListWithExpectedSize(mRootModules.size());
+        for (ImportModule module : mRootModules) {
+            File moduleDir = null;
+            if (destDirMap != null) {
+                moduleDir = destDirMap.get(module.getDir());
+            }
+            if (moduleDir == null) {
+                moduleDir = new File(projectDir, module.getModuleName());
+                if (moduleDir.exists()) {
+                    module.pickUniqueName(projectDir);
+                    moduleDir = new File(projectDir, module.getModuleName());
+                    assert !moduleDir.exists();
+                }
+            }
+            exportModule(moduleDir, module);
+            imported.add(moduleDir);
+        }
+
+        if (updateSettings) {
+            exportSettingsGradle(new File(projectDir, FN_SETTINGS_GRADLE), true);
+        }
+
+        if (writeSummary) {
+            mSummary.write(new File(projectDir, IMPORT_SUMMARY_TXT));
+        }
+
+        return imported;
     }
 
     private void exportGradleWrapper(@NonNull File destDir) throws IOException {
@@ -647,7 +747,7 @@ public class GradleImport {
 
         if (module.isApp() || module.isAndroidLibrary()) {
             //noinspection PointlessBooleanExpression,ConstantConditions
-            if (!DECLARE_GLOBAL_REPOSITORIES) {
+            if (mPerModuleRepositories) {
                 appendRepositories(sb, true);
             }
 
@@ -659,7 +759,7 @@ public class GradleImport {
             }
             sb.append(NL);
             //noinspection PointlessBooleanExpression,ConstantConditions
-            if (!DECLARE_GLOBAL_REPOSITORIES) {
+            if (mPerModuleRepositories) {
                 sb.append("repositories {").append(NL);
                 sb.append("    ").append(MAVEN_REPOSITORY).append(NL);
                 sb.append("}").append(NL);
@@ -777,7 +877,7 @@ public class GradleImport {
 
         } else if (module.isJavaLibrary()) {
             //noinspection PointlessBooleanExpression,ConstantConditions
-            if (!DECLARE_GLOBAL_REPOSITORIES) {
+            if (mPerModuleRepositories) {
                 appendRepositories(sb, false);
             }
 
@@ -890,9 +990,9 @@ public class GradleImport {
         return sb.toString();
     }
 
-    private static void appendRepositories(@NonNull StringBuilder sb, boolean needAndroidPlugin) {
+    private void appendRepositories(@NonNull StringBuilder sb, boolean needAndroidPlugin) {
         //noinspection PointlessBooleanExpression,ConstantConditions
-        if (!DECLARE_GLOBAL_REPOSITORIES) {
+        if (mPerModuleRepositories) {
             sb.append("buildscript {").append(NL);
             sb.append("    repositories {").append(NL);
             sb.append("        ").append(MAVEN_REPOSITORY).append(NL);
@@ -906,13 +1006,13 @@ public class GradleImport {
         }
     }
 
-    private static void createProjectBuildGradle(@NonNull File file) throws IOException {
+    private void createProjectBuildGradle(@NonNull File file) throws IOException {
         StringBuilder sb = new StringBuilder();
         sb.append(
                 "// Top-level build file where you can add configuration options common to all sub-projects/modules.");
 
         //noinspection PointlessBooleanExpression,ConstantConditions
-        if (DECLARE_GLOBAL_REPOSITORIES) {
+        if (!mPerModuleRepositories) {
             sb.append(NL);
             sb.append("buildscript {").append(NL);
             sb.append("    repositories {").append(NL);
@@ -933,8 +1033,20 @@ public class GradleImport {
         Files.write(sb.toString(), file, UTF_8);
     }
 
-    private void createSettingsGradle(@NonNull File file) throws IOException {
+    private void exportSettingsGradle(@NonNull File file, boolean append) throws IOException {
         StringBuilder sb = new StringBuilder();
+        if (append) {
+            if (!file.exists()) {
+                append = false;
+            } else {
+                // Ensure that the new include statements are separate code statements, not
+                // for example inserted at the end of a // line comment
+                String existing = Files.toString(file, UTF_8);
+                if (!existing.endsWith(NL)) {
+                    sb.append(NL);
+                }
+            }
+        }
 
         for (ImportModule module : mRootModules) {
             sb.append("include '");
@@ -943,7 +1055,12 @@ public class GradleImport {
             sb.append(NL);
         }
 
-        Files.write(sb.toString(), file, UTF_8);
+        String code = sb.toString();
+        if (append) {
+            Files.append(code, file, UTF_8);
+        } else {
+            Files.write(code, file, UTF_8);
+        }
     }
 
     private void createDestDir(@NonNull File destDir, boolean allowNonEmpty) throws IOException {
