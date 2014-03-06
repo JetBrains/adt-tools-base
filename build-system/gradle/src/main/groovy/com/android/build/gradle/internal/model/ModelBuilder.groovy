@@ -46,7 +46,7 @@ import org.gradle.tooling.provider.model.ToolingModelBuilder
 import java.util.jar.Attributes
 import java.util.jar.Manifest
 
-import static com.android.builder.model.AndroidProject.ARTIFACT_INSTRUMENT_TEST
+import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN
 /**
  * Builder for the custom Android model.
@@ -87,7 +87,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         // plus the instrumentation test one.
         artifactMetaDataList.add(
                 new ArtifactMetaDataImpl(
-                        ARTIFACT_INSTRUMENT_TEST,
+                        ARTIFACT_ANDROID_TEST,
                         true /*isTest*/,
                         ArtifactMetaData.TYPE_ANDROID));
 
@@ -171,7 +171,7 @@ public class ModelBuilder implements ToolingModelBuilder {
 
         // extra Android Artifacts
         AndroidArtifact testArtifact = testVariantData != null ?
-                createArtifactInfo(ARTIFACT_INSTRUMENT_TEST, testVariantData, basePlugin, gradleProjects) : null
+                createArtifactInfo(ARTIFACT_ANDROID_TEST, testVariantData, basePlugin, gradleProjects) : null
 
         List<AndroidArtifact> extraAndroidArtifacts = Lists.newArrayList(
                 basePlugin.getExtraAndroidArtifacts(variantName))

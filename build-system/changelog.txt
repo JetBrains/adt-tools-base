@@ -1,6 +1,8 @@
 0.9.0:
 - Compatible with Gradle 1.10 and 1.11
-- DSL for Library DSL is now the same as for app projects, meaning you can create more Build Types, as well as Flavors.
+- BREAKING CHANGES:
+   * DSL for Library Projects is now the same as for app projects, meaning you can create more Build Types, as well as ProductFlavors.
+   * instrumentTest (both default folders and DSL objects) renamed androidTest
 - In preparation for a final variant publishing mechanism, flavors in Libraries can be published alongside the default configuration.
   The default publishing configuration is configured with
     android.defaultPublishConfig
