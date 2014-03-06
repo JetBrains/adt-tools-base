@@ -64,4 +64,12 @@ public class UselessViewDetectorTest extends AbstractCheckTest {
 
             lintFiles("res/layout/breadcrumbs_in_fragment.xml"));
     }
+
+    public void testUseless65519() throws Exception {
+        // https://code.google.com/p/android/issues/detail?id=65519
+        assertEquals(
+                "No warnings.",
+
+                lintFiles("res/layout/useless4.xml"));
+    }
 }
