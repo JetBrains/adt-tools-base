@@ -82,6 +82,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -113,6 +114,7 @@ import lombok.ast.StrictListAccessor;
 import lombok.ast.StringLiteral;
 import lombok.ast.SuperConstructorInvocation;
 import lombok.ast.Switch;
+import lombok.ast.Try;
 import lombok.ast.TypeReference;
 import lombok.ast.VariableDefinition;
 import lombok.ast.VariableDefinitionEntry;
@@ -1091,6 +1093,7 @@ public class ApiDetector extends ResourceXmlDetector
         types.add(ConstructorDeclaration.class);
         types.add(VariableDefinitionEntry.class);
         types.add(VariableReference.class);
+        types.add(Try.class);
         return types;
     }
 
@@ -1408,6 +1411,42 @@ public class ApiDetector extends ResourceXmlDetector
             mLocalVars = null;
             mCurrentMethod = node;
             return super.visitConstructorDeclaration(node);
+        }
+
+        @Override
+        public boolean visitTry(Try node) {
+            Object nativeNode = node.getNativeNode();
+            if (nativeNode != null && nativeNode.getClass().getName().equals(
+                    "org.eclipse.jdt.internal.compiler.ast.TryStatement")) {
+                boolean isTryWithResources = false;
+                try {
+                    Field field = nativeNode.getClass().getDeclaredField("resources");
+                    Object value = field.get(nativeNode);
+                    if (value instanceof Object[]) {
+                        Object[] resources = (Object[]) value;
+                        isTryWithResources = resources.length > 0;
+                    }
+                } catch (NoSuchFieldException e) {
+                    // Unexpected: ECJ parser internals have changed; can't detect try block
+                } catch (IllegalAccessException e) {
+                    // Unexpected: ECJ parser internals have changed; can't detect try block
+                }
+                if (isTryWithResources) {
+                    int minSdk = getMinSdk(mContext);
+                    int api = 19;  // minSdk for try with resources
+                    if (api > minSdk && api > getLocalMinSdk(node)) {
+                        Location location = mContext.getLocation(node);
+                        String message = String.format("Try-with-resources requires "
+                                + "API level %1$d (current min is %2$d)", api, minSdk);
+                        LintDriver driver = mContext.getDriver();
+                        if (!driver.isSuppressed(UNSUPPORTED, node)) {
+                            mContext.report(UNSUPPORTED, location, message, null);
+                        }
+                    }
+                }
+            }
+
+            return super.visitTry(node);
         }
 
         @Override
