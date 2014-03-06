@@ -2,16 +2,10 @@ apply plugin: 'groovy'
 apply plugin: 'clone-artifacts'
 apply plugin: 'idea'
 
-configurations {
-    gradleApi
-    compile.extendsFrom gradleApi
-    gradleApi.extendsFrom groovy
-}
-
 sourceSets {
     main {
-        groovy.srcDirs 'src/main/groovy', 'src/fromGradle/groovy'
-        resources.srcDirs 'src/main/resources', 'src/fromGradle/resources'
+        groovy.srcDirs = ['src/main/groovy', 'src/fromGradle/groovy']
+        resources.srcDirs = ['src/main/resources', 'src/fromGradle/resources']
     }
     buildTest {
         groovy.srcDir file('src/build-test/groovy')
@@ -24,13 +18,14 @@ sourceSets {
 }
 
 dependencies {
-    gradleApi gradleApi()
-    groovy localGroovy()
+    compile gradleApi()
+    compile localGroovy()
     compile project(':builder')
     compile project(':lint')
     compile 'net.sf.proguard:proguard-gradle:4.10'
 
     testCompile 'junit:junit:3.8.1'
+    
 
     buildTestCompile sourceSets.main.output
     buildTestCompile sourceSets.test.output
@@ -57,7 +52,6 @@ dependencies{
 //Include provided for compilation
 sourceSets.main.compileClasspath += configurations.provided
 
-/*
 idea {
     module {
         testSourceDirs += files('src/build-test/groovy', 'src/device-test/groovy').files
@@ -65,7 +59,6 @@ idea {
         scopes.COMPILE.plus += configurations.provided
     }
 }
-*/
 
 group = 'com.android.tools.build'
 archivesBaseName = 'gradle'
