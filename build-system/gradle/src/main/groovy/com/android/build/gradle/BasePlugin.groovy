@@ -247,7 +247,8 @@ public abstract class BasePlugin {
 
         extension = project.extensions.create('android', getExtensionClass(),
                 this, (ProjectInternal) project, instantiator,
-                buildTypeContainer, productFlavorContainer, signingConfigContainer)
+                buildTypeContainer, productFlavorContainer, signingConfigContainer,
+                this instanceof LibraryPlugin)
         setBaseExtension(extension)
 
         variantManager = new VariantManager(project, this, extension, getVariantFactory())

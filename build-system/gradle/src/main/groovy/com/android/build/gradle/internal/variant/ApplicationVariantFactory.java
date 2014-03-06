@@ -59,6 +59,11 @@ public class ApplicationVariantFactory implements VariantFactory {
         return false;
     }
 
+    @Override
+    public boolean isLibrary() {
+        return false;
+    }
+
     /**
      * Creates the tasks for a given ApplicationVariantData.
      * @param variantData the non-null ApplicationVariantData.

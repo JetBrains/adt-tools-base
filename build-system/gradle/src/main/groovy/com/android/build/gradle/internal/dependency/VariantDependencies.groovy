@@ -56,6 +56,7 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
     static VariantDependencies compute(@NonNull Project project,
                                        @NonNull String name,
                                                 boolean publishVariant,
+                                                boolean isLibrary,
                                        @NonNull ConfigurationProvider... providers) {
         Set<Configuration> compileConfigs = Sets.newHashSetWithExpectedSize(providers.length * 2)
         Set<Configuration> apkConfigs = Sets.newHashSetWithExpectedSize(providers.length)
@@ -76,15 +77,15 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
         compile.description = "## Internal use, do not manually configure ##"
         compile.setExtendsFrom(compileConfigs)
 
-        Configuration apk = project.configurations.create("_${name}Apk")
+        Configuration apk = project.configurations.create(isLibrary? "_${name}Publish" : "_${name}Apk")
         apk.description = "## Internal use, do not manually configure ##"
         apk.setExtendsFrom(apkConfigs)
 
         Configuration publish = null;
         if (publishVariant) {
             publish = project.configurations.create(name)
-            publish.description = "Publishing Configuration for Variant ${name}"
-            publish.setExtendsFrom(compileConfigs)
+            publish.description = "Published Configuration for Variant ${name}"
+            publish.setExtendsFrom(apkConfigs)
         }
 
         return new VariantDependencies(name, compile, apk, publish);
