@@ -25,6 +25,7 @@ import com.android.builder.DefaultProductFlavor;
 import com.android.builder.model.SigningConfig;
 import org.gradle.api.DefaultTask;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -77,6 +78,9 @@ public interface ApkVariant extends BaseVariant {
      */
     @Nullable
     ZipAlign getZipAlign();
+
+    @NonNull
+    ZipAlign createZipAlignTask(@NonNull String taskName, @NonNull File inputFile, @NonNull File outputFile);
 
     /**
      * Returns the installation task.

@@ -103,6 +103,8 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
         return getApkVariantData().isSigned();
     }
 
+    @Override
+    @NonNull
     public ZipAlign createZipAlignTask(
             @NonNull String taskName,
             @NonNull File inputFile,
