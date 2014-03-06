@@ -38,10 +38,29 @@ public class DeviceTest extends BuildTest {
     private String gradleVersion;
 
     private static final String[] sBuiltProjects = new String[] {
-        "api", "assets", "applibtest", "attrOrder", "basic", "dependencies", "flavored",
-        "flavorlib", "flavors", "libProguardJarDep", "libProguardLibDep", "libTestDep", "libsTest",
-        "migrated", "multires", "ndkJniLib", "overlay1", "overlay2", "pkgOverride", "proguard",
-        "proguardLib", "sameNamedLibs"
+            "api",
+            "assets",
+            "applibtest",
+            "attrOrder",
+            "basic",
+            "dependencies",
+            "flavored",
+            "flavorlib",
+            "flavors",
+            "libProguardJarDep",
+            "libProguardLibDep",
+            "libTestDep",
+            "libsTest",
+            "migrated",
+            "multires",
+            "ndkJniLib",
+            "ndkPrebuilts",
+            "overlay1",
+            "overlay2",
+            "pkgOverride",
+            "proguard",
+            "proguardLib",
+            "sameNamedLibs"
     };
 
     public static Test suite() {
