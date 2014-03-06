@@ -52,5 +52,4 @@ public class Utf8DetectorTest extends AbstractCheckTest {
             "No warnings.",
             lintProject("res/layout/layout1.xml"));
     }
-
 }
