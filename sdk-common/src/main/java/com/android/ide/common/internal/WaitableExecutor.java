@@ -45,17 +45,22 @@ public class WaitableExecutor<T> {
     private final CompletionService<T> mCompletionService;
     private final Set<Future<T>> mFutureSet = Sets.newHashSet();
 
-
+    /**
+     * Creates an executor that will use at most <var>nThreads</var> threads.
+     * @param nThreads the number of threads, or zero for default count (which is number of core *2)
+     */
     public WaitableExecutor(int nThreads) {
         if (nThreads < 1) {
-            mExecutorService = Executors.newCachedThreadPool();
-        } else {
-            mExecutorService = Executors.newFixedThreadPool(nThreads);
+            nThreads = Runtime.getRuntime().availableProcessors() * 2;
         }
 
+        mExecutorService = Executors.newFixedThreadPool(nThreads);
         mCompletionService = new ExecutorCompletionService<T>(mExecutorService);
     }
 
+    /**
+     * Creates an executor that will use at two thread per core.
+     */
     public WaitableExecutor() {
         this(0);
     }
