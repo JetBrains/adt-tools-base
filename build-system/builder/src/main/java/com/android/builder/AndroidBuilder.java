@@ -47,9 +47,10 @@ import com.android.builder.packaging.SigningException;
 import com.android.builder.signing.CertificateInfo;
 import com.android.builder.signing.KeystoreHelper;
 import com.android.builder.signing.KeytoolException;
-import com.android.ide.common.internal.AaptRunner;
+import com.android.ide.common.internal.AaptCruncher;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
+import com.android.ide.common.internal.PngCruncher;
 import com.android.manifmerger.ManifestMerger;
 import com.android.manifmerger.MergerLog;
 import com.android.sdklib.BuildToolInfo;
@@ -275,12 +276,12 @@ public class AndroidBuilder {
     }
 
     /**
-     * Returns an {@link AaptRunner} able to run aapt commands.
-     * @return an AaptRunner object
+     * Returns an {@link PngCruncher} using aapt underneath
+     * @return an PngCruncher object
      */
     @NonNull
-    public AaptRunner getAaptRunner() {
-        return new AaptRunner(
+    public PngCruncher getAaptCruncher() {
+        return new AaptCruncher(
                 mBuildTools.getPath(BuildToolInfo.PathId.AAPT),
                 mCmdLineRunner);
     }
