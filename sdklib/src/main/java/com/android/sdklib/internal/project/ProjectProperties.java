@@ -455,8 +455,10 @@ public class ProjectProperties implements IPropertySource {
     public static Map<String, String> parsePropertyFile(
             @NonNull IAbstractFile propFile,
             @Nullable ILogger log) {
+        InputStream is = null;
         try {
-            return parsePropertyStream(propFile.getContents(),
+            is = propFile.getContents();
+            return parsePropertyStream(is,
                                        propFile.getOsLocation(),
                                        log);
         } catch (StreamException e) {
@@ -465,7 +467,10 @@ public class ProjectProperties implements IPropertySource {
                         propFile.getOsLocation(),
                         e.getMessage());
             }
+        } finally {
+            Closeables.closeQuietly(is);
         }
+
 
         return null;
     }
@@ -497,6 +502,7 @@ public class ProjectProperties implements IPropertySource {
             @Nullable ILogger log) {
         BufferedReader reader = null;
         try {
+            //noinspection IOResourceOpenedButNotSafelyClosed
             reader = new BufferedReader(
                         new InputStreamReader(propStream, SdkConstants.INI_CHARSET));
 
@@ -504,7 +510,7 @@ public class ProjectProperties implements IPropertySource {
             Map<String, String> map = new HashMap<String, String>();
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
-                if (line.length() > 0 && line.charAt(0) != '#') {
+                if (!line.isEmpty() && line.charAt(0) != '#') {
 
                     Matcher m = PATTERN_PROP.matcher(line);
                     if (m.matches()) {

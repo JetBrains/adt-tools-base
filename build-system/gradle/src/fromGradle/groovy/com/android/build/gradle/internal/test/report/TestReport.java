@@ -15,6 +15,8 @@
  */
 package com.android.build.gradle.internal.test.report;
 
+import com.google.common.io.Closeables;
+
 import org.gradle.api.GradleException;
 import org.gradle.api.internal.tasks.testing.junit.report.LocaleSafeDecimalFormat;
 import org.gradle.reporting.HtmlReportRenderer;
@@ -23,11 +25,12 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
+
+import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * Custom test reporter based on Gradle's DefaultTestReport
@@ -65,8 +68,10 @@ public class TestReport {
     }
 
     private void mergeFromFile(File file, AllTestResults model) {
+        InputStream inputStream = null;
         try {
-            InputStream inputStream = new FileInputStream(file);
+            //noinspection IOResourceOpenedButNotSafelyClosed
+            inputStream = new FileInputStream(file);
             Document document;
             try {
                 document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(
@@ -123,6 +128,8 @@ public class TestReport {
             }
         } catch (Exception e) {
             throw new GradleException(String.format("Could not load test results from '%s'.", file), e);
+        } finally {
+            Closeables.closeQuietly(inputStream);
         }
     }
 
