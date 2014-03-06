@@ -49,14 +49,14 @@ import static com.android.SdkConstants.ATTR_PADDING_END;
 import static com.android.SdkConstants.ATTR_PADDING_LEFT;
 import static com.android.SdkConstants.ATTR_PADDING_RIGHT;
 import static com.android.SdkConstants.ATTR_PADDING_START;
-import static com.android.SdkConstants.TAG_APPLICATION;
 import static com.android.SdkConstants.GRAVITY_VALUE_END;
 import static com.android.SdkConstants.GRAVITY_VALUE_LEFT;
 import static com.android.SdkConstants.GRAVITY_VALUE_RIGHT;
 import static com.android.SdkConstants.GRAVITY_VALUE_START;
+import static com.android.SdkConstants.TAG_APPLICATION;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.VisibleForTesting;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -141,6 +141,17 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
 
         Category.RTL, 6, Severity.ERROR, IMPLEMENTATION).setEnabledByDefault(false);
 
+    public static final Issue SYMMETRY = Issue.create(
+            "RtlSymmetry", //$NON-NLS-1$
+            "Padding and margin symmetry",
+            "Ensures that specifying padding on one side is matched by padding on the other",
+
+            "If you specify padding or margin on the left side of a layout, you should " +
+            "probably also specify padding on the right side (and vice versa) for " +
+            "right-to-left layout symmetry.",
+
+            Category.RTL, 6, Severity.ERROR, IMPLEMENTATION).setEnabledByDefault(false);
+
 
     public static final Issue ENABLED = Issue.create(
         "RtlEnabled", //$NON-NLS-1$
@@ -191,6 +202,11 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
     /** API version in which RTL support was added */
     private static final int RTL_API = 17;
 
+    private static final String LEFT = "Left";
+    private static final String START = "Start";
+    private static final String RIGHT = "Right";
+    private static final String END = "End";
+
     private Boolean mEnabledRtlSupport;
     private boolean mUsesRtlAttributes;
 
@@ -215,6 +231,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             return false;
         }
 
+        //noinspection RedundantIfStatement
         if (mEnabledRtlSupport != null && !mEnabledRtlSupport) {
             return false;
         }
@@ -238,7 +255,8 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
 
     // ---- Implements XmlDetector ----
 
-    private static final String[] ATTRIBUTES = new String[] {
+    @VisibleForTesting
+    static final String[] ATTRIBUTES = new String[] {
             // Pairs, from left/right constants to corresponding start/end constants
             ATTR_LAYOUT_ALIGN_PARENT_LEFT,          ATTR_LAYOUT_ALIGN_PARENT_START,
             ATTR_LAYOUT_ALIGN_PARENT_RIGHT,         ATTR_LAYOUT_ALIGN_PARENT_END,
@@ -268,60 +286,34 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         }
     }
 
-    private static String convertOldToNew(String attribute) {
-        int index = attribute.indexOf("eft");  //$NON-NLS-1$
-        if (index == -1) {
-            index = attribute.indexOf("ight"); //$NON-NLS-1$
-            assert index > 0 : attribute;
-            if (attribute.charAt(index - 1) == 'R') {
-                return attribute.replace("Right", "End");
-            } else {
-                return attribute.replace("right", "end");
-            }
-        }
-        assert index > 0 : attribute;
-        if (attribute.charAt(index - 1) == 'L') {
-            return attribute.replace("Left", "Start");
+    @VisibleForTesting
+    static String convertOldToNew(String attribute) {
+        if (attribute.contains(LEFT)) {
+            return attribute.replace(LEFT, START);
         } else {
-            return attribute.replace("left", "start");
+            return attribute.replace(RIGHT, END);
         }
     }
 
-    private static String convertToOppositeDirection(String attribute) {
-        int index = attribute.indexOf("eft");  //$NON-NLS-1$
-        if (index == -1) {
-            index = attribute.indexOf("ight"); //$NON-NLS-1$
-            assert index > 0 : attribute;
-            if (attribute.charAt(index - 1) == 'R') {
-                return attribute.replace("Right", "Left");
-            } else {
-                return attribute.replace("right", "left");
-            }
-        }
-        assert index > 0 : attribute;
-        if (attribute.charAt(index - 1) == 'L') {
-            return attribute.replace("Left", "Right");
+    @VisibleForTesting
+    static String convertNewToOld(String attribute) {
+        if (attribute.contains(START)) {
+            return attribute.replace(START, LEFT);
         } else {
-            return attribute.replace("left", "right");
+            return attribute.replace(END, RIGHT);
         }
     }
 
-    private static String convertNewToOld(String attribute) {
-        int index = attribute.indexOf("tart");  //$NON-NLS-1$
-        if (index == -1) {
-            index = attribute.indexOf("nd"); //$NON-NLS-1$
-            assert index > 0 : attribute;
-            if (attribute.charAt(index - 1) == 'E') {
-                return attribute.replace("End", "Right");
-            } else {
-                return attribute.replace("end", "right");
-            }
-        }
-        assert index > 0 : attribute;
-        if (attribute.charAt(index - 1) == 'S') {
-            return attribute.replace("Start", "Left");
+    @VisibleForTesting
+    static String convertToOppositeDirection(String attribute) {
+        if (attribute.contains(LEFT)) {
+            return attribute.replace(LEFT, RIGHT);
+        } else if (attribute.contains(RIGHT)) {
+            return attribute.replace(RIGHT, LEFT);
+        } else if (attribute.contains(START)) {
+            return attribute.replace(START, END);
         } else {
-            return attribute.replace("start", "left");
+            return attribute.replace(END, START);
         }
     }
 
@@ -409,13 +401,16 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                         "To support older versions than API 17 (project specifies %1$d) "
                                 + "you must *also* specify gravity or layout_gravity=\"%2$s\"",
                         project.getMinSdk(), value);
-                context.report(COMPAT, attribute, context.getLocation(attribute), message, null);
+                if (context.isEnabled(COMPAT)) {
+                    context.report(COMPAT, attribute, context.getLocation(attribute), message,
+                            null);
+                }
                 return;
             } else {
                 return;
             }
 
-            if (!value.equals(gravity)) {
+            if (!value.equals(gravity) && context.isEnabled(COMPAT)) {
                 // TODO: Only compare horizontal alignment attributes?
                 String message = "Inconsistent alignment specification between "
                         + "textAlignment and gravity attributes";
@@ -438,8 +433,10 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                             + "right-to-left locales",
                     isLeft ? GRAVITY_VALUE_START : GRAVITY_VALUE_END,
                     isLeft ? GRAVITY_VALUE_LEFT : GRAVITY_VALUE_RIGHT);
-            context.report(USE_START, attribute, context.getLocation(attribute), message,
-                    null);
+            if (context.isEnabled(USE_START)) {
+                context.report(USE_START, attribute, context.getLocation(attribute), message,
+                        null);
+            }
 
             return;
         }
@@ -451,8 +448,30 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         // want to consider adding a specialized image in the -ldrtl folder as well
 
         Element element = attribute.getOwnerElement();
-        boolean isOld = name.contains("eft") || name.contains("ight"); //$NON-NLS-1$ //$NON-NLS-2$
+        boolean isPaddingAttribute = isPaddingAttribute(name);
+        if (isPaddingAttribute || isMarginAttribute(name)) {
+            String opposite = convertToOppositeDirection(name);
+            if (element.hasAttributeNS(ANDROID_URI, opposite)) {
+                String oldValue = element.getAttributeNS(ANDROID_URI, opposite);
+                if (value.equals(oldValue)) {
+                    return;
+                }
+            } else if (isPaddingAttribute
+                    && !element.hasAttributeNS(ANDROID_URI,
+                    isOldAttribute(opposite) ? convertOldToNew(opposite)
+                            : convertNewToOld(opposite)) && context.isEnabled(SYMMETRY)) {
+                String message = "When you define %1$s you should probably also define %2$s for "
+                        + "right-to-left symmetry";
+                context.report(SYMMETRY, attribute, context.getLocation(attribute),
+                        message, null);
+            }
+        }
+
+        boolean isOld = isOldAttribute(name);
         if (isOld) {
+            if (!context.isEnabled(USE_START)) {
+                return;
+            }
             String rtl = convertOldToNew(name);
             if (element.hasAttributeNS(ANDROID_URI, rtl)) {
                 if (project.getMinSdk() >= RTL_API || context.getFolderVersion() >= RTL_API) {
@@ -465,15 +484,6 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                             message, null);
                 }
             } else {
-                // For margins and padding, if the values are the same there's no problem
-                if (isPaddingAttribute(name) || isMarginAttribute(name)) {
-                    String opposite = convertToOppositeDirection(name);
-                    String oldValue = element.getAttributeNS(ANDROID_URI, opposite);
-                    if (value.equals(oldValue)) {
-                        return;
-                    }
-                }
-
                 String message;
                 if (project.getMinSdk() >= RTL_API || context.getFolderVersion() >= RTL_API) {
                     message = String.format(
@@ -490,7 +500,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                         message, null);
             }
         } else {
-            if (project.getMinSdk() >= RTL_API) {
+            if (project.getMinSdk() >= RTL_API || !context.isEnabled(COMPAT)) {
                 // Only supporting 17+: no need to define older attributes
                 return;
             }
@@ -509,6 +519,10 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                     project.getMinSdk(), attribute.getPrefix(), old, value);
             context.report(COMPAT, attribute, context.getLocation(attribute), message, null);
         }
+    }
+
+    private static boolean isOldAttribute(String name) {
+        return name.contains(LEFT) || name.contains(RIGHT);
     }
 
     private static boolean isMarginAttribute(@NonNull String name) {
