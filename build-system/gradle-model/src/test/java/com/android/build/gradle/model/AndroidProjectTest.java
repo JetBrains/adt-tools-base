@@ -164,7 +164,7 @@ public class AndroidProjectTest extends TestCase {
         AndroidProject model = projectData.model;
 
         assertFalse("Library Project", model.isLibrary());
-        assertEquals("Compile Target", "android-15", model.getCompileTarget());
+        assertEquals("Compile Target", "android-19", model.getCompileTarget());
         assertFalse("Non empty bootclasspath", model.getBootClasspath().isEmpty());
 
         JavaCompileOptions javaCompileOptions = model.getJavaCompileOptions();
