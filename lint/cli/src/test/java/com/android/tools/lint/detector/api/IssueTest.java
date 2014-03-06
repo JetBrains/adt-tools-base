@@ -99,7 +99,7 @@ public class IssueTest extends TestCase {
 
     public void testConvertMarkup2() throws Exception {
         // http at the end:
-        // Explanation from ManifestOrderDetector#TARGET_NEWER
+        // Explanation from ManifestDetector#TARGET_NEWER
         String explanation =
             "When your application runs on a version of Android that is more recent than your " +
             "targetSdkVersion specifies that it has been tested with, various compatibility " +
@@ -168,7 +168,7 @@ public class IssueTest extends TestCase {
 
     public void testConvertMarkup5() throws Exception {
         // monospace and bold test
-        // From ManifestOrderDetector#MULTIPLE_USES_SDK
+        // From ManifestDetector#MULTIPLE_USES_SDK
         String explanation =
             "The `<uses-sdk>` element should appear just once; the tools will *not* merge the " +
             "contents of all the elements so if you split up the atttributes across multiple " +
