@@ -238,4 +238,19 @@ public class TranslationDetectorTest extends AbstractCheckTest {
                         "locale33845/res/values-en-rGB/strings.xml=>res/values-en-rGB/strings.xml"
                 ));
     }
+
+    public void testIssue33845b() throws Exception {
+        // Similar to issue 33845, but with some variations to the test data
+        // See http://code.google.com/p/android/issues/detail?id=33845
+        assertEquals("No warnings.",
+
+                lintProject(
+                        "locale33845/.classpath=>.classpath",
+                        "locale33845/AndroidManifest.xml=>AndroidManifest.xml",
+                        "locale33845/project.properties=>project.properties",
+                        "locale33845/res/values/styles.xml=>res/values/styles.xml",
+                        "locale33845/res/values/strings2.xml=>res/values/strings.xml",
+                        "locale33845/res/values-en-rGB/strings2.xml=>res/values-en-rGB/strings.xml"
+                ));
+    }
 }
