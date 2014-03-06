@@ -95,30 +95,44 @@ class GatherNoticesTask extends BaseTask {
                                                 File repo, File noticeDir) {
         File toFile, fromFile
         Set<ResolvedArtifact> artifacts = configuration.resolvedConfiguration.resolvedArtifacts
+
+        System.out.println("")
+
         for (ResolvedArtifact artifact : artifacts) {
-            // check it's not an android artifact
-            if (!artifact.moduleVersion.id.group.startsWith("com.android.tools") &&
-                    !isLocalArtifact(artifact.moduleVersion.id)) {
-                if (artifact.type == "jar") {
-                    ModuleVersionIdentifier id = artifact.moduleVersion.id
-                    // manually look for the NOTICE file in the repo
-                    if (!dependencyCache.contains(id)) {
-                        dependencyCache.add(id)
+            System.out.print(" ${artifact.moduleVersion.id.toString()} ")
+            // check it's not an android artifact or a local artifact
+            if (isAndroidArtifact(artifact.moduleVersion.id)) {
+                System.out.println("SKIPPED (android)")
+            } else if (isLocalArtifact(artifact.moduleVersion.id)) {
+                System.out.println("  SKIPPED (local)")
+            } else if (!isValidArtifactType(artifact)) {
+                System.out.println("  SKIPPED (type = ${artifact.type})")
+            } else {
+                ModuleVersionIdentifier id = artifact.moduleVersion.id
+                // manually look for the NOTICE file in the repo
+                if (!dependencyCache.contains(id)) {
+                    dependencyCache.add(id)
 
-                        fromFile = new File(repo,
-                                id.group.replace('.', '/') +
-                                        '/' + id.name + '/' + id.version + '/NOTICE')
-                        if (!fromFile.isFile()) {
-                            throw new GradleException(
-                                    "Missing NOTICE file: " + fromFile.absolutePath)
-                        }
-
-                        toFile = new File(noticeDir, "NOTICE_" + artifact.file.name + ".txt")
-                        copyNoticeAndAddHeader(fromFile, toFile, artifact.file.name)
+                    fromFile = new File(repo,
+                            id.group.replace('.', '/') +
+                                    '/' + id.name + '/' + id.version + '/NOTICE')
+                    if (!fromFile.isFile()) {
+                        System.out.println("  Error: Missing NOTICE file")
+                        throw new GradleException(
+                                "Missing NOTICE file: " + fromFile.absolutePath)
                     }
+
+                    toFile = new File(noticeDir, "NOTICE_" + artifact.file.name + ".txt")
+
+                    System.out.println("  > ${toFile.absolutePath}")
+
+                    copyNoticeAndAddHeader(fromFile, toFile, artifact.file.name)
+                } else {
+                    System.out.println("  SKIPPED (already processed)")
                 }
             }
         }
+        System.out.println("")
     }
 
     private static void gatherNoticesFromFolder(File folder,

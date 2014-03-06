@@ -161,8 +161,7 @@ class ArtifactDownloader {
     private void pullArtifact(String[] repoUrls, ModuleVersionIdentifier artifact,
                               File rootDestination, Set<ModuleVersionIdentifier> downloadedSet) throws IOException {
         // ignore all android artifacts and already downloaded artifacts
-        if ((artifact.group.startsWith("com.android") && !artifact.group.startsWith("com.android.tools.external.")) ||
-                BaseTask.isLocalArtifact(artifact)) {
+        if (BaseTask.isAndroidArtifact(artifact) || BaseTask.isLocalArtifact(artifact)) {
             return
         }
 

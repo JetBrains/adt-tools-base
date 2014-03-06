@@ -24,7 +24,6 @@ import org.gradle.api.tasks.TaskAction
 class CopyDependenciesTask extends BaseTask {
 
     Project project
-
     File distributionDir
 
     @TaskAction
@@ -33,14 +32,22 @@ class CopyDependenciesTask extends BaseTask {
         Configuration configuration = project.configurations.compile
         Set<ResolvedArtifact> artifacts = configuration.resolvedConfiguration.resolvedArtifacts
         File dir = getDistributionDir()
+        System.out.println("")
         for (ResolvedArtifact artifact : artifacts) {
-            // check it's not an android artifact
-            if (!artifact.moduleVersion.id.group.startsWith("com.android.tools") &&
-                    !isLocalArtifact(artifact.moduleVersion.id)) {
-                if (artifact.type == "jar") {
-                    Files.copy(artifact.file, new File(dir, artifact.file.name))
-                }
+            System.out.print(" ${artifact.moduleVersion.id.toString()} ")
+            // check it's not an android artifact or a local artifact
+            if (isAndroidArtifact(artifact.moduleVersion.id)) {
+                System.out.println("SKIPPED (android)")
+            } else if (isLocalArtifact(artifact.moduleVersion.id)) {
+                System.out.println("  SKIPPED (local)")
+            } else if (!isValidArtifactType(artifact)) {
+                System.out.println("  SKIPPED (type = ${artifact.type})")
+            } else {
+                File dest = new File(dir, artifact.file.name)
+                System.out.println("  > ${dest.absolutePath}")
+                Files.copy(artifact.file, dest)
             }
         }
+        System.out.println("")
     }
 }
