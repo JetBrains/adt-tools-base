@@ -180,6 +180,10 @@ public class DeviceManager {
         if (d != null) {
             return d;
         }
+        d = getDeviceImpl(mSysImgDevices, id, manufacturer);
+        if (d != null) {
+            return d;
+        }
         d = getDeviceImpl(mDefaultDevices, id, manufacturer);
         if (d != null) {
             return d;

@@ -45,11 +45,17 @@ public class DeviceManagerTest extends SdkManagerTestCase {
     }
 
     /** Returns a list of just the devices' display names, for unit test comparisons. */
+    private static String listDisplayName(Device device) {
+        if (device == null) return null;
+        return device.getDisplayName();
+    }
+
+    /** Returns a list of just the devices' display names, for unit test comparisons. */
     private static List<String> listDisplayNames(List<Device> devices) {
         if (devices == null) return null;
         List<String> names = new ArrayList<String>();
         for (Device d : devices) {
-            names.add(d.getDisplayName());
+            names.add(listDisplayName(d));
         }
         return names;
     }
@@ -78,6 +84,9 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                  listDisplayNames(dm.getDevices(DeviceFilter.DEFAULT)).toString());
         assertEquals("", log.toString());
 
+        assertEquals("2.7\" QVGA",
+                listDisplayName(dm.getDevice("2.7in QVGA", "Generic")));
+
         // this list comes from the nexus.xml bundled in the JAR
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertEquals(
@@ -85,6 +94,9 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                  "Nexus 4, Nexus 10, Nexus 7, Nexus 5]",
                  listDisplayNames(dm.getDevices(DeviceFilter.VENDOR)).toString());
         assertEquals("", log.toString());
+
+        assertEquals("Nexus One",
+                listDisplayName(dm.getDevice("Nexus One", "Google")));
 
         assertEquals(
                 "[2.7\" QVGA, 2.7\" QVGA slider, 3.2\" HVGA slider (ADP1), 3.2\" QVGA (ADP2), " +
@@ -181,10 +193,14 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         assertEquals("[]", listDisplayNames(dm.getDevices(DeviceFilter.USER)).toString());
         assertEquals("", log.toString());
 
-        // no system-images devices defined in the SDK by default
+        // find the system-images specific device added by makeSystemImageFolder above
+        // using both the getDevices() API and the device-specific getDevice() API.
         assertEquals("[Mock Tag 1 Device Name]",
                 listDisplayNames(dm.getDevices(DeviceFilter.SYSTEM_IMAGES)).toString());
         assertEquals("", log.toString());
+
+        assertEquals("Mock Tag 1 Device Name",
+                listDisplayName(dm.getDevice("MockDevice-tag-1", "Mock Tag 1 OEM")));
 
         // this list comes from devices.xml bundled in the JAR
         // cf /sdklib/src/main/java/com/android/sdklib/devices/devices.xml

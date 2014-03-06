@@ -410,7 +410,7 @@ public class SdkManagerTestCase extends TestCase {
             List<Device> devices = new ArrayList<Device>();
             Builder b = new Device.Builder();
             b.setName("Mock " + tagDisplay + " Device Name");
-            b.setId("MockDevice" + tagId);
+            b.setId("MockDevice-" + tagId);
             b.setManufacturer("Mock " + tagDisplay + " OEM");
 
             Software sw = new Software();
