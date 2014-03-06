@@ -35,6 +35,7 @@ import static com.android.SdkConstants.VIEW_INCLUDE;
 import static com.android.SdkConstants.VIEW_TAG;
 
 import com.android.annotations.NonNull;
+import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.tools.lint.client.api.SdkInfo;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
@@ -180,7 +181,8 @@ public class InefficientWeightDetector extends LayoutDetector {
                 if (weightChild != null) {
                     // More than one child defining a weight!
                     multipleWeights = true;
-                } else if (!multipleWeights) {
+                } else //noinspection ConstantConditions
+                    if (!multipleWeights) {
                     weightChild = child;
                 }
 
@@ -235,9 +237,24 @@ public class InefficientWeightDetector extends LayoutDetector {
         } else if (children.isEmpty() && (orientation == null || orientation.isEmpty())
                 && context.isEnabled(ORIENTATION)
                 && element.hasAttributeNS(ANDROID_URI, ATTR_ID)) {
-            String message = "No orientation specified, and the default is horizontal. "
-                    + "This is a common source of bugs when children are added dynamically.";
-            context.report(ORIENTATION, element, context.getLocation(element), message, null);
+            boolean ignore;
+            if (element.hasAttribute(ATTR_STYLE)) {
+                if (context.getClient().supportsProjectResources()) {
+                    List<ResourceValue> values = LintUtils.getStyleAttributes(
+                            context.getMainProject(), context.getClient(),
+                            element.getAttribute(ATTR_STYLE), ANDROID_URI, ATTR_ORIENTATION);
+                    ignore = values != null && !values.isEmpty();
+                } else {
+                    ignore = true;
+                }
+            } else {
+                ignore = false;
+            }
+            if (!ignore) {
+                String message = "No orientation specified, and the default is horizontal. "
+                        + "This is a common source of bugs when children are added dynamically.";
+                context.report(ORIENTATION, element, context.getLocation(element), message, null);
+            }
         }
 
         if (context.isEnabled(BASELINE_WEIGHTS) && weightChild != null
@@ -277,9 +294,25 @@ public class InefficientWeightDetector extends LayoutDetector {
             }
             Attr sizeNode = weightChild.getAttributeNodeNS(ANDROID_URI, dimension);
             String size = sizeNode != null ? sizeNode.getValue() : "(undefined)";
+            if (sizeNode == null && weightChild.hasAttribute(ATTR_STYLE)) {
+                String style = weightChild.getAttribute(ATTR_STYLE);
+                List<ResourceValue> sizes = LintUtils.getStyleAttributes(context.getMainProject(),
+                        context.getClient(), style, ANDROID_URI, dimension);
+                if (sizes != null) {
+                    for (ResourceValue value : sizes) {
+                        String v = value.getValue();
+                        if (v != null) {
+                            size = v;
+                            if (v.startsWith("0")) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
             if (!size.startsWith("0")) { //$NON-NLS-1$
                 String msg = String.format(
-                        "Use a %1$s of 0dip instead of %2$s for better performance",
+                        "Use a %1$s of 0dp instead of %2$s for better performance",
                         dimension, size);
                 context.report(INEFFICIENT_WEIGHT,
                         weightChild,
@@ -334,10 +367,8 @@ public class InefficientWeightDetector extends LayoutDetector {
             if (noWidth && noHeight) {
                 return;
             }
-            assert noWidth || noHeight;
 
             if (noWidth) {
-                assert widthNode != null;
                 if (!hasWeight) {
                     context.report(WRONG_0DP, widthNode, context.getLocation(widthNode),
                         "Suspicious size: this will make the view invisible, should be " +
@@ -348,8 +379,6 @@ public class InefficientWeightDetector extends LayoutDetector {
                         "intended for layout_height", null);
                 }
             } else {
-                assert noHeight;
-                assert heightNode != null;
                 if (!hasWeight) {
                     context.report(WRONG_0DP, widthNode, context.getLocation(heightNode),
                         "Suspicious size: this will make the view invisible, should be " +

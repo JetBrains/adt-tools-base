@@ -82,4 +82,19 @@ public class ViewTypeDetectorTest extends AbstractCheckTest {
                 "src/test/pkg/WrongCastActivity3.java.txt=>src/test/pkg/WrongCastActivity3.java"
             ));
     }
+
+    public void testIncremental() throws Exception {
+        assertEquals(
+                "src/test/pkg/WrongCastActivity.java:13: Error: Unexpected cast to ToggleButton: layout tag was Button [WrongViewCast]\n" +
+                        "        ToggleButton toggleButton = (ToggleButton) findViewById(R.id.button);\n" +
+                        "                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+                        "1 errors, 0 warnings\n",
+
+                lintProjectIncrementally(
+                        "src/test/pkg/WrongCastActivity.java",
+                        "res/layout/casts.xml",
+                        "src/test/pkg/WrongCastActivity.java.txt=>src/test/pkg/WrongCastActivity.java"
+                ));
+    }
+
 }

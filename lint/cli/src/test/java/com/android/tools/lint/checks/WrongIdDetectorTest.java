@@ -144,4 +144,29 @@ public class WrongIdDetectorTest extends AbstractCheckTest {
 
                 lintFiles("res/layout/invalid_ids2.xml"));
     }
+
+    public void testIncremental() throws Exception {
+        assertEquals(
+            "res/layout/layout1.xml:14: Error: The id \"button5\" is not defined anywhere. Did you mean one of {button1, button2, button3, button4} ? [UnknownId]\n" +
+            "        android:layout_alignBottom=\"@+id/button5\"\n" +
+            "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "res/layout/layout1.xml:17: Error: The id \"my_id3\" is not defined anywhere. Did you mean one of {my_id1, my_id2} ? [UnknownId]\n" +
+            "        android:layout_alignRight=\"@+id/my_id3\"\n" +
+            "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "res/layout/layout1.xml:18: Error: The id \"my_id1\" is defined but not assigned to any views. Did you mean one of {my_id2, my_id3} ? [UnknownId]\n" +
+            "        android:layout_alignTop=\"@+id/my_id1\"\n" +
+            "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "res/layout/layout1.xml:15: Warning: The id \"my_id2\" is not referring to any views in this layout [UnknownIdInLayout]\n" +
+            "        android:layout_alignLeft=\"@+id/my_id2\"\n" +
+            "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "3 errors, 1 warnings\n",
+
+            lintProjectIncrementally(
+                    "res/layout/layout1.xml",
+
+                    "wrongid/layout1.xml=>res/layout/layout1.xml",
+                    "wrongid/layout2.xml=>res/layout/layout2.xml",
+                    "wrongid/ids.xml=>res/values/ids.xml"
+            ));
+    }
 }
