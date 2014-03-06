@@ -3,6 +3,9 @@
   <component name="EntryPointsManager">
     <entry_points version="2.0" />
   </component>
+  <component name="FrameworkDetectionExcludesConfiguration">
+    <type id="android" />
+  </component>
   <component name="IdProvider" IDEtalkID="DCEF6D5FAEEAA0E5B2200920077168C7" />
   <component name="NullableNotNullManager">
     <option name="myDefaultNullable" value="com.android.annotations.Nullable" />
