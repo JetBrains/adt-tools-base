@@ -10,7 +10,7 @@ apply plugin: 'android'
 
 android {
     compileSdkVersion 17
-    buildToolsVersion "19.0.1"
+    buildToolsVersion "19.0.2"
 
     defaultConfig {
         renderscriptTargetApi = 11
