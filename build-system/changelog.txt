@@ -1,10 +1,12 @@
 0.8.0
 
 - Support for Gradle 1.10
+- Requires Build-Tools 19.0.0+
 - Fixed issue 64302: Add renderscript support mode jar to the dependencies in the IDE model.
 - Fixed issue 64094: buildConfigField can now replace previous values inside the same type/flavors.
 - Add support for NDK prebuilts in library projects.
 - Parallelize pre-dexing to speed up clean builds.
+- Incremental dexing re-enabled (though it'll be automatically disabled in some builds for some cases that dx doesn't support yet.)
 - Added 'provided' dependency scope for compile only (not packaged) dependencies.
   Additional scope per buildtype and flavors are also available (debugProvided, myFlavorProvided,etc...)
 - Fix NDK on windows.

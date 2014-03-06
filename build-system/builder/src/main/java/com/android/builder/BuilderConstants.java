@@ -24,31 +24,31 @@ public class BuilderConstants {
     /**
      * Extension for library packages.
      */
-    public final static String EXT_LIB_ARCHIVE = "aar";
+    public static final String EXT_LIB_ARCHIVE = "aar";
 
     /**
      * The name of the default config.
      */
     public static final String MAIN = "main";
 
-    public final static String DEBUG = "debug";
-    public final static String RELEASE = "release";
+    public static final String DEBUG = "debug";
+    public static final String RELEASE = "release";
 
-    public final static String LINT = "lint";
+    public static final String LINT = "lint";
 
-    public final static String FD_REPORTS = "reports";
+    public static final String FD_REPORTS = "reports";
 
-    public final static String CONNECTED = "connected";
-    public final static String DEVICE = "device";
+    public static final String CONNECTED = "connected";
+    public static final String DEVICE = "device";
 
-    public final static String INSTRUMENT_TEST = "instrumentTest";
-    public final static String FD_INSTRUMENT_TESTS = "instrumentTests";
-    public final static String FD_INSTRUMENT_RESULTS = INSTRUMENT_TEST + "-results";
+    public static final String INSTRUMENT_TEST = "instrumentTest";
+    public static final String FD_INSTRUMENT_TESTS = "instrumentTests";
+    public static final String FD_INSTRUMENT_RESULTS = INSTRUMENT_TEST + "-results";
 
-    public final static String UI_TEST = "uiTest";
-    public final static String FD_UI_TESTS = "uiTests";
-    public final static String FD_UI_RESULTS = UI_TEST + "-results";
+    public static final String UI_TEST = "uiTest";
+    public static final String FD_UI_TESTS = "uiTests";
+    public static final String FD_UI_RESULTS = UI_TEST + "-results";
 
-    public final static String FD_FLAVORS = "flavors";
-    public final static String FD_FLAVORS_ALL = "all";
+    public static final String FD_FLAVORS = "flavors";
+    public static final String FD_FLAVORS_ALL = "all";
 }

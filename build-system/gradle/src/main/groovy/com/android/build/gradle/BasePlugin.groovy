@@ -282,6 +282,11 @@ public abstract class BasePlugin {
         }
         hasCreatedTasks = true
 
+        // check on the build tools version.
+        if (extension.buildToolsRevision.major < 19) {
+            throw new RuntimeException("Build Tools Revision 19.0.0+ is required.")
+        }
+
         doCreateAndroidTasks()
         createReportTasks()
 
@@ -1235,9 +1240,8 @@ public abstract class BasePlugin {
         dexTask.plugin = this
         dexTask.variant = variantData
 
-        dexTask.conventionMapping.outputFile = {
-            project.file(
-                    "${project.buildDir}/libs/${project.archivesBaseName}-${variantData.variantConfiguration.baseName}.dex")
+        dexTask.conventionMapping.outputFolder = {
+            project.file("${project.buildDir}/dex/${variantConfig.dirName}")
         }
         dexTask.dexOptions = extension.dexOptions
 
@@ -1249,11 +1253,10 @@ public abstract class BasePlugin {
 
             // then dexing task
             dexTask.dependsOn variantData.proguardTask
-            dexTask.conventionMapping.inputFiles = { project.files(outFile) }
-            dexTask.conventionMapping.preDexedLibraries = { Collections.emptyList() }
+            dexTask.conventionMapping.inputFiles = { project.files(outFile).files }
+            dexTask.conventionMapping.libraries = { Collections.emptyList() }
 
         } else {
-
             // if required, pre-dexing task.
             PreDex preDexTask = null;
             boolean runPreDex = extension.dexOptions.preDexLibraries
@@ -1280,14 +1283,14 @@ public abstract class BasePlugin {
                 dexTask.dependsOn preDexTask
             }
 
-            dexTask.conventionMapping.inputFiles = { variantData.javaCompileTask.outputs.files }
+            dexTask.conventionMapping.inputFiles = { variantData.javaCompileTask.outputs.files.files }
             if (runPreDex) {
-                dexTask.conventionMapping.preDexedLibraries = {
+                dexTask.conventionMapping.libraries = {
                     project.fileTree(preDexTask.outputFolder).files
                 }
             } else {
-                dexTask.conventionMapping.preDexedLibraries = {
-                    project.files(getAndroidBuilder(variantData).getPackagedJars(variantConfig))
+                dexTask.conventionMapping.libraries = {
+                    getAndroidBuilder(variantData).getPackagedJars(variantConfig)
                 }
             }
         }
@@ -1305,7 +1308,7 @@ public abstract class BasePlugin {
         packageApp.conventionMapping.resourceFile = {
             variantData.processResourcesTask.packageOutputFile
         }
-        packageApp.conventionMapping.dexFile = { dexTask.outputFile }
+        packageApp.conventionMapping.dexFolder = { dexTask.outputFolder }
         packageApp.conventionMapping.packagedJars = { getAndroidBuilder(variantData).getPackagedJars(variantConfig) }
         packageApp.conventionMapping.javaResourceDir = {
             getOptionalDir(variantData.processJavaResourcesTask.destinationDir)
