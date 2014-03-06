@@ -22,6 +22,9 @@ import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.sources.SdkSource;
+import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDesc;
 
 import java.io.File;
 import java.util.Properties;
@@ -130,6 +133,11 @@ public class MockEmptyPackage extends MajorRevisionPackage {
                     return mTestHandle;
                 }
             } };
+    }
+
+    @Override
+    public IPkgDesc getPkgDesc() {
+        return PkgDesc.newTool(new FullRevision(1, 2, 3, 4), FullRevision.NOT_SPECIFIED);
     }
 
     public Archive getLocalArchive() {

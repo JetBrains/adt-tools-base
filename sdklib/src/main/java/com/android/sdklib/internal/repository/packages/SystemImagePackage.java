@@ -28,8 +28,11 @@ import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
+import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDesc;
 
 import org.w3c.dom.Node;
 
@@ -49,6 +52,8 @@ public class SystemImagePackage extends MajorRevisionPackage
 
     /** The ABI of the system-image. Must not be null nor empty. */
     private final String mAbi;
+
+    private final IPkgDesc mPkgDesc;
 
     /**
      * Creates a new system-image package from the attributes and elements of the given XML node.
@@ -76,6 +81,8 @@ public class SystemImagePackage extends MajorRevisionPackage
         mVersion = new AndroidVersion(apiLevel, codeName);
 
         mAbi = PackageParserUtils.getXmlString(packageNode, SdkRepoConstants.NODE_ABI);
+
+        mPkgDesc = PkgDesc.newSysImg(mVersion, mAbi, (MajorRevision) getRevision());
     }
 
     @VisibleForTesting(visibility=Visibility.PRIVATE)
@@ -112,6 +119,8 @@ public class SystemImagePackage extends MajorRevisionPackage
         }
         assert abi != null : "To use this SystemImagePackage constructor you must pass an ABI as a parameter or as a PROP_ABI property";
         mAbi = abi;
+
+        mPkgDesc = PkgDesc.newSysImg(mVersion, mAbi, (MajorRevision) getRevision());
     }
 
     /**
@@ -179,10 +188,22 @@ public class SystemImagePackage extends MajorRevisionPackage
 
         String longDesc = sb.toString();
 
+        IPkgDesc desc = PkgDesc.newSysImg(
+                version != null ? version : new AndroidVersion(0, null),
+                abiType,
+                new MajorRevision(MajorRevision.MISSING_MAJOR_REV));
+
         return new BrokenPackage(props, shortDesc, longDesc,
                 IMinApiLevelDependency.MIN_API_LEVEL_NOT_SPECIFIED,
                 version==null ? IExactApiLevelDependency.API_LEVEL_INVALID : version.getApiLevel(),
-                abiDir.getAbsolutePath());
+                abiDir.getAbsolutePath(),
+                desc);
+    }
+
+    @Override
+    @NonNull
+    public IPkgDesc getPkgDesc() {
+        return mPkgDesc;
     }
 
     /**

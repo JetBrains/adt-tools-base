@@ -80,7 +80,7 @@ public abstract class FullRevisionPackage extends Package
         super(source, props, revision, license, description, descUrl,
                 archiveOs, archiveArch, archiveOsPath);
 
-        FullRevision rev = PackageParserUtils.getPropertyFullRevision(props);
+        FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
         if (rev == null) {
             rev = new FullRevision(revision);
         }

@@ -28,9 +28,12 @@ import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
+import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.sdklib.repository.SdkRepoConstants;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.local.LocalAddonPkgInfo;
 import com.android.utils.Pair;
 
@@ -55,6 +58,7 @@ public class AddonPackage extends MajorRevisionPackage
     private final String mNameId;
     private final String mDisplayName;
     private final AndroidVersion mVersion;
+    private final IPkgDesc mPkgDesc;
 
     /**
      * The helper handling the layoutlib version.
@@ -203,6 +207,8 @@ public class AddonPackage extends MajorRevisionPackage
                 PackageParserUtils.findChildElement(packageNode, SdkAddonConstants.NODE_LIBS));
 
         mLayoutlibVersion = new LayoutlibVersionMixin(packageNode);
+
+        mPkgDesc = PkgDesc.newAddon(mVersion, (MajorRevision) getRevision(), mVendorId, mNameId);
     }
 
     /**
@@ -299,6 +305,14 @@ public class AddonPackage extends MajorRevisionPackage
                 mLibs[i] = new Lib(optLibs[i].getName(), optLibs[i].getDescription());
             }
         }
+
+        mPkgDesc = PkgDesc.newAddon(mVersion, (MajorRevision) getRevision(), mVendorId, mNameId);
+    }
+
+    @Override
+    @NonNull
+    public IPkgDesc getPkgDesc() {
+        return mPkgDesc;
     }
 
     /**
@@ -343,14 +357,24 @@ public class AddonPackage extends MajorRevisionPackage
 
         try {
             apiLevel = Integer.parseInt(api);
-        } catch(NumberFormatException e) {
-            // ignore
-        }
+        } catch(NumberFormatException ignore) {}
+
+        int intRevision = MajorRevision.MISSING_MAJOR_REV;
+        try {
+            intRevision = Integer.parseInt(revision);
+        } catch (NumberFormatException ignore) {}
+
+        IPkgDesc desc = PkgDesc.newAddon(
+                new AndroidVersion(apiLevel, null),
+                new MajorRevision(intRevision),
+                vendor,
+                name);
 
         return new BrokenPackage(null/*props*/, shortDesc, longDesc,
                 IMinApiLevelDependency.MIN_API_LEVEL_NOT_SPECIFIED,
                 apiLevel,
-                archiveOsPath);
+                archiveOsPath,
+                desc);
     }
 
     @Override

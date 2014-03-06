@@ -18,27 +18,35 @@ package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.packages.DocPackage;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.repository.MajorRevision;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDesc;
 
 import java.io.File;
 import java.util.Properties;
 
-public class LocalDocPkgInfo extends LocalMajorRevisionPkgInfo {
+public class LocalDocPkgInfo extends LocalPkgInfo {
+
+    private final @NonNull IPkgDesc mDesc;
 
     public LocalDocPkgInfo(@NonNull LocalSdk localSdk,
                            @NonNull File localDir,
                            @NonNull Properties sourceProps,
+                           @NonNull AndroidVersion version,
                            @NonNull MajorRevision revision) {
-        super(localSdk, localDir, sourceProps, revision);
+        super(localSdk, localDir, sourceProps);
+        mDesc = PkgDesc.newDoc(version, revision);
     }
 
+    @NonNull
     @Override
-    public int getType() {
-        return LocalSdk.PKG_DOCS;
+    public IPkgDesc getDesc() {
+        return mDesc;
     }
 
     @Nullable
