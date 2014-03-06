@@ -793,7 +793,6 @@ public class GradleImportTest extends TestCase {
         deleteDir(imported);
     }
 
-
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void testReplaceSourceLibraryProject() throws Exception {
         // Make a library project which looks like it can just be replaced by a project
@@ -1052,7 +1051,7 @@ public class GradleImportTest extends TestCase {
                 + "\t<classpathentry exported=\"true\" kind=\"con\" path=\"com.android.ide.eclipse.adt.LIBRARIES\"/>\n"
                 + "\t<classpathentry combineaccessrules=\"false\" kind=\"src\" path=\"/android-support-v7-appcompat\"/>\n"
                 + "\t<classpathentry kind=\"output\" path=\"bin/classes\"/>\n"
-                + "</classpath>".replace('/', separatorChar),
+                + "</classpath>",
                 classpath, UTF_8);
 
         //noinspection SpellCheckingInspection

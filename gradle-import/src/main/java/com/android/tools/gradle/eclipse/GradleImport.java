@@ -350,7 +350,7 @@ public class GradleImport {
         if (mWorkspaceLocation != null) {
             // Is the file present directly in the workspace?
             char first = path.charAt(0);
-            if (first != '/' || first != separatorChar) {
+            if (first != '/') {
                 return null;
             }
             File f = new File(mWorkspaceLocation, path.substring(1).replace('/', separatorChar));
@@ -390,9 +390,6 @@ public class GradleImport {
                                             String name = project.getName();
                                             mWorkspaceProjects.put('/' + name, file);
                                             //noinspection ConstantConditions
-                                            if (separatorChar != '/') {
-                                                mWorkspaceProjects.put(separatorChar + name, file);
-                                            }
                                         }
                                     } catch (Throwable t) {
                                         // Ignore binary data we can't read
@@ -406,9 +403,6 @@ public class GradleImport {
                     }
                 }
             }
-
-            // Clean up path to ensure there is no / at the end etc
-            path = new File(path).getPath();
 
             // Is it just a project root?
             File project = mWorkspaceProjects.get(path);
