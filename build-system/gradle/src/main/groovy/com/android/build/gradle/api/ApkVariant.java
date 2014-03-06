@@ -43,13 +43,6 @@ public interface ApkVariant extends BaseVariant {
     List<DefaultProductFlavor> getProductFlavors();
 
     /**
-     * Returns a {@link com.android.builder.DefaultProductFlavor} that represents the merging
-     * of the default config and the flavors of this build variant.
-     */
-    @NonNull
-    DefaultProductFlavor getMergedFlavor();
-
-    /**
      * Returns the {@link SigningConfig} for this build variant,
      * if one has been specified.
      */

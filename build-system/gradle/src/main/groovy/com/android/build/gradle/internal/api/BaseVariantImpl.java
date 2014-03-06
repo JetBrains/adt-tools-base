@@ -80,10 +80,10 @@ abstract class BaseVariantImpl implements BaseVariant {
         return getVariantData().getVariantConfiguration().getBuildType();
     }
 
-    @NonNull
     @Override
-    public DefaultProductFlavor getConfig() {
-        return getVariantData().getVariantConfiguration().getDefaultConfig();
+    @NonNull
+    public DefaultProductFlavor getMergedFlavor() {
+        return getVariantData().getVariantConfiguration().getMergedFlavor();
     }
 
     @NonNull
