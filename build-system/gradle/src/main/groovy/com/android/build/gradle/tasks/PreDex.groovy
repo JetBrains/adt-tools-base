@@ -20,9 +20,11 @@ import com.android.build.gradle.internal.dsl.DexOptionsImpl
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.builder.AndroidBuilder
 import com.android.builder.DexOptions
+import com.google.common.collect.Sets
 import com.google.common.hash.HashCode
 import com.google.common.hash.HashFunction
 import com.google.common.hash.Hashing
+import com.google.common.io.Files
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputDirectory
@@ -59,8 +61,17 @@ public class PreDex extends BaseTask {
         }
 
         AndroidBuilder builder = getBuilder()
+        Set<String> hashs = Sets.newHashSet()
 
         taskInputs.outOfDate { change ->
+
+            // TODO remove once we can properly add a library as a dependency of its test.
+            String hash = getFileHash(change.file)
+            if (hashs.contains(hash)) {
+                return
+            }
+
+            hashs.add(hash)
 
             //noinspection GroovyAssignabilityCheck
             File preDexedFile = getDexFileName(outFolder, change.file)
@@ -76,6 +87,16 @@ public class PreDex extends BaseTask {
     }
 
     /**
+     * Returns the hash of a file.
+     * @param file the file to hash
+     * @return
+     */
+    private static String getFileHash(@NonNull File file) {
+        HashCode hashCode = Files.hash(file, Hashing.sha1())
+        return hashCode.toString()
+    }
+
+    /**
      * Returns a unique File for the pre-dexed library, even
      * if there are 2 libraries with the same file names (but different
      * paths)
@@ -87,17 +108,17 @@ public class PreDex extends BaseTask {
     @NonNull
     private static File getDexFileName(@NonNull File outFolder, @NonNull File inputFile) {
         // get the filename
-        String name = inputFile.getName();
+        String name = inputFile.getName()
         // remove the extension
-        int pos = name.lastIndexOf('.');
+        int pos = name.lastIndexOf('.')
         if (pos != -1) {
-            name = name.substring(0, pos);
+            name = name.substring(0, pos)
         }
 
         // add a hash of the original file path
-        HashFunction hashFunction = Hashing.md5();
-        HashCode hashCode = hashFunction.hashString(inputFile.getAbsolutePath());
+        HashFunction hashFunction = Hashing.sha1()
+        HashCode hashCode = hashFunction.hashString(inputFile.getAbsolutePath())
 
-        return new File(outFolder, name + "-" + hashCode.toString() + SdkConstants.DOT_JAR);
+        return new File(outFolder, name + "-" + hashCode.toString() + SdkConstants.DOT_JAR)
     }
 }

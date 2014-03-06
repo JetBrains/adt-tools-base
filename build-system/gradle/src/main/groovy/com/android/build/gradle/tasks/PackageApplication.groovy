@@ -62,7 +62,7 @@ public class PackageApplication extends IncrementalTask implements OutputFileTas
     @Nested @Optional
     SigningConfigDsl signingConfig
 
-    @Nested @Optional
+    @Nested
     PackagingOptionsImpl packagingOptions
 
     @InputFiles

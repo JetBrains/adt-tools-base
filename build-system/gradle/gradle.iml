@@ -10,22 +10,48 @@
       <sourceFolder url="file://$MODULE_DIR$/src/test/groovy" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/device-test/groovy" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/build-test/groovy" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/../../../../out/host/gradle/tools/base/gradle" />
+      <excludeFolder url="file://$MODULE_DIR$/.gradle" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" exported="" scope="TEST" name="JUnit3" level="project" />
+    <orderEntry type="library" exported="" name="proguard-gradle" level="project" />
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/groovy-all-1.8.6.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/net/sf/proguard/proguard-gradle/4.10/proguard-gradle-4.10.jar!/" />
         </CLASSES>
         <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/net/sf/proguard/proguard-gradle/4.10/proguard-gradle-4.10-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/net/sf/proguard/proguard-base/4.10/proguard-base-4.10.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/net/sf/proguard/proguard-base/4.10/proguard-base-4.10-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/groovy-all-1.8.6.jar!/" />
+        </CLASSES>
+        <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/gradle-core-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/gradle-core-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -34,7 +60,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/asm-all-4.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/asm-all-4.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -43,7 +69,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/ant-1.9.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/ant-1.9.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -52,7 +78,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/commons-collections-3.2.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/commons-collections-3.2.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -61,7 +87,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/commons-io-1.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/commons-io-1.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -70,7 +96,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/commons-lang-2.6.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/commons-lang-2.6.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -79,7 +105,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/ivy-2.2.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/ivy-2.2.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -88,7 +114,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/logback-core-1.0.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/logback-core-1.0.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -97,7 +123,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/logback-classic-1.0.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/logback-classic-1.0.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -106,7 +132,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/guava-jdk5-14.0.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/guava-jdk5-14.0.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -115,7 +141,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/jcip-annotations-1.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/jcip-annotations-1.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -124,7 +150,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/jul-to-slf4j-1.7.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/jul-to-slf4j-1.7.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -133,7 +159,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/jarjar-1.3.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/jarjar-1.3.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -142,7 +168,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/javax.inject-1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/javax.inject-1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -151,7 +177,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/slf4j-api-1.7.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/slf4j-api-1.7.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -160,7 +186,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/log4j-over-slf4j-1.7.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/log4j-over-slf4j-1.7.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -169,7 +195,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/jcl-over-slf4j-1.7.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/jcl-over-slf4j-1.7.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -178,7 +204,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/ant-launcher-1.9.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/ant-launcher-1.9.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -187,7 +213,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/jsch-0.1.46.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/jsch-0.1.46.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -196,7 +222,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/gradle-docs-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/gradle-docs-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -205,7 +231,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/gradle-base-services-groovy-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/gradle-base-services-groovy-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -214,7 +240,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/gradle-base-services-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/gradle-base-services-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -223,7 +249,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/gradle-resources-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/gradle-resources-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -232,7 +258,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/gradle-cli-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/gradle-cli-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -241,7 +267,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/gradle-native-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/gradle-native-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -250,7 +276,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/jna-3.2.7.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/jna-3.2.7.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -259,7 +285,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/native-platform-0.3-rc-2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/native-platform-0.3-rc-2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -268,7 +294,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/jna-posix-1.0.3.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/jna-posix-1.0.3.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -277,7 +303,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/jansi-1.2.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/jansi-1.2.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -286,7 +312,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/native-platform-osx-universal-0.3-rc-2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/native-platform-osx-universal-0.3-rc-2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -295,7 +321,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/native-platform-linux-amd64-0.3-rc-2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/native-platform-linux-amd64-0.3-rc-2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -304,7 +330,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/native-platform-linux-i386-0.3-rc-2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/native-platform-linux-i386-0.3-rc-2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -313,7 +339,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/native-platform-windows-amd64-0.3-rc-2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/native-platform-windows-amd64-0.3-rc-2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -322,7 +348,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/native-platform-windows-i386-0.3-rc-2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/native-platform-windows-i386-0.3-rc-2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -331,7 +357,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/gradle-messaging-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/gradle-messaging-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -340,7 +366,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/kryo-2.20.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/kryo-2.20.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -349,7 +375,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/asm-4.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/asm-4.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -358,7 +384,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/reflectasm-1.07-shaded.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/reflectasm-1.07-shaded.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -367,7 +393,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/minlog-1.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/minlog-1.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -376,7 +402,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/objenesis-1.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/objenesis-1.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -385,7 +411,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-core-impl-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-core-impl-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -394,7 +420,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-maven-settings-3.0.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-maven-settings-3.0.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -403,7 +429,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-maven-repository-metadata-3.0.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-maven-repository-metadata-3.0.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -412,7 +438,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-plexus-container-default-1.5.5.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-plexus-container-default-1.5.5.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -421,7 +447,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-maven-aether-provider-3.0.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-maven-aether-provider-3.0.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -430,7 +456,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-wagon-provider-api-2.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-wagon-provider-api-2.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -439,7 +465,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-plexus-cipher-1.7.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-plexus-cipher-1.7.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -448,7 +474,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-plexus-interpolation-1.14.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-plexus-interpolation-1.14.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -457,7 +483,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-plexus-utils-2.0.6.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-plexus-utils-2.0.6.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -466,7 +492,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-plexus-classworlds-2.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-plexus-classworlds-2.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -475,7 +501,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-maven-plugin-api-3.0.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-maven-plugin-api-3.0.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -484,7 +510,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-maven-model-builder-3.0.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-maven-model-builder-3.0.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -493,7 +519,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-plexus-sec-dispatcher-1.3.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-plexus-sec-dispatcher-1.3.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -502,7 +528,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-plexus-component-annotations-1.5.5.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-plexus-component-annotations-1.5.5.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -511,7 +537,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-aether-connector-wagon-1.13.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-aether-connector-wagon-1.13.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -520,7 +546,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-maven-compat-3.0.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-maven-compat-3.0.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -529,7 +555,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-wagon-http-2.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-wagon-http-2.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -538,7 +564,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-aether-api-1.13.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-aether-api-1.13.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -547,7 +573,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-maven-settings-builder-3.0.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-maven-settings-builder-3.0.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -556,7 +582,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-aether-spi-1.13.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-aether-spi-1.13.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -565,7 +591,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-maven-core-3.0.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-maven-core-3.0.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -574,7 +600,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-wagon-http-shared4-2.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-wagon-http-shared4-2.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -583,7 +609,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-aether-util-1.13.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-aether-util-1.13.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -592,7 +618,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-maven-artifact-3.0.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-maven-artifact-3.0.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -601,7 +627,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-maven-model-3.0.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-maven-model-3.0.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -610,7 +636,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jarjar-aether-impl-1.13.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jarjar-aether-impl-1.13.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -619,7 +645,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/httpclient-4.2.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/httpclient-4.2.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -628,7 +654,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/maven-ant-tasks-2.1.3.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/maven-ant-tasks-2.1.3.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -637,7 +663,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/nekohtml-1.9.14.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/nekohtml-1.9.14.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -646,7 +672,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/xbean-reflect-3.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/xbean-reflect-3.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -655,7 +681,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/commons-codec-1.6.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/commons-codec-1.6.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -664,7 +690,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/httpcore-4.2.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/httpcore-4.2.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -673,7 +699,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jcifs-1.3.17.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jcifs-1.3.17.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -682,7 +708,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/xml-apis-1.3.04.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/xml-apis-1.3.04.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -691,7 +717,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/xercesImpl-2.9.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/xercesImpl-2.9.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -700,7 +726,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/gradle-tooling-api-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/gradle-tooling-api-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -709,7 +735,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-plugins-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-plugins-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -718,7 +744,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/junit-4.11.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/junit-4.11.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -727,7 +753,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/testng-6.3.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/testng-6.3.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -736,7 +762,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/commons-cli-1.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/commons-cli-1.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -745,7 +771,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/bsh-2.0b4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/bsh-2.0b4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -754,7 +780,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jcommander-1.12.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jcommander-1.12.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -763,7 +789,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/snakeyaml-1.6.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/snakeyaml-1.6.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -772,7 +798,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/hamcrest-core-1.3.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/hamcrest-core-1.3.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -781,7 +807,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-code-quality-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-code-quality-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -790,7 +816,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-jetty-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-jetty-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -799,7 +825,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jetty-6.1.25.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jetty-6.1.25.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -808,7 +834,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jetty-util-6.1.25.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jetty-util-6.1.25.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -817,7 +843,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/servlet-api-2.5-20081211.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/servlet-api-2.5-20081211.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -826,7 +852,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jetty-plus-6.1.25.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jetty-plus-6.1.25.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -835,7 +861,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jsp-2.1-6.1.14.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jsp-2.1-6.1.14.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -844,7 +870,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jetty-annotations-6.1.25.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jetty-annotations-6.1.25.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -853,7 +879,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/geronimo-annotation_1.0_spec-1.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/geronimo-annotation_1.0_spec-1.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -862,7 +888,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jetty-naming-6.1.25.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jetty-naming-6.1.25.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -871,7 +897,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/core-3.1.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/core-3.1.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -880,7 +906,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jsp-api-2.1-6.1.14.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jsp-api-2.1-6.1.14.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -889,7 +915,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-antlr-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-antlr-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -898,7 +924,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/ant-antlr-1.9.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/ant-antlr-1.9.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -907,7 +933,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/antlr-2.7.7.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/antlr-2.7.7.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -916,7 +942,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/gradle-wrapper-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/gradle-wrapper-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -925,7 +951,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-osgi-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-osgi-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -934,7 +960,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/bndlib-2.1.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/bndlib-2.1.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -943,7 +969,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-maven-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-maven-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -952,7 +978,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/pmaven-common-0.8-20100325.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/pmaven-common-0.8-20100325.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -961,7 +987,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/pmaven-groovy-0.8-20100325.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/pmaven-groovy-0.8-20100325.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -970,7 +996,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/plexus-component-annotations-1.5.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/plexus-component-annotations-1.5.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -979,7 +1005,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-ide-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-ide-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -988,7 +1014,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-announce-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-announce-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -997,7 +1023,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-scala-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-scala-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1006,7 +1032,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-sonar-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-sonar-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1015,7 +1041,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/sonar-runner-2.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/sonar-runner-2.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1024,7 +1050,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/sonar-batch-bootstrapper-2.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/sonar-batch-bootstrapper-2.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1033,7 +1059,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-signing-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-signing-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1042,7 +1068,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/bcpg-jdk15-1.46.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/bcpg-jdk15-1.46.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1051,7 +1077,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/bcprov-jdk15-1.46.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/bcprov-jdk15-1.46.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1060,7 +1086,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-cpp-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-cpp-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1069,7 +1095,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-ear-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-ear-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1078,7 +1104,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-javascript-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-javascript-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1087,7 +1113,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/rhino-1.7R3.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/rhino-1.7R3.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1096,7 +1122,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gson-2.2.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gson-2.2.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1105,7 +1131,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/simple-4.1.21.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/simple-4.1.21.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1114,7 +1140,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-build-comparison-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-build-comparison-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1123,7 +1149,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-diagnostics-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-diagnostics-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1132,7 +1158,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-reporting-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-reporting-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1141,7 +1167,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/jatl-0.2.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/jatl-0.2.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1150,7 +1176,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-publish-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-publish-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1159,7 +1185,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-ivy-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-ivy-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1168,7 +1194,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-jacoco-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-jacoco-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1177,7 +1203,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-build-init-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-build-init-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1186,7 +1212,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-language-jvm-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-language-jvm-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1195,16 +1221,25 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../out/host/gradle/tools/build/.gradle/wrapper/dists/gradle-1.9-bin/57mc7p3gas7d7kj33rqr8ak2qt/gradle-1.9/lib/plugins/gradle-language-base-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/host/gradle/tools/base/.gradle/wrapper/dists/gradle-1.9-bin/3164d50v735ji3vvds6aeni47e/gradle-1.9/lib/plugins/gradle-language-base-1.9.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="builder" exported="" />
-    <orderEntry type="library" exported="" scope="TEST" name="JUnit3" level="project" />
-    <orderEntry type="module" module-name="lint-cli" exported="" />
-    <orderEntry type="library" exported="" name="proguard-gradle" level="project" />
+    <orderEntry type="module" module-name="lint" exported="" />
+    <orderEntry type="module-library" scope="TEST">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/junit/junit/3.8.1/junit-3.8.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/junit/junit/3.8.1/junit-3.8.1-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
   </component>
 </module>
 

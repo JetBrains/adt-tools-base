@@ -1312,9 +1312,7 @@ public abstract class BasePlugin {
             "${project.archivesBaseName}-${variantData.variantConfiguration.baseName}-unaligned.apk" :
             "${project.archivesBaseName}-${variantData.variantConfiguration.baseName}-unsigned.apk"
 
-        packageApp.conventionMapping.packagingOptions = {
-            extension instanceof AppExtension ? extension.packagingOptions : null
-        }
+        packageApp.conventionMapping.packagingOptions = { extension.packagingOptions }
 
         packageApp.conventionMapping.outputFile = {
             project.file("$project.buildDir/apk/${apkName}")
