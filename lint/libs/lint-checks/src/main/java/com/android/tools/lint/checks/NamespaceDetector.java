@@ -64,7 +64,7 @@ public class NamespaceDetector extends LayoutDetector {
             "help track these down.",
             Category.CORRECTNESS,
             8,
-            Severity.WARNING,
+            Severity.FATAL,
             IMPLEMENTATION);
 
     /** Unused namespace declarations */
@@ -94,7 +94,7 @@ public class NamespaceDetector extends LayoutDetector {
             "application project.",
             Category.CORRECTNESS,
             6,
-            Severity.ERROR,
+            Severity.FATAL,
             IMPLEMENTATION);
 
     /** Unused namespace declarations */
@@ -112,7 +112,7 @@ public class NamespaceDetector extends LayoutDetector {
 
             Category.CORRECTNESS,
             9,
-            Severity.ERROR,
+            Severity.FATAL,
             IMPLEMENTATION);
 
 

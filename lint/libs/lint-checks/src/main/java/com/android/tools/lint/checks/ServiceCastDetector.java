@@ -55,7 +55,7 @@ public class ServiceCastDetector extends Detector implements Detector.JavaScanne
 
             Category.CORRECTNESS,
             6,
-            Severity.ERROR,
+            Severity.FATAL,
             new Implementation(
                     ServiceCastDetector.class,
                     Scope.JAVA_FILE_SCOPE));

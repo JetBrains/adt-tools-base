@@ -32,8 +32,8 @@ public class PrivateKeyDetectorTest extends AbstractCheckTest {
 
     public void testPrivateKey() throws Exception {
         assertEquals(
-                "res/private_key.pem: Warning: The res/private_key.pem file seems to be a private key file. Please make sure not to embed this in your APK file. [PackagedPrivateKey]\n" +
-                "0 errors, 1 warnings\n",
+                "res/private_key.pem: Error: The res/private_key.pem file seems to be a private key file. Please make sure not to embed this in your APK file. [PackagedPrivateKey]\n" +
+                "1 errors, 0 warnings\n",
                 lintProject(
                     // Not a private key file
                     "res/values/strings.xml=>res/values/strings/xml",

@@ -79,7 +79,7 @@ public class PluralsDetector extends ResourceXmlDetector {
             "Similarly, a Czech translation must provide a string for `quantity=\"few\"`.",
             Category.MESSAGES,
             8,
-            Severity.WARNING,
+            Severity.ERROR,
             IMPLEMENTATION).addMoreInfo(
             "http://developer.android.com/guide/topics/resources/string-resource.html#Plurals");
 

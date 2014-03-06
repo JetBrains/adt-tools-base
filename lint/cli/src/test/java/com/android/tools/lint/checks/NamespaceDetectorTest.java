@@ -81,49 +81,46 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
 
     public void testTypo() throws Exception {
         assertEquals(
-            "res/layout/wrong_namespace.xml:2: Warning: Unexpected namespace URI bound to the \"android\" prefix, was http://schemas.android.com/apk/res/andriod, expected http://schemas.android.com/apk/res/android [NamespaceTypo]\n" +
+            "res/layout/wrong_namespace.xml:2: Error: Unexpected namespace URI bound to the \"android\" prefix, was http://schemas.android.com/apk/res/andriod, expected http://schemas.android.com/apk/res/android [NamespaceTypo]\n" +
             "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/andriod\"\n" +
             "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 1 warnings\n" +
-            "",
+            "1 errors, 0 warnings\n",
 
             lintProject("res/layout/wrong_namespace.xml"));
     }
 
     public void testTypo2() throws Exception {
         assertEquals(
-            "res/layout/wrong_namespace2.xml:2: Warning: URI is case sensitive: was \"http://schemas.android.com/apk/res/Android\", expected \"http://schemas.android.com/apk/res/android\" [NamespaceTypo]\n" +
+            "res/layout/wrong_namespace2.xml:2: Error: URI is case sensitive: was \"http://schemas.android.com/apk/res/Android\", expected \"http://schemas.android.com/apk/res/android\" [NamespaceTypo]\n" +
             "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/Android\"\n" +
             "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 1 warnings\n" +
-            "",
+            "1 errors, 0 warnings\n",
 
             lintProject("res/layout/wrong_namespace2.xml"));
     }
 
     public void testTypo3() throws Exception {
         assertEquals(
-            "res/layout/wrong_namespace3.xml:2: Warning: Unexpected namespace URI bound to the \"android\" prefix, was http://schemas.android.com/apk/res/androi, expected http://schemas.android.com/apk/res/android [NamespaceTypo]\n" +
+            "res/layout/wrong_namespace3.xml:2: Error: Unexpected namespace URI bound to the \"android\" prefix, was http://schemas.android.com/apk/res/androi, expected http://schemas.android.com/apk/res/android [NamespaceTypo]\n" +
             "<LinearLayout xmlns:a=\"http://schemas.android.com/apk/res/androi\"\n" +
             "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 1 warnings\n" +
-            "",
+            "1 errors, 0 warnings\n",
 
             lintProject("res/layout/wrong_namespace3.xml"));
     }
 
     public void testTypo4() throws Exception {
         assertEquals(
-            "res/layout/wrong_namespace5.xml:2: Warning: Suspicious namespace: should start with http:// [NamespaceTypo]\n" +
+            "res/layout/wrong_namespace5.xml:2: Error: Suspicious namespace: should start with http:// [NamespaceTypo]\n" +
             "    xmlns:noturi=\"tp://schems.android.com/apk/res/com.my.package\"\n" +
             "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "res/layout/wrong_namespace5.xml:3: Warning: Possible typo in URL: was \"http://schems.android.com/apk/res/com.my.package\", should probably be \"http://schemas.android.com/apk/res/com.my.package\" [NamespaceTypo]\n" +
+            "res/layout/wrong_namespace5.xml:3: Error: Possible typo in URL: was \"http://schems.android.com/apk/res/com.my.package\", should probably be \"http://schemas.android.com/apk/res/com.my.package\" [NamespaceTypo]\n" +
             "    xmlns:typo1=\"http://schems.android.com/apk/res/com.my.package\"\n" +
             "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "res/layout/wrong_namespace5.xml:4: Warning: Possible typo in URL: was \"http://schems.android.comm/apk/res/com.my.package\", should probably be \"http://schemas.android.com/apk/res/com.my.package\" [NamespaceTypo]\n" +
+            "res/layout/wrong_namespace5.xml:4: Error: Possible typo in URL: was \"http://schems.android.comm/apk/res/com.my.package\", should probably be \"http://schemas.android.com/apk/res/com.my.package\" [NamespaceTypo]\n" +
             "    xmlns:typo2=\"http://schems.android.comm/apk/res/com.my.package\"\n" +
             "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 3 warnings\n",
+            "3 errors, 0 warnings\n",
 
             lintProject("res/layout/wrong_namespace5.xml"));
     }

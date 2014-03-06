@@ -183,10 +183,10 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
         mScopes = null;
         mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         assertEquals(
-            "src/test/pkg/Foo.java:8: Warning: This inner class should be static (test.pkg.Foo.Baz) [Instantiatable]\n" +
+            "src/test/pkg/Foo.java:8: Error: This inner class should be static (test.pkg.Foo.Baz) [Instantiatable]\n" +
             "    public class Baz extends Activity {\n" +
             "    ^\n" +
-            "0 errors, 1 warnings\n",
+            "1 errors, 0 warnings\n",
 
             lintProject(
                 "registration/AndroidManifest.xml=>AndroidManifest.xml",
@@ -202,10 +202,10 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
         mScopes = null;
         mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
         assertEquals(
-            "src/test/pkg/Foo/Bar.java:6: Warning: The default constructor must be public [Instantiatable]\n" +
+            "src/test/pkg/Foo/Bar.java:6: Error: The default constructor must be public [Instantiatable]\n" +
             "    private Bar() {\n" +
             "    ^\n" +
-            "0 errors, 1 warnings\n",
+            "1 errors, 0 warnings\n",
 
             lintProject(
                 "registration/AndroidManifestInner.xml=>AndroidManifest.xml",
@@ -315,10 +315,10 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
             + "res/layout/fragment2.xml:17: Error: Class referenced in the layout file, my.app.Fragment2, was not found in the project or the libraries [MissingRegistered]\n"
             + "    <fragment\n"
             + "    ^\n"
-            + "src/test/pkg/Foo/Bar.java:6: Warning: The default constructor must be public [Instantiatable]\n"
+            + "src/test/pkg/Foo/Bar.java:6: Error: The default constructor must be public [Instantiatable]\n"
             + "    private Bar() {\n"
             + "    ^\n"
-            + "3 errors, 1 warnings\n",
+            + "4 errors, 0 warnings\n",
 
         lintProject(
             "bytecode/AndroidManifestRegs.xml=>AndroidManifest.xml",

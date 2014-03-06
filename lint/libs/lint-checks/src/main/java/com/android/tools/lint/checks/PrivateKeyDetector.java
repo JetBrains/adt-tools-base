@@ -48,7 +48,7 @@ public class PrivateKeyDetector extends Detector implements Detector.OtherFileSc
 
             Category.SECURITY,
             8,
-            Severity.WARNING,
+            Severity.FATAL,
             new Implementation(PrivateKeyDetector.class, Scope.OTHER_SCOPE));
 
     /** Constructs a new {@link PrivateKeyDetector} check */
