@@ -815,14 +815,6 @@ public abstract class BasePlugin {
     }
 
     protected void createNdkTasks(@NonNull BaseVariantData variantData) {
-        createNdkTasks(
-                variantData,
-                { project.file("$project.buildDir/ndk/${variantData.variantConfiguration.dirName}/lib") }
-        )
-    }
-
-    protected void createNdkTasks(@NonNull BaseVariantData variantData,
-                                  @NonNull Closure<File> soFolderClosure) {
         NdkCompile ndkCompile = project.tasks.create(
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Ndk",
                 NdkCompile)
@@ -862,7 +854,9 @@ public abstract class BasePlugin {
         ndkCompile.conventionMapping.objFolder = {
             project.file("$project.buildDir/ndk/${variantData.variantConfiguration.dirName}/obj")
         }
-        ndkCompile.conventionMapping.soFolder = soFolderClosure
+        ndkCompile.conventionMapping.soFolder = {
+            project.file("$project.buildDir/ndk/${variantData.variantConfiguration.dirName}/lib")
+        }
     }
 
     /**
