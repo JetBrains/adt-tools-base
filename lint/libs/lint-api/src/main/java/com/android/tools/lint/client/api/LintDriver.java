@@ -93,6 +93,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -669,7 +670,7 @@ public class LintDriver {
 
     private Collection<Project> computeProjects(@NonNull List<File> files) {
         // Compute list of projects
-        Map<File, Project> fileToProject = new HashMap<File, Project>();
+        Map<File, Project> fileToProject = new LinkedHashMap<File, Project>();
 
         File sharedRoot = null;
 
