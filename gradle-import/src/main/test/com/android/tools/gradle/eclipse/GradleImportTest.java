@@ -44,6 +44,7 @@ import com.android.annotations.Nullable;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkManager;
 import com.android.testutils.TestUtils;
+import com.android.utils.Pair;
 import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
@@ -1075,7 +1076,7 @@ public class GradleImportTest extends TestCase {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public void testLibraries2() throws Exception {
+    private static Pair<File,File> createLibrary2(File library1Dir) throws Exception {
         File root = Files.createTempDir();
 
         // Workspace Setup
@@ -1083,19 +1084,15 @@ public class GradleImportTest extends TestCase {
         // /Library2 (depends on /Library1)
         // /AndroidLibraryProject (depend on /Library1, /Library2)
         // /AndroidAppProject (depends on /AndroidLibraryProject)
-        // In addition to make things complicated, /Library1 lives outside the workspace,
+        // In addition to make things complicated, /Library1 can live outside the workspace
+        // (based on the path we pass in)
         // and /Library2 lives in a subdirectory of the workspace
 
         // Plain Java library, used by Library 1 and App
-        //String javaLibName = "UnrelatedName";
-        // TODO: Use this to place subdir in a different workspace location
-        //String javaLibRelative = "subdir1" + separator + "subdir2" + separator + javaLibName;
-
         // Make Java Library library 1
-        // TODO: Place it in a more random location!
         String lib1Name = "Library1";
-        //File lib1 = new File(root, javaLibRelative);
-        File lib1 = new File(root, lib1Name);
+        File lib1 = library1Dir.isAbsolute() ? library1Dir :
+                new File(root, library1Dir.getPath());
         lib1.mkdirs();
         String lib1Pkg = "test.lib1.pkg";
         createDotProject(lib1, lib1Name, false);
@@ -1181,6 +1178,15 @@ public class GradleImportTest extends TestCase {
 
         // Add some files in there that we are ignoring
         new File(app, ".gitignore").createNewFile();
+
+        return Pair.of(root, app);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testLibraries2() throws Exception {
+        Pair<File,File> pair = createLibrary2(new File("Library1"));
+        File root = pair.getFirst();
+        File app = pair.getSecond();
 
         // ADT Directory structure created by the above:
         assertEquals(""
@@ -1492,27 +1498,188 @@ public class GradleImportTest extends TestCase {
         deleteDir(imported);
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testLibrariesWithWorkspaceMapping1() throws Exception {
+        // Provide manually edited workspace mapping /Library1 = actual dir
+        final String library1Path = "subdir1" + separator + "subdir2" + separator +
+                "UnrelatedName";
+        final File library1Dir = new File(library1Path);
+        Pair<File,File> pair = createLibrary2(library1Dir);
+        final File root = pair.getFirst();
+        File app = pair.getSecond();
+
+        final AtomicReference<GradleImport> importReference = new AtomicReference<GradleImport>();
+        File imported = checkProject(app, ""
+                + MSG_HEADER
+                + MSG_MANIFEST
+                + MSG_UNHANDLED
+                + "* .gitignore\n"
+                + MSG_REPLACED_JARS
+                + "guava-13.0.1.jar => com.google.guava:guava:13.0.1\n"
+                + MSG_GUESSED_VERSIONS
+                + "guava-13.0.1.jar => version 13.0.1 in com.google.guava:guava:13.0.1\n"
+                + MSG_FOLDER_STRUCTURE
+                + "In Library1:\n"
+                + "* src/ => library1/src/main/java/\n"
+                + "In Library2:\n"
+                + "* src/ => library2/src/main/java/\n"
+                + "In AndroidLibrary:\n"
+                + "* AndroidManifest.xml => androidLibrary/src/main/AndroidManifest.xml\n"
+                + "* src/ => androidLibrary/src/main/java/\n"
+                + "In AndroidApp:\n"
+                + "* AndroidManifest.xml => androidApp/src/main/AndroidManifest.xml\n"
+                + "* res/ => androidApp/src/main/res/\n"
+                + "* src/ => androidApp/src/main/java/\n"
+                + MSG_FOOTER,
+                false /* checkBuild */, new ImportCustomizer() {
+            @Override
+            public void customize(GradleImport importer) {
+                importReference.set(importer);
+                importer.getPathMap().put("/Library1", new File(root, library1Path));
+            }
+        });
+        Map<String,File> pathMap = importReference.get().getPathMap();
+        assertEquals("{/Library1=" + new File(root, library1Path).getPath() +", /Library2=null}",
+                pathMap.toString());
+        deleteDir(root);
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testLibrariesWithWorkspaceMapping2() throws Exception {
+        // Provide manually edited workspace location; importer reads workspace data
+        // to find it
+        final String library1Path = "subdir1" + separator + "subdir2" + separator +
+                "UnrelatedName";
+        final File library1Dir = new File(library1Path);
+        Pair<File,File> pair = createLibrary2(library1Dir);
+        final File root = pair.getFirst();
+        File app = pair.getSecond();
+        final File library1AbsDir = new File(root, library1Path);
+
+        final File workspace = new File(root, "workspace");
+        workspace.mkdirs();
+        File metadata = new File(workspace, ".metadata");
+        metadata.mkdirs();
+        new File(metadata, "version.ini").createNewFile();
+        assertTrue(GradleImport.isEclipseWorkspaceDir(workspace));
+        File projects = new File(metadata, ".plugins" + separator + "org.eclipse.core.resources" +
+                separator + ".projects");
+        projects.mkdirs();
+        File library1 = new File(projects, "Library1");
+        library1.mkdirs();
+        File location = new File(library1, ".location");
+        byte[] data = ("blahblahblahURI//" + SdkUtils.fileToUrl(library1AbsDir) +
+                "\000blahblahblah").getBytes(Charsets.UTF_8);
+        Files.write(data, location);
+
+        final AtomicReference<GradleImport> importReference = new AtomicReference<GradleImport>();
+        File imported = checkProject(app, ""
+                + MSG_HEADER
+                + MSG_MANIFEST
+                + MSG_UNHANDLED
+                + "* .gitignore\n"
+                + MSG_REPLACED_JARS
+                + "guava-13.0.1.jar => com.google.guava:guava:13.0.1\n"
+                + MSG_GUESSED_VERSIONS
+                + "guava-13.0.1.jar => version 13.0.1 in com.google.guava:guava:13.0.1\n"
+                + MSG_FOLDER_STRUCTURE
+                + "In Library1:\n"
+                + "* src/ => library1/src/main/java/\n"
+                + "In Library2:\n"
+                + "* src/ => library2/src/main/java/\n"
+                + "In AndroidLibrary:\n"
+                + "* AndroidManifest.xml => androidLibrary/src/main/AndroidManifest.xml\n"
+                + "* src/ => androidLibrary/src/main/java/\n"
+                + "In AndroidApp:\n"
+                + "* AndroidManifest.xml => androidApp/src/main/AndroidManifest.xml\n"
+                + "* res/ => androidApp/src/main/res/\n"
+                + "* src/ => androidApp/src/main/java/\n"
+                + MSG_FOOTER,
+                false /* checkBuild */, new ImportCustomizer() {
+            @Override
+            public void customize(GradleImport importer) {
+                importReference.set(importer);
+                importer.setEclipseWorkspace(workspace);
+            }
+        });
+        Map<String,File> pathMap = importReference.get().getPathMap();
+        assertEquals("{/Library1=" + new File(root, library1Path).getPath() +", /Library2=null}",
+                pathMap.toString());
+        deleteDir(root);
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testErrorHandling() throws Exception {
+        File projectDir = createProject("test1", "test.pkg");
+
+        File classPath = new File(projectDir, ".classpath");
+        Files.write(""
+                + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<classpath>\n"
+                + "        <classpathentry kind=\"src\" path=\"src\"/\n" // <== XML error
+                + "        <classpathentry kind=\"src\" path=\"gen\"/>\n"
+                + "        <classpathentry kind=\"con\" path=\"com.android.ide.eclipse.adt.ANDROID_FRAMEWORK\"/>\n"
+                + "        <classpathentry exported=\"true\" kind=\"con\" path=\"com.android.ide.eclipse.adt.LIBRARIES\"/>\n"
+                + "        <classpathentry exported=\"true\" kind=\"con\" path=\"com.android.ide.eclipse.adt.DEPENDENCIES\"/>\n"
+                + "        <classpathentry kind=\"output\" path=\"bin/classes\"/>\n"
+                + "</classpath>", classPath, UTF_8);
+
+        final AtomicReference<GradleImport> importReference = new AtomicReference<GradleImport>();
+        File imported = checkProject(projectDir, ""
+                + MSG_HEADER
+                + "\n"
+                + " * $ROOT/.classpath:\n"
+                + "   Invalid XML file:\n"
+                + "   $ROOT/.classpath:\n"
+                + "   Element type \"classpathentry\" must be followed by either attribute\n"
+                + "   specifications, \">\" or \"/>\".\n\n"
+                + MSG_FOOTER,
+                false /* checkBuild */, new ImportCustomizer() {
+            @Override
+            public void customize(GradleImport importer) {
+                importReference.set(importer);
+            }
+        });
+
+        assertEquals("[$CLASSPATH_FILE:\n"
+                + "Invalid XML file: $CLASSPATH_FILE:\n"
+                + "Element type \"classpathentry\" must be followed by either attribute "
+                + "specifications, \">\" or \"/>\".]",
+                importReference.get().getErrors().toString().replace(
+                        classPath.getPath(), "$CLASSPATH_FILE").
+                        replace(classPath.getCanonicalPath(), "$CLASSPATH_FILE"));
+
+        deleteDir(projectDir);
+        deleteDir(imported);
+    }
+
+    // --- Unit test infrastructure from this point on ----
+
     @SuppressWarnings({"ResultOfMethodCallIgnored", "SpellCheckingInspection"})
     private static void createEclipseSettingsFile(File prj, String languageLevel)
             throws IOException {
         File file = new File(prj, ".settings" + separator + "org.eclipse.jdt.core.prefs");
         file.getParentFile().mkdirs();
-        Files.write(""
-                + "eclipse.preferences.version=1\n"
-                + "org.eclipse.jdt.core.compiler.codegen.inlineJsrBytecode=enabled\n"
-                + "org.eclipse.jdt.core.compiler.codegen.targetPlatform=" + languageLevel + "\n"
-                + "org.eclipse.jdt.core.compiler.codegen.unusedLocal=preserve\n"
-                + "org.eclipse.jdt.core.compiler.compliance=" + languageLevel + "\n"
-                + "org.eclipse.jdt.core.compiler.debug.lineNumber=generate\n"
-                + "org.eclipse.jdt.core.compiler.debug.localVariable=generate\n"
-                + "org.eclipse.jdt.core.compiler.debug.sourceFile=generate\n"
-                + "org.eclipse.jdt.core.compiler.problem.assertIdentifier=error\n"
-                + "org.eclipse.jdt.core.compiler.problem.enumIdentifier=error\n"
-                + "org.eclipse.jdt.core.compiler.source=" + languageLevel,
-                file, Charsets.UTF_8);
+        Files.write("" +
+                "eclipse.preferences.version=1\n" +
+                "org.eclipse.jdt.core.compiler.codegen.inlineJsrBytecode=enabled\n" +
+                "org.eclipse.jdt.core.compiler.codegen.targetPlatform=" +
+                languageLevel +
+                "\n" +
+                "org.eclipse.jdt.core.compiler.codegen.unusedLocal=preserve\n" +
+                "org.eclipse.jdt.core.compiler.compliance=" +
+                languageLevel +
+                "\n" +
+                "org.eclipse.jdt.core.compiler.debug.lineNumber=generate\n" +
+                "org.eclipse.jdt.core.compiler.debug.localVariable=generate\n" +
+                "org.eclipse.jdt.core.compiler.debug.sourceFile=generate\n" +
+                "org.eclipse.jdt.core.compiler.problem.assertIdentifier=error\n" +
+                "org.eclipse.jdt.core.compiler.problem.enumIdentifier=error\n" +
+                "org.eclipse.jdt.core.compiler.source=" +
+                languageLevel, file, Charsets.UTF_8);
     }
-
-    // --- Unit test infrastructure from this point on ----
 
     interface ImportCustomizer {
         void customize(GradleImport importer);

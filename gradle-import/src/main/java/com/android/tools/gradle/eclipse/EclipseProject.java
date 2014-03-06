@@ -397,7 +397,7 @@ class EclipseProject implements Comparable<EclipseProject> {
             }
 
             // It might be a workspace reference
-            if (relative.charAt(0) == separatorChar) {
+            if (relative.charAt(0) == '/') { // Workspace roots use '/', even on Windows
                 // Try to resolve it using the workspace name
                 File f = mImporter.resolveWorkspacePath(path);
                 if (f != null && f.exists()) {
