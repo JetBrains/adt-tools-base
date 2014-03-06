@@ -5,7 +5,7 @@ dependencies {
 }
 
 android {
-    compileSdkVersion 15
+    compileSdkVersion 19
     buildToolsVersion "19.0.2"
 
     // This actual the app version code. Giving ourselves 100,000 values [0, 99999]

@@ -4,7 +4,7 @@ project.ext.fakeProvider = new com.android.tests.basic.buildscript.FakeProvider(
 project.ext.fakeServer = new com.android.tests.basic.buildscript.FakeServer()
 
 android {
-    compileSdkVersion 15
+    compileSdkVersion 19
     buildToolsVersion "19.0.2"
 
     deviceProvider project.ext.fakeProvider
