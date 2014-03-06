@@ -90,6 +90,18 @@ abstract class BaseVariantImpl implements BaseVariant {
 
     @Override
     @NonNull
+    public Task getPreBuild() {
+        return getVariantData().preBuildTask;
+    }
+
+    @Override
+    @NonNull
+    public Task getCheckManifest() {
+        return getVariantData().checkManifestTask;
+    }
+
+    @Override
+    @NonNull
     public ProcessManifest getProcessManifest() {
         return getVariantData().processManifestTask;
     }
