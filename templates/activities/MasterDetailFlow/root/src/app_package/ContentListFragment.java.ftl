@@ -6,6 +6,7 @@ import android.support.v4.app.ListFragment;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+<#if applicationPackage??>import ${applicationPackage}.R;</#if>
 
 import ${packageName}.dummy.DummyContent;
 

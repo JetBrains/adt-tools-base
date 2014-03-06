@@ -17,6 +17,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+<#if applicationPackage??>import ${applicationPackage}.R;</#if>
 
 public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBar','')}Activity<#if features == 'tabs'> implements ActionBar.TabListener</#if> {
 
