@@ -357,9 +357,10 @@ public class SdkManager {
             assert info instanceof LocalExtraPkgInfo;
             if (info instanceof LocalExtraPkgInfo) {
                 LocalExtraPkgInfo ei = (LocalExtraPkgInfo) info;
-                String vendor = ei.getVendorId();
-                String path   = ei.getExtraPath();
-                int majorRev  = ei.getDesc().getFullRevision().getMajor();
+                IPkgDesc d = ei.getDesc();
+                String vendor = d.getVendorId();
+                String path   = d.getPath();
+                int majorRev  = d.getFullRevision().getMajor();
 
                 extraVersions.put(vendor + '/' + path, majorRev);
             }
