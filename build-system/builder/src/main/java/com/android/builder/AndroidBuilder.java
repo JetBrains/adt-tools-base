@@ -1040,8 +1040,6 @@ public class AndroidBuilder {
             command.add("--no-strict");
         }
 
-        command.add("--num-threads=" + Runtime.getRuntime().availableProcessors() * 2);
-
         if (additionalParameters != null) {
             for (String arg : additionalParameters) {
                 command.add(arg);
@@ -1118,8 +1116,6 @@ public class AndroidBuilder {
         if (mVerboseExec) {
             command.add("--verbose");
         }
-
-        command.add("--num-threads=" + Runtime.getRuntime().availableProcessors() * 2);
 
         if (dexOptions.getJumboMode()) {
             command.add("--force-jumbo");
