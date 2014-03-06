@@ -345,7 +345,7 @@ public class SdkManager {
      * @return A non-null possibly empty map of { string "vendor/path" => integer major revision }
      * @deprecated Starting with add-on schema 6, extras can have full revisions instead of just
      *   major revisions. This API only returns the major revision. Callers should be modified
-     *   to use the new {code LocalSdk.getPkgInfo(PkgDesc.PKG_EXTRAS)} API instead.
+     *   to use the new {code LocalSdk.getPkgInfo(PkgType.PKG_EXTRAS)} API instead.
      */
     @Deprecated
     @NonNull
