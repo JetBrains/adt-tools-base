@@ -254,7 +254,7 @@ public class DuplicateIdDetector extends LayoutDetector {
 
     @Override
     public void visitAttribute(@NonNull XmlContext context, @NonNull Attr attribute) {
-        assert attribute.getName().equals(ATTR_ID) || attribute.getLocalName().equals(ATTR_ID);
+        assert attribute.getName().equals(ATTR_ID) || ATTR_ID.equals(attribute.getLocalName());
         String id = attribute.getValue();
         if (context.getPhase() == 1) {
             if (mIds.contains(id)) {

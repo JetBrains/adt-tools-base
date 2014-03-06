@@ -335,7 +335,16 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         Project project = context.getMainProject();
         String value = attribute.getValue();
 
+        if (!ANDROID_URI.equals(attribute.getNamespaceURI())) {
+            // Layout attribute not in the Android namespace (or a custom namespace).
+            // This is likely an application error (which should get caught by
+            // the MissingPrefixDetector)
+            return;
+        }
+
         String name = attribute.getLocalName();
+        assert name != null : attribute.getName();
+
         if (name.equals(ATTR_SUPPORTS_RTL)) {
             mEnabledRtlSupport = Boolean.valueOf(value);
             if (!attribute.getOwnerElement().getTagName().equals(TAG_APPLICATION)) {

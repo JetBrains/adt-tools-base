@@ -84,8 +84,28 @@ public class DetectMissingPrefixTest extends AbstractCheckTest {
 
     public void testUnusedNamespace() throws Exception {
         assertEquals(
-                "No warnings.",
+            "No warnings.",
 
-                lintProject("res/layout/message_edit_detail.xml"));
+            lintProject("res/layout/message_edit_detail.xml"));
+    }
+
+    public void testMissingLayoutAttribute() throws Exception {
+        assertEquals(
+            "res/layout/rtl.xml:7: Error: Attribute is missing the Android namespace prefix [MissingPrefix]\n" +
+            "        layout_gravity=\"left\"\n" +
+            "        ~~~~~~~~~~~~~~~~~~~~~\n" +
+            "res/layout/rtl.xml:8: Error: Attribute is missing the Android namespace prefix [MissingPrefix]\n" +
+            "        layout_alignParentLeft=\"true\"\n" +
+            "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"  +
+            "res/layout/rtl.xml:9: Error: Attribute is missing the Android namespace prefix [MissingPrefix]\n" +
+            "        editable=\"false\"\n" +
+            "        ~~~~~~~~~~~~~~~~\n" +
+            "3 errors, 0 warnings\n",
+
+            lintProject(
+                    "overdraw/project.properties=>project.properties",
+                    "rtl/minsdk5targetsdk17.xml=>AndroidManifest.xml",
+                    "rtl/rtl_noprefix.xml=>res/layout/rtl.xml"
+            ));
     }
 }
