@@ -46,11 +46,11 @@ public class LibraryExtension extends BaseExtension {
         debugSigningConfig.initDebug()
 
         debug = instantiator.newInstance(BuildTypeDsl.class,
-                BuilderConstants.DEBUG, project.fileResolver, instantiator)
+                BuilderConstants.DEBUG, project.fileResolver, instantiator, project.getLogger())
         debug.init(debugSigningConfig)
 
         release = instantiator.newInstance(BuildTypeDsl.class,
-                BuilderConstants.RELEASE, project.fileResolver, instantiator)
+                BuilderConstants.RELEASE, project.fileResolver, instantiator, project.getLogger())
         release.init(null)
     }
 

@@ -82,7 +82,7 @@ public abstract class BaseExtension {
         this.plugin = plugin
 
         defaultConfig = instantiator.newInstance(ProductFlavorDsl.class, BuilderConstants.MAIN,
-                project.fileResolver, instantiator)
+                project.fileResolver, instantiator, project.getLogger())
 
         aaptOptions = instantiator.newInstance(AaptOptionsImpl.class)
         dexOptions = instantiator.newInstance(DexOptionsImpl.class)

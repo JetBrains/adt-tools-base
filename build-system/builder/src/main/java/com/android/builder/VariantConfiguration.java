@@ -1292,7 +1292,7 @@ public class VariantConfiguration implements TestData {
 
         Set<String> usedFieldNames = Sets.newHashSet();
 
-        List<ClassField> list = mBuildType.getBuildConfigFields();
+        Collection<ClassField> list = mBuildType.getBuildConfigFields().values();
         if (!list.isEmpty()) {
             fullList.add("Fields from build type: " + mBuildType.getName());
             for (ClassField f : list) {
@@ -1302,7 +1302,7 @@ public class VariantConfiguration implements TestData {
         }
 
         for (DefaultProductFlavor flavor : mFlavorConfigs) {
-            list = flavor.getBuildConfigFields();
+            list = flavor.getBuildConfigFields().values();
             if (!list.isEmpty()) {
                 fullList.add("Fields from product flavor: " + flavor.getName());
                 for (ClassField f : list) {
@@ -1315,7 +1315,7 @@ public class VariantConfiguration implements TestData {
             }
         }
 
-        list = mDefaultConfig.getBuildConfigFields();
+        list = mDefaultConfig.getBuildConfigFields().values();
         if (!list.isEmpty()) {
             fullList.add("Fields from default config.");
             for (ClassField f : list) {
