@@ -1,3 +1,13 @@
+0.7.1
+
+- DSL to exclude some files coming from jar dependencies
+    android {
+      packagingOptions {
+        exclude 'META-INF/LICENSE.txt'
+      }
+    }
+
+
 0.7.0
 - Requires Gradle 1.9
 - You can now have a variant specific source folder if you have flavors.
