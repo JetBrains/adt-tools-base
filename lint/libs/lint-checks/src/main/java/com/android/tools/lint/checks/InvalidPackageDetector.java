@@ -123,6 +123,12 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
             return;
         }
 
+        // Don't flag references from annotations and annotation processors
+        if ((classNode.access & Opcodes.ACC_ANNOTATION) != 0
+                || classNode.superName.startsWith("javax/annotation/")) {
+            return;
+        }
+
         if (classNode.name.startsWith(JAVAX_PKG_PREFIX)) {
             mJavaxLibraryClasses.add(classNode.name);
         }
@@ -232,6 +238,8 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
             return;
         }
 
+        Set<String> seen = Sets.newHashSet();
+
         for (Candidate candidate : mCandidates) {
             String type = candidate.mClass;
             if (mJavaxLibraryClasses.contains(type)) {
@@ -241,7 +249,11 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
             String referencedIn = candidate.mReferencedIn;
 
             Location location = Location.create(jarFile);
-            Object pkg = getPackageName(type);
+            String pkg = getPackageName(type);
+            if (seen.contains(pkg)) {
+                continue;
+            }
+            seen.add(pkg);
             String message = String.format(
                     "Invalid package reference in library; not included in Android: %1$s. " +
                     "Referenced from %2$s.", pkg, ClassContext.getFqcn(referencedIn));
@@ -249,7 +261,7 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
         }
     }
 
-    private static Object getPackageName(String owner) {
+    private static String getPackageName(String owner) {
         String pkg = owner;
         int index = pkg.lastIndexOf('/');
         if (index != -1) {
