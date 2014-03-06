@@ -22,7 +22,8 @@ import com.android.sdklib.devices.DeviceManager.DeviceFilter;
 import com.android.sdklib.mock.MockLog;
 
 import java.io.File;
-import java.util.EnumSet;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DeviceManagerTest extends SdkManagerTestCase {
 
@@ -40,6 +41,16 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         log = super.getLog();
         File sdkLocation = getSdkManager().getLocalSdk().getLocation();
         return DeviceManager.createInstance(sdkLocation, log);
+    }
+
+    /** Returns a list of just the devices' display names, for unit test comparisons. */
+    private static List<String> listDisplayNames(List<Device> devices) {
+        if (devices == null) return null;
+        List<String> names = new ArrayList<String>();
+        for (Device d : devices) {
+            names.add(d.getDisplayName());
+        }
+        return names;
     }
 
     @Override
@@ -63,7 +74,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                  "3.3\" WQVGA, 3.4in WQVGA, 3.7\" WVGA (Nexus One), 3.7\" FWVGA slider, " +
                  "4\" WVGA (Nexus S), 4.65\" 720p (Galaxy Nexus), 4.7\" WXGA, 5.1\" WVGA, " +
                  "5.4\" FWVGA, 7\" WSVGA (Tablet), 10.1\" WXGA (Tablet)]",
-                dm.getDevices(DeviceFilter.DEFAULT).toString());
+                 listDisplayNames(dm.getDevices(DeviceFilter.DEFAULT)).toString());
         assertEquals("", log.toString());
 
         // this list comes from the nexus.xml bundled in the JAR
@@ -71,7 +82,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         assertEquals(
                 "[Nexus One, Nexus S, Galaxy Nexus, Nexus 7 (2012), " +
                  "Nexus 4, Nexus 10, Nexus 7, Nexus 5]",
-                dm.getDevices(DeviceFilter.VENDOR).toString());
+                 listDisplayNames(dm.getDevices(DeviceFilter.VENDOR)).toString());
         assertEquals("", log.toString());
 
         assertEquals(
@@ -81,19 +92,19 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                  "5.4\" FWVGA, 7\" WSVGA (Tablet), 10.1\" WXGA (Tablet), " +
                  "Nexus One, Nexus S, Galaxy Nexus, Nexus 7 (2012), " +
                  "Nexus 4, Nexus 10, Nexus 7, Nexus 5]",
-                dm.getDevices(DeviceManager.ALL_DEVICES).toString());
+                 listDisplayNames(dm.getDevices(DeviceManager.ALL_DEVICES)).toString());
         assertEquals("", log.toString());
     }
 
     public final void testGetDevice() {
         // get a definition from the bundled devices.xml file
         Device d1 = dm.getDevice("7in WSVGA (Tablet)", "Generic");
-        assertEquals("7\" WSVGA (Tablet)", d1.toString());
+        assertEquals("7\" WSVGA (Tablet)", d1.getDisplayName());
         assertEquals("", log.toString());
 
         // get a definition from the bundled nexus.xml file
         Device d2 = dm.getDevice("Nexus One", "Google");
-        assertEquals("Nexus One", d2.toString());
+        assertEquals("Nexus One", d2.getDisplayName());
         assertEquals("", log.toString());
     }
 
@@ -111,22 +122,24 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         dm.addUserDevice(d2);
         dm.saveUserDevices();
 
-        assertEquals("My Custom Tablet", dm.getDevice("MyCustomTablet", "OEM").toString());
+        assertEquals("My Custom Tablet", dm.getDevice("MyCustomTablet", "OEM").getDisplayName());
         assertEquals("", log.toString());
 
         // create a new device manager, forcing it reload all files
         dm = null;
         DeviceManager dm2 = createDeviceManager();
 
-        assertEquals("My Custom Tablet", dm2.getDevice("MyCustomTablet", "OEM").toString());
+        assertEquals("My Custom Tablet", dm2.getDevice("MyCustomTablet", "OEM").getDisplayName());
         assertEquals("", log.toString());
 
         // 1 user device defined in the test's custom .android home folder
-        assertEquals("[My Custom Tablet]", dm2.getDevices(DeviceFilter.USER).toString());
+        assertEquals("[My Custom Tablet]",
+                     listDisplayNames(dm2.getDevices(DeviceFilter.USER)).toString());
         assertEquals("", log.toString());
 
         // no system-images devices defined in the SDK by default
-        assertEquals("[]", dm2.getDevices(DeviceFilter.SYSTEM_IMAGES).toString());
+        assertEquals("[]",
+                     listDisplayNames(dm2.getDevices(DeviceFilter.SYSTEM_IMAGES)).toString());
         assertEquals("", log.toString());
 
         // this list comes from devices.xml bundled in the JAR
@@ -136,7 +149,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                  "3.3\" WQVGA, 3.4in WQVGA, 3.7\" WVGA (Nexus One), 3.7\" FWVGA slider, " +
                  "4\" WVGA (Nexus S), 4.65\" 720p (Galaxy Nexus), 4.7\" WXGA, 5.1\" WVGA, " +
                  "5.4\" FWVGA, 7\" WSVGA (Tablet), 10.1\" WXGA (Tablet)]",
-                 dm2.getDevices(DeviceFilter.DEFAULT).toString());
+                 listDisplayNames(dm2.getDevices(DeviceFilter.DEFAULT)).toString());
         assertEquals("", log.toString());
 
         // this list comes from the nexus.xml bundled in the JAR
@@ -144,7 +157,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         assertEquals(
                 "[Nexus One, Nexus S, Galaxy Nexus, Nexus 7 (2012), " +
                  "Nexus 4, Nexus 10, Nexus 7, Nexus 5]",
-                 dm2.getDevices(DeviceFilter.VENDOR).toString());
+                 listDisplayNames(dm2.getDevices(DeviceFilter.VENDOR)).toString());
         assertEquals("", log.toString());
 
         assertEquals(
@@ -155,7 +168,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                  "5.4\" FWVGA, 7\" WSVGA (Tablet), 10.1\" WXGA (Tablet), " +
                  "Nexus One, Nexus S, Galaxy Nexus, Nexus 7 (2012), " +
                  "Nexus 4, Nexus 10, Nexus 7, Nexus 5]",
-                 dm2.getDevices(DeviceManager.ALL_DEVICES).toString());
+                 listDisplayNames(dm2.getDevices(DeviceManager.ALL_DEVICES)).toString());
         assertEquals("", log.toString());
     }
 
@@ -164,12 +177,12 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         makeSystemImageFolder(TARGET_DIR_NAME_0, "tag-1", "x86");
 
         // no user devices defined in the test's custom .android home folder
-        assertEquals("[]", dm.getDevices(DeviceFilter.USER).toString());
+        assertEquals("[]", listDisplayNames(dm.getDevices(DeviceFilter.USER)).toString());
         assertEquals("", log.toString());
 
         // no system-images devices defined in the SDK by default
         assertEquals("[Mock Tag 1 Device Name]",
-                dm.getDevices(DeviceFilter.SYSTEM_IMAGES).toString());
+                listDisplayNames(dm.getDevices(DeviceFilter.SYSTEM_IMAGES)).toString());
         assertEquals("", log.toString());
 
         // this list comes from devices.xml bundled in the JAR
@@ -179,7 +192,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                  "3.3\" WQVGA, 3.4in WQVGA, 3.7\" WVGA (Nexus One), 3.7\" FWVGA slider, " +
                  "4\" WVGA (Nexus S), 4.65\" 720p (Galaxy Nexus), 4.7\" WXGA, 5.1\" WVGA, " +
                  "5.4\" FWVGA, 7\" WSVGA (Tablet), 10.1\" WXGA (Tablet)]",
-                dm.getDevices(DeviceFilter.DEFAULT).toString());
+                 listDisplayNames(dm.getDevices(DeviceFilter.DEFAULT)).toString());
         assertEquals("", log.toString());
 
         // this list comes from the nexus.xml bundled in the JAR
@@ -187,7 +200,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         assertEquals(
                 "[Nexus One, Nexus S, Galaxy Nexus, Nexus 7 (2012), " +
                  "Nexus 4, Nexus 10, Nexus 7, Nexus 5]",
-                dm.getDevices(DeviceFilter.VENDOR).toString());
+                 listDisplayNames(dm.getDevices(DeviceFilter.VENDOR)).toString());
         assertEquals("", log.toString());
 
         assertEquals(
@@ -198,8 +211,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                  "Nexus One, Nexus S, Galaxy Nexus, Nexus 7 (2012), " +
                  "Nexus 4, Nexus 10, Nexus 7, Nexus 5, " +
                  "Mock Tag 1 Device Name]",
-                dm.getDevices(DeviceManager.ALL_DEVICES).toString());
+                 listDisplayNames(dm.getDevices(DeviceManager.ALL_DEVICES)).toString());
         assertEquals("", log.toString());
     }
-
 }

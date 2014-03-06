@@ -150,4 +150,26 @@ public class Software {
         hash = 31 * hash + (mStatusBar ? 1 : 0);
         return hash;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Software <mMinSdkLevel=");
+        sb.append(mMinSdkLevel);
+        sb.append(", mMaxSdkLevel=");
+        sb.append(mMaxSdkLevel);
+        sb.append(", mLiveWallpaperSupport=");
+        sb.append(mLiveWallpaperSupport);
+        sb.append(", mBluetoothProfiles=");
+        sb.append(mBluetoothProfiles);
+        sb.append(", mGlVersion=");
+        sb.append(mGlVersion);
+        sb.append(", mGlExtensions=");
+        sb.append(mGlExtensions);
+        sb.append(", mStatusBar=");
+        sb.append(mStatusBar);
+        sb.append(">");
+        return sb.toString();
+    }
+
 }
