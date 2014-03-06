@@ -963,6 +963,66 @@ public class GradleImportTest extends TestCase {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testJniLibs() throws Exception {
+        // Check that ABI libs are copied to the right place
+        File projectDir = createProject("Test1", "test.pkg");
+        File libs = new File(projectDir, "libs");
+        libs.mkdirs();
+        new File(libs, "android-support-v4.jar").createNewFile();
+        File armeabi = new File(libs, "armeabi");
+        armeabi.mkdirs();
+        new File(armeabi, "libfoo.so").createNewFile();
+
+        File imported = checkProject(projectDir, ""
+                + MSG_HEADER
+                + MSG_FOLDER_STRUCTURE
+                + "* AndroidManifest.xml => Test1/src/main/AndroidManifest.xml\n"
+                + "* libs/android-support-v4.jar => Test1/libs/android-support-v4.jar\n"
+                + "* libs/armeabi/libfoo.so => Test1/src/main/jniLibs/armeabi/libfoo.so\n"
+                + "* res/ => Test1/src/main/res/\n"
+                + "* src/ => Test1/src/main/java/\n"
+                + MSG_FOOTER,
+                false /* checkBuild */,
+                new ImportCustomizer() {
+                    @Override
+                    public void customize(GradleImport importer) {
+                        importer.setGradleNameStyle(false);
+                        importer.setReplaceJars(false);
+                        importer.setReplaceLibs(false);
+                    }
+                });
+
+        // Imported contents
+        assertEquals(""
+                + "Test1\n"
+                + "  build.gradle\n"
+                + "  libs\n"
+                + "    android-support-v4.jar\n"
+                + "  src\n"
+                + "    main\n"
+                + "      AndroidManifest.xml\n"
+                + "      java\n"
+                + "        test\n"
+                + "          pkg\n"
+                + "            MyActivity.java\n"
+                + "      jniLibs\n"
+                + "        armeabi\n"
+                + "          libfoo.so\n"
+                + "      res\n"
+                + "        drawable\n"
+                + "          ic_launcher.xml\n"
+                + "        values\n"
+                + "          strings.xml\n"
+                + "build.gradle\n"
+                + "import-summary.txt\n"
+                + "settings.gradle\n",
+                fileTree(imported, true));
+
+        deleteDir(projectDir);
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public void testReplaceSourceLibraryProject() throws Exception {
         // Make a library project which looks like it can just be replaced by a project
 

@@ -186,6 +186,12 @@ class EclipseImportModule extends ImportModule {
 
     @Override
     @NonNull
+    protected List<File> getNativeLibs() {
+        return mProject.getNativeLibs();
+    }
+
+    @Override
+    @NonNull
     protected List<File> getLocalProguardFiles() {
         return mProject.getLocalProguardFiles();
     }
