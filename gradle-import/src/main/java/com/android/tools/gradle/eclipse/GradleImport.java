@@ -19,9 +19,12 @@ package com.android.tools.gradle.eclipse;
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.FD_EXTRAS;
 import static com.android.SdkConstants.FN_BUILD_GRADLE;
+import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.SdkConstants.FN_SETTINGS_GRADLE;
 import static com.android.SdkConstants.GRADLE_PLUGIN_LATEST_VERSION;
 import static com.android.SdkConstants.GRADLE_PLUGIN_NAME;
+import static com.android.sdklib.internal.project.ProjectProperties.PROPERTY_NDK;
+import static com.android.sdklib.internal.project.ProjectProperties.PROPERTY_SDK;
 import static com.google.common.base.Charsets.UTF_8;
 import static java.io.File.separator;
 import static java.io.File.separatorChar;
@@ -51,6 +54,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -134,6 +138,7 @@ public class GradleImport {
     private File mWorkspaceLocation;
     private File mGradleWrapperLocation;
     private File mSdkLocation;
+    private File mNdkLocation;
     private SdkManager mSdkManager;
     private Set<String> mHandledJars = Sets.newHashSet();
     private Map<String,File> mWorkspaceProjects;
@@ -179,7 +184,12 @@ public class GradleImport {
                 file = file.getParentFile();
             }
 
+            guessWorkspace(file);
+
             if (isAdtProjectDir(file)) {
+                guessSdk(file);
+                guessNdk(file);
+
                 try {
                     EclipseProject.getProject(this, file);
                 } catch (ImportException e) {
@@ -193,8 +203,6 @@ public class GradleImport {
                 reportError(null, file, "Not a recognized project: " + file, false);
                 return;
             }
-
-            guessWorkspace(file);
         }
 
         // Find unique projects. (We can register projects under multiple paths
@@ -227,7 +235,7 @@ public class GradleImport {
 
     /** Sets location of the SDK to use with the import, if known */
     @NonNull
-    public GradleImport setSdkLocation(@NonNull File sdkLocation) {
+    public GradleImport setSdkLocation(@Nullable File sdkLocation) {
         mSdkLocation = sdkLocation;
         return this;
     }
@@ -254,6 +262,19 @@ public class GradleImport {
         }
 
         return mSdkManager;
+    }
+
+    /** Sets location of the SDK to use with the import, if known */
+    @NonNull
+    public GradleImport setNdkLocation(@Nullable File ndkLocation) {
+        mNdkLocation = ndkLocation;
+        return this;
+    }
+
+    /** Gets location of the SDK to use with the import, if known */
+    @Nullable
+    public File getNdkLocation() {
+        return mNdkLocation;
     }
 
     /** Sets location of Eclipse workspace, if known */
@@ -316,6 +337,83 @@ public class GradleImport {
                 dir = dir.getParentFile();
             }
         }
+    }
+
+    private void guessSdk(@NonNull File projectDir) {
+        if (mSdkLocation == null) {
+            mSdkLocation = getDirFromLocalProperties(projectDir, PROPERTY_SDK);
+
+            if (mSdkLocation == null && mWorkspaceLocation != null) {
+                mSdkLocation = getDirFromWorkspaceSetting(getAdtSettingsFile(),
+                        "com.android.ide.eclipse.adt.sdk");
+            }
+        }
+    }
+
+    private void guessNdk(@NonNull File projectDir) {
+        if (mNdkLocation == null) {
+            mNdkLocation = getDirFromLocalProperties(projectDir, PROPERTY_NDK);
+
+            if (mNdkLocation == null && mWorkspaceLocation != null) {
+                mNdkLocation = getDirFromWorkspaceSetting(getNdkSettingsFile(), "ndkLocation");
+            }
+        }
+    }
+
+    @Nullable
+    private static File getDirFromLocalProperties(@NonNull File projectDir,
+            @NonNull String property) {
+        File localProperties = new File(projectDir, FN_LOCAL_PROPERTIES);
+        if (localProperties.exists()) {
+            try {
+                Properties properties = getProperties(localProperties);
+                if (properties != null) {
+                    String sdk = properties.getProperty(property);
+                    if (sdk != null) {
+                        File dir = new File(sdk);
+                        if (dir.exists()) {
+                            return dir;
+                        } else {
+                            dir = new File(sdk.replace('/', separatorChar));
+                            if (dir.exists()) {
+                                return dir;
+                            }
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                // ignore properties
+            }
+        }
+
+        return null;
+    }
+
+    private File getDirFromWorkspaceSetting(@NonNull File settings, @NonNull String property) {
+        //noinspection VariableNotUsedInsideIf
+        if (mWorkspaceLocation != null) {
+            if (settings.exists()) {
+                try {
+                    Properties properties = getProperties(settings);
+                    if (properties != null) {
+                        String path = properties.getProperty(property);
+                        File dir = new File(path);
+                        if (dir.exists()) {
+                            return dir;
+                        } else {
+                            dir = new File(path.replace('/', separatorChar));
+                            if (dir.exists()) {
+                                return dir;
+                            }
+                        }
+                    }
+                } catch (IOException e) {
+                    // Ignore workspace data
+                }
+            }
+        }
+
+        return null;
     }
 
     public static boolean isEclipseWorkspaceDir(@NonNull File file) {
@@ -456,6 +554,7 @@ public class GradleImport {
         createSettingsGradle(new File(destDir, FN_SETTINGS_GRADLE));
 
         exportGradleWrapper(destDir);
+        exportLocalProperties(destDir);
 
         for (ImportModule module : mRootModules) {
             exportModule(new File(destDir, module.getModuleName()), module);
@@ -464,7 +563,7 @@ public class GradleImport {
         mSummary.write(new File(destDir, IMPORT_SUMMARY_TXT));
     }
 
-    private void exportGradleWrapper(File destDir) throws IOException {
+    private void exportGradleWrapper(@NonNull File destDir) throws IOException {
         if (mGradleWrapperLocation != null && mGradleWrapperLocation.exists()) {
             File gradlewDest = new File(destDir, "gradlew");
             copyDir(new File(mGradleWrapperLocation, "gradlew"), gradlewDest, null);
@@ -477,6 +576,44 @@ public class GradleImport {
                     "gradlew.bat"), null);
             copyDir(new File(mGradleWrapperLocation, "gradle"), new File(destDir, "gradle"), null);
         }
+    }
+
+    // Write local.properties file
+    private void exportLocalProperties(@NonNull File destDir) throws IOException {
+        boolean needsNdk = needsNdk();
+        if (mNdkLocation != null && needsNdk || mSdkLocation != null) {
+            Properties properties = new Properties();
+            if (mSdkLocation != null) {
+                properties.put(PROPERTY_SDK, mSdkLocation.getPath());
+            }
+            if (mNdkLocation != null && needsNdk) {
+                properties.put(PROPERTY_NDK, mNdkLocation.getPath());
+            }
+
+            FileOutputStream out = null;
+            try {
+                //noinspection IOResourceOpenedButNotSafelyClosed
+                out = new FileOutputStream(new File(destDir, FN_LOCAL_PROPERTIES));
+                properties.store(out,
+                    "# This file must *NOT* be checked into Version Control Systems,\n" +
+                    "# as it contains information specific to your local configuration.\n" +
+                    "\n" +
+                    "# Location of the SDK. This is only used by Gradle.\n");
+            } finally {
+                Closeables.close(out, true);
+            }
+        }
+    }
+
+    /** Returns true if this project appears to need the NDK */
+    public boolean needsNdk() {
+        for (ImportModule module : mModules) {
+            if (module.isNdkProject()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void exportModule(File destDir, ImportModule module) throws IOException {
@@ -530,7 +667,7 @@ public class GradleImport {
             sb.append(NL);
             sb.append("    defaultConfig {").append(NL);
             sb.append("        minSdkVersion ").append(minSdkVersion).append(NL);
-            if (module.getTargetSdkVersion() > 1) {
+            if (module.getTargetSdkVersion() > 1 && module.getCompileSdkVersion() > 3) {
                 sb.append("        targetSdkVersion ").append(targetSdkVersion).append(NL);
             }
 
@@ -544,6 +681,15 @@ public class GradleImport {
                         .append(NL);
                 sb.append("        }").append(NL);
             }
+
+            if (module.isNdkProject() && module.getNativeModuleName() != null) {
+                sb.append(NL);
+                sb.append("        ndk {").append(NL);
+                sb.append("            moduleName \"").append(module.getNativeModuleName())
+                        .append("\"").append(NL);
+                sb.append("        }").append(NL);
+            }
+
             sb.append("    }").append(NL);
             sb.append(NL);
 
@@ -878,13 +1024,28 @@ public class GradleImport {
         return getProperties(settings);
     }
 
-    private File getJdtSettingsFile() {
+    private File getRuntimeSettingsDir() {
         return new File(getWorkspaceLocation(),
                 ".metadata" + separator +
                 ".plugins" + separator +
                 "org.eclipse.core.runtime" + separator +
-                ".settings" + separator +
-                "org.eclipse.jdt.core.prefs");
+                ".settings");
+    }
+
+    private File getJdtSettingsFile() {
+        return new File(getRuntimeSettingsDir(), "org.eclipse.jdt.core.prefs");
+    }
+
+    private File getPathSettingsFile() {
+        return new File(getRuntimeSettingsDir(), "org.eclipse.core.resources.prefs");
+    }
+
+    private File getNdkSettingsFile() {
+        return new File(getRuntimeSettingsDir(), "com.android.ide.eclipse.ndk.prefs");
+    }
+
+    private File getAdtSettingsFile() {
+        return new File(getRuntimeSettingsDir(), "com.android.ide.eclipse.adt.prefs");
     }
 
     @Nullable
@@ -898,15 +1059,6 @@ public class GradleImport {
         }
 
         return getProperties(settings);
-    }
-
-    private File getPathSettingsFile() {
-        return new File(getWorkspaceLocation(),
-                ".metadata" + separator +
-                ".plugins" + separator +
-                "org.eclipse.core.runtime" + separator +
-                ".settings" + separator +
-                "org.eclipse.core.resources.prefs");
     }
 
     private File getWorkspaceLocation() {
