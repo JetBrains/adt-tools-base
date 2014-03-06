@@ -38,7 +38,13 @@ import java.util.List;
 @SuppressWarnings("javadoc")
 public class HtmlReporterTest extends AbstractCheckTest {
     public void test() throws Exception {
-        File file = new File(getTargetDir(), "report");
+        //noinspection ResultOfMethodCallIgnored
+        File projectDir = Files.createTempDir();
+        File buildDir = new File(projectDir, "build");
+        File reportFile = new File(buildDir, "report");
+        //noinspection ResultOfMethodCallIgnored
+        buildDir.mkdirs();
+
         try {
             LintCliClient client = new LintCliClient() {
                 @Override
@@ -60,19 +66,19 @@ public class HtmlReporterTest extends AbstractCheckTest {
                 }
             };
 
-            //noinspection ResultOfMethodCallIgnored
-            file.getParentFile().mkdirs();
-            HtmlReporter reporter = new HtmlReporter(client, file);
-            Project project = Project.create(client, new File("/foo/bar/Foo"),
-                    new File("/foo/bar/Foo"));
-
+            HtmlReporter reporter = new HtmlReporter(client, reportFile);
+            File res = new File(projectDir, "res");
+            File layout = new File(res, "layout");
+            File main = new File(layout, "main.xml");
+            File manifest = new File(projectDir, "AndroidManifest.xml");
+            Project project = Project.create(client, projectDir, projectDir);
             Warning warning1 = new Warning(ManifestDetector.USES_SDK,
                     "<uses-sdk> tag should specify a target API level (the highest verified " +
                     "version; when running on later versions, compatibility behaviors may " +
                     "be enabled) with android:targetSdkVersion=\"?\"",
                     Severity.WARNING, project, null);
             warning1.line = 6;
-            warning1.file = new File("/foo/bar/Foo/AndroidManifest.xml");
+            warning1.file = manifest;
             warning1.errorLine = "    <uses-sdk android:minSdkVersion=\"8\" />\n    ^\n";
             warning1.path = "AndroidManifest.xml";
             warning1.location = Location.create(warning1.file,
@@ -82,7 +88,7 @@ public class HtmlReporterTest extends AbstractCheckTest {
                     "[I18N] Hardcoded string \"Fooo\", should use @string resource",
                     Severity.WARNING, project, null);
             warning2.line = 11;
-            warning2.file = new File("/foo/bar/Foo/res/layout/main.xml");
+            warning2.file = main;
             warning2.errorLine = " (java.lang.String)         android:text=\"Fooo\" />\n" +
                           "        ~~~~~~~~~~~~~~~~~~~\n";
             warning2.path = "res/layout/main.xml";
@@ -95,7 +101,7 @@ public class HtmlReporterTest extends AbstractCheckTest {
 
             reporter.write(0, 2, warnings);
 
-            String report = Files.toString(file, Charsets.UTF_8);
+            String report = Files.toString(reportFile, Charsets.UTF_8);
 
             // Replace the timestamp to make golden file comparison work
             String timestampPrefix = "Check performed at ";
@@ -155,7 +161,7 @@ public class HtmlReporterTest extends AbstractCheckTest {
                     + "<div class=\"id\"><a href=\"#\" title=\"Return to top\">UsesMinSdkAttributes: Minimum SDK and target SDK attributes not defined</a><div class=\"issueSeparator\"></div>\n"
                     + "</div>\n"
                     + "<div class=\"warningslist\">\n"
-                    + "<span class=\"location\">AndroidManifest.xml:7</span>: <span class=\"message\">&lt;uses-sdk> tag should specify a target API level (the highest verified version; when running on later versions, compatibility behaviors may be enabled) with android:targetSdkVersion=\"?\"</span><br />\n"
+                    + "<span class=\"location\"><a href=\"../AndroidManifest.xml\">AndroidManifest.xml</a>:7</span>: <span class=\"message\">&lt;uses-sdk> tag should specify a target API level (the highest verified version; when running on later versions, compatibility behaviors may be enabled) with android:targetSdkVersion=\"?\"</span><br />\n"
                     + "</div>\n"
                     + "<div class=\"metadata\">Priority: 9 / 10<br/>\n"
                     + "Category: Correctness</div>\n"
@@ -176,7 +182,7 @@ public class HtmlReporterTest extends AbstractCheckTest {
                     + "<div class=\"id\"><a href=\"#\" title=\"Return to top\">HardcodedText: Hardcoded text</a><div class=\"issueSeparator\"></div>\n"
                     + "</div>\n"
                     + "<div class=\"warningslist\">\n"
-                    + "<span class=\"location\">res/layout/main.xml:12</span>: <span class=\"message\">[I18N] Hardcoded string \"Fooo\", should use @string resource</span><br />\n"
+                    + "<span class=\"location\"><a href=\"../res/layout/main.xml\">res/layout/main.xml</a>:12</span>: <span class=\"message\">[I18N] Hardcoded string \"Fooo\", should use @string resource</span><br />\n"
                     + "</div>\n"
                     + "<div class=\"metadata\">Priority: 5 / 10<br/>\n"
                     + "Category: Internationalization</div>\n"
@@ -248,8 +254,7 @@ public class HtmlReporterTest extends AbstractCheckTest {
                     + "</html>",
                 report);
         } finally {
-            //noinspection ResultOfMethodCallIgnored
-            file.delete();
+            deleteFile(projectDir);
         }
     }
 

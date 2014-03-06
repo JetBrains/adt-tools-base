@@ -173,6 +173,9 @@ public class Lint extends DefaultTask {
             flags.setFatalOnly(true)
         }
         options.syncTo(client, flags, variantName, project, report)
+        if (!report) {
+            flags.setQuiet(true)
+        }
 
         List<Warning> warnings;
         try {
