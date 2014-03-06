@@ -16,16 +16,12 @@
 
 package com.android.tools.lint.client.api;
 
-import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ATTR_IGNORE;
 import static com.android.SdkConstants.CLASS_CONSTRUCTOR;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
 import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.DOT_JAVA;
-import static com.android.SdkConstants.DOT_XML;
-import static com.android.SdkConstants.FN_PROJECT_PROGUARD_FILE;
-import static com.android.SdkConstants.OLD_PROGUARD_FILE;
 import static com.android.SdkConstants.RES_FOLDER;
 import static com.android.SdkConstants.SUPPRESS_ALL;
 import static com.android.SdkConstants.SUPPRESS_LINT;
@@ -54,8 +50,6 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.annotations.Beta;
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -110,7 +104,6 @@ import lombok.ast.Expression;
 import lombok.ast.MethodDeclaration;
 import lombok.ast.Modifiers;
 import lombok.ast.Node;
-import lombok.ast.Statement;
 import lombok.ast.StrictListAccessor;
 import lombok.ast.StringLiteral;
 import lombok.ast.TypeReference;
@@ -1026,6 +1019,11 @@ public class LintDriver {
                 project.isAndroidProject()) {
             checkProGuard(project, main);
         }
+
+        if (project == main && mScope.contains(Scope.PROPERTY_FILE) &&
+                project.isAndroidProject()) {
+            checkProperties(project, main);
+        }
     }
 
     private void checkBuildScripts(Project project, Project main) {
@@ -1054,6 +1052,24 @@ public class LintDriver {
         if (detectors != null) {
             List<File> files = project.getProguardFiles();
             for (File file : files) {
+                Context context = new Context(this, project, main, file);
+                fireEvent(EventType.SCANNING_FILE, context);
+                for (Detector detector : detectors) {
+                    if (detector.appliesTo(context, file)) {
+                        detector.beforeCheckFile(context);
+                        detector.run(context);
+                        detector.afterCheckFile(context);
+                    }
+                }
+            }
+        }
+    }
+
+    private void checkProperties(Project project, Project main) {
+        List<Detector> detectors = mScopeDetectors.get(Scope.PROPERTY_FILE);
+        if (detectors != null) {
+            File file = new File(project.getDir(), "local.properties");
+            if (file.exists()) {
                 Context context = new Context(this, project, main, file);
                 fireEvent(EventType.SCANNING_FILE, context);
                 for (Detector detector : detectors) {

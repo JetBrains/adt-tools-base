@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.SdkConstants.DOT_GRADLE;
 import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.DOT_PROPERTIES;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.FN_PROJECT_PROGUARD_FILE;
 import static com.android.SdkConstants.OLD_PROGUARD_FILE;
@@ -104,6 +105,9 @@ public enum Scope {
     /** The analysis considers a Gradle build file */
     GRADLE_FILE,
 
+    /** The analysis considers Java property files */
+    PROPERTY_FILE,
+
     /**
      * Scope for other files. Issues that specify a custom scope will be called unconditionally.
      * This will call {@link Detector#run(Context)}} on the detectors unconditionally.
@@ -129,6 +133,8 @@ public enum Scope {
                         || scopes.contains(CLASS_FILE)
                         || scopes.contains(RESOURCE_FILE)
                         || scopes.contains(PROGUARD_FILE)
+                        || scopes.contains(PROPERTY_FILE)
+                        || scopes.contains(GRADLE_FILE)
                         || scopes.contains(MANIFEST));
         }
     }
@@ -181,6 +187,8 @@ public enum Scope {
                     } else if (name.equals(OLD_PROGUARD_FILE)
                             || name.equals(FN_PROJECT_PROGUARD_FILE)) {
                         scope.add(PROGUARD_FILE);
+                    } else if (name.endsWith(DOT_PROPERTIES)) {
+                        scope.add(PROPERTY_FILE);
                     }
                 }
             } else {
@@ -211,6 +219,8 @@ public enum Scope {
     public static final EnumSet<Scope> OTHER_SCOPE = EnumSet.of(OTHER);
     /** Scope-set used for detectors which are affected by a single ProGuard class file */
     public static final EnumSet<Scope> PROGUARD_SCOPE = EnumSet.of(PROGUARD_FILE);
+    /** Scope-set used for detectors which correspond to property files */
+    public static final EnumSet<Scope> PROPERTY_SCOPE = EnumSet.of(PROPERTY_FILE);
     /** Scope-set used for detectors which are affected by single XML and Java source files */
     public static final EnumSet<Scope> JAVA_AND_RESOURCE_FILES =
             EnumSet.of(RESOURCE_FILE, JAVA_FILE);
