@@ -14,40 +14,31 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.local;
+package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.internal.repository.packages.BuildToolPackage;
+import com.android.sdklib.internal.repository.archives.Archive.Arch;
+import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.packages.Package;
+import com.android.sdklib.internal.repository.packages.ToolPackage;
 import com.android.sdklib.repository.FullRevision;
 
 import java.io.File;
 import java.util.Properties;
 
-public class LocalBuildToolPkgInfo extends LocalFullRevisionPkgInfo {
+public class LocalToolPkgInfo extends LocalFullRevisionPkgInfo {
 
-    @Nullable
-    private final BuildToolInfo mBuildToolInfo;
-
-    public LocalBuildToolPkgInfo(@NonNull LocalSdk localSdk,
-                                 @NonNull File localDir,
-                                 @NonNull Properties sourceProps,
-                                 @NonNull FullRevision revision,
-                                 @Nullable BuildToolInfo btInfo) {
+    public LocalToolPkgInfo(@NonNull LocalSdk localSdk,
+                            @NonNull File localDir,
+                            @NonNull Properties sourceProps,
+                            @NonNull FullRevision revision) {
         super(localSdk, localDir, sourceProps, revision);
-        mBuildToolInfo = btInfo;
     }
 
     @Override
     public int getType() {
-        return LocalSdk.PKG_BUILD_TOOLS;
-    }
-
-    @Nullable
-    public BuildToolInfo getBuildToolInfo() {
-        return mBuildToolInfo;
+        return LocalSdk.PKG_TOOLS;
     }
 
     @Nullable
@@ -56,7 +47,17 @@ public class LocalBuildToolPkgInfo extends LocalFullRevisionPkgInfo {
         Package pkg = super.getPackage();
         if (pkg == null) {
             try {
-                pkg = BuildToolPackage.create(getLocalDir(), getSourceProperties());
+                pkg = ToolPackage.create(
+                        null,                       //source
+                        getSourceProperties(),      //properties
+                        0,                          //revision
+                        null,                       //license
+                        "Tools",                    //description
+                        null,                       //descUrl
+                        Os.getCurrentOs(),          //archiveOs
+                        Arch.getCurrentArch(),      //archiveArch
+                        getLocalDir().getPath()     //archiveOsPath
+                        );
                 setPackage(pkg);
             } catch (Exception e) {
                 appendLoadError("Failed to parse package: %1$s", e.toString());

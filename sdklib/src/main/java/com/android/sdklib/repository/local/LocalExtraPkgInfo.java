@@ -14,31 +14,59 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.local;
+package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
-import com.android.sdklib.internal.repository.packages.DocPackage;
+import com.android.sdklib.internal.repository.packages.ExtraPackage;
 import com.android.sdklib.internal.repository.packages.Package;
-import com.android.sdklib.repository.MajorRevision;
+import com.android.sdklib.repository.NoPreviewRevision;
 
 import java.io.File;
 import java.util.Properties;
 
-public class LocalDocPkgInfo extends LocalMajorRevisionPkgInfo {
+public class LocalExtraPkgInfo extends LocalFullRevisionPkgInfo {
 
-    public LocalDocPkgInfo(@NonNull LocalSdk localSdk,
-                           @NonNull File localDir,
-                           @NonNull Properties sourceProps,
-                           @NonNull MajorRevision revision) {
+    private final @NonNull String mExtraPath;
+    private final @NonNull String mVendorId;
+
+    public LocalExtraPkgInfo(@NonNull LocalSdk localSdk,
+                             @NonNull File localDir,
+                             @NonNull Properties sourceProps,
+                             @NonNull String vendorId,
+                             @NonNull String path,
+                             @NonNull NoPreviewRevision revision) {
         super(localSdk, localDir, sourceProps, revision);
+        mVendorId = vendorId;
+        mExtraPath = path;
     }
 
     @Override
     public int getType() {
-        return LocalSdk.PKG_DOCS;
+        return LocalSdk.PKG_EXTRAS;
+    }
+
+    @Override
+    public boolean hasPath() {
+        return true;
+    }
+
+    @NonNull
+    public String getExtraPath() {
+        return mExtraPath;
+    }
+
+    @NonNull
+    public String getVendorId() {
+        return mVendorId;
+    }
+
+    @NonNull
+    @Override
+    public String getPath() {
+        return mVendorId + '/' + mExtraPath;
     }
 
     @Nullable
@@ -47,11 +75,11 @@ public class LocalDocPkgInfo extends LocalMajorRevisionPkgInfo {
         Package pkg = super.getPackage();
         if (pkg == null) {
             try {
-                pkg = DocPackage.create(
+                pkg = ExtraPackage.create(
                         null,                       //source
                         getSourceProperties(),      //properties
-                        0,                          //apiLevel
-                        null,                       //codename
+                        mVendorId,                  //vendor
+                        mExtraPath,                 //path
                         0,                          //revision
                         null,                       //license
                         null,                       //description
@@ -68,3 +96,4 @@ public class LocalDocPkgInfo extends LocalMajorRevisionPkgInfo {
         return pkg;
     }
 }
+

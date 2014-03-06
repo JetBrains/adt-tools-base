@@ -14,40 +14,43 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.local;
+package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.internal.repository.packages.Package;
-import com.android.sdklib.internal.repository.packages.SamplePackage;
 import com.android.sdklib.repository.MajorRevision;
 
 import java.io.File;
 import java.util.Properties;
 
 /**
- * Local sample package, for a given platform's {@link AndroidVersion}.
+ * Local system-image package, for a given platform's {@link AndroidVersion}
+ * and given ABI.
  * The package itself has a major revision.
- * There should be only one for a given android platform version.
+ * There should be only one for a given android platform version & ABI.
  */
-public class LocalSamplePkgInfo extends LocalAndroidVersionPkgInfo {
+public class LocalSysImgPkgInfo extends LocalAndroidVersionPkgInfo {
 
     @NonNull
     private final MajorRevision mRevision;
+    @NonNull
+    private final String mAbi;
 
-    public LocalSamplePkgInfo(@NonNull LocalSdk localSdk,
+    public LocalSysImgPkgInfo(@NonNull LocalSdk localSdk,
                               @NonNull File localDir,
                               @NonNull Properties sourceProps,
                               @NonNull AndroidVersion version,
+                              @NonNull String abi,
                               @NonNull MajorRevision revision) {
         super(localSdk, localDir, sourceProps, version);
+        mAbi = abi;
         mRevision = revision;
+
     }
 
     @Override
     public int getType() {
-        return LocalSdk.PKG_SAMPLES;
+        return LocalSdk.PKG_SYS_IMAGES;
     }
 
     @Override
@@ -61,18 +64,23 @@ public class LocalSamplePkgInfo extends LocalAndroidVersionPkgInfo {
         return mRevision;
     }
 
-    @Nullable
     @Override
-    public Package getPackage() {
-        Package pkg = super.getPackage();
-        if (pkg == null) {
-            try {
-                pkg = SamplePackage.create(getLocalDir().getPath(), getSourceProperties());
-                setPackage(pkg);
-            } catch (Exception e) {
-                appendLoadError("Failed to parse package: %1$s", e.toString());
-            }
-        }
-        return pkg;
+    public boolean hasPath() {
+        return true;
     }
+
+    /** The System-image path is its ABI. */
+    @NonNull
+    @Override
+    public String getPath() {
+        return getAbi();
+    }
+
+    @NonNull
+    public String getAbi() {
+        return mAbi;
+    }
+
+    // TODO create package on demand if needed. This might not be needed
+    // since typically system-images are retrieved via IAndroidTarget.
 }
