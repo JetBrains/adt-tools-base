@@ -1487,9 +1487,6 @@ public abstract class BasePlugin {
                 // Now reset the input count for the only output present in the proguard task.
                 // This is to go around the fact that proguard wants to know about the input
                 // before the output is given.
-                // we're basically doing:
-                //     proguardTask.inJarCounts.clear()
-                //     proguardTask.inJarCounts.add(Integer.valueOf(proguardTask.inJarFiles.size()));
                 resetProguardInJarCounts(proguardTask)
             }
 
@@ -1514,9 +1511,6 @@ public abstract class BasePlugin {
                 // Now reset the input count for the only output present in the proguard task.
                 // This is to go around the fact that proguard wants to know about the input
                 // before the output is given.
-                // we're basically doing:
-                //     proguardTask.inJarCounts.clear()
-                //     proguardTask.inJarCounts.add(Integer.valueOf(proguardTask.inJarFiles.size()));
                 resetProguardInJarCounts(proguardTask)
             }
         }
@@ -1552,22 +1546,32 @@ public abstract class BasePlugin {
     }
 
     protected static void resetProguardInJarCounts(@NonNull ProGuardTask proguardTask) {
-        Field inJarCountsField = ProGuardTask.getDeclaredField("inJarCounts")
-        inJarCountsField.setAccessible(true)
-        Field inJarFilesField = ProGuardTask.getDeclaredField("inJarFiles")
-        inJarFilesField.setAccessible(true)
+        // we're basically doing:
+        //     proguardTask.inJarCounts.clear()
+        //     proguardTask.inJarCounts.add(Integer.valueOf(proguardTask.inJarFiles.size()));
 
-        Method clearMethod = ArrayList.class.getMethod("clear")
-        Method sizeMethod = ArrayList.class.getMethod("size")
-        Method addMethod = ArrayList.class.getMethod("add", Object.class)
+        try {
+            Field inJarCountsField = ProGuardTask.getDeclaredField("inJarCounts")
+            inJarCountsField.setAccessible(true)
+            Field inJarFilesField = ProGuardTask.getDeclaredField("inJarFiles")
+            inJarFilesField.setAccessible(true)
 
-        Object inJarCountsInstance = inJarCountsField.get(proguardTask)
-        Object inJarFilesInstance = inJarFilesField.get(proguardTask)
+            Method clearMethod = ArrayList.class.getMethod("clear")
+            Method sizeMethod = ArrayList.class.getMethod("size")
+            Method addMethod = ArrayList.class.getMethod("add", Object.class)
 
-        clearMethod.invoke(inJarCountsInstance, null)
-        Object sizeValue = sizeMethod.invoke(inJarFilesInstance, null)
+            Object inJarCountsInstance = inJarCountsField.get(proguardTask)
+            Object inJarFilesInstance = inJarFilesField.get(proguardTask)
 
-        addMethod.invoke(inJarCountsInstance, sizeValue)
+            clearMethod.invoke(inJarCountsInstance, null)
+            Object sizeValue = sizeMethod.invoke(inJarFilesInstance, null)
+
+            addMethod.invoke(inJarCountsInstance, sizeValue)
+        } catch (Throwable t) {
+            throw new RuntimeException(
+                    "Failed to change some proguard internals. There is a mismatch in the version of used.",
+                    t)
+        }
     }
 
     private void createReportTasks() {
