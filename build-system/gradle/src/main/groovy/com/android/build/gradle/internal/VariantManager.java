@@ -24,6 +24,7 @@ import static com.android.builder.BuilderConstants.UI_TEST;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AppExtension;
+import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.api.BaseVariant;
@@ -62,7 +63,7 @@ public class VariantManager {
     @NonNull
     private final BasePlugin basePlugin;
     @NonNull
-    private final AppExtension appExtension;
+    private final BaseExtension extension;
 
     private final Map<String, BuildTypeData> buildTypes = Maps.newHashMap();
     private final Map<String, ProductFlavorData<GroupableProductFlavorDsl>> productFlavors = Maps.newHashMap();
@@ -71,8 +72,8 @@ public class VariantManager {
     public VariantManager(
             @NonNull Project project,
             @NonNull BasePlugin basePlugin,
-            @NonNull AppExtension appExtension) {
-        this.appExtension = appExtension;
+            @NonNull BaseExtension extension) {
+        this.extension = extension;
         this.basePlugin = basePlugin;
         this.project = project;
     }
@@ -111,7 +112,7 @@ public class VariantManager {
             throw new RuntimeException("BuildType names cannot collide with ProductFlavor names");
         }
 
-        DefaultAndroidSourceSet sourceSet = (DefaultAndroidSourceSet) appExtension.getSourceSetsContainer().maybeCreate(name);
+        DefaultAndroidSourceSet sourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(name);
 
         BuildTypeData buildTypeData = new BuildTypeData(buildType, sourceSet, project);
         project.getTasks().getByName("assemble").dependsOn(buildTypeData.getAssembleTask());
@@ -133,10 +134,10 @@ public class VariantManager {
             throw new RuntimeException("ProductFlavor names cannot collide with BuildType names");
         }
 
-        DefaultAndroidSourceSet mainSourceSet = (DefaultAndroidSourceSet) appExtension.getSourceSetsContainer().maybeCreate(
+        DefaultAndroidSourceSet mainSourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(
                 productFlavor.getName());
         String testName = INSTRUMENT_TEST + StringHelper.capitalize(productFlavor.getName());
-        DefaultAndroidSourceSet testSourceSet = (DefaultAndroidSourceSet) appExtension.getSourceSetsContainer().maybeCreate(
+        DefaultAndroidSourceSet testSourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(
                 testName);
 
         ProductFlavorData<GroupableProductFlavorDsl> productFlavorData =
@@ -150,6 +151,10 @@ public class VariantManager {
      * Task creation entry point.
      */
     public void createAndroidTasks() {
+        if (!(extension instanceof AppExtension)) {
+            throw new RuntimeException("Impossible to create task for libraries in VariantManager");
+        }
+
         if (productFlavors.isEmpty()) {
             createTasksForDefaultBuild();
         } else {
@@ -160,7 +165,7 @@ public class VariantManager {
             basePlugin.setAssembleTest(assembleTest);
 
             // check whether we have multi flavor builds
-            List<String> flavorGroupList = appExtension.getFlavorGroupList();
+            List<String> flavorGroupList = extension.getFlavorGroupList();
             if (flavorGroupList == null || flavorGroupList.size() < 2) {
                 for (ProductFlavorData productFlavorData : productFlavors.values()) {
                     createTasksForFlavoredBuild(productFlavorData);
@@ -227,7 +232,7 @@ public class VariantManager {
 
         // fill the array at the current index.
         // get the group name that matches the index we are filling.
-        String group = appExtension.getFlavorGroupList().get(i);
+        String group = extension.getFlavorGroupList().get(i);
 
         // from our map, get all the possible flavors in that group.
         List<? extends ProductFlavorData> flavorList = map.get(group);
@@ -246,9 +251,10 @@ public class VariantManager {
      * <type>.
      */
     private void createTasksForDefaultBuild() {
-        BuildTypeData testData = buildTypes.get(appExtension.getTestBuildType());
+        BuildTypeData testData = buildTypes.get(extension.getTestBuildType());
         if (testData == null) {
-            throw new RuntimeException("Test Build Type '$appExtension.testBuildType' does not exist.");
+            throw new RuntimeException(String.format(
+                    "Test Build Type '%1$s' does not exist.", extension.getTestBuildType()));
         }
 
         ApplicationVariantData testedVariantData = null;
@@ -327,9 +333,10 @@ public class VariantManager {
      */
     private void createTasksForFlavoredBuild(@NonNull ProductFlavorData... flavorDataList) {
 
-        BuildTypeData testData = buildTypes.get(appExtension.getTestBuildType());
+        BuildTypeData testData = buildTypes.get(extension.getTestBuildType());
         if (testData == null) {
-            throw new RuntimeException("Test Build Type '$appExtension.testBuildType' does not exist.");
+            throw new RuntimeException(String.format(
+                    "Test Build Type '%1$s' does not exist.", extension.getTestBuildType()));
         }
 
         // because this method is called multiple times, we need to keep track
@@ -350,7 +357,7 @@ public class VariantManager {
             variantProviders.add(buildTypeData);
 
             VariantConfiguration variantConfig = new VariantConfiguration(
-                    appExtension.getDefaultConfig(),
+                    extension.getDefaultConfig(),
                     basePlugin.getDefaultConfigData().getSourceSet(),
                     buildTypeData.getBuildType(),
                     buildTypeData.getSourceSet());
@@ -376,7 +383,7 @@ public class VariantManager {
             // create the variant and get its internal storage object.
             ApplicationVariantData appVariantData = new ApplicationVariantData(variantConfig);
 
-            NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer = appExtension
+            NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer = extension
                     .getSourceSetsContainer();
 
             DefaultAndroidSourceSet variantSourceSet = (DefaultAndroidSourceSet) sourceSetsContainer.maybeCreate(
@@ -408,7 +415,7 @@ public class VariantManager {
 
         // handle test variant
         VariantConfiguration testVariantConfig = new VariantConfiguration(
-                appExtension.getDefaultConfig(),
+                extension.getDefaultConfig(),
                 basePlugin.getDefaultConfigData().getTestSourceSet(),
                 testData.getBuildType(),
                 null,
@@ -575,11 +582,11 @@ public class VariantManager {
             testVariant.setTestedVariant(appVariant);
         }
 
-        appExtension.addApplicationVariant(appVariant);
+        ((AppExtension) extension).addApplicationVariant(appVariant);
         map.put(appVariantData, appVariant);
 
         if (testVariant != null) {
-            appExtension.addTestVariant(testVariant);
+            extension.addTestVariant(testVariant);
             map.put(testVariantData, testVariant);
         }
     }

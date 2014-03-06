@@ -48,7 +48,6 @@ import java.util.jar.Manifest
 
 import static com.android.builder.model.AndroidProject.ARTIFACT_INSTRUMENT_TEST
 import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN
-
 /**
  * Builder for the custom Android model.
  */
@@ -69,8 +68,6 @@ public class ModelBuilder implements ToolingModelBuilder {
 
         if (appPlugin == null) {
             basePlugin = libPlugin = getPlugin(project, LibraryPlugin.class)
-        } else {
-            signingConfigs = appPlugin.extension.signingConfigs
         }
 
         if (basePlugin == null) {
@@ -78,9 +75,7 @@ public class ModelBuilder implements ToolingModelBuilder {
             return null
         }
 
-        if (libPlugin != null) {
-            signingConfigs = Collections.singletonList(libPlugin.extension.debugSigningConfig)
-        }
+        signingConfigs = basePlugin.extension.signingConfigs
 
         SdkParser sdkParser = basePlugin.getLoadedSdkParser()
         List<String> bootClasspath = basePlugin.runtimeJarList
@@ -115,25 +110,15 @@ public class ModelBuilder implements ToolingModelBuilder {
                         basePlugin.defaultConfigData,
                         basePlugin.getExtraFlavorSourceProviders(basePlugin.defaultConfigData.productFlavor.name)))
 
-        if (appPlugin != null) {
-            for (BuildTypeData btData : appPlugin.variantManager.buildTypes.values()) {
-                androidProject.addBuildType(BuildTypeContainerImpl.createBTC(
-                        btData,
-                        basePlugin.getExtraBuildTypeSourceProviders(btData.buildType.name)))
-            }
-            for (ProductFlavorData pfData : appPlugin.variantManager.productFlavors.values()) {
-                androidProject.addProductFlavors(ProductFlavorContainerImpl.createPFC(
-                        pfData,
-                        basePlugin.getExtraFlavorSourceProviders(pfData.productFlavor.name)))
-            }
-
-        } else if (libPlugin != null) {
+        for (BuildTypeData btData : basePlugin.variantManager.buildTypes.values()) {
             androidProject.addBuildType(BuildTypeContainerImpl.createBTC(
-                        libPlugin.debugBuildTypeData,
-                        basePlugin.getExtraBuildTypeSourceProviders(libPlugin.debugBuildTypeData.buildType.name)))
-                 .addBuildType(BuildTypeContainerImpl.createBTC(
-                        libPlugin.releaseBuildTypeData,
-                        basePlugin.getExtraBuildTypeSourceProviders(libPlugin.releaseBuildTypeData.buildType.name)))
+                    btData,
+                    basePlugin.getExtraBuildTypeSourceProviders(btData.buildType.name)))
+        }
+        for (ProductFlavorData pfData : basePlugin.variantManager.productFlavors.values()) {
+            androidProject.addProductFlavors(ProductFlavorContainerImpl.createPFC(
+                    pfData,
+                    basePlugin.getExtraFlavorSourceProviders(pfData.productFlavor.name)))
         }
 
         Set<Project> gradleProjects = project.getRootProject().getAllprojects();

@@ -20,7 +20,9 @@ android {
         targetSdkVersion 16
         proguardFile 'config.pro'
     }
-    release {
-        runProguard true
+    buildTypes {
+        release {
+            runProguard true
+        }
     }
 }

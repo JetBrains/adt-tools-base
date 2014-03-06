@@ -55,6 +55,7 @@ class AppPlugin extends BasePlugin implements Plugin<Project> {
         return extension
     }
 
+    @Override
     public VariantManager getVariantManager() {
         return variantManager
     }
