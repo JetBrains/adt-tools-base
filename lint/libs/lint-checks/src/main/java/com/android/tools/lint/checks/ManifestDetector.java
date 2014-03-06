@@ -757,13 +757,13 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             mSeenApplication = true;
             boolean recordLocation = false;
             if (element.hasAttributeNS(ANDROID_URI, ATTR_ALLOW_BACKUP)
-                    || context.getDriver().isSuppressed(ALLOW_BACKUP, element)) {
+                    || context.getDriver().isSuppressed(context, ALLOW_BACKUP, element)) {
                 mSeenAllowBackup = true;
             } else {
                 recordLocation = true;
             }
             if (element.hasAttributeNS(ANDROID_URI, ATTR_ICON)
-                    || context.getDriver().isSuppressed(APPLICATION_ICON, element)) {
+                    || context.getDriver().isSuppressed(context, APPLICATION_ICON, element)) {
                 mSeenAppIcon = true;
             } else {
                 recordLocation = true;

@@ -261,7 +261,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
         }
 
         Handle handle = null;
-        if (!context.getDriver().isSuppressed(MISSING, element)) {
+        if (!context.getDriver().isSuppressed(context, MISSING, element)) {
             if (mReferencedClasses == null) {
                 mReferencedClasses = Maps.newHashMapWithExpectedSize(16);
                 mCustomViews = Sets.newHashSetWithExpectedSize(8);

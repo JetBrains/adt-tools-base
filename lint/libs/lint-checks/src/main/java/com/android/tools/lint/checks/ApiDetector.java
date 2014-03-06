@@ -1439,7 +1439,7 @@ public class ApiDetector extends ResourceXmlDetector
                         String message = String.format("Try-with-resources requires "
                                 + "API level %1$d (current min is %2$d)", api, minSdk);
                         LintDriver driver = mContext.getDriver();
-                        if (!driver.isSuppressed(UNSUPPORTED, node)) {
+                        if (!driver.isSuppressed(mContext, UNSUPPORTED, node)) {
                             mContext.report(UNSUPPORTED, location, message, null);
                         }
                     }
@@ -1499,13 +1499,13 @@ public class ApiDetector extends ResourceXmlDetector
                             api, minSdk, fqcn);
 
                     LintDriver driver = mContext.getDriver();
-                    if (driver.isSuppressed(INLINED, node)) {
+                    if (driver.isSuppressed(mContext, INLINED, node)) {
                         return true;
                     }
 
                     // Also allow to suppress these issues with NewApi, since some
                     // fields used to get identified that way
-                    if (driver.isSuppressed(UNSUPPORTED, node)) {
+                    if (driver.isSuppressed(mContext, UNSUPPORTED, node)) {
                         return true;
                     }
 

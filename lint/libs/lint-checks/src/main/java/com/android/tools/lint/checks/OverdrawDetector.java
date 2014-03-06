@@ -211,7 +211,7 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
 
                 Object clientData = location.getClientData();
                 if (clientData instanceof Node) {
-                    if (context.getDriver().isSuppressed(ISSUE, (Node) clientData)) {
+                    if (context.getDriver().isSuppressed(null, ISSUE, (Node) clientData)) {
                         return;
                     }
                 }
