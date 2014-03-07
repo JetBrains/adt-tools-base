@@ -1562,7 +1562,7 @@ public class AvdManager {
 
         // Get the device status if this AVD is associated with a device
         DeviceStatus deviceStatus = null;
-        boolean updateHashV2 = true;
+        boolean updateHashV2 = false;
         if (properties != null) {
             String deviceName = properties.get(AVD_INI_DEVICE_NAME);
             String deviceMfctr = properties.get(AVD_INI_DEVICE_MANUFACTURER);
@@ -1573,13 +1573,8 @@ public class AvdManager {
                 DeviceManager devMan = DeviceManager.createInstance(myLocalSdk.getLocation(), log);
                 d = devMan.getDevice(deviceName, deviceMfctr);
                 deviceStatus = d == null ? DeviceStatus.MISSING : DeviceStatus.EXISTS;
-            }
 
-            String hashV1 = properties.get(AVD_INI_DEVICE_HASH_V1);
-            if (hashV1 != null) {
-                // will recompute a hash v2 and save it below
-                properties.remove(AVD_INI_DEVICE_HASH_V1);
-            } else {
+                updateHashV2 = true;
                 String hashV2 = properties.get(AVD_INI_DEVICE_HASH_V2);
                 if (hashV2 != null) {
                     String newHashV2 = DeviceManager.hasHardwarePropHashChanged(d, hashV2);
@@ -1588,6 +1583,12 @@ public class AvdManager {
                     } else {
                         properties.put(AVD_INI_DEVICE_HASH_V2, newHashV2);
                     }
+                }
+
+                String hashV1 = properties.get(AVD_INI_DEVICE_HASH_V1);
+                if (hashV1 != null) {
+                    // will recompute a hash v2 and save it below
+                    properties.remove(AVD_INI_DEVICE_HASH_V1);
                 }
             }
         }
