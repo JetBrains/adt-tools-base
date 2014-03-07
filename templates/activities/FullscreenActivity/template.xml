@@ -8,8 +8,6 @@
     minBuildApi="16">
     <dependency name="android-support-v4" revision="8" />
 
-    <category value="Activities" />
-
     <parameter
         id="activityClass"
         name="Activity Name"
