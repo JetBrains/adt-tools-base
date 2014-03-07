@@ -80,6 +80,20 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             Severity.WARNING,
             IMPLEMENTATION);
 
+    /** Incompatible Android Gradle plugin */
+    public static final Issue GRADLE_PLUGIN_COMPATIBILITY = Issue.create(
+            "AndroidGradlePluginVersion", //$NON-NLS-1$
+            "Incompatible Android Gradle Plugin",
+            "Ensures that the Android Gradle plugin version is compatible with this SDK",
+            "Not all versions of the Android Gradle plugin are compatible with all versions " +
+            "of the SDK. If you update your tools, or if you are trying to open a project that " +
+            "was built with an old version of the tools, you may need to update your plugin " +
+            "version number.",
+            Category.CORRECTNESS,
+            8,
+            Severity.ERROR,
+            IMPLEMENTATION);
+
     /** Invalid or dangerous paths */
     public static final Issue PATH = Issue.create(
             "GradlePath", //$NON-NLS-1$
@@ -354,13 +368,12 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 if (dependency != null) {
                     GradleCoordinate gc = GradleCoordinate.parseCoordinateString(dependency);
                     if (gc != null) {
-                        checkDependency(context, gc, cookie);
-
-                        if (!dependency.startsWith(SdkConstants.GRADLE_PLUGIN_NAME)
-                                && gc.acceptsGreaterRevisions()) {
-                            String message = "Avoid using + in version numbers; can lead "
-                                    + "to unpredictable and  unrepeatable builds";
+                        if (gc.acceptsGreaterRevisions()) {
+                            String message = "Avoid using + in version numbers; can lead " + "to unpredictable and  unrepeatable builds";
                             report(context, cookie, PLUS, message);
+                        }
+                        if (!dependency.startsWith(SdkConstants.GRADLE_PLUGIN_NAME) || !checkGradlePluginDependency(context, gc, cookie)) {
+                            checkDependency(context, gc, cookie);
                         }
                     }
                 }
@@ -639,6 +652,20 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             client.log(ioe, "Could not connect to maven central to look up the " + "latest available version for %1$s", dependency);
             return null;
         }
+    }
+
+    private boolean checkGradlePluginDependency(Context context, GradleCoordinate dependency,
+            Object cookie) {
+        GradleCoordinate latestPlugin = GradleCoordinate.parseCoordinateString(SdkConstants.GRADLE_PLUGIN_NAME +
+                SdkConstants.GRADLE_PLUGIN_MINIMUM_VERSION);
+        if (GradleCoordinate.COMPARE_PLUS_HIGHER.compare(dependency, latestPlugin) < 0) {
+            String message = "You must use a newer version of the Android Gradle plugin. The "
+                    + "minimum supported version is " + SdkConstants.GRADLE_PLUGIN_MINIMUM_VERSION +
+                    " and the recommended version is " + SdkConstants.GRADLE_PLUGIN_LATEST_VERSION;
+            report(context, cookie, GRADLE_PLUGIN_COMPATIBILITY, message);
+            return true;
+        }
+        return false;
     }
 
     private void checkSupportLibraries(Context context, GradleCoordinate dependency,

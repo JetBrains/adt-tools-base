@@ -33,7 +33,7 @@ import java.util.Set;
 /** Registry which provides a list of checks to be performed on an Android project */
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
-    static final int INITIAL_CAPACITY = 195;
+    static final int INITIAL_CAPACITY = 196;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -77,6 +77,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(FieldGetterDetector.ISSUE);
         issues.add(FragmentDetector.ISSUE);
         issues.add(GradleDetector.COMPATIBILITY);
+        issues.add(GradleDetector.GRADLE_PLUGIN_COMPATIBILITY);
         issues.add(GradleDetector.DEPENDENCY);
         issues.add(GradleDetector.GRADLE_GETTER);
         issues.add(GradleDetector.IDE_SUPPORT);
