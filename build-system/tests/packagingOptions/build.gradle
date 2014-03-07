@@ -1,0 +1,24 @@
+buildscript {
+    repositories {
+        maven { url '../../../../../out/host/gradle/repo' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.9.0-SNAPSHOT'
+    }
+}
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "19.0.2"
+
+    packagingOptions {
+        exclude 'excluded.txt'
+        pickFirst 'first_pick.txt'
+    }
+}
+
+dependencies {
+    compile files('jar1.jar')
+    compile files('jar2.jar')
+}
