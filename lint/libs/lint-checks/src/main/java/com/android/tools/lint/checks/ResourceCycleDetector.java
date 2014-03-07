@@ -75,6 +75,10 @@ import java.util.TreeMap;
  * Checks for cycles in resource definitions
  */
 public class ResourceCycleDetector extends ResourceXmlDetector {
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            ResourceCycleDetector.class,
+            Scope.RESOURCE_FILE_SCOPE);
+
     /** Style parent cycles, resource alias cycles, layout include cycles, etc */
     public static final Issue CYCLE = Issue.create(
             "ResourceCycle", //$NON-NLS-1$
@@ -85,9 +89,8 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
             Category.CORRECTNESS,
             8,
             Severity.FATAL,
-            new Implementation(
-                    ResourceCycleDetector.class,
-                    Scope.RESOURCE_FILE_SCOPE));
+            IMPLEMENTATION
+    );
 
     /** Parent cycles */
     public static final Issue CRASH = Issue.create(
@@ -100,9 +103,7 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
             Category.CORRECTNESS,
             8,
             Severity.FATAL,
-            new Implementation(
-                    ResourceCycleDetector.class,
-                    Scope.RESOURCE_FILE_SCOPE))
+            IMPLEMENTATION)
             .addMoreInfo("https://code.google.com/p/android/issues/detail?id=20479"); //$NON-NLS-1$
 
     /**
