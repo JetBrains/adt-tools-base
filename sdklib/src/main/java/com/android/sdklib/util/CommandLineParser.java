@@ -965,4 +965,12 @@ public class CommandLineParser {
     protected void stderr(String format, Object...args) {
         mLog.error(null, format, args);
     }
+
+    /**
+     * Returns the logger object.
+     * @return the logger object.
+     */
+    protected ILogger getLog() {
+        return mLog;
+    }
 }
