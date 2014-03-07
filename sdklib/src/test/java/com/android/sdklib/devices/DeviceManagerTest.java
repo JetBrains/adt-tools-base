@@ -16,6 +16,8 @@
 
 package com.android.sdklib.devices;
 
+import com.android.resources.Keyboard;
+import com.android.resources.Navigation;
 import com.android.sdklib.SdkManagerTestCase;
 import com.android.sdklib.devices.Device.Builder;
 import com.android.sdklib.devices.DeviceManager.DeviceFilter;
@@ -234,25 +236,75 @@ public class DeviceManagerTest extends SdkManagerTestCase {
 
     public final void testGetDeviceStatus() {
         // get a definition from the bundled devices.xml file
-        // Note: the recorded hash code of this device should not change in future implementations
-        // otherwise the AVD Manager will list existing AVDs as having changed.
         assertEquals(DeviceStatus.EXISTS,
-                     dm.getDeviceStatus("7in WSVGA (Tablet)", "Generic", -1338842870));
+                     dm.getDeviceStatus("7in WSVGA (Tablet)", "Generic"));
 
-        // same device but with an invalid hash code
-        assertEquals(DeviceStatus.CHANGED,
-                     dm.getDeviceStatus("7in WSVGA (Tablet)", "Generic", 1));
-
-
-        // get a definition from the bundled oem file with its canonical hash code
+        // get a definition from the bundled oem file
         assertEquals(DeviceStatus.EXISTS,
-                     dm.getDeviceStatus("Nexus One", "Google", -1812631727));
-
-        assertEquals(DeviceStatus.CHANGED,
-                     dm.getDeviceStatus("Nexus One", "Google", 2));
+                     dm.getDeviceStatus("Nexus One", "Google"));
 
         // try a device that does not exist
         assertEquals(DeviceStatus.MISSING,
-                     dm.getDeviceStatus("My Device", "Custom OEM", 3));
+                     dm.getDeviceStatus("My Device", "Custom OEM"));
+    }
+
+    public final void testHasHardwarePropHashChanged_Generic() {
+        final Device d1 = dm.getDevice("7in WSVGA (Tablet)", "Generic");
+
+        assertEquals("MD5:750a657019b49e621c42ce9a20c2cc30",
+                DeviceManager.hasHardwarePropHashChanged(
+                        d1,
+                        "invalid"));
+
+        assertEquals(null,
+                DeviceManager.hasHardwarePropHashChanged(
+                        d1,
+                        "MD5:750a657019b49e621c42ce9a20c2cc30"));
+
+        // change the device hardware props, this should change the hash
+        d1.getDefaultHardware().setNav(Navigation.TRACKBALL);
+
+        assertEquals("MD5:9c4dd5018987da51f7166f139f4361a2",
+                DeviceManager.hasHardwarePropHashChanged(
+                        d1,
+                        "MD5:750a657019b49e621c42ce9a20c2cc30"));
+
+        // change the property back, should revert its hash to the previous one
+        d1.getDefaultHardware().setNav(Navigation.NONAV);
+
+        assertEquals(null,
+                DeviceManager.hasHardwarePropHashChanged(
+                        d1,
+                        "MD5:750a657019b49e621c42ce9a20c2cc30"));
+    }
+
+    public final void testHasHardwarePropHashChanged_Oem() {
+        final Device d2 = dm.getDevice("Nexus One", "Google");
+
+        assertEquals("MD5:d886364fc30320c0518f51002d0ef22d",
+                DeviceManager.hasHardwarePropHashChanged(
+                        d2,
+                        "invalid"));
+
+        assertEquals(null,
+                DeviceManager.hasHardwarePropHashChanged(
+                        d2,
+                        "MD5:d886364fc30320c0518f51002d0ef22d"));
+
+        // change the device hardware props, this should change the hash
+        d2.getDefaultHardware().setKeyboard(Keyboard.QWERTY);
+
+        assertEquals("MD5:db682e0a58e74a8614e43e6e15c05176",
+                DeviceManager.hasHardwarePropHashChanged(
+                        d2,
+                        "MD5:d886364fc30320c0518f51002d0ef22d"));
+
+        // change the property back, should revert its hash to the previous one
+        d2.getDefaultHardware().setKeyboard(Keyboard.NOKEY);
+
+        assertEquals(null,
+                DeviceManager.hasHardwarePropHashChanged(
+                        d2,
+                        "MD5:d886364fc30320c0518f51002d0ef22d"));
     }
 }

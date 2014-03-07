@@ -436,14 +436,8 @@ public final class Device {
         return ok;
     }
 
-    /** A hash that's stable across JVM instances.
-     *
-     * TODO this API must be deprecated. hashCodes are not designed to be "stable across JVMs"
-     * as made in the original assumption. It would be fine if compared in memory in the same
-     * JVM implementation, but here these hash codes are then serialized to disk when saving
-     * AVDs and reloading them under a different JVM might result in incorrect hash codes.
-     * The proper fix to be done later is to replace this by a proper stable serialization
-     * mechanism (e.g. generate a property string and then use an MD5 or SHA1 checksum.)
+    /**
+     * For *internal* usage only. Must not be serialized to disk.
      */
     @Override
     public int hashCode() {
