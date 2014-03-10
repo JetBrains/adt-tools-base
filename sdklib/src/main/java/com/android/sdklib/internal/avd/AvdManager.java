@@ -62,8 +62,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -976,8 +974,11 @@ public class AvdManager {
             // display the chosen hardware config
             if (finalHardwareValues.size() > 0) {
                 report.append(",\nwith the following hardware config:\n");
-                for (Entry<String, String> entry : finalHardwareValues.entrySet()) {
-                    report.append(String.format("%s=%s\n",entry.getKey(), entry.getValue()));
+                List<String> keys = new ArrayList<String>(finalHardwareValues.keySet());
+                Collections.sort(keys);
+                for (String key : keys) {
+                    String value = finalHardwareValues.get(key);
+                    report.append(String.format("%s=%s\n", key, value));
                 }
             } else {
                 report.append("\n");
