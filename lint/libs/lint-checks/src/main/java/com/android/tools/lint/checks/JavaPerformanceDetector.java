@@ -131,7 +131,7 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
     static final String ON_MEASURE = "onMeasure";                           //$NON-NLS-1$
     static final String ON_DRAW = "onDraw";                                 //$NON-NLS-1$
     static final String ON_LAYOUT = "onLayout";                             //$NON-NLS-1$
-    private static final String INT = "int";                                //$NON-NLS-1$
+    static final String INT = "int";                                        //$NON-NLS-1$
     private static final String INTEGER = "Integer";                        //$NON-NLS-1$
     private static final String BOOL = "boolean";                           //$NON-NLS-1$
     private static final String BOOLEAN = "Boolean";                        //$NON-NLS-1$
