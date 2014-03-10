@@ -22,7 +22,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Instances of this class are able to run aapt command.
+ * Implementation of the PngCruncher using aapt underneath.
  */
 public class AaptCruncher implements PngCruncher {
 
@@ -36,6 +36,7 @@ public class AaptCruncher implements PngCruncher {
 
     /**
      * Runs the aapt crunch command on a single file
+     *
      * @param from the file to crunch
      * @param to the output file
      * @throws IOException
@@ -43,7 +44,7 @@ public class AaptCruncher implements PngCruncher {
      * @throws LoggedErrorException
      */
     @Override
-    public void crunchPng(File from, File to)
+    public void crunchPng(@NonNull File from, @NonNull File to)
             throws InterruptedException, LoggedErrorException, IOException {
         String[] command = new String[] {
                 mAaptLocation,
