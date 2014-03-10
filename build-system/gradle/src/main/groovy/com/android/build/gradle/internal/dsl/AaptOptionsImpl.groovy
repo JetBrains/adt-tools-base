@@ -27,6 +27,9 @@ public class AaptOptionsImpl implements AaptOptions {
     @Input
     private List<String> noCompressList
 
+    @Input
+    private boolean useAaptPngCruncher = false;
+
     public void setIgnoreAssetsPattern(String ignoreAssetsPattern) {
         this.ignoreAssetsPattern = ignoreAssetsPattern
     }
@@ -47,6 +50,19 @@ public class AaptOptionsImpl implements AaptOptions {
     @Override
     Collection<String> getNoCompress() {
         return noCompressList
+    }
+
+    public void useAaptPngCruncher(boolean value) {
+        useAaptPngCruncher = value;
+    }
+
+    public void setUseAaptPngCruncher(boolean value) {
+        useAaptPngCruncher = value;
+    }
+
+    @Override
+    public boolean getUseAaptPngCruncher() {
+        return useAaptPngCruncher;
     }
 
     // -- DSL Methods. TODO remove once the instantiator does what I expect it to do.
