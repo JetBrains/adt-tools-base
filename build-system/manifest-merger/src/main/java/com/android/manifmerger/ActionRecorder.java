@@ -227,7 +227,10 @@ public class ActionRecorder {
         }
 
         List<AttributeRecord> getAttributeRecords(XmlNode.NodeName attributeName) {
-            return ImmutableList.copyOf(mAttributeRecords.get(attributeName));
+            List<AttributeRecord> attributeRecords = mAttributeRecords.get(attributeName);
+            return attributeRecords == null
+                    ? ImmutableList.<AttributeRecord>of()
+                    : ImmutableList.copyOf(attributeRecords);
         }
     }
 

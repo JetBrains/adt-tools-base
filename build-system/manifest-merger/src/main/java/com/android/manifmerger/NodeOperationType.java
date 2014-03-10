@@ -16,6 +16,8 @@
 
 package com.android.manifmerger;
 
+import com.android.utils.SdkUtils;
+
 /**
  * Defines node operation types as it can be provided by user's through attributes on the
  * target xml element.
@@ -29,7 +31,7 @@ package com.android.manifmerger;
  * </pre>
  *
  */
-public enum NodeOperationType {
+public enum NodeOperationType implements ConvertibleName {
 
     /**
      * Replace further definitions of the same element with this one. There can be 0..n similar
@@ -59,5 +61,16 @@ public enum NodeOperationType {
      * No further definition of this element should be encountered. A merging tool failure will be
      * generated if there is one.
      */
-    STRICT
+    STRICT;
+
+    @Override
+    public String toXmlName() {
+        return SdkUtils.constantNameToXmlName(name());
+    }
+
+    @Override
+    public String toCamelCaseName() {
+        return SdkUtils.constantNameToCamelCase(name());
+    }
+
 }
