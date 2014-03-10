@@ -68,7 +68,6 @@ apply from: '../../buildVersion.gradle'
 apply from: '../../publish.gradle'
 
 jar.manifest.attributes("Plugin-Version": version)
-publishLocal.dependsOn ':builder:publishLocal'
 
 task buildTest(type: Test, dependsOn: publishLocal) {
     testClassesDir = sourceSets.buildTest.output.classesDir

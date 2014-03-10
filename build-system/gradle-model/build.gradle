@@ -30,7 +30,7 @@ dependencies {
 sourceSets.test.compileClasspath += configurations.gradleRepo
 sourceSets.test.runtimeClasspath += configurations.gradleRepo
 
-test.dependsOn ':gradle:publishLocal'
+test.dependsOn ':publishLocal'
 
 idea {
     module {
