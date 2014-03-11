@@ -28,6 +28,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -154,11 +155,10 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
         return mTestFunctionalTest;
     }
 
-
     @NonNull
     @Override
-    public List<ClassField> getBuildConfigFields() {
-        return Collections.emptyList();
+    public Map<String, ClassField> getBuildConfigFields() {
+        return Collections.emptyMap();
     }
 
     @NonNull

@@ -20,18 +20,23 @@ import com.android.annotations.NonNull;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Base config object for Build Type and Product flavor.
  */
 public interface BaseConfig {
 
+    @NonNull
+    String getName();
+
     /**
-     * List of Build Config Fields
-     * @return a non-null list of class fields (possibly empty)
+     * Map of Build Config Fields where the key is the field name.
+     *
+     * @return a non-null map of class fields (possibly empty).
      */
     @NonNull
-    Collection<ClassField> getBuildConfigFields();
+    Map<String, ClassField> getBuildConfigFields();
 
     /**
      * Returns the list of proguard rule files.
