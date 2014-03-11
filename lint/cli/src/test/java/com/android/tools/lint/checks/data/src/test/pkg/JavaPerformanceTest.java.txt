@@ -193,7 +193,11 @@ public class JavaPerformanceTest extends Button {
         new SparseArray<Object>();  // OK
     }
 
-    public void longSparseArray() { // but only minSdkVersion >= 17
+    public void longSparseArray() { // but only minSdkVersion >= 17 or if has v4 support lib
         Map<Long, String> myStringMap = new HashMap<Long, String>();
+    }
+
+    public void byteSparseArray() { // bytes easily apply to ints
+        Map<Byte, String> myByteMap = new HashMap<Byte, String>();
     }
 }

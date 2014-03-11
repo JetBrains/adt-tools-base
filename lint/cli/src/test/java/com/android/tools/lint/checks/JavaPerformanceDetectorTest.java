@@ -76,6 +76,9 @@ public class JavaPerformanceDetectorTest extends AbstractCheckTest {
             "src/test/pkg/JavaPerformanceTest.java:192: Warning: Use new SparseBooleanArray(...) instead for better performance [UseSparseArrays]\n" +
             "        new SparseArray<Boolean>(); // Use SparseBooleanArray instead\n" +
             "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "src/test/pkg/JavaPerformanceTest.java:201: Warning: Use new SparseArray<String>(...) instead for better performance [UseSparseArrays]\n" +
+            "        Map<Byte, String> myByteMap = new HashMap<Byte, String>();\n" +
+            "                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "src/test/pkg/JavaPerformanceTest.java:33: Warning: Use Integer.valueOf(5) instead [UseValueOf]\n" +
             "        Integer i = new Integer(5);\n" +
             "                    ~~~~~~~~~~~~~~\n" +
@@ -98,7 +101,7 @@ public class JavaPerformanceDetectorTest extends AbstractCheckTest {
             "        Double d1 = new Double(1.0);\n" +
             "                    ~~~~~~~~~~~~~~~\n" +
             (isInAospEnvironment ?
-            "0 errors, 22 warnings\n" : "0 errors, 21 warnings\n"),
+            "0 errors, 23 warnings\n" : "0 errors, 22 warnings\n"),
 
             lintProject("src/test/pkg/JavaPerformanceTest.java.txt=>" +
                     "src/test/pkg/JavaPerformanceTest.java"));
@@ -116,6 +119,18 @@ public class JavaPerformanceDetectorTest extends AbstractCheckTest {
                     "src/test/pkg/LongSparseArray.java.txt=>src/test/pkg/LongSparseArray.java"));
     }
 
+    public void testLongSparseSupportLibArray() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/LongSparseArray.java:10: Warning: Use new android.support.v4.util.LongSparseArray(...) instead for better performance [UseSparseArrays]\n"
+                + "        Map<Long, String> myStringMap = new HashMap<Long, String>();\n"
+                + "                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "src/test/pkg/LongSparseArray.java.txt=>src/test/pkg/LongSparseArray.java",
+                        "bytecode/classes.jar=>libs/android-support-v4.jar"));
+    }
+
     public void testNoLongSparseArray() throws Exception {
         assertEquals(
                 "No warnings.",
@@ -123,5 +138,30 @@ public class JavaPerformanceDetectorTest extends AbstractCheckTest {
                 lintProject(
                     "apicheck/minsdk1.xml=>AndroidManifest.xml",
                     "src/test/pkg/LongSparseArray.java.txt=>src/test/pkg/LongSparseArray.java"));
+    }
+
+    public void testSparseLongArray1() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/SparseLongArray.java:10: Warning: Use new SparseLongArray(...) instead for better performance [UseSparseArrays]\n"
+                + "        Map<Integer, Long> myStringMap = new HashMap<Integer, Long>();\n"
+                + "                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk19.xml=>AndroidManifest.xml",
+                        "src/test/pkg/SparseLongArray.java.txt=>src/test/pkg/SparseLongArray.java"));
+    }
+
+    public void testSparseLongArray2() throws Exception {
+        // Note -- it's offering a SparseArray, not a SparseLongArray!
+        assertEquals(""
+                + "src/test/pkg/SparseLongArray.java:10: Warning: Use new SparseArray<Long>(...) instead for better performance [UseSparseArrays]\n"
+                + "        Map<Integer, Long> myStringMap = new HashMap<Integer, Long>();\n"
+                + "                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "src/test/pkg/SparseLongArray.java.txt=>src/test/pkg/SparseLongArray.java"));
     }
 }
