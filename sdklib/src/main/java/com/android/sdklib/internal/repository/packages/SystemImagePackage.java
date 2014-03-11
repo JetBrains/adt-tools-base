@@ -24,6 +24,7 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.AndroidVersion.AndroidVersionException;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.SystemImage;
+import com.android.sdklib.devices.Abi;
 import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
@@ -31,8 +32,11 @@ import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
+import com.android.sdklib.repository.SdkSysImgConstants;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
+import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
 
 import org.w3c.dom.Node;
 
@@ -40,6 +44,7 @@ import java.io.File;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 /**
  * Represents a system-image XML node in an SDK repository.
@@ -54,6 +59,8 @@ public class SystemImagePackage extends MajorRevisionPackage
     private final String mAbi;
 
     private final IPkgDesc mPkgDesc;
+
+    private final IdDisplay mTag;
 
     /**
      * Creates a new system-image package from the attributes and elements of the given XML node.
@@ -82,7 +89,20 @@ public class SystemImagePackage extends MajorRevisionPackage
 
         mAbi = PackageParserUtils.getXmlString(packageNode, SdkRepoConstants.NODE_ABI);
 
-        mPkgDesc = PkgDesc.newSysImg(mVersion, mAbi, (MajorRevision) getRevision());
+        // tag id
+        String tagId = PackageParserUtils.getXmlString(packageNode,
+                                                       SdkSysImgConstants.ATTR_TAG_ID,
+                                                       SystemImage.DEFAULT_TAG.getId());
+        String tagDisp = PackageParserUtils.getOptionalXmlString(packageNode,
+                                                       SdkSysImgConstants.ATTR_TAG_DISPLAY);
+        if (tagDisp == null || tagDisp.isEmpty()) {
+            tagDisp = LocalSysImgPkgInfo.tagIdToDisplay(tagId);
+        }
+        assert tagId   != null;
+        assert tagDisp != null;
+        mTag = new IdDisplay(tagId, tagDisp);
+
+        mPkgDesc = PkgDesc.newSysImg(mVersion, mTag, mAbi, (MajorRevision) getRevision());
     }
 
     @VisibleForTesting(visibility=Visibility.PRIVATE)
@@ -120,14 +140,16 @@ public class SystemImagePackage extends MajorRevisionPackage
         assert abi != null : "To use this SystemImagePackage constructor you must pass an ABI as a parameter or as a PROP_ABI property";
         mAbi = abi;
 
-        mPkgDesc = PkgDesc.newSysImg(mVersion, mAbi, (MajorRevision) getRevision());
+        mTag = LocalSysImgPkgInfo.extractTagFromProps(props);
+
+        mPkgDesc = PkgDesc.newSysImg(mVersion, mTag, mAbi, (MajorRevision) getRevision());
     }
 
     /**
      * Creates a {@link BrokenPackage} representing a system image that failed to load
      * with the regular {@link SdkManager} workflow.
      *
-     * @param abiDir The SDK/system-images/android-N/abi folder
+     * @param abiDir The SDK/system-images/android-N/tag/abi folder
      * @param props The properties located in {@code abiDir} or null if not found.
      * @return A new {@link BrokenPackage} that represents this installed package.
      */
@@ -135,8 +157,9 @@ public class SystemImagePackage extends MajorRevisionPackage
         AndroidVersion version = null;
         String abiType = abiDir.getName();
         String error = null;
+        IdDisplay tag = null;
 
-        // Try to load the android version & ABI from the sources.props.
+        // Try to load the android version, tag & ABI from the sources.props.
         // If we don't find them, it would explain why this package is broken.
         if (props == null) {
             error = String.format("Missing file %1$s", SdkConstants.FN_SOURCE_PROP);
@@ -144,6 +167,7 @@ public class SystemImagePackage extends MajorRevisionPackage
             try {
                 version = new AndroidVersion(props);
 
+                tag = LocalSysImgPkgInfo.extractTagFromProps(props);
                 String abi = props.getProperty(PkgProps.SYS_IMG_ABI);
                 if (abi != null) {
                     abiType = abi;
@@ -159,20 +183,50 @@ public class SystemImagePackage extends MajorRevisionPackage
             }
         }
 
-        if (version == null) {
-            try {
-                // Try to parse the first number out of the platform folder name.
-                String platform = abiDir.getParentFile().getName();
-                platform = platform.replaceAll("[^0-9]+", " ").trim();  //$NON-NLS-1$ //$NON-NLS-2$
-                int pos = platform.indexOf(' ');
-                if (pos >= 0) {
-                    platform = platform.substring(0, pos);
+        try {
+            // Try to parse the first number out of the platform folder name.
+            // Also try to parse the tag if not known yet.
+            // Folder structure should be:
+            // Tools < 22.6 / API < 20: sdk/system-images/android-N/abi/
+            // Tools >=22.6 / API >=20: sdk/system-images/android-N/tag/abi/
+            String[] segments = abiDir.getAbsolutePath().split(Pattern.quote(File.separator));
+            int len = segments.length;
+            for (int i = len - 2; version == null && i >= 0; i--) {
+                if (SdkConstants.FD_SYSTEM_IMAGES.equals(segments[i])) {
+                    if (version == null) {
+                        String platform = segments[i+1];
+                        try {
+                            platform = platform.replaceAll("[^0-9]+", " ").trim();  //$NON-NLS-1$ //$NON-NLS-2$
+                            int pos = platform.indexOf(' ');
+                            if (pos >= 0) {
+                                platform = platform.substring(0, pos);
+                            }
+                            int apiLevel = Integer.parseInt(platform);
+                            version = new AndroidVersion(apiLevel, null /*codename*/);
+                        } catch (Exception ignore) {}
+                    }
+                    if (tag == null && i+2 < len) {
+                        // If we failed to find a tag id in the properties, check whether
+                        // we can guess one from the system image folder path. It should
+                        // match the limited tag id character set and not be one of the
+                        // known ABIs.
+                        String abiOrTag = segments[i+2].trim();
+                        if (abiOrTag.matches("[A-Za-z0-9_-]+")) {
+                            if (Abi.getEnum(abiOrTag) == null) {
+                                tag = new IdDisplay(abiOrTag,
+                                                    LocalSysImgPkgInfo.tagIdToDisplay(abiOrTag));
+                            }
+                        }
+                    }
                 }
-                int apiLevel = Integer.parseInt(platform);
-                version = new AndroidVersion(apiLevel, null /*codename*/);
-            } catch (Exception ignore) {
             }
+        } catch (Exception ignore) {}
+
+        if (tag == null) {
+            // No tag? Use the default.
+            tag = SystemImage.DEFAULT_TAG;
         }
+        assert tag != null;
 
         StringBuilder sb = new StringBuilder(
                 String.format("Broken %1$s System Image", getAbiDisplayNameInternal(abiType)));
@@ -190,6 +244,7 @@ public class SystemImagePackage extends MajorRevisionPackage
 
         IPkgDesc desc = PkgDesc.newSysImg(
                 version != null ? version : new AndroidVersion(0, null),
+                tag,
                 abiType,
                 new MajorRevision(MajorRevision.MISSING_MAJOR_REV));
 
@@ -215,7 +270,15 @@ public class SystemImagePackage extends MajorRevisionPackage
         super.saveProperties(props);
 
         mVersion.saveProperties(props);
-        props.setProperty(PkgProps.SYS_IMG_ABI, mAbi);
+        props.setProperty(PkgProps.SYS_IMG_ABI,         mAbi);
+        props.setProperty(PkgProps.SYS_IMG_TAG_ID,      mTag.getId());
+        props.setProperty(PkgProps.SYS_IMG_TAG_DISPLAY, mTag.getDisplay());
+    }
+
+    /** Returns the tag of the system-image. */
+    @NonNull
+    public IdDisplay getTag() {
+        return mTag;
     }
 
     /** Returns the ABI of the system-image. Cannot be null nor empty. */
@@ -263,7 +326,9 @@ public class SystemImagePackage extends MajorRevisionPackage
      */
     @Override
     public String getListDescription() {
-        return String.format("%1$s System Image%2$s",
+        boolean isDefaultTag = SystemImage.DEFAULT_TAG.equals(mTag);
+        return String.format("%1$s%2$s System Image%3$s",
+                isDefaultTag ? "" : (mTag.getDisplay() + " "),
                 getAbiDisplayName(),
                 isObsolete() ? " (Obsolete)" : "");
     }
@@ -273,7 +338,9 @@ public class SystemImagePackage extends MajorRevisionPackage
      */
     @Override
     public String getShortDescription() {
-        return String.format("%1$s System Image, Android API %2$s, revision %3$s%4$s",
+        boolean isDefaultTag = SystemImage.DEFAULT_TAG.equals(mTag);
+        return String.format("%1$s%2$s System Image, Android API %3$s, revision %4$s%5$s",
+                isDefaultTag ? "" : (mTag.getDisplay() + " "),
                 getAbiDisplayName(),
                 mVersion.getApiString(),
                 getRevision().toShortString(),
@@ -308,7 +375,7 @@ public class SystemImagePackage extends MajorRevisionPackage
      * Computes a potential installation folder if an archive of this package were
      * to be installed right away in the given SDK root.
      * <p/>
-     * A system-image package is typically installed in SDK/systems/platform/abi.
+     * A system-image package is typically installed in SDK/systems/platform/tag/abi.
      * The name needs to be sanitized to be acceptable as a directory name.
      *
      * @param osSdkRoot The OS path of the SDK root folder.
@@ -320,11 +387,20 @@ public class SystemImagePackage extends MajorRevisionPackage
         File folder = new File(osSdkRoot, SdkConstants.FD_SYSTEM_IMAGES);
         folder = new File(folder, SystemImage.ANDROID_PREFIX + mVersion.getApiString());
 
-        // Computes a folder directory using the sanitized abi string.
+        // Computes a folder directory using the sanitized tag & abi strings.
+        String tag = mTag.getId();
+        tag = tag.toLowerCase(Locale.US);
+        tag = tag.replaceAll("[^a-z0-9_-]+", "_");      //$NON-NLS-1$ //$NON-NLS-2$
+        tag = tag.replaceAll("_+", "_");                //$NON-NLS-1$ //$NON-NLS-2$
+        tag = tag.replaceAll("-+", "-");                //$NON-NLS-1$ //$NON-NLS-2$
+
+        folder = new File(folder, tag);
+
         String abi = mAbi;
         abi = abi.toLowerCase(Locale.US);
         abi = abi.replaceAll("[^a-z0-9_-]+", "_");      //$NON-NLS-1$ //$NON-NLS-2$
         abi = abi.replaceAll("_+", "_");                //$NON-NLS-1$ //$NON-NLS-2$
+        abi = abi.replaceAll("-+", "-");                //$NON-NLS-1$ //$NON-NLS-2$
 
         folder = new File(folder, abi);
         return folder;
@@ -335,8 +411,9 @@ public class SystemImagePackage extends MajorRevisionPackage
         if (pkg instanceof SystemImagePackage) {
             SystemImagePackage newPkg = (SystemImagePackage)pkg;
 
-            // check they are the same abi and version.
-            return getAbi().equals(newPkg.getAbi()) &&
+            // check they are the same tag, abi and version.
+            return getTag().equals(newPkg.getTag()) &&
+                    getAbi().equals(newPkg.getAbi()) &&
                     getAndroidVersion().equals(newPkg.getAndroidVersion());
         }
 
@@ -347,6 +424,7 @@ public class SystemImagePackage extends MajorRevisionPackage
     public int hashCode() {
         final int prime = 31;
         int result = super.hashCode();
+        result = prime * result + ((mTag == null) ? 0 : mTag.hashCode());
         result = prime * result + ((mAbi == null) ? 0 : mAbi.hashCode());
         result = prime * result + ((mVersion == null) ? 0 : mVersion.hashCode());
         return result;
@@ -364,6 +442,13 @@ public class SystemImagePackage extends MajorRevisionPackage
             return false;
         }
         SystemImagePackage other = (SystemImagePackage) obj;
+        if (mTag == null) {
+            if (other.mTag != null) {
+                return false;
+            }
+        } else if (!mTag.equals(other.mTag)) {
+            return false;
+        }
         if (mAbi == null) {
             if (other.mAbi != null) {
                 return false;
@@ -382,7 +467,7 @@ public class SystemImagePackage extends MajorRevisionPackage
     }
 
     /**
-     * For sys img packages, we want to add abi to the sorting key
+     * For sys img packages, we want to add tag/abi to the sorting key
      * <em>before<em/> the revision number.
      * <p/>
      * {@inheritDoc}
@@ -390,10 +475,11 @@ public class SystemImagePackage extends MajorRevisionPackage
     @Override
     protected String comparisonKey() {
         String s = super.comparisonKey();
-        int pos = s.indexOf("|r:");         //$NON-NLS-1$
+        int pos = s.indexOf("|r:");                 //$NON-NLS-1$
         assert pos > 0;
         s = s.substring(0, pos) +
-            "|abi:" + getAbiDisplayName() + //$NON-NLS-1$
+            "|tag:" + getTag().getId() +            //$NON-NLS-1$
+            "|abi:" + getAbiDisplayName() +         //$NON-NLS-1$
             s.substring(pos);
         return s;
     }

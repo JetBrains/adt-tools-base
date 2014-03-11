@@ -71,12 +71,14 @@ public class SystemImagePackageTest extends PackageTest {
     }
 
     @Override
-    protected Properties createProps() {
-        Properties props = super.createProps();
+    protected Properties createExpectedProps() {
+        Properties props = super.createExpectedProps();
 
         // SystemImagePackage properties
-        props.setProperty(PkgProps.VERSION_API_LEVEL, "5");
-        props.setProperty(PkgProps.SYS_IMG_ABI, "armeabi-v7a");
+        props.setProperty(PkgProps.VERSION_API_LEVEL,   "5");
+        props.setProperty(PkgProps.SYS_IMG_ABI,         "armeabi-v7a");
+        props.setProperty(PkgProps.SYS_IMG_TAG_ID,      "default");
+        props.setProperty(PkgProps.SYS_IMG_TAG_DISPLAY, "Default");
 
         return props;
     }
@@ -93,7 +95,7 @@ public class SystemImagePackageTest extends PackageTest {
 
     @Override
     public final void testCreate() throws Exception {
-        Properties props = createProps();
+        Properties props = createExpectedProps();
         SystemImagePackage p = createSystemImagePackage(props);
 
         testCreatedSystemImagePackage(p);
@@ -101,17 +103,17 @@ public class SystemImagePackageTest extends PackageTest {
 
     @Override
     public void testSaveProperties() throws Exception {
-        Properties props = createProps();
-        SystemImagePackage p = createSystemImagePackage(props);
+        Properties expected = createExpectedProps();
+        SystemImagePackage p = createSystemImagePackage(expected);
 
-        Properties props2 = new Properties();
-        p.saveProperties(props2);
+        Properties actual = new Properties();
+        p.saveProperties(actual);
 
-        assertEquals(props2, props);
+        assertEquals(expected, actual);
     }
 
     public void testSameItemAs() throws Exception {
-        Properties props1 = createProps();
+        Properties props1 = createExpectedProps();
         SystemImagePackage p1 = createSystemImagePackage(props1);
         assertTrue(p1.sameItemAs(p1));
 
@@ -137,7 +139,7 @@ public class SystemImagePackageTest extends PackageTest {
     }
 
     public void testInstallId() throws Exception {
-        Properties props = createProps();
+        Properties props = createExpectedProps();
         SystemImagePackage p = createSystemImagePackage(props);
 
         assertEquals("sysimg-5", p.installId());

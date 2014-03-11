@@ -42,6 +42,7 @@ import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.sdklib.repository.local.LocalAddonPkgInfo;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
+import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -49,6 +50,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -299,12 +301,7 @@ public class LocalSdkParser {
             ILogger log) {
         File root = new File(sdkManager.getLocation(), SdkConstants.FD_EXTRAS);
 
-        if (!root.isDirectory()) {
-            // This should not happen. It makes listFiles() return null so let's avoid it.
-            return;
-        }
-
-        for (File vendor : root.listFiles()) {
+        for (File vendor : listFilesNonNull(root)) {
             if (vendor.isDirectory()) {
                 scanExtrasDirectory(vendor.getAbsolutePath(), visited, packages, log);
             }
@@ -321,12 +318,7 @@ public class LocalSdkParser {
             ILogger log) {
         File root = new File(extrasRoot);
 
-        if (!root.isDirectory()) {
-            // This should not happen. It makes listFiles() return null so let's avoid it.
-            return;
-        }
-
-        for (File dir : root.listFiles()) {
+        for (File dir : listFilesNonNull(root)) {
             if (dir.isDirectory() && !visited.contains(dir)) {
                 Properties props = parseProperties(new File(dir, SdkConstants.FN_SOURCE_PROP));
                 if (props != null) {
@@ -368,12 +360,7 @@ public class LocalSdkParser {
         File root = new File(sdkManager.getLocation());
         root = new File(root, SdkConstants.FD_SAMPLES);
 
-        if (!root.isDirectory()) {
-            // It makes listFiles() return null so let's avoid it.
-            return;
-        }
-
-        for (File dir : root.listFiles()) {
+        for (File dir : listFilesNonNull(root)) {
             if (dir.isDirectory() && !visited.contains(dir)) {
                 Properties props = parseProperties(new File(dir, SdkConstants.FN_SOURCE_PROP));
                 if (props != null) {
@@ -402,12 +389,7 @@ public class LocalSdkParser {
             ILogger log) {
         File addons = new File(new File(sdkManager.getLocation()), SdkConstants.FD_ADDONS);
 
-        File[] files = addons.listFiles();
-        if (files == null) {
-            return;
-        }
-
-        for (File dir : files) {
+        for (File dir : listFilesNonNull(addons)) {
             if (dir.isDirectory() && !visited.contains(dir)) {
                 Pair<Map<String, String>, String> infos =
                     parseAddonProperties(dir, sdkManager.getTargets(), log);
@@ -546,37 +528,44 @@ public class LocalSdkParser {
             ILogger log) {
         File siRoot = new File(sdkManager.getLocation(), SdkConstants.FD_SYSTEM_IMAGES);
 
-        File[] files = siRoot.listFiles();
-        if (files == null) {
-            return;
-        }
-
         // The system-images folder contains a list of platform folders.
-        for (File platformDir : files) {
+        for (File platformDir : listFilesNonNull(siRoot)) {
             if (platformDir.isDirectory() && !visited.contains(platformDir)) {
                 visited.add(platformDir);
 
                 // In the platform directory, we expect a list of abi folders
-                File[] platformFiles = platformDir.listFiles();
-                if (platformFiles != null) {
-                    for (File abiDir : platformFiles) {
-                        if (abiDir.isDirectory() && !visited.contains(abiDir)) {
-                            visited.add(abiDir);
+                // or a list of tag/abi folders. Basically parse any folder that has
+                // a source.prop file within 2 levels.
+                List<File> propFiles = Lists.newArrayList();
 
-                            // Ignore empty directories
-                            File[] abiFiles = abiDir.listFiles();
-                            if (abiFiles != null && abiFiles.length > 0) {
-                                Properties props =
-                                    parseProperties(new File(abiDir, SdkConstants.FN_SOURCE_PROP));
-
-                                try {
-                                    Package pkg = SystemImagePackage.createBroken(abiDir, props);
-                                    packages.add(pkg);
-                                } catch (Exception e) {
-                                    log.error(e, null);
+                for (File dir1 : listFilesNonNull(platformDir)) {
+                    if (dir1.isDirectory() && !visited.contains(dir1)) {
+                        visited.add(dir1);
+                        File prop1 = new File(dir1, SdkConstants.FN_SOURCE_PROP);
+                        if (prop1.isFile()) {
+                            propFiles.add(prop1);
+                        } else {
+                            for (File dir2 : listFilesNonNull(dir1)) {
+                                if (dir2.isDirectory() && !visited.contains(dir2)) {
+                                    visited.add(dir2);
+                                    File prop2 = new File(dir2, SdkConstants.FN_SOURCE_PROP);
+                                    if (prop2.isFile()) {
+                                        propFiles.add(prop2);
+                                    }
                                 }
                             }
                         }
+                    }
+                }
+
+                for (File propFile : propFiles) {
+                    Properties props = parseProperties(propFile);
+                    try {
+                        Package pkg = SystemImagePackage.createBroken(propFile.getParentFile(),
+                                                                      props);
+                        packages.add(pkg);
+                    } catch (Exception e) {
+                        log.error(e, null);
                     }
                 }
             }
@@ -592,13 +581,8 @@ public class LocalSdkParser {
             ILogger log) {
         File srcRoot = new File(sdkManager.getLocation(), SdkConstants.FD_PKG_SOURCES);
 
-        File[] subDirs = srcRoot.listFiles();
-        if (subDirs == null) {
-            return;
-        }
-
         // The sources folder contains a list of platform folders.
-        for (File platformDir : subDirs) {
+        for (File platformDir : listFilesNonNull(srcRoot)) {
             if (platformDir.isDirectory() && !visited.contains(platformDir)) {
                 visited.add(platformDir);
 
@@ -633,16 +617,13 @@ public class LocalSdkParser {
         boolean hasAndroid = false;
         String android1 = SdkConstants.androidCmdName().replace(".bat", ".exe");
         String android2 = android1.indexOf('.') == -1 ? null : android1.replace(".exe", ".bat");
-        File[] files = toolFolder.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                String name = file.getName();
-                if (SdkConstants.FN_EMULATOR.equals(name)) {
-                    hasEmulator = true;
-                }
-                if (android1.equals(name) || (android2 != null && android2.equals(name))) {
-                    hasAndroid = true;
-                }
+        for (File file : listFilesNonNull(toolFolder)) {
+            String name = file.getName();
+            if (SdkConstants.FN_EMULATOR.equals(name)) {
+                hasEmulator = true;
+            }
+            if (android1.equals(name) || (android2 != null && android2.equals(name))) {
+                hasAndroid = true;
             }
         }
 
@@ -720,13 +701,8 @@ public class LocalSdkParser {
             ILogger log) {
         File buildToolRoot = new File(sdkManager.getLocation(), SdkConstants.FD_BUILD_TOOLS);
 
-        File[] subDirs = buildToolRoot.listFiles();
-        if (subDirs == null) {
-            return;
-        }
-
         // The build-tool root folder contains a list of revisioned folders.
-        for (File buildToolDir : subDirs) {
+        for (File buildToolDir : listFilesNonNull(buildToolRoot)) {
             if (buildToolDir.isDirectory() && !visited.contains(buildToolDir)) {
                 visited.add(buildToolDir);
 
@@ -812,5 +788,23 @@ public class LocalSdkParser {
             }
         }
         return null;
+    }
+
+    private static final File[] EMPTY_FILE_LIST = new File[0];
+
+    /**
+     * Helper method that calls {@link File#listFiles()} and returns
+     * a non-null empty list if the input is not a directory or has
+     * no files.
+     */
+    @NonNull
+    private static File[] listFilesNonNull(@NonNull File dir) {
+        if (dir.isDirectory()) {
+            File[] files = dir.listFiles();
+            if (files != null) {
+                return files;
+            }
+        }
+        return EMPTY_FILE_LIST;
     }
 }

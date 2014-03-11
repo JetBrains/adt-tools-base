@@ -60,8 +60,8 @@ public class PlatformPackageTest extends MinToolsPackageTest {
     }
 
     @Override
-    protected Properties createProps() {
-        Properties props = super.createProps();
+    protected Properties createExpectedProps() {
+        Properties props = super.createExpectedProps();
 
         // PlatformPackage properties
         props.setProperty(PkgProps.VERSION_API_LEVEL, "5");
@@ -83,7 +83,7 @@ public class PlatformPackageTest extends MinToolsPackageTest {
 
     @Override
     public final void testCreate() {
-        Properties props = createProps();
+        Properties props = createExpectedProps();
         PlatformPackage p = createPlatformPackage(props);
 
         testCreatedPlatformPackage(p);
@@ -91,18 +91,17 @@ public class PlatformPackageTest extends MinToolsPackageTest {
 
     @Override
     public void testSaveProperties() {
-        Properties props = createProps();
-        PlatformPackage p = createPlatformPackage(props);
+        Properties expected = createExpectedProps();
+        PlatformPackage p = createPlatformPackage(expected);
 
-        Properties props2 = new Properties();
-        p.saveProperties(props2);
+        Properties actual = new Properties();
+        p.saveProperties(actual);
 
-        assertEquals(props2.toString(), props.toString());
-        assertEquals(props2, props);
+        assertEquals(expected, actual);
     }
 
     public void testInstallId() {
-        Properties props = createProps();
+        Properties props = createExpectedProps();
         PlatformPackage p = createPlatformPackage(props);
 
         assertEquals("android-5", p.installId());

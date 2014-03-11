@@ -52,7 +52,7 @@ public class ExtraPackageTest_v3 extends ExtraPackageTest_Base {
 
     /** Properties used to "load" the package. When saved, they become different. */
     private Properties createLoadedProps() {
-        Properties props = super.createProps();
+        Properties props = super.createExpectedProps();
 
         // ExtraPackage properties
         props.setProperty(PkgProps.EXTRA_VENDOR, "vendor");
@@ -67,7 +67,7 @@ public class ExtraPackageTest_v3 extends ExtraPackageTest_Base {
 
     /** Properties saved by the package. They differ from loaded ones in name and vendor. */
     private Properties createSavedProps() {
-        Properties props = super.createProps();
+        Properties props = super.createExpectedProps();
 
         // ExtraPackage properties
         props.setProperty(PkgProps.EXTRA_VENDOR_ID, "vendor");

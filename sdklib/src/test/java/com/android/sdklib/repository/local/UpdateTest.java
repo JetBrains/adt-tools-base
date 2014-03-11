@@ -24,6 +24,7 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.sdklib.repository.local.Update.Result;
@@ -66,6 +67,10 @@ public class UpdateTest extends TestCase {
         final AndroidVersion api18 = new AndroidVersion("18");
         final AndroidVersion api19 = new AndroidVersion("19");
 
+        final IdDisplay tagDefault = new IdDisplay("default", "Default");
+        final IdDisplay tag1       = new IdDisplay("tag-1", "Tag 1");
+        final IdDisplay tag2       = new IdDisplay("tag-2", "Tag 2");
+
         addLocalTool("22.3.4", "18");
         addRemoteTool(new FullRevision(23), new FullRevision(19));
         addRemoteTool(new FullRevision(23, 0, 1, 2), new FullRevision(19));
@@ -93,18 +98,22 @@ public class UpdateTest extends TestCase {
         addLocalAddOn   ("18", "2", "android", "coolstuff");
         addLocalSource  ("18", "2");
         addLocalSample  ("18", "2", "22.1.2");
-        addLocalSysImg  ("18", "2", "eabi");
+        addLocalSysImg  ("18", "2", null,    "eabi");
+        addLocalSysImg  ("18", "2", "tag-1", "eabi");
         addRemotePlatform(api18, new MajorRevision(3), new FullRevision(22));
         addRemoteAddOn   (api18, new MajorRevision(3), "android", "coolstuff");
         addRemoteSource  (api18, new MajorRevision(3));
         addRemoteSample  (api18, new MajorRevision(3), new FullRevision(22));
-        addRemoteSysImg  (api18, new MajorRevision(3), "eabi");
+        addRemoteSysImg  (api18, new MajorRevision(3), tagDefault, "eabi");
+        addRemoteSysImg  (api18, new MajorRevision(3), tag1,       "eabi");
 
         addRemotePlatform(api19, new MajorRevision(4), new FullRevision(23));
         addRemoteAddOn   (api19, new MajorRevision(4), "android", "coolstuff");
         addRemoteSource  (api19, new MajorRevision(4));
         addRemoteSample  (api19, new MajorRevision(4), new FullRevision(23));
-        addRemoteSysImg  (api19, new MajorRevision(4), "eabi");
+        addRemoteSysImg  (api19, new MajorRevision(4), tagDefault, "eabi");
+        addRemoteSysImg  (api19, new MajorRevision(4), tag1, "eabi");
+        addRemoteSysImg  (api19, new MajorRevision(4), tag2, "eabi");
 
         Result result = Update.computeUpdates(
                 mLS.getPkgsInfos(PkgType.PKG_ALL),
@@ -112,38 +121,60 @@ public class UpdateTest extends TestCase {
 
         assertNotNull(result);
         assertEquals(
-                "[<LocalSourcePkgInfo <PkgDesc Type=sources Android=API 18 MajorRev=2> " +
-                         "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=sources Android=API 18 MajorRev=3>>>, " +
-                 "<LocalSamplePkgInfo <PkgDesc Type=samples Android=API 18 MajorRev=2 MinToolsRev=22.1.2> " +
-                         "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=samples Android=API 18 MajorRev=3 MinToolsRev=22.0.0>>>, " +
-                  "<LocalAddonPkgInfo <PkgDesc Type=addons Android=API 18 Vendor=android Path=android:coolstuff:18 MajorRev=2> " +
-                         "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=addons Android=API 18 Vendor=android Path=android:coolstuff:18 MajorRev=3>>>, " +
-                 "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 18 Path=eabi MajorRev=2> " +
-                         "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=sys_images Android=API 18 Path=eabi MajorRev=3>>>, " +
-               "<LocalPlatformPkgInfo <PkgDesc Type=platforms Android=API 18 Path=android-18 MajorRev=2 MinToolsRev=22.1.2> " +
-                         "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=platforms Android=API 18 Path=android-18 MajorRev=3 MinToolsRev=22.0.0>>>, " +
-                  "<LocalExtraPkgInfo <PkgDesc Type=extras Vendor=android Path=compat FullRev=18.0.2> " +
-                         "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=extras Vendor=android Path=compat FullRev=18.5.6>>>, " +
-                  "<LocalExtraPkgInfo <PkgDesc Type=extras Vendor=android Path=support FullRev=18.0.1> " +
-                         "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=extras Vendor=android Path=support FullRev=18.3.4>>>, " +
-                    "<LocalDocPkgInfo <PkgDesc Type=docs Android=API 18 MajorRev=1> " +
-                         "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=docs Android=API 19 MajorRev=3>>>, " +
-           "<LocalPlatformToolPkgInfo <PkgDesc Type=platform_tools FullRev=1.0.2> " +
-                         "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=platform_tools FullRev=1.0.3>>>, " +
-                   "<LocalToolPkgInfo <PkgDesc Type=tools FullRev=22.3.4 MinPlatToolsRev=18.0.0> " +
-                         "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=tools FullRev=23.0.0 MinPlatToolsRev=19.0.0>>>]",
+                "[" +
+                "<LocalToolPkgInfo <PkgDesc Type=tools FullRev=22.3.4 MinPlatToolsRev=18.0.0> " +
+                      "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=tools FullRev=23.0.0 MinPlatToolsRev=19.0.0>>>, " +
+
+                "<LocalPlatformToolPkgInfo <PkgDesc Type=platform_tools FullRev=1.0.2> " +
+                              "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=platform_tools FullRev=1.0.3>>>, " +
+
+                "<LocalDocPkgInfo <PkgDesc Type=docs Android=API 18 MajorRev=1> " +
+                     "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=docs Android=API 19 MajorRev=3>>>, " +
+
+                "<LocalPlatformPkgInfo <PkgDesc Type=platforms Android=API 18 Path=android-18 MajorRev=2 MinToolsRev=22.1.2> " +
+                          "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=platforms Android=API 18 Path=android-18 MajorRev=3 MinToolsRev=22.0.0>>>, " +
+
+                "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 18 Tag=default [Default] Path=eabi MajorRev=2> " +
+                        "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=sys_images Android=API 18 Tag=default [Default] Path=eabi MajorRev=3>>>, " +
+
+                "<LocalAddonPkgInfo <PkgDesc Type=addons Android=API 18 Vendor=android Path=android:coolstuff:18 MajorRev=2> " +
+                       "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=addons Android=API 18 Vendor=android Path=android:coolstuff:18 MajorRev=3>>>, " +
+
+                "<LocalSamplePkgInfo <PkgDesc Type=samples Android=API 18 MajorRev=2 MinToolsRev=22.1.2> " +
+                        "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=samples Android=API 18 MajorRev=3 MinToolsRev=22.0.0>>>, " +
+
+                "<LocalSourcePkgInfo <PkgDesc Type=sources Android=API 18 MajorRev=2> " +
+                        "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=sources Android=API 18 MajorRev=3>>>, " +
+
+                "<LocalExtraPkgInfo <PkgDesc Type=extras Vendor=android Path=compat FullRev=18.0.2> " +
+                       "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=extras Vendor=android Path=compat FullRev=18.5.6>>>, " +
+                "<LocalExtraPkgInfo <PkgDesc Type=extras Vendor=android Path=support FullRev=18.0.1> " +
+                       "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=extras Vendor=android Path=support FullRev=18.3.4>>>" +
+                "]",
                 result.getUpdatedPkgs().toString());
         assertEquals(
-                "[<RemotePkgInfo Source:source <PkgDesc Type=sources Android=API 19 MajorRev=4>>, " +
-                 "<RemotePkgInfo Source:source <PkgDesc Type=samples Android=API 19 MajorRev=4 MinToolsRev=23.0.0>>, " +
-                 "<RemotePkgInfo Source:source <PkgDesc Type=addons Android=API 19 Vendor=android Path=android:coolstuff:19 MajorRev=4>>, " +
-                 "<RemotePkgInfo Source:source <PkgDesc Type=sys_images Android=API 19 Path=eabi MajorRev=4>>, " +
-                 "<RemotePkgInfo Source:source <PkgDesc Type=platforms Android=API 19 Path=android-19 MajorRev=4 MinToolsRev=23.0.0>>, " +
-                 "<RemotePkgInfo Source:source <PkgDesc Type=extras Vendor=android Path=whatever FullRev=19.7.8>>, " +
+                "[" +
+                 "<RemotePkgInfo Source:source <PkgDesc Type=tools FullRev=23.0.1 rc2 MinPlatToolsRev=19.0.0>>, " +
+                 "<RemotePkgInfo Source:source <PkgDesc Type=platform_tools FullRev=2.0.4 rc5>>, " +
+
                  "<RemotePkgInfo Source:source <PkgDesc Type=build_tools FullRev=18.0.1>>, " +
                  "<RemotePkgInfo Source:source <PkgDesc Type=build_tools FullRev=19.1.2>>, " +
-                 "<RemotePkgInfo Source:source <PkgDesc Type=platform_tools FullRev=2.0.4 rc5>>, " +
-                 "<RemotePkgInfo Source:source <PkgDesc Type=tools FullRev=23.0.1 rc2 MinPlatToolsRev=19.0.0>>]",
+
+                 "<RemotePkgInfo Source:source <PkgDesc Type=platforms Android=API 19 Path=android-19 MajorRev=4 MinToolsRev=23.0.0>>, " +
+
+                 "<RemotePkgInfo Source:source <PkgDesc Type=sys_images Android=API 18 Tag=tag-1 [Tag 1] Path=eabi MajorRev=3>>, " +
+                 "<RemotePkgInfo Source:source <PkgDesc Type=sys_images Android=API 19 Tag=default [Default] Path=eabi MajorRev=4>>, " +
+                 "<RemotePkgInfo Source:source <PkgDesc Type=sys_images Android=API 19 Tag=tag-1 [Tag 1] Path=eabi MajorRev=4>>, " +
+                 "<RemotePkgInfo Source:source <PkgDesc Type=sys_images Android=API 19 Tag=tag-2 [Tag 2] Path=eabi MajorRev=4>>, " +
+
+                 "<RemotePkgInfo Source:source <PkgDesc Type=addons Android=API 19 Vendor=android Path=android:coolstuff:19 MajorRev=4>>, " +
+
+                 "<RemotePkgInfo Source:source <PkgDesc Type=samples Android=API 19 MajorRev=4 MinToolsRev=23.0.0>>, " +
+
+                 "<RemotePkgInfo Source:source <PkgDesc Type=sources Android=API 19 MajorRev=4>>, " +
+
+                 "<RemotePkgInfo Source:source <PkgDesc Type=extras Vendor=android Path=whatever FullRev=19.7.8>>" +
+                 "]",
                 result.getNewPkgs().toString());
     }
 
@@ -239,12 +270,14 @@ public class UpdateTest extends TestCase {
                 "Archive.Arch=ANY\n");
     }
 
-    private void addLocalSysImg(String api, String majorRev, String abi) {
+    private void addLocalSysImg(String api, String majorRev, String tag, String abi) {
+        String tagDir = (tag == null ? "" : "/" + tag);
         mFOp.recordExistingFolder("/sdk/system-images");
-        mFOp.recordExistingFolder("/sdk/system-images/android-" + api);
-        mFOp.recordExistingFolder("/sdk/system-images/android-" + api + "/" + abi);
-        mFOp.recordExistingFile("/sdk/system-images/android-" + api + "/" + abi +"/source.properties",
+        mFOp.recordExistingFolder("/sdk/system-images/android-" + api + tagDir);
+        mFOp.recordExistingFolder("/sdk/system-images/android-" + api + tagDir + "/" + abi);
+        mFOp.recordExistingFile("/sdk/system-images/android-" + api + "/" + tagDir + abi +"/source.properties",
                 "SystemImage.Abi=" + abi + "\n" +
+                (tag == null ? "" : ("SystemImage.TagId=" + tag)) +
                 "Pkg.Revision=" + majorRev + "\n" +
                 "AndroidVersion.ApiLevel=" + api + "\n" +
                 "Pkg.LicenseRef=android-sdk-license\n" +
@@ -384,8 +417,11 @@ public class UpdateTest extends TestCase {
         mRemotePkgs.put(d.getType(), r);
     }
 
-    private void addRemoteSysImg(AndroidVersion version, MajorRevision revision, String abi) {
-        IPkgDesc d = PkgDesc.newSysImg(version, abi, revision);
+    private void addRemoteSysImg(AndroidVersion version,
+                                 MajorRevision revision,
+                                 IdDisplay tag,
+                                 String abi) {
+        IPkgDesc d = PkgDesc.newSysImg(version, tag, abi, revision);
         RemotePkgInfo r = new RemotePkgInfo(d, mSource);
         mRemotePkgs.put(d.getType(), r);
     }

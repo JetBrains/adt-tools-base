@@ -484,6 +484,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             if (fileOp.isDirectory(file)) {
                 found.add(new SystemImage(file,
                                           LocationType.IN_PLATFORM_SUBFOLDER,
+                                          SystemImage.DEFAULT_TAG,
                                           file.getName()));
             } else if (!hasImgFiles && fileOp.isFile(file)) {
                 if (file.getName().endsWith(".img")) {                  //$NON-NLS-1$
@@ -497,6 +498,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             // has some img files in it. It must be a legacy ARM EABI system image folder.
             found.add(new SystemImage(imagesDir,
                                       LocationType.IN_PLATFORM_LEGACY,
+                                      SystemImage.DEFAULT_TAG,
                                       SdkConstants.ABI_ARMEABI));
         }
 

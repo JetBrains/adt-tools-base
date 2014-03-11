@@ -15,7 +15,7 @@
  * limitations under the License.
 -->
 <sdk:sdk-repository
-    xmlns:sdk="http://schemas.android.com/sdk/android/repository/8">
+    xmlns:sdk="http://schemas.android.com/sdk/android/repository/9">
 
     <!-- Define a couple of licenses. These will be referenced by uses-license later. -->
 
@@ -134,6 +134,7 @@
         <sdk:api-level>2</sdk:api-level>
         <sdk:revision>1</sdk:revision>
         <sdk:abi>x86</sdk:abi>
+        <sdk:tag-id>default</sdk:tag-id>
         <sdk:archives>
             <sdk:archive os="any">
                 <sdk:size>65535</sdk:size>
@@ -147,11 +148,27 @@
         <sdk:api-level>2</sdk:api-level>
         <sdk:revision>2</sdk:revision>
         <sdk:abi>armeabi-v7a</sdk:abi>
+        <sdk:tag-id>default</sdk:tag-id>
         <sdk:archives>
             <sdk:archive os="any">
                 <sdk:size>65534</sdk:size>
                 <sdk:checksum type="sha1">1234ae37115ebf13412bbef91339ee0d94541234</sdk:checksum>
                 <sdk:url>http://www.example.com/plat1/armv7/image2.zip</sdk:url>
+            </sdk:archive>
+        </sdk:archives>
+    </sdk:system-image>
+
+    <sdk:system-image>
+        <sdk:api-level>2</sdk:api-level>
+        <sdk:revision>2</sdk:revision>
+        <sdk:abi>armeabi-v7a</sdk:abi>
+        <sdk:tag-id>coolThing</sdk:tag-id>
+        <sdk:tag-display>Custom Thing</sdk:tag-display>
+        <sdk:archives>
+            <sdk:archive os="any">
+                <sdk:size>65533</sdk:size>
+                <sdk:checksum type="sha1">1235ae37115ebf13412bbef91339ee0d94541234</sdk:checksum>
+                <sdk:url>http://www.example.com/plat1/armv7/image3.zip</sdk:url>
             </sdk:archive>
         </sdk:archives>
     </sdk:system-image>
@@ -413,6 +430,7 @@
         <sdk:api-level>42</sdk:api-level>
         <sdk:revision>12</sdk:revision>
         <sdk:abi>armeabi</sdk:abi>
+        <sdk:tag-id>variant-1</sdk:tag-id>
         <sdk:archives>
             <sdk:archive os="any">
                 <sdk:size>1234</sdk:size>
@@ -426,6 +444,21 @@
         <sdk:api-level>42</sdk:api-level>
         <sdk:revision>12</sdk:revision>
         <sdk:abi>mips</sdk:abi>
+        <sdk:tag-id>variant-1</sdk:tag-id>
+        <sdk:archives>
+            <sdk:archive os="any">
+                <sdk:size>12345</sdk:size>
+                <sdk:checksum type="sha1">12345637115ebf13412bbef91339ee0d94541234</sdk:checksum>
+                <sdk:url>http://www.example.com/plat42/mips/image12.zip</sdk:url>
+            </sdk:archive>
+        </sdk:archives>
+    </sdk:system-image>
+
+    <sdk:system-image>
+        <sdk:api-level>42</sdk:api-level>
+        <sdk:revision>12</sdk:revision>
+        <sdk:abi>mips</sdk:abi>
+        <sdk:tag-id>variant-2</sdk:tag-id>
         <sdk:archives>
             <sdk:archive os="any">
                 <sdk:size>12345</sdk:size>

@@ -76,7 +76,7 @@
               <revision> -> <preview> and is only for <tool> and <platform-tool> packages.
             - <min-tools-rev> and <min-platform-tools-rev> also become a full revision element.
 
-         - v8 is used by the SDK Manager in Tools r22:
+         - v8 is used by the SDK Manager in Tools r22.0:
             - It introduces the new <build-tool> repository type, which contains build-specific
               tools that were before placed in either <tool> or <platform-tool> (e.g. ant,
               aapt, aidl, etc.)

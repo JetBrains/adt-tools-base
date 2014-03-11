@@ -78,6 +78,14 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities {
     public String getPath();
 
     /**
+     * Returns the package's tag id-display tuple or null.
+     *
+     * @return A non-null tag if {@link #hasTag()} is true; otherwise a null value.
+     */
+    @Nullable
+    public IdDisplay getTag();
+
+    /**
      * Returns the package's vendor-id string or null.
      * @return A non-null value if {@link #hasVendorId()} is true; otherwise a null value.
      */
