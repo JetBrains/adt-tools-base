@@ -868,6 +868,7 @@ public class GradleImportTest extends TestCase {
         new File(libs, "android-support-v4.jar").createNewFile();
         new File(libs, "android-support-v7-gridlayout.jar").createNewFile();
         new File(libs, "android-support-v7-appcompat.jar").createNewFile();
+        new File(libs, "armeabi").mkdirs();
 
         File imported = checkProject(projectDir, ""
                 + MSG_HEADER
