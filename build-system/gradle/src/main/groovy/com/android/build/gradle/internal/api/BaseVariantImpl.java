@@ -40,6 +40,8 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
+import proguard.gradle.ProGuardTask;
+
 abstract class BaseVariantImpl implements BaseVariant {
 
     @NonNull
@@ -160,6 +162,12 @@ abstract class BaseVariantImpl implements BaseVariant {
     @Override
     public NdkCompile getNdkCompile() {
         return getVariantData().ndkCompileTask;
+    }
+
+    @Nullable
+    @Override
+    public ProGuardTask getProguardTask() {
+        return getVariantData().proguardTask;
     }
 
     @Override
