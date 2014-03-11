@@ -19,10 +19,20 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_COLUMN_COUNT;
 import static com.android.SdkConstants.ATTR_LAYOUT_COLUMN;
+import static com.android.SdkConstants.ATTR_LAYOUT_COLUMN_SPAN;
+import static com.android.SdkConstants.ATTR_LAYOUT_GRAVITY;
 import static com.android.SdkConstants.ATTR_LAYOUT_ROW;
+import static com.android.SdkConstants.ATTR_LAYOUT_ROW_SPAN;
+import static com.android.SdkConstants.ATTR_ORIENTATION;
 import static com.android.SdkConstants.ATTR_ROW_COUNT;
+import static com.android.SdkConstants.ATTR_USE_DEFAULT_MARGINS;
+import static com.android.SdkConstants.AUTO_URI;
+import static com.android.SdkConstants.FQCN_GRID_LAYOUT_V7;
+import static com.android.SdkConstants.GRID_LAYOUT;
+import static com.android.SdkConstants.XMLNS_PREFIX;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
@@ -34,10 +44,13 @@ import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 
 import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 /**
  * Check which looks for potential errors in declarations of GridLayouts, such as specifying
@@ -71,8 +84,9 @@ public class GridLayoutDetector extends LayoutDetector {
 
     @Override
     public Collection<String> getApplicableElements() {
-        return Collections.singletonList(
-                "GridLayout" //$NON-NLS-1$
+        return Arrays.asList(
+                GRID_LAYOUT,
+                FQCN_GRID_LAYOUT_V7
         );
     }
 
@@ -116,5 +130,66 @@ public class GridLayoutDetector extends LayoutDetector {
                 }
             }
         }
+
+        if (element.getTagName().equals(FQCN_GRID_LAYOUT_V7)) {
+            // Make sure that we're not using android: namespace attributes where we should
+            // be using app namespace attributes!
+            ensureAppNamespace(context, element, ATTR_COLUMN_COUNT);
+            ensureAppNamespace(context, element, ATTR_ORIENTATION);
+            ensureAppNamespace(context, element, ATTR_ROW_COUNT);
+            ensureAppNamespace(context, element, ATTR_USE_DEFAULT_MARGINS);
+            ensureAppNamespace(context, element, "alignmentMode");
+            ensureAppNamespace(context, element, "columnOrderPreserved");
+            ensureAppNamespace(context, element, "rowOrderPreserved");
+
+            for (Element child : LintUtils.getChildren(element)) {
+                ensureAppNamespace(context, child, ATTR_LAYOUT_COLUMN);
+                ensureAppNamespace(context, child, ATTR_LAYOUT_COLUMN_SPAN);
+                ensureAppNamespace(context, child, ATTR_LAYOUT_GRAVITY);
+                ensureAppNamespace(context, child, ATTR_LAYOUT_ROW);
+                ensureAppNamespace(context, child, ATTR_LAYOUT_ROW_SPAN);
+            }
+        }
+    }
+
+    private static void ensureAppNamespace(XmlContext context, Element element, String name) {
+        Attr attribute = element.getAttributeNodeNS(ANDROID_URI, name);
+        if (attribute != null) {
+            String prefix = getNamespacePrefix(element.getOwnerDocument(), AUTO_URI);
+            boolean haveNamespace = prefix != null;
+            if (!haveNamespace) {
+                prefix = "app";
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Wrong namespace; with v7 GridLayout you should use ").append(prefix)
+                    .append(":").append(name);
+            if (!haveNamespace) {
+                sb.append(" (and add xmlns:app=\"").append(AUTO_URI)
+                        .append("\" to your root element.)");
+            }
+            String message = sb.toString();
+
+            context.report(ISSUE, attribute, context.getLocation(attribute), message, null);
+        }
+    }
+
+    @Nullable
+    private static String getNamespacePrefix(Document document, String uri) {
+        Element root = document.getDocumentElement();
+        if (root == null) {
+            return null;
+        }
+        NamedNodeMap attributes = root.getAttributes();
+        for (int i = 0, n = attributes.getLength(); i < n; i++) {
+            Node attribute = attributes.item(i);
+            if (attribute.getNodeName().startsWith(XMLNS_PREFIX) &&
+                    attribute.getNodeValue().equals(uri)) {
+                return attribute.getNodeName().substring(XMLNS_PREFIX.length());
+            }
+
+        }
+
+        return null;
     }
 }
