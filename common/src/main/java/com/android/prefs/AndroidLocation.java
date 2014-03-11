@@ -49,6 +49,30 @@ public final class AndroidLocation {
     private static String sPrefsLocation = null;
 
     /**
+     * Enum describing which variables to check and whether they should
+     * be checked via {@link System#getProperty(String)} or {@link System#getenv()} or both.
+     */
+    public enum EnvVar {
+        ANDROID_SDK_HOME("ANDROID_SDK_HOME", true,  true),  // both sys prop and env var
+        USER_HOME       ("user.home",        true,  false), // sys prop only
+        HOME            ("HOME",             false, true);  // env var only
+
+        final String mName;
+        final boolean mIsSysProp;
+        final boolean mIsEnvVar;
+
+        private EnvVar(String name, boolean isSysProp, boolean isEnvVar) {
+            mName = name;
+            mIsSysProp = isSysProp;
+            mIsEnvVar = isEnvVar;
+        }
+
+        public String getName() {
+            return mName;
+        }
+    }
+
+    /**
      * Returns the folder used to store android related files.
      * @return an OS specific path, terminated by a separator.
      * @throws AndroidLocationException
@@ -56,7 +80,9 @@ public final class AndroidLocation {
     @NonNull
     public static final String getFolder() throws AndroidLocationException {
         if (sPrefsLocation == null) {
-            String home = findValidPath("ANDROID_SDK_HOME", "user.home", "HOME");
+            String home = findValidPath(new EnvVar[] { EnvVar.ANDROID_SDK_HOME,
+                                                       EnvVar.USER_HOME,
+                                                       EnvVar.HOME });
 
             // if the above failed, we throw an exception.
             if (home == null) {
@@ -104,26 +130,37 @@ public final class AndroidLocation {
     /**
      * Checks a list of system properties and/or system environment variables for validity, and
      * existing director, and returns the first one.
-     * @param names
-     * @return the content of the first property/variable.
+     * @param vars The variables to check. Order does matter.
+     * @return the content of the first property/variable that is a valid directory.
      */
-    private static String findValidPath(String... names) {
-        for (String name : names) {
+    private static String findValidPath(EnvVar... vars) {
+        for (EnvVar var : vars) {
             String path;
-            if (name.indexOf('.') != -1) {
-                path = System.getProperty(name);
-            } else {
-                path = System.getenv(name);
+            if (var.mIsSysProp) {
+                path = checkPath(System.getProperty(var.mName));
+                if (path != null) {
+                    return path;
+                }
             }
 
-            if (path != null) {
-                File f = new File(path);
-                if (f.isDirectory()) {
+            if (var.mIsEnvVar) {
+                path = checkPath(System.getenv(var.mName));
+                if (path != null) {
                     return path;
                 }
             }
         }
 
+        return null;
+    }
+
+    private static String checkPath(String path) {
+        if (path != null) {
+            File f = new File(path);
+            if (f.isDirectory()) {
+                return path;
+            }
+        }
         return null;
     }
 }
