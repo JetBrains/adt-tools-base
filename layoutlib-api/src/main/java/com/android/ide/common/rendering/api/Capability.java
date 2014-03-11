@@ -69,5 +69,9 @@ public enum Capability {
     /**
      * Ability to render RTL layouts.
      */
-    RTL
+    RTL,
+    /**
+     * Ability to render ActionBar.
+     */
+    ACTION_BAR,
 }
