@@ -950,6 +950,27 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testTryWithResources() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/TryWithResources.java:13: Error: Try-with-resources requires API level 19 (current min is 1) [NewApi]\n"
+                + "        try (BufferedReader br = new BufferedReader(new FileReader(path))) {\n"
+                + "        ^\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "src/test/pkg/TryWithResources.java.txt=>src/test/pkg/TryWithResources.java"
+                ));
+    }
+
+    public void testTryWithResourcesOk() throws Exception {
+        assertEquals(""
+                + "No warnings.",
+                lintProject(
+                        "apicheck/minsdk19.xml=>AndroidManifest.xml",
+                        "src/test/pkg/TryWithResources.java.txt=>src/test/pkg/TryWithResources.java"
+                ));
+    }
+
     public void testMissingApiDatabase() throws Exception {
         ApiLookup.dispose();
         assertEquals(""
