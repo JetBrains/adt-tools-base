@@ -18,6 +18,7 @@ package com.android.sdklib.util;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.io.Closeables;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -104,6 +105,8 @@ public class GrabProcessOutput {
                     }
                 } catch (IOException e) {
                     // do nothing.
+                } finally {
+                    Closeables.closeQuietly(errReader);
                 }
             }
         };
@@ -126,6 +129,8 @@ public class GrabProcessOutput {
                     }
                 } catch (IOException e) {
                     // do nothing.
+                } finally {
+                    Closeables.closeQuietly(outReader);
                 }
             }
         };

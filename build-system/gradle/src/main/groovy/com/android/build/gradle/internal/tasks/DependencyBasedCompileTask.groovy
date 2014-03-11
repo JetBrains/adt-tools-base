@@ -186,7 +186,10 @@ public abstract class DependencyBasedCompileTask extends IncrementalTask {
                 case FileStatus.CHANGED:
                     List<DependencyData> impactedData = inputMap.get(entry.getKey().absolutePath)
                     if (impactedData != null) {
-                        for (final DependencyData data : impactedData) {
+                        final count = impactedData.size();
+                        for (int i = 0; i < count; i++) {
+                            final DependencyData data = impactedData.get(i);
+
                             executor.execute(new Callable<Void>() {
                                 @Override
                                 Void call() throws Exception {
@@ -198,15 +201,15 @@ public abstract class DependencyBasedCompileTask extends IncrementalTask {
                     }
                     break
                 case FileStatus.REMOVED:
-                    final DependencyData data = mainFileMap.get(entry.getKey().absolutePath)
-                    if (data != null) {
+                    final DependencyData data2 = mainFileMap.get(entry.getKey().absolutePath)
+                    if (data2 != null) {
                         executor.execute(new Callable<Void>() {
                             @Override
                             Void call() throws Exception {
-                                cleanUpOutputFrom(data)
+                                cleanUpOutputFrom(data2)
                             }
                         })
-                        store.remove(data)
+                        store.remove(data2)
                     }
                     break
             }

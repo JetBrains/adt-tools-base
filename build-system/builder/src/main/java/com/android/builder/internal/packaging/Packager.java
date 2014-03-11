@@ -29,6 +29,7 @@ import com.android.builder.signing.SignedJarBuilder;
 import com.android.builder.signing.SignedJarBuilder.IZipEntryFilter;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.android.utils.ILogger;
+import com.google.common.io.Closeables;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -368,6 +369,7 @@ public final class Packager implements IArchiveBuilder {
             throw new SealedPackageException("APK is already sealed");
         }
 
+        FileInputStream fis = null;
         try {
             mLogger.verbose("%s:", zipFile);
 
@@ -375,7 +377,7 @@ public final class Packager implements IArchiveBuilder {
             mNullFilter.reset(zipFile);
 
             // ask the builder to add the content of the file.
-            FileInputStream fis = new FileInputStream(zipFile);
+            fis = new FileInputStream(zipFile);
             mBuilder.writeZip(fis, mNullFilter);
         } catch (DuplicateFileException e) {
             mBuilder.cleanUp();
@@ -383,6 +385,8 @@ public final class Packager implements IArchiveBuilder {
         } catch (Exception e) {
             mBuilder.cleanUp();
             throw new PackagerException(e, "Failed to add %s", zipFile);
+        } finally {
+            Closeables.closeQuietly(fis);
         }
     }
 
@@ -402,6 +406,7 @@ public final class Packager implements IArchiveBuilder {
             throw new SealedPackageException("APK is already sealed");
         }
 
+        FileInputStream fis = null;
         try {
             mLogger.verbose("%s:", jarFile);
 
@@ -410,7 +415,7 @@ public final class Packager implements IArchiveBuilder {
 
             // ask the builder to add the content of the file, filtered to only let through
             // the java resources.
-            FileInputStream fis = new FileInputStream(jarFile);
+            fis = new FileInputStream(jarFile);
             mBuilder.writeZip(fis, mFilter);
 
             // check if native libraries were found in the external library. This should
@@ -422,6 +427,8 @@ public final class Packager implements IArchiveBuilder {
         } catch (Exception e) {
             mBuilder.cleanUp();
             throw new PackagerException(e, "Failed to add %s", jarFile);
+        } finally {
+            Closeables.closeQuietly(fis);
         }
     }
 

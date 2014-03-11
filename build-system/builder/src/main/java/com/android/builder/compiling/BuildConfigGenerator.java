@@ -15,6 +15,8 @@
  */
 package com.android.builder.compiling;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.AndroidBuilder;
@@ -22,7 +24,6 @@ import com.android.builder.model.ClassField;
 import com.google.common.collect.Lists;
 import com.squareup.javawriter.JavaWriter;
 
-import javax.lang.model.element.Modifier;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -31,7 +32,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import javax.lang.model.element.Modifier;
 
 /**
  * Class able to generate a BuildConfig class in Android project.
@@ -39,7 +40,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class BuildConfigGenerator {
 
-    public final static String BUILD_CONFIG_NAME = "BuildConfig.java";
+    public static final String BUILD_CONFIG_NAME = "BuildConfig.java";
 
     private final String mGenFolder;
     private final String mBuildConfigPackageName;
@@ -130,6 +131,7 @@ public class BuildConfigGenerator {
 
         writer.endType();
 
+        writer.close();
         out.close();
     }
 }
