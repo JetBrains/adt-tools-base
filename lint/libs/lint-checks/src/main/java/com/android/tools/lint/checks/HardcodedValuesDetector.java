@@ -59,8 +59,8 @@ public class HardcodedValuesDetector extends LayoutDetector {
             "* The application cannot be translated to other languages by just adding new " +
             "translations for existing string resources.\n" +
             "\n" +
-            "In Eclipse there is a quickfix to automatically extract this hardcoded string into " +
-            "a resource lookup.",
+            "In Android Studio and Eclipse there are quickfixes to automatically extract this " +
+            "hardcoded string into a resource lookup.",
 
             Category.I18N,
             5,

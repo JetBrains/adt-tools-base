@@ -52,6 +52,7 @@ public class LintCliFlags {
     private boolean mNoWarnings;
     private boolean mAllErrors;
     private boolean mFatalOnly;
+    private boolean mExplainIssues;
     private List<File> mSources;
     private List<File> mClasses;
     private List<File> mLibraries;
@@ -373,5 +374,25 @@ public class LintCliFlags {
      */
     public void setSeverityOverrides(@NonNull Map<String, Severity> severities) {
         mSeverities = severities;
+    }
+
+    /**
+     * Whether text reports should include full explanation texts. (HTML and XML reports always
+     * do, unconditionally.)
+     *
+     * @return true if text reports should include explanation text
+     */
+    public boolean isExplainIssues() {
+        return mExplainIssues;
+    }
+
+    /**
+     * Sets whether text reports should include full explanation texts. (HTML and XML reports
+     * always do, unconditionally.)
+     *
+     * @param explainText true if text reports should include explanation text
+     */
+    public void setExplainIssues(boolean explainText) {
+        mExplainIssues = explainText;
     }
 }
