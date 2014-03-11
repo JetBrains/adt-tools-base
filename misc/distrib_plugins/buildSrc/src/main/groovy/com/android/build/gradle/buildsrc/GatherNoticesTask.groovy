@@ -75,7 +75,7 @@ class GatherNoticesTask extends BaseTask {
         if (folders != null) {
             for (File folder : folders) {
                 if (folder.isDirectory()) {
-                    gatherNotices(folder, noticeCache, notices)
+                    gatherNoticesFromFolder(folder, noticeCache, notices)
                 }
             }
         }
@@ -121,7 +121,8 @@ class GatherNoticesTask extends BaseTask {
         }
     }
 
-    private static void gatherNotices(File folder, Set<String> filenameCache,
+    private static void gatherNoticesFromFolder(File folder,
+                                      Set<String> filenameCache,
                                       List<File> noticeList) {
         File[] files = folder.listFiles();
         if (files != null) {
