@@ -17,10 +17,12 @@
 package com.android.builder.png;
 
 import com.android.annotations.NonNull;
+import com.google.common.io.Files;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -80,6 +82,18 @@ public class PngProcessorTest extends BasePngTest {
         } catch (IOException e) {
             assertFalse("Got IOException instead of NinePatchException", true);
         }
+    }
+
+    public void testAlreadyCrunchedFile() throws IOException, NinePatchException {
+        File fromFile = getFile("crunched.png");
+        File outFile = crunch(fromFile);
+
+        // check the files are the same.
+        assertEquals(fromFile.length(), outFile.length());
+
+        byte[] fromArray = Files.toByteArray(fromFile);
+        byte[] toArray = Files.toByteArray(outFile);
+        assertTrue(Arrays.equals(fromArray, toArray));
     }
 
     byte[] getRawImageData(@NonNull File file) throws DataFormatException, IOException {
