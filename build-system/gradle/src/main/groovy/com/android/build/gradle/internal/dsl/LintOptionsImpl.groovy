@@ -60,6 +60,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
     private boolean warningsAsErrors
     @Input
     private boolean showAll
+    @Input
+    private boolean checkReleaseBuilds = true;
     @InputFile
     private File lintConfig
     @Input
@@ -96,7 +98,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
             boolean checkAllWarnings,
             boolean ignoreWarnings,
             boolean warningsAsErrors,
-            boolean showAll) {
+            boolean showAll,
+            boolean checkReleaseBuilds) {
         this.disable = disable
         this.enable = enable
         this.check = check
@@ -115,6 +118,7 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         this.ignoreWarnings = ignoreWarnings
         this.warningsAsErrors = warningsAsErrors
         this.showAll = showAll
+        this.checkReleaseBuilds = checkReleaseBuilds
     }
 
     @NonNull
@@ -137,7 +141,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
                 source.isCheckAllWarnings(),
                 source.isIgnoreWarnings(),
                 source.isWarningsAsErrors(),
-                source.isShowAll()
+                source.isShowAll(),
+                source.isCheckReleaseBuilds()
         )
     }
 
@@ -296,6 +301,15 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         this.showAll = showAll
     }
 
+    @Override
+    public boolean isCheckReleaseBuilds() {
+        return checkReleaseBuilds;
+    }
+
+    public void setCheckReleaseBuilds(boolean checkReleaseBuilds) {
+        this.checkReleaseBuilds = checkReleaseBuilds
+    }
+
     /**
      * Returns the default configuration file to use as a fallback
      */
@@ -390,8 +404,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         flags.setShowEverything(showAll)
         flags.setDefaultConfiguration(lintConfig)
 
-        if (report) {
-            if (textReport) {
+        if (report || flags.isFatalOnly()) {
+            if (textReport || flags.isFatalOnly()) {
                 File output = textOutput
                 if (output == null) {
                     output = new File(STDOUT)
@@ -420,8 +434,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
             }
             if (xmlReport) {
                 File output = xmlOutput
-                if (output == null) {
-                    output = createOutputPath(project, variantName, DOT_XML)
+                if (output == null || flags.isFatalOnly()) {
+                    output = createOutputPath(project, variantName, DOT_XML, flags.isFatalOnly())
                 } else if (!output.isAbsolute()) {
                     output = project.file(output.getPath())
                 }
@@ -434,8 +448,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
             }
             if (htmlReport) {
                 File output = htmlOutput
-                if (output == null) {
-                    output = createOutputPath(project, variantName, ".html")
+                if (output == null || flags.isFatalOnly()) {
+                    output = createOutputPath(project, variantName, ".html", flags.isFatalOnly())
                 } else if (!output.isAbsolute()) {
                     output = project.file(output.getPath())
                 }
@@ -488,12 +502,16 @@ public class LintOptionsImpl implements LintOptions, Serializable {
     private static File createOutputPath(
             @NonNull Project project,
             @NonNull String variantName,
-            @NonNull String extension) {
+            @NonNull String extension,
+            boolean fatalOnly) {
         StringBuilder base = new StringBuilder()
         base.append("lint-results")
         if (variantName != null) {
             base.append("-")
             base.append(variantName)
+        }
+        if (fatalOnly) {
+            base.append("-fatal")
         }
         base.append(extension)
         return new File(project.buildDir, base.toString())
