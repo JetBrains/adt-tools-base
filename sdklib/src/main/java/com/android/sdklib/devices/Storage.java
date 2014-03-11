@@ -128,4 +128,12 @@ public class Storage {
         }
         return optimalUnit;
     }
+
+    @Override
+    public String toString() {
+        Unit u = getAppropriateUnits();
+        return String.format("%d %s", getSizeAsUnit(u), u);
+    }
+
+
 }
