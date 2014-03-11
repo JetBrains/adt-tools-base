@@ -18,6 +18,14 @@ dependencies {
     testCompile 'junit:junit:3.8.1'
 }
 
+test {
+  testLogging {
+    showStandardStreams = true
+    showStackTraces = true
+    exceptionFormat = "full"
+  }
+}
+
 sourceSets {
     main.resources.srcDir 'src/main/java'
     test.resources.srcDir 'src/test/java'
