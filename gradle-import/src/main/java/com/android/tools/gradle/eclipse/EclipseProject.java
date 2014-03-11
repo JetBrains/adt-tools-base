@@ -299,7 +299,7 @@ class EclipseProject implements Comparable<EclipseProject> {
                 if (!path.equals(GEN_FOLDER)) { // ignore special generated source folder
                     String relative = path.replace('/', separatorChar);
                     File file = new File(relative);
-                    if (file.isAbsolute()) {
+                    if (file.isAbsolute() || path.startsWith("/")) {
                         File resolved = resolveWorkspacePath(path);
                         if (resolved != null) {
                             if (GradleImport.isEclipseProjectDir(resolved)) {
@@ -332,7 +332,7 @@ class EclipseProject implements Comparable<EclipseProject> {
                 if (!isAndroidProject()) {
                     String relative = path.replace('/', separatorChar);
                     File file = new File(relative);
-                    if (file.isAbsolute()) {
+                    if (file.isAbsolute() || path.startsWith("/")) {
                         File resolved = resolveWorkspacePath(path);
                         if (resolved != null) {
                             mJarPaths.add(resolved);
@@ -391,13 +391,13 @@ class EclipseProject implements Comparable<EclipseProject> {
         }
         String relative = path.replace('/', separatorChar);
         File file = new File(relative);
-        if (file.isAbsolute()) {
+        if (file.isAbsolute() || path.startsWith("/")) {
             if (file.exists()) {
                 return file;
             }
 
             // It might be a workspace reference
-            if (relative.charAt(0) == '/') { // Workspace roots use '/', even on Windows
+            if (path.charAt(0) == '/') { // Workspace roots use '/', even on Windows
                 // Try to resolve it using the workspace name
                 File f = mImporter.resolveWorkspacePath(path);
                 if (f != null && f.exists()) {
