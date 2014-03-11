@@ -12,7 +12,7 @@ android {
 }
 
 project.afterEvaluate {
-    configure(fakeInstrumentTest) {
+    configure(fakeAndroidTest) {
         doLast {
             String error = project.ext.fakeProvider.isValid()
             if (error != null) {

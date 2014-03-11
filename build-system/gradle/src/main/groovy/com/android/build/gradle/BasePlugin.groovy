@@ -145,10 +145,10 @@ import static com.android.builder.BuilderConstants.DEVICE
 import static com.android.builder.BuilderConstants.EXT_LIB_ARCHIVE
 import static com.android.builder.BuilderConstants.FD_FLAVORS
 import static com.android.builder.BuilderConstants.FD_FLAVORS_ALL
-import static com.android.builder.BuilderConstants.FD_INSTRUMENT_RESULTS
-import static com.android.builder.BuilderConstants.FD_INSTRUMENT_TESTS
+import static com.android.builder.BuilderConstants.FD_ANDROID_RESULTS
+import static com.android.builder.BuilderConstants.FD_ANDROID_TESTS
 import static com.android.builder.BuilderConstants.FD_REPORTS
-import static com.android.builder.BuilderConstants.INSTRUMENT_TEST
+import static com.android.builder.BuilderConstants.ANDROID_TEST
 import static com.android.builder.BuilderConstants.RELEASE
 import static com.android.builder.VariantConfiguration.Type.TEST
 import static java.io.File.separator
@@ -311,7 +311,7 @@ public abstract class BasePlugin {
     private void setBaseExtension(@NonNull BaseExtension extension) {
         sdk.setExtension(extension)
         mainSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(extension.defaultConfig.name)
-        testSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(INSTRUMENT_TEST)
+        testSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(ANDROID_TEST)
 
         defaultConfigData = new ProductFlavorData<DefaultProductFlavor>(
                 extension.defaultConfig, mainSourceSet,
@@ -1147,7 +1147,7 @@ public abstract class BasePlugin {
         List<TestServer> servers = extension.testServers
 
         Task mainConnectedTask = connectedCheck
-        String connectedRootName = "${CONNECTED}${INSTRUMENT_TEST.capitalize()}"
+        String connectedRootName = "${CONNECTED}${ANDROID_TEST.capitalize()}"
         // if more than one flavor, create a report aggregator task and make this the parent
         // task for all new connected tasks.
         if (hasFlavors) {
@@ -1159,14 +1159,14 @@ public abstract class BasePlugin {
 
             mainConnectedTask.conventionMapping.resultsDir = {
                 String rootLocation = extension.testOptions.resultsDir != null ?
-                    extension.testOptions.resultsDir : "$project.buildDir/$FD_INSTRUMENT_RESULTS"
+                    extension.testOptions.resultsDir : "$project.buildDir/$FD_ANDROID_RESULTS"
 
                 project.file("$rootLocation/connected/$FD_FLAVORS_ALL")
             }
             mainConnectedTask.conventionMapping.reportsDir = {
                 String rootLocation = extension.testOptions.reportDir != null ?
                     extension.testOptions.reportDir :
-                    "$project.buildDir/$FD_REPORTS/$FD_INSTRUMENT_TESTS"
+                    "$project.buildDir/$FD_REPORTS/$FD_ANDROID_TESTS"
 
                 project.file("$rootLocation/connected/$FD_FLAVORS_ALL")
             }
@@ -1178,7 +1178,7 @@ public abstract class BasePlugin {
         // if more than one provider tasks, either because of several flavors, or because of
         // more than one providers, then create an aggregate report tasks for all of them.
         if (providers.size() > 1 || hasFlavors) {
-            mainProviderTask = project.tasks.create("${DEVICE}${INSTRUMENT_TEST.capitalize()}",
+            mainProviderTask = project.tasks.create("${DEVICE}${ANDROID_TEST.capitalize()}",
                     AndroidReportTask)
             mainProviderTask.group = JavaBasePlugin.VERIFICATION_GROUP
             mainProviderTask.description = "Installs and runs instrumentation tests using all Device Providers."
@@ -1187,14 +1187,14 @@ public abstract class BasePlugin {
 
             mainProviderTask.conventionMapping.resultsDir = {
                 String rootLocation = extension.testOptions.resultsDir != null ?
-                    extension.testOptions.resultsDir : "$project.buildDir/$FD_INSTRUMENT_RESULTS"
+                    extension.testOptions.resultsDir : "$project.buildDir/$FD_ANDROID_RESULTS"
 
                 project.file("$rootLocation/devices/$FD_FLAVORS_ALL")
             }
             mainProviderTask.conventionMapping.reportsDir = {
                 String rootLocation = extension.testOptions.reportDir != null ?
                     extension.testOptions.reportDir :
-                    "$project.buildDir/$FD_REPORTS/$FD_INSTRUMENT_TESTS"
+                    "$project.buildDir/$FD_REPORTS/$FD_ANDROID_TESTS"
 
                 project.file("$rootLocation/devices/$FD_FLAVORS_ALL")
             }
@@ -1237,8 +1237,8 @@ public abstract class BasePlugin {
                 for (DeviceProvider deviceProvider : providers) {
                     DefaultTask providerTask = createDeviceProviderInstrumentTestTask(
                             hasFlavors ?
-                                "${deviceProvider.name}${INSTRUMENT_TEST.capitalize()}${baseVariantData.variantConfiguration.fullName.capitalize()}" :
-                                "${deviceProvider.name}${INSTRUMENT_TEST.capitalize()}",
+                                "${deviceProvider.name}${ANDROID_TEST.capitalize()}${baseVariantData.variantConfiguration.fullName.capitalize()}" :
+                                "${deviceProvider.name}${ANDROID_TEST.capitalize()}",
                             "Installs and runs the tests for Build '${baseVariantData.variantConfiguration.fullName}' using Provider '${deviceProvider.name.capitalize()}'.",
                             isLibraryTest ?
                                 DeviceProviderInstrumentTestLibraryTask :
@@ -1334,7 +1334,7 @@ public abstract class BasePlugin {
         testTask.conventionMapping.resultsDir = {
             String rootLocation = extension.testOptions.resultsDir != null ?
                 extension.testOptions.resultsDir :
-                "$project.buildDir/$FD_INSTRUMENT_RESULTS"
+                "$project.buildDir/$FD_ANDROID_RESULTS"
 
             String flavorFolder = variantData.variantConfiguration.flavorName
             if (!flavorFolder.isEmpty()) {
@@ -1346,7 +1346,7 @@ public abstract class BasePlugin {
         testTask.conventionMapping.reportsDir = {
             String rootLocation = extension.testOptions.reportDir != null ?
                 extension.testOptions.reportDir :
-                "$project.buildDir/$FD_REPORTS/$FD_INSTRUMENT_TESTS"
+                "$project.buildDir/$FD_REPORTS/$FD_ANDROID_TESTS"
 
             String flavorFolder = variantData.variantConfiguration.flavorName
             if (!flavorFolder.isEmpty()) {
