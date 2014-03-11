@@ -101,7 +101,8 @@ public class XmlElement extends XmlNode {
                             .split(attribute.getNodeValue())) {
                         if (attributeName.indexOf(XmlUtils.NS_SEPARATOR) == -1) {
                             String toolsPrefix = XmlUtils
-                                    .lookupNamespacePrefix(getXml(), SdkConstants.TOOLS_URI);
+                                    .lookupNamespacePrefix(getXml(), SdkConstants.TOOLS_URI,
+                                            SdkConstants.ANDROID_NS_NAME, false);
                             // automatically provide the prefix.
                             attributeName = toolsPrefix + XmlUtils.NS_SEPARATOR + attributeName;
                         }
@@ -213,8 +214,8 @@ public class XmlElement extends XmlNode {
                 : AttributeOperationType.STRICT;
     }
 
-    public Collection<AttributeOperationType> getAttributeOperations() {
-        return mAttributesOperationTypes.values();
+    public Collection<Map.Entry<NodeName, AttributeOperationType>> getAttributeOperations() {
+        return mAttributesOperationTypes.entrySet();
     }
 
 
