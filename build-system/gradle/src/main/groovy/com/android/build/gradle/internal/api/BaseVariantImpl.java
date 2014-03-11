@@ -103,6 +103,12 @@ abstract class BaseVariantImpl implements BaseVariant {
 
     @Override
     @NonNull
+    public String getPackageName() {
+        return getVariantData().getPackageName();
+    }
+
+    @Override
+    @NonNull
     public Task getPreBuild() {
         return getVariantData().preBuildTask;
     }
