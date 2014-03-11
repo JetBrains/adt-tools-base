@@ -102,6 +102,19 @@ public interface BaseVariant {
 
     void setOutputFile(@NonNull File outputFile);
 
+
+    /**
+     * Returns the pre-build anchor task
+     */
+    @NonNull
+    Task getPreBuild();
+
+    /**
+     * Returns the check manifest task.
+     */
+    @NonNull
+    Task getCheckManifest();
+
     /**
      * Returns the Manifest processing task.
      */
