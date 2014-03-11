@@ -159,13 +159,13 @@ public class LintGradleClient extends LintCliClient {
                     fileMap.put(fileName, canonical);
                     canonical.variants = Sets.newHashSet();
                     canonical.gradleProject = project;
+                    merged.add(canonical);
                 }
-                merged.add(canonical);
                 canonical.variants.add(variant);
             }
         }
 
-        // Clear out variants on any nodes that don't define all
+        // Clear out variants on any nodes that define all
         for (Warning warning : merged) {
             if (warning.variants != null && warning.variants.size() == totalVariantCount) {
                 // If this error is present in all variants, just clear it out
