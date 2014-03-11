@@ -42,6 +42,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Some utilities to reduce repetitions in the {@link ManifestMergerTest}s.
@@ -585,10 +587,13 @@ public class ManifestMergerTest extends TestCase {
 
         // Convert relative pathnames to absolute.
         String expectedErrors = testFiles.getExpectedErrors().trim();
-        expectedErrors = expectedErrors.replaceAll(testFiles.getMain().getName(),
-                testFiles.getMain().getAbsolutePath());
+        expectedErrors = expectedErrors.replaceAll(
+                Pattern.quote(testFiles.getMain().getName()),
+                Matcher.quoteReplacement(testFiles.getMain().getAbsolutePath()));
         for (File file : testFiles.getLibs()) {
-            expectedErrors = expectedErrors.replaceAll(file.getName(), file.getAbsolutePath());
+            expectedErrors = expectedErrors.replaceAll(
+                    Pattern.quote(file.getName()),
+                    Matcher.quoteReplacement(file.getAbsolutePath()));
         }
 
         StringBuilder actualErrors = new StringBuilder();
@@ -615,7 +620,7 @@ public class ManifestMergerTest extends TestCase {
         assertNotNull(document);
         assert document != null; // for Eclipse null analysis
         String actual = MergerXmlUtils.printXmlString(document, mergerLog);
-        assertEquals("Error parsing actual result XML", "[]", log.toString());
+        assertEquals("Error parsing actual result XML", "", log.toString());
         log.clear();
         document = MergerXmlUtils.parseDocument(
                 testFiles.getExpectedResult(),
@@ -624,7 +629,7 @@ public class ManifestMergerTest extends TestCase {
         assertNotNull("Failed to parse result document: " + testFiles.getExpectedResult(),document);
         assert document != null;
         String expected = MergerXmlUtils.printXmlString(document, mergerLog);
-        assertEquals("Error parsing expected result XML", "[]", log.toString());
+        assertEquals("Error parsing expected result XML", "", log.toString());
         assertEquals("Error comparing expected to actual result", expected, actual);
 
         testFiles.cleanup();
