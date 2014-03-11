@@ -95,6 +95,12 @@ public class PackageApplication extends IncrementalTask implements OutputFileTas
             logger.error("\tPath in archive: " + e.archivePath)
             logger.error("\tOrigin 1: " + e.file1)
             logger.error("\tOrigin 2: " + e.file2)
+            logger.error("You can ignore those files in your build.gradle:")
+            logger.error("\tandroid {")
+            logger.error("\t  packagingOptions {")
+            logger.error("\t    exclude '$e.archivePath'")
+            logger.error("\t  }")
+            logger.error("\t}")
             throw new BuildException(e.getMessage(), e);
         } catch (Exception e) {
             throw new BuildException(e.getMessage(), e);
