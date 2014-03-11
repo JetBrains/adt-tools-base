@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.Sdk
 import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
+import com.android.build.gradle.internal.dependency.ClassifiedJarDependency
 import com.android.build.gradle.internal.dependency.DependencyChecker
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
@@ -2202,7 +2203,12 @@ public abstract class BasePlugin {
                     reverseMap.put(adep, configDependencies)
                 } else {
                     jars.put(artifact.file,
-                            new JarDependency(artifact.file, true /*compiled*/, false /*packaged*/))
+                            new ClassifiedJarDependency(
+                                    artifact.file,
+                                    true /*compiled*/,
+                                    false /*packaged*/,
+                                    true /*proguarded*/,
+                                    artifact.classifier))
                 }
             }
 

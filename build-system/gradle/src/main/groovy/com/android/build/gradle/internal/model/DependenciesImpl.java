@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.model;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
+import com.android.build.gradle.internal.dependency.ClassifiedJarDependency;
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -84,9 +85,12 @@ public class DependenciesImpl implements Dependencies, Serializable {
         projects = Lists.newArrayList();
 
         for (JarDependency jarDep : jarDeps) {
+            boolean customArtifact = jarDep instanceof ClassifiedJarDependency &&
+                    ((ClassifiedJarDependency)jarDep).getClassifier() != null;
+
             File jarFile = jarDep.getJarFile();
-            Project projectMatch = getProject(jarFile, gradleProjects);
-            if (projectMatch != null) {
+            Project projectMatch;
+            if (!customArtifact && (projectMatch = getProject(jarFile, gradleProjects)) != null) {
                 projects.add(projectMatch.getPath());
             } else {
                 jars.add(jarFile);

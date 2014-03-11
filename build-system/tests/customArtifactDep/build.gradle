@@ -1,0 +1,16 @@
+buildscript {
+    repositories {
+        maven { url '../../../../../out/host/gradle/repo' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.8.4-SNAPSHOT'
+    }
+}
+
+allprojects {
+    version = '1.0'
+
+    repositories {
+        mavenCentral()
+    }
+}
