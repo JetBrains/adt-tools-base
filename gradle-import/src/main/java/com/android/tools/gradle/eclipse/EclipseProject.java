@@ -21,6 +21,7 @@ import static com.android.SdkConstants.ANDROID_LIBRARY_REFERENCE_FORMAT;
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_PACKAGE;
+import static com.android.SdkConstants.CURRENT_PLATFORM;
 import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.FD_ASSETS;
 import static com.android.SdkConstants.FD_RES;
@@ -28,6 +29,7 @@ import static com.android.SdkConstants.FD_SOURCES;
 import static com.android.SdkConstants.FN_PROJECT_PROPERTIES;
 import static com.android.SdkConstants.GEN_FOLDER;
 import static com.android.SdkConstants.LIBS_FOLDER;
+import static com.android.SdkConstants.PLATFORM_WINDOWS;
 import static com.android.SdkConstants.PROGUARD_CONFIG;
 import static com.android.SdkConstants.VALUE_TRUE;
 import static com.android.sdklib.internal.project.ProjectProperties.PROPERTY_SDK;
@@ -44,6 +46,7 @@ import static com.android.xml.AndroidManifest.NODE_USES_SDK;
 import static java.io.File.separator;
 import static java.io.File.separatorChar;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -186,7 +189,15 @@ class EclipseProject implements Comparable<EclipseProject> {
                 break;
             }
 
-            File path = new File(library.replace('/', File.separatorChar));
+            // Handle importing Windows-relative paths in project.properties on non-Windows,
+            // and vice versa
+            if (CURRENT_PLATFORM == PLATFORM_WINDOWS) {
+                library = library.replace('/', '\\');
+            } else {
+                library = library.replace('\\', '/');
+            }
+
+            File path = new File(library);
             File joined = path.isAbsolute() ? path : new File(mDir, library);
             File libraryDir = joined.getCanonicalFile();
             if (!libraryDir.exists()) {
