@@ -587,6 +587,9 @@ public class GradleImport {
             sb.append(NL);
             sb.append("dependencies {").append(NL);
             for (ImportModule lib : module.getDirectDependencies()) {
+                if (lib.isReplacedWithDependency()) {
+                    continue;
+                }
                 sb.append("    compile project('").append(lib.getModuleReference()).append("')")
                         .append(NL);
             }
