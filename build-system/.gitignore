@@ -18,6 +18,7 @@ tests/libsTest/*/build
 tests/multiproject/*/build
 tests/localJars/*/build
 tests/ndkJniLib/*/build
+tests/packagingOptions/jars/*/build
 tests/proguardLib/*/build
 tests/renderscriptInLib/*/build
 tests/repo/*/build
