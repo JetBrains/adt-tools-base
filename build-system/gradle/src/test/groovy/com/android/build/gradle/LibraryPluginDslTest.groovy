@@ -68,14 +68,16 @@ public class LibraryPluginDslTest extends BaseTest {
         project.android {
             compileSdkVersion 15
 
-            debugSigningConfig {
-                storePassword = "foo"
+            signingConfigs {
+                debug {
+                    storePassword = "foo"
+                }
             }
         }
 
-        SigningConfig signingConfig = project.android.debug.signingConfig
+        SigningConfig signingConfig = project.android.buildTypes.debug.signingConfig
 
-        assertEquals(project.android.debugSigningConfig, signingConfig)
+        assertEquals(project.android.signingConfigs.debug, signingConfig)
         assertEquals("foo", signingConfig.storePassword)
     }
 

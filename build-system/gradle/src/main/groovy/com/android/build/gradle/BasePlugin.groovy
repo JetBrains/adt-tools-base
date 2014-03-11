@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.ConfigurationDependencies
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.Sdk
+import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.dependency.DependencyChecker
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl
@@ -197,6 +198,7 @@ public abstract class BasePlugin {
     }
 
     public abstract BaseExtension getExtension()
+    public abstract VariantManager getVariantManager()
     protected abstract void doCreateAndroidTasks()
 
     public Instantiator getInstantiator() {

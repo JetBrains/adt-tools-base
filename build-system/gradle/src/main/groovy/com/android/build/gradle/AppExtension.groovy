@@ -14,62 +14,27 @@
  * limitations under the License.
  */
 package com.android.build.gradle
-
 import com.android.build.gradle.api.ApplicationVariant
-import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.builder.DefaultBuildType
 import com.android.builder.DefaultProductFlavor
 import com.android.builder.model.SigningConfig
-import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.internal.reflect.Instantiator
-
 /**
  * Extension for 'application' project.
  */
 public class AppExtension extends BaseExtension {
 
-    final NamedDomainObjectContainer<DefaultProductFlavor> productFlavors
-    final NamedDomainObjectContainer<DefaultBuildType> buildTypes
-    final NamedDomainObjectContainer<SigningConfig> signingConfigs
-
-
     private final DefaultDomainObjectSet<ApplicationVariant> applicationVariantList =
         new DefaultDomainObjectSet<ApplicationVariant>(ApplicationVariant.class)
-
-    List<String> flavorGroupList
-    String testBuildType = "debug"
 
     AppExtension(AppPlugin plugin, ProjectInternal project, Instantiator instantiator,
                  NamedDomainObjectContainer<DefaultBuildType> buildTypes,
                  NamedDomainObjectContainer<DefaultProductFlavor> productFlavors,
                  NamedDomainObjectContainer<SigningConfig> signingConfigs) {
-        super(plugin, project, instantiator)
-        this.buildTypes = buildTypes
-        this.productFlavors = productFlavors
-        this.signingConfigs = signingConfigs
-    }
-
-    void buildTypes(Action<? super NamedDomainObjectContainer<DefaultBuildType>> action) {
-        plugin.checkTasksAlreadyCreated();
-        action.execute(buildTypes)
-    }
-
-    void productFlavors(Action<? super NamedDomainObjectContainer<DefaultProductFlavor>> action) {
-        plugin.checkTasksAlreadyCreated();
-        action.execute(productFlavors)
-    }
-
-    void signingConfigs(Action<? super NamedDomainObjectContainer<SigningConfig>> action) {
-        plugin.checkTasksAlreadyCreated();
-        action.execute(signingConfigs)
-    }
-
-    public void flavorGroups(String... groups) {
-        plugin.checkTasksAlreadyCreated();
-        flavorGroupList = Arrays.asList(groups)
+        super(plugin, project, instantiator, buildTypes, productFlavors, signingConfigs)
     }
 
     public DefaultDomainObjectSet<ApplicationVariant> getApplicationVariants() {
