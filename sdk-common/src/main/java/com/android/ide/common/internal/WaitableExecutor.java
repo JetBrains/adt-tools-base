@@ -47,11 +47,11 @@ public class WaitableExecutor<T> {
 
     /**
      * Creates an executor that will use at most <var>nThreads</var> threads.
-     * @param nThreads the number of threads, or zero for default count (which is number of core *2)
+     * @param nThreads the number of threads, or zero for default count (which is number of core)
      */
     public WaitableExecutor(int nThreads) {
         if (nThreads < 1) {
-            nThreads = Runtime.getRuntime().availableProcessors() * 2;
+            nThreads = Runtime.getRuntime().availableProcessors();
         }
 
         mExecutorService = Executors.newFixedThreadPool(nThreads);
@@ -59,7 +59,7 @@ public class WaitableExecutor<T> {
     }
 
     /**
-     * Creates an executor that will use at two thread per core.
+     * Creates an executor that will use at most 1 thread per core.
      */
     public WaitableExecutor() {
         this(0);
