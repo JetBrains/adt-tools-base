@@ -74,11 +74,17 @@ public class ImageEditorPanel extends JPanel {
         setOpaque(false);
         setLayout(new BorderLayout());
 
+        is9Patch = name.endsWith(EXTENSION_9PATCH);
+        if (!is9Patch) {
+            this.image = convertTo9Patch(image);
+            this.name = name.substring(0, name.lastIndexOf('.')) + ".9.png";
+        } else {
+            ensure9Patch(image);
+        }
+
         loadSupport();
         buildImageViewer();
         buildStatusPanel();
-
-        checkImage();
 
         addAncestorListener(new AncestorListener() {
             @Override
@@ -297,16 +303,7 @@ public class ImageEditorPanel extends JPanel {
         add(status, BorderLayout.SOUTH);
     }
 
-    private void checkImage() {
-        is9Patch = name.endsWith(EXTENSION_9PATCH);
-        if (!is9Patch) {
-            convertTo9Patch();
-        } else {
-            ensure9Patch();
-        }
-    }
-
-    private void ensure9Patch() {
+    private static void ensure9Patch(BufferedImage image) {
         int width = image.getWidth();
         int height = image.getHeight();
         for (int i = 0; i < width; i++) {
@@ -331,7 +328,7 @@ public class ImageEditorPanel extends JPanel {
         }
     }
 
-    private void convertTo9Patch() {
+    private static BufferedImage convertTo9Patch(BufferedImage image) {
         BufferedImage buffer = GraphicsUtilities.createTranslucentCompatibleImage(
                 image.getWidth() + 2, image.getHeight() + 2);
 
@@ -339,9 +336,7 @@ public class ImageEditorPanel extends JPanel {
         g2.drawImage(image, 1, 1, null);
         g2.dispose();
 
-        image = buffer;
-        viewer.setImage(image);
-        name = name.substring(0, name.lastIndexOf('.')) + ".9.png";
+        return buffer;
     }
 
     File chooseSaveFile() {

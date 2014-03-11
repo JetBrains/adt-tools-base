@@ -85,14 +85,14 @@ public class PatchInfo {
         fixed = getRectangles(left.fixed, top.fixed);
         patches = getRectangles(left.patches, top.patches);
 
-        if (fixed.size() > 0) {
+        if (!fixed.isEmpty()) {
             horizontalPatches = getRectangles(left.fixed, top.patches);
             verticalPatches = getRectangles(left.patches, top.fixed);
         } else {
-            if (top.fixed.size() > 0) {
+            if (!top.fixed.isEmpty()) {
                 horizontalPatches = new ArrayList<Rectangle>(0);
                 verticalPatches = getVerticalRectangles(top.fixed);
-            } else if (left.fixed.size() > 0) {
+            } else if (!left.fixed.isEmpty()) {
                 horizontalPatches = getHorizontalRectangles(left.fixed);
                 verticalPatches = new ArrayList<Rectangle>(0);
             } else {
@@ -187,6 +187,7 @@ public class PatchInfo {
         List<Pair<Integer>> fixed = new ArrayList<Pair<Integer>>();
         List<Pair<Integer>> patches = new ArrayList<Pair<Integer>>();
 
+        assert pixels.length > 2 : "Invalid 9-patch, cannot be less than 3 pixels in a dimension";
         // ignore layout bound markers for the purpose of patch calculation
         lastPixel = pixels[1] != PatchInfo.RED_TICK ? pixels[1] : 0;
 
