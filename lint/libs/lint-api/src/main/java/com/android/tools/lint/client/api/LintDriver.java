@@ -641,6 +641,13 @@ public class LintDriver {
                 }
             }
 
+            List<Detector> gradleDetectors = mScopeDetectors.get(Scope.GRADLE_FILE);
+            if (gradleDetectors != null) {
+                for (Detector detector : gradleDetectors) {
+                    assert detector instanceof Detector.GradleScanner : detector;
+                }
+            }
+
             List<Detector> otherDetectors = mScopeDetectors.get(Scope.OTHER);
             if (otherDetectors != null) {
                 for (Detector detector : otherDetectors) {
@@ -900,64 +907,68 @@ public class LintDriver {
 
     private void runFileDetectors(@NonNull Project project, @Nullable Project main) {
         // Look up manifest information (but not for library projects)
-        for (File manifestFile : project.getManifestFiles()) {
-            XmlContext context = new XmlContext(this, project, main, manifestFile, null);
-            IDomParser parser = mClient.getDomParser();
-            if (parser != null) {
-                context.document = parser.parseXml(context);
-                if (context.document != null) {
-                    try {
-                        project.readManifest(context.document);
+        if (project.isAndroidProject()) {
+            for (File manifestFile : project.getManifestFiles()) {
+                XmlContext context = new XmlContext(this, project, main, manifestFile, null);
+                IDomParser parser = mClient.getDomParser();
+                if (parser != null) {
+                    context.document = parser.parseXml(context);
+                    if (context.document != null) {
+                        try {
+                            project.readManifest(context.document);
 
-                        if ((!project.isLibrary() || (main != null && main.isMergingManifests()))
-                                && mScope.contains(Scope.MANIFEST)) {
-                            List<Detector> detectors = mScopeDetectors.get(Scope.MANIFEST);
-                            if (detectors != null) {
-                                XmlVisitor v = new XmlVisitor(parser, detectors);
-                                fireEvent(EventType.SCANNING_FILE, context);
-                                v.visitFile(context, manifestFile);
+                            if ((!project.isLibrary() || (main != null
+                                    && main.isMergingManifests()))
+                                    && mScope.contains(Scope.MANIFEST)) {
+                                List<Detector> detectors = mScopeDetectors.get(Scope.MANIFEST);
+                                if (detectors != null) {
+                                    XmlVisitor v = new XmlVisitor(parser, detectors);
+                                    fireEvent(EventType.SCANNING_FILE, context);
+                                    v.visitFile(context, manifestFile);
+                                }
                             }
-                        }
-                    } finally {
-                      if (context.document != null) { // else: freed by XmlVisitor above
-                          parser.dispose(context, context.document);
-                      }
-                    }
-                }
-            }
-        }
-
-        // Process both Scope.RESOURCE_FILE and Scope.ALL_RESOURCE_FILES detectors together
-        // in a single pass through the resource directories.
-        if (mScope.contains(Scope.ALL_RESOURCE_FILES) || mScope.contains(Scope.RESOURCE_FILE)) {
-            List<Detector> checks = union(mScopeDetectors.get(Scope.RESOURCE_FILE),
-                    mScopeDetectors.get(Scope.ALL_RESOURCE_FILES));
-            if (checks != null && !checks.isEmpty()) {
-                List<ResourceXmlDetector> xmlDetectors =
-                        new ArrayList<ResourceXmlDetector>(checks.size());
-                for (Detector detector : checks) {
-                    if (detector instanceof ResourceXmlDetector) {
-                        xmlDetectors.add((ResourceXmlDetector) detector);
-                    }
-                }
-                if (!xmlDetectors.isEmpty()) {
-                    List<File> files = project.getSubset();
-                    if (files != null) {
-                        checkIndividualResources(project, main, xmlDetectors, files);
-                    } else {
-                        List<File> resourceFolders = project.getResourceFolders();
-                        if (!resourceFolders.isEmpty() && !xmlDetectors.isEmpty()) {
-                            for (File res : resourceFolders) {
-                                checkResFolder(project, main, res, xmlDetectors);
-                            }
+                        } finally {
+                          if (context.document != null) { // else: freed by XmlVisitor above
+                              parser.dispose(context, context.document);
+                          }
                         }
                     }
                 }
             }
-        }
 
-        if (mCanceled) {
-            return;
+            // Process both Scope.RESOURCE_FILE and Scope.ALL_RESOURCE_FILES detectors together
+            // in a single pass through the resource directories.
+            if (mScope.contains(Scope.ALL_RESOURCE_FILES) ||
+                    mScope.contains(Scope.RESOURCE_FILE)) {
+                List<Detector> checks = union(mScopeDetectors.get(Scope.RESOURCE_FILE),
+                        mScopeDetectors.get(Scope.ALL_RESOURCE_FILES));
+                if (checks != null && !checks.isEmpty()) {
+                    List<ResourceXmlDetector> xmlDetectors =
+                            new ArrayList<ResourceXmlDetector>(checks.size());
+                    for (Detector detector : checks) {
+                        if (detector instanceof ResourceXmlDetector) {
+                            xmlDetectors.add((ResourceXmlDetector) detector);
+                        }
+                    }
+                    if (!xmlDetectors.isEmpty()) {
+                        List<File> files = project.getSubset();
+                        if (files != null) {
+                            checkIndividualResources(project, main, xmlDetectors, files);
+                        } else {
+                            List<File> resourceFolders = project.getResourceFolders();
+                            if (!resourceFolders.isEmpty() && !xmlDetectors.isEmpty()) {
+                                for (File res : resourceFolders) {
+                                    checkResFolder(project, main, res, xmlDetectors);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (mCanceled) {
+                return;
+            }
         }
 
         if (mScope.contains(Scope.JAVA_FILE) || mScope.contains(Scope.ALL_JAVA_FILES)) {
@@ -984,6 +995,18 @@ public class LintDriver {
             checkClasses(project, main);
         }
 
+        if (mCanceled) {
+            return;
+        }
+
+        if (mScope.contains(Scope.GRADLE_FILE)) {
+            checkBuildScripts(project, main);
+        }
+
+        if (mCanceled) {
+            return;
+        }
+
         if (mScope.contains(Scope.OTHER)) {
             List<Detector> checks = mScopeDetectors.get(Scope.OTHER);
             if (checks != null) {
@@ -996,8 +1019,30 @@ public class LintDriver {
             return;
         }
 
-        if (project == main && mScope.contains(Scope.PROGUARD_FILE)) {
+        if (project == main && mScope.contains(Scope.PROGUARD_FILE) &&
+                project.isAndroidProject()) {
             checkProGuard(project, main);
+        }
+    }
+
+    private void checkBuildScripts(Project project, Project main) {
+        List<Detector> detectors = mScopeDetectors.get(Scope.GRADLE_FILE);
+        if (detectors != null) {
+            List<File> files = project.getSubset();
+            if (files == null) {
+                files = project.getGradleBuildScripts();
+            }
+            for (File file : files) {
+                Context context = new Context(this, project, main, file);
+                fireEvent(EventType.SCANNING_FILE, context);
+                for (Detector detector : detectors) {
+                    if (detector.appliesTo(context, file)) {
+                        detector.beforeCheckFile(context);
+                        detector.visitBuildScript(context, Maps.<String, Object>newHashMap());
+                        detector.afterCheckFile(context);
+                    }
+                }
+            }
         }
     }
 
