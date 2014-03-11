@@ -37,6 +37,11 @@ public interface VariantFactory {
     @NonNull
     BaseVariant createVariantApi(@NonNull BaseVariantData variantData);
 
+    @NonNull
+    VariantConfiguration.Type getVariantConfigurationType();
+
+    boolean isVariantPublished();
+
     /**
      * Creates the tasks for a given BaseVariantData.
      * @param variantData the non-null BaseVariantData.
@@ -45,7 +50,4 @@ public interface VariantFactory {
     void createTasks(
             @NonNull BaseVariantData variantData,
             @Nullable Task assembleTask);
-
-    @NonNull
-    VariantConfiguration.Type getVariantConfigurationType();
 }

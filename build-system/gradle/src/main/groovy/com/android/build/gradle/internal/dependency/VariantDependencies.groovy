@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal.dependency
 import com.android.annotations.NonNull
-
+import com.android.annotations.Nullable
 import com.android.build.gradle.internal.ConfigurationProvider
 import com.android.builder.dependency.DependencyContainer
 import com.android.builder.dependency.JarDependency
@@ -38,9 +38,11 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
     final String name
 
     @NonNull
-    final Configuration compileConfiguration
+    private final Configuration compileConfiguration
     @NonNull
-    final Configuration packageConfiguration
+    private final Configuration packageConfiguration
+    @NonNull
+    private final Configuration publishConfiguration
 
     @NonNull
     private final List<LibraryDependencyImpl> libraries = []
@@ -53,9 +55,10 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
 
     static VariantDependencies compute(@NonNull Project project,
                                        @NonNull String name,
+                                                boolean publishVariant,
                                        @NonNull ConfigurationProvider... providers) {
-        Set<Configuration> compileConfigs = Sets.newHashSet()
-        Set<Configuration> apkConfigs = Sets.newHashSet()
+        Set<Configuration> compileConfigs = Sets.newHashSetWithExpectedSize(providers.length * 2)
+        Set<Configuration> apkConfigs = Sets.newHashSetWithExpectedSize(providers.length)
 
         for (ConfigurationProvider provider : providers) {
             compileConfigs.add(provider.compileConfiguration)
@@ -68,20 +71,31 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
         }
 
         Configuration compile = project.configurations.create("_${name}Compile")
+        compile.description = "## Internal use, do not manually configure ##"
         compile.setExtendsFrom(compileConfigs)
 
         Configuration apk = project.configurations.create("_${name}Apk")
+        apk.description = "## Internal use, do not manually configure ##"
         apk.setExtendsFrom(apkConfigs)
 
-        return new VariantDependencies(name, compile, apk);
+        Configuration publish = null;
+        if (publishVariant) {
+            publish = project.configurations.create("variant${name.capitalize()}")
+            publish.description = "Publishing Configuration for Variant ${name}"
+            publish.setExtendsFrom(compileConfigs)
+        }
+
+        return new VariantDependencies(name, compile, apk, publish);
     }
 
-    private VariantDependencies(@NonNull String name,
-                                @NonNull Configuration compileConfiguration,
-                                @NonNull Configuration packageConfiguration) {
+    private VariantDependencies(@NonNull  String name,
+                                @NonNull  Configuration compileConfiguration,
+                                @NonNull  Configuration packageConfiguration,
+                                @Nullable Configuration publishConfiguration) {
         this.name = name
         this.compileConfiguration = compileConfiguration
         this.packageConfiguration = packageConfiguration
+        this.publishConfiguration = publishConfiguration
     }
 
     public String getName() {
@@ -89,8 +103,26 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
     }
 
     @Override
+    @NonNull
+    Configuration getCompileConfiguration() {
+        return compileConfiguration
+    }
+
+    @Override
+    @NonNull
+    Configuration getPackageConfiguration() {
+        return packageConfiguration
+    }
+
+    @Override
+    @Nullable
     Configuration getProvidedConfiguration() {
         return null
+    }
+
+    @Nullable
+    Configuration getPublishConfiguration() {
+        return publishConfiguration
     }
 
     void addLibraries(@NonNull List<LibraryDependencyImpl> list) {

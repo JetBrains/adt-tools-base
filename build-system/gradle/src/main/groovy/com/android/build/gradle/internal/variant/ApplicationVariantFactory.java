@@ -54,6 +54,11 @@ public class ApplicationVariantFactory implements VariantFactory {
         return VariantConfiguration.Type.DEFAULT;
     }
 
+    @Override
+    public boolean isVariantPublished() {
+        return false;
+    }
+
     /**
      * Creates the tasks for a given ApplicationVariantData.
      * @param variantData the non-null ApplicationVariantData.

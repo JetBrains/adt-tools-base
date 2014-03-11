@@ -46,6 +46,7 @@ public class DeviceTest extends BuildTest {
             "dependencies",
             "flavored",
             "flavorlib",
+            "flavoredlib",
             "flavors",
             "libProguardJarDep",
             "libProguardLibDep",

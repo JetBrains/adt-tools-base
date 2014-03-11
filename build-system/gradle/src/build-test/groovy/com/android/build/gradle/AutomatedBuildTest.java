@@ -44,6 +44,7 @@ public class AutomatedBuildTest extends BuildTest {
             "dependencyChecker",
             "flavored",
             "flavorlib",
+            "flavoredlib",
             "flavors",
             "genFolderApi",
             "libProguardJarDep",
