@@ -707,4 +707,23 @@ public class RenderSecurityManagerTest extends TestCase {
             manager.dispose(myCredential);
         }
     }
+
+    public void testTempDir() throws Exception {
+        RenderSecurityManager manager = new RenderSecurityManager(null, null);
+        try {
+            manager.setActive(true, myCredential);
+
+            String temp = System.getProperty("java.io.tmpdir");
+            assertNotNull(temp);
+
+            manager.checkPermission(new FilePermission(temp, "read,write"));
+            manager.checkPermission(new FilePermission(temp + File.separator, "read,write"));
+
+            temp = new File(temp).getCanonicalPath();
+            manager.checkPermission(new FilePermission(temp, "read,write"));
+
+        } finally {
+            manager.dispose(myCredential);
+        }
+    }
 }
