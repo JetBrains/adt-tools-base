@@ -94,7 +94,8 @@ public abstract class BaseExtension {
             @NonNull Instantiator instantiator,
             @NonNull NamedDomainObjectContainer<DefaultBuildType> buildTypes,
             @NonNull NamedDomainObjectContainer<DefaultProductFlavor> productFlavors,
-            @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs) {
+            @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
+                     final boolean isLibrary) {
         this.plugin = plugin
         this.buildTypes = buildTypes
         this.productFlavors = productFlavors
@@ -111,7 +112,7 @@ public abstract class BaseExtension {
         packagingOptions = instantiator.newInstance(PackagingOptionsImpl.class)
 
         sourceSetsContainer = project.container(AndroidSourceSet,
-                new AndroidSourceSetFactory(instantiator, project.fileResolver))
+                new AndroidSourceSetFactory(instantiator, project.fileResolver, isLibrary))
 
         sourceSetsContainer.whenObjectAdded { AndroidSourceSet sourceSet ->
             ConfigurationContainer configurations = project.getConfigurations()
@@ -131,10 +132,15 @@ public abstract class BaseExtension {
                 packageConfiguration = configurations.create(sourceSet.getPackageConfigurationName())
             }
             packageConfiguration.setVisible(false)
-            packageConfiguration.extendsFrom(compileConfiguration)
-            packageConfiguration.setDescription(
-                    String.format("Classpath packaged with the compiled %s classes.",
-                            sourceSet.getName()));
+            if (isLibrary) {
+                packageConfiguration.setDescription(
+                        String.format("Classpath only used for publishing.",
+                                sourceSet.getName()));
+            } else {
+                packageConfiguration.setDescription(
+                        String.format("Classpath packaged with the compiled %s classes.",
+                                sourceSet.getName()));
+            }
 
             Configuration providedConfiguration = configurations.findByName(
                     sourceSet.getProvidedConfigurationName())

@@ -34,8 +34,9 @@ public class AppExtension extends BaseExtension {
     AppExtension(AppPlugin plugin, ProjectInternal project, Instantiator instantiator,
                  NamedDomainObjectContainer<DefaultBuildType> buildTypes,
                  NamedDomainObjectContainer<DefaultProductFlavor> productFlavors,
-                 NamedDomainObjectContainer<SigningConfig> signingConfigs) {
-        super(plugin, project, instantiator, buildTypes, productFlavors, signingConfigs)
+                 NamedDomainObjectContainer<SigningConfig> signingConfigs,
+                 boolean isLibrary) {
+        super(plugin, project, instantiator, buildTypes, productFlavors, signingConfigs, isLibrary)
     }
 
     public DefaultDomainObjectSet<ApplicationVariant> getApplicationVariants() {

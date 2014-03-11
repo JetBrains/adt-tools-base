@@ -42,6 +42,8 @@ public interface VariantFactory {
 
     boolean isVariantPublished();
 
+    boolean isLibrary();
+
     /**
      * Creates the tasks for a given BaseVariantData.
      * @param variantData the non-null BaseVariantData.
