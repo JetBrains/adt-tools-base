@@ -22,6 +22,7 @@ import com.android.annotations.Nullable;
 import com.android.builder.AndroidBuilder;
 import com.android.builder.model.ClassField;
 import com.google.common.collect.Lists;
+import com.google.common.io.Closeables;
 import com.squareup.javawriter.JavaWriter;
 
 import java.io.File;
@@ -35,14 +36,14 @@ import java.util.Set;
 import javax.lang.model.element.Modifier;
 
 /**
- * Class able to generate a BuildConfig class in Android project.
+ * Class able to generate a BuildConfig class in an Android project.
  * The BuildConfig class contains constants related to the build target.
  */
 public class BuildConfigGenerator {
 
     public static final String BUILD_CONFIG_NAME = "BuildConfig.java";
 
-    private final String mGenFolder;
+    private final File mGenFolder;
     private final String mBuildConfigPackageName;
 
     private final List<ClassField> mFields = Lists.newArrayList();
@@ -53,7 +54,7 @@ public class BuildConfigGenerator {
      * @param genFolder the gen folder of the project
      * @param buildConfigPackageName the package in which to create the class.
      */
-    public BuildConfigGenerator(@NonNull String genFolder, @NonNull String buildConfigPackageName) {
+    public BuildConfigGenerator(@NonNull File genFolder, @NonNull String buildConfigPackageName) {
         mGenFolder = checkNotNull(genFolder);
         mBuildConfigPackageName = checkNotNull(buildConfigPackageName);
     }
@@ -75,8 +76,7 @@ public class BuildConfigGenerator {
      * Returns a File representing where the BuildConfig class will be.
      */
     public File getFolderPath() {
-        File genFolder = new File(mGenFolder);
-        return new File(genFolder, mBuildConfigPackageName.replace('.', File.separatorChar));
+        return new File(mGenFolder, mBuildConfigPackageName.replace('.', File.separatorChar));
     }
 
     public File getBuildConfigFile() {
@@ -100,38 +100,40 @@ public class BuildConfigGenerator {
 
         JavaWriter writer = new JavaWriter(out);
 
-        Set<Modifier> publicFinal = EnumSet.of(Modifier.PUBLIC, Modifier.FINAL);
-        Set<Modifier> publicFinalStatic = EnumSet.of(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC);
+        try {
+            Set<Modifier> publicFinal = EnumSet.of(Modifier.PUBLIC, Modifier.FINAL);
+            Set<Modifier> publicFinalStatic = EnumSet.of(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC);
 
-        writer.emitJavadoc("Automatically generated file. DO NOT MODIFY")
-                .emitPackage(mBuildConfigPackageName)
-                .beginType("BuildConfig", "class", publicFinal);
+            writer.emitJavadoc("Automatically generated file. DO NOT MODIFY")
+                    .emitPackage(mBuildConfigPackageName)
+                    .beginType("BuildConfig", "class", publicFinal);
 
-        for (ClassField field : mFields) {
-            writer.emitField(
-                    field.getType(),
-                    field.getName(),
-                    publicFinalStatic,
-                    field.getValue());
-        }
-
-        for (Object item : mItems) {
-            if (item instanceof ClassField) {
-                ClassField field = (ClassField)item;
+            for (ClassField field : mFields) {
                 writer.emitField(
                         field.getType(),
                         field.getName(),
                         publicFinalStatic,
                         field.getValue());
-
-            } else if (item instanceof String) {
-                writer.emitSingleLineComment((String) item);
             }
+
+            for (Object item : mItems) {
+                if (item instanceof ClassField) {
+                    ClassField field = (ClassField)item;
+                    writer.emitField(
+                            field.getType(),
+                            field.getName(),
+                            publicFinalStatic,
+                            field.getValue());
+
+                } else if (item instanceof String) {
+                    writer.emitSingleLineComment((String) item);
+                }
+            }
+
+            writer.endType();
+        } finally {
+            Closeables.closeQuietly(writer);
+            Closeables.closeQuietly(out);
         }
-
-        writer.endType();
-
-        writer.close();
-        out.close();
     }
 }

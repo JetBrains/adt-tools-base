@@ -39,6 +39,14 @@ public interface BaseConfig {
     Map<String, ClassField> getBuildConfigFields();
 
     /**
+     * Map of generated res values where the key is the res name.
+     *
+     * @return a non-null map of class fields (possibly empty).
+     */
+    @NonNull
+    Map<String, ClassField> getResValues();
+
+    /**
      * Returns the list of proguard rule files.
      *
      * @return a non-null list of files.
