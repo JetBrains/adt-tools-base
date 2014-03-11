@@ -199,6 +199,10 @@ public abstract class BasePlugin {
     public abstract BaseExtension getExtension()
     protected abstract void doCreateAndroidTasks()
 
+    public Instantiator getInstantiator() {
+        return instantiator
+    }
+
     protected void apply(Project project) {
         this.project = project
 
@@ -351,6 +355,38 @@ public abstract class BasePlugin {
         return project.logger.isEnabled(LogLevel.DEBUG)
     }
 
+    void setMainPreBuild(PreBuildTask mainPreBuild) {
+        this.mainPreBuild = mainPreBuild
+    }
+
+    void setUninstallAll(Task uninstallAll) {
+        this.uninstallAll = uninstallAll
+    }
+
+    void setAssembleTest(Task assembleTest) {
+        this.assembleTest = assembleTest
+    }
+
+    void setDeviceCheck(Task deviceCheck) {
+        this.deviceCheck = deviceCheck
+    }
+
+    void setConnectedCheck(Task connectedCheck) {
+        this.connectedCheck = connectedCheck
+    }
+
+    void setLintCompile(Task lintCompile) {
+        this.lintCompile = lintCompile
+    }
+
+    void setLintAll(Task lintAll) {
+        this.lintAll = lintAll
+    }
+
+    void setLintVital(Task lintVital) {
+        this.lintVital = lintVital
+    }
+
     AndroidBuilder getAndroidBuilder(BaseVariantData variantData) {
         AndroidBuilder androidBuilder = builders.get(variantData)
 
@@ -377,7 +413,7 @@ public abstract class BasePlugin {
         return AndroidBuilder.getBootClasspath(sdkParser);
     }
 
-    protected void createProcessManifestTask(BaseVariantData variantData,
+    public void createProcessManifestTask(BaseVariantData variantData,
                                              String manifestOurDir) {
         VariantConfiguration config = variantData.variantConfiguration
 
@@ -468,7 +504,7 @@ public abstract class BasePlugin {
         }
     }
 
-    protected void createRenderscriptTask(BaseVariantData variantData) {
+    public void createRenderscriptTask(BaseVariantData variantData) {
         VariantConfiguration config = variantData.variantConfiguration
 
         def renderscriptTask = project.tasks.create(
@@ -523,7 +559,7 @@ public abstract class BasePlugin {
         renderscriptTask.conventionMapping.ndkConfig = { config.ndkConfig }
     }
 
-    protected void createMergeResourcesTask(@NonNull BaseVariantData variantData,
+    public void createMergeResourcesTask(@NonNull BaseVariantData variantData,
                                             final boolean process9Patch) {
         MergeResources mergeResourcesTask = basicCreateMergeResourcesTask(
                 variantData,
@@ -564,7 +600,7 @@ public abstract class BasePlugin {
         return mergeResourcesTask
     }
 
-    protected void createMergeAssetsTask(@NonNull BaseVariantData variantData,
+    public void createMergeAssetsTask(@NonNull BaseVariantData variantData,
                                          @Nullable String outputLocation,
                                          final boolean includeDependencies) {
         if (outputLocation == null) {
@@ -588,7 +624,7 @@ public abstract class BasePlugin {
         mergeAssetsTask.conventionMapping.outputDir = { project.file(outputLocation) }
     }
 
-    protected void createBuildConfigTask(BaseVariantData variantData) {
+    public void createBuildConfigTask(BaseVariantData variantData) {
         def generateBuildConfigTask = project.tasks.create(
                 "generate${variantData.variantConfiguration.fullName.capitalize()}BuildConfig",
                 GenerateBuildConfig)
@@ -649,7 +685,7 @@ public abstract class BasePlugin {
         }
     }
 
-    protected void createGenerateResValuesTask(BaseVariantData variantData) {
+    public void createGenerateResValuesTask(BaseVariantData variantData) {
         GenerateResValues generateResValuesTask = project.tasks.create(
                 "generate${variantData.variantConfiguration.fullName.capitalize()}ResValues",
                 GenerateResValues)
@@ -670,7 +706,7 @@ public abstract class BasePlugin {
         }
     }
 
-    protected void createProcessResTask(
+    public void createProcessResTask(
             @NonNull BaseVariantData variantData,
             boolean generateResourcePackage) {
         createProcessResTask(variantData,
@@ -739,7 +775,7 @@ public abstract class BasePlugin {
         processResources.conventionMapping.resourceConfigs = { variantConfiguration.mergedFlavor.resourceConfigurations }
     }
 
-    protected void createProcessJavaResTask(BaseVariantData variantData) {
+    public void createProcessJavaResTask(BaseVariantData variantData) {
         VariantConfiguration variantConfiguration = variantData.variantConfiguration
 
         Copy processResources = project.tasks.create(
@@ -765,7 +801,7 @@ public abstract class BasePlugin {
         }
     }
 
-    protected void createAidlTask(BaseVariantData variantData) {
+    public void createAidlTask(BaseVariantData variantData) {
         VariantConfiguration variantConfiguration = variantData.variantConfiguration
 
         def compileTask = project.tasks.create(
@@ -789,7 +825,7 @@ public abstract class BasePlugin {
         }
     }
 
-    protected void createCompileTask(BaseVariantData variantData,
+    public void createCompileTask(BaseVariantData variantData,
                                      BaseVariantData testedVariantData) {
         def compileTask = project.tasks.create(
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Java",
@@ -858,7 +894,7 @@ public abstract class BasePlugin {
         }
     }
 
-    protected void createNdkTasks(@NonNull BaseVariantData variantData) {
+    public void createNdkTasks(@NonNull BaseVariantData variantData) {
         NdkCompile ndkCompile = project.tasks.create(
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Ndk",
                 NdkCompile)
@@ -910,7 +946,7 @@ public abstract class BasePlugin {
      * @param testedVariant the tested variant
      * @param configDependencies the list of config dependencies
      */
-    protected void createTestApkTasks(@NonNull TestVariantData variantData,
+    public void createTestApkTasks(@NonNull TestVariantData variantData,
                                       @NonNull BaseVariantData testedVariantData) {
         createAnchorTasks(variantData)
 
@@ -962,7 +998,7 @@ public abstract class BasePlugin {
     }
 
     // TODO - should compile src/lint/java from src/lint/java and jar it into build/lint/lint.jar
-    protected void createLintCompileTask() {
+    public void createLintCompileTask() {
         lintCompile = project.tasks.create("compileLint", Task)
         File outputDir = new File("$project.buildDir/lint")
 
@@ -986,7 +1022,7 @@ public abstract class BasePlugin {
 
     // Add tasks for running lint on individual variants. We've already added a
     // lint task earlier which runs on all variants.
-    protected void createLintTasks() {
+    public void createLintTasks() {
         Lint lint = project.tasks.create("lint", Lint)
         lint.description = "Runs lint on all variants."
         lint.group = JavaBasePlugin.VERIFICATION_GROUP
@@ -1038,7 +1074,7 @@ public abstract class BasePlugin {
         }
     }
 
-    protected void createCheckTasks(boolean hasFlavors, boolean isLibraryTest) {
+    public void createCheckTasks(boolean hasFlavors, boolean isLibraryTest) {
         List<AndroidReportTask> reportTasks = Lists.newArrayListWithExpectedSize(2)
 
         List<DeviceProvider> providers = extension.deviceProviders
@@ -1163,6 +1199,7 @@ public abstract class BasePlugin {
                                 "${testServer.name}${"upload".capitalize()}${baseVariantData.variantConfiguration.fullName}" :
                                 "${testServer.name}${"upload".capitalize()}",
                             TestServerTask)
+
                     serverTask.description = "Uploads APKs for Build '${baseVariantData.variantConfiguration.fullName}' to Test Server '${testServer.name.capitalize()}'."
                     serverTask.group = JavaBasePlugin.VERIFICATION_GROUP
                     serverTask.dependsOn testVariantData.assembleTask, baseVariantData.assembleTask
@@ -1262,7 +1299,7 @@ public abstract class BasePlugin {
      * @param assembleTask an optional assembleTask to be used. If null a new one is created. The
      *                assembleTask is always set in the Variant.
      */
-    protected void addPackageTasks(@NonNull ApkVariantData variantData,
+    public void addPackageTasks(@NonNull ApkVariantData variantData,
                                    @Nullable Task assembleTask) {
         VariantConfiguration variantConfig = variantData.variantConfiguration
 
@@ -1701,7 +1738,7 @@ public abstract class BasePlugin {
         signingReportTask.setGroup("Android")
     }
 
-    protected void createAnchorTasks(@NonNull BaseVariantData variantData) {
+    public void createAnchorTasks(@NonNull BaseVariantData variantData) {
         variantData.preBuildTask = project.tasks.create(
                 "pre${variantData.variantConfiguration.fullName.capitalize()}Build")
         variantData.preBuildTask.dependsOn mainPreBuild
@@ -1733,7 +1770,7 @@ public abstract class BasePlugin {
                 "generate${variantData.variantConfiguration.fullName.capitalize()}Resources")
     }
 
-    protected void createCheckManifestTask(@NonNull BaseVariantData variantData) {
+    public void createCheckManifestTask(@NonNull BaseVariantData variantData) {
         String name = variantData.variantConfiguration.fullName
         variantData.checkManifestTask = project.tasks.create(
                 "check${name.capitalize()}Manifest",
