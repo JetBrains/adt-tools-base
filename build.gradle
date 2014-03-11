@@ -29,8 +29,8 @@ buildDir = new File(file(ext.androidHostOut), "tools/base/build")
 
 ext.localRepo = project.hasProperty('localRepo') ? localRepo : "$ext.androidHostOut/repo"
 
-project.ext.baseVersion = '22.5.1'
-project.ext.buildVersion = '0.8.1'
+project.ext.baseVersion = '22.5.2'
+project.ext.buildVersion = '0.8.2'
 
 subprojects { Project project ->
     // Change buildDir first so that all plugins pick up the new value.
