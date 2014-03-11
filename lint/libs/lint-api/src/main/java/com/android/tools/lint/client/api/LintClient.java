@@ -27,6 +27,8 @@ import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.res2.AbstractResourceRepository;
+import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.prefs.AndroidLocation;
 import com.android.sdklib.IAndroidTarget;
@@ -866,5 +868,39 @@ public abstract class LintClient {
         }
 
         return registry;
+    }
+
+    /**
+     * Returns true if this client supports project resource repository lookup via
+     * {@link #getProjectResources(Project,boolean)}
+     *
+     * @return true if the client can provide project resources
+     */
+    public boolean supportsProjectResources() {
+        return false;
+    }
+
+    /**
+     * Returns the project resources, if available
+     *
+     * @param includeDependencies if true, include merged view of all dependencies
+     * @return the project resources, or null if not available
+     */
+    @Nullable
+    public AbstractResourceRepository getProjectResources(Project project,
+            boolean includeDependencies) {
+        return null;
+    }
+
+    /**
+     * For a lint client which supports resource items (via {@link #supportsProjectResources()})
+     * return a handle for a resource item
+     *
+     * @param item the resource item to look up a location handle for
+     * @return a corresponding handle
+     */
+    @NonNull
+    public Location.Handle createResourceItemHandle(@NonNull ResourceItem item) {
+        return new Location.ResourceItemHandle(item);
     }
 }

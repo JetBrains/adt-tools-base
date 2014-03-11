@@ -36,6 +36,8 @@ import static org.objectweb.asm.Opcodes.ASM4;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.ide.common.res2.AbstractResourceRepository;
+import com.android.ide.common.res2.ResourceItem;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.client.api.LintListener.EventType;
@@ -2023,8 +2025,31 @@ public class LintDriver {
         }
 
         @Override
+        public IssueRegistry addCustomLintRules(@NonNull IssueRegistry registry) {
+            return mDelegate.addCustomLintRules(registry);
+        }
+
+        @Override
         public boolean checkForSuppressComments() {
             return mDelegate.checkForSuppressComments();
+        }
+
+        @Override
+        public boolean supportsProjectResources() {
+            return mDelegate.supportsProjectResources();
+        }
+
+        @Nullable
+        @Override
+        public AbstractResourceRepository getProjectResources(Project project,
+                boolean includeDependencies) {
+            return mDelegate.getProjectResources(project, includeDependencies);
+        }
+
+        @NonNull
+        @Override
+        public Location.Handle createResourceItemHandle(@NonNull ResourceItem item) {
+            return mDelegate.createResourceItemHandle(item);
         }
     }
 

@@ -25,7 +25,6 @@ import static com.android.SdkConstants.FN_PROJECT_PROGUARD_FILE;
 import static com.android.SdkConstants.OLD_PROGUARD_FILE;
 import static com.android.SdkConstants.RES_FOLDER;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.google.common.annotations.Beta;
 

@@ -54,6 +54,10 @@ import java.util.List;
  * Checks for errors related to locale handling
  */
 public class LocaleDetector extends Detector implements ClassScanner {
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            LocaleDetector.class,
+            Scope.CLASS_FILE_SCOPE);
+
     /** Calling risky convenience methods */
     public static final Issue STRING_LOCALE = Issue.create(
             "DefaultLocale", //$NON-NLS-1$
@@ -74,11 +78,9 @@ public class LocaleDetector extends Detector implements ClassScanner {
             Category.CORRECTNESS,
             6,
             Severity.WARNING,
-            new Implementation(
-                    LocaleDetector.class,
-                    Scope.CLASS_AND_ALL_RESOURCE_FILES))
+            IMPLEMENTATION)
             .addMoreInfo(
-                    "http://developer.android.com/reference/java/util/Locale.html#default_locale"); //$NON-NLS-1$
+            "http://developer.android.com/reference/java/util/Locale.html#default_locale"); //$NON-NLS-1$
 
     /** Constructing SimpleDateFormat without an explicit locale */
     public static final Issue DATE_FORMAT = Issue.create(
@@ -100,9 +102,7 @@ public class LocaleDetector extends Detector implements ClassScanner {
             Category.CORRECTNESS,
             6,
             Severity.WARNING,
-            new Implementation(
-                    LocaleDetector.class,
-                    Scope.CLASS_FILE_SCOPE))
+            IMPLEMENTATION)
             .addMoreInfo(
             "http://developer.android.com/reference/java/text/SimpleDateFormat.html"); //$NON-NLS-1$
 

@@ -16,16 +16,22 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_CLASS;
 import static com.android.SdkConstants.ATTR_ID;
-import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.ID_PREFIX;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
 import static com.android.SdkConstants.VIEW_TAG;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.res2.AbstractResourceRepository;
+import com.android.ide.common.res2.ResourceFile;
+import com.android.ide.common.res2.ResourceItem;
 import com.android.resources.ResourceFolderType;
+import com.android.resources.ResourceType;
+import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -38,9 +44,19 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.android.utils.XmlUtils;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
 import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -50,6 +66,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import lombok.ast.AstVisitor;
 import lombok.ast.Cast;
@@ -61,6 +78,7 @@ import lombok.ast.StrictListAccessor;
 /** Detector for finding inconsistent usage of views and casts */
 public class ViewTypeDetector extends ResourceXmlDetector implements Detector.JavaScanner {
     /** Mismatched view types */
+    @SuppressWarnings("unchecked")
     public static final Issue ISSUE = Issue.create(
             "WrongViewCast", //$NON-NLS-1$
             "Mismatched view type",
@@ -72,7 +90,12 @@ public class ViewTypeDetector extends ResourceXmlDetector implements Detector.Ja
             Severity.FATAL,
             new Implementation(
                     ViewTypeDetector.class,
-                    EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES)));
+                    EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES),
+                    Scope.JAVA_FILE_SCOPE));
+
+    /** Flag used to do no work if we're running in incremental mode in a .java file without
+     * a client supporting project resources */
+    private Boolean mIgnore = null;
 
     private final Map<String, Object> mIdToViewTag = new HashMap<String, Object>(50);
 
@@ -85,15 +108,6 @@ public class ViewTypeDetector extends ResourceXmlDetector implements Detector.Ja
     @Override
     public boolean appliesTo(@NonNull ResourceFolderType folderType) {
         return folderType == ResourceFolderType.LAYOUT;
-    }
-
-    @Override
-    public boolean appliesTo(@NonNull Context context, @NonNull File file) {
-        if (LintUtils.endsWith(file.getName(), DOT_JAVA)) {
-            return true;
-        }
-
-        return super.appliesTo(context, file);
     }
 
     @Override
@@ -149,6 +163,16 @@ public class ViewTypeDetector extends ResourceXmlDetector implements Detector.Ja
     @Override
     public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
             @NonNull MethodInvocation node) {
+        LintClient client = context.getClient();
+        if (mIgnore == Boolean.TRUE) {
+            return;
+        } else if (mIgnore == null) {
+            mIgnore = !context.getScope().contains(Scope.ALL_RESOURCE_FILES) &&
+                    !client.supportsProjectResources();
+            if (mIgnore) {
+                return;
+            }
+        }
         assert node.astName().astValue().equals("findViewById");
         if (node.getParent() instanceof Cast) {
             Cast cast = (Cast) node.getParent();
@@ -162,17 +186,105 @@ public class ViewTypeDetector extends ResourceXmlDetector implements Detector.Ja
                     String resource = first.toString();
                     if (resource.startsWith("R.id.")) { //$NON-NLS-1$
                         String id = ((Select) first).astIdentifier().astValue();
-                        Object types = mIdToViewTag.get(id);
-                        if (types instanceof String) {
-                            String layoutType = (String) types;
-                            checkCompatible(context, castType, layoutType, null, cast);
-                        } else if (types instanceof List<?>) {
-                            @SuppressWarnings("unchecked")
-                            List<String> layoutTypes = (List<String>) types;
-                            checkCompatible(context, castType, null, layoutTypes, cast);
+
+                        if (client.supportsProjectResources()) {
+                            AbstractResourceRepository resources = client
+                                    .getProjectResources(context.getMainProject(), true);
+                            if (resources == null) {
+                                return;
+                            }
+
+                            List<ResourceItem> items = resources.getResourceItem(ResourceType.ID,
+                                    id);
+                            if (items != null) {
+                                Set<String> compatible = Sets.newHashSet();
+                                for (ResourceItem item : items) {
+                                    Collection<String> tags = getViewTags(context, item);
+                                    if (tags != null) {
+                                       compatible.addAll(tags);
+                                    }
+                                }
+                                if (!compatible.isEmpty()) {
+                                    ArrayList<String> layoutTypes = Lists.newArrayList(compatible);
+                                    checkCompatible(context, castType, null, layoutTypes, cast);
+                                }
+                            }
+                        } else {
+                            Object types = mIdToViewTag.get(id);
+                            if (types instanceof String) {
+                                String layoutType = (String) types;
+                                checkCompatible(context, castType, layoutType, null, cast);
+                            } else if (types instanceof List<?>) {
+                                @SuppressWarnings("unchecked")
+                                List<String> layoutTypes = (List<String>) types;
+                                checkCompatible(context, castType, null, layoutTypes, cast);
+                            }
                         }
                     }
                 }
+            }
+        }
+    }
+
+    @Nullable
+    protected Collection<String> getViewTags(
+            @NonNull Context context,
+            @NonNull ResourceItem item) {
+        // Check view tag in this file. Can I do it cheaply? Try with
+        // an XML pull parser. Or DOM if we have multiple resources looked
+        // up?
+        ResourceFile source = item.getSource();
+        if (source != null) {
+            File file = source.getFile();
+            Multimap<String,String> map = getIdToTagsIn(context, file);
+            if (map != null) {
+                return map.get(item.getName());
+            }
+        }
+
+        return null;
+    }
+
+
+    private Map<File, Multimap<String, String>> mFileIdMap;
+
+    @Nullable
+    private Multimap<String, String> getIdToTagsIn(@NonNull Context context, @NonNull File file) {
+        if (!file.getPath().endsWith(DOT_XML)) {
+            return null;
+        }
+        if (mFileIdMap == null) {
+            mFileIdMap = Maps.newHashMap();
+        }
+        Multimap<String, String> map = mFileIdMap.get(file);
+        if (map == null) {
+            map = ArrayListMultimap.create();
+            mFileIdMap.put(file, map);
+
+            String xml = context.getClient().readFile(file);
+            // TODO: Use pull parser instead for better performance!
+            Document document = XmlUtils.parseDocumentSilently(xml, true);
+            if (document != null && document.getDocumentElement() != null) {
+                addViewTags(map, document.getDocumentElement());
+            }
+        }
+        return map;
+    }
+
+    private static void addViewTags(Multimap<String, String> map, Element element) {
+        String id = element.getAttributeNS(ANDROID_URI, ATTR_ID);
+        if (id != null && !id.isEmpty()) {
+            id = LintUtils.stripIdPrefix(id);
+            if (!map.containsEntry(id, element.getTagName())) {
+                map.put(id, element.getTagName());
+            }
+        }
+
+        NodeList children = element.getChildNodes();
+        for (int i = 0, n = children.getLength(); i < n; i++) {
+            Node child = children.item(i);
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                addViewTags(map, (Element) child);
             }
         }
     }

@@ -18,6 +18,8 @@ package com.android.tools.lint.detector.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.res2.ResourceFile;
+import com.android.ide.common.res2.ResourceItem;
 import com.google.common.annotations.Beta;
 
 import java.io.File;
@@ -591,6 +593,33 @@ public class Location {
         @Nullable
         public Object getClientData() {
             return mClientData;
+        }
+    }
+
+    public static class ResourceItemHandle implements Handle {
+        private final ResourceItem mItem;
+
+        public ResourceItemHandle(@NonNull ResourceItem item) {
+            mItem = item;
+        }
+        @NonNull
+        @Override
+        public Location resolve() {
+            // TODO: Look up the exact item location more
+            // closely
+            ResourceFile source = mItem.getSource();
+            assert source != null : mItem;
+            return Location.create(source.getFile());
+        }
+
+        @Override
+        public void setClientData(@Nullable Object clientData) {
+        }
+
+        @Nullable
+        @Override
+        public Object getClientData() {
+            return null;
         }
     }
 

@@ -30,10 +30,10 @@ public class InefficientWeightDetectorTest extends AbstractCheckTest {
             "res/layout/inefficient_weight.xml:3: Error: Wrong orientation? No orientation specified, and the default is horizontal, yet this layout has multiple children where at least one has layout_width=\"match_parent\" [Orientation]\n" +
             "<LinearLayout\n" +
             "^\n" +
-            "res/layout/inefficient_weight.xml:10: Warning: Use a layout_width of 0dip instead of match_parent for better performance [InefficientWeight]\n" +
+            "res/layout/inefficient_weight.xml:10: Warning: Use a layout_width of 0dp instead of match_parent for better performance [InefficientWeight]\n" +
             "     android:layout_width=\"match_parent\"\n" +
             "     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "res/layout/inefficient_weight.xml:24: Warning: Use a layout_height of 0dip instead of wrap_content for better performance [InefficientWeight]\n" +
+            "res/layout/inefficient_weight.xml:24: Warning: Use a layout_height of 0dp instead of wrap_content for better performance [InefficientWeight]\n" +
             "      android:layout_height=\"wrap_content\"\n" +
             "      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "1 errors, 2 warnings\n",
@@ -133,5 +133,62 @@ public class InefficientWeightDetectorTest extends AbstractCheckTest {
                 + "1 errors, 0 warnings\n",
 
                 lintFiles("res/layout/orientation.xml"));
+    }
+
+    public void testIncremental1() throws Exception {
+        assertEquals(""
+                + "res/layout/orientation2.xml:5: Error: No orientation specified, and the default is horizontal. This is a common source of bugs when children are added dynamically. [Orientation]\n"
+                + "    <LinearLayout\n"
+                + "    ^\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProjectIncrementally("res/layout/orientation2.xml",
+                        "res/layout/orientation2.xml"));
+    }
+
+    public void testIncremental2() throws Exception {
+        assertEquals("No warnings.",
+
+                lintProjectIncrementally("res/layout/orientation2.xml",
+                        "res/layout/orientation2.xml",
+                        "res/values/styles-inherited-orientation.xml"));
+    }
+
+    public void testIncremental3() throws Exception {
+        assertEquals("No warnings.",
+                lintProjectIncrementally("res/layout/orientation2.xml",
+                        "res/layout/orientation2.xml",
+                        "res/values/styles-orientation.xml"));
+    }
+
+    public void testIncremental4() throws Exception {
+        assertEquals(""
+            + "res/layout/inefficient_weight3.xml:9: Warning: Use a layout_height of 0dp instead of (undefined) for better performance [InefficientWeight]\n"
+            + "    <Button\n"
+            + "    ^\n"
+            + "0 errors, 1 warnings\n",
+            lintProjectIncrementally(
+                    "res/layout/inefficient_weight3.xml",
+                    "res/layout/inefficient_weight3.xml"));
+    }
+
+    public void testIncremental5() throws Exception {
+        assertEquals("No warnings.",
+            lintProjectIncrementally(
+                    "res/layout/inefficient_weight3.xml",
+                    "res/layout/inefficient_weight3.xml",
+                    "res/values/styles-orientation.xml"));
+    }
+
+    public void testIncremental6() throws Exception {
+        assertEquals(""
+            + "res/layout/inefficient_weight3.xml:9: Warning: Use a layout_height of 0dp instead of wrap_content for better performance [InefficientWeight]\n"
+            + "    <Button\n"
+            + "    ^\n"
+            + "0 errors, 1 warnings\n",
+            lintProjectIncrementally(
+                    "res/layout/inefficient_weight3.xml",
+                    "res/layout/inefficient_weight3.xml",
+                    "res/values/styles-inherited-orientation.xml"));
     }
 }
