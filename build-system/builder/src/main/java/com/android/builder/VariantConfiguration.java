@@ -1276,6 +1276,25 @@ public class VariantConfiguration implements TestData {
     }
 
     /**
+     * Returns the list of provided jars for this config.
+     *
+     * @return a non null, but possibly empty list.
+     */
+    @NonNull
+    public List<File> getProvidedJars() {
+        Set<File> jars = Sets.newHashSetWithExpectedSize(mJars.size());
+
+        for (JarDependency jar : mJars) {
+            File jarFile = jar.getJarFile();
+            if (!jar.isPackaged() && jarFile.exists()) {
+                jars.add(jarFile);
+            }
+        }
+
+        return Lists.newArrayList(jars);
+    }
+
+    /**
      * Returns a list of items for the BuildConfig class.
      *
      * Items can be either fields (instance of {@link com.android.builder.model.ClassField})

@@ -15,23 +15,11 @@ repositories {
 }
 
 dependencies {
-    compile 'com.google.guava:guava:11.0.2'
-    apk files('libs/jarProject.jar')
+    apk project(':jarProject')
+    provided project(':jarProject2')
 }
 
 android {
     compileSdkVersion 15
     buildToolsVersion "18.0.1"
-
-    testBuildType "blah"
-
-    defaultConfig {
-    }
-
-    buildTypes {
-        blah {
-            packageNameSuffix ".blah"
-            signingConfig signingConfigs.debug
-        }
-    }
 }
