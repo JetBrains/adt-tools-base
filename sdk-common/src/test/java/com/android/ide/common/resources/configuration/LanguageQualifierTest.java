@@ -41,12 +41,17 @@ public class LanguageQualifierTest extends TestCase {
         assertEquals(true, lq.checkAndSet("en", config)); //$NON-NLS-1$
         assertTrue(config.getLanguageQualifier() != null);
         assertEquals("en", config.getLanguageQualifier().toString()); //$NON-NLS-1$
+    }
 
+    public void testCheckAndSetCaseInsensitive() {
+        assertEquals(true, lq.checkAndSet("EN", config)); //$NON-NLS-1$
+        assertTrue(config.getLanguageQualifier() != null);
+        assertEquals("en", config.getLanguageQualifier().toString()); //$NON-NLS-1$
+        assertEquals("en", LanguageQualifier.getFolderSegment("EN"));
     }
 
     public void testFailures() {
         assertEquals(false, lq.checkAndSet("", config)); //$NON-NLS-1$
-        assertEquals(false, lq.checkAndSet("EN", config)); //$NON-NLS-1$
         assertEquals(false, lq.checkAndSet("abc", config)); //$NON-NLS-1$
     }
 }

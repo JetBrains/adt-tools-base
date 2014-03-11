@@ -28,6 +28,7 @@ import com.google.common.collect.Iterators;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 
 /**
@@ -146,6 +147,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         while (qualifiers.hasNext()) {
             String seg = qualifiers.next();
             if (!seg.isEmpty()) {
+                seg = seg.toLowerCase(Locale.US); // no-op if string is already in lower case
                 while (qualifierIndex < qualifierCount &&
                         !DEFAULT_QUALIFIERS[qualifierIndex].checkAndSet(seg, config)) {
                     qualifierIndex++;
@@ -154,6 +156,8 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
                 // if we reached the end of the qualifier we didn't find a matching qualifier.
                 if (qualifierIndex == qualifierCount) {
                     return null;
+                } else {
+                    qualifierIndex++; // already processed this one
                 }
 
             } else {

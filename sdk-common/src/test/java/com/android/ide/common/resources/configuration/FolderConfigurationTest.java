@@ -98,6 +98,11 @@ public class FolderConfigurationTest extends TestCase {
     }
 
     @SuppressWarnings("ConstantConditions")
+    public void testInvalidRepeats() {
+        assertNull(FolderConfiguration.getConfigForFolder("values-en-rUS-rES"));
+    }
+
+    @SuppressWarnings("ConstantConditions")
     public void testGetConfig2() {
         FolderConfiguration configForFolder =
                 FolderConfiguration.getConfigForFolder("values-en-rUS");
@@ -106,6 +111,29 @@ public class FolderConfigurationTest extends TestCase {
         assertEquals("US", configForFolder.getRegionQualifier().getValue());
         assertNull(configForFolder.getScreenDimensionQualifier());
         assertNull(configForFolder.getLayoutDirectionQualifier());
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public void testGetConfigCaseInsensitive() {
+        FolderConfiguration configForFolder =
+                FolderConfiguration.getConfigForFolder("values-EN-rus");
+        assertNotNull(configForFolder);
+        assertEquals("en", configForFolder.getLanguageQualifier().getValue());
+        assertEquals("US", configForFolder.getRegionQualifier().getValue());
+        assertNull(configForFolder.getScreenDimensionQualifier());
+        assertNull(configForFolder.getLayoutDirectionQualifier());
+        assertEquals("layout-en-rUS", configForFolder.getFolderName(ResourceFolderType.LAYOUT));
+
+        runConfigMatchTest(
+                "en-rgb-Port-HDPI-notouch-12key",
+                3,
+                "",
+                "en",
+                "fr-rCA",
+                "en-port",
+                "en-notouch-12key",
+                "port-ldpi",
+                "port-notouch-12key");
     }
 
     public void testToStrings() {

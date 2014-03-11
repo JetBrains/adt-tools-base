@@ -43,7 +43,7 @@ public final class CountryCodeQualifier extends ResourceQualifier {
         if (m.matches()) {
             String v = m.group(1);
 
-            int code = -1;
+            int code;
             try {
                 code = Integer.parseInt(v);
             } catch (NumberFormatException e) {
