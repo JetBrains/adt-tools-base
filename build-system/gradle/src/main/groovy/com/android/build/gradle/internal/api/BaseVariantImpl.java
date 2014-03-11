@@ -24,6 +24,7 @@ import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
+import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.ProcessManifest;
 import com.android.build.gradle.tasks.RenderscriptCompile;
@@ -153,6 +154,12 @@ abstract class BaseVariantImpl implements BaseVariant {
     @NonNull
     public JavaCompile getJavaCompile() {
         return getVariantData().javaCompileTask;
+    }
+
+    @NonNull
+    @Override
+    public NdkCompile getNdkCompile() {
+        return getVariantData().ndkCompileTask;
     }
 
     @Override
