@@ -23,6 +23,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -71,6 +72,11 @@ public class PngProcessor {
         PngProcessor processor = new PngProcessor(from);
         processor.read();
 
+        if (!processor.is9Patch() && processor.size() >= from.length()) {
+            Files.copy(from, to);
+            return;
+        }
+
         PngWriter writer = new PngWriter(to);
         writer.setIhdr(processor.getIhdr())
                 .setChunks(processor.getOtherChunks())
@@ -117,6 +123,21 @@ public class PngProcessor {
 
     private void addChunk(@NonNull Chunk chunk) {
         mOtherChunks.add(chunk);
+    }
+
+    /**
+     * Returns the size of the generated png.
+     */
+    long size() {
+        long size = PngWriter.SIGNATURE.length;
+
+        size += mIhdr.size();
+        size += mIdat.size();
+        for (Chunk chunk : mOtherChunks) {
+            size += chunk.size();
+        }
+
+        return size;
     }
 
     private void processImageContent(@NonNull BufferedImage image) throws NinePatchException,
@@ -911,7 +932,7 @@ public class PngProcessor {
         return new Chunk(PngWriter.IHDR, buffer);
     }
 
-    private boolean is9Patch() {
+    boolean is9Patch() {
         return mFile.getPath().endsWith(SdkConstants.DOT_9PNG);
     }
 }
