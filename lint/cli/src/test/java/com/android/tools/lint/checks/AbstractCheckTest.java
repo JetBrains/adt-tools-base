@@ -21,15 +21,11 @@ import com.android.annotations.Nullable;
 import com.android.testutils.SdkTestCase;
 import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.LintCliFlags;
-import com.android.tools.lint.LintCliXmlParser;
-import com.android.tools.lint.LombokParser;
 import com.android.tools.lint.Reporter;
 import com.android.tools.lint.TextReporter;
 import com.android.tools.lint.Warning;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.DefaultConfiguration;
-import com.android.tools.lint.client.api.IDomParser;
-import com.android.tools.lint.client.api.IJavaParser;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
@@ -401,16 +397,6 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             if (exception != null) {
                 fail(exception.toString());
             }
-        }
-
-        @Override
-        public IDomParser getDomParser() {
-            return new LintCliXmlParser();
-        }
-
-        @Override
-        public IJavaParser getJavaParser() {
-            return new LombokParser();
         }
 
         @Override
