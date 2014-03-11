@@ -92,7 +92,7 @@ public interface BaseVariant {
      * of the default config and the flavors of this build variant.
      */
     @NonNull
-    DefaultProductFlavor getConfig();
+    DefaultProductFlavor getMergedFlavor();
 
     /**
      * Returns a list of sorted SourceProvider in order of ascending order, meaning, the earlier
