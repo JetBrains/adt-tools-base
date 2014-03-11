@@ -37,6 +37,12 @@ class MockSourceProvider implements SourceProvider {
 
     @NonNull
     @Override
+    public String getName() {
+        return mRoot;
+    }
+
+    @NonNull
+    @Override
     public Set<File> getJavaDirectories() {
         return Collections.singleton(new File(mRoot, "java"));
     }

@@ -31,6 +31,7 @@ import java.util.Collection;
 class SourceProviderImpl implements SourceProvider, Serializable {
     private static final long serialVersionUID = 1L;
 
+    private String name;
     private File manifestFile;
     private Collection<File> javaDirs;
     private Collection<File> resourcesDirs;
@@ -45,6 +46,7 @@ class SourceProviderImpl implements SourceProvider, Serializable {
     static SourceProviderImpl cloneProvider(@NonNull SourceProvider sourceProvider) {
         SourceProviderImpl sourceProviderClone = new SourceProviderImpl();
 
+        sourceProviderClone.name = sourceProvider.getName();
         sourceProviderClone.manifestFile = sourceProvider.getManifestFile();
         sourceProviderClone.javaDirs = sourceProvider.getJavaDirectories();
         sourceProviderClone.resourcesDirs = sourceProvider.getResourcesDirectories();
@@ -70,6 +72,12 @@ class SourceProviderImpl implements SourceProvider, Serializable {
     }
 
     private SourceProviderImpl() {
+    }
+
+    @NonNull
+    @Override
+    public String getName() {
+        return name;
     }
 
     @NonNull

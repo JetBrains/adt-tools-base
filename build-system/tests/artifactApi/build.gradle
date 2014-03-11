@@ -92,7 +92,11 @@ public class SourceProviderImpl implements SourceProvider, Serializable {
     SourceProviderImpl(String name) {
         this.name = name
     }
-    
+
+    String getName() {
+        return name
+    }
+
     File getManifestFile() {
         return new File(name)
     }
