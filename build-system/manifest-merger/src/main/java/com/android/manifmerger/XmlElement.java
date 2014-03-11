@@ -59,7 +59,7 @@ public class XmlElement extends XmlNode {
     /**
      * Local name used in node level tools instructions attribute
      */
-    public static final String TOOLS_NODE_LOCAL_NAME = "node";
+    public static final String TOOLS_NODE_LOCAL_NAME = "node";      //$NON-NLS-1$
 
     private final Element mXml;
     private final ManifestModel.NodeTypes mType;
@@ -99,6 +99,12 @@ public class XmlElement extends XmlNode {
                                     XmlUtils.xmlNameToConstantName(instruction));
                     for (String attributeName : Splitter.on(',').trimResults()
                             .split(attribute.getNodeValue())) {
+                        if (attributeName.indexOf(XmlUtils.NS_SEPARATOR) == -1) {
+                            String toolsPrefix = XmlUtils
+                                    .lookupNamespacePrefix(getXml(), SdkConstants.TOOLS_URI);
+                            // automatically provide the prefix.
+                            attributeName = toolsPrefix + XmlUtils.NS_SEPARATOR + attributeName;
+                        }
                         NodeName nodeName = XmlNode.fromXmlName(attributeName);
                         attributeOperationTypeBuilder.put(nodeName, attributeOperationType);
                     }
@@ -260,32 +266,7 @@ public class XmlElement extends XmlNode {
 
         // merge attributes.
         for (XmlAttribute lowerPriorityAttribute : lowerPriorityNode.getAttributes()) {
-            Optional<XmlAttribute> myOptionalAttribute = getAttribute(lowerPriorityAttribute.getName());
-            if (myOptionalAttribute.isPresent()) {
-                XmlAttribute myAttribute = myOptionalAttribute.get();
-                // this is conflict, depending on tools:replace, tools:strict
-                // for now we keep the higher priority value and log it.
-                String error = "Attribute " + myAttribute.getId()
-                        + " is also present at " + lowerPriorityAttribute.printPosition()
-                        + " use tools:replace to override it.";
-                mergingReport.addWarning(error);
-                mergingReport.getActionRecorder().recordAttributeAction(
-                        lowerPriorityAttribute,
-                        ActionRecorder.ActionType.REJECTED,
-                        AttributeOperationType.REMOVE);
-            } else {
-                // cool, does not exist, just add it.
-                // TODO: handle tools:remove and other user specified merging directions when
-                // merging attributes from lower priority files
-                lowerPriorityAttribute.getName().addToNode(mXml, lowerPriorityAttribute.getValue());
-
-                // and record the action.
-                mergingReport.getActionRecorder().recordAttributeAction(
-                        lowerPriorityAttribute,
-                        ActionRecorder.ActionType.ADDED,
-                        lowerPriorityNode.getAttributeOperationType(
-                                lowerPriorityAttribute.getName()));
-            }
+            lowerPriorityAttribute.mergeInHigherPriorityElement(this, mergingReport);
         }
         // merge children.
         mergeChildren(lowerPriorityNode, mergingReport);
