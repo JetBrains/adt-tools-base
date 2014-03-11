@@ -1,0 +1,116 @@
+/*
+ * Copyright (C) 2014 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.manifmerger;
+
+import com.android.utils.StdLogger;
+
+import junit.framework.Test;
+import junit.framework.TestSuite;
+
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+
+/**
+ * Tests for the {@link com.android.manifmerger.ManifestMerger2} class
+ */
+public class ManifestMerger2Test extends ManifestMergerTest {
+
+    // so far, I only support 3 original tests.
+    private static String[] sDataFiles = new String[]{
+            "00_noop",
+            "10_activity_merge",
+            "11_activity_dup",
+    };
+
+    /**
+     * This overrides the default test suite created by junit. The test suite is a bland TestSuite
+     * with a dedicated name. We inject as many instances of {@link ManifestMergerTest} in the suite
+     * as we have declared data files above.
+     *
+     * @return A new {@link junit.framework.TestSuite}.
+     */
+    public static Test suite() {
+        TestSuite suite = new TestSuite();
+        // Give a non-generic name to our test suite, for better unit reports.
+        suite.setName("ManifestMergerTestSuite");
+
+        for (String fileName : sDataFiles) {
+            suite.addTest(TestSuite.createTest(ManifestMerger2Test.class, fileName));
+        }
+
+        return suite;
+    }
+
+    public ManifestMerger2Test(String testName) {
+        super(testName);
+    }
+
+    /**
+     * Processes the data from the given
+     * {@link com.android.manifmerger.ManifestMergerTest.TestFiles} by invoking {@link
+     * ManifestMerger#process(java.io.File, java.io.File, java.io.File[], java.util.Map, String)}:
+     * the given library files are applied consecutively to the main XML document and the output is
+     * generated. <p/> Then the expected and actual outputs are loaded into a DOM, dumped again to a
+     * String using an XML transform and compared. This makes sure only the structure is checked and
+     * that any formatting is ignored in the comparison.
+     *
+     * @param testFiles The test files to process. Must not be null.
+     * @throws Exception when this go wrong.
+     */
+    @Override
+    void processTestFiles(TestFiles testFiles) throws Exception {
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        StdLogger stdLogger = new StdLogger(StdLogger.Level.VERBOSE);
+        MergingReport mergeReport = ManifestMerger2.newInvoker(testFiles.getMain(),
+                stdLogger)
+                .addLibraryManifests(testFiles.getLibs())
+                .merge();
+
+        assertTrue(mergeReport.getMergedDocument().isPresent());
+        XmlDocument actualResult = mergeReport.getMergedDocument().get();
+        actualResult.write(byteArrayOutputStream);
+
+        mergeReport.log(stdLogger);
+
+        XmlDocument expectedResult = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), testFiles.getMain().getName()),
+                testFiles.getExpectedResult());
+
+        // saves the result to the external file for easier human parsing.
+        OutputStream fos = null;
+        try {
+            fos = new BufferedOutputStream(new FileOutputStream(testFiles.getActualResult()));
+            actualResult.write(fos);
+        } finally {
+            if (fos != null) fos.close();
+        }
+
+        MergingReport.Builder comparingReport = new MergingReport.Builder(stdLogger);
+        stdLogger.info(byteArrayOutputStream.toString());
+        stdLogger.info(testFiles.getExpectedErrors());
+        // this is obviously quite hacky, refine once merge output is better defined.
+        boolean notExpectingError =
+                testFiles.getExpectedErrors().isEmpty() ||
+                testFiles.getExpectedErrors().charAt(0) != 'E';
+        assertEquals(notExpectingError,
+                expectedResult.compareXml(actualResult, comparingReport));
+
+    }
+}
