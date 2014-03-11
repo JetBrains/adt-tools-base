@@ -17,7 +17,7 @@ import java.util.List;
 class LintGradleRequest extends LintRequest {
     @NonNull private final LintGradleClient mLintClient;
     @NonNull private final BasePlugin mPlugin;
-    @NonNull private final String mVariantName;
+    @Nullable private final String mVariantName;
     @NonNull private final AndroidProject mModelProject;
 
     public LintGradleRequest(
@@ -38,7 +38,10 @@ class LintGradleRequest extends LintRequest {
     public Collection<Project> getProjects() {
         if (mProjects == null) {
             Variant variant = findVariant(mModelProject, mVariantName);
-            assert variant != null : mVariantName;
+            if (variant == null) {
+                mProjects = Collections.emptyList();
+                return mProjects;
+            }
             Pair<LintGradleProject,List<File>> result = LintGradleProject.create(
                     mLintClient, mModelProject, variant, mPlugin.getProject());
             mProjects = Collections.<Project>singletonList(result.getFirst());
@@ -49,13 +52,17 @@ class LintGradleRequest extends LintRequest {
     }
 
     private static Variant findVariant(@NonNull AndroidProject project,
-            @NonNull String variantName) {
+            @Nullable String variantName) {
         if (variantName != null) {
             for (Variant variant : project.getVariants()) {
                 if (variantName.equals(variant.getName())) {
                     return variant;
                 }
             }
+        }
+
+        if (!project.getVariants().isEmpty()) {
+            return project.getVariants().iterator().next();
         }
 
         return null;

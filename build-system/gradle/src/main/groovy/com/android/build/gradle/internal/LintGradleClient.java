@@ -67,11 +67,13 @@ public class LintGradleClient extends LintCliClient {
         mCustomRules = customRules;
     }
 
+    @NonNull
     @Override
     public List<File> findRuleJars(@NonNull Project project) {
         return mCustomRules;
     }
 
+    @NonNull
     @Override
     protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
         // Should not be called by lint since we supply an explicit set of projects

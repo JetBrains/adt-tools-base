@@ -16,8 +16,11 @@
 
 package com.android.tools.lint.checks;
 
+import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Project;
+
+import java.io.File;
 
 @SuppressWarnings("javadoc")
 public class ApiDetectorTest extends AbstractCheckTest {
@@ -945,5 +948,43 @@ public class ApiDetectorTest extends AbstractCheckTest {
                         "apicheck/ApiCallTest14$2.class.data=>bin/classes/test/pkg/ApiCallTest14$2.class",
                         "apicheck/ApiCallTest14$3.class.data=>bin/classes/test/pkg/ApiCallTest14$3.class"
                 ));
+    }
+
+    public void testMissingApiDatabase() throws Exception {
+        ApiLookup.dispose();
+        assertEquals(""
+                + "ApiDetectorTest_testMissingApiDatabase: Error: Can't find API database; API check not performed [LintError]\n"
+                + "1 errors, 0 warnings\n",
+            lintProject(
+                    "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                    "apicheck/layout.xml=>res/layout/layout.xml",
+                    "apicheck/themes.xml=>res/values/themes.xml",
+                    "apicheck/themes.xml=>res/color/colors.xml",
+                    "apicheck/classpath=>.classpath",
+                    "apicheck/ApiCallTest.java.txt=>src/foo/bar/ApiCallTest.java",
+                    "apicheck/ApiCallTest.class.data=>bin/classes/foo/bar/ApiCallTest.class"
+            ));
+    }
+
+    @Override
+    protected TestLintClient createClient() {
+        if (getName().equals("testMissingApiDatabase")) {
+            // Simulate an environment where there is no API database
+            return new TestLintClient() {
+                @Override
+                public File findResource(@NonNull String relativePath) {
+                    return null;
+                }
+            };
+        }
+        return super.createClient();
+    }
+
+    @Override
+    protected boolean ignoreSystemErrors() {
+        if (getName().equals("testMissingApiDatabase")) {
+            return false;
+        }
+        return super.ignoreSystemErrors();
     }
 }
