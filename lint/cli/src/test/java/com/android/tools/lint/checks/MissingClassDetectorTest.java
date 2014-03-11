@@ -416,6 +416,33 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testCustomViewInCapitalizedPackage() throws Exception {
+        mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
+        assertEquals(""
+                + "No warnings.",
+
+                lintProject(
+                        "bytecode/.classpath=>.classpath",
+                        "res/layout/customview3.xml",
+                        "bytecode/CustomView3.java.txt=>src/test/bytecode/CustomView3.java",
+                        "bytecode/CustomView3.class.data=>bin/classes/test/bytecode/CustomView3.class"
+                ));
+    }
+
+    public void testCustomViewNotReferenced() throws Exception {
+        mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
+        assertEquals(""
+                + "No warnings.",
+
+                lintProject(
+                        "bytecode/.classpath=>.classpath",
+                        "bytecode/CustomView3.java.txt=>src/test/bytecode/CustomView3.java",
+                        "bytecode/CustomView3.class.data=>bin/classes/test/bytecode/CustomView3.class"
+                ));
+    }
+
     public void testFragments() throws Exception {
         mScopes = Scope.MANIFEST_SCOPE;
         mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
