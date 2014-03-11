@@ -66,4 +66,69 @@ public class ScreenSizeQualifierTest extends TestCase {
         assertEquals(ScreenSize.XLARGE, config.getScreenSizeQualifier().getValue());
         assertEquals("xlarge", config.getScreenSizeQualifier().toString()); //$NON-NLS-1$
     }
+
+    public void testIsMatchFor() {
+        // create qualifiers for small, normal, large and xlarge sizes.
+        ScreenSizeQualifier smallQ = new ScreenSizeQualifier(ScreenSize.SMALL);
+        ScreenSizeQualifier normalQ = new ScreenSizeQualifier(ScreenSize.NORMAL);
+        ScreenSizeQualifier largeQ = new ScreenSizeQualifier(ScreenSize.LARGE);
+        ScreenSizeQualifier xlargeQ = new ScreenSizeQualifier(ScreenSize.XLARGE);
+
+        // test that every qualifier is a match for itself.
+        assertTrue(smallQ.isMatchFor(smallQ));
+        assertTrue(normalQ.isMatchFor(normalQ));
+        assertTrue(largeQ.isMatchFor(largeQ));
+        assertTrue(xlargeQ.isMatchFor(xlargeQ));
+
+        // test that small screen sizes match the larger ones.
+        assertTrue(smallQ.isMatchFor(smallQ));
+        assertTrue(smallQ.isMatchFor(normalQ));
+        assertTrue(smallQ.isMatchFor(largeQ));
+        assertTrue(smallQ.isMatchFor(xlargeQ));
+        assertTrue(normalQ.isMatchFor(normalQ));
+        assertTrue(normalQ.isMatchFor(largeQ));
+        assertTrue(normalQ.isMatchFor(xlargeQ));
+        assertTrue(largeQ.isMatchFor(largeQ));
+        assertTrue(largeQ.isMatchFor(xlargeQ));
+        assertTrue(xlargeQ.isMatchFor(xlargeQ));
+
+        // test that larger screen sizes don't match the smaller ones.
+        assertFalse(normalQ.isMatchFor(smallQ));
+        assertFalse(largeQ.isMatchFor(smallQ));
+        assertFalse(largeQ.isMatchFor(normalQ));
+        assertFalse(xlargeQ.isMatchFor(smallQ));
+        assertFalse(xlargeQ.isMatchFor(normalQ));
+        assertFalse(xlargeQ.isMatchFor(largeQ));
+    }
+
+    public void testIsBetterMatchThan() {
+        // create qualifiers for small, normal, large and xlarge sizes.
+        ScreenSizeQualifier smallQ = new ScreenSizeQualifier(ScreenSize.SMALL);
+        ScreenSizeQualifier normalQ = new ScreenSizeQualifier(ScreenSize.NORMAL);
+        ScreenSizeQualifier largeQ = new ScreenSizeQualifier(ScreenSize.LARGE);
+        ScreenSizeQualifier xlargeQ = new ScreenSizeQualifier(ScreenSize.XLARGE);
+
+        // test that each Q is a better match than all other valid Qs when the ref is the same Q.
+        assertTrue(normalQ.isBetterMatchThan(smallQ, normalQ));
+
+        assertTrue(largeQ.isBetterMatchThan(smallQ, largeQ));
+        assertTrue(largeQ.isBetterMatchThan(normalQ, largeQ));
+
+        assertTrue(xlargeQ.isBetterMatchThan(smallQ, xlargeQ));
+        assertTrue(xlargeQ.isBetterMatchThan(normalQ, xlargeQ));
+        assertTrue(xlargeQ.isBetterMatchThan(largeQ, xlargeQ));
+
+        // test that higher screen size if preferable if there's no exact match.
+        assertTrue(normalQ.isBetterMatchThan(smallQ, largeQ));
+        assertFalse(smallQ.isBetterMatchThan(normalQ, largeQ));
+
+        assertTrue(normalQ.isBetterMatchThan(smallQ, xlargeQ));
+        assertTrue(largeQ.isBetterMatchThan(smallQ, xlargeQ));
+        assertTrue(largeQ.isBetterMatchThan(normalQ, xlargeQ));
+
+        assertFalse(smallQ.isBetterMatchThan(normalQ, xlargeQ));
+        assertFalse(smallQ.isBetterMatchThan(largeQ, xlargeQ));
+        assertFalse(normalQ.isBetterMatchThan(largeQ, xlargeQ));
+    }
+
 }
