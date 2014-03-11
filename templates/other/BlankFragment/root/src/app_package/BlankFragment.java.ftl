@@ -78,7 +78,7 @@ public class ${className} extends Fragment {
                              Bundle savedInstanceState) {
 <#if includeLayout>
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_${classToResource(className)}, container, false);
+        return inflater.inflate(R.layout.${fragmentName}, container, false);
 <#else>
         TextView textView = new TextView(getActivity());
         textView.setText(R.string.hello_blank_fragment);
