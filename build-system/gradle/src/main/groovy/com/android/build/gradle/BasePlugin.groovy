@@ -118,6 +118,8 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 import org.gradle.util.GUtil
 import proguard.gradle.ProGuardTask
 
+import java.lang.reflect.Field
+import java.lang.reflect.Method
 import java.util.jar.Attributes
 import java.util.jar.Manifest
 
@@ -1481,6 +1483,14 @@ public abstract class BasePlugin {
                 for (File libJar : packagedJars) {
                     proguardTask.libraryjars(libJar, filter: '!META-INF/MANIFEST.MF')
                 }
+
+                // Now reset the input count for the only output present in the proguard task.
+                // This is to go around the fact that proguard wants to know about the input
+                // before the output is given.
+                // we're basically doing:
+                //     proguardTask.inJarCounts.clear()
+                //     proguardTask.inJarCounts.add(Integer.valueOf(proguardTask.inJarFiles.size()));
+                resetProguardInJarCounts(proguardTask)
             }
 
             // ensure local jars keep their package names
@@ -1498,11 +1508,16 @@ public abstract class BasePlugin {
 
                 // injar: the dependencies
                 for (File inJar : packagedJars) {
-                    System.out.println(">>> " + inJar)
                     proguardTask.injars(inJar, filter: '!META-INF/MANIFEST.MF')
                 }
 
-                proguardTask.outjars(outFile)
+                // Now reset the input count for the only output present in the proguard task.
+                // This is to go around the fact that proguard wants to know about the input
+                // before the output is given.
+                // we're basically doing:
+                //     proguardTask.inJarCounts.clear()
+                //     proguardTask.inJarCounts.add(Integer.valueOf(proguardTask.inJarFiles.size()));
+                resetProguardInJarCounts(proguardTask)
             }
         }
 
@@ -1521,7 +1536,9 @@ public abstract class BasePlugin {
             }
         }
 
-        // --- Other Out files ---
+        // --- Out files ---
+
+        proguardTask.outjars(outFile)
 
         proguardTask.dump("${project.buildDir}/proguard/${variantData.variantConfiguration.dirName}/dump.txt")
         proguardTask.printseeds(
@@ -1532,6 +1549,25 @@ public abstract class BasePlugin {
                 "${project.buildDir}/proguard/${variantData.variantConfiguration.dirName}/mapping.txt")
 
         return outFile
+    }
+
+    protected static void resetProguardInJarCounts(@NonNull ProGuardTask proguardTask) {
+        Field inJarCountsField = ProGuardTask.getDeclaredField("inJarCounts")
+        inJarCountsField.setAccessible(true)
+        Field inJarFilesField = ProGuardTask.getDeclaredField("inJarFiles")
+        inJarFilesField.setAccessible(true)
+
+        Method clearMethod = ArrayList.class.getMethod("clear")
+        Method sizeMethod = ArrayList.class.getMethod("size")
+        Method addMethod = ArrayList.class.getMethod("add", Object.class)
+
+        Object inJarCountsInstance = inJarCountsField.get(proguardTask)
+        Object inJarFilesInstance = inJarFilesField.get(proguardTask)
+
+        clearMethod.invoke(inJarCountsInstance, null)
+        Object sizeValue = sizeMethod.invoke(inJarFilesInstance, null)
+
+        addMethod.invoke(inJarCountsInstance, sizeValue)
     }
 
     private void createReportTasks() {
