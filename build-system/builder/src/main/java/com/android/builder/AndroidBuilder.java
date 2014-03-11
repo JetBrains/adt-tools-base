@@ -16,6 +16,9 @@
 
 package com.android.builder;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -34,6 +37,7 @@ import com.android.builder.internal.packaging.JavaResourceProcessor;
 import com.android.builder.internal.packaging.Packager;
 import com.android.builder.model.AaptOptions;
 import com.android.builder.model.ClassField;
+import com.android.builder.model.PackagingOptions;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.packaging.DuplicateFileException;
@@ -70,9 +74,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * This is the main builder class. It is given all the data to process the build (such as
  * {@link DefaultProductFlavor}s, {@link DefaultBuildType} and dependencies) and use them when doing specific
@@ -84,10 +85,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * then build steps can be done with
  * {@link #processManifest(java.io.File, java.util.List, java.util.List, String, int, String, int, int, String)}
  * {@link #processTestManifest(String, int, int, String, String, Boolean, Boolean, java.util.List, String)}
- * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions)}
+ * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions, java.util.Collection)}
  * {@link #compileAllAidlFiles(java.util.List, java.io.File, java.util.List, com.android.builder.compiling.DependencyFileProcessor)}
  * {@link #convertByteCode(Iterable, Iterable, File, DexOptions, boolean)}
- * {@link #packageApk(String, String, java.util.List, String, java.util.Collection, java.util.Set, boolean, com.android.builder.model.SigningConfig, String)}
+ * {@link #packageApk(String, String, java.util.List, String, java.util.Collection, java.util.Set, boolean, com.android.builder.model.SigningConfig, com.android.builder.model.PackagingOptions, String)}
  *
  * Java compilation is not handled but the builder provides the bootclasspath with
  * {@link #getBootClasspath(SdkParser)}.
@@ -1124,6 +1125,7 @@ public class AndroidBuilder {
      * @param abiFilters optional ABI filter
      * @param jniDebugBuild whether the app should include jni debug data
      * @param signingConfig the signing configuration
+     * @param packagingOptions the packaging options
      * @param outApkLocation location of the APK.
      * @throws DuplicateFileException
      * @throws FileNotFoundException if the store location was not found
@@ -1142,7 +1144,9 @@ public class AndroidBuilder {
             @Nullable Set<String> abiFilters,
             boolean jniDebugBuild,
             @Nullable SigningConfig signingConfig,
-            @NonNull String outApkLocation) throws DuplicateFileException, FileNotFoundException,
+            @Nullable PackagingOptions packagingOptions,
+            @NonNull String outApkLocation)
+            throws DuplicateFileException, FileNotFoundException,
             KeytoolException, PackagerException, SigningException {
         checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
         checkNotNull(classesDexLocation, "classesDexLocation cannot be null.");
@@ -1159,7 +1163,7 @@ public class AndroidBuilder {
         try {
             Packager packager = new Packager(
                     outApkLocation, androidResPkgLocation, classesDexLocation,
-                    certificateInfo, mCreatedBy, mLogger);
+                    certificateInfo, mCreatedBy, packagingOptions, mLogger);
 
             packager.setJniDebugMode(jniDebugBuild);
 

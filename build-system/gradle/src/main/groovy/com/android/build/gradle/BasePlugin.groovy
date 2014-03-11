@@ -1260,7 +1260,7 @@ public abstract class BasePlugin {
         }
 
         // Add a task to generate application package
-        def packageApp = project.tasks.create(
+        PackageApplication packageApp = project.tasks.create(
                 "package${variantData.variantConfiguration.fullName.capitalize()}",
                 PackageApplication)
         variantData.packageApplicationTask = packageApp
@@ -1316,6 +1316,10 @@ public abstract class BasePlugin {
         def apkName = signedApk ?
             "${project.archivesBaseName}-${variantData.variantConfiguration.baseName}-unaligned.apk" :
             "${project.archivesBaseName}-${variantData.variantConfiguration.baseName}-unsigned.apk"
+
+        packageApp.conventionMapping.packagingOptions = {
+            extension instanceof AppExtension ? extension.packagingOptions : null
+        }
 
         packageApp.conventionMapping.outputFile = {
             project.file("$project.buildDir/apk/${apkName}")
