@@ -75,7 +75,18 @@ import lombok.ast.MethodInvocation;
 import lombok.ast.Select;
 import lombok.ast.StrictListAccessor;
 
-/** Detector for finding inconsistent usage of views and casts */
+/** Detector for finding inconsistent usage of views and casts
+ * <p>
+ * TODO: Check findFragmentById
+ * <pre>
+ * ((ItemListFragment) getSupportFragmentManager()
+ *   .findFragmentById(R.id.item_list))
+ *   .setActivateOnItemClick(true);
+ * </pre>
+ * Here we should check the {@code <fragment>} tag pointed to by the id, and
+ * check its name or class attributes to make sure the cast is compatible with
+ * the named fragment class!
+ */
 public class ViewTypeDetector extends ResourceXmlDetector implements Detector.JavaScanner {
     /** Mismatched view types */
     @SuppressWarnings("unchecked")
@@ -196,7 +207,7 @@ public class ViewTypeDetector extends ResourceXmlDetector implements Detector.Ja
 
                             List<ResourceItem> items = resources.getResourceItem(ResourceType.ID,
                                     id);
-                            if (items != null) {
+                            if (items != null && !items.isEmpty()) {
                                 Set<String> compatible = Sets.newHashSet();
                                 for (ResourceItem item : items) {
                                     Collection<String> tags = getViewTags(context, item);
