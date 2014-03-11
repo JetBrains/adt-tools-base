@@ -86,4 +86,25 @@ public class PxUsageDetectorTest extends AbstractCheckTest {
 
             lintFiles("res/values/pxsp.xml"));
     }
+
+    public void testIncrementalDimensions() throws Exception {
+        assertEquals(""
+                + "res/layout/textsize2.xml:9: Warning: Should use \"sp\" instead of \"dp\" for text sizes (@dimen/bottom_bar_portrait_button_font_size is defined as 16dp in /TESTROOT/res/values/dimens.xml [SpUsage]\n"
+                + "        android:textSize=\"@dimen/bottom_bar_portrait_button_font_size\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+            lintProjectIncrementally(
+                    "res/layout/textsize2.xml",
+                    "res/values/dimens.xml", "res/layout/textsize2.xml"));
+    }
+
+    public void testBatchDimensions() throws Exception {
+        assertEquals(""
+                + "res/values/dimens.xml:2: Warning: This dimension is used as a text size: Should use \"sp\" instead of \"dp\" [SpUsage]\n"
+                + "    <dimen name=\"bottom_bar_portrait_button_font_size\">16dp</dimen>\n"
+                + "                                                       ^\n"
+                + "    res/layout/textsize2.xml:9: Dimension used as a text size here\n"
+                + "0 errors, 1 warnings\n",
+            lintFiles("res/values/dimens.xml", "res/layout/textsize2.xml"));
+    }
 }
