@@ -34,6 +34,9 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.gradle.api.tasks.util.PatternSet
 
+import static com.android.SdkConstants.CURRENT_PLATFORM
+import static com.android.SdkConstants.PLATFORM_WINDOWS
+
 class NdkCompile extends NdkTask {
 
     List<File> sourceFolders
@@ -185,7 +188,7 @@ class NdkCompile extends NdkTask {
         List<String> commands = Lists.newArrayList()
 
         String exe = ndkLocation.absolutePath + File.separator + "ndk-build"
-        if (!ndkCygwinMode) {
+        if (CURRENT_PLATFORM == PLATFORM_WINDOWS && !ndkCygwinMode) {
             exe += ".cmd"
         }
         commands.add(exe)
