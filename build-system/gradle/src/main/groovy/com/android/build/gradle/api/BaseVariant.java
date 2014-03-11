@@ -187,7 +187,7 @@ public interface BaseVariant {
      * Returns the Proguard task. This can be null if proguard is not enabled.
      */
     @Nullable
-    ProGuardTask getProguardTask();
+    ProGuardTask getProguard();
 
     /**
      * Returns the Java resource processing task.

@@ -166,7 +166,7 @@ abstract class BaseVariantImpl implements BaseVariant {
 
     @Nullable
     @Override
-    public ProGuardTask getProguardTask() {
+    public ProGuardTask getProguard() {
         return getVariantData().proguardTask;
     }
 
