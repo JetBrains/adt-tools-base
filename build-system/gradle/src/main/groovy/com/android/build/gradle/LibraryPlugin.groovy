@@ -213,17 +213,24 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
         // Add a task to compile renderscript files.
         createRenderscriptTask(variantData)
 
-        // Add a task to merge the resource folders, including the libraries, in order to
-        // generate the R.txt file with all the symbols, including the ones from the dependencies.
-        createMergeResourcesTask(variantData, false /*process9Patch*/)
-
-        // Create another merge task to only merge the resources from this library and not
+        // Create a merge task to only merge the resources from this library and not
         // the dependencies. This is what gets packaged in the aar.
         MergeResources packageRes = basicCreateMergeResourcesTask(variantData,
                 "package",
                 "$project.buildDir/$DIR_BUNDLES/${variantData.variantConfiguration.dirName}/res",
                 false /*includeDependencies*/,
                 false /*process9Patch*/)
+
+        if (variantData.variantDependency.androidDependencies.isEmpty()) {
+            // if there is no android dependencies, then we should use the packageRes task above
+            // as the only res merging task.
+            variantData.mergeResourcesTask = packageRes
+        } else {
+            // Add a task to merge the resource folders, including the libraries, in order to
+            // generate the R.txt file with all the symbols, including the ones from
+            // the dependencies.
+            createMergeResourcesTask(variantData, false /*process9Patch*/)
+        }
 
         // Add a task to merge the assets folders
         createMergeAssetsTask(variantData,
