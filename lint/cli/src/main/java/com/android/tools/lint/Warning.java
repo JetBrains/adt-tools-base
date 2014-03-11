@@ -105,7 +105,22 @@ public class Warning implements Comparable<Warning> {
             return line - other.line;
         }
 
-        return message.compareTo(other.message);
+        int delta = message.compareTo(other.message);
+        if (delta != 0) {
+            return delta;
+        }
+
+        if (file != null) {
+            if (other.file != null) {
+                return file.compareTo(other.file);
+            } else {
+                return -1;
+            }
+        } else if (other.file != null) {
+            return 1;
+        }
+
+        return 0;
     }
 
     @Override
