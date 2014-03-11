@@ -303,7 +303,7 @@ public class AvdManager {
     private final LocalSdk myLocalSdk;
 
     /**
-     * Creates an AVD Manager for a given SDK represented by a {@link SdkManager}.
+     * Creates an AVD Manager for a given SDK represented by a {@link LocalSdk}.
      * @param localSdk The SDK.
      * @param log The log object to receive the log of the initial loading of the AVDs.
      *            This log object is not kept by this instance of AvdManager and each
@@ -312,20 +312,25 @@ public class AvdManager {
      *            logging needs. Cannot be null.
      * @throws AndroidLocationException
      */
-    protected AvdManager(LocalSdk localSdk, ILogger log) throws AndroidLocationException {
+    protected AvdManager(@NonNull LocalSdk localSdk, @NonNull ILogger log)
+            throws AndroidLocationException {
         myLocalSdk = localSdk;
         buildAvdList(mAllAvdList, log);
     }
 
     /**
-     * Temporary while we slowly deprecate SdkManager
+     * Returns an AVD Manager for a given SDK represented by a {@link LocalSdk}.
+     * One AVD Manager instance is created by SDK location and then cached and reused.
+     *
+     * @param localSdk The SDK.
+     * @param log The log object to receive the log of the initial loading of the AVDs.
+     *            This log object is not kept by this instance of AvdManager and each
+     *            method takes its own logger. The rationale is that the AvdManager
+     *            might be called from a variety of context, each with different
+     *            logging needs. Cannot be null.
+     * @throws AndroidLocationException
      */
-    public static AvdManager getInstance(SdkManager manager, ILogger log)
-            throws AndroidLocationException {
-        return getInstance(manager.getLocalSdk(), log);
-    }
-
-    public static AvdManager getInstance(LocalSdk localSdk, ILogger log)
+    public static AvdManager getInstance(@NonNull LocalSdk localSdk, @NonNull ILogger log)
             throws AndroidLocationException {
         synchronized(mManagers) {
             AvdManager manager;
@@ -352,7 +357,8 @@ public class AvdManager {
     /**
      * Returns the {@link LocalSdk} associated with the {@link AvdManager}.
      */
-    public LocalSdk getSdk() {
+    @NonNull
+    public LocalSdk getLocalSdk() {
         return myLocalSdk;
     }
 
@@ -1486,7 +1492,7 @@ public class AvdManager {
             String hash = properties.get(AVD_INI_DEVICE_HASH);
             if (deviceName != null && deviceMfctr != null && hash != null) {
                 int deviceHash = Integer.parseInt(hash);
-                DeviceManager devMan = DeviceManager.createInstance(myLocalSdk.getPath(), log);
+                DeviceManager devMan = DeviceManager.createInstance(myLocalSdk.getLocation(), log);
                 deviceStatus = devMan.getDeviceStatus(deviceName, deviceMfctr, deviceHash);
             }
         }
