@@ -45,19 +45,13 @@ android {
     <#if isLibraryProject>
     release {
         runProguard false
-        proguardFile 'proguard-rules.txt'
-        proguardFile getDefaultProguardFile('proguard-android.txt')
+        proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
     }
     <#else>
     buildTypes {
         release {
             runProguard false
-            proguardFile getDefaultProguardFile('proguard-android.txt')
-        }
-    }
-    productFlavors {
-        defaultFlavor {
-            proguardFile 'proguard-rules.txt'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
     </#if>
