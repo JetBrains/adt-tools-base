@@ -45,6 +45,18 @@ public class DuplicateResourceDetectorTest extends AbstractCheckTest {
                 "res/values/customattr.xml=>res/values/customattr2.xml"));
     }
 
+    public void testSameFile() throws Exception {
+        assertEquals(""
+                + "res/values/duplicate-strings.xml:6: Error: app_name has already been defined in this folder [DuplicateDefinition]\n"
+                + "    <string name=\"app_name\">App Name 1</string>\n"
+                + "            ~~~~~~~~~~~~~~~\n"
+                + "    res/values/duplicate-strings.xml:4: Previously defined here\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "res/values/duplicate-strings.xml"));
+    }
+
     public void testOk() throws Exception {
         assertEquals(
         "No warnings.",
