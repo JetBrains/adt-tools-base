@@ -18,6 +18,7 @@ package com.android.sdklib.internal.repository;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
@@ -25,6 +26,7 @@ import com.android.sdklib.ISystemImage;
 import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.SystemImage;
 import com.android.sdklib.io.FileOp;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 
 import java.util.List;
 import java.util.Map;
@@ -85,8 +87,9 @@ public class MockAddonTarget implements IAndroidTarget {
     }
 
     @Override
-    public ISystemImage getSystemImage(String abiType) {
-        if (SdkConstants.ABI_ARMEABI.equals(abiType)) {
+    @Nullable
+    public ISystemImage getSystemImage(@NonNull IdDisplay tag, @NonNull String abiType) {
+        if (SystemImage.DEFAULT_TAG.equals(tag) && SdkConstants.ABI_ARMEABI.equals(abiType)) {
             return getSystemImages()[0];
         }
         return null;

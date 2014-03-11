@@ -19,8 +19,10 @@ package com.android.sdklib;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
+import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.internal.avd.AvdManager;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.mock.MockLog;
@@ -28,6 +30,7 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.local.LocalPlatformPkgInfo;
+import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
 import com.android.utils.ILogger;
 import junit.framework.TestCase;
 
@@ -41,6 +44,7 @@ import java.io.IOException;
  */
 public class SdkManagerTestCase extends TestCase {
 
+    protected static final String TARGET_DIR_NAME_0 = "v0_0";
     private File mFakeSdk;
     private MockLog mLog;
     private SdkManager mSdkManager;
@@ -176,9 +180,7 @@ public class SdkManagerTestCase extends TestCase {
 
         // Creating a fake target here on down
         File targetDir = makeFakeTargetInternal(platformsDir);
-
-        File imagesDir = new File(targetDir, "images");
-        makeFakeSysImgInternal(imagesDir, "default", SdkConstants.ABI_ARMEABI);
+        makeFakeLegacySysImg(targetDir, SdkConstants.ABI_ARMEABI);
 
         makeFakeSkinInternal(targetDir);
         makeFakeSourceInternal(sdkDir);
@@ -192,10 +194,53 @@ public class SdkManagerTestCase extends TestCase {
      * @throws IOException if the file fails to be created.
      */
     protected void makeSystemImageFolder(ISystemImage systemImage) throws IOException {
-        File imagesDir = systemImage.getLocation();
-        imagesDir.mkdirs();
+        File sysImgDir = systemImage.getLocation();
 
-        makeFakeSysImgInternal(imagesDir, systemImage.getTag().getId(), systemImage.getAbiType());
+        if (systemImage.getLocationType() == LocationType.IN_PLATFORM_LEGACY) {
+            // legacy mode. Path should look like SDK/platforms/platform-N/userdata.img
+            makeFakeLegacySysImg(sysImgDir.getParentFile(), systemImage.getAbiType());
+
+        } else  if (systemImage.getLocationType() == LocationType.IN_PLATFORM_SUBFOLDER) {
+            // not-so-legacy mode.
+            // Path should look like SDK/platforms/platform-N/images/userdata.img
+            makeFakeSysImgInternal(
+                    sysImgDir,
+                    systemImage.getTag().getId(),
+                    systemImage.getAbiType());
+
+        } else  if (systemImage.getLocationType() == LocationType.IN_SYSTEM_IMAGE) {
+            // system-image folder mode.
+            // Path should like SDK/system-images/platform-N/tag/abi/userdata.img+source.properties
+            makeFakeSysImgInternal(
+                    sysImgDir,
+                    systemImage.getTag().getId(),
+                    systemImage.getAbiType());
+        }
+    }
+
+    /**
+     * Creates the system image folder and places a fake userdata.img in it.
+     * This must be called after {@link #setUp()} so that it can use the temp fake SDK folder,
+     * and consequently you do not need to specify the SDK root.
+     *
+     * @param targetDir The targetDir segment of the sys-image folder.
+     *          Use {@link #TARGET_DIR_NAME_0} to match the default single platform.
+     * @param tagId An optional tag id. Use null for legacy no-tag system images.
+     * @param abiType The abi for the system image.
+     * @throws IOException if the file fails to be created.
+     */
+    protected void makeSystemImageFolder(
+            @NonNull String targetDir,
+            @Nullable String tagId,
+            @NonNull String abiType) throws IOException {
+        File sysImgDir = new File(mFakeSdk, SdkConstants.FD_SYSTEM_IMAGES);
+        sysImgDir = new File(sysImgDir, targetDir);
+        if (tagId != null) {
+            sysImgDir = new File(sysImgDir, tagId);
+        }
+        sysImgDir = new File(sysImgDir, abiType);
+
+        makeFakeSysImgInternal(sysImgDir, tagId, abiType);
     }
 
     //----
@@ -222,7 +267,7 @@ public class SdkManagerTestCase extends TestCase {
 
     /** Utility used by {@link #makeFakeSdk()} to create a fake target with API 0, rev 0. */
     private File makeFakeTargetInternal(File platformsDir) throws IOException {
-        File targetDir = new File(platformsDir, "v0_0");
+        File targetDir = new File(platformsDir, TARGET_DIR_NAME_0);
         targetDir.mkdirs();
         new File(targetDir, SdkConstants.FN_FRAMEWORK_LIBRARY).createNewFile();
         new File(targetDir, SdkConstants.FN_FRAMEWORK_AIDL).createNewFile();
@@ -242,17 +287,55 @@ public class SdkManagerTestCase extends TestCase {
         return targetDir;
     }
 
-    /** Utility to create a fake sys image in the given folder. */
-    private void makeFakeSysImgInternal(File imagesDir, String tag, String abiType)
-            throws IOException {
+    /**
+     * Utility to create a fake *legacy* sys image in a platform folder.
+     * Legacy system images follow that path pattern:
+     *   $SDK/platforms/platform-N/images/userdata.img
+     *
+     * They have no source.properties file in that directory.
+     */
+    private void makeFakeLegacySysImg(
+            @NonNull File platformDir,
+            @NonNull String abiType) throws IOException {
+        File imagesDir = new File(platformDir, "images");
         imagesDir.mkdirs();
         new File(imagesDir, "userdata.img").createNewFile();
+    }
 
-        createSourceProps(imagesDir,
-                PkgProps.PKG_REVISION, "0",
-                PkgProps.VERSION_API_LEVEL, "0",
-                PkgProps.SYS_IMG_TAG_ID, tag,
-                PkgProps.SYS_IMG_ABI, abiType);
+    /**
+     * Utility to create a fake sys image in the system-images folder.
+     *
+     * "modern" (as in "not legacy") system-images follow that path pattern:
+     *   $SDK/system-images/platform-N/abi/source.properties
+     *   $SDK/system-images/platform-N/abi/userdata.img
+     * or
+     *   $SDK/system-images/platform-N/tag/abi/source.properties
+     *   $SDK/system-images/platform-N/tag/abi/userdata.img
+     *
+     * The tag id is optional and was only introduced in API 20 / Tools 22.6.
+     * The platform-N and the tag folder names are irrelevant as the info from
+     * source.properties matters most.
+     */
+    private void makeFakeSysImgInternal(
+            @NonNull File sysImgDir,
+            @Nullable String tagId,
+            @NonNull String abiType) throws IOException {
+        sysImgDir.mkdirs();
+        new File(sysImgDir, "userdata.img").createNewFile();
+
+        if (tagId == null) {
+            createSourceProps(sysImgDir,
+                    PkgProps.PKG_REVISION, "0",
+                    PkgProps.VERSION_API_LEVEL, "0",
+                    PkgProps.SYS_IMG_ABI, abiType);
+        } else {
+            createSourceProps(sysImgDir,
+                    PkgProps.PKG_REVISION, "0",
+                    PkgProps.VERSION_API_LEVEL, "0",
+                    PkgProps.SYS_IMG_TAG_ID, tagId,
+                    PkgProps.SYS_IMG_TAG_DISPLAY, LocalSysImgPkgInfo.tagIdToDisplay(tagId),
+                    PkgProps.SYS_IMG_ABI, abiType);
+        }
     }
 
     /** Utility to make a fake skin for the given target */
