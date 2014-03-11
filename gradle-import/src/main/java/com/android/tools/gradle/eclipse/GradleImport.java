@@ -259,6 +259,7 @@ public class GradleImport {
     public GradleImport setEclipseWorkspace(@NonNull File workspace) {
         mWorkspaceLocation = workspace;
         assert mWorkspaceLocation.exists() : workspace.getPath();
+        mWorkspaceProjects = null;
         return this;
     }
 
@@ -322,7 +323,7 @@ public class GradleImport {
     }
 
     @Nullable
-    public File resolveWorkspacePath(@NonNull String path) {
+    public File resolveWorkspacePath(@Nullable EclipseProject fromProject, @NonNull String path, boolean record) {
         if (path.isEmpty()) {
             return null;
         }
@@ -345,6 +346,10 @@ public class GradleImport {
                     }
                 }
             }
+        }
+
+        if (fromProject != null && mWorkspaceLocation == null) {
+            guessWorkspace(fromProject.getDir());
         }
 
         if (mWorkspaceLocation != null) {
@@ -432,8 +437,10 @@ public class GradleImport {
             }
 
             // Record path as one we need to resolve
-            mPathMap.put(path, null);
-        } else {
+            if (record) {
+                mPathMap.put(path, null);
+            }
+        } else if (record) {
             // Record path as one we need to resolve
             mPathMap.put(path, null);
         }
@@ -823,23 +830,43 @@ public class GradleImport {
     }
 
     @Nullable
-    public String resolvePathVariable(@NonNull String name) throws IOException {
-        Properties properties = getJdkSettingsProperties(true);
-        assert properties != null; // because mustExist=true, otherwise throws error
-        String value = properties.getProperty("org.eclipse.jdt.core.classpathVariable." + name);
+    File resolvePathVariable(@Nullable EclipseProject fromProject, @NonNull String name, boolean record) throws IOException {
+        File file = mPathMap.get(name);
+        if (file != null) {
+            return file;
+        }
+
+        if (fromProject != null && mWorkspaceLocation == null) {
+            guessWorkspace(fromProject.getDir());
+        }
+
+        String value = null;
+        Properties properties = getJdtSettingsProperties(false);
+        if (properties != null) {
+            value = properties.getProperty("org.eclipse.jdt.core.classpathVariable." + name);
+        }
         if (value == null) {
-            File settings = getSettingsFile();
-            reportError(null, settings, "Didn't find path variable " + name + " definition in " +
-                    settings);
+            properties = getPathSettingsProperties(false);
+            if (properties != null) {
+                value = properties.getProperty("pathvariable." + name);
+            }
+        }
+
+        if (value == null) {
+            if (record) {
+                mPathMap.put(name, null);
+            }
             return null;
         }
 
-        return value;
+        file = new File(value.replace('/', separatorChar));
+
+        return file;
     }
 
     @Nullable
-    private Properties getJdkSettingsProperties(boolean mustExist) throws IOException {
-        File settings = getSettingsFile();
+    private Properties getJdtSettingsProperties(boolean mustExist) throws IOException {
+        File settings = getJdtSettingsFile();
         if (!settings.exists()) {
             if (mustExist) {
                 reportError(null, settings, "Settings file does not exist");
@@ -850,13 +877,35 @@ public class GradleImport {
         return getProperties(settings);
     }
 
-    private File getSettingsFile() {
+    private File getJdtSettingsFile() {
         return new File(getWorkspaceLocation(),
                 ".metadata" + separator +
                 ".plugins" + separator +
                 "org.eclipse.core.runtime" + separator +
                 ".settings" + separator +
                 "org.eclipse.jdt.core.prefs");
+    }
+
+    @Nullable
+    private Properties getPathSettingsProperties(boolean mustExist) throws IOException {
+        File settings = getPathSettingsFile();
+        if (!settings.exists()) {
+            if (mustExist) {
+                reportError(null, settings, "Settings file does not exist");
+            }
+            return null;
+        }
+
+        return getProperties(settings);
+    }
+
+    private File getPathSettingsFile() {
+        return new File(getWorkspaceLocation(),
+                ".metadata" + separator +
+                ".plugins" + separator +
+                "org.eclipse.core.runtime" + separator +
+                ".settings" + separator +
+                "org.eclipse.core.resources.prefs");
     }
 
     private File getWorkspaceLocation() {
