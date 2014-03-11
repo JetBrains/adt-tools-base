@@ -44,6 +44,13 @@ public class NetworkCodeQualifierTest extends TestCase {
         assertEquals("mnc123", config.getNetworkCodeQualifier().toString()); //$NON-NLS-1$
     }
 
+    public void testPrint() {
+        assertEquals("mnc123", NetworkCodeQualifier.getFolderSegment(123));
+        assertEquals("mnc012", NetworkCodeQualifier.getFolderSegment(12));
+        assertEquals("mnc001", NetworkCodeQualifier.getFolderSegment(1));
+        assertEquals("", NetworkCodeQualifier.getFolderSegment(0));
+    }
+
     public void testFailures() {
         assertEquals(false, mncq.checkAndSet("", config));//$NON-NLS-1$
         assertEquals(false, mncq.checkAndSet("mnc", config));//$NON-NLS-1$
