@@ -254,7 +254,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 getGeneratedSourceFolders(variantData),
                 getGeneratedResourceFolders(variantData),
                 variantData.javaCompileTask.destinationDir,
-                DependenciesImpl.cloneDependencies(variantData.variantDependency, gradleProjects),
+                DependenciesImpl.cloneDependencies(variantData, basePlugin, gradleProjects),
                 variantSourceProvider,
                 multiFlavorSourceProvider)
     }
