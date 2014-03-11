@@ -42,7 +42,7 @@ class SourceProviderImpl implements SourceProvider, Serializable {
     private Collection<File> libsDirs;
 
     @NonNull
-    static SourceProviderImpl cloneProvider(SourceProvider sourceProvider) {
+    static SourceProviderImpl cloneProvider(@NonNull SourceProvider sourceProvider) {
         SourceProviderImpl sourceProviderClone = new SourceProviderImpl();
 
         sourceProviderClone.manifestFile = sourceProvider.getManifestFile();

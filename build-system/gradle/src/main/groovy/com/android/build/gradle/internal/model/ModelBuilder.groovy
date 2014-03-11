@@ -193,9 +193,12 @@ public class ModelBuilder implements ToolingModelBuilder {
             extraAndroidArtifacts.add(testArtifact)
         }
 
-        // extra Java Artifacts
-        List<JavaArtifact> extraJavaArtifacts = Lists.newArrayList(
-                basePlugin.getExtraJavaArtifacts(variantName))
+        // clone the Java Artifacts
+        Collection<JavaArtifact> javaArtifacts = basePlugin.getExtraJavaArtifacts(variantName)
+        List<JavaArtifact> clonedJavaArtifacts = Lists.newArrayListWithCapacity(javaArtifacts.size())
+        for (JavaArtifact javaArtifact : javaArtifacts) {
+            clonedJavaArtifacts.add(JavaArtifactImpl.clone(javaArtifact))
+        }
 
         VariantImpl variant = new VariantImpl(
                 variantName,
@@ -205,7 +208,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 ProductFlavorImpl.cloneFlavor(variantData.variantConfiguration.mergedFlavor),
                 mainArtifact,
                 extraAndroidArtifacts,
-                extraJavaArtifacts)
+                clonedJavaArtifacts)
 
         return variant
     }

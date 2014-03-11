@@ -15,11 +15,13 @@
  */
 
 package com.android.build.gradle
+
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.BadPluginException
+import com.android.build.gradle.internal.ConfigurationDependencies
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.Sdk
@@ -135,6 +137,7 @@ import static com.android.builder.BuilderConstants.FD_REPORTS
 import static com.android.builder.BuilderConstants.INSTRUMENT_TEST
 import static com.android.builder.VariantConfiguration.Type.TEST
 import static java.io.File.separator
+
 /**
  * Base class for all Android plugins
  */
@@ -1786,6 +1789,7 @@ public abstract class BasePlugin {
             @NonNull BaseVariant variant,
             @NonNull String assembleTaskName,
             @NonNull String javaCompileTaskName,
+            @NonNull Configuration configuration,
             @NonNull File classesFolder,
             @Nullable SourceProvider sourceProvider) {
         ArtifactMetaData artifactMetaData = extraArtifactMap.get(name)
@@ -1800,7 +1804,8 @@ public abstract class BasePlugin {
 
         JavaArtifact artifact = new JavaArtifactImpl(
                 name, assembleTaskName, javaCompileTaskName, classesFolder,
-                null, sourceProvider, null)
+                new ConfigurationDependencies(configuration),
+                sourceProvider, null)
         extraJavaArtifacts.put(variant.name, artifact)
     }
 
