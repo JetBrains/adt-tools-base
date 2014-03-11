@@ -21,7 +21,9 @@ import com.android.annotations.Nullable
 import com.android.build.gradle.internal.tasks.DependencyBasedCompileTask
 import com.android.builder.compiling.DependencyFileProcessor
 import com.google.common.collect.Lists
+import org.gradle.api.file.FileTree
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.util.PatternSet
 
 /**
  * Task to compile aidl files. Supports incremental update.
@@ -30,11 +32,22 @@ public class AidlCompile extends DependencyBasedCompileTask {
 
     // ----- PRIVATE TASK API -----
 
-    @InputFiles
     List<File> sourceDirs
 
     @InputFiles
     List<File> importDirs
+
+    final PatternSet patternSet = new PatternSet().include("**/*.aidl")
+
+    @InputFiles
+    FileTree getSourceFiles() {
+        FileTree src = null
+        Set<File> sources = getSourceDirs()
+        if (!sources.isEmpty()) {
+            src = getProject().files(new ArrayList<Object>(sources)).getAsFileTree().matching(patternSet)
+        }
+        return src == null ? getProject().files().getAsFileTree() : src
+    }
 
     @Override
     protected boolean isIncremental() {
