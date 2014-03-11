@@ -29,6 +29,10 @@ import com.android.sdklib.internal.avd.HardwareProperties;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.PkgProps;
 import com.android.utils.ILogger;
+import com.google.common.base.Charsets;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
 
 import org.xml.sax.SAXException;
 
@@ -163,14 +167,13 @@ public class DeviceManager {
     }
 
     @NonNull
-    public DeviceStatus getDeviceStatus(@NonNull String name, @NonNull String manufacturer,
-            int hashCode) {
+    public DeviceStatus getDeviceStatus(@NonNull String name, @NonNull String manufacturer) {
         Device d = getDevice(name, manufacturer);
         if (d == null) {
             return DeviceStatus.MISSING;
-        } else {
-            return d.hashCode() == hashCode ? DeviceStatus.EXISTS : DeviceStatus.CHANGED;
         }
+
+        return DeviceStatus.EXISTS;
     }
 
     @Nullable
@@ -538,6 +541,9 @@ public class DeviceManager {
      * Returns the hardware properties defined in
      * {@link AvdManager#HARDWARE_INI} as a {@link Map}.
      *
+     * This is intended to be dumped in the config.ini and already contains
+     * the device name, manufacturer and device hash.
+     *
      * @param d The {@link Device} from which to derive the hardware properties.
      * @return A {@link Map} of hardware properties.
      */
@@ -549,11 +555,57 @@ public class DeviceManager {
                 props.put("hw.keyboard.lid", getBooleanVal(true));
             }
         }
-        props.put(AvdManager.AVD_INI_DEVICE_HASH, Integer.toString(d.hashCode()));
+
+        HashFunction md5 = Hashing.md5();
+        Hasher hasher = md5.newHasher();
+
+        ArrayList<String> keys = new ArrayList<String>(props.keySet());
+        Collections.sort(keys);
+        for (String key : keys) {
+            if (key != null) {
+                hasher.putString(key, Charsets.UTF_8);
+                String value = props.get(key);
+                hasher.putString(value == null ? "null" : value, Charsets.UTF_8);
+            }
+        }
+        // store the hash method for potential future compatibility
+        String hash = "MD5:" + hasher.hash().toString();
+        props.put(AvdManager.AVD_INI_DEVICE_HASH_V2, hash);
+        props.remove(AvdManager.AVD_INI_DEVICE_HASH_V1);
+
         props.put(AvdManager.AVD_INI_DEVICE_NAME, d.getId());
         props.put(AvdManager.AVD_INI_DEVICE_MANUFACTURER, d.getManufacturer());
         return props;
     }
+
+    /**
+     * Checks whether the the hardware props have changed.
+     * If the hash is the same, returns null for success.
+     * If the hash is not the same or there's not enough information to indicate it's
+     * the same (e.g. if in the future we change the digest method), simply return the
+     * new hash, indicating it would be best to update it.
+     *
+     * @param d The device.
+     * @param hashV2 The previous saved AvdManager.AVD_INI_DEVICE_HASH_V2 property.
+     * @return Null if the same, otherwise returns the new and different hash.
+     */
+    @Nullable
+    public static String hasHardwarePropHashChanged(@NonNull Device d, @NonNull String hashV2) {
+        Map<String, String> props = getHardwareProperties(d);
+        String newHash = props.get(AvdManager.AVD_INI_DEVICE_HASH_V2);
+
+        // Implementation detail: don't just return the hash and let the caller decide whether
+        // the hash is the same. That's because the hash contains the digest method so if in
+        // the future we decide to change it, we could potentially recompute the hash here
+        // using an older digest method here and still determine its validity, whereas the
+        // caller cannot determine that.
+
+        if (newHash != null && newHash.equals(hashV2)) {
+            return null;
+        }
+        return newHash;
+    }
+
 
     /**
      * Takes a boolean and returns the appropriate value for
