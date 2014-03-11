@@ -23,6 +23,7 @@ import static com.android.SdkConstants.TAG_ITEM;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.tools.lint.detector.api.Category;
@@ -45,6 +46,7 @@ import com.google.common.collect.Sets;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.util.Collection;
@@ -77,8 +79,24 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
             Severity.ERROR,
             new Implementation(
                     DuplicateResourceDetector.class,
+                    // We should be able to do this incrementally!
                     Scope.ALL_RESOURCES_SCOPE,
                     Scope.RESOURCE_FILE_SCOPE));
+
+    /** Wrong resource value type */
+    public static final Issue TYPE_MISMATCH = Issue.create(
+            "ReferenceType", //$NON-NLS-1$
+            "Incorrect reference types",
+            "Looks for resource aliases that are of the wrong type",
+            "When you generate a resource alias, the resource you are pointing to must be " +
+                    "of the same type as the alias",
+            Category.CORRECTNESS,
+            8,
+            Severity.FATAL,
+            new Implementation(
+                    DuplicateResourceDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
+
 
     private static final String PRODUCT = "product";   //$NON-NLS-1$
     private Map<ResourceType, Set<String>> mTypeMap;
@@ -150,6 +168,38 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
             return;
         }
 
+        NodeList children = element.getChildNodes();
+        int childCount = children.getLength();
+        for (int i = 0; i < childCount; i++) {
+            Node child = children.item(i);
+            if (child.getNodeType() == Node.TEXT_NODE) {
+                String text = child.getNodeValue();
+                for (int j = 0, length = text.length(); j < length; j++) {
+                    char c = text.charAt(j);
+                    if (c == '@') {
+                        if (!text.regionMatches(false, j + 1, typeString, 0,
+                                typeString.length()) && context.isEnabled(TYPE_MISMATCH)) {
+                            ResourceUrl url = ResourceUrl.parse(text.trim());
+                            if (url != null && url.type != type &&
+                                // colors can apparently be used as drawables
+                                !(type == ResourceType.DRAWABLE
+                                        && url.type == ResourceType.COLOR)) {
+                                String message = "Unexpected resource reference type; "
+                                        + "expected value of type @" + type + "/";
+                                context.report(TYPE_MISMATCH, element,
+                                        context.getLocation(child),
+                                        message, null);
+                            }
+                        }
+                        break;
+                    } else if (!Character.isWhitespace(c)) {
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
         Set<String> names = mTypeMap.get(type);
         if (names == null) {
             names = Sets.newHashSetWithExpectedSize(40);
@@ -190,7 +240,7 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
                 Attr nameNode = item.getAttributeNode(ATTR_NAME);
                 if (nameNode != null) {
                     String name = nameNode.getValue();
-                    if (names.contains(name)) {
+                    if (names.contains(name) && context.isEnabled(ISSUE)) {
                         Location location = context.getLocation(nameNode);
                         for (Element prevItem : items) {
                           Attr attribute = item.getAttributeNode(ATTR_NAME);
