@@ -5,7 +5,7 @@
     <#if appCompat?has_content><dependency mavenUrl="com.android.support:appcompat-v7:+"/></#if>
 
 <#if !createActivity>
-    <mkdir at="${srcOut}" />
+    <mkdir at="${escapeXmlAttribute(srcOut)}" />
 </#if>
 
     <merge from="settings.gradle.ftl"

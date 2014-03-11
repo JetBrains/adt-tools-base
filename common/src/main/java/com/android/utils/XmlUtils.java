@@ -220,6 +220,22 @@ public class XmlUtils {
     }
 
     /**
+     * Converts the given XML-attribute-safe value to a java string
+     *
+     * @param escapedAttrValue the escaped value
+     * @return the unescaped value
+     */
+    @NonNull
+    public static String fromXmlAttributeValue(@NonNull String escapedAttrValue) {
+      String workingString = escapedAttrValue.replace(QUOT_ENTITY, "\"");
+      workingString = workingString.replace(LT_ENTITY, "<");
+      workingString = workingString.replace(APOS_ENTITY, "'");
+      workingString = workingString.replace(AMP_ENTITY, "&");
+
+      return workingString;
+    }
+
+    /**
      * Converts the given attribute value to an XML-text-safe value, meaning that
      * less than and ampersand characters are escaped.
      *
