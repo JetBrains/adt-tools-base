@@ -124,4 +124,26 @@ public class TextFieldDetectorTest extends AbstractCheckTest {
     private static boolean containsWord(String name, String word) {
         return TextFieldDetector.containsWord(name, word);
     }
+
+    public void testIncremental1() throws Exception {
+        assertEquals(""
+            + "res/layout/note_edit2.xml:7: Warning: This text field does not specify an inputType or a hint [TextFields]\n"
+            + "    <EditText\n"
+            + "    ^\n"
+            + "res/layout/note_edit2.xml:12: Warning: This text field does not specify an inputType or a hint [TextFields]\n"
+            + "    <EditText\n"
+            + "    ^\n"
+            + "0 errors, 2 warnings\n",
+            lintProjectIncrementally(
+                    "res/layout/note_edit2.xml",
+                    "res/layout/note_edit2.xml"));
+    }
+
+    public void testIncremental2() throws Exception {
+        assertEquals("No warnings.",
+            lintProjectIncrementally(
+                    "res/layout/note_edit2.xml",
+                    "res/layout/note_edit2.xml",
+                    "res/values/styles-orientation.xml"));
+    }
 }
