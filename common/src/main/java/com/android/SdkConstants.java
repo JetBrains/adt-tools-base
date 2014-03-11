@@ -505,6 +505,7 @@ public final class SdkConstants {
         "android.test.InstrumentationTestRunner"; //$NON-NLS-1$
     public static final String CLASS_BUNDLE = "android.os.Bundle"; //$NON-NLS-1$
     public static final String CLASS_R = "android.R"; //$NON-NLS-1$
+    public static final String CLASS_R_PREFIX = CLASS_R + "."; //$NON-NLS-1$
     public static final String CLASS_MANIFEST_PERMISSION = "android.Manifest$permission"; //$NON-NLS-1$
     public static final String CLASS_INTENT = "android.content.Intent"; //$NON-NLS-1$
     public static final String CLASS_CONTEXT = "android.content.Context"; //$NON-NLS-1$
