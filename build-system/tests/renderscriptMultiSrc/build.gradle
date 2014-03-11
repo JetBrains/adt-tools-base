@@ -9,7 +9,7 @@ buildscript {
 apply plugin: 'android'
 
 android {
-    compileSdkVersion 19
+    compileSdkVersion 15
     buildToolsVersion "19.0.2"
 
     defaultConfig {
