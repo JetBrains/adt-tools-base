@@ -1,3 +1,8 @@
+0.7.2
+
+- Add packagingOptions support in Library projects
+- Solve issue with local jar when testing library projects.
+
 0.7.1
 
 - DSL to exclude some files coming from jar dependencies
