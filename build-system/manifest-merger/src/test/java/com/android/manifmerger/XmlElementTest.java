@@ -206,6 +206,58 @@ public class XmlElementTest extends TestCase {
                 activity.getAttributeOperationType(XmlNode.fromXmlName("android:windowSoftInputMode")));
     }
 
+    public void testNoNamespaceAwareAttributeInstructions()
+            throws ParserConfigurationException, SAXException, IOException {
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" "
+                + "         tools:remove=\"theme\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        // ActivityOne, remove operation.
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "testAttributeInstructions()"), input);
+        Optional<XmlElement> activityOptional = xmlDocument.getRootNode().getNodeByTypeAndKey(
+                ManifestModel.NodeTypes.ACTIVITY, "com.example.lib3.activityOne");
+        assertTrue(activityOptional.isPresent());
+        XmlElement activity = activityOptional.get();
+        assertEquals(1, activity.getAttributeOperations().size());
+        AttributeOperationType attributeOperationType =
+                activity.getAttributeOperationType(XmlNode.fromXmlName("android:theme"));
+        assertEquals(AttributeOperationType.REMOVE, attributeOperationType);
+    }
+
+    public void testUnusualNamespacePrefixAttributeInstructions()
+            throws ParserConfigurationException, SAXException, IOException {
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:z=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity z:name=\"activityOne\" tools:remove=\"theme\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        // ActivityOne, remove operation.
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "testAttributeInstructions()"), input);
+        Optional<XmlElement> activityOptional = xmlDocument.getRootNode().getNodeByTypeAndKey(
+                ManifestModel.NodeTypes.ACTIVITY, "com.example.lib3.activityOne");
+        assertTrue(activityOptional.isPresent());
+        XmlElement activity = activityOptional.get();
+
+        assertEquals(1, activity.getAttributeOperations().size());
+        AttributeOperationType attributeOperationType =
+                activity.getAttributeOperationType(XmlNode.fromXmlName("z:theme"));
+        assertEquals(AttributeOperationType.REMOVE, attributeOperationType);
+    }
+
     public void testInvalidAttributeInstruction()
             throws ParserConfigurationException, SAXException, IOException {
 

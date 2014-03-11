@@ -18,6 +18,7 @@ package com.android.manifmerger;
 
 import com.android.annotations.NonNull;
 import com.android.utils.PositionXmlParser;
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 
 import org.w3c.dom.Attr;
@@ -101,6 +102,52 @@ public class XmlAttribute extends XmlNode {
 
     XmlElement getOwnerElement() {
         return mOwnerElement;
+    }
+
+    void mergeInHigherPriorityElement(XmlElement higherPriorityElement,
+            MergingReport.Builder mergingReport) {
+
+        // does the higher priority has the same attribute as myself ?
+        Optional<XmlAttribute> higherPriorityAttribute =
+                higherPriorityElement.getAttribute(getName());
+
+        if (higherPriorityAttribute.isPresent()) {
+            XmlAttribute myAttribute = higherPriorityAttribute.get();
+            // this is conflict, depending on tools:replace, tools:strict
+            // for now we keep the higher priority value and log it.
+            String error = "Attribute " + myAttribute.getId()
+                    + " is also present at " + printPosition()
+                    + " use tools:replace to override it.";
+            mergingReport.addWarning(error);
+            mergingReport.getActionRecorder().recordAttributeAction(
+                    this,
+                    ActionRecorder.ActionType.REJECTED,
+                    AttributeOperationType.REMOVE);
+        } else {
+            // it does not exist, verify if we are supposed to remove it.
+            AttributeOperationType attributeOperationType =
+                    higherPriorityElement.getAttributeOperationType(getName());
+
+            // Strict being the default, and the attribute does not exist in the higher priority
+            // element, we can safely merge it.
+            if (attributeOperationType == AttributeOperationType.STRICT) {
+                getName().addToNode(higherPriorityElement.getXml(), getValue());
+
+                // and record the action.
+                mergingReport.getActionRecorder().recordAttributeAction(
+                        this,
+                        ActionRecorder.ActionType.ADDED,
+                        getOwnerElement().getAttributeOperationType(getName()));
+            } else {
+                // the only operation that make sense at this point is a remove.
+                Preconditions.checkState(attributeOperationType == AttributeOperationType.REMOVE);
+                // record the fact the attribute was actively removed.
+                mergingReport.getActionRecorder().recordAttributeAction(
+                        this,
+                        ActionRecorder.ActionType.REJECTED,
+                        AttributeOperationType.REMOVE);
+            }
+        }
     }
 
     /**

@@ -54,6 +54,11 @@ public class XmlUtils {
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";  //$NON-NLS-1$
 
     /**
+     * Separator for xml namespace and localname
+     */
+    public static final char NS_SEPARATOR = ':';                  //$NON-NLS-1$
+
+    /**
      * Returns the namespace prefix matching the requested namespace URI.
      * If no such declaration is found, returns the default "android" prefix for
      * the Android URI, and "app" for other URI's. By default the app namespace

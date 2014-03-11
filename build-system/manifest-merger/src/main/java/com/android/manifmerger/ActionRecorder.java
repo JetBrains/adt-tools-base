@@ -135,6 +135,14 @@ public class ActionRecorder {
             mPosition = Preconditions.checkNotNull(position);
         }
 
+        public PositionXmlParser.Position getPosition() {
+            return mPosition;
+        }
+
+        public XmlLoader.SourceLocation getSourceLocation() {
+            return mSourceLocation;
+        }
+
         @Override
         public String toString() {
             return mSourceLocation.print(true) + ":" + mPosition.getLine();
@@ -155,6 +163,14 @@ public class ActionRecorder {
         }
 
         abstract ActionTarget getActionTarget();
+
+        public ActionType getActionType() {
+            return mActionType;
+        }
+
+        public ActionLocation getActionLocation() {
+            return mActionLocation;
+        }
 
         public void print(StringBuilder stringBuilder) {
             stringBuilder.append(mActionType)
@@ -210,8 +226,9 @@ public class ActionRecorder {
             return ImmutableMap.copyOf(mAttributeRecords);
         }
 
-        // this need to be enhanced to get the operation type per node and per attribute. this will
-        // be useful to determine conflicts resolution as we merge more files.
+        List<AttributeRecord> getAttributeRecords(XmlNode.NodeName attributeName) {
+            return ImmutableList.copyOf(mAttributeRecords.get(attributeName));
+        }
     }
 
     /**
@@ -234,6 +251,10 @@ public class ActionRecorder {
         @Override
         ActionTarget getActionTarget() {
             return ActionTarget.ATTRIBUTE;
+        }
+
+        public AttributeOperationType getOperationType() {
+            return mOperationType;
         }
     }
 
