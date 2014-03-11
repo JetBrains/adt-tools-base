@@ -16,6 +16,11 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.checks.RtlDetector.ATTRIBUTES;
+import static com.android.tools.lint.checks.RtlDetector.convertNewToOld;
+import static com.android.tools.lint.checks.RtlDetector.convertOldToNew;
+import static com.android.tools.lint.checks.RtlDetector.convertToOppositeDirection;
+
 import com.android.annotations.NonNull;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Detector;
@@ -39,6 +44,7 @@ public class RtlDetectorTest extends AbstractCheckTest {
         ALL.add(RtlDetector.USE_START);
         ALL.add(RtlDetector.ENABLED);
         ALL.add(RtlDetector.COMPAT);
+        ALL.add(RtlDetector.SYMMETRY);
     }
 
     @Override
@@ -343,5 +349,50 @@ public class RtlDetectorTest extends AbstractCheckTest {
                         "rtl/minsdk5targetsdk17.xml=>AndroidManifest.xml",
                         "rtl/rtl_noprefix.xml=>res/layout/rtl.xml"
                 ));
+    }
+
+    public void testSymmetry() throws Exception {
+        mEnabled = Collections.singleton(RtlDetector.SYMMETRY);
+        assertEquals(""
+                + "res/layout/relative.xml:29: Error: When you define %1$s you should probably also define %2$s for right-to-left symmetry [RtlSymmetry]\n"
+                + "        android:paddingRight=\"120dip\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "rtl/project-api17.properties=>project.properties",
+                        "rtl/minsdk5targetsdk17.xml=>AndroidManifest.xml",
+                        "rtl/relative.xml=>res/layout/relative.xml"
+                ));
+    }
+
+    public void testConvertBetweenAttributes() {
+        assertEquals("alignParentStart", convertOldToNew("alignParentLeft"));
+        assertEquals("alignParentEnd", convertOldToNew("alignParentRight"));
+        assertEquals("paddingEnd", convertOldToNew("paddingRight"));
+        assertEquals("paddingStart", convertOldToNew("paddingLeft"));
+
+        assertEquals("alignParentLeft", convertNewToOld("alignParentStart"));
+        assertEquals("alignParentRight", convertNewToOld("alignParentEnd"));
+        assertEquals("paddingRight", convertNewToOld("paddingEnd"));
+        assertEquals("paddingLeft", convertNewToOld("paddingStart"));
+
+        for (int i = 0, n = ATTRIBUTES.length; i < n; i += 2) {
+            String oldAttribute = ATTRIBUTES[i];
+            String newAttribute = ATTRIBUTES[i + 1];
+            assertEquals(newAttribute, convertOldToNew(oldAttribute));
+            assertEquals(oldAttribute, convertNewToOld(newAttribute));
+        }
+    }
+
+    public void testConvertToOppositeDirection() {
+        assertEquals("alignParentRight", convertToOppositeDirection("alignParentLeft"));
+        assertEquals("alignParentLeft", convertToOppositeDirection("alignParentRight"));
+        assertEquals("alignParentStart", convertToOppositeDirection("alignParentEnd"));
+        assertEquals("alignParentEnd", convertToOppositeDirection("alignParentStart"));
+        assertEquals("paddingLeft", convertToOppositeDirection("paddingRight"));
+        assertEquals("paddingRight", convertToOppositeDirection("paddingLeft"));
+        assertEquals("paddingStart", convertToOppositeDirection("paddingEnd"));
+        assertEquals("paddingEnd", convertToOppositeDirection("paddingStart"));
     }
 }
