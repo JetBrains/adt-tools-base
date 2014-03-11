@@ -31,7 +31,6 @@ apply from: '../../publish.gradle'
 apply from: '../../javadoc.gradle'
 
 jar.manifest.attributes("Builder-Version": version)
-publishLocal.dependsOn ':builder-model:publishLocal', ':builder-test-api:publishLocal'
 
 apply plugin: 'distrib'
 shipping.isShipping = false

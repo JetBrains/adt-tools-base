@@ -66,3 +66,12 @@ task copyGradleProperty(type: Copy) {
     from { "${System.env.HOME}/.gradle/gradle.properties" }
     into { gradle.gradleUserHomeDir }
 }
+
+tasks.create(name: 'publishLocal')
+subprojects { project ->
+   if (project.tasks.findByName('publishLocal') != null) {
+       rootProject.publishLocal.dependsOn project.publishLocal
+   }
+}
+
+
