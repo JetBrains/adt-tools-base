@@ -30,12 +30,17 @@ public class LibraryDependencyImpl extends LibraryBundle {
     @NonNull
     private final List<LibraryDependency> dependencies;
 
+    @Nullable
+    private final String variantName;
+
     public LibraryDependencyImpl(@NonNull File bundle,
                                  @NonNull File explodedBundle,
                                  @NonNull List<LibraryDependency> dependencies,
-                                 @Nullable String name) {
+                                 @Nullable String name,
+                                 @Nullable String variantName) {
         super(bundle, explodedBundle, name);
         this.dependencies = dependencies;
+        this.variantName = variantName;
     }
 
     @NonNull
@@ -54,5 +59,11 @@ public class LibraryDependencyImpl extends LibraryBundle {
     @NonNull
     public List<? extends ManifestDependency> getManifestDependencies() {
         return dependencies;
+    }
+
+    @Nullable
+    @Override
+    public String getProjectVariant() {
+        return variantName;
     }
 }
