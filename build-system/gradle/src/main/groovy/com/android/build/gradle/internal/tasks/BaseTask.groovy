@@ -30,22 +30,7 @@ public abstract class BaseTask extends DefaultTask {
     }
 
     protected static void emptyFolder(File folder) {
-        deleteFolder(folder)
+        folder.deleteDir()
         folder.mkdirs()
-    }
-
-    protected static void deleteFolder(File folder) {
-        File[] files = folder.listFiles()
-        if (files != null && files.length > 0) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    deleteFolder(file)
-                } else {
-                    file.delete()
-                }
-            }
-        }
-
-        folder.delete()
     }
 }
