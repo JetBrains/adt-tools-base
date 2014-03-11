@@ -16,6 +16,7 @@
 
 package com.android.manifmerger;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Objects;
@@ -81,6 +82,14 @@ public abstract class XmlNode {
                 : new NamespaceAwareName(node);
     }
 
+    public static NodeName fromXmlName(String name) {
+        return (name.contains(":"))
+                ? new NamespaceAwareName(SdkConstants.ANDROID_URI,
+                        name.substring(0, name.indexOf(':') - 1),
+                        name.substring(name.indexOf(':') + 1))
+                : new Name(name);
+    }
+
     /**
      * Implementation of {@link com.android.manifmerger.XmlNode.NodeName} for an
      * node's declaration not using a namespace.
@@ -134,6 +143,13 @@ public abstract class XmlNode {
             this.mLocalName = Preconditions.checkNotNull(node.getLocalName());
         }
 
+        private NamespaceAwareName(@NonNull String namespaceURI,
+                @NonNull String prefix,
+                @NonNull String localName) {
+            mNamespaceURI = Preconditions.checkNotNull(namespaceURI);
+            mPrefix = Preconditions.checkNotNull(prefix);
+            mLocalName = Preconditions.checkNotNull(localName);
+        }
 
         @Override
         public boolean isInNamespace(String namespaceURI) {

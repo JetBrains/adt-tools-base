@@ -164,8 +164,8 @@ public class ActionRecorderTest extends TestCase {
                 ManifestModel.NodeTypes.ACTIVITY, "com.example.lib3.activityOne").get();
         // added during the initial file loading
         mActionRecorderBuilder.recordNodeAction(xmlElement, ActionRecorder.ActionType.ADDED);
-        mActionRecorderBuilder.recordAttributeAction(xmlElement,
-                XmlNode.unwrapName(xmlElement.getXml().getAttributeNode("android:name")),
+        mActionRecorderBuilder.recordAttributeAction(
+                xmlElement.getAttribute(XmlNode.fromXmlName("android:name")).get(),
                 ActionRecorder.ActionType.ADDED, AttributeOperationType.STRICT);
 
         ActionRecorder actionRecorder = mActionRecorderBuilder.build();
@@ -201,8 +201,8 @@ public class ActionRecorderTest extends TestCase {
         XmlElement xmlElement = xmlDocument.getRootNode();
         // added during the initial file loading
         mActionRecorderBuilder.recordNodeAction(xmlElement, ActionRecorder.ActionType.ADDED);
-        mActionRecorderBuilder.recordAttributeAction(xmlElement,
-                XmlNode.unwrapName(xmlElement.getXml().getAttributeNode("package")),
+        mActionRecorderBuilder.recordAttributeAction(
+                xmlElement.getAttribute(XmlNode.fromXmlName("package")).get(),
                 ActionRecorder.ActionType.ADDED, AttributeOperationType.STRICT);
 
         ActionRecorder actionRecorder = mActionRecorderBuilder.build();
@@ -215,7 +215,7 @@ public class ActionRecorderTest extends TestCase {
         assertEquals(1, allRecords.get(xmlElement.getId()).getAttributesRecords().size());
         assertEquals(ActionRecorder.ActionTarget.ATTRIBUTE,
                 allRecords.get(xmlElement.getId()).getAttributesRecords()
-                        .get("package").get(0).getActionTarget());
+                        .get(XmlNode.fromXmlName("package")).get(0).getActionTarget());
         actionRecorder.log(mLoggerMock);
 
         // check that output is consistent with spec.
@@ -227,7 +227,7 @@ public class ActionRecorderTest extends TestCase {
                 XmlNode.unwrapName(xmlElement.getXml().getAttributeNode("package")),
                 ActionRecorder.ActionType.ADDED,
                 REFEFENCE_DOCUMENT,
-                1);
+                4);
 
         Mockito.verify(mLoggerMock).info(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
