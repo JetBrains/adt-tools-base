@@ -15,6 +15,7 @@ import android.service.dreams.DreamService;
 import android.view.ViewPropertyAnimator;
 import android.view.animation.LinearInterpolator;
 import android.widget.TextView;
+<#if applicationPackage??>import ${applicationPackage}.R;</#if>
 
 /**
  * This class is a sample implementation of a DreamService. When activated, a
