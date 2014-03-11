@@ -29,13 +29,13 @@ class PreBuildTask extends DefaultTask {
 
     @Input
     String getVersion() {
-        return getExtension().buildToolsRevision.toShortString()
+        return extension.buildToolsRevision.toShortString()
     }
 
     @TaskAction
     void preBuild() {
         // check on the build tools version.
-        if (getExtension().buildToolsRevision.major < 19) {
+        if (extension.buildToolsRevision.major < 19) {
             throw new RuntimeException("Build Tools Revision 19.0.0+ is required.")
         }
     }
