@@ -46,19 +46,12 @@ android {
     }
 </#if>
 <#if enableProGuard>
-    <#if isLibraryProject>
-    release {
-        runProguard false
-        proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
-    }
-    <#else>
     buildTypes {
         release {
             runProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
-    </#if>
 </#if>
 }
 
