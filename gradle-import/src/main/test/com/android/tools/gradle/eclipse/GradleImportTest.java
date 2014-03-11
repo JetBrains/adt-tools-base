@@ -417,6 +417,8 @@ public class GradleImportTest extends TestCase {
                 + "}\n"
                 + "\n"
                 + "dependencies {\n"
+                + "    compile project(':lib2')\n"
+                + "    compile project(':javaLib')\n"
                 + "}",
                 Files.toString(new File(imported, "app" + separator + "build.gradle"), UTF_8)
                         .replace(NL,"\n"));
@@ -448,10 +450,7 @@ public class GradleImportTest extends TestCase {
                 + "        runProguard false\n"
                 + "        proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'\n"
                 + "    }\n"
-                + "}\n"
-                + "\n"
-                + "dependencies {\n"
-                + "}",
+                + "}\n",
                 Files.toString(new File(imported, "lib2" + separator + "build.gradle"), UTF_8)
                         .replace(NL, "\n"));
         assertEquals(""
@@ -826,6 +825,8 @@ public class GradleImportTest extends TestCase {
                 + "}\n"
                 + "\n"
                 + "dependencies {\n"
+                + "    compile project(':lib2')\n"
+                + "    compile project(':javaLib')\n"
                 + "    compile 'com.actionbarsherlock:actionbarsherlock:4.4.0@aar'\n"
                 + "    compile 'com.android.support:support-v4:+'\n"
                 + "}",
@@ -838,8 +839,12 @@ public class GradleImportTest extends TestCase {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void testMissingRepositories() throws Exception {
-        File projectDir = createProject("test1", "test.pkg");
-        final File sdkLocation = Files.createTempDir(); // fake
+        File root = Files.createTempDir();
+        final File sdkLocation = new File(root, "sdk");
+        sdkLocation.mkdirs();
+        File projectDir = new File(root, "project");
+        projectDir.mkdirs();
+        createProject(projectDir, "test1", "test.pkg");
         File libs = new File(projectDir, "libs");
         libs.mkdirs();
         new File(libs, "android-support-v4.jar").createNewFile();
@@ -851,7 +856,7 @@ public class GradleImportTest extends TestCase {
                 + MSG_FOLDER_STRUCTURE
                 + DEFAULT_MOVED
                 + MSG_MISSING_REPO_1
-                + sdkLocation.getPath().replace(separatorChar,'/') + "\n"
+                + "$ROOT_PARENT/sdk\n"
                 + MSG_MISSING_REPO_2
                 + MSG_FOOTER,
                 true /* checkBuild */, new ImportCustomizer() {
@@ -861,15 +866,18 @@ public class GradleImportTest extends TestCase {
             }
         });
 
-        deleteDir(projectDir);
+        deleteDir(root);
         deleteDir(imported);
-        deleteDir(sdkLocation);
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void testMissingPlayRepositories() throws Exception {
-        File projectDir = createProject("test1", "test.pkg");
-        final File sdkLocation = Files.createTempDir(); // fake
+        File root = Files.createTempDir();
+        final File sdkLocation = new File(root, "sdk");
+        sdkLocation.mkdirs();
+        File projectDir = new File(root, "project");
+        projectDir.mkdirs();
+        createProject(projectDir, "test1", "test.pkg");
         File libs = new File(projectDir, "libs");
         libs.mkdirs();
         new File(libs, "gcm.jar").createNewFile();
@@ -881,7 +889,7 @@ public class GradleImportTest extends TestCase {
                 + MSG_FOLDER_STRUCTURE
                 + DEFAULT_MOVED
                 + MSG_MISSING_GOOGLE_REPOSITORY_1
-                + sdkLocation.getPath().replace(separatorChar,'/') + "\n"
+                + "$ROOT_PARENT/sdk\n"
                 + MSG_MISSING_GOOGLE_REPOSITORY_2
                 + MSG_FOOTER,
                 true /* checkBuild */, new ImportCustomizer() {
@@ -891,9 +899,8 @@ public class GradleImportTest extends TestCase {
             }
         });
 
-        deleteDir(projectDir);
+        deleteDir(root);
         deleteDir(imported);
-        deleteDir(sdkLocation);
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -901,7 +908,13 @@ public class GradleImportTest extends TestCase {
         // Test a project where the .classpath file contains additional
         // issues: workspace-local dependencies for projects,
         // absolute paths to the framework, etc.
-        File projectDir = createProject("1 Weird 'name' of project!", "test.pkg");
+
+        File root = Files.createTempDir();
+        File projectDir = new File(root, "prj");
+        projectDir.mkdirs();
+        projectDir = createProject(projectDir, "1 Weird 'name' of project!", "test.pkg");
+        File lib = new File(root, "android-support-v7-appcompat");
+        lib.mkdirs();
 
         File classpath = new File(projectDir, ".classpath");
         assertTrue(classpath.exists());
@@ -932,6 +945,7 @@ public class GradleImportTest extends TestCase {
         File imported = checkProject(projectDir, ""
                 + MSG_HEADER
                 + MSG_FOLDER_STRUCTURE
+                + "* $ROOT_PARENT/android-support-v7-appcompat/ => _1Weirdnameofproject/src/main/java/\n"
                 + "* AndroidManifest.xml => _1Weirdnameofproject/src/main/AndroidManifest.xml\n"
                 + "* res/ => _1Weirdnameofproject/src/main/res/\n"
                 + "* src/ => _1Weirdnameofproject/src/main/java/\n"
@@ -982,6 +996,11 @@ public class GradleImportTest extends TestCase {
         }
         summary = summary.replace(separatorChar, '/');
         summary = summary.replace(adtProjectDir.getPath().replace(separatorChar,'/'), "$ROOT");
+        File parentFile = adtProjectDir.getParentFile();
+        if (parentFile != null) {
+            summary = summary.replace(parentFile.getPath().replace(separatorChar,'/'),
+                    "$ROOT_PARENT");
+        }
         assertEquals(expectedSummary, summary);
 
         if (checkBuild) {
