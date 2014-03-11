@@ -202,6 +202,8 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
 
         createAnchorTasks(variantData)
 
+        createCheckManifestTask(variantData)
+
         // Add a task to process the manifest(s)
         createProcessManifestTask(variantData, DIR_BUNDLES)
 

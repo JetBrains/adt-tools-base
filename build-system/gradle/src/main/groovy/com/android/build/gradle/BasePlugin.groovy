@@ -34,6 +34,7 @@ import com.android.build.gradle.internal.model.ArtifactMetaDataImpl
 import com.android.build.gradle.internal.model.JavaArtifactImpl
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.tasks.AndroidReportTask
+import com.android.build.gradle.internal.tasks.CheckManifest
 import com.android.build.gradle.internal.tasks.DependencyReportTask
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestLibraryTask
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
@@ -132,6 +133,7 @@ import static com.android.builder.BuilderConstants.FD_INSTRUMENT_RESULTS
 import static com.android.builder.BuilderConstants.FD_INSTRUMENT_TESTS
 import static com.android.builder.BuilderConstants.FD_REPORTS
 import static com.android.builder.BuilderConstants.INSTRUMENT_TEST
+import static com.android.builder.VariantConfiguration.Type.TEST
 import static java.io.File.separator
 /**
  * Base class for all Android plugins
@@ -365,16 +367,20 @@ public abstract class BasePlugin {
 
     protected void createProcessManifestTask(BaseVariantData variantData,
                                              String manifestOurDir) {
+        VariantConfiguration config = variantData.variantConfiguration
+
         def processManifestTask = project.tasks.create(
                 "process${variantData.variantConfiguration.fullName.capitalize()}Manifest",
                 ProcessAppManifest)
         variantData.processManifestTask = processManifestTask
         processManifestTask.dependsOn variantData.prepareDependenciesTask
+        if (config.type != TEST) {
+            processManifestTask.dependsOn variantData.checkManifestTask
+        }
 
         processManifestTask.plugin = this
         processManifestTask.variant = variantData
 
-        VariantConfiguration config = variantData.variantConfiguration
         ProductFlavor mergedFlavor = config.mergedFlavor
 
         processManifestTask.conventionMapping.mainManifest = {
@@ -457,6 +463,11 @@ public abstract class BasePlugin {
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Renderscript",
                 RenderscriptCompile)
         variantData.renderscriptCompileTask = renderscriptTask
+        if (config.type == TEST) {
+            renderscriptTask.dependsOn variantData.processManifestTask
+        } else {
+            renderscriptTask.dependsOn variantData.checkManifestTask
+        }
 
         ProductFlavor mergedFlavor = config.mergedFlavor
         boolean ndkMode = mergedFlavor.renderscriptNdkMode
@@ -470,9 +481,11 @@ public abstract class BasePlugin {
         renderscriptTask.plugin = this
         renderscriptTask.variant = variantData
 
-        int targetApi = mergedFlavor.renderscriptTargetApi
-        int minSdk = config.getMinSdkVersion()
-        renderscriptTask.targetApi = targetApi > minSdk ? targetApi : minSdk
+        renderscriptTask.conventionMapping.targetApi = {
+            int targetApi = mergedFlavor.renderscriptTargetApi
+            int minSdk = config.getMinSdkVersion()
+            targetApi > minSdk ? targetApi : minSdk
+        }
 
         renderscriptTask.supportMode = mergedFlavor.renderscriptSupportMode
         renderscriptTask.ndkMode = ndkMode
@@ -570,10 +583,12 @@ public abstract class BasePlugin {
         VariantConfiguration variantConfiguration = variantData.variantConfiguration
 
         variantData.sourceGenTask.dependsOn generateBuildConfigTask
-        if (variantConfiguration.type == VariantConfiguration.Type.TEST) {
+        if (variantConfiguration.type == TEST) {
             // in case of a test project, the manifest is generated so we need to depend
             // on its creation.
             generateBuildConfigTask.dependsOn variantData.processManifestTask
+        } else {
+            generateBuildConfigTask.dependsOn variantData.checkManifestTask
         }
 
         generateBuildConfigTask.plugin = this
@@ -691,7 +706,7 @@ public abstract class BasePlugin {
         // set the input
         processResources.from(((AndroidSourceSet) variantConfiguration.defaultSourceSet).resources)
 
-        if (variantConfiguration.type != VariantConfiguration.Type.TEST) {
+        if (variantConfiguration.type != TEST) {
             processResources.from(
                     ((AndroidSourceSet) variantConfiguration.buildTypeSourceSet).resources)
         }
@@ -749,7 +764,7 @@ public abstract class BasePlugin {
             sourceList.add({ variantData.renderscriptCompileTask.sourceOutputDir })
         }
 
-        if (config.getType() != VariantConfiguration.Type.TEST) {
+        if (config.getType() != TEST) {
             sourceList.add(((AndroidSourceSet) config.buildTypeSourceSet).java)
         }
         if (config.hasFlavors()) {
@@ -932,7 +947,7 @@ public abstract class BasePlugin {
     private static boolean isLintVariant(@NonNull BaseVariantData baseVariantData) {
         // Only create lint targets for variants like debug and release, not debugTest
         VariantConfiguration config = baseVariantData.variantConfiguration
-        return config.getType() != VariantConfiguration.Type.TEST;
+        return config.getType() != TEST;
     }
 
     // Add tasks for running lint on individual variants. We've already added a
@@ -1218,8 +1233,8 @@ public abstract class BasePlugin {
         VariantConfiguration variantConfig = variantData.variantConfiguration
 
         boolean runProguard = variantConfig.buildType.runProguard &&
-                (variantConfig.type != VariantConfiguration.Type.TEST ||
-                        (variantConfig.type == VariantConfiguration.Type.TEST &&
+                (variantConfig.type != TEST ||
+                        (variantConfig.type == TEST &&
                                 variantConfig.testedConfig.type != VariantConfiguration.Type.LIBRARY))
 
         // common dex task configuration
@@ -1651,6 +1666,18 @@ public abstract class BasePlugin {
                 "generate${variantData.variantConfiguration.fullName.capitalize()}Sources")
     }
 
+    protected void createCheckManifestTask(@NonNull BaseVariantData variantData) {
+        String name = variantData.variantConfiguration.fullName
+        variantData.checkManifestTask = project.tasks.create(
+                "check${name.capitalize()}Manifest",
+                CheckManifest)
+        variantData.checkManifestTask.dependsOn variantData.preBuildTask
+
+        variantData.checkManifestTask.variantName = name
+        variantData.checkManifestTask.conventionMapping.manifest = {
+            variantData.variantConfiguration.getDefaultSourceSet().manifestFile
+        }
+    }
 
     private final Map<String, ArtifactMetaData> extraArtifactMap = Maps.newHashMap()
     private final ListMultimap<String, AndroidArtifact> extraAndroidArtifacts = ArrayListMultimap.create()
