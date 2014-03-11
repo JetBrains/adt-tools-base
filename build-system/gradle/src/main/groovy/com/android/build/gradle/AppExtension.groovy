@@ -15,7 +15,6 @@
  */
 package com.android.build.gradle
 import com.android.build.gradle.api.ApplicationVariant
-import com.android.build.gradle.api.BaseVariant
 import com.android.builder.DefaultBuildType
 import com.android.builder.DefaultProductFlavor
 import com.android.builder.model.SigningConfig
@@ -42,8 +41,7 @@ public class AppExtension extends BaseExtension {
         return applicationVariantList
     }
 
-    @Override
-    void addVariant(BaseVariant variant) {
-        applicationVariantList.add((ApplicationVariant) variant)
+    void addApplicationVariant(ApplicationVariant applicationVariant) {
+        applicationVariantList.add(applicationVariant)
     }
 }

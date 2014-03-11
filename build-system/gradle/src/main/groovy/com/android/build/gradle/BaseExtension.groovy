@@ -266,8 +266,6 @@ public abstract class BaseExtension {
         return testVariantList
     }
 
-    abstract void addVariant(BaseVariant variant)
-
     void addTestVariant(TestVariant testVariant) {
         testVariantList.add(testVariant)
     }
