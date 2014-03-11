@@ -25,6 +25,7 @@ import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.TestResourceRepository;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.resources.configuration.LanguageQualifier;
+import com.android.ide.common.resources.configuration.RegionQualifier;
 import com.android.ide.common.resources.configuration.ScreenOrientationQualifier;
 import com.android.resources.ResourceType;
 import com.android.resources.ScreenOrientation;
@@ -100,6 +101,17 @@ public class ResourceRepositoryTest2 extends TestCase {
                 + "<resources>\n"
                 + "    <string name=\"show_all_apps\">Todo</string>\n"
                 + "</resources>\n", new File(valuesEsUs, "strings.xml"), Charsets.UTF_8);
+
+        if ("testGetMatchingFileAliases".equals(getName())) {
+            Files.write(""
+                    + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    + "<resources>\n"
+                    + "    <item name=\"layout2\" type=\"layout\">@layout/indirect3</item>\n"
+                    + "    <item name=\"indirect3\" type=\"layout\">@layout/indirect2</item>\n"
+                    + "    <item name=\"indirect2\" type=\"layout\">@layout/indirect1</item>\n"
+                    + "    <item name=\"indirect1\" type=\"layout\">@layout/layout1</item>\n"
+                    + "</resources>", new File(valuesEsUs, "refs.xml"), Charsets.UTF_8);
+        }
 
         mResourceMerger = new ResourceMerger();
         ResourceSet resourceSet = new ResourceSet("main");
@@ -243,6 +255,34 @@ public class ResourceRepositoryTest2 extends TestCase {
 //        assertNotNull(file);
         file = mRepository.getMatchingFile("layout1", ResourceType.LAYOUT, folderConfig);
         assertNotNull(file);
+    }
+
+    public void testGetMatchingFileAliases() throws Exception {
+        FolderConfiguration folderConfig = new FolderConfiguration();
+        folderConfig.setLanguageQualifier(new LanguageQualifier("es"));
+        folderConfig.setScreenOrientationQualifier(
+                new ScreenOrientationQualifier(ScreenOrientation.LANDSCAPE));
+
+        Map<ResourceType, Map<String, ResourceValue>> configuredResources =
+                mRepository.getConfiguredResources(folderConfig);
+        Map<String, ResourceValue> layouts = configuredResources.get(ResourceType.LAYOUT);
+        assertEquals(6, layouts.size());
+        assertNotNull(layouts.get("layout1"));
+
+        folderConfig.setRegionQualifier(new RegionQualifier("ES"));
+        ResourceFile file = mRepository.getMatchingFile("dialog_min_width_major",
+                ResourceType.DIMEN, folderConfig);
+        assertNotNull(file);
+        file = mRepository.getMatchingFile("layout2", ResourceType.LAYOUT, folderConfig);
+        assertNotNull(file);
+        assertEquals("layout2.xml", file.getFile().getName());
+        assertEquals("", file.getQualifiers());
+
+        folderConfig.setRegionQualifier(new RegionQualifier("US"));
+        file = mRepository.getMatchingFile("layout2", ResourceType.LAYOUT, folderConfig);
+        assertNotNull(file);
+        assertEquals("layout1.xml", file.getFile().getName());
+        assertEquals("land", file.getQualifiers());
     }
 
     public void testUpdates() throws Exception {

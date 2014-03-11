@@ -24,6 +24,7 @@ import static com.android.SdkConstants.RESOURCE_CLZ_ATTR;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.rendering.api.ResourceValue;
+import com.android.ide.common.resources.ResourceUrl;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
 import com.google.common.base.Splitter;
@@ -260,15 +261,31 @@ public abstract class AbstractResourceRepository {
                 return null;
             }
 
-            List<ResourceItem> matchingItems = typeItems.get(name);
-            if (matchingItems == null || matchingItems.isEmpty()) {
-                return null;
-            }
+            for (int depth = 0; depth < 20; depth++) {
+                List<ResourceItem> matchingItems = typeItems.get(name);
+                if (matchingItems == null || matchingItems.isEmpty()) {
+                    return null;
+                }
 
-            ResourceItem match = (ResourceItem) config.findMatchingConfigurable(matchingItems);
+                ResourceItem match = (ResourceItem) config.findMatchingConfigurable(matchingItems);
+                if (match != null) {
+                    ResourceValue resourceValue = match.getResourceValue(isFramework());
+                    if (resourceValue != null) {
+                        String value = resourceValue.getValue();
+                        if (value != null && value.startsWith(PREFIX_RESOURCE_REF)) {
+                            ResourceUrl url = ResourceUrl.parse(value);
+                            if (url != null && url.type == type
+                                    && url.framework == isFramework()) {
+                                name = url.name;
+                                continue;
+                            }
+                        }
+                    }
 
-            if (match != null) {
-                return match.getSource();
+                    return match.getSource();
+                } else {
+                    return null;
+                }
             }
         }
 
