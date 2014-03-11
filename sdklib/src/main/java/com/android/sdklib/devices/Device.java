@@ -20,15 +20,17 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.dvlib.DeviceSchema;
 import com.android.resources.ScreenOrientation;
-import com.android.sdklib.devices.Device.Builder;
 
 import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Instances of this class contain the specifications for a device. Use the
@@ -485,4 +487,72 @@ public final class Device {
         sb.append("]");
         return sb.toString();
     }
+
+    private static Pattern PATTERN = Pattern.compile(
+    "(\\d+\\.?\\d*)(?:in|\") (.+?)( \\(.*Nexus.*\\))?"); //$NON-NLS-1$
+
+    /**
+     * Returns a "sortable" name for the device -- if a device list is sorted
+     * using this sort-aware display name, it will be displayed in an order that
+     * is user friendly with devices using names first sorted alphabetically
+     * followed by all devices that use a numeric screen size sorted by actual
+     * size.
+     * <p/>
+     * Note that although the name results in a proper sort, it is not a name
+     * that you actually want to display to the user.
+     * <p/>
+     * Extracted from DeviceMenuListener. Modified to remove the leading space
+     * insertion as it doesn't render neatly in the avd manager. Instead added
+     * the option to add leading zeroes to make the string names sort properly.
+     *
+     * Replace "'in'" with '"' (e.g. 2.7" QVGA instead of 2.7in QVGA).
+     * Use the same precision for all devices (all but one specify decimals).
+     */
+    private String getSortableName() {
+        String sortableName = mName;
+        Matcher matcher = PATTERN.matcher(sortableName);
+        if (matcher.matches()) {
+            String size = matcher.group(1);
+            String n = matcher.group(2);
+            int dot = size.indexOf('.');
+            if (dot == -1) {
+                size = size + ".0";
+                dot = size.length() - 2;
+            }
+            if (dot < 3) {
+                // Pad to have at least 3 digits before the dot, for sorting
+                // purposes.
+                // We can revisit this once we get devices that are more than
+                // 999 inches wide.
+                size = "000".substring(dot) + size;
+            }
+            sortableName = size + "\" " + n;
+        }
+
+        return sortableName;
+    }
+
+    /**
+     * Returns a comparator suitable to sort a device list using a sort-aware display name.
+     * The list is displayed in an order that is user friendly with devices using names
+     * first sorted alphabetically followed by all devices that use a numeric screen size
+     * sorted by actual size.
+     */
+    public static Comparator<Device> getDisplayComparator() {
+        return new Comparator<Device>() {
+            @Override
+            public int compare(Device d1, Device d2) {
+                String s1 = d1.getSortableName();
+                String s2 = d2.getSortableName();
+                if (s1.length() > 1 && s2.length() > 1) {
+                    int i1 = Character.isDigit(s1.charAt(0)) ? 1 : 0;
+                    int i2 = Character.isDigit(s2.charAt(0)) ? 1 : 0;
+                    if (i1 != i2) {
+                        return i1 - i2;
+                    }
+                }
+                return s1.compareTo(s2);
+            }};
+    }
+
 }
