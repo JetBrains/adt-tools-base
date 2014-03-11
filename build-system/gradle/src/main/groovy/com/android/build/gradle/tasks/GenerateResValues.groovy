@@ -17,6 +17,7 @@ package com.android.build.gradle.tasks
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.builder.compiling.ResValueGenerator
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
@@ -29,7 +30,7 @@ public class GenerateResValues extends BaseTask {
 
     // ----- PRIVATE TASK API -----
 
-    @Input
+    @Input @Nested
     List<Object> items
 
     @TaskAction
