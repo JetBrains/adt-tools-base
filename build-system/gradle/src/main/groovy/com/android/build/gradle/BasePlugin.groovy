@@ -96,6 +96,7 @@ import com.android.builder.model.ProductFlavor
 import com.android.builder.model.SigningConfig
 import com.android.builder.model.SourceProvider
 import com.android.builder.model.SourceProviderContainer
+import com.android.builder.png.PngProcessor
 import com.android.builder.testing.ConnectedDeviceProvider
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
@@ -306,6 +307,7 @@ public abstract class BasePlugin {
 
         project.gradle.buildFinished {
             ExecutorSingleton.shutdown()
+            PngProcessor.clearCache()
         }
     }
 
@@ -654,6 +656,8 @@ public abstract class BasePlugin {
                 "$project.buildDir/incremental/${taskNamePrefix}Resources/${variantData.variantConfiguration.dirName}")
 
         mergeResourcesTask.process9Patch = process9Patch
+
+        mergeResourcesTask.conventionMapping.useAaptCruncher = { extension.aaptOptions.useAaptPngCruncher }
 
         mergeResourcesTask.conventionMapping.inputResourceSets = {
             variantData.variantConfiguration.getResourceSets(
