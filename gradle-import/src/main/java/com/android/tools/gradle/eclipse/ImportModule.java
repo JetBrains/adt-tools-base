@@ -90,6 +90,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
     protected abstract int getCompileSdkVersion();
     protected abstract int getMinSdkVersion();
     protected abstract int getTargetSdkVersion();
+    @NonNull public abstract File getDir();
     @NonNull protected abstract String getOriginalName();
     @NonNull protected abstract List<File> getSourcePaths();
     @NonNull protected abstract List<File> getJarPaths();
@@ -248,9 +249,10 @@ abstract class ImportModule implements Comparable<ImportModule> {
 
     public String getModuleName() {
         if (mModuleName == null) {
-            if (mImporter.isGradleNameStyle() && mImporter.getModuleCount() == 1) {
-                 mModuleName = "app";
-                 return mModuleName;
+            if (mImporter.isGradleNameStyle() && !mImporter.isImportIntoExisting()
+                    && mImporter.getModuleCount() == 1) {
+                mModuleName = "app";
+                return mModuleName;
             }
 
             String string = getOriginalName();
@@ -275,6 +277,37 @@ abstract class ImportModule implements Comparable<ImportModule> {
             mModuleName = moduleName;
         }
         return mModuleName;
+    }
+
+    public void pickUniqueName(@NonNull File projectDir) {
+        assert projectDir.exists() : projectDir;
+        String preferredName = getModuleName();
+
+        // If the name ends with a number, strip that off and increment from it.
+        // In other words if the module name is "foo", we test "foo2", "foo3", and so on.
+        // But if the name already is "module49", we don't do "module492", ... we try "module50"
+        int length = preferredName.length();
+        int lastDigit = length;
+        for (int i = length - 1; i >= 1; i--) { // 1: name cannot start with a digit!
+            if (!Character.isDigit(preferredName.charAt(i))) {
+                break;
+            } else {
+                lastDigit = i;
+            }
+        }
+        int startingNumber = 2;
+        if (lastDigit < length) {
+            startingNumber = Integer.parseInt(preferredName.substring(lastDigit)) + 1;
+            preferredName = preferredName.substring(0, lastDigit);
+        }
+
+        for (int i = startingNumber; ; i++) {
+            String name = preferredName + i;
+            if (!(new File(projectDir, name)).exists()) {
+                mModuleName = name;
+                break;
+            }
+        }
     }
 
     public String getModuleReference() {
