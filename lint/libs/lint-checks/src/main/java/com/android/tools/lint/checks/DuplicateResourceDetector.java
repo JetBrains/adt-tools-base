@@ -29,6 +29,7 @@ import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Location.Handle;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
@@ -43,6 +44,7 @@ import com.google.common.collect.Sets;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import java.io.File;
 import java.util.Collection;
@@ -126,6 +128,13 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
         String typeString = tag;
         if (tag.equals(TAG_ITEM)) {
             typeString = element.getAttribute(ATTR_TYPE);
+            if (typeString == null || typeString.isEmpty()) {
+                if (element.getParentNode().getNodeName().equals(
+                        ResourceType.STYLE.getName()) && isFirstElementChild(element)) {
+                    checkUniqueNames(context, (Element) element.getParentNode());
+                }
+                return;
+            }
         }
         ResourceType type = ResourceType.getEnum(typeString);
         if (type == null) {
@@ -135,6 +144,9 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
         if (type == ResourceType.ATTR
                 && element.getParentNode().getNodeName().equals(
                         ResourceType.DECLARE_STYLEABLE.getName())) {
+            if (isFirstElementChild(element)) {
+                checkUniqueNames(context, (Element) element.getParentNode());
+            }
             return;
         }
 
@@ -168,5 +180,48 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
             Location.Handle handle = context.parser.createLocationHandle(context, attribute);
             list.add(Pair.of(name, handle));
         }
+    }
+
+    private static void checkUniqueNames(XmlContext context, Element parent) {
+        List<Element> items = LintUtils.getChildren(parent);
+        if (items.size() > 1) {
+            Set<String> names = Sets.newHashSet();
+            for (Element item : items) {
+                Attr nameNode = item.getAttributeNode(ATTR_NAME);
+                if (nameNode != null) {
+                    String name = nameNode.getValue();
+                    if (names.contains(name)) {
+                        Location location = context.getLocation(nameNode);
+                        for (Element prevItem : items) {
+                            if (name.equals(item.getAttribute(ATTR_NAME))) {
+                                assert prevItem != item;
+                                Location prev = context.getLocation(prevItem);
+                                prev.setMessage("Previously defined here");
+                                location.setSecondary(prev);
+                                break;
+                            }
+                        }
+                        String message = String.format(
+                                "%1$s has already been defined in this <%2$s>",
+                                name, parent.getTagName());
+                        context.report(ISSUE, nameNode, location, message,
+                                null);
+                    }
+                    names.add(name);
+                }
+            }
+        }
+    }
+
+    private static boolean isFirstElementChild(Node node) {
+        node = node.getPreviousSibling();
+        while (node != null) {
+            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                return false;
+            }
+            node = node.getPreviousSibling();
+        }
+
+        return true;
     }
 }
