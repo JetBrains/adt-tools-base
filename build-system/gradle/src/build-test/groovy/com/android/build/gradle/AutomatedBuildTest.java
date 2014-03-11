@@ -58,6 +58,7 @@ public class AutomatedBuildTest extends BuildTest {
             "ndkJniLib",
             "ndkPrebuilts",
             "ndkLibPrebuilts",
+            "noPreDex",
             "overlay1",
             "overlay2",
             "pkgOverride",

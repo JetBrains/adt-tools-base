@@ -14,53 +14,96 @@
  * limitations under the License.
  */
 package com.android.build.gradle.tasks
+import com.android.SdkConstants
 import com.android.build.gradle.internal.dsl.DexOptionsImpl
-import com.android.build.gradle.internal.tasks.IncrementalTask
-import com.android.ide.common.res2.FileStatus
+import com.android.build.gradle.internal.tasks.BaseTask
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
-import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 
-public class Dex extends IncrementalTask {
+import java.util.concurrent.atomic.AtomicBoolean
+
+public class Dex extends BaseTask {
 
     // ----- PUBLIC TASK API -----
 
-    @OutputFile
-    File outputFile
+    @OutputDirectory
+    File outputFolder
+
+    @Input @Optional
+    List<String> additionalParameters
+
+    boolean enableIncremental = true
 
     // ----- PRIVATE TASK API -----
 
     @InputFiles
-    Iterable<File> inputFiles
+    Collection<File> inputFiles
 
     @InputFiles
-    Iterable<File> preDexedLibraries
+    Collection<File> libraries
 
     @Nested
     DexOptionsImpl dexOptions
 
-    @Override
-    protected void doFullTaskAction() {
-        getBuilder().convertByteCode(
-                getInputFiles(),
-                getPreDexedLibraries(),
-                getOutputFile(),
-                getDexOptions(),
-                false)
+    /**
+     * Actual entry point for the action.
+     * Calls out to the doTaskAction as needed.
+     */
+    @TaskAction
+    void taskAction(IncrementalTaskInputs inputs) {
+        if (!dexOptions.incremental || !enableIncremental) {
+            doTaskAction(false /*incremental*/)
+            return
+        }
+
+        if (!inputs.isIncremental()) {
+            project.logger.info("Unable to do incremental execution: full task run.")
+            doTaskAction(false /*incremental*/)
+            return
+        }
+
+        AtomicBoolean forceFullRun = new AtomicBoolean()
+
+        //noinspection GroovyAssignabilityCheck
+        inputs.outOfDate { change ->
+            // force full dx run if existing jar file is modified
+            // New jar files are fine.
+            if (change.isModified() && change.file.path.endsWith(SdkConstants.DOT_JAR)) {
+                project.logger.info("Force full dx run: Found updated ${change.file}")
+                forceFullRun.set(true)
+            }
+        }
+
+        //noinspection GroovyAssignabilityCheck
+        inputs.removed { change ->
+            // force full dx run if existing jar file is removed
+            if (change.file.path.endsWith(SdkConstants.DOT_JAR)) {
+                project.logger.info("Force full dx run: Found removed ${change.file}")
+                forceFullRun.set(true)
+            }
+        }
+
+        doTaskAction(!forceFullRun)
     }
 
-    @Override
-    protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) {
+    private void doTaskAction(boolean incremental) {
+        File outFolder = getOutputFolder()
+
+        if (!incremental) {
+            emptyFolder(outFolder)
+        }
+
         getBuilder().convertByteCode(
                 getInputFiles(),
-                getPreDexedLibraries(),
-                getOutputFile(),
+                getLibraries(),
+                outFolder,
                 getDexOptions(),
-                true)
-    }
-
-    @Override
-    protected boolean isIncremental() {
-        return dexOptions.incremental
+                getAdditionalParameters(),
+                incremental)
     }
 }
