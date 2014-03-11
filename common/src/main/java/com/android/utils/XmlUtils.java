@@ -29,6 +29,7 @@ import static com.android.SdkConstants.XMLNS_URI;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.CaseFormat;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -441,5 +442,23 @@ public class XmlUtils {
         } else {
             return Integer.toString((int) value);
         }
+    }
+
+    /**
+     * Translates an XML name (e.g. xml-name) into a Java / C++ constant name (e.g. XML_NAME)
+     * @param xmlName the hyphen separated lower case xml name.
+     * @return the equivalent constant name.
+     */
+    public static String xmlNameToConstantName(String xmlName) {
+        return CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_UNDERSCORE, xmlName);
+    }
+
+    /**
+     * Translates a camel case name (e.g. xmlName) into a Java / C++ constant name (e.g. XML_NAME)
+     * @param camelCaseName the camel case name.
+     * @return the equivalent constant name.
+     */
+    public static String camelCaseToConstantName(String camelCaseName) {
+        return CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, camelCaseName);
     }
 }
