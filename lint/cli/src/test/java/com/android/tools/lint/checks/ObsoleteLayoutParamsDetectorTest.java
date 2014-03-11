@@ -84,8 +84,13 @@ public class ObsoleteLayoutParamsDetectorTest extends AbstractCheckTest {
             "res/layout/wrongparams5.xml:15: Warning: Invalid layout param 'layout_alignParentLeft' (included from within a LinearLayout in layout/wrongparams6.xml) [ObsoleteLayoutParam]\n" +
             "        android:layout_alignParentLeft=\"true\"\n" +
             "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 2 warnings\n" +
-            "",
+            "res/layout/wrongparams6.xml:16: Warning: Invalid layout param in a LinearLayout: layout_alignStart [ObsoleteLayoutParam]\n" +
+            "            android:layout_alignStart=\"@+id/include1\"\n" +
+            "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "res/layout/wrongparams6.xml:17: Warning: Invalid layout param in a LinearLayout: layout_toEndOf [ObsoleteLayoutParam]\n" +
+            "            android:layout_toEndOf=\"@+id/include1\" />\n" +
+            "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"  +
+            "0 errors, 4 warnings\n",
 
             lintProject("res/layout/wrongparams5.xml", "res/layout/wrongparams6.xml"));
     }
