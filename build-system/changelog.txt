@@ -2,6 +2,7 @@
 - Added the ability to create resource values through the DSL.
   You can now use 'resValue <type>,<name>,<value>' on build types and product flavors
   the same way you can use buildConfigField.
+- Fixed package renaming in activity-alias:targetActivity
 
 0.8.0
 
