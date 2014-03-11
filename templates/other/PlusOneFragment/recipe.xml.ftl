@@ -7,8 +7,6 @@
     <merge from="AndroidManifest.xml.ftl"
              to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
 
-    <merge from="res/values/strings.xml" to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
-
     <instantiate from="res/layout/fragment_plus_one.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/layout/fragment_${classToResource(className)}.xml" />
 
