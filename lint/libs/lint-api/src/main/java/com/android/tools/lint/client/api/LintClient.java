@@ -831,4 +831,12 @@ public abstract class LintClient {
     public boolean isProjectDirectory(@NonNull File dir) {
         return LintUtils.isManifestFolder(dir) || Project.isAospFrameworksProject(dir);
     }
+
+    /**
+     * Returns whether lint should look for suppress comments. Tools that already do
+     * this on their own can return false here to avoid doing unnecessary work.
+     */
+    public boolean checkForSuppressComments() {
+        return true;
+    }
 }

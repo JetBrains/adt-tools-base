@@ -16,6 +16,11 @@
 
 package com.android.tools.lint.detector.api;
 
+import static com.android.SdkConstants.DOT_GRADLE;
+import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.DOT_XML;
+import static com.android.SdkConstants.SUPPRESS_ALL;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.Configuration;
@@ -76,6 +81,9 @@ public class Context {
 
     /** Map of properties to share results between detectors */
     private Map<String, Object> mProperties;
+
+    /** Whether this file contains any suppress markers (null means not yet determined) */
+    private Boolean mContainsCommentSuppress;
 
     /**
      * Construct a new {@link Context}
@@ -363,5 +371,103 @@ public class Context {
         }
 
         return sCachedFolderVersion;
+    }
+
+    /** Returns the comment marker used in Studio to suppress statements for language, if any */
+    @Nullable
+    protected String getSuppressCommentPrefix() {
+        // Java and XML files are handled in sub classes (XmlContext, JavaContext)
+
+        String path = file.getPath();
+        if (path.endsWith(DOT_JAVA) || path.endsWith(DOT_GRADLE)) {
+            return JavaContext.SUPPRESS_COMMENT_PREFIX;
+        } else if (path.endsWith(DOT_XML)) {
+            return XmlContext.SUPPRESS_COMMENT_PREFIX;
+        } else if (path.endsWith(".cfg") || path.endsWith(".pro")) {
+            return "#suppress ";
+        }
+
+        return null;
+    }
+
+    /** Returns whether this file contains any suppress comment markers */
+    public boolean containsCommentSuppress() {
+        if (mContainsCommentSuppress == null) {
+            mContainsCommentSuppress = false;
+            String prefix = getSuppressCommentPrefix();
+            if (prefix != null) {
+                String contents = getContents();
+                if (contents != null) {
+                    mContainsCommentSuppress = contents.contains(prefix);
+                }
+            }
+        }
+
+        return mContainsCommentSuppress;
+    }
+
+    /**
+     * Returns true if the given issue is suppressed at the given character offset
+     * in the file's contents
+     */
+    protected boolean isSuppressedWithComment(int startOffset, @NonNull Issue issue) {
+        String prefix = getSuppressCommentPrefix();
+        if (prefix == null) {
+            return false;
+        }
+
+        if (startOffset == -1) {
+            return false;
+        }
+
+        // Check whether there is a comment marker
+        String contents = getContents();
+        assert contents != null; // otherwise we wouldn't be here
+        if (startOffset >= contents.length()) {
+            return false;
+        }
+
+        // Scan backwards to the previous line and see if it contains the marker
+        int lineStart = contents.lastIndexOf('\n', startOffset) + 1;
+        if (lineStart <= 1) {
+            return false;
+        }
+        int prevLineStart = contents.lastIndexOf('\n', lineStart - 2) + 1;
+        if (prevLineStart == 0) {
+            return false;
+        }
+        int index = findPrefixOnPreviousLine(contents, lineStart, prefix);
+        if (index != -1 &&index+prefix.length() < lineStart) {
+                String line = contents.substring(index + prefix.length(), lineStart);
+            return line.contains(issue.getId())
+                    || line.contains(SUPPRESS_ALL) && line.trim().startsWith(SUPPRESS_ALL);
+        }
+
+        return false;
+    }
+
+    private static int findPrefixOnPreviousLine(String contents, int lineStart, String prefix) {
+        // Search backwards on the previous line until you find the prefix start (also look
+        // back on previous lines if the previous line(s) contain just whitespace
+        char first = prefix.charAt(0);
+        int offset = lineStart - 2; // 0: first char on this line, -1: \n on previous line, -2 last
+        boolean seenNonWhitespace = false;
+        for (; offset >= 0; offset--) {
+            char c = contents.charAt(offset);
+            if (seenNonWhitespace && c == '\n') {
+                return -1;
+            }
+
+            if (!seenNonWhitespace && !Character.isWhitespace(c)) {
+                seenNonWhitespace = true;
+            }
+
+            if (c == first && contents.regionMatches(false, offset, prefix, 0,
+                    prefix.length())) {
+                return offset;
+            }
+        }
+
+        return -1;
     }
 }

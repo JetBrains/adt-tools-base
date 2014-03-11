@@ -90,4 +90,24 @@ public interface IDomParser {
      * @param document the document that was parsed and is now being disposed
      */
     void dispose(@NonNull XmlContext context, @NonNull Document document);
+
+    /**
+     * Returns the start offset of the given node, or -1 if not known
+     *
+     * @param context the context providing the node
+     * @param node the node (element or attribute) to create a location handle
+     *            for
+     * @return the start offset, or -1 if not known
+     */
+    int getNodeStartOffset(@NonNull XmlContext context, @NonNull Node node);
+
+    /**
+     * Returns the end offset of the given node, or -1 if not known
+     *
+     * @param context the context providing the node
+     * @param node the node (element or attribute) to create a location handle
+     *            for
+     * @return the end offset, or -1 if not known
+     */
+    int getNodeEndOffset(@NonNull XmlContext context, @NonNull Node node);
 }
