@@ -1,3 +1,11 @@
+0.8.0
+
+- Support for Gradle 1.10
+
+0.7.3
+
+- Rebuild 0.7.2 to work with Java6
+
 0.7.2
 
 - Fix issue with Proguard.
