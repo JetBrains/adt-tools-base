@@ -114,7 +114,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 public class GradleImport {
     public static final String NL = SdkUtils.getLineSeparator();
     public static final int CURRENT_COMPILE_VERSION = 19;
-    public static final String CURRENT_BUILD_TOOLS_VERSION = "19.0.1";
+    public static final String CURRENT_BUILD_TOOLS_VERSION = "19.0.2";
     public static final String ANDROID_GRADLE_PLUGIN =
             GRADLE_PLUGIN_NAME + GRADLE_PLUGIN_LATEST_VERSION;
     public static final String MAVEN_URL_PROPERTY = "android.mavenRepoUrl";
@@ -966,12 +966,12 @@ public class GradleImport {
                         .append("')").append(NL);
             }
             for (GradleCoordinate dependency : module.getTestDependencies()) {
-                sb.append("    instrumentTestCompile '").append(dependency.toString()).append("'")
+                sb.append("    androidTestCompile '").append(dependency.toString()).append("'")
                         .append(NL);
             }
             for (File jar : module.getTestJarDependencies()) {
                 String path = jar.getPath().replace(separatorChar, '/');
-                sb.append("    instrumentTestCompile files('")
+                sb.append("    androidTestCompile files('")
                         .append(escapeGroovyStringLiteral(path)).append("')").append(NL);
             }
             sb.append("}").append(NL);

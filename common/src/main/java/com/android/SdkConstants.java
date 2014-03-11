@@ -229,8 +229,8 @@ public final class SdkConstants {
     public static final String FD_SOURCES = "src";                      //$NON-NLS-1$
     /** Default main source set folder name, i.e. "main" */
     public static final String FD_MAIN = "main";                        //$NON-NLS-1$
-    /** Default test source set folder name, i.e. "instrumentTest" */
-    public static final String FD_TEST = "instrumentTest";              //$NON-NLS-1$
+    /** Default test source set folder name, i.e. "androidTest" */
+    public static final String FD_TEST = "androidTest";                 //$NON-NLS-1$
     /** Default java code folder name, i.e. "java" */
     public static final String FD_JAVA = "java";                        //$NON-NLS-1$
     /** Default generated source folder name, i.e. "gen" */
