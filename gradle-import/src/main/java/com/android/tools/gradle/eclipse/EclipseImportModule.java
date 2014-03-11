@@ -158,6 +158,11 @@ class EclipseImportModule extends ImportModule {
     }
 
     @Override
+    public boolean isNdkProject() {
+        return mProject.isNdkProject();
+    }
+
+    @Override
     @Nullable protected File getManifestFile() {
         return mProject.getManifestFile();
     }
@@ -188,6 +193,18 @@ class EclipseImportModule extends ImportModule {
     @NonNull
     protected List<File> getNativeLibs() {
         return mProject.getNativeLibs();
+    }
+
+    @Override
+    @Nullable
+    protected File getNativeSources() {
+        return mProject.getNativeSources();
+    }
+
+    @Nullable
+    @Override
+    protected String getNativeModuleName() {
+        return mProject.getNativeModuleName();
     }
 
     @Override

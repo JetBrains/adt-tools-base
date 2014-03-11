@@ -47,9 +47,11 @@ import com.android.sdklib.AndroidVersion;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -62,6 +64,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -77,6 +80,7 @@ class EclipseProject implements Comparable<EclipseProject> {
     private final File mCanonicalDir;
     private boolean mLibrary;
     private boolean mAndroidProject;
+    private boolean mNdkProject;
     private int mMinSdkVersion;
     private int mTargetSdkVersion;
     private Document mClassPathDoc;
@@ -90,6 +94,8 @@ class EclipseProject implements Comparable<EclipseProject> {
     private List<File> mSourcePaths;
     private List<File> mJarPaths;
     private List<File> mNativeLibs;
+    private File mNativeSources;
+    private String mNativeModuleName;
     private File mOutputDir;
     private String mPackage;
     private List<File> mLocalProguardFiles;
@@ -130,6 +136,7 @@ class EclipseProject implements Comparable<EclipseProject> {
         }
 
         initClassPathEntries();
+        initJni();
     }
 
     @NonNull
@@ -266,6 +273,46 @@ class EclipseProject implements Comparable<EclipseProject> {
         }
 
         return defaultApiLevel;
+    }
+
+    private void initJni() throws IOException {
+        File jniDir = new File(mDir, "jni");
+        if (!jniDir.exists()) {
+            return;
+        }
+
+        //noinspection SpellCheckingInspection
+        if (mNdkProject) {
+            mNativeSources = jniDir;
+
+            File makefile = new File(jniDir, "Android.mk");
+            if (makefile.exists()) {
+                Pattern pattern = Pattern.compile("\\s*LOCAL_MODULE\\s*:=\\s*(\\S+)\\s*");
+                for (String line : Files.readLines(makefile, Charsets.UTF_8)) {
+                    Matcher matcher = pattern.matcher(line);
+                    if (matcher.matches()) {
+                        mNativeModuleName = matcher.group(1);
+
+                        if (mNativeLibs != null) {
+                            // Remove libs from the libs/<abi> folder if they are just
+                            // outputs from these sources
+                            String libName = "lib" + mNativeModuleName + ".so";
+                            ListIterator<File> iterator = mNativeLibs.listIterator();
+                            while (iterator.hasNext()) {
+                                File lib = iterator.next();
+                                if (libName.equals(lib.getName())) {
+                                    iterator.remove();
+                                }
+                            }
+                            if (mNativeLibs.isEmpty()) {
+                                mNativeLibs = null;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     private void initClassPathEntries() throws IOException {
@@ -622,18 +669,28 @@ class EclipseProject implements Comparable<EclipseProject> {
     }
 
     private void initAndroidProject() throws IOException {
+        mAndroidProject = hasNature("com.android.ide.eclipse.adt.AndroidNature");
+        mNdkProject = mAndroidProject && (
+                hasNature("org.eclipse.cdt.core.cnature") ||
+                hasNature("org.eclipse.cdt.core.ccnature") ||
+                new File(mDir, "jni" + separator + "Android.mk").exists()
+        );
+    }
+
+    private boolean hasNature(String nature) throws IOException {
         Document document = getProjectDocument();
-        if (document == null) {
-            return;
-        }
-        NodeList natures = document.getElementsByTagName("nature");
-        for (int i = 0; i < natures.getLength(); i++) {
-            Node nature = natures.item(i);
-            String value = getStringValue((Element) nature);
-            if ("com.android.ide.eclipse.adt.AndroidNature".equals(value)) {
-                mAndroidProject = true;
+        if (document != null) {
+            NodeList natures = document.getElementsByTagName("nature");
+            for (int i = 0; i < natures.getLength(); i++) {
+                Node element = natures.item(i);
+                String value = getStringValue((Element) element);
+                if (nature.equals(value)) {
+                    return true;
+                }
             }
         }
+
+        return false;
     }
 
     private void initLanguageLevel() throws IOException {
@@ -802,6 +859,10 @@ class EclipseProject implements Comparable<EclipseProject> {
         return mAndroidProject;
     }
 
+    public boolean isNdkProject() {
+        return mNdkProject;
+    }
+
     @Nullable
     private static String getStringValue(@NonNull Element element) {
         NodeList children = element.getChildNodes();
@@ -835,6 +896,16 @@ class EclipseProject implements Comparable<EclipseProject> {
     @NonNull
     public List<File> getNativeLibs() {
         return mNativeLibs != null ? mNativeLibs : Collections.<File>emptyList();
+    }
+
+    @Nullable
+    public File getNativeSources() {
+        return mNativeSources;
+    }
+
+    @Nullable
+    public String getNativeModuleName() {
+        return mNativeModuleName;
     }
 
     @Nullable

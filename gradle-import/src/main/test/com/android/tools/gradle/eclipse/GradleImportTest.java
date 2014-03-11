@@ -18,6 +18,7 @@ package com.android.tools.gradle.eclipse;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.tools.gradle.eclipse.GradleImport.ANDROID_GRADLE_PLUGIN;
 import static com.android.tools.gradle.eclipse.GradleImport.DECLARE_GLOBAL_REPOSITORIES;
 import static com.android.tools.gradle.eclipse.GradleImport.IMPORT_SUMMARY_TXT;
@@ -98,7 +99,7 @@ public class GradleImportTest extends TestCase {
 
         createClassPath(dir,
                 new File("bin", "classes"),
-                Arrays.<File>asList(src, gen),
+                Arrays.asList(src, gen),
                 Collections.<File>emptyList());
         createProjectProperties(dir, "android-17", null, null, null,
                 Collections.<File>emptyList());
@@ -286,6 +287,7 @@ public class GradleImportTest extends TestCase {
         new File(projectDir, "ic_launcher-web.png").createNewFile();
         new File(projectDir, "Android.mk").createNewFile();
         new File(projectDir, "build.properties").createNewFile();
+        new File(projectDir, "local.properties").createNewFile();
         new File(projectDir, "src" + separator + ".git").mkdir();
         new File(projectDir, "src" + separator + ".svn").mkdir();
 
@@ -301,6 +303,7 @@ public class GradleImportTest extends TestCase {
                 + "    pkg\n"
                 + "      R.java\n"
                 + "ic_launcher-web.png\n"
+                + "local.properties\n"
                 + "project.properties\n"
                 + "res\n"
                 + "  drawable\n"
@@ -344,6 +347,7 @@ public class GradleImportTest extends TestCase {
                 + "          strings.xml\n"
                 + "build.gradle\n"
                 + "import-summary.txt\n"
+                + "local.properties\n"
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -413,6 +417,7 @@ public class GradleImportTest extends TestCase {
                 + "        latency.rs\n"
                 + "build.gradle\n"
                 + "import-summary.txt\n"
+                + "local.properties\n"
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -560,6 +565,7 @@ public class GradleImportTest extends TestCase {
                 + "          lib2\n"
                 + "            pkg\n"
                 + "              MyLib2Activity.java\n"
+                + "local.properties\n"
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -719,10 +725,10 @@ public class GradleImportTest extends TestCase {
         createSampleJavaSource(lib1, "gen", lib1Pkg, "R");
         createClassPath(lib1,
                 new File("bin", "classes"),
-                Arrays.<File>asList(lib1Src, lib1Gen),
+                Arrays.asList(lib1Src, lib1Gen),
                 Collections.<File>emptyList());
         createProjectProperties(lib1, "android-19", null, true, null,
-                Collections.<File>singletonList(new File(".." + separator + javaLibRelative)));
+                Collections.singletonList(new File(".." + separator + javaLibRelative)));
         createAndroidManifest(lib1, lib1Pkg, -1, -1, "<application/>");
 
         String lib2Name = "Lib2";
@@ -735,10 +741,10 @@ public class GradleImportTest extends TestCase {
         createSampleJavaSource(lib2, "gen", lib2Pkg, "R");
         createClassPath(lib2,
                 new File("bin", "classes"),
-                Arrays.<File>asList(lib2Src, lib2Gen),
+                Arrays.asList(lib2Src, lib2Gen),
                 Collections.<File>emptyList());
         createProjectProperties(lib2, "android-18", null, true, null,
-                Collections.<File>singletonList(new File(".." + separator + lib1Name)));
+                Collections.singletonList(new File(".." + separator + lib1Name)));
         createAndroidManifest(lib2, lib2Pkg, 7, -1, "<application/>");
 
         // Main app project, depends on library1, library2 and java lib
@@ -753,10 +759,10 @@ public class GradleImportTest extends TestCase {
         createSampleJavaSource(app, "gen", appPkg, "R");
         createClassPath(app,
                 new File("bin", "classes"),
-                Arrays.<File>asList(appSrc, appGen),
+                Arrays.asList(appSrc, appGen),
                 Collections.<File>emptyList());
         createProjectProperties(app, "android-17", null, null, null,
-                Arrays.<File>asList(
+                Arrays.asList(
                         new File(".." + separator + lib1Name),
                         new File(".." + separator + lib2Name),
                         new File(".." + separator + javaLibRelative)));
@@ -809,6 +815,7 @@ public class GradleImportTest extends TestCase {
                 + "          strings.xml\n"
                 + "build.gradle\n"
                 + "import-summary.txt\n"
+                + "local.properties\n"
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -912,6 +919,7 @@ public class GradleImportTest extends TestCase {
                 + "          strings.xml\n"
                 + "build.gradle\n"
                 + "import-summary.txt\n"
+                + "local.properties\n"
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -959,6 +967,155 @@ public class GradleImportTest extends TestCase {
                         .replace(NL, "\n"));
 
         deleteDir(projectDir);
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testJni() throws Exception {
+        File root = Files.createTempDir();
+        final File sdkLocation = new File(root, "sdk");
+        sdkLocation.mkdirs();
+        final File ndkLocation = new File(root, "ndk");
+        ndkLocation.mkdirs();
+        File projectDir = new File(root, "project");
+        projectDir.mkdirs();
+        createProject(projectDir, "testJni", "test.pkg");
+        createDotProject(projectDir, "testJni", true, true);
+        File jni = new File(projectDir, "jni");
+        jni.mkdirs();
+        File makefile = new File(jni, "Android.mk");
+        Files.write(""
+                + "LOCAL_PATH := $(call my-dir)\n"
+                + "\n"
+                + "include $(CLEAR_VARS)\n"
+                + "\n"
+                + "LOCAL_MODULE    := hello-jni\n"
+                + "LOCAL_SRC_FILES := hello-jni.c\n"
+                + "\n"
+                + "include $(BUILD_SHARED_LIBRARY)",
+                makefile, UTF_8);
+        new File(jni, "Application.mk").createNewFile();
+        new File(jni, "HelloJni.cpp").createNewFile();
+        new File(jni, "hello-jni.c").createNewFile();
+
+        File libs = new File(projectDir, "libs");
+        libs.mkdirs();
+        File armeabi = new File(libs, "armeabi");
+        armeabi.mkdirs();
+        new File(armeabi, "libexternal.so").createNewFile();
+        new File(armeabi, "libhello-jni.so").createNewFile();
+        File mips = new File(libs, "mips");
+        mips.mkdirs();
+        new File(mips, "libexternal.so").createNewFile();
+        new File(mips, "libhello-jni.so").createNewFile();
+
+        Files.write(
+                escapeProperty("sdk.dir", sdkLocation.getPath()) + "\n" +
+                escapeProperty("ndk.dir", ndkLocation.getPath()) + "\n",
+                new File(projectDir, FN_LOCAL_PROPERTIES), UTF_8);
+
+        File imported = checkProject(projectDir, ""
+                + MSG_HEADER
+                + MSG_FOLDER_STRUCTURE
+                + "* AndroidManifest.xml => testJni/src/main/AndroidManifest.xml\n"
+                + "* jni/ => testJni/src/main/jni/\n"
+                + "* libs/armeabi/libexternal.so => testJni/src/main/jniLibs/armeabi/libexternal.so\n"
+                + "* libs/mips/libexternal.so => testJni/src/main/jniLibs/mips/libexternal.so\n"
+                + "* res/ => testJni/src/main/res/\n"
+                + "* src/ => testJni/src/main/java/\n"
+                + MSG_FOOTER,
+                false /* checkBuild */,
+                new ImportCustomizer() {
+                    @Override
+                    public void customize(GradleImport importer) {
+                        importer.setGradleNameStyle(false);
+                        importer.setSdkLocation(null);
+                        importer.setReplaceJars(false);
+                        importer.setReplaceLibs(false);
+                    }
+                });
+
+        // Imported contents
+        assertEquals(""
+                + "build.gradle\n"
+                + "import-summary.txt\n"
+                + "local.properties\n"
+                + "settings.gradle\n"
+                + "testJni\n"
+                + "  build.gradle\n"
+                + "  src\n"
+                + "    main\n"
+                + "      AndroidManifest.xml\n"
+                + "      java\n"
+                + "        test\n"
+                + "          pkg\n"
+                + "            MyActivity.java\n"
+                + "      jni\n"
+                + "        Android.mk\n"
+                + "        Application.mk\n"
+                + "        HelloJni.cpp\n"
+                + "        hello-jni.c\n"
+                + "      jniLibs\n"
+                + "        armeabi\n"
+                + "          libexternal.so\n"
+                + "        mips\n"
+                + "          libexternal.so\n"
+                + "      res\n"
+                + "        drawable\n"
+                + "          ic_launcher.xml\n"
+                + "        values\n"
+                + "          strings.xml\n",
+                fileTree(imported, true));
+
+        //noinspection PointlessBooleanExpression,ConstantConditions
+        assertEquals(""
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                "buildscript {\n"
+                + "    repositories {\n"
+                + "        " + MAVEN_REPOSITORY + "\n"
+                + "    }\n"
+                + "    dependencies {\n"
+                + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
+                + "    }\n"
+                + "}\n" : "")
+                + "apply plugin: 'android'\n"
+                + (!DECLARE_GLOBAL_REPOSITORIES ?
+                "\n"
+                + "repositories {\n"
+                + "    " + MAVEN_REPOSITORY + "\n"
+                + "}\n" : "")
+                + "\n"
+                + "android {\n"
+                + "    compileSdkVersion 17\n"
+                + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
+                + "\n"
+                + "    defaultConfig {\n"
+                + "        minSdkVersion 8\n"
+                + "        targetSdkVersion 16\n"
+                + "\n"
+                + "        ndk {\n"
+                + "            moduleName \"hello-jni\"\n"
+                + "        }\n"
+                + "    }\n"
+                + "\n"
+                + "    buildTypes {\n"
+                + "        release {\n"
+                + "            runProguard false\n"
+                + "            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'\n"
+                + "        }\n"
+                + "    }\n"
+                + "}\n",
+                Files.toString(new File(imported, "testJni" + separator + "build.gradle"), UTF_8)
+                        .replace(NL, "\n"));
+
+        assertEquals(sdkLocation.getPath(),
+                GradleImport.getProperties(new File(imported, FN_LOCAL_PROPERTIES)).
+                        getProperty("sdk.dir"));
+        assertEquals(ndkLocation.getPath(),
+                GradleImport.getProperties(new File(imported, FN_LOCAL_PROPERTIES)).
+                        getProperty("ndk.dir"));
+
+        deleteDir(root);
         deleteDir(imported);
     }
 
@@ -1015,6 +1172,7 @@ public class GradleImportTest extends TestCase {
                 + "          strings.xml\n"
                 + "build.gradle\n"
                 + "import-summary.txt\n"
+                + "local.properties\n"
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -1094,6 +1252,7 @@ public class GradleImportTest extends TestCase {
                 + "          lib\n"
                 + "            pkg\n"
                 + "              MyLibActivity.java\n"
+                + "local.properties\n"
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -1396,7 +1555,7 @@ public class GradleImportTest extends TestCase {
         createSampleJavaSource(app, "gen", appPkg, "R");
         createClassPath(app,
                 new File("bin", "classes"),
-                Arrays.<File>asList(appSrc, appGen),
+                Arrays.asList(appSrc, appGen),
                 Collections.<File>emptyList());
         createProjectProperties(app, "android-17", null, null, null,
                 Collections.singletonList(new File(".." + separator + androidLibName)));
@@ -1559,6 +1718,7 @@ public class GradleImportTest extends TestCase {
                 + "          lib2\n"
                 + "            pkg\n"
                 + "              Library2.java\n"
+                + "local.properties\n"
                 + "settings.gradle\n",
                 fileTree(imported, true));
 
@@ -1973,6 +2133,16 @@ public class GradleImportTest extends TestCase {
         deleteDir(imported);
     }
 
+    public void testSdkNdkSetters() {
+        GradleImport importer = new GradleImport();
+        File ndkLocation = new File("ndk");
+        File sdkLocation = new File("sdk");
+        importer.setNdkLocation(ndkLocation);
+        importer.setSdkLocation(sdkLocation);
+        assertSame(sdkLocation, importer.getSdkLocation());
+        assertSame(ndkLocation, importer.getNdkLocation());
+    }
+
     // --- Unit test infrastructure from this point on ----
 
     @SuppressWarnings({"ResultOfMethodCallIgnored", "SpellCheckingInspection"})
@@ -2161,6 +2331,13 @@ public class GradleImportTest extends TestCase {
             @NonNull File projectDir,
             String name,
             boolean addAndroidNature) throws IOException {
+        createDotProject(projectDir, name, addAndroidNature, addAndroidNature);
+    }
+
+    private static void createDotProject(
+            @NonNull File projectDir,
+            String name,
+            boolean addAndroidNature, boolean addNdkNature) throws IOException {
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
                 + "<projectDescription>\n"
@@ -2193,6 +2370,10 @@ public class GradleImportTest extends TestCase {
                 + "\t<natures>\n");
         if (addAndroidNature) {
             sb.append("\t\t<nature>com.android.ide.eclipse.adt.AndroidNature</nature>\n");
+        }
+        if (addNdkNature) {
+            sb.append("\t\t<nature>org.eclipse.cdt.core.cnature</nature>\n");
+            sb.append("\t\t<nature>org.eclipse.cdt.core.ccnature</nature>\n");
         }
         sb.append("\t\t<nature>org.eclipse.jdt.core.javanature</nature>\n"
                 + "\t</natures>\n"
