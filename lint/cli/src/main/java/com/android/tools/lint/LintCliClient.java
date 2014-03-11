@@ -436,6 +436,11 @@ public class LintCliClient extends LintClient {
                 return Severity.IGNORE;
             }
 
+            Severity manual = mFlags.getSeverityOverrides().get(id);
+            if (manual != null) {
+                return manual;
+            }
+
             Set<String> enabled = mFlags.getEnabledIds();
             Set<String> check = mFlags.getExactCheckedIds();
             if (enabled.contains(id) || (check != null && check.contains(id))) {
