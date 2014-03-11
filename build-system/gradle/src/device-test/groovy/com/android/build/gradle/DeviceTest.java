@@ -55,6 +55,7 @@ public class DeviceTest extends BuildTest {
             "multires",
             "ndkJniLib",
             "ndkPrebuilts",
+            "ndkLibPrebuilts",
             "overlay1",
             "overlay2",
             "pkgOverride",
