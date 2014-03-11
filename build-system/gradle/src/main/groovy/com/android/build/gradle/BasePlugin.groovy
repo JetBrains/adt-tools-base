@@ -1618,8 +1618,8 @@ public abstract class BasePlugin {
                     proguardTask.injars(inJar, filter: '!META-INF/MANIFEST.MF')
                 }
 
-                // now add the provided jars
-                for (File libJar : variantData.variantConfiguration.providedJars) {
+                // now add the provided-only jars
+                for (File libJar : variantData.variantConfiguration.providedOnlyJars) {
                     proguardTask.libraryjars(libJar)
                 }
 
