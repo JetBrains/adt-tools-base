@@ -278,7 +278,8 @@ class EclipseProject implements Comparable<EclipseProject> {
                 if (mImporter.getEclipseWorkspace() != null) {
                     try {
                         String prefix = mImporter.resolvePathVariable(var);
-                        File resolved = new File(prefix, path.replace('/', separatorChar));
+                        File resolved = new File(prefix.replace('/', separatorChar),
+                                path.replace('/', separatorChar));
                         if (resolved.exists()) {
                             mSourcePaths.add(resolved);
                             continue;
