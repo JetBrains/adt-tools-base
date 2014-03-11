@@ -728,8 +728,9 @@ class EclipseProject implements Comparable<EclipseProject> {
         for (EclipseProject library : mDirectLibraries) {
             if (seen.contains(library)) {
                 if (path.contains(library)) {
-                    throw new RuntimeException("Internal error: cyclic library dependency for " +
-                            library);
+                    mImporter.reportWarning(library, library.getDir(),
+                            "Internal error: cyclic library dependency for " +
+                                    library);
                 }
                 continue;
             }
@@ -745,6 +746,11 @@ class EclipseProject implements Comparable<EclipseProject> {
     @Override
     public int compareTo(@NonNull EclipseProject other) {
         return mDir.compareTo(other.mDir);
+    }
+
+    @Override
+    public String toString() {
+        return mDir.getPath();
     }
 
     /**
