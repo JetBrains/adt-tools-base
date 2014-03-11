@@ -79,6 +79,10 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
     }
 
     public void testArgCount() {
+        assertEquals(0, StringFormatDetector.getFormatArgumentCount(
+                "%n%% ", null));
+        assertEquals(1, StringFormatDetector.getFormatArgumentCount(
+                "%n%% %s", null));
         assertEquals(3, StringFormatDetector.getFormatArgumentCount(
                 "First: %1$s, Second %2$s, Third %3$s", null));
         assertEquals(11, StringFormatDetector.getFormatArgumentCount(
@@ -97,6 +101,8 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
     }
 
     public void testArgType() {
+        assertEquals("s", StringFormatDetector.getFormatArgumentType(
+                "First: %n%% %1$s, Second %2$s, Third %3$s", 1));
         assertEquals("s", StringFormatDetector.getFormatArgumentType(
                 "First: %1$s, Second %2$s, Third %3$s", 1));
         assertEquals("d", StringFormatDetector.getFormatArgumentType(
@@ -217,5 +223,23 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                 lintProject(
                         "res/values/formatstrings7.xml",
                         "src/test/pkg/StringFormat5.java.txt=>src/test/pkg/StringFormat5.java"));
+    }
+
+    public void testNewlineChar() throws Exception {
+        // https://code.google.com/p/android/issues/detail?id=65692
+        assertEquals(""
+                + "src/test/pkg/StringFormat8.java:12: Error: Wrong argument count, format string amount_string requires 1 but format call supplies 0 [StringFormatMatches]\n"
+                + "        String amount4 = String.format(getResources().getString(R.string.amount_string));  // ERROR\n"
+                + "                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/formatstrings8.xml:2: This definition requires 1 arguments\n"
+                + "src/test/pkg/StringFormat8.java:13: Error: Wrong argument count, format string amount_string requires 1 but format call supplies 2 [StringFormatMatches]\n"
+                + "        String amount5 = getResources().getString(R.string.amount_string, amount, amount); // ERROR\n"
+                + "                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/formatstrings8.xml:2: This definition requires 1 arguments\n"
+                + "2 errors, 0 warnings\n",
+
+                lintProject(
+                        "res/values/formatstrings8.xml",
+                        "src/test/pkg/StringFormat8.java.txt=>src/test/pkg/StringFormat8.java"));
     }
 }

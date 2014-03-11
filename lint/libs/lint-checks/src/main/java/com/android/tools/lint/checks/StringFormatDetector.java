@@ -390,7 +390,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
 
                     index = matcher.end(); // Ensure loop proceeds
                     String str = formatString.substring(matchStart, matcher.end());
-                    if (str.equals("%%")) { //$NON-NLS-1$
+                    if (str.equals("%%") || str.equals("%n")) { //$NON-NLS-1$ //$NON-NLS-2$
                         // Just an escaped %
                         continue;
                     }
@@ -695,6 +695,11 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
         int nextNumber = 1;
         while (true) {
             if (matcher.find(index)) {
+                String value = matcher.group(6);
+                if ("%".equals(value) || "n".equals(value)) { //$NON-NLS-1$ //$NON-NLS-2$
+                    index = matcher.end();
+                    continue;
+                }
                 int matchStart = matcher.start();
                 // Make sure this is not an escaped '%'
                 for (; prevIndex < matchStart; prevIndex++) {
@@ -748,7 +753,8 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
         int max = 0;
         while (true) {
             if (matcher.find(index)) {
-                if ("%".equals(matcher.group(6))) { //$NON-NLS-1$
+                String value = matcher.group(6);
+                if ("%".equals(value) || "n".equals(value)) { //$NON-NLS-1$ //$NON-NLS-2$
                     index = matcher.end();
                     continue;
                 }
