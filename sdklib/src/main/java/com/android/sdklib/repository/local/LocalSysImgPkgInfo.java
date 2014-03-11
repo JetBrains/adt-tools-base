@@ -19,6 +19,8 @@ package com.android.sdklib.repository.local;
 import com.android.annotations.NonNull;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.repository.MajorRevision;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDesc;
 
 import java.io.File;
 import java.util.Properties;
@@ -29,12 +31,10 @@ import java.util.Properties;
  * The package itself has a major revision.
  * There should be only one for a given android platform version & ABI.
  */
-public class LocalSysImgPkgInfo extends LocalAndroidVersionPkgInfo {
+public class LocalSysImgPkgInfo extends LocalPkgInfo {
 
-    @NonNull
-    private final MajorRevision mRevision;
-    @NonNull
-    private final String mAbi;
+
+    private final @NonNull IPkgDesc mDesc;
 
     public LocalSysImgPkgInfo(@NonNull LocalSdk localSdk,
                               @NonNull File localDir,
@@ -42,43 +42,14 @@ public class LocalSysImgPkgInfo extends LocalAndroidVersionPkgInfo {
                               @NonNull AndroidVersion version,
                               @NonNull String abi,
                               @NonNull MajorRevision revision) {
-        super(localSdk, localDir, sourceProps, version);
-        mAbi = abi;
-        mRevision = revision;
-
-    }
-
-    @Override
-    public int getType() {
-        return LocalSdk.PKG_SYS_IMAGES;
-    }
-
-    @Override
-    public boolean hasMajorRevision() {
-        return true;
+        super(localSdk, localDir, sourceProps);
+        mDesc = PkgDesc.newSysImg(version, abi, revision);
     }
 
     @NonNull
     @Override
-    public MajorRevision getMajorRevision() {
-        return mRevision;
-    }
-
-    @Override
-    public boolean hasPath() {
-        return true;
-    }
-
-    /** The System-image path is its ABI. */
-    @NonNull
-    @Override
-    public String getPath() {
-        return getAbi();
-    }
-
-    @NonNull
-    public String getAbi() {
-        return mAbi;
+    public IPkgDesc getDesc() {
+        return mDesc;
     }
 
     // TODO create package on demand if needed. This might not be needed

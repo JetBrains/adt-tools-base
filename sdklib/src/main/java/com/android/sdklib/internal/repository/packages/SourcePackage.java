@@ -30,7 +30,10 @@ import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.io.IFileOp;
+import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.SdkRepoConstants;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDesc;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.w3c.dom.Node;
@@ -50,6 +53,8 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
 
     /** The package version, for platform, add-on and doc packages. */
     private final AndroidVersion mVersion;
+
+    private final IPkgDesc mPkgDesc;
 
     /**
      * Creates a new source package from the attributes and elements of the given XML node.
@@ -76,6 +81,8 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
             codeName = null;
         }
         mVersion = new AndroidVersion(apiLevel, codeName);
+
+        mPkgDesc = PkgDesc.newSource(mVersion, (MajorRevision) getRevision());
     }
 
     @VisibleForTesting(visibility=Visibility.PRIVATE)
@@ -105,6 +112,8 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
                 localOsPath                 //archiveOsPath
                 );
         mVersion = platformVersion;
+
+        mPkgDesc = PkgDesc.newSource(mVersion, (MajorRevision) getRevision());
     }
 
     /**
@@ -168,10 +177,21 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
 
         String longDesc = sb.toString();
 
+        IPkgDesc desc = PkgDesc.newSource(
+                version != null ? version : new AndroidVersion(0, null),
+                new MajorRevision(MajorRevision.MISSING_MAJOR_REV));
+
         return new BrokenPackage(props, shortDesc, longDesc,
                 IMinApiLevelDependency.MIN_API_LEVEL_NOT_SPECIFIED,
                 version==null ? IExactApiLevelDependency.API_LEVEL_INVALID : version.getApiLevel(),
-                srcDir.getAbsolutePath());
+                srcDir.getAbsolutePath(),
+                desc);
+    }
+
+    @Override
+    @NonNull
+    public IPkgDesc getPkgDesc() {
+        return mPkgDesc;
     }
 
     /**

@@ -279,10 +279,13 @@ public class PackageParserUtils {
      *
      * @param props The properties to parse.
      * @return A {@link FullRevision} or null if there is no such property or it couldn't be parsed.
+     * @param propKey The name of the property. Must not be null.
      */
     @Nullable
-    public static FullRevision getPropertyFullRevision(@Nullable Properties props) {
-        String revStr = getProperty(props, PkgProps.PKG_REVISION, null);
+    public static FullRevision getPropertyFull(
+            @Nullable Properties props,
+            @NonNull String propKey) {
+        String revStr = getProperty(props, propKey, null);
 
         FullRevision rev = null;
         if (revStr != null) {
@@ -300,10 +303,13 @@ public class PackageParserUtils {
      *
      * @param props The properties to parse.
      * @return A {@link MajorRevision} or null if there is no such property or it couldn't be parsed.
+     * @param propKey The name of the property. Must not be null.
      */
     @Nullable
-    public static MajorRevision getPropertyMajorRevision(@Nullable Properties props) {
-        String revStr = getProperty(props, PkgProps.PKG_REVISION, null);
+    public static MajorRevision getPropertyMajor(
+            @Nullable Properties props,
+            @NonNull String propKey) {
+        String revStr = getProperty(props, propKey, null);
 
         MajorRevision rev = null;
         if (revStr != null) {
@@ -322,10 +328,13 @@ public class PackageParserUtils {
      * @param props The properties to parse.
      * @return A {@link NoPreviewRevision} or
      *         null if there is no such property or it couldn't be parsed.
+     * @param propKey The name of the property. Must not be null.
      */
     @Nullable
-    public static NoPreviewRevision getPropertyNoPreviewRevision(@Nullable Properties props) {
-        String revStr = getProperty(props, PkgProps.PKG_REVISION, null);
+    public static NoPreviewRevision getPropertyNoPreview(
+            @Nullable Properties props,
+            @NonNull String propKey) {
+        String revStr = getProperty(props, propKey, null);
 
         NoPreviewRevision rev = null;
         if (revStr != null) {

@@ -17,6 +17,7 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.SdkManager;
@@ -28,6 +29,8 @@ import com.android.sdklib.internal.repository.archives.Archive.Arch;
 import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision.PreviewComparison;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDesc;
 
 import org.w3c.dom.Node;
 
@@ -47,6 +50,8 @@ public class PlatformToolPackage extends FullRevisionPackage {
     /** The value returned by {@link PlatformToolPackage#installId()}. */
     public static final String INSTALL_ID_PREVIEW = "platform-tools-preview";       //$NON-NLS-1$
 
+    private final IPkgDesc mPkgDesc;
+
     /**
      * Creates a new platform-tool package from the attributes and elements of the given XML node.
      * This constructor should throw an exception if the package cannot be created.
@@ -60,6 +65,8 @@ public class PlatformToolPackage extends FullRevisionPackage {
     public PlatformToolPackage(SdkSource source, Node packageNode,
             String nsUri, Map<String,String> licenses) {
         super(source, packageNode, nsUri, licenses);
+
+        mPkgDesc = PkgDesc.newPlatformTool(getRevision());
     }
 
     /**
@@ -133,7 +140,8 @@ public class PlatformToolPackage extends FullRevisionPackage {
             BrokenPackage ba = new BrokenPackage(props, shortDesc, longDesc,
                     IMinApiLevelDependency.MIN_API_LEVEL_NOT_SPECIFIED,
                     IExactApiLevelDependency.API_LEVEL_INVALID,
-                    archiveOsPath);
+                    archiveOsPath,
+                    PkgDesc.newPlatformTool(ptp.getRevision()));
             return ba;
         }
 
@@ -161,6 +169,14 @@ public class PlatformToolPackage extends FullRevisionPackage {
                 archiveOs,
                 archiveArch,
                 archiveOsPath);
+
+        mPkgDesc = PkgDesc.newPlatformTool(getRevision());
+    }
+
+    @Override
+    @NonNull
+    public IPkgDesc getPkgDesc() {
+        return mPkgDesc;
     }
 
     /**

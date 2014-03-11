@@ -32,9 +32,11 @@ import com.android.sdklib.io.IFileOp;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.sdklib.repository.PkgProps;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgType;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 
@@ -43,6 +45,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -66,19 +69,19 @@ import java.util.zip.Adler32;
  * <tr>
  * <td>Tools</td>
  * <td>Unique instance</td>
- * <td>{@code getPkgInfo(PKG_TOOLS)} => {@link LocalPkgInfo}</td>
+ * <td>{@code getPkgInfo(PkgType.PKG_TOOLS)} => {@link LocalPkgInfo}</td>
  * </tr>
  *
  * <tr>
  * <td>Platform-Tools</td>
  * <td>Unique instance</td>
- * <td>{@code getPkgInfo(PKG_PLATFORM_TOOLS)} => {@link LocalPkgInfo}</td>
+ * <td>{@code getPkgInfo(PkgType.PKG_PLATFORM_TOOLS)} => {@link LocalPkgInfo}</td>
  * </tr>
  *
  * <tr>
  * <td>Docs</td>
  * <td>Unique instance</td>
- * <td>{@code getPkgInfo(PKG_DOCS)} => {@link LocalPkgInfo}</td>
+ * <td>{@code getPkgInfo(PkgType.PKG_DOCS)} => {@link LocalPkgInfo}</td>
  * </tr>
  *
  * <tr>
@@ -86,53 +89,53 @@ import java.util.zip.Adler32;
  * <td>{@link FullRevision}</td>
  * <td>{@code getLatestBuildTool()} => {@link BuildToolInfo}, <br/>
  *     or {@code getBuildTool(FullRevision)} => {@link BuildToolInfo}, <br/>
- *     or {@code getPkgInfo(PKG_BUILD_TOOLS, FullRevision)} => {@link LocalPkgInfo}, <br/>
- *     or {@code getPkgsInfos(PKG_BUILD_TOOLS)} => {@link LocalPkgInfo}[]</td>
+ *     or {@code getPkgInfo(PkgType.PKG_BUILD_TOOLS, FullRevision)} => {@link LocalPkgInfo}, <br/>
+ *     or {@code getPkgsInfos(PkgType.PKG_BUILD_TOOLS)} => {@link LocalPkgInfo}[]</td>
  * </tr>
  *
  * <tr>
  * <td>Extras</td>
  * <td>String vendor/path</td>
  * <td>{@code getExtra(String)} => {@link LocalExtraPkgInfo}, <br/>
- *     or {@code getPkgInfo(PKG_EXTRAS, String)} => {@link LocalPkgInfo}, <br/>
- *     or {@code getPkgsInfos(PKG_EXTRAS)} => {@link LocalPkgInfo}[]</td>
+ *     or {@code getPkgInfo(PkgType.PKG_EXTRAS, String)} => {@link LocalPkgInfo}, <br/>
+ *     or {@code getPkgsInfos(PkgType.PKG_EXTRAS)} => {@link LocalPkgInfo}[]</td>
  * </tr>
  *
  * <tr>
  * <td>Sources</td>
  * <td>{@link AndroidVersion}</td>
- * <td>{@code getPkgInfo(PKG_SOURCES, AndroidVersion)} => {@link LocalPkgInfo}, <br/>
- *     or {@code getPkgsInfos(PKG_SOURCES)} => {@link LocalPkgInfo}[]</td>
+ * <td>{@code getPkgInfo(PkgType.PKG_SOURCES, AndroidVersion)} => {@link LocalPkgInfo}, <br/>
+ *     or {@code getPkgsInfos(PkgType.PKG_SOURCES)} => {@link LocalPkgInfo}[]</td>
  * </tr>
  *
  * <tr>
  * <td>Samples</td>
  * <td>{@link AndroidVersion}</td>
- * <td>{@code getPkgInfo(PKG_SAMPLES, AndroidVersion)} => {@link LocalPkgInfo}, <br/>
- *     or {@code getPkgsInfos(PKG_SAMPLES)} => {@link LocalPkgInfo}[]</td>
+ * <td>{@code getPkgInfo(PkgType.PKG_SAMPLES, AndroidVersion)} => {@link LocalPkgInfo}, <br/>
+ *     or {@code getPkgsInfos(PkgType.PKG_SAMPLES)} => {@link LocalPkgInfo}[]</td>
  * </tr>
  *
  * <tr>
  * <td>Platforms</td>
  * <td>{@link AndroidVersion}</td>
- * <td>{@code getPkgInfo(PKG_PLATFORMS, AndroidVersion)} => {@link LocalPkgInfo}, <br/>
- *     or {@code getPkgInfo(PKG_ADDONS, String)} => {@link LocalPkgInfo}, <br/>
- *     or {@code getPkgsInfos(PKG_PLATFORMS)} => {@link LocalPkgInfo}[], <br/>
+ * <td>{@code getPkgInfo(PkgType.PKG_PLATFORMS, AndroidVersion)} => {@link LocalPkgInfo}, <br/>
+ *     or {@code getPkgInfo(PkgType.PKG_ADDONS, String)} => {@link LocalPkgInfo}, <br/>
+ *     or {@code getPkgsInfos(PkgType.PKG_PLATFORMS)} => {@link LocalPkgInfo}[], <br/>
  *     or {@code getTargetFromHashString(String)} => {@link IAndroidTarget}</td>
  * </tr>
  *
  * <tr>
  * <td>Add-ons</td>
  * <td>{@link AndroidVersion} x String vendor/path</td>
- * <td>{@code getPkgInfo(PKG_ADDONS, String)} => {@link LocalPkgInfo}, <br/>
- *     or {@code getPkgsInfos(PKG_ADDONS)}    => {@link LocalPkgInfo}[], <br/>
+ * <td>{@code getPkgInfo(PkgType.PKG_ADDONS, String)} => {@link LocalPkgInfo}, <br/>
+ *     or {@code getPkgsInfos(PkgType.PKG_ADDONS)}    => {@link LocalPkgInfo}[], <br/>
  *     or {@code getTargetFromHashString(String)} => {@link IAndroidTarget}</td>
  * </tr>
  *
  * <tr>
  * <td>System images</td>
  * <td>{@link AndroidVersion} x {@link String} ABI</td>
- * <td>{@code getPkgsInfos(PKG_SYS_IMAGES)} => {@link LocalPkgInfo}[]</td>
+ * <td>{@code getPkgsInfos(PkgType.PKG_SYS_IMAGES)} => {@link LocalPkgInfo}[]</td>
  * </tr>
  *
  * </table>
@@ -160,68 +163,16 @@ import java.util.zip.Adler32;
  */
 public class LocalSdk {
 
-    /** Filter all SDK folders. */
-    public static final int PKG_ALL            = 0xFFFF;
-
-    /** Filter the SDK/tools folder.
-     *  Has {@link FullRevision}. */
-    public static final int PKG_TOOLS          = 0x0001;
-    /** Filter the SDK/platform-tools folder.
-     *  Has {@link FullRevision}. */
-    public static final int PKG_PLATFORM_TOOLS = 0x0002;
-    /** Filter the SDK/build-tools folder.
-     *  Has {@link FullRevision}. */
-    public static final int PKG_BUILD_TOOLS    = 0x0004;
-
-    /** Filter the SDK/docs folder.
-     *  Has {@link MajorRevision}. */
-    public static final int PKG_DOCS           = 0x0010;
-    /** Filter the SDK/extras folder.
-     *  Has {@code Path}. Has {@link MajorRevision}. */
-    public static final int PKG_EXTRAS         = 0x0020;
-
-    /** Filter the SDK/platforms.
-     *  Has {@link AndroidVersion}. Has {@link MajorRevision}. */
-    public static final int PKG_PLATFORMS      = 0x0100;
-    /** Filter the SDK/sys-images.
-     * Has {@link AndroidVersion}. Has {@link MajorRevision}. */
-    public static final int PKG_SYS_IMAGES     = 0x0200;
-    /** Filter the SDK/addons.
-     *  Has {@link AndroidVersion}. Has {@link MajorRevision}. */
-    public static final int PKG_ADDONS         = 0x0400;
-    /** Filter the SDK/samples folder.
-     *  Note: this will not detect samples located in the SDK/extras packages.
-     *  Has {@link AndroidVersion}. Has {@link MajorRevision}. */
-    public static final int PKG_SAMPLES        = 0x0800;
-    /** Filter the SDK/sources folder.
-     *  Has {@link AndroidVersion}. Has {@link MajorRevision}. */
-    public static final int PKG_SOURCES        = 0x1000;
-
     /** Location of the SDK. Maybe null. Can be changed. */
     private File mSdkRoot;
     /** File operation object. (Used for overriding in mock testing.) */
     private final IFileOp mFileOp;
     /** List of package information loaded so far. Lazily populated. */
-    private final Multimap<Integer, LocalPkgInfo> mLocalPackages = TreeMultimap.create();
+    private final Multimap<PkgType, LocalPkgInfo> mLocalPackages = TreeMultimap.create();
     /** Directories already parsed into {@link #mLocalPackages}. */
-    private final Multimap<Integer, DirInfo> mVisitedDirs = HashMultimap.create();
+    private final Multimap<PkgType, DirInfo> mVisitedDirs = HashMultimap.create();
     /** A legacy build-tool for older platform-tools < 17. */
     private BuildToolInfo mLegacyBuildTools;
-
-    private final static Map<Integer, String> sFolderName = Maps.newHashMap();
-
-    static {
-        sFolderName.put(PKG_TOOLS,          SdkConstants.FD_TOOLS);
-        sFolderName.put(PKG_PLATFORM_TOOLS, SdkConstants.FD_PLATFORM_TOOLS);
-        sFolderName.put(PKG_BUILD_TOOLS,    SdkConstants.FD_BUILD_TOOLS);
-        sFolderName.put(PKG_DOCS,           SdkConstants.FD_DOCS);
-        sFolderName.put(PKG_PLATFORMS,      SdkConstants.FD_PLATFORMS);
-        sFolderName.put(PKG_SYS_IMAGES,     SdkConstants.FD_SYSTEM_IMAGES);
-        sFolderName.put(PKG_ADDONS,         SdkConstants.FD_ADDONS);
-        sFolderName.put(PKG_SOURCES,        SdkConstants.FD_ANDROID_SOURCES);
-        sFolderName.put(PKG_SAMPLES,        SdkConstants.FD_SAMPLES);
-        sFolderName.put(PKG_EXTRAS,         SdkConstants.FD_EXTRAS);
-    }
 
     /**
      * Creates an initial LocalSdk instance with an unknown location.
@@ -254,6 +205,7 @@ public class LocalSdk {
     /*
      * Returns the current IFileOp being used.
      */
+    @NonNull
     public IFileOp getFileOp() {
         return mFileOp;
     }
@@ -266,7 +218,7 @@ public class LocalSdk {
     public void setLocation(@NonNull File sdkRoot) {
         assert sdkRoot != null;
         mSdkRoot = sdkRoot;
-        clearLocalPkg(PKG_ALL);
+        clearLocalPkg(PkgType.PKG_ALL);
     }
 
     /**
@@ -283,17 +235,12 @@ public class LocalSdk {
      * Clear the tracked visited folders & the cached {@link LocalPkgInfo} for the
      * given filter types.
      *
-     * @param filters An OR of the PKG_ constants or {@link #PKG_ALL} to clear everything.
+     * @param filters An OR of the PkgType.PKG_ constants or {@link PkgType#PKG_ALL} to clear everything.
      */
-    public void clearLocalPkg(int filters) {
+    public void clearLocalPkg(@NonNull EnumSet<PkgType> filters) {
         mLegacyBuildTools = null;
 
-        int minf = Integer.lowestOneBit(filters);
-        for (int filter = minf; filters != 0 && filter <= PKG_ALL; filter <<= 1) {
-            if ((filters & filter) == 0) {
-                continue;
-            }
-            filters ^= filter;
+        for (PkgType filter : filters) {
             mVisitedDirs.removeAll(filter);
             mLocalPackages.removeAll(filter);
         }
@@ -304,16 +251,10 @@ public class LocalSdk {
      * requested filter types.
      * This does not refresh or reload any package information.
      *
-     * @param filters An OR of the PKG_ constants or {@link #PKG_ALL} to clear everything.
+     * @param filters An OR of the PkgType.PKG_ constants or {@link PkgType#PKG_ALL} to clear everything.
      */
-    public boolean hasChanged(int filters) {
-        int minf = Integer.lowestOneBit(filters);
-        for (int filter = minf; filters != 0 && filter <= PKG_ALL; filter <<= 1) {
-            if ((filters & filter) == 0) {
-                continue;
-            }
-            filters ^= filter;
-
+    public boolean hasChanged(@NonNull EnumSet<PkgType> filters) {
+        for (PkgType filter : filters) {
             for(DirInfo dirInfo : mVisitedDirs.get(filter)) {
                 if (dirInfo.hasChanged()) {
                     return true;
@@ -331,24 +272,24 @@ public class LocalSdk {
     /**
      * Retrieves information on a package identified by an {@link AndroidVersion}.
      *
-     * Note: don't use this for {@link #PKG_SYS_IMAGES} since there can be more than
+     * Note: don't use this for {@link PkgType#PKG_SYS_IMAGES} since there can be more than
      * one ABI and this method only returns a single package per filter type.
      *
-     * @param filter {@link #PKG_PLATFORMS}, {@link #PKG_SAMPLES} or {@link #PKG_SOURCES}.
+     * @param filter {@link PkgType#PKG_PLATFORMS}, {@link PkgType#PKG_SAMPLES}
+     *                or {@link PkgType#PKG_SOURCES}.
      * @param version The {@link AndroidVersion} specific for this package type.
      * @return An existing package information or null if not found.
      */
-    public LocalPkgInfo getPkgInfo(int filter, AndroidVersion version) {
-        assert filter == PKG_PLATFORMS ||
-               filter == PKG_SAMPLES ||
-               filter == PKG_SOURCES;
+    @Nullable
+    public LocalPkgInfo getPkgInfo(@NonNull PkgType filter, @NonNull AndroidVersion version) {
+        assert filter == PkgType.PKG_PLATFORMS ||
+               filter == PkgType.PKG_SAMPLES ||
+               filter == PkgType.PKG_SOURCES;
 
         for (LocalPkgInfo pkg : getPkgsInfos(filter)) {
-            if (pkg instanceof LocalAndroidVersionPkgInfo) {
-                LocalAndroidVersionPkgInfo p = (LocalAndroidVersionPkgInfo) pkg;
-                if (p.getAndroidVersion().equals(version)) {
-                    return p;
-                }
+            IPkgDesc d = pkg.getDesc();
+            if (d.hasAndroidVersion() && d.getAndroidVersion().equals(version)) {
+                return pkg;
             }
         }
 
@@ -358,23 +299,23 @@ public class LocalSdk {
     /**
      * Retrieves information on a package identified by its {@link FullRevision}.
      * <p/>
-     * Note that {@link #PKG_TOOLS} and {@link #PKG_PLATFORM_TOOLS} are unique in a local SDK
-     * so you'll want to use {@link #getPkgInfo(int)} to retrieve them instead.
+     * Note that {@link PkgType#PKG_TOOLS} and {@link PkgType#PKG_PLATFORM_TOOLS}
+     * are unique in a local SDK so you'll want to use {@link #getPkgInfo(PkgType)}
+     * to retrieve them instead.
      *
-     * @param filter {@link #PKG_BUILD_TOOLS}.
+     * @param filter {@link PkgType#PKG_BUILD_TOOLS}.
      * @param revision The {@link FullRevision} uniquely identifying this package.
      * @return An existing package information or null if not found.
      */
-    public LocalPkgInfo getPkgInfo(int filter, FullRevision revision) {
+    @Nullable
+    public LocalPkgInfo getPkgInfo(@NonNull PkgType filter, @NonNull FullRevision revision) {
 
-        assert filter == PKG_BUILD_TOOLS;
+        assert filter == PkgType.PKG_BUILD_TOOLS;
 
         for (LocalPkgInfo pkg : getPkgsInfos(filter)) {
-            if (pkg instanceof LocalFullRevisionPkgInfo) {
-                LocalFullRevisionPkgInfo p = (LocalFullRevisionPkgInfo) pkg;
-                if (p.getFullRevision().equals(revision)) {
-                    return p;
-                }
+            IPkgDesc d = pkg.getDesc();
+            if (d.hasFullRevision() && d.getFullRevision().equals(revision)) {
+                return pkg;
             }
         }
         return null;
@@ -383,18 +324,20 @@ public class LocalSdk {
     /**
      * Retrieves information on a package identified by its {@link String} vendor/path.
      *
-     * @param filter {@link #PKG_EXTRAS}, {@link #PKG_ADDONS}, {@link #PKG_PLATFORMS}.
+     * @param filter {@link PkgType#PKG_EXTRAS}, {@link PkgType#PKG_ADDONS},
+     *               {@link PkgType#PKG_PLATFORMS}.
      * @param vendorPath The vendor/path uniquely identifying this package.
      * @return An existing package information or null if not found.
      */
-    public LocalPkgInfo getPkgInfo(int filter, String vendorPath) {
+    @Nullable
+    public LocalPkgInfo getPkgInfo(@NonNull PkgType filter, @NonNull String vendorPath) {
 
-        assert filter == PKG_EXTRAS ||
-               filter == PKG_ADDONS ||
-               filter == PKG_PLATFORMS;
+        assert filter == PkgType.PKG_EXTRAS ||
+               filter == PkgType.PKG_ADDONS ||
+               filter == PkgType.PKG_PLATFORMS;
 
         for (LocalPkgInfo pkg : getPkgsInfos(filter)) {
-            if (pkg.hasPath() && vendorPath.equals(pkg.getPath())) {
+            if (pkg.getDesc().hasPath() && vendorPath.equals(pkg.getDesc().getPath())) {
                return pkg;
            }
        }
@@ -407,8 +350,9 @@ public class LocalSdk {
      * @param vendorPath The vendor/path uniquely identifying this package.
      * @return An existing extra package information or null if not found.
      */
-    public LocalExtraPkgInfo getExtra(String vendorPath) {
-        return (LocalExtraPkgInfo) getPkgInfo(PKG_EXTRAS, vendorPath);
+    @Nullable
+    public LocalExtraPkgInfo getExtra(@NonNull String vendorPath) {
+        return (LocalExtraPkgInfo) getPkgInfo(PkgType.PKG_EXTRAS, vendorPath);
     }
 
     /**
@@ -416,21 +360,20 @@ public class LocalSdk {
      * Returns the cached LocalPkgInfo for the requested type.
      * Loads it from disk if not cached.
      *
-     * @param filter {@link #PKG_TOOLS} or {@link #PKG_PLATFORM_TOOLS} or {@link #PKG_DOCS}.
+     * @param filter {@link PkgType#PKG_TOOLS} or {@link PkgType#PKG_PLATFORM_TOOLS}
+     *               or {@link PkgType#PKG_DOCS}.
      * @return null if the package is not installed.
      */
-    public LocalPkgInfo getPkgInfo(int filter) {
+    @Nullable
+    public LocalPkgInfo getPkgInfo(@NonNull PkgType filter) {
 
-        assert filter == PKG_TOOLS ||
-               filter == PKG_PLATFORM_TOOLS ||
-               filter == PKG_DOCS;
+        assert filter == PkgType.PKG_TOOLS ||
+               filter == PkgType.PKG_PLATFORM_TOOLS ||
+               filter == PkgType.PKG_DOCS;
 
-        switch(filter) {
-        case PKG_TOOLS:
-        case PKG_PLATFORM_TOOLS:
-        case PKG_DOCS:
-            break;
-        default:
+        if (filter != PkgType.PKG_TOOLS &&
+            filter != PkgType.PKG_PLATFORM_TOOLS &&
+            filter != PkgType.PKG_DOCS) {
             return null;
         }
 
@@ -440,7 +383,7 @@ public class LocalSdk {
             return existing.iterator().next();
         }
 
-        File uniqueDir = new File(mSdkRoot, sFolderName.get(filter));
+        File uniqueDir = new File(mSdkRoot, filter.getFolderName());
         LocalPkgInfo info = null;
 
         if (!mVisitedDirs.containsEntry(filter, uniqueDir)) {
@@ -453,6 +396,14 @@ public class LocalSdk {
                 break;
             case PKG_DOCS:
                 info = scanDoc(uniqueDir);
+                break;
+            case PKG_BUILD_TOOLS:
+            case PKG_EXTRAS:
+            case PKG_PLATFORMS:
+            case PKG_ADDONS:
+            case PKG_SAMPLES:
+            case PKG_SOURCES:
+            case PKG_SYS_IMAGES:
                 break;
             }
         }
@@ -472,83 +423,96 @@ public class LocalSdk {
      * This is used for the package types that have one or more instances, each with different
      * versions.
      * <p/>
-     * To force the LocalSdk parser to load <b>everything</b>, simply call this method
-     * with the {@link #PKG_ALL} argument to load all the known package types.
-     * <p/>
-     * Note: you can use this with {@link #PKG_TOOLS}, {@link #PKG_PLATFORM_TOOLS} and
-     * {@link #PKG_DOCS} but since there can only be one package of these types, it is
-     * more efficient to use {@link #getPkgInfo(int)} to query them.
+     * Note: you can use this with {@link PkgType#PKG_TOOLS}, {@link PkgType#PKG_PLATFORM_TOOLS} and
+     * {@link PkgType#PKG_DOCS} but since there can only be one package of these types, it is
+     * more efficient to use {@link #getPkgInfo(PkgType)} to query them.
      *
-     * @param filters One or more of {@link #PKG_ADDONS}, {@link #PKG_PLATFORMS},
-     *                               {@link #PKG_BUILD_TOOLS}, {@link #PKG_EXTRAS},
-     *                               {@link #PKG_SOURCES}, {@link #PKG_SYS_IMAGES}
+     * @param filter One of {@link PkgType} constants.
      * @return A list (possibly empty) of matching installed packages. Never returns null.
      */
-    public LocalPkgInfo[] getPkgsInfos(int filters) {
+    @NonNull
+    public LocalPkgInfo[] getPkgsInfos(@NonNull PkgType filter) {
+        return getPkgsInfos(EnumSet.of(filter));
+    }
 
+    /**
+     * Retrieve all the info about the requested package types.
+     * This is used for the package types that have one or more instances, each with different
+     * versions.
+     * <p/>
+     * To force the LocalSdk parser to load <b>everything</b>, simply call this method
+     * with the {@link PkgType#PKG_ALL} argument to load all the known package types.
+     * <p/>
+     * Note: you can use this with {@link PkgType#PKG_TOOLS}, {@link PkgType#PKG_PLATFORM_TOOLS} and
+     * {@link PkgType#PKG_DOCS} but since there can only be one package of these types, it is
+     * more efficient to use {@link #getPkgInfo(PkgType)} to query them.
+     *
+     * @param filters One or more of {@link PkgType#PKG_ADDONS}, {@link PkgType#PKG_PLATFORMS},
+     *                               {@link PkgType#PKG_BUILD_TOOLS}, {@link PkgType#PKG_EXTRAS},
+     *                               {@link PkgType#PKG_SOURCES}, {@link PkgType#PKG_SYS_IMAGES}
+     * @return A list (possibly empty) of matching installed packages. Never returns null.
+     */
+    @NonNull
+    public LocalPkgInfo[] getPkgsInfos(@NonNull EnumSet<PkgType> filters) {
         List<LocalPkgInfo> list = Lists.newArrayList();
 
-        int minf = Integer.lowestOneBit(filters);
-
-        for (int filter = minf; filters != 0 && filter <= PKG_ALL; filter <<= 1) {
-            if ((filters & filter) == 0) {
-                continue;
-            }
-            filters ^= filter;
-
-            switch(filter) {
-            case PKG_TOOLS:
-            case PKG_PLATFORM_TOOLS:
-            case PKG_DOCS:
+        for (PkgType filter : filters) {
+            if (filter == PkgType.PKG_TOOLS ||
+                    filter == PkgType.PKG_PLATFORM_TOOLS ||
+                    filter == PkgType.PKG_DOCS) {
                 LocalPkgInfo info = getPkgInfo(filter);
                 if (info != null) {
                     list.add(info);
                 }
-                break;
-
-            case PKG_BUILD_TOOLS:
-            case PKG_PLATFORMS:
-            case PKG_SYS_IMAGES:
-            case PKG_ADDONS:
-            case PKG_SAMPLES:
-            case PKG_SOURCES:
-            case PKG_EXTRAS:
+            } else {
                 Collection<LocalPkgInfo> existing = mLocalPackages.get(filter);
-                if (existing.size() > 0) {
+                assert existing != null; // Multimap returns an empty set if not found
+
+                if (!existing.isEmpty()) {
                     list.addAll(existing);
                     continue;
                 }
 
-                File subDir = new File(mSdkRoot, sFolderName.get(filter));
+                File subDir = new File(mSdkRoot, filter.getFolderName());
 
                 if (!mVisitedDirs.containsEntry(filter, subDir)) {
                     switch(filter) {
                     case PKG_BUILD_TOOLS:
                         scanBuildTools(subDir, existing);
                         break;
+
                     case PKG_PLATFORMS:
                         scanPlatforms(subDir, existing);
                         break;
+
                     case PKG_SYS_IMAGES:
                         scanSysImages(subDir, existing);
                         break;
+
                     case PKG_ADDONS:
                         scanAddons(subDir, existing);
                         break;
+
                     case PKG_SAMPLES:
                         scanSamples(subDir, existing);
                         break;
+
                     case PKG_SOURCES:
                         scanSources(subDir, existing);
                         break;
+
                     case PKG_EXTRAS:
                         scanExtras(subDir, existing);
+                        break;
+
+                    case PKG_TOOLS:
+                    case PKG_PLATFORM_TOOLS:
+                    case PKG_DOCS:
                         break;
                     }
                     mVisitedDirs.put(filter, new DirInfo(subDir));
                     list.addAll(existing);
                 }
-                break;
             }
         }
 
@@ -562,11 +526,11 @@ public class LocalSdk {
      *
      * @param revision The requested revision.
      * @return A {@link BuildToolInfo}. Can be null if {@code revision} is null or is
-     *  not part of the known set returned by {@code getPkgsInfos(PKG_BUILD_TOOLS)}.
+     *  not part of the known set returned by {@code getPkgsInfos(PkgType.PKG_BUILD_TOOLS)}.
      */
     @Nullable
     public BuildToolInfo getBuildTool(@Nullable FullRevision revision) {
-        LocalPkgInfo pkg = getPkgInfo(PKG_BUILD_TOOLS, revision);
+        LocalPkgInfo pkg = getPkgInfo(PkgType.PKG_BUILD_TOOLS, revision);
         if (pkg instanceof LocalBuildToolPkgInfo) {
             return ((LocalBuildToolPkgInfo) pkg).getBuildToolInfo();
         }
@@ -589,12 +553,12 @@ public class LocalSdk {
             return mLegacyBuildTools;
         }
 
-        LocalPkgInfo[] pkgs = getPkgsInfos(PKG_BUILD_TOOLS);
+        LocalPkgInfo[] pkgs = getPkgsInfos(PkgType.PKG_BUILD_TOOLS);
 
         if (pkgs.length == 0) {
-            LocalPkgInfo ptPkg = getPkgInfo(PKG_PLATFORM_TOOLS);
+            LocalPkgInfo ptPkg = getPkgInfo(PkgType.PKG_PLATFORM_TOOLS);
             if (ptPkg instanceof LocalPlatformToolPkgInfo &&
-                    ptPkg.getFullRevision().compareTo(new FullRevision(17)) < 0) {
+                    ptPkg.getDesc().getFullRevision().compareTo(new FullRevision(17)) < 0) {
                 // older SDK, create a compatible build-tools
                 mLegacyBuildTools = createLegacyBuildTools((LocalPlatformToolPkgInfo) ptPkg);
                 return mLegacyBuildTools;
@@ -618,13 +582,14 @@ public class LocalSdk {
         return null;
     }
 
-    private BuildToolInfo createLegacyBuildTools(LocalPlatformToolPkgInfo ptInfo) {
+    @NonNull
+    private BuildToolInfo createLegacyBuildTools(@NonNull LocalPlatformToolPkgInfo ptInfo) {
         File platformTools = new File(getLocation(), SdkConstants.FD_PLATFORM_TOOLS);
         File platformToolsLib = ptInfo.getLocalDir();
         File platformToolsRs = new File(platformTools, SdkConstants.FN_FRAMEWORK_RENDERSCRIPT);
 
         return new BuildToolInfo(
-                ptInfo.getFullRevision(),
+                ptInfo.getDesc().getFullRevision(),
                 platformTools,
                 new File(platformTools, SdkConstants.FN_AAPT),
                 new File(platformTools, SdkConstants.FN_AIDL),
@@ -650,7 +615,8 @@ public class LocalSdk {
 
         if (hash != null) {
             boolean isPlatform = AndroidTargetHash.isPlatform(hash);
-            LocalPkgInfo[] pkgs = getPkgsInfos(isPlatform ? PKG_PLATFORMS : PKG_ADDONS);
+            LocalPkgInfo[] pkgs =
+                getPkgsInfos(isPlatform ? PkgType.PKG_PLATFORMS : PkgType.PKG_ADDONS);
 
             for (LocalPkgInfo pkg : pkgs) {
                 if (pkg instanceof LocalPlatformPkgInfo) {
@@ -674,12 +640,18 @@ public class LocalSdk {
     private LocalToolPkgInfo scanTools(File toolFolder) {
         // Can we find some properties?
         Properties props = parseProperties(new File(toolFolder, SdkConstants.FN_SOURCE_PROP));
-        FullRevision rev = PackageParserUtils.getPropertyFullRevision(props);
+        FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
         if (rev == null) {
             return null;
         }
 
-        LocalToolPkgInfo info = new LocalToolPkgInfo(this, toolFolder, props, rev);
+        FullRevision minPlatToolsRev =
+            PackageParserUtils.getPropertyFull(props, PkgProps.MIN_PLATFORM_TOOLS_REV);
+        if (minPlatToolsRev == null) {
+            minPlatToolsRev = FullRevision.NOT_SPECIFIED;
+        }
+
+        LocalToolPkgInfo info = new LocalToolPkgInfo(this, toolFolder, props, rev, minPlatToolsRev);
 
         // We're not going to check that all tools are present. At the very least
         // we should expect to find android and an emulator adapted to the current OS.
@@ -714,7 +686,7 @@ public class LocalSdk {
     private LocalPlatformToolPkgInfo scanPlatformTools(File ptFolder) {
         // Can we find some properties?
         Properties props = parseProperties(new File(ptFolder, SdkConstants.FN_SOURCE_PROP));
-        FullRevision rev = PackageParserUtils.getPropertyFullRevision(props);
+        FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
         if (rev == null) {
             return null;
         }
@@ -730,32 +702,38 @@ public class LocalSdk {
     private LocalDocPkgInfo scanDoc(File docFolder) {
         // Can we find some properties?
         Properties props = parseProperties(new File(docFolder, SdkConstants.FN_SOURCE_PROP));
-        MajorRevision rev = PackageParserUtils.getPropertyMajorRevision(props);
+        MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
         if (rev == null) {
             return null;
         }
 
-        LocalDocPkgInfo info = new LocalDocPkgInfo(this, docFolder, props, rev);
+        try {
+            AndroidVersion vers = new AndroidVersion(props);
+            LocalDocPkgInfo info = new LocalDocPkgInfo(this, docFolder, props, vers, rev);
 
-        // To start with, a doc folder should have an "index.html" to be acceptable.
-        // We don't actually check the content of the file.
-        if (!mFileOp.isFile(new File(docFolder, "index.html"))) {
-            info.appendLoadError("Missing index.html");
+            // To start with, a doc folder should have an "index.html" to be acceptable.
+            // We don't actually check the content of the file.
+            if (!mFileOp.isFile(new File(docFolder, "index.html"))) {
+                info.appendLoadError("Missing index.html");
+            }
+            return info;
+
+        } catch (AndroidVersionException e) {
+            return null; // skip invalid or missing android version.
         }
-        return info;
     }
 
     private void scanBuildTools(File collectionDir, Collection<LocalPkgInfo> outCollection) {
         // The build-tool root folder contains a list of per-revision folders.
         for (File buildToolDir : mFileOp.listFiles(collectionDir)) {
             if (!mFileOp.isDirectory(buildToolDir) ||
-                    mVisitedDirs.containsEntry(PKG_BUILD_TOOLS, buildToolDir)) {
+                    mVisitedDirs.containsEntry(PkgType.PKG_BUILD_TOOLS, buildToolDir)) {
                 continue;
             }
-            mVisitedDirs.put(PKG_BUILD_TOOLS, new DirInfo(buildToolDir));
+            mVisitedDirs.put(PkgType.PKG_BUILD_TOOLS, new DirInfo(buildToolDir));
 
             Properties props = parseProperties(new File(buildToolDir, SdkConstants.FN_SOURCE_PROP));
-            FullRevision rev = PackageParserUtils.getPropertyFullRevision(props);
+            FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
             }
@@ -770,22 +748,28 @@ public class LocalSdk {
     private void scanPlatforms(File collectionDir, Collection<LocalPkgInfo> outCollection) {
         for (File platformDir : mFileOp.listFiles(collectionDir)) {
             if (!mFileOp.isDirectory(platformDir) ||
-                    mVisitedDirs.containsEntry(PKG_PLATFORMS, platformDir)) {
+                    mVisitedDirs.containsEntry(PkgType.PKG_PLATFORMS, platformDir)) {
                 continue;
             }
-            mVisitedDirs.put(PKG_PLATFORMS, new DirInfo(platformDir));
+            mVisitedDirs.put(PkgType.PKG_PLATFORMS, new DirInfo(platformDir));
 
             Properties props = parseProperties(new File(platformDir, SdkConstants.FN_SOURCE_PROP));
-            MajorRevision rev = PackageParserUtils.getPropertyMajorRevision(props);
+            MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
+            }
+
+            FullRevision minToolsRev =
+                PackageParserUtils.getPropertyFull(props, PkgProps.MIN_TOOLS_REV);
+            if (minToolsRev == null) {
+                minToolsRev = FullRevision.NOT_SPECIFIED;
             }
 
             try {
                 AndroidVersion vers = new AndroidVersion(props);
 
                 LocalPlatformPkgInfo pkgInfo =
-                    new LocalPlatformPkgInfo(this, platformDir, props, vers, rev);
+                    new LocalPlatformPkgInfo(this, platformDir, props, vers, rev, minToolsRev);
                 outCollection.add(pkgInfo);
 
             } catch (AndroidVersionException e) {
@@ -797,13 +781,13 @@ public class LocalSdk {
     private void scanAddons(File collectionDir, Collection<LocalPkgInfo> outCollection) {
         for (File addonDir : mFileOp.listFiles(collectionDir)) {
             if (!mFileOp.isDirectory(addonDir) ||
-                    mVisitedDirs.containsEntry(PKG_ADDONS, addonDir)) {
+                    mVisitedDirs.containsEntry(PkgType.PKG_ADDONS, addonDir)) {
                 continue;
             }
-            mVisitedDirs.put(PKG_ADDONS, new DirInfo(addonDir));
+            mVisitedDirs.put(PkgType.PKG_ADDONS, new DirInfo(addonDir));
 
             Properties props = parseProperties(new File(addonDir, SdkConstants.FN_SOURCE_PROP));
-            MajorRevision rev = PackageParserUtils.getPropertyMajorRevision(props);
+            MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
             }
@@ -824,20 +808,21 @@ public class LocalSdk {
     private void scanSysImages(File collectionDir, Collection<LocalPkgInfo> outCollection) {
         for (File platformDir : mFileOp.listFiles(collectionDir)) {
             if (!mFileOp.isDirectory(platformDir) ||
-                    mVisitedDirs.containsEntry(PKG_SYS_IMAGES, platformDir)) {
+                    mVisitedDirs.containsEntry(PkgType.PKG_SYS_IMAGES, platformDir)) {
                 continue;
             }
-            mVisitedDirs.put(PKG_SYS_IMAGES, new DirInfo(platformDir));
+            mVisitedDirs.put(PkgType.PKG_SYS_IMAGES, new DirInfo(platformDir));
 
             for (File abiDir : mFileOp.listFiles(platformDir)) {
                 if (!mFileOp.isDirectory(abiDir) ||
-                        mVisitedDirs.containsEntry(PKG_SYS_IMAGES, abiDir)) {
+                        mVisitedDirs.containsEntry(PkgType.PKG_SYS_IMAGES, abiDir)) {
                     continue;
                 }
-                mVisitedDirs.put(PKG_SYS_IMAGES, new DirInfo(abiDir));
+                mVisitedDirs.put(PkgType.PKG_SYS_IMAGES, new DirInfo(abiDir));
 
                 Properties props = parseProperties(new File(abiDir, SdkConstants.FN_SOURCE_PROP));
-                MajorRevision rev = PackageParserUtils.getPropertyMajorRevision(props);
+                MajorRevision rev =
+                    PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
                 if (rev == null) {
                     continue; // skip, no revision
                 }
@@ -859,22 +844,28 @@ public class LocalSdk {
     private void scanSamples(File collectionDir, Collection<LocalPkgInfo> outCollection) {
         for (File platformDir : mFileOp.listFiles(collectionDir)) {
             if (!mFileOp.isDirectory(platformDir) ||
-                    mVisitedDirs.containsEntry(PKG_SAMPLES, platformDir)) {
+                    mVisitedDirs.containsEntry(PkgType.PKG_SAMPLES, platformDir)) {
                 continue;
             }
-            mVisitedDirs.put(PKG_SAMPLES, new DirInfo(platformDir));
+            mVisitedDirs.put(PkgType.PKG_SAMPLES, new DirInfo(platformDir));
 
             Properties props = parseProperties(new File(platformDir, SdkConstants.FN_SOURCE_PROP));
-            MajorRevision rev = PackageParserUtils.getPropertyMajorRevision(props);
+            MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
+            }
+
+            FullRevision minToolsRev =
+                PackageParserUtils.getPropertyFull(props, PkgProps.MIN_TOOLS_REV);
+            if (minToolsRev == null) {
+                minToolsRev = FullRevision.NOT_SPECIFIED;
             }
 
             try {
                 AndroidVersion vers = new AndroidVersion(props);
 
                 LocalSamplePkgInfo pkgInfo =
-                    new LocalSamplePkgInfo(this, platformDir, props, vers, rev);
+                    new LocalSamplePkgInfo(this, platformDir, props, vers, rev, minToolsRev);
                 outCollection.add(pkgInfo);
             } catch (AndroidVersionException e) {
                 continue; // skip invalid or missing android version.
@@ -886,13 +877,13 @@ public class LocalSdk {
         // The build-tool root folder contains a list of per-revision folders.
         for (File platformDir : mFileOp.listFiles(collectionDir)) {
             if (!mFileOp.isDirectory(platformDir) ||
-                    mVisitedDirs.containsEntry(PKG_SOURCES, platformDir)) {
+                    mVisitedDirs.containsEntry(PkgType.PKG_SOURCES, platformDir)) {
                 continue;
             }
-            mVisitedDirs.put(PKG_SOURCES, new DirInfo(platformDir));
+            mVisitedDirs.put(PkgType.PKG_SOURCES, new DirInfo(platformDir));
 
             Properties props = parseProperties(new File(platformDir, SdkConstants.FN_SOURCE_PROP));
-            MajorRevision rev = PackageParserUtils.getPropertyMajorRevision(props);
+            MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
             }
@@ -911,20 +902,22 @@ public class LocalSdk {
 
     private void scanExtras(File collectionDir, Collection<LocalPkgInfo> outCollection) {
         for (File vendorDir : mFileOp.listFiles(collectionDir)) {
-            if (!mFileOp.isDirectory(vendorDir) || mVisitedDirs.containsEntry(PKG_EXTRAS, vendorDir)) {
+            if (!mFileOp.isDirectory(vendorDir) ||
+                    mVisitedDirs.containsEntry(PkgType.PKG_EXTRAS, vendorDir)) {
                 continue;
             }
-            mVisitedDirs.put(PKG_EXTRAS, new DirInfo(vendorDir));
+            mVisitedDirs.put(PkgType.PKG_EXTRAS, new DirInfo(vendorDir));
 
             for (File extraDir : mFileOp.listFiles(vendorDir)) {
                 if (!mFileOp.isDirectory(extraDir) ||
-                        mVisitedDirs.containsEntry(PKG_EXTRAS, extraDir)) {
+                        mVisitedDirs.containsEntry(PkgType.PKG_EXTRAS, extraDir)) {
                     continue;
                 }
-                mVisitedDirs.put(PKG_EXTRAS, new DirInfo(extraDir));
+                mVisitedDirs.put(PkgType.PKG_EXTRAS, new DirInfo(extraDir));
 
                 Properties props = parseProperties(new File(extraDir, SdkConstants.FN_SOURCE_PROP));
-                NoPreviewRevision rev = PackageParserUtils.getPropertyNoPreviewRevision(props);
+                NoPreviewRevision rev =
+                    PackageParserUtils.getPropertyNoPreview(props, PkgProps.PKG_REVISION);
                 if (rev == null) {
                     continue; // skip, no revision
                 }
