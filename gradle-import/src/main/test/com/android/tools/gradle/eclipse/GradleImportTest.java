@@ -298,6 +298,7 @@ public class GradleImportTest extends TestCase {
         new File(unhandled, "unhandledFile").createNewFile();
         new File(unhandled, "unhandledDir3").mkdirs();
         new File(unhandled.getParentFile(), "unhandledDir4").mkdirs();
+        new File(projectDir, "lint.xml").createNewFile();
 
         // Project being imported
         assertEquals(""
@@ -311,6 +312,7 @@ public class GradleImportTest extends TestCase {
                 + "    pkg\n"
                 + "      R.java\n"
                 + "ic_launcher-web.png\n"
+                + "lint.xml\n"
                 + "local.properties\n"
                 + "project.properties\n"
                 + "res\n"
@@ -341,7 +343,10 @@ public class GradleImportTest extends TestCase {
                 + "* unhandledDir1/unhandledDir2/\n"
                 + "* unhandledDir1/unhandledDir2/unhandledFile\n"
                 + MSG_FOLDER_STRUCTURE
-                + DEFAULT_MOVED
+                + "* AndroidManifest.xml => app/src/main/AndroidManifest.xml\n"
+                + "* lint.xml => app/lint.xml\n"
+                + "* res/ => app/src/main/res/\n"
+                + "* src/ => app/src/main/java/\n"
                 + MSG_FOOTER,
                 true /* checkBuild */);
 
@@ -349,6 +354,7 @@ public class GradleImportTest extends TestCase {
         assertEquals(""
                 + "app\n"
                 + "  build.gradle\n"
+                + "  lint.xml\n"
                 + "  src\n"
                 + "    main\n"
                 + "      AndroidManifest.xml\n"

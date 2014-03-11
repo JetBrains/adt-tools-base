@@ -101,6 +101,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
     @NonNull protected abstract List<ImportModule> getDirectDependencies();
     @NonNull protected abstract List<ImportModule> getAllDependencies();
     @Nullable protected abstract String getPackage();
+    @Nullable protected abstract File getLintXml();
     @Nullable protected abstract File getOutputDir();
     @Nullable protected abstract File getManifestFile();
     @Nullable protected abstract File getResourceDir();
@@ -332,6 +333,13 @@ abstract class ImportModule implements Comparable<ImportModule> {
                 recordCopiedFile(copied, srcAssets);
             }
 
+            File lintXml = getLintXml();
+            if (lintXml != null) {
+                File destLintXml = new File(destDir, lintXml.getName());
+                Files.copy(lintXml, destLintXml);
+                summary.reportMoved(this, lintXml, destLintXml);
+                recordCopiedFile(copied, lintXml);
+            }
         }
 
         for (final File src : getSourcePaths()) {
