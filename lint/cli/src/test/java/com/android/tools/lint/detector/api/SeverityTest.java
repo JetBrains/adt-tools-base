@@ -40,4 +40,12 @@ public class SeverityTest extends TestCase {
         assertSame(Severity.IGNORE, Severity.fromName("ignore"));
         assertSame(Severity.IGNORE, Severity.fromName("IGNORE"));
     }
+
+    public void testCompare() {
+        assertTrue(Severity.IGNORE.compareTo(Severity.ERROR) > 0);
+        assertTrue(Severity.WARNING.compareTo(Severity.ERROR) > 0);
+        assertTrue(Severity.ERROR.compareTo(Severity.ERROR) == 0);
+        assertTrue(Severity.FATAL.compareTo(Severity.ERROR) < 0);
+        assertTrue(Severity.WARNING.compareTo(Severity.ERROR) > 0);
+    }
 }

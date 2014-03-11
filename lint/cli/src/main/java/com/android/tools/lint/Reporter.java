@@ -59,6 +59,7 @@ public abstract class Reporter {
     protected File mResources;
     protected final Map<File, String> mResourceUrl = new HashMap<File, String>();
     protected final Map<String, File> mNameToFile = new HashMap<String, File>();
+    protected boolean mDisplayEmpty = true;
 
     /**
      * Write the given warnings into the report
@@ -330,5 +331,21 @@ public abstract class Reporter {
         }
         relativePath.append(filePath.substring(lastSeparatorIndex + 1));
         return relativePath.toString();
+    }
+
+    /**
+     * Returns whether this report should display info (such as a path to the report) if
+     * no issues were found
+     */
+    public boolean isDisplayEmpty() {
+        return mDisplayEmpty;
+    }
+
+    /**
+     * Sets whether this report should display info (such as a path to the report) if
+     * no issues were found
+     */
+    public void setDisplayEmpty(boolean displayEmpty) {
+        mDisplayEmpty = displayEmpty;
     }
 }

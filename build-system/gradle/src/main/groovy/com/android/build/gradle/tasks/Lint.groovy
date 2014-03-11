@@ -20,6 +20,7 @@ import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.internal.LintGradleClient
+import com.android.build.gradle.internal.dsl.LintOptionsImpl
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
@@ -86,8 +87,10 @@ public class Lint extends DefaultTask {
         for (Map.Entry<Variant,List<Warning>> entry : warningMap.entrySet()) {
             def variant = entry.getKey()
             def warnings = entry.getValue()
-            println "Ran lint on variant " + variant.getName() + ": " + warnings.size() +
-                    " issues found"
+            if (!mFatalOnly) {
+                println "Ran lint on variant " + variant.getName() + ": " + warnings.size() +
+                        " issues found"
+            }
         }
 
         List<Warning> mergedWarnings = LintGradleClient.merge(warningMap, modelProject)
@@ -105,7 +108,9 @@ public class Lint extends DefaultTask {
         LintCliFlags flags = new LintCliFlags()
         LintGradleClient client = new LintGradleClient(registry, flags, mPlugin, modelProject,
                 null)
-        mPlugin.getExtension().lintOptions.syncTo(client, flags, null, project, true)
+        syncOptions(mPlugin.getExtension().lintOptions, client, flags, null, project, true,
+                mFatalOnly)
+
         for (Reporter reporter : flags.getReporters()) {
             reporter.write(errorCount, warningCount, mergedWarnings)
         }
@@ -172,8 +177,8 @@ public class Lint extends DefaultTask {
             }
             flags.setFatalOnly(true)
         }
-        options.syncTo(client, flags, variantName, project, report)
-        if (!report) {
+        syncOptions(options, client, flags, variantName, project, report, mFatalOnly)
+        if (!report || mFatalOnly) {
             flags.setQuiet(true)
         }
 
@@ -189,6 +194,23 @@ public class Lint extends DefaultTask {
         }
 
         return warnings;
+    }
+
+    private static syncOptions(
+            @NonNull LintOptionsImpl options,
+            @NonNull LintGradleClient client,
+            @NonNull LintCliFlags flags,
+            @NonNull String variantName,
+            @NonNull Project project,
+            boolean report,
+            boolean fatalOnly) {
+        options.syncTo(client, flags, variantName, project, report)
+
+        if (fatalOnly) {
+            for (Reporter reporter : flags.getReporters()) {
+                reporter.setDisplayEmpty(false)
+            }
+        }
     }
 
     private static AndroidProject createAndroidProject(@NonNull Project gradleProject) {

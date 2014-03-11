@@ -18,6 +18,7 @@ package com.android.tools.lint;
 
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.utils.SdkUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
@@ -134,8 +135,11 @@ public class MultiProjectHtmlReporter extends HtmlReporter {
         writeOverview(errorCount, warningCount, projects);
         Closeables.closeQuietly(mWriter);
 
-        File index = new File(mDir, INDEX_NAME);
-        System.out.println(String.format("Wrote overview index to %1$s", index));
+        if (mDisplayEmpty || errorCount > 0 || warningCount > 0) {
+            File index = new File(mDir, INDEX_NAME);
+            String url = SdkUtils.fileToUrlString(index.getAbsoluteFile());
+            System.out.println(String.format("Wrote overview index to %1$s", url));
+        }
     }
 
     private void writeOverview(int errorCount, int warningCount, List<ProjectEntry> projects)
