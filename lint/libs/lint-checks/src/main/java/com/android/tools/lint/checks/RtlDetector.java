@@ -31,6 +31,7 @@ import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_START;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_RIGHT;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_START;
 import static com.android.SdkConstants.ATTR_LAYOUT_GRAVITY;
+import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN;
 import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN_END;
 import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN_LEFT;
 import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN_RIGHT;
@@ -43,6 +44,7 @@ import static com.android.SdkConstants.ATTR_LIST_PREFERRED_ITEM_PADDING_END;
 import static com.android.SdkConstants.ATTR_LIST_PREFERRED_ITEM_PADDING_LEFT;
 import static com.android.SdkConstants.ATTR_LIST_PREFERRED_ITEM_PADDING_RIGHT;
 import static com.android.SdkConstants.ATTR_LIST_PREFERRED_ITEM_PADDING_START;
+import static com.android.SdkConstants.ATTR_PADDING;
 import static com.android.SdkConstants.ATTR_PADDING_END;
 import static com.android.SdkConstants.ATTR_PADDING_LEFT;
 import static com.android.SdkConstants.ATTR_PADDING_RIGHT;
@@ -53,6 +55,7 @@ import static com.android.SdkConstants.GRAVITY_VALUE_LEFT;
 import static com.android.SdkConstants.GRAVITY_VALUE_RIGHT;
 import static com.android.SdkConstants.GRAVITY_VALUE_START;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -284,6 +287,25 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         }
     }
 
+    private static String convertToOppositeDirection(String attribute) {
+        int index = attribute.indexOf("eft");  //$NON-NLS-1$
+        if (index == -1) {
+            index = attribute.indexOf("ight"); //$NON-NLS-1$
+            assert index > 0 : attribute;
+            if (attribute.charAt(index - 1) == 'R') {
+                return attribute.replace("Right", "Left");
+            } else {
+                return attribute.replace("right", "left");
+            }
+        }
+        assert index > 0 : attribute;
+        if (attribute.charAt(index - 1) == 'L') {
+            return attribute.replace("Left", "Right");
+        } else {
+            return attribute.replace("left", "right");
+        }
+    }
+
     private static String convertNewToOld(String attribute) {
         int index = attribute.indexOf("tart");  //$NON-NLS-1$
         if (index == -1) {
@@ -443,6 +465,15 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                             message, null);
                 }
             } else {
+                // For margins and padding, if the values are the same there's no problem
+                if (isPaddingAttribute(name) || isMarginAttribute(name)) {
+                    String opposite = convertToOppositeDirection(name);
+                    String oldValue = element.getAttributeNS(ANDROID_URI, opposite);
+                    if (value.equals(oldValue)) {
+                        return;
+                    }
+                }
+
                 String message;
                 if (project.getMinSdk() >= RTL_API || context.getFolderVersion() >= RTL_API) {
                     message = String.format(
@@ -478,6 +509,14 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                     project.getMinSdk(), attribute.getPrefix(), old, value);
             context.report(COMPAT, attribute, context.getLocation(attribute), message, null);
         }
+    }
+
+    private static boolean isMarginAttribute(@NonNull String name) {
+        return name.startsWith(ATTR_LAYOUT_MARGIN);
+    }
+
+    private static boolean isPaddingAttribute(@NonNull String name) {
+        return name.startsWith(ATTR_PADDING);
     }
 
     // ---- Implements JavaScanner ----
