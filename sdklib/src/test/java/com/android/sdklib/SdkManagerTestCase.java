@@ -23,11 +23,11 @@ import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.sdklib.internal.avd.AvdManager;
 import com.android.sdklib.io.FileOp;
-import com.android.sdklib.local.LocalPlatformPkgInfo;
 import com.android.sdklib.mock.MockLog;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
+import com.android.sdklib.repository.local.LocalPlatformPkgInfo;
 import com.android.utils.ILogger;
 
 import junit.framework.TestCase;

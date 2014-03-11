@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.local;
+package com.android.sdklib.repository.local;
 
 import com.android.SdkConstants;
 import com.android.sdklib.AndroidVersion;
@@ -26,6 +26,18 @@ import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.io.MockFileOp;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
+import com.android.sdklib.repository.local.LocalAddonPkgInfo;
+import com.android.sdklib.repository.local.LocalBuildToolPkgInfo;
+import com.android.sdklib.repository.local.LocalDocPkgInfo;
+import com.android.sdklib.repository.local.LocalExtraPkgInfo;
+import com.android.sdklib.repository.local.LocalPkgInfo;
+import com.android.sdklib.repository.local.LocalPlatformPkgInfo;
+import com.android.sdklib.repository.local.LocalPlatformToolPkgInfo;
+import com.android.sdklib.repository.local.LocalSamplePkgInfo;
+import com.android.sdklib.repository.local.LocalSdk;
+import com.android.sdklib.repository.local.LocalSourcePkgInfo;
+import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
+import com.android.sdklib.repository.local.LocalToolPkgInfo;
 
 import java.io.File;
 import java.util.Arrays;
