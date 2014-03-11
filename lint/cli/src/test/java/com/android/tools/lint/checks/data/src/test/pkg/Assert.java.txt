@@ -1,0 +1,15 @@
+package test.pkg;
+
+import android.annotations.tools.SuppressLint;
+
+public class Assert {
+    public Assert(int param) {
+        assert false;
+        assert param > 5 : "My description";
+    }
+
+    @SuppressLint("Assert")
+    public void checkSuppressed(int param) {
+        assert param > 5 : "My description";
+    }
+}
