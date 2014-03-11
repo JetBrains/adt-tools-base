@@ -434,7 +434,7 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
 
         TestVariantImpl testVariant = null;
         if (testVariantData != null) {
-            testVariant = instantiator.newInstance(TestVariantImpl.class, testVariantData)
+            testVariant = instantiator.newInstance(TestVariantImpl.class, testVariantData, this)
         }
 
         if (libVariant != null && testVariant != null) {

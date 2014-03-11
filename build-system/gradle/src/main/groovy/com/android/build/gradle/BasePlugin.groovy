@@ -874,13 +874,6 @@ public abstract class BasePlugin {
      */
     protected void createTestApkTasks(@NonNull TestVariantData variantData,
                                       @NonNull BaseVariantData testedVariantData) {
-        // The test app is signed with the same info as the tested app so there's no need
-        // to test both.
-        if (!variantData.isSigned()) {
-            throw new GradleException(
-                    "Tested Variant '${testedVariantData.variantConfiguration.fullName}' is not configured to create a signed APK.")
-        }
-
         createAnchorTasks(variantData)
 
         // Add a task to process the manifest
@@ -1430,6 +1423,31 @@ public abstract class BasePlugin {
 
         variantData.uninstallTask = uninstallTask
         uninstallAll.dependsOn uninstallTask
+    }
+
+    /**
+     * creates a zip align. This does not use convention mapping,
+     * and is meant to let other plugin create zip align tasks.
+     *
+     * @param name the name of the task
+     * @param inputFile the input file
+     * @param outputFile the output file
+     *
+     * @return the task
+     */
+    @NonNull
+    ZipAlign createZipAlignTask(
+            @NonNull String name,
+            @NonNull File inputFile,
+            @NonNull File outputFile) {
+        // Add a task to zip align application package
+        def zipAlignTask = project.tasks.create(name, ZipAlign)
+
+        zipAlignTask.inputFile = inputFile
+        zipAlignTask.outputFile = outputFile
+        zipAlignTask.conventionMapping.zipAlignExe = { getSdkParser().zipAlign }
+
+        return zipAlignTask
     }
 
     /**

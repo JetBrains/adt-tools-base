@@ -17,58 +17,42 @@
 package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.api.TestVariant;
+import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
-import com.android.build.gradle.tasks.Dex;
-import com.android.build.gradle.tasks.PackageApplication;
-import com.android.build.gradle.tasks.ZipAlign;
-import com.android.builder.DefaultProductFlavor;
-import com.android.builder.model.SigningConfig;
+
 import org.gradle.api.DefaultTask;
 
-import java.io.File;
 import java.util.List;
 
 /**
  * implementation of the {@link TestVariant} interface around an {@link TestVariantData} object.
  */
-public class TestVariantImpl extends BaseVariantImpl implements TestVariant {
+public class TestVariantImpl extends ApkVariantImpl implements TestVariant {
 
     @NonNull
     private final TestVariantData variantData;
     @NonNull
     private BaseVariant testedVariant;
 
-    public TestVariantImpl(@NonNull TestVariantData variantData) {
+    public TestVariantImpl(@NonNull TestVariantData variantData, @NonNull BasePlugin plugin) {
+        super(plugin);
         this.variantData = variantData;
     }
 
     @Override
+    @NonNull
     protected BaseVariantData getVariantData() {
         return variantData;
     }
 
     @Override
     @NonNull
-    public List<DefaultProductFlavor> getProductFlavors() {
-        return variantData.getVariantConfiguration().getFlavorConfigs();
-    }
-
-    @Override
-    @NonNull
-    public DefaultProductFlavor getMergedFlavor() {
-        return variantData.getVariantConfiguration().getMergedFlavor();
-    }
-
-    @Override
-    public void setOutputFile(@NonNull File outputFile) {
-        if (variantData.zipAlignTask != null) {
-            variantData.zipAlignTask.setOutputFile(outputFile);
-        } else {
-            variantData.packageApplicationTask.setOutputFile(outputFile);
-        }
+    protected ApkVariantData getApkVariantData() {
+        return variantData;
     }
 
     @Override
@@ -82,31 +66,6 @@ public class TestVariantImpl extends BaseVariantImpl implements TestVariant {
     }
 
     @Override
-    public Dex getDex() {
-        return variantData.dexTask;
-    }
-
-    @Override
-    public PackageApplication getPackageApplication() {
-        return variantData.packageApplicationTask;
-    }
-
-    @Override
-    public ZipAlign getZipAlign() {
-        return variantData.zipAlignTask;
-    }
-
-    @Override
-    public DefaultTask getInstall() {
-        return variantData.installTask;
-    }
-
-    @Override
-    public DefaultTask getUninstall() {
-        return variantData.uninstallTask;
-    }
-
-    @Override
     public DefaultTask getConnectedInstrumentTest() {
         return variantData.connectedTestTask;
     }
@@ -115,15 +74,5 @@ public class TestVariantImpl extends BaseVariantImpl implements TestVariant {
     @Override
     public List<? extends DefaultTask> getProviderInstrumentTests() {
         return variantData.providerTestTaskList;
-    }
-
-    @Override
-    public SigningConfig getSigningConfig() {
-        return variantData.getVariantConfiguration().getSigningConfig();
-    }
-
-    @Override
-    public boolean isSigningReady() {
-        return variantData.isSigned();
     }
 }
