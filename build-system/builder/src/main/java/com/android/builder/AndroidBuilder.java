@@ -923,9 +923,10 @@ public class AndroidBuilder {
             throw new IllegalStateException("llvm-rs-cc is missing");
         }
 
-        if (supportMode && mBuildTools.getRevision().compareTo(new FullRevision(18,1, 0)) == -1) {
+        FullRevision minBuildToolsRev = new FullRevision(19,0,3);
+        if (supportMode && mBuildTools.getRevision().compareTo(minBuildToolsRev) == -1) {
             throw new IllegalStateException(
-                    "RenderScript Support Mode requires buildToolsVersion >= 18.1");
+                    "RenderScript Support Mode requires buildToolsVersion >= " + minBuildToolsRev.toString());
         }
 
         RenderScriptProcessor processor = new RenderScriptProcessor(
