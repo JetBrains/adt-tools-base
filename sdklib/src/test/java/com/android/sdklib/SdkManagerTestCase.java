@@ -23,7 +23,29 @@ import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.prefs.AndroidLocation.EnvVar;
+import com.android.resources.Density;
+import com.android.resources.Keyboard;
+import com.android.resources.KeyboardState;
+import com.android.resources.Navigation;
+import com.android.resources.NavigationState;
+import com.android.resources.ScreenOrientation;
+import com.android.resources.ScreenRatio;
+import com.android.resources.ScreenSize;
+import com.android.resources.TouchScreen;
 import com.android.sdklib.ISystemImage.LocationType;
+import com.android.sdklib.devices.Device;
+import com.android.sdklib.devices.Device.Builder;
+import com.android.sdklib.devices.Storage.Unit;
+import com.android.sdklib.devices.ButtonType;
+import com.android.sdklib.devices.DeviceWriter;
+import com.android.sdklib.devices.Hardware;
+import com.android.sdklib.devices.Multitouch;
+import com.android.sdklib.devices.PowerType;
+import com.android.sdklib.devices.Screen;
+import com.android.sdklib.devices.ScreenType;
+import com.android.sdklib.devices.Software;
+import com.android.sdklib.devices.State;
+import com.android.sdklib.devices.Storage;
 import com.android.sdklib.internal.avd.AvdManager;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.mock.MockLog;
@@ -36,8 +58,15 @@ import com.android.utils.ILogger;
 import junit.framework.TestCase;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactoryConfigurationError;
 
 /**
  * Test case that allocates a temporary SDK, a temporary AVD base folder
@@ -230,7 +259,7 @@ public class SdkManagerTestCase extends TestCase {
      * @param systemImage A system image with a valid location.
      * @throws IOException if the file fails to be created.
      */
-    protected void makeSystemImageFolder(ISystemImage systemImage) throws IOException {
+    protected void makeSystemImageFolder(ISystemImage systemImage) throws Exception {
         File sysImgDir = systemImage.getLocation();
 
         if (systemImage.getLocationType() == LocationType.IN_PLATFORM_LEGACY) {
@@ -271,7 +300,7 @@ public class SdkManagerTestCase extends TestCase {
     protected File makeSystemImageFolder(
             @NonNull String targetDir,
             @Nullable String tagId,
-            @NonNull String abiType) throws IOException {
+            @NonNull String abiType) throws Exception {
         File sysImgDir = new File(mFakeSdk, SdkConstants.FD_SYSTEM_IMAGES);
         sysImgDir = new File(sysImgDir, targetDir);
         if (tagId != null) {
@@ -359,7 +388,7 @@ public class SdkManagerTestCase extends TestCase {
     private void makeFakeSysImgInternal(
             @NonNull File sysImgDir,
             @Nullable String tagId,
-            @NonNull String abiType) throws IOException {
+            @NonNull String abiType) throws Exception {
         sysImgDir.mkdirs();
         new File(sysImgDir, "userdata.img").createNewFile();
 
@@ -368,14 +397,72 @@ public class SdkManagerTestCase extends TestCase {
                     PkgProps.PKG_REVISION, "0",
                     PkgProps.VERSION_API_LEVEL, "0",
                     PkgProps.SYS_IMG_ABI, abiType);
-        } else {
+       } else {
+            String tagDisplay = LocalSysImgPkgInfo.tagIdToDisplay(tagId);
             createSourceProps(sysImgDir,
                     PkgProps.PKG_REVISION, "0",
                     PkgProps.VERSION_API_LEVEL, "0",
                     PkgProps.SYS_IMG_TAG_ID, tagId,
-                    PkgProps.SYS_IMG_TAG_DISPLAY, LocalSysImgPkgInfo.tagIdToDisplay(tagId),
+                    PkgProps.SYS_IMG_TAG_DISPLAY, tagDisplay,
                     PkgProps.SYS_IMG_ABI, abiType);
-        }
+
+            // create a devices.xml file
+            List<Device> devices = new ArrayList<Device>();
+            Builder b = new Device.Builder();
+            b.setName("Mock " + tagDisplay + " Device Name");
+            b.setId("MockDevice" + tagId);
+            b.setManufacturer("Mock " + tagDisplay + " OEM");
+
+            Software sw = new Software();
+            sw.setGlVersion("4.2");
+            sw.setLiveWallpaperSupport(false);
+            sw.setMaxSdkLevel(42);
+            sw.setMinSdkLevel(1);
+            sw.setStatusBar(true);
+
+            Screen sc = new Screen();
+            sc.setDiagonalLength(7);
+            sc.setMechanism(TouchScreen.FINGER);
+            sc.setMultitouch(Multitouch.JAZZ_HANDS);
+            sc.setPixelDensity(Density.HIGH);
+            sc.setRatio(ScreenRatio.NOTLONG);
+            sc.setScreenType(ScreenType.CAPACITIVE);
+            sc.setSize(ScreenSize.LARGE);
+            sc.setXDimension(5);
+            sc.setXdpi(100);
+            sc.setYDimension(4);
+            sc.setYdpi(100);
+
+            Hardware hw = new Hardware();
+            hw.setButtonType(ButtonType.SOFT);
+            hw.setChargeType(PowerType.BATTERY);
+            hw.setCpu(abiType);
+            hw.setGpu("pixelpushing");
+            hw.setHasMic(true);
+            hw.setKeyboard(Keyboard.QWERTY);
+            hw.setNav(Navigation.NONAV);
+            hw.setRam(new Storage(512, Unit.MiB));
+            hw.setScreen(sc);
+
+            State st = new State();
+            st.setName("portrait");
+            st.setDescription("Portrait");
+            st.setDefaultState(true);
+            st.setOrientation(ScreenOrientation.PORTRAIT);
+            st.setKeyState(KeyboardState.SOFT);
+            st.setNavState(NavigationState.HIDDEN);
+            st.setHardware(hw);
+
+            b.addSoftware(sw);
+            b.addState(st);
+
+            devices.add(b.build());
+
+            File f = new File(sysImgDir, "devices.xml");
+            FileOutputStream fos = new FileOutputStream(f);
+            DeviceWriter.writeToXml(fos, devices);
+            fos.close();
+         }
     }
 
     /** Utility to make a fake skin for the given target */
