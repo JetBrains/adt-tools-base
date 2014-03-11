@@ -16,11 +16,11 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/org/gradle/gradle-tooling-api/1.10/gradle-tooling-api-1.10.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/org/gradle/gradle-tooling-api/1.11/gradle-tooling-api-1.11.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/org/gradle/gradle-tooling-api/1.10/gradle-tooling-api-1.10-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/org/gradle/gradle-tooling-api/1.11/gradle-tooling-api-1.11-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
