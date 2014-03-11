@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.dsl.AaptOptionsImpl
 import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory
 import com.android.build.gradle.internal.dsl.DexOptionsImpl
 import com.android.build.gradle.internal.dsl.LintOptionsImpl
+import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.build.gradle.internal.dsl.ProductFlavorDsl
 import com.android.build.gradle.internal.test.TestOptions
 import com.android.builder.BuilderConstants
@@ -61,6 +62,7 @@ public abstract class BaseExtension {
     final DexOptionsImpl dexOptions
     final TestOptions testOptions
     final CompileOptions compileOptions
+    final PackagingOptionsImpl packagingOptions
 
     private final DefaultDomainObjectSet<TestVariant> testVariantList =
         new DefaultDomainObjectSet<TestVariant>(TestVariant.class)
@@ -87,6 +89,7 @@ public abstract class BaseExtension {
         lintOptions = instantiator.newInstance(LintOptionsImpl.class)
         testOptions = instantiator.newInstance(TestOptions.class)
         compileOptions = instantiator.newInstance(CompileOptions.class)
+        packagingOptions = instantiator.newInstance(PackagingOptionsImpl.class)
 
         sourceSetsContainer = project.container(AndroidSourceSet,
                 new AndroidSourceSetFactory(instantiator, project.fileResolver))
@@ -184,6 +187,11 @@ public abstract class BaseExtension {
     void compileOptions(Action<CompileOptions> action) {
         plugin.checkTasksAlreadyCreated();
         action.execute(compileOptions)
+    }
+
+    void packagingOptions(Action<PackagingOptionsImpl> action) {
+        plugin.checkTasksAlreadyCreated();
+        action.execute(packagingOptions)
     }
 
     void deviceProvider(DeviceProvider deviceProvider) {
