@@ -24,6 +24,7 @@ import com.android.sdklib.internal.repository.packages.ExtraPackage;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.IPkgDescExtra;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 
 import java.io.File;
@@ -31,20 +32,17 @@ import java.util.Properties;
 
 public class LocalExtraPkgInfo extends LocalPkgInfo {
 
-    private final @NonNull String mExtraPath;
-    private final @NonNull String mVendorId;
-    private final @NonNull IPkgDesc mDesc;
+    private final @NonNull IPkgDescExtra mDesc;
 
     public LocalExtraPkgInfo(@NonNull LocalSdk localSdk,
                              @NonNull File localDir,
                              @NonNull Properties sourceProps,
                              @NonNull String vendorId,
                              @NonNull String path,
+                             @NonNull String[] oldPaths,
                              @NonNull NoPreviewRevision revision) {
         super(localSdk, localDir, sourceProps);
-        mDesc = PkgDesc.newExtra(vendorId, path, revision);
-        mVendorId = vendorId;
-        mExtraPath = path;
+        mDesc = PkgDesc.newExtra(vendorId, path, oldPaths, revision);
     }
 
     @NonNull
@@ -54,13 +52,8 @@ public class LocalExtraPkgInfo extends LocalPkgInfo {
     }
 
     @NonNull
-    public String getExtraPath() {
-        return mExtraPath;
-    }
-
-    @NonNull
-    public String getVendorId() {
-        return mVendorId;
+    public String[] getOldPaths() {
+        return mDesc.getOldPaths();
     }
 
     @Nullable
@@ -72,8 +65,8 @@ public class LocalExtraPkgInfo extends LocalPkgInfo {
                 pkg = ExtraPackage.create(
                         null,                       //source
                         getSourceProperties(),      //properties
-                        mVendorId,                  //vendor
-                        mExtraPath,                 //path
+                        mDesc.getVendorId(),        //vendor
+                        mDesc.getPath(),            //path
                         0,                          //revision
                         null,                       //license
                         null,                       //description

@@ -21,8 +21,11 @@ import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.FullRevision.PreviewComparison;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.NoPreviewRevision;
+
+import java.util.Locale;
 
 /**
  * {@link PkgDesc} keeps information on individual SDK packages
@@ -38,127 +41,146 @@ import com.android.sdklib.repository.NoPreviewRevision;
  */
 public abstract class PkgDesc implements IPkgDesc {
 
-    /**
-     * Returns the type of the package.
-     * @return Returns one of the {@link PkgType} constants.
-     */
     @NonNull
     @Override
     public abstract PkgType getType();
 
-    /**
-     * Indicates whether this package type has a {@link FullRevision}.
-     * @return True if this package type has a {@link FullRevision}.
-     */
     @Override
     public final boolean hasFullRevision() {
         return getType().hasFullRevision();
     }
 
-    /**
-     * Indicates whether this package type has a {@link MajorRevision}.
-     * @return True if this package type has a {@link MajorRevision}.
-     */
     @Override
     public final boolean hasMajorRevision() {
         return getType().hasMajorRevision();
     }
 
-    /**
-     * Indicates whether this package type has a {@link AndroidVersion}.
-     * @return True if this package type has a {@link AndroidVersion}.
-     */
     @Override
     public final boolean hasAndroidVersion() {
         return getType().hasAndroidVersion();
     }
 
-    /**
-     * Indicates whether this package type has a path.
-     * @return True if this package type has a path.
-     */
     @Override
     public final boolean hasPath() {
         return getType().hasPath();
     }
 
-    /**
-     * Indicates whether this package type has a {@code min-tools-rev} attribute.
-     * @return True if this package type has a {@code min-tools-rev} attribute.
-     */
+    @Override
+    public boolean hasVendorId() {
+        return getType().hasVendorId();
+    }
+
     @Override
     public final boolean hasMinToolsRev() {
         return getType().hasMinToolsRev();
     }
 
-    /**
-     * Indicates whether this package type has a {@code min-platform-tools-rev} attribute.
-     * @return True if this package type has a {@code min-platform-tools-rev} attribute.
-     */
     @Override
     public final boolean hasMinPlatformToolsRev() {
         return getType().hasMinPlatformToolsRev();
     }
 
-    /**
-     * Returns the package's {@link FullRevision} or null.
-     * @return A non-null value if {@link #hasFullRevision()} is true; otherwise a null value.
-     */
     @Nullable
     @Override
     public FullRevision getFullRevision() {
         return null;
     }
 
-    /**
-     * Returns the package's {@link MajorRevision} or null.
-     * @return A non-null value if {@link #hasMajorRevision()} is true; otherwise a null value.
-     */
     @Nullable
     @Override
     public MajorRevision getMajorRevision() {
         return null;
     }
 
-    /**
-     * Returns the package's {@link AndroidVersion} or null.
-     * @return A non-null value if {@link #hasAndroidVersion()} is true; otherwise a null value.
-     */
     @Nullable
     @Override
     public AndroidVersion getAndroidVersion() {
         return null;
     }
 
-    /**
-     * Returns the package's path string or null.
-     * @return A non-null value if {@link #hasPath()} is true; otherwise a null value.
-     */
     @Nullable
     @Override
     public String getPath() {
         return null;
     }
 
-    /**
-     * Returns the package's {@code min-tools-rev} or null.
-     * @return A non-null value if {@link #hasMinToolsRev()} is true; otherwise a null value.
-     */
+    @Nullable
+    @Override
+    public String getVendorId() {
+        return null;
+    }
+
     @Nullable
     @Override
     public FullRevision getMinToolsRev() {
         return null;
     }
 
-    /**
-     * Returns the package's {@code min-platform-tools-rev} or null.
-     * @return A non-null value if {@link #hasMinPlatformToolsRev()} is true; otherwise null.
-     */
     @Nullable
     @Override
     public FullRevision getMinPlatformToolsRev() {
         return null;
     }
+
+    //---- Updating ----
+
+    /**
+     * Computes the most general case of {@link #isUpdateFor(IPkgDesc)}.
+     * Individual package types use this and complement with their own specific cases
+     * as needed.
+     *
+     * @param existingDesc A non-null package descriptor to compare with.
+     * @return True if this package descriptor would generally update the given one.
+     */
+    protected final boolean isGenericUpdateFor(@NonNull IPkgDesc existingDesc) {
+        if (existingDesc == null || !getType().equals(existingDesc.getType())) {
+            return false;
+        }
+
+        // Packages that have an Android version can generally only be updated
+        // for the same Android version (otherwise it's a new artifact.)
+        if (hasAndroidVersion() && !getAndroidVersion().equals(existingDesc.getAndroidVersion())) {
+            return false;
+        }
+
+        // Packages that have a vendor id need the same vendor id on both sides
+        if (hasVendorId() && !getVendorId().equals(existingDesc.getVendorId())) {
+            return false;
+        }
+
+        // Packages that have a path can generally only be updated if both use the same path
+        if (hasPath()) {
+            if (this instanceof IPkgDescExtra) {
+                // Extra package handle paths differently, they need to use the old_path
+                // to allow upgrade compatibility.
+                if (!PkgDescExtra.compatibleVendorAndPath((IPkgDescExtra) this,
+                                                          (IPkgDescExtra) existingDesc)) {
+                    return false;
+                }
+            } else if (!getPath().equals(existingDesc.getPath())) {
+                return false;
+            }
+        }
+
+        // Packages that have a major version are generally updates if it increases.
+        if (hasMajorRevision() &&
+                getMajorRevision().compareTo(existingDesc.getMajorRevision()) > 0) {
+            return true;
+        }
+
+        // Packages that have a full revision are generally updates if it increases
+        // but keeps the same kind of preview (e.g. previews are only updates by previews.)
+        if (hasFullRevision() &&
+                getFullRevision().isPreview() == existingDesc.getFullRevision().isPreview()) {
+            // If both packages match in their preview type (both previews or both not previews)
+            // then is the RC/preview number an update?
+            return getFullRevision().compareTo(existingDesc.getFullRevision(),
+                                               PreviewComparison.COMPARE_NUMBER) > 0;
+        }
+
+        return false;
+    }
+
 
     //---- Ordering ----
 
@@ -184,6 +206,12 @@ public abstract class PkgDesc implements IPkgDesc {
             }
         }
 
+        if (hasVendorId() && o.hasVendorId()) {
+            t1 = getVendorId().compareTo(o.getVendorId());
+            if (t1 != 0) {
+                return t1;
+            }
+        }
 
         if (hasPath() && o.hasPath()) {
             t1 = getPath().compareTo(o.getPath());
@@ -229,8 +257,17 @@ public abstract class PkgDesc implements IPkgDesc {
         StringBuilder builder = new StringBuilder();
         builder.append("<PkgDesc");                                                 //NON-NLS-1$
 
+        builder.append(" Type=");                                                   //NON-NLS-1$
+        builder.append(getType().toString()
+                                .toLowerCase(Locale.US)
+                                .replace("pkg_", ""));                 //NON-NLS-1$ //NON-NLS-2$
+
         if (hasAndroidVersion()) {
             builder.append(" Android=").append(getAndroidVersion());                //NON-NLS-1$
+        }
+
+        if (hasVendorId()) {
+            builder.append(" Vendor=").append(getVendorId());                       //NON-NLS-1$
         }
 
         if (hasPath()) {
@@ -262,6 +299,7 @@ public abstract class PkgDesc implements IPkgDesc {
         final int prime = 31;
         int result = 1;
         result = prime * result + (hasAndroidVersion() ? getAndroidVersion().hashCode() : 0);
+        result = prime * result + (hasVendorId()       ? getVendorId()      .hashCode() : 0);
         result = prime * result + (hasPath()           ? getPath()          .hashCode() : 0);
         result = prime * result + (hasFullRevision()   ? getFullRevision()  .hashCode() : 0);
         result = prime * result + (hasMajorRevision()  ? getMajorRevision() .hashCode() : 0);
@@ -352,6 +390,13 @@ public abstract class PkgDesc implements IPkgDesc {
             public FullRevision getMinPlatformToolsRev() {
                 return minPlatformToolsRev;
             }
+
+            @Override
+            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
+                // Generic test checks that the preview type is the same (both previews or not)
+                // and whether this is a better RC/preview than the existing one.
+                return isGenericUpdateFor(existingDesc);
+            }
         };
     }
 
@@ -373,6 +418,13 @@ public abstract class PkgDesc implements IPkgDesc {
             public FullRevision getFullRevision() {
                 return revision;
             }
+
+            @Override
+            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
+                // Generic test checks that the preview type is the same (both previews or not)
+                // and whether this is a better RC/preview than the existing one.
+                return isGenericUpdateFor(existingDesc);
+            }
         };
     }
 
@@ -393,6 +445,16 @@ public abstract class PkgDesc implements IPkgDesc {
             @Override
             public FullRevision getFullRevision() {
                 return revision;
+            }
+
+            @Override
+            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
+                // Generic test checks that the preview type is the same (both previews or not).
+                // Build tool is different in that the full revision must be an exact match
+                // and not an increase.
+                return isGenericUpdateFor(existingDesc) &&
+                    revision.compareTo(existingDesc.getFullRevision(),
+                                       PreviewComparison.COMPARE_TYPE) == 0;
             }
         };
     }
@@ -421,6 +483,19 @@ public abstract class PkgDesc implements IPkgDesc {
             public AndroidVersion getAndroidVersion() {
                 return version;
             }
+
+            @Override
+            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
+                if (existingDesc == null || !getType().equals(existingDesc.getType())) {
+                    return false;
+                }
+
+                // This package is unique in the SDK. It's an update if the API is newer
+                // or the revision is newer for the same API.
+                int diff = version.compareTo(existingDesc.getAndroidVersion());
+                return diff > 0 ||
+                       (diff == 0 && revision.compareTo(existingDesc.getMajorRevision()) > 0);
+            }
         };
     }
 
@@ -435,49 +510,10 @@ public abstract class PkgDesc implements IPkgDesc {
     @NonNull
     public static IPkgDescExtra newExtra(@NonNull final String vendorId,
                                          @NonNull final String path,
+                                         @NonNull final String[] oldPaths,
                                          @NonNull final NoPreviewRevision revision) {
-        return new PkgDescExtra() {
-            String fullPath = vendorId + '/' + path;
-
-            @Override
-            public PkgType getType() {
-                return PkgType.PKG_EXTRAS;
-            }
-
-            @Override
-            public FullRevision getFullRevision() {
-                return revision;
-            }
-
-            @Override
-            public String getPath() {
-                return fullPath;
-            }
-
-            @Override
-            public boolean hasExtraPath() {
-                return true;
-            }
-
-            @Override
-            public String getExtraPath() {
-                return path;
-            }
-
-            @Override
-            public String getVendorId() {
-                return vendorId;
-            }
-        };
+        return new PkgDescExtra(vendorId, path, oldPaths, revision);
     }
-
-    public interface IPkgDescExtra extends IPkgDesc {
-        public boolean hasExtraPath();
-        @NonNull public String getExtraPath();
-        @NonNull public String getVendorId();
-    }
-
-    private static abstract class PkgDescExtra extends PkgDesc implements IPkgDescExtra {}
 
     /**
      * Create a new platform package descriptor.
@@ -519,6 +555,11 @@ public abstract class PkgDesc implements IPkgDesc {
             public String getPath() {
                 return AndroidTargetHash.getPlatformHashString(getAndroidVersion());
             }
+
+            @Override
+            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
+                return isGenericUpdateFor(existingDesc);
+            }
         };
     }
 
@@ -542,10 +583,6 @@ public abstract class PkgDesc implements IPkgDesc {
         return new PkgDescAddon(version, revision, addonVendor, addonName);
     }
 
-    public interface ITargetHashProvider {
-        String getTargetHash();
-    }
-
     /**
      * Create a new platform add-on descriptor where the target hash isn't determined yet.
      *
@@ -557,7 +594,7 @@ public abstract class PkgDesc implements IPkgDesc {
     @NonNull
     public static IPkgDesc newAddon(@NonNull AndroidVersion version,
                                     @NonNull MajorRevision revision,
-                                    @NonNull ITargetHashProvider targetHashProvider) {
+                                    @NonNull IAddonDesc targetHashProvider) {
         return new PkgDescAddon(version, revision, targetHashProvider);
     }
 
@@ -595,6 +632,11 @@ public abstract class PkgDesc implements IPkgDesc {
             public String getPath() {
                 return abi;
             }
+
+            @Override
+            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
+                return isGenericUpdateFor(existingDesc);
+            }
         };
     }
 
@@ -622,6 +664,11 @@ public abstract class PkgDesc implements IPkgDesc {
             @Override
             public AndroidVersion getAndroidVersion() {
                 return version;
+            }
+
+            @Override
+            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
+                return isGenericUpdateFor(existingDesc);
             }
         };
     }
@@ -659,6 +706,11 @@ public abstract class PkgDesc implements IPkgDesc {
             @Override
             public FullRevision getMinToolsRev() {
                 return minToolsRev;
+            }
+
+            @Override
+            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
+                return isGenericUpdateFor(existingDesc);
             }
         };
     }

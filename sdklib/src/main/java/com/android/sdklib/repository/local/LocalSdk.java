@@ -34,6 +34,7 @@ import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgDescExtra;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
@@ -235,7 +236,7 @@ public class LocalSdk {
      * Clear the tracked visited folders & the cached {@link LocalPkgInfo} for the
      * given filter types.
      *
-     * @param filters An OR of the PkgType.PKG_ constants or {@link PkgType#PKG_ALL} to clear everything.
+     * @param filters A set of PkgType constants or {@link PkgType#PKG_ALL} to clear everything.
      */
     public void clearLocalPkg(@NonNull EnumSet<PkgType> filters) {
         mLegacyBuildTools = null;
@@ -251,7 +252,7 @@ public class LocalSdk {
      * requested filter types.
      * This does not refresh or reload any package information.
      *
-     * @param filters An OR of the PkgType.PKG_ constants or {@link PkgType#PKG_ALL} to clear everything.
+     * @param filters A set of PkgType constants or {@link PkgType#PKG_ALL} to clear everything.
      */
     public boolean hasChanged(@NonNull EnumSet<PkgType> filters) {
         for (PkgType filter : filters) {
@@ -322,22 +323,24 @@ public class LocalSdk {
     }
 
     /**
-     * Retrieves information on a package identified by its {@link String} vendor/path.
+     * Retrieves information on a package identified by its {@link String} path.
+     * <p/>
+     * For add-ons and platforms, the path is the target hash string
+     * (see {@link AndroidTargetHash} for helpers methods to generate this string.)
      *
-     * @param filter {@link PkgType#PKG_EXTRAS}, {@link PkgType#PKG_ADDONS},
-     *               {@link PkgType#PKG_PLATFORMS}.
-     * @param vendorPath The vendor/path uniquely identifying this package.
+     * @param filter {@link PkgType#PKG_ADDONS}, {@link PkgType#PKG_PLATFORMS}.
+     * @param path The vendor/path uniquely identifying this package.
      * @return An existing package information or null if not found.
      */
     @Nullable
-    public LocalPkgInfo getPkgInfo(@NonNull PkgType filter, @NonNull String vendorPath) {
+    public LocalPkgInfo getPkgInfo(@NonNull PkgType filter, @NonNull String path) {
 
-        assert filter == PkgType.PKG_EXTRAS ||
-               filter == PkgType.PKG_ADDONS ||
+        assert filter == PkgType.PKG_ADDONS ||
                filter == PkgType.PKG_PLATFORMS;
 
         for (LocalPkgInfo pkg : getPkgsInfos(filter)) {
-            if (pkg.getDesc().hasPath() && vendorPath.equals(pkg.getDesc().getPath())) {
+            IPkgDesc d = pkg.getDesc();
+            if (d.hasPath() && path.equals(d.getPath())) {
                return pkg;
            }
        }
@@ -345,14 +348,45 @@ public class LocalSdk {
     }
 
     /**
+     * Retrieves information on a package identified by both vendor and path strings.
+     * <p/>
+     * For add-ons the path is target hash string
+     * (see {@link AndroidTargetHash} for helpers methods to generate this string.)
+     *
+     * @param filter {@link PkgType#PKG_EXTRAS}, {@link PkgType#PKG_ADDONS}.
+     * @param vendor The vendor id of the extra package.
+     * @param path The path uniquely identifying this package for its vendor.
+     * @return An existing package information or null if not found.
+     */
+    @Nullable
+    public LocalPkgInfo getPkgInfo(@NonNull PkgType filter,
+                                   @NonNull String vendor,
+                                   @NonNull String path) {
+
+        assert filter == PkgType.PKG_EXTRAS ||
+               filter == PkgType.PKG_ADDONS;
+
+        for (LocalPkgInfo pkg : getPkgsInfos(filter)) {
+            IPkgDesc d = pkg.getDesc();
+            if (d.hasVendorId() && vendor.equals(d.getVendorId())) {
+                if (d.hasPath() && path.equals(d.getPath())) {
+                   return pkg;
+               }
+            }
+       }
+       return null;
+    }
+
+    /**
      * Retrieves information on an extra package identified by its {@link String} vendor/path.
      *
-     * @param vendorPath The vendor/path uniquely identifying this package.
+     * @param vendor The vendor id of the extra package.
+     * @param path The path uniquely identifying this package for its vendor.
      * @return An existing extra package information or null if not found.
      */
     @Nullable
-    public LocalExtraPkgInfo getExtra(@NonNull String vendorPath) {
-        return (LocalExtraPkgInfo) getPkgInfo(PkgType.PKG_EXTRAS, vendorPath);
+    public LocalExtraPkgInfo getExtra(@NonNull String vendor, @NonNull String path) {
+        return (LocalExtraPkgInfo) getPkgInfo(PkgType.PKG_EXTRAS, vendor, path);
     }
 
     /**
@@ -922,12 +956,17 @@ public class LocalSdk {
                     continue; // skip, no revision
                 }
 
-                LocalExtraPkgInfo pkgInfo = new LocalExtraPkgInfo(this,
-                                                                  extraDir,
-                                                                  props,
-                                                                  vendorDir.getName(),
-                                                                  extraDir.getName(),
-                                                                  rev);
+                String oldPaths =
+                    PackageParserUtils.getProperty(props, PkgProps.EXTRA_OLD_PATHS, null);
+
+                LocalExtraPkgInfo pkgInfo = new LocalExtraPkgInfo(
+                        this,
+                        extraDir,
+                        props,
+                        vendorDir.getName(),
+                        extraDir.getName(),
+                        PkgDescExtra.convertOldPaths(oldPaths),
+                        rev);
                 outCollection.add(pkgInfo);
             }
         }
