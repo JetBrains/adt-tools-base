@@ -1,0 +1,34 @@
+buildscript {
+    repositories {
+        maven { url '../../../../../out/host/gradle/repo' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.7.2-SNAPSHOT'
+    }
+}
+
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion "18.0.1"
+
+    productFlavors {
+        x86 {
+            ndk {
+                abiFilter "x86"
+            }
+        }
+        arm {
+            ndk {
+                abiFilters "armeabi-v7a", "armeabi"
+            }
+        }
+        mips {
+            ndk {
+                abiFilter "mips"
+            }
+        }
+    }
+
+}
