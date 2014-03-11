@@ -332,7 +332,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             }
 
             String result = mOutput.toString();
-            if (result.equals("\nNo issues found.\n")) {
+            if (result.equals("No issues found.\n")) {
                 result = "No warnings.";
             }
 

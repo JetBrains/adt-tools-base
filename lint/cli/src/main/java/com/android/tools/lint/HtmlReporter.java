@@ -622,7 +622,12 @@ public class HtmlReporter extends Reporter {
             mWriter.write(url);
             mWriter.write("\">");                        //$NON-NLS-1$
         }
-        mWriter.write(stripPath(path));
+
+        String displayPath = stripPath(path);
+        if (url != null && url.startsWith("../") && new File(displayPath).isAbsolute()) {
+            displayPath = url;
+        }
+        mWriter.write(displayPath);
         if (url != null) {
             mWriter.write("</a>");                       //$NON-NLS-1$
         }
