@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -151,10 +152,20 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
 
     /**
      * Returns the path of a platform component.
-     * @param pathId the id representing the path to return. Any of the constants defined in the
-     * {@link IAndroidTarget} interface can be used.
+     * @param pathId the id representing the path to return.
+     *        Any of the constants defined in the {@link IAndroidTarget} interface can be used.
      */
     String getPath(int pathId);
+
+    /**
+     * Returns the path of a platform component.
+     * <p/>
+     * This is like the legacy {@link #getPath(int)} method except it returns a {@link File}.
+     *
+     * @param pathId the id representing the path to return.
+     *        Any of the constants defined in the {@link IAndroidTarget} interface can be used.
+     */
+    File getFile(int pathId);
 
     /**
      * Returns a BuildToolInfo for backward compatibility. If an older SDK is used this will return
@@ -180,14 +191,27 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     boolean hasRenderingLibrary();
 
     /**
-     * Returns the available skins for this target.
+     * Returns the available skin folders for this target.
+     * <p/>
+     * To get the skin names, use {@link File#getName()}. <br/>
+     * Skins come either from:
+     * <ul>
+     * <li>a platform ({@code sdk/platforms/N/skins/name})</li>
+     * <li>an add-on ({@code sdk/addons/name/skins/name})</li>
+     * <li>a tagged system-image ({@code sdk/system-images/platform-N/tag/abi/skins/name}.)</li>
+     * </ul>
+     * The array can be empty but not null.
      */
-    String[] getSkins();
+    @NonNull
+    File[] getSkins();
 
     /**
-     * Returns the default skin for this target.
+     * Returns the default skin folder for this target.
+     * <p/>
+     * To get the skin name, use {@link File#getName()}.
      */
-    String getDefaultSkin();
+    @Nullable
+    File getDefaultSkin();
 
     /**
      * Returns the available optional libraries for this target.

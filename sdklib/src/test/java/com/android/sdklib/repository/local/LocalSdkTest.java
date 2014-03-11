@@ -31,6 +31,7 @@ import com.android.sdklib.repository.descriptors.PkgType;
 import java.io.File;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
 
@@ -439,6 +440,9 @@ public class LocalSdkTest extends TestCase {
         mFOp.recordExistingFolder("/sdk/system-images/android-42/somedir/armeabi-v7a");
         mFOp.recordExistingFolder("/sdk/system-images/android-42/tag-1/x86");
         mFOp.recordExistingFolder("/sdk/system-images/android-42/tag-2/mips");
+        mFOp.recordExistingFolder("/sdk/system-images/android-42/tag-2/mips/skins");
+        mFOp.recordExistingFolder("/sdk/system-images/android-42/tag-2/mips/skins/skinA");
+        mFOp.recordExistingFolder("/sdk/system-images/android-42/tag-2/mips/skins/skinB");
         // without tags
         mFOp.recordExistingFile("/sdk/system-images/android-18/armeabi-v7a/source.properties",
                 "Pkg.Revision=1\n" +
@@ -502,6 +506,12 @@ public class LocalSdkTest extends TestCase {
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Os=ANY\n" +
                 "Archive.Arch=ANY\n");
+        mFOp.recordExistingFile("/sdk/system-images/android-42/tag-2/mips/skins/skinA/layout",
+                "part {\n" +
+                "}\n");
+        mFOp.recordExistingFile("/sdk/system-images/android-42/tag-2/mips/skins/skinB/layout",
+                "part {\n" +
+                "}\n");
 
         assertEquals("[<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 18 Tag=default [Default] Path=armeabi-v7a MajorRev=1>>, " +
                       "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 18 Tag=default [Default] Path=x86 MajorRev=2>>, " +
@@ -556,6 +566,89 @@ public class LocalSdkTest extends TestCase {
 
         IAndroidTarget t2 = mLS.getTargetFromHashString("android-18");
         assertSame(t1, t2);
+    }
+
+    public final void testLocalSdkTest_getPkgInfo_Platforms_SysImages_Skins() {
+        // check empty
+        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGES)));
+
+        // setup fake files
+        mLS.clearLocalPkg(PkgType.PKG_ALL);
+        recordPlatform18(mFOp);
+
+        mFOp.recordExistingFolder("/sdk/system-images");
+        mFOp.recordExistingFolder("/sdk/system-images/android-18");
+        mFOp.recordExistingFolder("/sdk/system-images/android-18/tag-1/x86");
+        mFOp.recordExistingFolder("/sdk/system-images/android-18/tag-2/mips");
+        mFOp.recordExistingFolder("/sdk/system-images/android-18/tag-2/mips/skins");
+        mFOp.recordExistingFolder("/sdk/system-images/android-18/tag-2/mips/skins/skinA");
+        mFOp.recordExistingFolder("/sdk/system-images/android-18/tag-2/mips/skins/skinB");
+        mFOp.recordExistingFile("/sdk/system-images/android-18/tag-1/x86/source.properties",
+                "Pkg.Revision=7\n" +
+                "SystemImage.TagId=tag-1\n" +
+                "SystemImage.TagDisplay=My Tag 1\n" +
+                "SystemImage.Abi=x86\n" +
+                "AndroidVersion.ApiLevel=18\n" +
+                "Pkg.LicenseRef=android-sdk-license\n" +
+                "Archive.Os=ANY\n" +
+                "Archive.Arch=ANY\n");
+        mFOp.recordExistingFile("/sdk/system-images/android-18/tag-2/mips/source.properties",
+                "Pkg.Revision=8\n" +
+                "SystemImage.TagId=tag-2\n" +
+                "SystemImage.TagDisplay=My Tag 2\n" +
+                "SystemImage.Abi=mips\n" +
+                "AndroidVersion.ApiLevel=18\n" +
+                "Pkg.LicenseRef=android-sdk-license\n" +
+                "Archive.Os=ANY\n" +
+                "Archive.Arch=ANY\n");
+        mFOp.recordExistingFile("/sdk/system-images/android-18/tag-2/mips/skins/skinA/layout",
+                "part {\n" +
+                "}\n");
+        mFOp.recordExistingFile("/sdk/system-images/android-18/tag-2/mips/skins/skinB/layout",
+                "part {\n" +
+                "}\n");
+
+        assertEquals(
+                "[<LocalPlatformPkgInfo <PkgDesc Type=platforms Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>, " +
+                   "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 18 Tag=tag-1 [My Tag 1] Path=x86 MajorRev=7>>, " +
+                   "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 18 Tag=tag-2 [My Tag 2] Path=mips MajorRev=8>>]",
+                 Arrays.toString(
+                      mLS.getPkgsInfos(EnumSet.of(PkgType.PKG_PLATFORMS, PkgType.PKG_SYS_IMAGES))));
+
+        LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_PLATFORMS, new AndroidVersion(18, null));
+        assertNotNull(pi);
+        assertTrue(pi instanceof LocalPlatformPkgInfo);
+
+        IAndroidTarget t = ((LocalPlatformPkgInfo)pi).getAndroidTarget();
+        assertNotNull(t);
+
+        assertEquals(
+                "[SystemImage tag=tag-1, ABI=x86, location in system image='/sdk/system-images/android-18/tag-1/x86', " +
+                 "SystemImage tag=tag-2, ABI=mips, location in system image='/sdk/system-images/android-18/tag-2/mips']",
+                 sanitizePath(Arrays.toString(t.getSystemImages())));
+
+        assertEquals("/sdk/platforms/android-18/skins/WVGA800",
+                sanitizePath(t.getDefaultSkin().toString()));
+
+        assertEquals(
+                "[/sdk/system-images/android-18/tag-2/mips/skins/skinA, " +
+                 "/sdk/system-images/android-18/tag-2/mips/skins/skinB]",
+                sanitizePath(Arrays.toString(t.getSkins())));
+
+        // check the skins paths from the system image also match what's in the platform
+        assertEquals(
+                "[/sdk/system-images/android-18/tag-2/mips/skins/skinA, " +
+                 "/sdk/system-images/android-18/tag-2/mips/skins/skinB]",
+                sanitizePath(Arrays.toString(t.getSystemImages()[1].getSkins())));
+    }
+
+    private String sanitizePath(String path) {
+        // On Windows the "/sdk" paths get transformed into an absolute "C:\\sdk"
+        // so we sanitize them back to "/sdk". On Linux/Mac, this is mostly a no-op.
+        String sdk = mLS.getLocation().getAbsolutePath();
+        path = path.replaceAll(Pattern.quote(sdk), "/sdk");
+        path = path.replace(File.separatorChar, '/');
+        return path;
     }
 
     public final void testLocalSdkTest_getPkgInfo_Platforms_Sources() {
