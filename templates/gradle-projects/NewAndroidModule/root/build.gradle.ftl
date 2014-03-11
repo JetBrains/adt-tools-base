@@ -1,3 +1,4 @@
+<#if !(perModuleRepositories??) || perModuleRepositories>
 buildscript {
     repositories {
 <#if mavenUrl == "mavenCentral">
@@ -10,11 +11,13 @@ buildscript {
         classpath 'com.android.tools.build:gradle:${gradlePluginVersion}'
     }
 }
+</#if>
 <#if isLibraryProject?? && isLibraryProject>
 apply plugin: 'android-library'
 <#else>
 apply plugin: 'android'
 </#if>
+<#if !(perModuleRepositories??) || perModuleRepositories>
 
 repositories {
 <#if mavenUrl == "mavenCentral">
@@ -23,6 +26,7 @@ repositories {
     maven { url '${mavenUrl}' }
 </#if>
 }
+</#if>
 
 android {
     compileSdkVersion ${buildApi}
