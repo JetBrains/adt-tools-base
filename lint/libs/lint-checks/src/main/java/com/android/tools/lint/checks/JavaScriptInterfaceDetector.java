@@ -66,7 +66,7 @@ public class JavaScriptInterfaceDetector extends Detector implements Detector.Cl
             "Ensures that interfaces added with addJavascriptInterface are annotated with @JavascriptInterface",
 
             "As of API 17, you must annotate methods in objects registered with the " +
-                    "`addJavascriptInterface` method with a `@JavascriptInterface` annotation.",
+            "`addJavascriptInterface` method with a `@JavascriptInterface` annotation.",
 
             Category.SECURITY,
             8,

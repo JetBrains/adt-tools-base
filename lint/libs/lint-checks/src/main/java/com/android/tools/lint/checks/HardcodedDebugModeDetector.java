@@ -59,7 +59,7 @@ public class HardcodedDebugModeDetector extends Detector implements Detector.Xml
 
             Category.SECURITY,
             5,
-            Severity.WARNING,
+            Severity.FATAL,
             new Implementation(
                     HardcodedDebugModeDetector.class,
                     Scope.MANIFEST_SCOPE));

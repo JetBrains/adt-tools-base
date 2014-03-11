@@ -48,8 +48,8 @@ public class WrongCaseDetector extends LayoutDetector {
             "lint check looks for incorrect capitalizations.",
 
             Category.CORRECTNESS,
-            8,
-            Severity.WARNING,
+            4,
+            Severity.FATAL,
             new Implementation(
                     WrongCaseDetector.class,
                     Scope.RESOURCE_FILE_SCOPE))
