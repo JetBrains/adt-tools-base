@@ -79,8 +79,17 @@ class Chunk {
      * Return the length info about the chunk. This is the length that
      * is written in the PNG file.
      */
-    int getLength() {
+    int getDataLength() {
         return mData != null ? mData.length : 0;
+    }
+
+    /**
+     * returns the size of the chunk in the file.
+     */
+    int size() {
+        // 4 bytes for each length, type and crc32.
+        // then add the data length.
+        return 12 + getDataLength();
     }
 
     @NonNull
@@ -115,7 +124,7 @@ class Chunk {
         ByteUtils utils = ByteUtils.Cache.get();
 
         //write the length
-        outStream.write(utils.getIntAsArray(getLength()));
+        outStream.write(utils.getIntAsArray(getDataLength()));
 
         // write the type
         outStream.write(mType);
@@ -177,13 +186,13 @@ class Chunk {
 
         return "Chunk{" +
                 "mType=" + getTypeAsString() +
-                (getLength() <= 200 ? ", mData=" + getArray() : "") +
-                ", mData-Length=" + getLength() +
+                (getDataLength() <= 200 ? ", mData=" + getArray() : "") +
+                ", mData-Length=" + getDataLength() +
                 '}';
     }
 
     private String getArray() {
-        int len = getLength();
+        int len = getDataLength();
         StringBuilder sb = new StringBuilder(len * 2);
         if (mData != null) {
             for (int i = 0 ; i < len ; i++) {
