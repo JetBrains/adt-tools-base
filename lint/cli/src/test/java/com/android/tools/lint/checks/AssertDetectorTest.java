@@ -28,12 +28,18 @@ public class AssertDetectorTest extends AbstractCheckTest {
     public void test() throws Exception {
         assertEquals(""
                 + "src/test/pkg/Assert.java:7: Warning: Assertions are unreliable. Use BuildConfig.DEBUG conditional checks instead. [Assert]\n"
-                + "        assert false;\n"
+                + "        assert false;                              // ERROR\n"
                 + "        ~~~~~~~~~~~~\n"
                 + "src/test/pkg/Assert.java:8: Warning: Assertions are unreliable. Use BuildConfig.DEBUG conditional checks instead. [Assert]\n"
-                + "        assert param > 5 : \"My description\";\n"
+                + "        assert param > 5 : \"My description\";       // ERROR\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "0 errors, 2 warnings\n",
+                + "src/test/pkg/Assert.java:9: Warning: Assertions are unreliable. Use BuildConfig.DEBUG conditional checks instead. [Assert]\n"
+                + "        assert param2 == param3;                   // ERROR\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/Assert.java:10: Warning: Assertions are unreliable. Use BuildConfig.DEBUG conditional checks instead. [Assert]\n"
+                + "        assert param2 != null && param3 == param2; // ERROR\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 4 warnings\n",
 
             lintProject("src/test/pkg/Assert.java.txt=>src/test/pkg/Assert.java"));
     }
