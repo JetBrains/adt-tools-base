@@ -626,6 +626,29 @@ public class AndroidProjectTest extends TestCase {
         assertEquals(1, testDependencies.getJars().size());
     }
 
+    public void testLibTestDep() {
+        // Load the custom model for the project
+        ProjectData projectData = getModelForProject("libTestDep");
+
+        AndroidProject model = projectData.model;
+
+        Collection<Variant> variants = model.getVariants();
+        Variant debugVariant = getVariant(variants, "debug");
+        assertNotNull(debugVariant);
+
+        Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts();
+        AndroidArtifact testArtifact = getAndroidArtifact(extraAndroidArtifact,
+                ARTIFACT_INSTRUMENT_TEST);
+        assertNotNull(testArtifact);
+
+        Dependencies testDependencies = testArtifact.getDependencies();
+        Collection<File> jars = testDependencies.getJars();
+        assertEquals(2, jars.size());
+        for (File f : jars) {
+            assertTrue(f.getName().equals("guava-11.0.2.jar") || f.getName().equals("jsr305-1.3.9.jar"));
+        }
+    }
+
     public void testRsSupportMode() throws Exception {
         // Load the custom model for the project
         ProjectData projectData = getModelForProject("rsSupportMode");
