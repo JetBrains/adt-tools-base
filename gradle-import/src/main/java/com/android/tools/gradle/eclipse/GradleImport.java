@@ -328,11 +328,21 @@ public class GradleImport {
         }
 
         // If file within project, must match on all prefixes
-        for (File file : mPathMap.values()) {
-            if (file != null && path.startsWith(file.getPath())) {
-                File resolved = new File(file, path);
-                if (resolved.exists()) {
-                    return resolved;
+        for (Map.Entry<String,File> entry : mPathMap.entrySet()) {
+            String workspacePath = entry.getKey();
+            File file = entry.getValue();
+            if (file != null && path.startsWith(workspacePath)) {
+                if (path.equals(workspacePath)) {
+                    return file;
+                } else {
+                    path = path.substring(workspacePath.length());
+                    if (path.charAt(0) == '/' || path.charAt(0) == separatorChar) {
+                        path = path.substring(1);
+                    }
+                    File resolved = new File(file, path.replace('/', separatorChar));
+                    if (resolved.exists()) {
+                        return resolved;
+                    }
                 }
             }
         }
@@ -408,11 +418,22 @@ public class GradleImport {
             }
 
             // If file within project, must match on all prefixes
-            for (File file : mWorkspaceProjects.values()) {
-                File resolved = new File(file, path);
-                if (resolved.exists()) {
-                    mPathMap.put(path, resolved);
-                    return resolved;
+            for (Map.Entry<String,File> entry : mWorkspaceProjects.entrySet()) {
+                String workspacePath = entry.getKey();
+                File file = entry.getValue();
+                if (file != null && path.startsWith(workspacePath)) {
+                    if (path.equals(workspacePath)) {
+                        return file;
+                    } else {
+                        path = path.substring(workspacePath.length());
+                        if (path.charAt(0) == '/' || path.charAt(0) == separatorChar) {
+                            path = path.substring(1);
+                        }
+                        File resolved = new File(file, path.replace('/', separatorChar));
+                        if (resolved.exists()) {
+                            return resolved;
+                        }
+                    }
                 }
             }
 
