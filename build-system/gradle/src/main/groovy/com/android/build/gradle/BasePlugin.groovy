@@ -901,8 +901,16 @@ public abstract class BasePlugin {
 
         VariantConfiguration config = variantData.variantConfiguration
 
+        // build the list of source folders.
         List<Object> sourceList = Lists.newArrayList()
-        sourceList.add(((AndroidSourceSet) config.defaultSourceSet).java)
+
+        // first the actual source folders.
+        List<SourceProvider> providers = config.getSortedSourceProviders()
+        for (SourceProvider provider : providers) {
+            sourceList.add(((AndroidSourceSet) provider).java)
+        }
+
+        // then all the generated src folders.
         sourceList.add({ variantData.processResourcesTask.sourceOutputDir })
         sourceList.add({ variantData.generateBuildConfigTask.sourceOutputDir })
         sourceList.add({ variantData.aidlCompileTask.sourceOutputDir })
@@ -910,14 +918,6 @@ public abstract class BasePlugin {
             sourceList.add({ variantData.renderscriptCompileTask.sourceOutputDir })
         }
 
-        if (config.getType() != TEST) {
-            sourceList.add(((AndroidSourceSet) config.buildTypeSourceSet).java)
-        }
-        if (config.hasFlavors()) {
-            for (SourceProvider flavorSourceProvider : config.flavorSourceProviders) {
-                sourceList.add(((AndroidSourceSet) flavorSourceProvider).java)
-            }
-        }
         compileTask.source = sourceList.toArray()
 
         // if the tested variant is an app, add its classpath. For the libraries,
