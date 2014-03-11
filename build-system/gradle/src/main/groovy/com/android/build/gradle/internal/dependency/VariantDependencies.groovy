@@ -41,8 +41,6 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
     final Configuration compileConfiguration
     @NonNull
     final Configuration packageConfiguration
-    @NonNull
-    final Configuration providedConfiguration
 
     @NonNull
     private final List<LibraryDependencyImpl> libraries = []
@@ -58,11 +56,12 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
                                        @NonNull ConfigurationProvider... providers) {
         Set<Configuration> compileConfigs = Sets.newHashSet()
         Set<Configuration> apkConfigs = Sets.newHashSet()
-        Set<Configuration> providedConfigs = Sets.newHashSet()
 
         for (ConfigurationProvider provider : providers) {
             compileConfigs.add(provider.compileConfiguration)
-            compileConfigs.add(provider.providedConfiguration)
+            if (provider.providedConfiguration != null) {
+                compileConfigs.add(provider.providedConfiguration)
+            }
 
             apkConfigs.add(provider.compileConfiguration)
             apkConfigs.add(provider.packageConfiguration)
@@ -74,26 +73,24 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
         Configuration apk = project.configurations.create("_${name}Apk")
         apk.setExtendsFrom(apkConfigs)
 
-        // this empty and used for things that consume a variant dependency,
-        // which is only tests for libraries.
-        Configuration provided = project.configurations.create("_${name}Provided")
-        //provided.setExtendsFrom(providedConfigs)
-
-        return new VariantDependencies(name, compile, apk, provided);
+        return new VariantDependencies(name, compile, apk);
     }
 
     private VariantDependencies(@NonNull String name,
                                 @NonNull Configuration compileConfiguration,
-                                @NonNull Configuration packageConfiguration,
-                                @NonNull Configuration providedConfiguration) {
+                                @NonNull Configuration packageConfiguration) {
         this.name = name
         this.compileConfiguration = compileConfiguration
         this.packageConfiguration = packageConfiguration
-        this.providedConfiguration = providedConfiguration
     }
 
     public String getName() {
         return name
+    }
+
+    @Override
+    Configuration getProvidedConfiguration() {
+        return null
     }
 
     void addLibraries(@NonNull List<LibraryDependencyImpl> list) {
