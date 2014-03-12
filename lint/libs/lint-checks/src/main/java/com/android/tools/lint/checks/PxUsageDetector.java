@@ -55,7 +55,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -285,8 +284,7 @@ public class PxUsageDetector extends LayoutDetector {
                         if (mTextSizeUsage == null) {
                             mTextSizeUsage = new HashMap<String, Location.Handle>();
                         }
-                        Location.Handle handle = context.parser.createLocationHandle(context,
-                                attribute);
+                        Location.Handle handle = context.createLocationHandle(attribute);
                         mTextSizeUsage.put(url.name, handle);
                     }
                 }

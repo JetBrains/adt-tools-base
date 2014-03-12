@@ -32,7 +32,7 @@ import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.prefs.AndroidLocation;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.SdkManager;
+import com.android.sdklib.repository.local.LocalSdk;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
@@ -40,8 +40,6 @@ import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.utils.StdLogger;
-import com.android.utils.StdLogger.Level;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -151,22 +149,26 @@ public abstract class LintClient {
             @Nullable Object... args);
 
     /**
-     * Returns a {@link IDomParser} to use to parse XML
+     * Returns a {@link XmlParser} to use to parse XML
      *
-     * @return a new {@link IDomParser}, or null if this client does not support
+     * @return a new {@link XmlParser}, or null if this client does not support
      *         XML analysis
      */
     @Nullable
-    public abstract IDomParser getDomParser();
+    public abstract XmlParser getXmlParser();
 
     /**
-     * Returns a {@link IJavaParser} to use to parse Java
+     * Returns a {@link JavaParser} to use to parse Java
      *
-     * @return a new {@link IJavaParser}, or null if this client does not
+     * @param project the project to parse, if known (this can be used to look up
+     *                the class path for type attribution etc, and it can also be used
+     *                to more efficiently process a set of files, for example to
+     *                perform type attribution for multiple units in a single pass)
+     * @return a new {@link JavaParser}, or null if this client does not
      *         support Java analysis
      */
     @Nullable
-    public abstract IJavaParser getJavaParser();
+    public abstract JavaParser getJavaParser(@Nullable Project project);
 
     /**
      * Returns an optimal detector, if applicable. By default, just returns the
@@ -667,19 +669,35 @@ public abstract class LintClient {
         if (mTargets == null) {
             File sdkHome = getSdkHome();
             if (sdkHome != null) {
-                StdLogger log = new StdLogger(Level.WARNING);
-                SdkManager manager = SdkManager.createManager(sdkHome.getPath(), log);
-                if (manager != null) {
-                    mTargets = manager.getTargets();
-                } else {
-                    mTargets = new IAndroidTarget[0];
-                }
+                LocalSdk localSdk = new LocalSdk(sdkHome);
+                mTargets = localSdk.getTargets();
             } else {
                 mTargets = new IAndroidTarget[0];
             }
         }
 
         return mTargets;
+    }
+
+    /**
+     * Returns the compile target to use for the given project
+     *
+     * @param project the project in question
+     *
+     * @return the compile target to use to build the given project
+     */
+    @Nullable
+    public IAndroidTarget getCompileTarget(@NonNull Project project) {
+        int buildSdk = project.getBuildSdk();
+        IAndroidTarget[] targets = getTargets();
+        for (int i = targets.length - 1; i >= 0; i--) {
+            IAndroidTarget target = targets[i];
+            if (target.isPlatform() && target.getVersion().getApiLevel() == buildSdk) {
+                return target;
+            }
+        }
+
+        return null;
     }
 
     /**

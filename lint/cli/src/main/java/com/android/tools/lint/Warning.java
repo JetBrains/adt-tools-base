@@ -24,6 +24,7 @@ import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -112,11 +113,28 @@ public class Warning implements Comparable<Warning> {
 
         if (file != null) {
             if (other.file != null) {
-                return file.compareTo(other.file);
+                delta = file.compareTo(other.file);
+                if (delta != 0) {
+                    return delta;
+                }
             } else {
                 return -1;
             }
         } else if (other.file != null) {
+            return 1;
+        }
+
+        Location secondary1 = location != null ? location.getSecondary() : null;
+        File secondaryFile1 = secondary1 != null ? secondary1.getFile() : null;
+        Location secondary2 = other.location != null ? other.location.getSecondary() : null;
+        File secondaryFile2 = secondary2 != null ? secondary2.getFile() : null;
+        if (secondaryFile1 != null) {
+            if (secondaryFile2 != null) {
+                return secondaryFile1.compareTo(secondaryFile2);
+            } else {
+                return -1;
+            }
+        } else if (secondaryFile2 != null) {
             return 1;
         }
 
@@ -151,6 +169,21 @@ public class Warning implements Comparable<Warning> {
         }
         //noinspection RedundantIfStatement
         if (!message.equals(warning.message)) {
+            return false;
+        }
+
+        Location secondary1 = location != null ? location.getSecondary() : null;
+        Location secondary2 = warning.location != null ? warning.location.getSecondary() : null;
+        if (secondary1 != null) {
+            if (secondary2 != null) {
+                if (!Objects.equal(secondary1.getFile(), secondary2.getFile())) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        } else //noinspection VariableNotUsedInsideIf
+            if (secondary2 != null) {
             return false;
         }
 

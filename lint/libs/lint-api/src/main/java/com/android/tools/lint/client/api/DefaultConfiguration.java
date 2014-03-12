@@ -19,7 +19,6 @@ package com.android.tools.lint.client.api;
 import static com.android.SdkConstants.CURRENT_PLATFORM;
 import static com.android.SdkConstants.PLATFORM_WINDOWS;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Context;

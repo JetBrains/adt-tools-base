@@ -16,15 +16,26 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.detector.api.*;
-
-import lombok.ast.*;
+import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
+import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.JavaContext;
+import com.android.tools.lint.detector.api.Scope;
+import com.android.tools.lint.detector.api.Severity;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+
+import lombok.ast.AstVisitor;
+import lombok.ast.ExpressionStatement;
+import lombok.ast.MethodInvocation;
 
 /**
  * Ensures that calls to check permission use the result (otherwise they probably meant to call the
@@ -80,14 +91,13 @@ public class CheckPermissionDetector extends Detector implements Detector.JavaSc
         // Method name used in many other contexts where it doesn't have the
         // same semantics; only use this one if we can resolve types
         // and we're certain this is the Context method
-        Node resolved = context.parser.resolve(context, node);
-        if (resolved instanceof MethodDeclaration) {
-            ClassDeclaration declaration = JavaContext.findSurroundingClass(resolved);
-            if (declaration != null && declaration.astName() != null) {
-                String className = declaration.astName().astValue();
-                if ("ContextWrapper".equals(className) || "Context".equals(className)) {
-                    return true;
-                }
+        ResolvedNode resolved = context.resolve(node);
+        if (resolved instanceof ResolvedMethod) {
+            ResolvedMethod method = (ResolvedMethod) resolved;
+            TypeDescriptor containingClass = method.getContainingClass();
+            if ((containingClass.matchesName("android.content.ContextWrapper") ||
+                    containingClass.matchesName("android.content.Context"))) {
+                return true;
             }
         }
         return false;

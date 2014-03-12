@@ -72,7 +72,6 @@ import static com.android.SdkConstants.VIEW_MERGE;
 import static com.android.SdkConstants.VIEW_TAG;
 
 import com.android.annotations.NonNull;
-import com.android.tools.lint.client.api.IDomParser;
 import com.android.tools.lint.client.api.SdkInfo;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -274,8 +273,7 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
                     // We can't do that yet since we may be processing the include tag to
                     // this layout after the layout itself. Instead, stash a work order...
                     if (context.getScope().contains(Scope.ALL_RESOURCE_FILES)) {
-                        IDomParser parser = context.parser;
-                        Location.Handle handle = parser.createLocationHandle(context, attribute);
+                        Location.Handle handle = context.createLocationHandle(attribute);
                         handle.setClientData(attribute);
                         mPending.add(Pair.of(name, handle));
                     }
@@ -289,8 +287,7 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
                     // wherever they are. This has to be done after all the files have been
                     // scanned since we are not processing the files in any particular order.
                     if (context.getScope().contains(Scope.ALL_RESOURCE_FILES)) {
-                        IDomParser parser = context.parser;
-                        Location.Handle handle = parser.createLocationHandle(context, attribute);
+                        Location.Handle handle = context.createLocationHandle(attribute);
                         handle.setClientData(attribute);
                         mPending.add(Pair.of(name, handle));
                     }

@@ -43,7 +43,6 @@ import org.objectweb.asm.tree.analysis.BasicValue;
 import org.objectweb.asm.tree.analysis.Frame;
 
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 
 /**
