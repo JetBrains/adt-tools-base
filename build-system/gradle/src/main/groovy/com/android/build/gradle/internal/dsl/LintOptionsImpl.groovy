@@ -430,7 +430,7 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         flags.setSeverityOverrides(severities)
         flags.setExplainIssues(explainIssues)
 
-        if (report || flags.isFatalOnly()) {
+        if (report || flags.isFatalOnly() && this.abortOnError) {
             if (textReport || flags.isFatalOnly()) {
                 File output = textOutput
                 if (output == null) {
