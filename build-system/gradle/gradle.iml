@@ -1318,7 +1318,7 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="builder" exported="" />
-    <orderEntry type="module" module-name="lint" exported="" />
+    <orderEntry type="module" module-name="lint-cli" exported="" />
     <orderEntry type="module-library" scope="TEST">
       <library>
         <CLASSES>
