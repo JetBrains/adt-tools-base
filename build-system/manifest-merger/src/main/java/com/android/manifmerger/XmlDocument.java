@@ -75,7 +75,13 @@ public class XmlDocument {
         }
     }
 
-    // merge this higher priority document with a higher priority document.
+    /**
+     * merge this higher priority document with a higher priority document.
+     * @param lowerPriorityDocument the lower priority document to merge in.
+     * @param mergingReportBuilder the merging report to record errors and actions.
+     * @return a new merged {@link com.android.manifmerger.XmlDocument} or
+     * {@link Optional#absent()} if there were errors during the merging activities.
+     */
     public Optional<XmlDocument> merge(
             XmlDocument lowerPriorityDocument,
             MergingReport.Builder mergingReportBuilder) {
@@ -86,7 +92,9 @@ public class XmlDocument {
                 lowerPriorityDocument.getRootNode(), mergingReportBuilder);
 
         // force re-parsing as new nodes may have appeared.
-        return Optional.of(reparse());
+        return mergingReportBuilder.hasErrors()
+                ? Optional.<XmlDocument>absent()
+                : Optional.of(reparse());
     }
 
     /**
@@ -97,11 +105,16 @@ public class XmlDocument {
         return new XmlDocument(mPositionXmlParser, mSourceLocation, mRootElement);
     }
 
-    public boolean compareXml(
-            XmlDocument other,
-            MergingReport.Builder mergingReport) throws Exception {
-
-        return getRootNode().compareTo(other.getRootNode(), mergingReport);
+    /**
+     * Compares this document to another {@link com.android.manifmerger.XmlDocument} ignoring all
+     * attributes belonging to the {@link com.android.SdkConstants#TOOLS_URI} namespace.
+     *
+     * @param other the other document to compare against.
+     * @return  a {@link String} describing the differences between the two XML elements or
+     * {@link Optional#absent()} if they are equals.
+     */
+    public Optional<String> compareTo(XmlDocument other) {
+        return getRootNode().compareTo(other.getRootNode());
     }
 
     /**
