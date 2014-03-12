@@ -85,8 +85,20 @@ public class ManifestMerger2 {
                 return mergingReportBuilder.build();
             }
         }
+        XmlDocument finalMergedDocument = xmlDocumentOptional.get();
+        MergingReport.Result validate = PostValidator.validate(
+                finalMergedDocument, mergingReportBuilder.getActionRecorder().build(), mLogger);
+        if (validate != MergingReport.Result.SUCCESS) {
+            mergingReportBuilder.addWarning("Post merge validation failed");
+        }
+        XmlDocument cleanedDocument =
+                ToolsInstructionsCleaner.cleanToolsReferences(
+                        finalMergedDocument, mLogger);
 
-        mergingReportBuilder.setMergedDocument(xmlDocumentOptional.get());
+        if (cleanedDocument != null) {
+            mergingReportBuilder.setMergedDocument(cleanedDocument);
+        }
+
         return mergingReportBuilder.build();
     }
 

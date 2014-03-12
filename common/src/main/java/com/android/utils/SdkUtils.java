@@ -22,6 +22,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.google.common.base.CaseFormat;
 import com.google.common.base.Charsets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
@@ -422,5 +423,41 @@ public class SdkUtils {
         } finally {
             Closeables.close(in, successfulOps < 2);
         }
+    }
+
+    /**
+     * Translates an XML name (e.g. xml-name) into a Java / C++ constant name (e.g. XML_NAME)
+     * @param xmlName the hyphen separated lower case xml name.
+     * @return the equivalent constant name.
+     */
+    public static String xmlNameToConstantName(String xmlName) {
+        return CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_UNDERSCORE, xmlName);
+    }
+
+    /**
+     * Translates a camel case name (e.g. xmlName) into a Java / C++ constant name (e.g. XML_NAME)
+     * @param camelCaseName the camel case name.
+     * @return the equivalent constant name.
+     */
+    public static String camelCaseToConstantName(String camelCaseName) {
+        return CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, camelCaseName);
+    }
+
+    /**
+     * Translates a Java / C++ constant name (e.g. XML_NAME) into camel case name (e.g. xmlName)
+     * @param constantName the constant name.
+     * @return the equivalent camel case name.
+     */
+    public static String constantNameToCamelCase(String constantName) {
+        return CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, constantName);
+    }
+
+    /**
+     * Translates a Java / C++ constant name (e.g. XML_NAME) into a XML case name (e.g. xml-name)
+     * @param constantName the constant name.
+     * @return the equivalent XML name.
+     */
+    public static String constantNameToXmlName(String constantName) {
+        return CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_HYPHEN, constantName);
     }
 }

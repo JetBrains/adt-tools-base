@@ -22,6 +22,7 @@ import com.android.annotations.Nullable;
 import com.android.utils.ILogger;
 import com.android.utils.PositionXmlParser;
 import com.android.utils.PositionXmlParser.Position;
+import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -91,12 +92,12 @@ public class XmlElement extends XmlNode {
                 if (instruction.equals(TOOLS_NODE_LOCAL_NAME)) {
                     // should we flag an error when there are more than one operation type on a node ?
                     lastNodeOperationType = NodeOperationType.valueOf(
-                            XmlUtils.camelCaseToConstantName(
+                            SdkUtils.camelCaseToConstantName(
                                     attribute.getNodeValue()));
                 } else {
                     AttributeOperationType attributeOperationType =
                             AttributeOperationType.valueOf(
-                                    XmlUtils.xmlNameToConstantName(instruction));
+                                    SdkUtils.xmlNameToConstantName(instruction));
                     for (String attributeName : Splitter.on(',').trimResults()
                             .split(attribute.getNodeValue())) {
                         if (attributeName.indexOf(XmlUtils.NS_SEPARATOR) == -1) {

@@ -86,7 +86,15 @@ public class XmlDocument {
                 lowerPriorityDocument.getRootNode(), mergingReportBuilder);
 
         // force re-parsing as new nodes may have appeared.
-        return Optional.of(new XmlDocument(mPositionXmlParser, mSourceLocation, mRootElement));
+        return Optional.of(reparse());
+    }
+
+    /**
+     * Forces a re-parsing of the document
+     * @return a new {@link com.android.manifmerger.XmlDocument} with up to date information.
+     */
+    public XmlDocument reparse() {
+        return new XmlDocument(mPositionXmlParser, mSourceLocation, mRootElement);
     }
 
     public boolean compareXml(
