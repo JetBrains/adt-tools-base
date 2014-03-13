@@ -19,6 +19,9 @@ package com.android.manifmerger;
 import static org.mockito.Mockito.when;
 
 import com.android.SdkConstants;
+import com.android.utils.StdLogger;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
 
 import junit.framework.TestCase;
 
@@ -26,6 +29,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.w3c.dom.Attr;
+import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Tests for {@link com.android.manifmerger.XmlAttribute} class
@@ -75,5 +84,256 @@ public class XmlAttributeTest extends TestCase {
         Mockito.verify(mAttr).getLocalName();
         Mockito.verify(mAttr).getValue();
         Mockito.verifyNoMoreInteractions(mAttr);
+    }
+
+    public void testAttributeRemoval()
+            throws ParserConfigurationException, SAXException, IOException {
+        String higherPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\"\n"
+                + "         tools:remove=\"theme\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        String lowerPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" \n"
+                + "         android:theme=\"@oldtheme\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+        XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
+                new StdLogger(StdLogger.Level.VERBOSE));
+        Optional<XmlDocument> result = refDocument.merge(otherDocument, mergingReportBuilder);
+        assertTrue(result.isPresent());
+        XmlDocument resultDocument = result.get();
+
+        Optional<XmlElement> activityOne = resultDocument.getRootNode()
+                .getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,
+                        "com.example.lib3.activityOne");
+        assertTrue(activityOne.isPresent());
+
+        // verify that only android:name remains in the result.
+        List<XmlAttribute> attributes = activityOne.get().getAttributes();
+        assertEquals(1, attributes.size());
+        assertTrue(activityOne.get().getAttribute(
+                XmlNode.fromXmlName("android:name")).isPresent());
+
+        // check the recorded actions.
+        ImmutableMap<String,ActionRecorder.DecisionTreeRecord> allRecords = mergingReportBuilder
+                .getActionRecorder().build().getAllRecords();
+        ActionRecorder.DecisionTreeRecord activityOneRecords =
+                allRecords.get(activityOne.get().getId());
+        assertNotNull(activityOneRecords);
+        List<ActionRecorder.AttributeRecord> attributeRecords = activityOneRecords
+                .getAttributeRecords(XmlNode.fromXmlName("android:theme"));
+        assertNotNull(attributeRecords);
+        assertEquals(1, attributeRecords.size());
+        ActionRecorder.AttributeRecord attributeRecord = attributeRecords.get(0);
+        assertEquals(ActionRecorder.ActionType.REJECTED, attributeRecord.getActionType());
+        assertEquals(AttributeOperationType.REMOVE, attributeRecord.getOperationType());
+        assertEquals(7, attributeRecord.getActionLocation().getPosition().getLine());
+    }
+
+    public void testNamespaceAwareAttributeRemoval()
+            throws ParserConfigurationException, SAXException, IOException {
+        String higherPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\"\n"
+                + "         tools:remove=\"android:theme\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        String lowerPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" \n"
+                + "         android:theme=\"@oldtheme\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+        XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
+                new StdLogger(StdLogger.Level.VERBOSE));
+        Optional<XmlDocument> result = refDocument.merge(otherDocument, mergingReportBuilder);
+        assertTrue(result.isPresent());
+        XmlDocument resultDocument = result.get();
+
+        Optional<XmlElement> activityOne = resultDocument.getRootNode()
+                .getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,
+                        "com.example.lib3.activityOne");
+        assertTrue(activityOne.isPresent());
+
+        // verify that both attributes are in the resulting merged element.
+        List<XmlAttribute> attributes = activityOne.get().getAttributes();
+        assertEquals(1, attributes.size());
+        assertTrue(activityOne.get().getAttribute(
+                XmlNode.fromXmlName("android:name")).isPresent());
+    }
+
+    public void testMultipleAttributesRemoval()
+            throws ParserConfigurationException, SAXException, IOException {
+        String higherPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\"\n"
+                + "         tools:remove=\"theme, exported\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        String lowerPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" \n"
+                + "         android:exported=\"true\"\n"
+                + "         android:theme=\"@oldtheme\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+        XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
+                new StdLogger(StdLogger.Level.VERBOSE));
+        Optional<XmlDocument> result = refDocument.merge(otherDocument, mergingReportBuilder);
+        assertTrue(result.isPresent());
+        XmlDocument resultDocument = result.get();
+
+        Optional<XmlElement> activityOne = resultDocument.getRootNode()
+                .getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,
+                        "com.example.lib3.activityOne");
+        assertTrue(activityOne.isPresent());
+
+        // verify that both attributes are in the resulting merged element.
+        List<XmlAttribute> attributes = activityOne.get().getAttributes();
+        assertEquals(1, attributes.size());
+        assertTrue(activityOne.get().getAttribute(
+                XmlNode.fromXmlName("android:name")).isPresent());
+    }
+
+    public void testDeepAttributeRemoval()
+            throws ParserConfigurationException, SAXException, IOException {
+        String higherPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\"\n"
+                + "         tools:remove=\"theme, exported\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        String lowerPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" \n"
+                + "         android:screenOrientation=\"landscape\"\n"
+                + "         android:theme=\"@oldtheme\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        String evenLowerPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" \n"
+                + "         android:theme=\"@oldtheme\"\n"
+                + "         android:exported=\"true\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument highPriority = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "highPriority"), higherPriority);
+        XmlDocument lowPriority = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "lowPriority"), lowerPriority);
+        XmlDocument lowestPriority = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "lowestPriority"), evenLowerPriority);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
+                new StdLogger(StdLogger.Level.VERBOSE));
+        Optional<XmlDocument> result = highPriority.merge(lowPriority, mergingReportBuilder);
+        assertTrue(result.isPresent());
+        XmlDocument resultDocument = result.get();
+        result = resultDocument.merge(lowestPriority, mergingReportBuilder);
+        assertTrue(result.isPresent());
+        resultDocument = result.get();
+
+
+        Optional<XmlElement> activityOne = resultDocument.getRootNode()
+                .getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,
+                        "com.example.lib3.activityOne");
+        assertTrue(activityOne.isPresent());
+
+        // verify that both attributes are in the resulting merged element.
+        List<XmlAttribute> attributes = activityOne.get().getAttributes();
+        assertEquals(2, attributes.size());
+        assertTrue(activityOne.get().getAttribute(
+                XmlNode.fromXmlName("android:name")).isPresent());
+        assertTrue(activityOne.get().getAttribute(
+                XmlNode.fromXmlName("android:screenOrientation")).isPresent());
+
+        // check the recorded actions.
+        ImmutableMap<String,ActionRecorder.DecisionTreeRecord> allRecords = mergingReportBuilder
+                .getActionRecorder().build().getAllRecords();
+        ActionRecorder.DecisionTreeRecord activityOneRecords =
+                allRecords.get(activityOne.get().getId());
+        assertNotNull(activityOneRecords);
+        List<ActionRecorder.AttributeRecord> attributeRecords = activityOneRecords
+                .getAttributeRecords(XmlNode.fromXmlName("android:theme"));
+        assertNotNull(attributeRecords);
+
+        // theme was removed twice...
+        assertEquals(2, attributeRecords.size());
+        ActionRecorder.AttributeRecord attributeRecord = attributeRecords.get(0);
+        assertEquals(ActionRecorder.ActionType.REJECTED, attributeRecord.getActionType());
+        assertEquals(AttributeOperationType.REMOVE, attributeRecord.getOperationType());
+        assertEquals("XmlAttributeTest#lowPriority",
+                attributeRecord.getActionLocation().getSourceLocation().print(true));
+        assertEquals(8, attributeRecord.getActionLocation().getPosition().getLine());
+
+        attributeRecord = attributeRecords.get(1);
+        assertEquals(ActionRecorder.ActionType.REJECTED, attributeRecord.getActionType());
+        assertEquals(AttributeOperationType.REMOVE, attributeRecord.getOperationType());
+        assertEquals("XmlAttributeTest#lowestPriority",
+                attributeRecord.getActionLocation().getSourceLocation().print(true));
+        assertEquals(7, attributeRecord.getActionLocation().getPosition().getLine());
     }
 }
