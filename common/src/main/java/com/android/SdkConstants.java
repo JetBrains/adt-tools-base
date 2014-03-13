@@ -913,6 +913,9 @@ public final class SdkConstants {
     // Attributes: Drawables
     public static final String ATTR_TILE_MODE = "tileMode";            //$NON-NLS-1$
 
+    // Values: Manifest
+    public static final String VALUE_SPLIT_ACTION_BAR_WHEN_NARROW = "splitActionBarWhenNarrow"; // NON-NLS-$1
+
     // Values: Layouts
     public static final String VALUE_FILL_PARENT = "fill_parent";       //$NON-NLS-1$
     public static final String VALUE_MATCH_PARENT = "match_parent";     //$NON-NLS-1$
