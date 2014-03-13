@@ -16,6 +16,7 @@
 
 package com.android.ide.common.resources.configuration;
 
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -65,7 +66,7 @@ public final class NetworkCodeQualifier extends ResourceQualifier {
      */
     public static String getFolderSegment(int code) {
         if (code != DEFAULT_CODE && code >= 1 && code <= 999) { // code is 1-3 digit.
-            return String.format("mnc%1$d", code); //$NON-NLS-1$
+            return String.format(Locale.US, "mnc%1$03d", code); //$NON-NLS-1$
         }
 
         return ""; //$NON-NLS-1$
