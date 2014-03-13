@@ -69,7 +69,7 @@ public class XmlElement extends XmlNode {
     // list of non tools related attributes.
     private final ImmutableList<XmlAttribute> mAttributes;
     // map of all tools related attributes keyed by target attribute name
-    private final Map<String, AttributeOperationType> mAttributesOperationTypes;
+    private final Map<NodeName, AttributeOperationType> mAttributesOperationTypes;
     // list of mergeable children elements.
     private final ImmutableList<XmlElement> mMergeableChildren;
 
@@ -79,7 +79,7 @@ public class XmlElement extends XmlNode {
         this.mType = ManifestModel.NodeTypes.fromXmlSimpleName(mXml.getNodeName());
         this.mDocument = Preconditions.checkNotNull(document);
 
-        ImmutableMap.Builder<String, AttributeOperationType> attributeOperationTypeBuilder =
+        ImmutableMap.Builder<NodeName, AttributeOperationType> attributeOperationTypeBuilder =
                 ImmutableMap.builder();
         ImmutableList.Builder<XmlAttribute> attributesListBuilder = ImmutableList.builder();
         NamedNodeMap namedNodeMap = mXml.getAttributes();
@@ -99,7 +99,8 @@ public class XmlElement extends XmlNode {
                                     XmlUtils.xmlNameToConstantName(instruction));
                     for (String attributeName : Splitter.on(',').trimResults()
                             .split(attribute.getNodeValue())) {
-                        attributeOperationTypeBuilder.put(attributeName, attributeOperationType);
+                        NodeName nodeName = XmlNode.fromXmlName(attributeName);
+                        attributeOperationTypeBuilder.put(nodeName, attributeOperationType);
                     }
                 }
             }
@@ -200,7 +201,7 @@ public class XmlElement extends XmlNode {
                 : NodeOperationType.STRICT;
     }
 
-    public AttributeOperationType getAttributeOperationType(String attributeName) {
+    public AttributeOperationType getAttributeOperationType(NodeName attributeName) {
         return mAttributesOperationTypes.containsKey(attributeName)
                 ? mAttributesOperationTypes.get(attributeName)
                 : AttributeOperationType.STRICT;
@@ -268,8 +269,8 @@ public class XmlElement extends XmlNode {
                         + " is also present at " + lowerPriorityAttribute.printPosition()
                         + " use tools:replace to override it.";
                 mergingReport.addWarning(error);
-                mergingReport.getActionRecorder().recordAttributeAction(lowerPriorityNode,
-                        myAttribute.getName(),
+                mergingReport.getActionRecorder().recordAttributeAction(
+                        lowerPriorityAttribute,
                         ActionRecorder.ActionType.REJECTED,
                         AttributeOperationType.REMOVE);
             } else {
@@ -277,6 +278,13 @@ public class XmlElement extends XmlNode {
                 // TODO: handle tools:remove and other user specified merging directions when
                 // merging attributes from lower priority files
                 lowerPriorityAttribute.getName().addToNode(mXml, lowerPriorityAttribute.getValue());
+
+                // and record the action.
+                mergingReport.getActionRecorder().recordAttributeAction(
+                        lowerPriorityAttribute,
+                        ActionRecorder.ActionType.ADDED,
+                        lowerPriorityNode.getAttributeOperationType(
+                                lowerPriorityAttribute.getName()));
             }
         }
         // merge children.
@@ -320,7 +328,7 @@ public class XmlElement extends XmlNode {
             if (thisChildNodeOptional.isPresent()) {
                 // it's defined in both files
                 logger.verbose(
-                        lowerPriorityChild.getXml().toString() + " defined in both files...");
+                        lowerPriorityChild.getId() + " defined in both files...");
                 XmlElement thisChildNode = thisChildNodeOptional.get();
                 // are we merging no matter what or the two nodes equals ?
                 if (thisChildNode.getType().getMergeType() != MergeType.MERGE

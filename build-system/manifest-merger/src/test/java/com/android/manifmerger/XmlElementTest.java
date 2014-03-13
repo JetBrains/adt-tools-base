@@ -26,6 +26,7 @@ import org.mockito.MockitoAnnotations;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -150,7 +151,7 @@ public class XmlElementTest extends TestCase {
         XmlElement activity = activityOptional.get();
         assertEquals(1, activity.getAttributeOperations().size());
         AttributeOperationType attributeOperationType =
-                activity.getAttributeOperationType("android:theme");
+                activity.getAttributeOperationType(XmlNode.fromXmlName("android:theme"));
         assertEquals(AttributeOperationType.REMOVE, attributeOperationType);
 
         // ActivityTwo, replace operation.
@@ -160,7 +161,7 @@ public class XmlElementTest extends TestCase {
         assertTrue(activityOptional.isPresent());
         activity = activityOptional.get();
         assertEquals(1, activity.getAttributeOperations().size());
-        attributeOperationType = activity.getAttributeOperationType("android:theme");
+        attributeOperationType = activity.getAttributeOperationType(XmlNode.fromXmlName("android:theme"));
         assertEquals(AttributeOperationType.REPLACE, attributeOperationType);
 
         // ActivityThree, strict operation.
@@ -170,7 +171,7 @@ public class XmlElementTest extends TestCase {
         assertTrue(activityOptional.isPresent());
         activity = activityOptional.get();
         assertEquals(1, activity.getAttributeOperations().size());
-        attributeOperationType = activity.getAttributeOperationType("android:exported");
+        attributeOperationType = activity.getAttributeOperationType(XmlNode.fromXmlName("android:theme"));
         assertEquals(AttributeOperationType.STRICT, attributeOperationType);
 
         // ActivityFour, multiple target fields.
@@ -181,11 +182,11 @@ public class XmlElementTest extends TestCase {
         activity = activityOptional.get();
         assertEquals(3, activity.getAttributeOperations().size());
         assertEquals(AttributeOperationType.REPLACE,
-                activity.getAttributeOperationType("android:theme"));
+                activity.getAttributeOperationType(XmlNode.fromXmlName("android:theme")));
         assertEquals(AttributeOperationType.REPLACE,
-                activity.getAttributeOperationType("android:exported"));
+                activity.getAttributeOperationType(XmlNode.fromXmlName("android:theme")));
         assertEquals(AttributeOperationType.REPLACE,
-                activity.getAttributeOperationType("android:windowSoftInputMode"));
+                activity.getAttributeOperationType(XmlNode.fromXmlName("android:theme")));
 
         // ActivityFive, multiple operations.
         activityOptional = xmlDocument.getRootNode()
@@ -196,13 +197,13 @@ public class XmlElementTest extends TestCase {
         assertEquals(3, activity.getAttributeOperations().size());
 
         assertEquals(AttributeOperationType.REMOVE,
-                activity.getAttributeOperationType("android:exported"));
+                activity.getAttributeOperationType(XmlNode.fromXmlName("android:exported")));
 
         assertEquals(AttributeOperationType.REPLACE,
-                activity.getAttributeOperationType("android:theme"));
+                activity.getAttributeOperationType(XmlNode.fromXmlName("android:theme")));
 
         assertEquals(AttributeOperationType.STRICT,
-                activity.getAttributeOperationType("android:windowSoftInputMode"));
+                activity.getAttributeOperationType(XmlNode.fromXmlName("android:windowSoftInputMode")));
     }
 
     public void testInvalidAttributeInstruction()
@@ -508,5 +509,58 @@ public class XmlElementTest extends TestCase {
                 .getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,
                         "com.example.lib3.activityTwo");
         assertTrue(activityTwo.isPresent());
+    }
+
+    /**
+     * test merging of same element with no attribute collision.
+     */
+    public void testAttributeMerging()
+            throws ParserConfigurationException, SAXException, IOException {
+        String higherPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\">\n"
+                + "       <intent-filter android:label=\"@string/foo\"/>\n"
+                + "    </activity>\n"
+                + "\n"
+                + "</manifest>";
+
+        String lowerPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" \n"
+                + "         android:configChanges=\"locale\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+        XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
+                new StdLogger(StdLogger.Level.VERBOSE));
+        Optional<XmlDocument> result = refDocument.merge(otherDocument, mergingReportBuilder);
+        assertTrue(result.isPresent());
+        XmlDocument resultDocument = result.get();
+
+        Optional<XmlElement> activityOne = resultDocument.getRootNode()
+                .getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,
+                        "com.example.lib3.activityOne");
+        assertTrue(activityOne.isPresent());
+
+        // verify that both attributes are in the resulting merged element.
+        List<XmlAttribute> attributes = activityOne.get().getAttributes();
+        assertEquals(2, attributes.size());
+        assertTrue(activityOne.get().getAttribute(
+                XmlNode.fromXmlName("android:configChanges")).isPresent());
+        assertTrue(activityOne.get().getAttribute(
+                XmlNode.fromXmlName("android:name")).isPresent());
     }
 }
