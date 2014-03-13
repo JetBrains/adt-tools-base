@@ -80,7 +80,7 @@ public class MergingReport {
 
     /**
      * Returns all the merging intermediary stages if
-     * {@link com.android.manifmerger.ManifestMerger2.Invoker.Features#KEEP_INTERMEDIARY_STAGES}
+     * {@link com.android.manifmerger.ManifestMerger2.Invoker.Feature#KEEP_INTERMEDIARY_STAGES}
      * is set.
      */
     public ImmutableList<String> getIntermediaryStages() {
