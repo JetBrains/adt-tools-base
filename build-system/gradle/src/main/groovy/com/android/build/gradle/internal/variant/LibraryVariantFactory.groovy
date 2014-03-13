@@ -141,7 +141,8 @@ public class LibraryVariantFactory implements VariantFactory {
         // of the r.txt file to be directly in the bundle.
         basePlugin.createProcessResTask(variantData,
                 "$project.buildDir/$DIR_BUNDLES/${dirName}",
-                false /*generateResourcePackage*/)
+                false /*generateResourcePackage*/,
+                )
 
         // process java resources
         basePlugin.createProcessJavaResTask(variantData)
@@ -242,7 +243,9 @@ public class LibraryVariantFactory implements VariantFactory {
             jar.exclude(packageName + "/R\$*.class")
             jar.exclude(packageName + "/Manifest.class")
             jar.exclude(packageName + "/Manifest\$*.class")
-            jar.exclude(packageName + "/BuildConfig.class")
+            if (!extension.packageBuildConfig) {
+                jar.exclude(packageName + "/BuildConfig.class")
+            }
 
             bundle.dependsOn packageRes, jar, packageAidl, packageRenderscript, packageLocalJar,
                     mergeProGuardFileTask, lintCopy, packageJniLibs

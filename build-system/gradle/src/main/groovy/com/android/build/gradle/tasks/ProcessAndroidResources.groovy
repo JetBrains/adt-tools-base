@@ -62,6 +62,9 @@ public class ProcessAndroidResources extends IncrementalTask {
     @Input @Optional
     String packageForR
 
+    @Input
+    boolean enforceUniquePackageName
+
     // this doesn't change from one build to another, so no need to annotate
     VariantConfiguration.Type type
 
@@ -92,6 +95,8 @@ public class ProcessAndroidResources extends IncrementalTask {
                 getType(),
                 getDebuggable(),
                 getAaptOptions(),
-                getResourceConfigs())
+                getResourceConfigs(),
+                getEnforceUniquePackageName()
+        )
     }
 }
