@@ -85,7 +85,7 @@ public abstract class XmlNode {
     public static NodeName fromXmlName(String name) {
         return (name.contains(":"))
                 ? new NamespaceAwareName(SdkConstants.ANDROID_URI,
-                        name.substring(0, name.indexOf(':') - 1),
+                        name.substring(0, name.indexOf(':')),
                         name.substring(name.indexOf(':') + 1))
                 : new Name(name);
     }
