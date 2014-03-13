@@ -7,6 +7,8 @@
    * Should be much faster when processing many files
    * Fix issue where crunched png are bigger than original file
    * to revert to the old cruncher: android.aaptOptions.useAaptPngCruncher = true
+- Fixes:
+   * libraryVariant API now gives access to the list of flavors.
 
 0.9.0:
 - Compatible with Gradle 1.10 and 1.11
