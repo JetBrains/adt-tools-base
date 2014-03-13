@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  * Resource Qualifier for Language.
  */
 public final class LanguageQualifier extends ResourceQualifier {
-    private static final Pattern sLanguagePattern = Pattern.compile("^[a-z]{2}$"); //$NON-NLS-1$
+    private static final Pattern sLanguagePattern = Pattern.compile("^[a-zA-Z]{2}$"); //$NON-NLS-1$
 
     public static final String FAKE_LANG_VALUE = "__"; //$NON-NLS-1$
     public static final String NAME = "Language";
