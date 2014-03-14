@@ -17,6 +17,8 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.SUPPORT_LIB_ARTIFACT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
@@ -131,9 +133,7 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
     static final String ON_MEASURE = "onMeasure";                           //$NON-NLS-1$
     static final String ON_DRAW = "onDraw";                                 //$NON-NLS-1$
     static final String ON_LAYOUT = "onLayout";                             //$NON-NLS-1$
-    static final String INT = "int";                                        //$NON-NLS-1$
     private static final String INTEGER = "Integer";                        //$NON-NLS-1$
-    private static final String BOOL = "boolean";                           //$NON-NLS-1$
     private static final String BOOLEAN = "Boolean";                        //$NON-NLS-1$
     private static final String BYTE = "Byte";                              //$NON-NLS-1$
     private static final String LONG = "Long";                              //$NON-NLS-1$
@@ -423,12 +423,12 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
 
                     // Ensure that the argument list matches boolean, int, int, int, int
                     TypeReferencePart type = iterator.next().astTypeReference().astParts().last();
-                    if (!type.getTypeName().equals(BOOL) || !iterator.hasNext()) {
+                    if (!type.getTypeName().equals(TYPE_BOOLEAN) || !iterator.hasNext()) {
                         return false;
                     }
                     for (int i = 0; i < 4; i++) {
                         type = iterator.next().astTypeReference().astParts().last();
-                        if (!type.getTypeName().equals(INT)) {
+                        if (!type.getTypeName().equals(TYPE_INT)) {
                             return false;
                         }
                         if (!iterator.hasNext()) {
@@ -454,7 +454,8 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                     VariableDefinition arg1 = parameters.last();
                     TypeReferencePart type1 = arg0.astTypeReference().astParts().last();
                     TypeReferencePart type2 = arg1.astTypeReference().astParts().last();
-                    return INT.equals(type1.getTypeName()) && INT.equals(type2.getTypeName());
+                    return TYPE_INT.equals(type1.getTypeName())
+                            && TYPE_INT.equals(type2.getTypeName());
                 }
             }
 
@@ -477,7 +478,7 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                         }
                         VariableDefinition next = iterator.next();
                         TypeReferencePart type = next.astTypeReference().astParts().last();
-                        if (!INT.equals(type.getTypeName())) {
+                        if (!TYPE_INT.equals(type.getTypeName())) {
                             return false;
                         }
                     }

@@ -37,7 +37,6 @@ import static com.android.SdkConstants.TRANSPARENT_COLOR;
 import static com.android.SdkConstants.VALUE_DISABLED;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;

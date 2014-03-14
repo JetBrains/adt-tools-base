@@ -73,7 +73,7 @@ public class LintCliXmlParserTest extends TestCase {
         LintClient client = new TestClient();
         LintDriver driver = new LintDriver(new BuiltinIssueRegistry(), client);
         Project project = Project.create(client, file.getParentFile(), file.getParentFile());
-        XmlContext context = new XmlContext(driver, project, null, file, null);
+        XmlContext context = new XmlContext(driver, project, null, file, null, parser);
         Document document = parser.parseXml(context);
         assertNotNull(document);
 
@@ -147,7 +147,7 @@ public class LintCliXmlParserTest extends TestCase {
         LintClient client = new TestClient();
         LintDriver driver = new LintDriver(new BuiltinIssueRegistry(), client);
         Project project = Project.create(client, file.getParentFile(), file.getParentFile());
-        XmlContext context = new XmlContext(driver, project, null, file, null);
+        XmlContext context = new XmlContext(driver, project, null, file, null, parser);
         Document document = parser.parseXml(context);
         assertNotNull(document);
 

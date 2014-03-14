@@ -31,7 +31,6 @@ import static com.android.SdkConstants.DRAWABLE_LDPI;
 import static com.android.SdkConstants.DRAWABLE_MDPI;
 import static com.android.SdkConstants.DRAWABLE_PREFIX;
 import static com.android.SdkConstants.DRAWABLE_XHDPI;
-import static com.android.SdkConstants.DRAWABLE_XXHDPI;
 import static com.android.SdkConstants.MENU_TYPE;
 import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.R_DRAWABLE_PREFIX;

@@ -18,7 +18,7 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.VIEW;
 import static com.android.SdkConstants.VIEW_GROUP;
-import static com.android.tools.lint.checks.JavaPerformanceDetector.INT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
@@ -129,7 +129,8 @@ public class ViewHolderDetector extends Detector implements Detector.JavaScanner
                     }
 
                     VariableDefinition first = iterator.next();
-                    if (!first.astTypeReference().astParts().last().getTypeName().equals(INT)) {
+                    if (!first.astTypeReference().astParts().last().getTypeName().equals(
+                            TYPE_INT)) {
                         return false;
                     }
 

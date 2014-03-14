@@ -19,8 +19,8 @@ package com.android.tools.lint.detector.api;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
-import com.android.tools.lint.client.api.IDomParser;
 import com.android.tools.lint.client.api.LintDriver;
+import com.android.tools.lint.client.api.XmlParser;
 import com.google.common.annotations.Beta;
 
 import org.w3c.dom.Document;
@@ -39,7 +39,7 @@ public class XmlContext extends Context {
     static final String SUPPRESS_COMMENT_PREFIX = "<!--suppress "; //$NON-NLS-1$
 
     /** The XML parser */
-    public IDomParser parser;
+    private final XmlParser mParser;
     /** The XML document */
     public Document document;
     private final ResourceFolderType mFolderType;
@@ -61,9 +61,11 @@ public class XmlContext extends Context {
             @NonNull Project project,
             @Nullable Project main,
             @NonNull File file,
-            @Nullable ResourceFolderType folderType) {
+            @Nullable ResourceFolderType folderType,
+            @NonNull XmlParser parser) {
         super(driver, project, main, file);
         mFolderType = folderType;
+        mParser = parser;
     }
 
     /**
@@ -74,11 +76,7 @@ public class XmlContext extends Context {
      */
     @NonNull
     public Location getLocation(@NonNull Node node) {
-        if (parser != null) {
-            return parser.getLocation(this, node);
-        }
-
-        return Location.create(file);
+        return mParser.getLocation(this, node);
     }
 
     /**
@@ -92,13 +90,13 @@ public class XmlContext extends Context {
     @NonNull
     public Location getLocation(@NonNull Node textNode, int begin, int end) {
         assert textNode.getNodeType() == Node.TEXT_NODE;
-        if (parser != null) {
-            return parser.getLocation(this, textNode, begin, end);
-        }
-
-        return Location.create(file);
+        return mParser.getLocation(this, textNode, begin, end);
     }
 
+    @NonNull
+    public XmlParser getParser() {
+        return mParser;
+    }
 
     /**
      * Reports an issue applicable to a given DOM node. The DOM node is used as the
@@ -165,14 +163,16 @@ public class XmlContext extends Context {
         String contents = getContents();
         assert contents != null; // otherwise we wouldn't be here
 
-        if (parser != null) {
-            int start = parser.getNodeStartOffset(this, node);
-            if (start != -1) {
-                return isSuppressedWithComment(start, issue);
-            }
-
+        int start = mParser.getNodeStartOffset(this, node);
+        if (start != -1) {
+            return isSuppressedWithComment(start, issue);
         }
 
         return false;
+    }
+
+    @NonNull
+    public Location.Handle createLocationHandle(@NonNull Node node) {
+        return mParser.createLocationHandle(this, node);
     }
 }

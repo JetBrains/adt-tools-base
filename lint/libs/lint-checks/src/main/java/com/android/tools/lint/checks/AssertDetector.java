@@ -33,7 +33,6 @@ import java.util.List;
 import lombok.ast.Assert;
 import lombok.ast.AstVisitor;
 import lombok.ast.BinaryExpression;
-import lombok.ast.BinaryOperator;
 import lombok.ast.BooleanLiteral;
 import lombok.ast.Expression;
 import lombok.ast.ForwardingAstVisitor;

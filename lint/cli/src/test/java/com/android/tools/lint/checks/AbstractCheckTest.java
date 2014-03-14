@@ -18,10 +18,8 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_ID;
-import static com.android.SdkConstants.FD_RES_VALUES;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.res2.AbstractResourceRepository;
@@ -83,7 +81,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.CodeSource;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -457,6 +454,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             // Make sure errors are unique!
             Warning prev = null;
             for (Warning warning : mWarnings) {
+                assertNotSame(warning, prev);
                 assert prev == null || !warning.equals(prev);
                 prev = warning;
             }
