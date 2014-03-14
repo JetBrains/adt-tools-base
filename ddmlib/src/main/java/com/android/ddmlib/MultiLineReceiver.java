@@ -16,7 +16,8 @@
 
 package com.android.ddmlib;
 
-import java.io.UnsupportedEncodingException;
+import com.google.common.base.Charsets;
+
 import java.util.ArrayList;
 
 /**
@@ -50,13 +51,7 @@ public abstract class MultiLineReceiver implements IShellOutputReceiver {
     @Override
     public final void addOutput(byte[] data, int offset, int length) {
         if (!isCancelled()) {
-            String s = null;
-            try {
-                s = new String(data, offset, length, "UTF-8"); //$NON-NLS-1$
-            } catch (UnsupportedEncodingException e) {
-                // normal encoding didn't work, try the default one
-                s = new String(data, offset,length);
-            }
+            String s = new String(data, offset, length, Charsets.UTF_8);
 
             // ok we've got a string
             // if we had an unfinished line we add it.

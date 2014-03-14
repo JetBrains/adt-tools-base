@@ -54,9 +54,18 @@ public final class SdkConstants {
     public static final String SDK_DIR_PROPERTY = "sdk.dir";
 
     /**
+     * The encoding we strive to use for all files we write.
+     * <p>
+     * When possible, use the APIs which take a {@link java.nio.charset.Charset} and pass in
+     * {@link com.google.common.base.Charsets#UTF_8} instead of using the String encoding
+     * method.
+     */
+    public static final String UTF_8 = "UTF-8";                                       //$NON-NLS-1$
+
+    /**
      * Charset for the ini file handled by the SDK.
      */
-    public static final String INI_CHARSET = "UTF-8";                                 //$NON-NLS-1$
+    public static final String INI_CHARSET = UTF_8;
 
     /** Path separator used by Gradle */
     public static final String GRADLE_PATH_SEPARATOR = ":";                           //$NON-NLS-1$

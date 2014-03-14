@@ -16,6 +16,8 @@
 
 package com.android.tools.lint;
 
+import static com.android.SdkConstants.UTF_8;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.IAndroidTarget;
@@ -94,6 +96,7 @@ import lombok.ast.ecj.EcjTreeConverter;
  * Java parser which uses ECJ for parsing and type attribution
  */
 public class EcjParser extends JavaParser implements ICompilerRequestor {
+
     private final LintClient mClient;
     private final Project mProject;
     private Map<File, ICompilationUnit> mSourceUnits;
@@ -118,7 +121,7 @@ public class EcjParser extends JavaParser implements ICompilerRequestor {
         options.parseLiteralExpressionsAsConstants = true;
         options.analyseResourceLeaks = false;
         options.docCommentSupport = false;
-        options.defaultEncoding = "UTF-8";
+        options.defaultEncoding = UTF_8;
         options.suppressOptionalErrors = true;
         options.generateClassFiles = false;
         options.isAnnotationBasedNullAnalysisEnabled = false;
@@ -156,7 +159,7 @@ public class EcjParser extends JavaParser implements ICompilerRequestor {
 
         mCompiled = null;
         String[] classPath = computeClassPath(contexts);
-        INameEnvironment environment = new FileSystem(classPath, new String[0], "UTF-8");
+        INameEnvironment environment = new FileSystem(classPath, new String[0], UTF_8);
         IErrorHandlingPolicy policy = DefaultErrorHandlingPolicies.proceedWithAllProblems();
         ICompilerRequestor requestor = this;
         IProblemFactory problemFactory = new DefaultProblemFactory(Locale.getDefault());
@@ -173,7 +176,7 @@ public class EcjParser extends JavaParser implements ICompilerRequestor {
             }
             File file = context.file;
             CompilationUnit unit = new CompilationUnit(contents.toCharArray(), file.getPath(),
-                    "UTF-8"); //$NON-NLS-1$
+                    UTF_8);
             sources.add(unit);
             mSourceUnits.put(file, unit);
         }
@@ -278,8 +281,7 @@ public class EcjParser extends JavaParser implements ICompilerRequestor {
         }
 
         if (sourceUnit == null) {
-            sourceUnit = new CompilationUnit(code.toCharArray(),
-                    context.file.getName(), "UTF-8"); //$NON-NLS-1$
+            sourceUnit = new CompilationUnit(code.toCharArray(), context.file.getName(), UTF_8);
         }
         try {
             CompilationResult compilationResult = new CompilationResult(sourceUnit, 0, 0, 0);

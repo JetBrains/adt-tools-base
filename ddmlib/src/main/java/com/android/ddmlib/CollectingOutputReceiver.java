@@ -16,7 +16,8 @@
 package com.android.ddmlib;
 
 
-import java.io.UnsupportedEncodingException;
+import com.google.common.base.Charsets;
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -56,12 +57,7 @@ public class CollectingOutputReceiver implements IShellOutputReceiver {
     public void addOutput(byte[] data, int offset, int length) {
         if (!isCancelled()) {
             String s;
-            try {
-                s = new String(data, offset, length, "UTF-8"); //$NON-NLS-1$
-            } catch (UnsupportedEncodingException e) {
-                // normal encoding didn't work, try the default one
-                s = new String(data, offset,length);
-            }
+            s = new String(data, offset, length, Charsets.UTF_8);
             mOutputBuffer.append(s);
         }
     }
