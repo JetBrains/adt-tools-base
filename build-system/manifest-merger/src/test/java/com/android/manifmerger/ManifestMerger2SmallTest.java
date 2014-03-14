@@ -153,6 +153,25 @@ public class ManifestMerger2SmallTest extends TestCase {
         assertEquals("14", usesSdk.getAttribute("android:targetSdkVersion"));
     }
 
+    public void testAddingSystemProperties_withDifferentPrefix()
+            throws ParserConfigurationException, SAXException, IOException {
+        String xml = ""
+                + "<manifest\n"
+                + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity t:name=\"activityOne\"/>\n"
+                + "</manifest>";
+
+        XmlDocument document = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(),
+                        "testAddingSystemProperties#xml"), xml
+        );
+
+        ManifestMerger2.SystemProperty.VERSION_CODE.addTo(document.getXml(), "101");
+        // using the non namespace aware API to make sure the prefix is the expected one.
+        assertEquals("101",
+                document.getXml().getDocumentElement().getAttribute("t:versionCode"));
+    }
+
     public void testOverridingSystemProperties()
             throws ParserConfigurationException, SAXException, IOException {
         String xml = ""

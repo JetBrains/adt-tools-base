@@ -62,6 +62,8 @@ public class PositionXmlParser {
             "http://xml.org/sax/features/namespace-prefixes";    //$NON-NLS-1$
     private static final String NAMESPACE_FEATURE =
             "http://xml.org/sax/features/namespaces";            //$NON-NLS-1$
+    private static final String PROVIDE_XMLNS_URIS =
+            "http://xml.org/sax/features/xmlns-uris";            //$NON-NLS-1$
     /** See http://www.w3.org/TR/REC-xml/#NT-EncodingDecl */
     private static final Pattern ENCODING_PATTERN =
             Pattern.compile("encoding=['\"](\\S*)['\"]");//$NON-NLS-1$
@@ -137,6 +139,7 @@ public class PositionXmlParser {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setFeature(NAMESPACE_FEATURE, true);
             factory.setFeature(NAMESPACE_PREFIX_FEATURE, true);
+            factory.setFeature(PROVIDE_XMLNS_URIS, true);
             SAXParser parser = factory.newSAXParser();
             DomBuilder handler = new DomBuilder(xml);
             XMLReader xmlReader = parser.getXMLReader();
