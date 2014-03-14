@@ -65,7 +65,7 @@ public class TitleDetector extends ResourceXmlDetector implements JavaScanner {
 
             Category.USABILITY,
             5,
-            Severity.WARNING,
+            Severity.ERROR,
             new Implementation(
                     TitleDetector.class,
                     Scope.RESOURCE_FILE_SCOPE))
