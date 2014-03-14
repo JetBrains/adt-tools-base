@@ -16,15 +16,20 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
+
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.android.utils.ILogger;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.util.Map;
 
 /**
  * merges android manifest files, idempotent.
@@ -36,6 +41,7 @@ public class ManifestMerger2 {
     private final ImmutableList<File> mLibraryFiles;
     private final ImmutableList<File> mFlavorsAndBuildTypeFiles;
     private final ImmutableList<Invoker.Features> mOptionalFeatures;
+    private final KeyBasedValueResolver mPlaceHolderValueResolver;
     private final ILogger mLogger;
 
     private ManifestMerger2(
@@ -43,12 +49,14 @@ public class ManifestMerger2 {
             @NonNull File mainManifestFile,
             @NonNull ImmutableList<File> libraryFiles,
             @NonNull ImmutableList<File> flavorsAndBuildTypeFiles,
-            @NonNull ImmutableList<Invoker.Features> optionalFeatures) {
+            @NonNull ImmutableList<Invoker.Features> optionalFeatures,
+            @NonNull KeyBasedValueResolver placeHolderValueResolver) {
         this.mLogger = logger;
         this.mMainManifestFile = mainManifestFile;
         this.mLibraryFiles = libraryFiles;
         this.mFlavorsAndBuildTypeFiles = flavorsAndBuildTypeFiles;
         this.mOptionalFeatures = optionalFeatures;
+        this.mPlaceHolderValueResolver = placeHolderValueResolver;
     }
 
     /**
@@ -85,6 +93,17 @@ public class ManifestMerger2 {
                 return mergingReportBuilder.build();
             }
         }
+
+        // do placeholder substitution
+        PlaceholderHandler placeholderHandler = new PlaceholderHandler();
+        placeholderHandler.visit(
+                xmlDocumentOptional.get(),
+                mPlaceHolderValueResolver,
+                mergingReportBuilder);
+        if (mergingReportBuilder.hasErrors()) {
+            return mergingReportBuilder.build();
+        }
+
         XmlDocument finalMergedDocument = xmlDocumentOptional.get();
         MergingReport.Result validate = PostValidator.validate(
                 finalMergedDocument, mergingReportBuilder.getActionRecorder().build(), mLogger);
@@ -205,6 +224,7 @@ public class ManifestMerger2 {
                 new ImmutableList.Builder<File>();
         private final ImmutableList.Builder<Features> mFeaturesBuilder =
                 new ImmutableList.Builder<Features>();
+        private KeyBasedValueResolver mKeyBasedValueResolver;
         private final ILogger mLogger;
 
 
@@ -274,6 +294,16 @@ public class ManifestMerger2 {
         }
 
         /**
+         * Sets the {@link KeyBasedValueResolver} to obtain place holder's values.
+         * @param resolver the resolver object.
+         * @return itself.
+         */
+        public Invoker setPlaceHolderResolver(KeyBasedValueResolver resolver) {
+            mKeyBasedValueResolver = resolver;
+            return this;
+        }
+
+        /**
          * Perform the merging and return the result.
          *
          * @return an instance of {@link com.android.manifmerger.MergingReport} that will give
@@ -284,14 +314,45 @@ public class ManifestMerger2 {
          * @throws MergeFailureException if the merging cannot be completed successfully.
          */
         public MergingReport merge() throws MergeFailureException {
+            KeyBasedValueResolver keyBasedValueResolver = mKeyBasedValueResolver != null
+                    ? mKeyBasedValueResolver
+                    : new KeyBasedValueResolver() {
+                        @Nullable
+                        @Override
+                        public String getValue(@NonNull String key) {
+                            // this will generate an error if the document contains any
+                            // placeholders.
+                            return null;
+                        }
+                    };
+
             ManifestMerger2 manifestMerger =
                     new ManifestMerger2(
                             mLogger,
                             mMainManifestFile,
                             mLibraryFilesBuilder.build(),
                             mFlavorsAndBuildTypeFiles.build(),
-                            mFeaturesBuilder.build());
+                            mFeaturesBuilder.build(),
+                            keyBasedValueResolver);
             return manifestMerger.merge();
+        }
+    }
+
+    /**
+     * Helper class for map based placeholders key value pairs.
+     */
+    public static class MapBasedKeyBasedValueResolver implements KeyBasedValueResolver {
+
+        private final ImmutableMap<String, String> mKeyValues;
+
+        public MapBasedKeyBasedValueResolver(Map<String, String> keyValues) {
+            this.mKeyValues = ImmutableMap.copyOf(keyValues);
+        }
+
+        @Nullable
+        @Override
+        public String getValue(@NonNull String key) {
+            return mKeyValues.get(key);
         }
     }
 }
