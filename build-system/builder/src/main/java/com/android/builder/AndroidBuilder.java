@@ -89,10 +89,10 @@ import java.util.Set;
  * then build steps can be done with
  * {@link #processManifest(java.io.File, java.util.List, java.util.List, String, int, String, int, int, String)}
  * {@link #processTestManifest(String, int, int, String, String, Boolean, Boolean, java.util.List, String)}
- * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions, java.util.Collection)}
+ * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions, java.util.Collection, boolean)}
  * {@link #compileAllAidlFiles(java.util.List, java.io.File, java.util.List, com.android.builder.compiling.DependencyFileProcessor)}
  * {@link #convertByteCode(Iterable, Iterable, java.io.File, DexOptions, java.util.List, boolean)}
- * {@link #packageApk(String, java.io.File, java.util.List, String, java.util.Collection, java.util.Set, boolean, com.android.builder.model.SigningConfig, com.android.builder.model.PackagingOptions, String)}
+ * {@link #packageApk(String, java.io.File, java.util.Collection, String, java.util.Collection, java.util.Set, boolean, com.android.builder.model.SigningConfig, com.android.builder.model.PackagingOptions, String)}
  *
  * Java compilation is not handled but the builder provides the bootclasspath with
  * {@link #getBootClasspath(SdkParser)}.
@@ -603,6 +603,9 @@ public class AndroidBuilder {
      * @param type the type of the variant being built
      * @param debuggable whether the app is debuggable
      * @param options the {@link com.android.builder.model.AaptOptions}
+     * @param resourceConfigs a list of resource config filters to pass to aapt.
+     * @param enforceUniquePackageName if true method will fail if some libraries share the same
+     *                                 package name
      *
      *
      * @throws IOException
@@ -621,8 +624,9 @@ public class AndroidBuilder {
             @Nullable String proguardOutput,
                       VariantConfiguration.Type type,
                       boolean debuggable,
-            @NonNull AaptOptions options,
-            @NonNull Collection<String> resourceConfigs)
+            @NonNull  AaptOptions options,
+            @NonNull  Collection<String> resourceConfigs,
+                      boolean enforceUniquePackageName)
             throws IOException, InterruptedException, LoggedErrorException {
 
         checkNotNull(manifestFile, "manifestFile cannot be null.");
@@ -753,15 +757,28 @@ public class AndroidBuilder {
             Multimap<String, SymbolLoader> libMap = ArrayListMultimap.create();
 
             for (SymbolFileProvider lib : libraries) {
+                String packageName = VariantConfiguration.getManifestPackage(lib.getManifest());
+                if (appPackageName == null) {
+                    continue;
+                }
+
+                if (appPackageName.equals(packageName)) {
+                    if (enforceUniquePackageName) {
+                        String msg =
+                                "Error: A library uses the same package as this project\n" +
+                                        "You can temporarily disable this error with android.enforceUniquePackageName=false\n" +
+                                        "However, this is temporary and will be enforced in 1.0";
+                        throw new RuntimeException(msg);
+                    }
+
+                    // ignore libraries that have the same package name as the app
+                    continue;
+                }
+
                 File rFile = lib.getSymbolFile();
                 // if the library has no resource, this file won't exist.
                 if (rFile.isFile()) {
 
-                    String packageName = VariantConfiguration.getManifestPackage(lib.getManifest());
-                    if (appPackageName.equals(packageName)) {
-                        // ignore libraries that have the same package name as the app
-                        continue;
-                    }
 
                     // load the full values if that's not already been done.
                     // Doing it lazily allow us to support the case where there's no
@@ -784,6 +801,14 @@ public class AndroidBuilder {
             // now loop on all the package name, merge all the symbols to write, and write them
             for (String packageName : libMap.keySet()) {
                 Collection<SymbolLoader> symbols = libMap.get(packageName);
+
+                if (enforceUniquePackageName && symbols.size() > 1) {
+                    String msg = String.format(
+                            "Error: more than one library with package name '%s'\n" +
+                            "You can temporarily disable this error with android.enforceUniquePackageName=false\n" +
+                            "However, this is temporary and will be enforced in 1.0", packageName);
+                    throw new RuntimeException(msg);
+                }
 
                 SymbolWriter writer = new SymbolWriter(sourceOutputDir, packageName,
                         fullSymbolValues);

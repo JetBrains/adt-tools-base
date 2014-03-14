@@ -353,4 +353,21 @@ public abstract class BaseExtension {
                         + SdkConstants.FD_PROGUARD + File.separatorChar
                         + name);
     }
+
+    // ---------------
+    // TEMP for compatibility
+
+    private boolean enforceUniquePackageName = true
+
+    public void enforceUniquePackageName(boolean value) {
+        if (!value) {
+            logger.warning("WARNING: support for libraries with same package name is deprecated and will be removed in 1.0")
+        }
+        enforceUniquePackageName = value
+    }
+
+    public getEnforceUniquePackageName() {
+        return enforceUniquePackageName
+    }
+
 }
