@@ -10,17 +10,16 @@
 # - It's an error if an element with the same @name attribute is defined
 #   or merged more than once unless the definition is *exactly* the same,
 #   the "same" being defined by the exact XML elements, whitespace excluded.
+# - To no generate an error, a tools:replace instruction can be set to
+#   explicitely override lower priority nodes.
 #
-# This tests that an error is generated because the libraries define
-# aliases which are already defined differently.
 #
-
-@fails
 
 @main
 
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.app1"
     android:versionCode="100"
     android:versionName="1.0.0">
@@ -33,7 +32,8 @@
         android:restoreAnyVersion="true"
         android:allowBackup="true"
         android:killAfterRestore="true"
-        android:name="com.example.TheApp" >
+        android:name="com.example.TheApp"
+        tools:replace="label">
 
         <activity-alias
             android:name="com.example.alias.MyActivity1"
@@ -181,6 +181,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LAUNCHER2"/>
             </intent-filter>
         </activity-alias>
 
@@ -190,22 +191,3 @@
 
 @errors
 
-P [ManifestMergerTest0_main.xml:6, ManifestMergerTest1_lib1.xml:6] Skipping identical /manifest/application/activity-alias[@name=com.example.alias.MyActivity1] element.
-E [ManifestMergerTest0_main.xml:13, ManifestMergerTest1_lib1.xml:14] Trying to merge incompatible /manifest/application/activity-alias[@name=com.example.alias.MyActivity2] element:
-  <activity-alias
---    @android:icon="@drawable/alias_icon2"
---    @android:label="@string/alias_name2"
---    @android:name="com.example.alias.MyActivity2"
-  <activity-alias
-++    @android:name="com.example.alias.MyActivity2"
-++    @android:targetActivity="com.example.MainActivity2">
-++</activity-alias>
-E [ManifestMergerTest0_main.xml, ManifestMergerTest2_lib2.xml:6] Trying to merge incompatible /manifest/application/activity-alias[@name=com.example.alias.MyActivity3] element:
-  <activity-alias
---    @android:name="com.example.alias.MyActivity3"
---    @android:targetActivity="com.example.MainActivity3">
---    <intent-filter>
-  <activity-alias
-++    @android:name="com.example.alias.MyActivity3">
-++    <intent-filter>
-++        <category
