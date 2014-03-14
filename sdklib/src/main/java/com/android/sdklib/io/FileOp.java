@@ -384,20 +384,17 @@ public class FileOp implements IFileOp {
 
     @Override
     @SuppressWarnings("deprecation") // Eclipse doesn't understand Closeables.closeQuietly
-    public boolean saveProperties(@NonNull File file, @NonNull Properties props,
-            @NonNull String comments) {
+    public void saveProperties(
+            @NonNull File file,
+            @NonNull Properties props,
+            @NonNull String comments) throws IOException {
         OutputStream fos = null;
         try {
             fos = newFileOutputStream(file);
-
             props.store(fos, comments);
-            return true;
-        } catch (IOException ignore) {
         } finally {
             Closeables.closeQuietly(fos);
         }
-
-        return false;
     }
 
     @Override

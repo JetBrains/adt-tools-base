@@ -68,6 +68,7 @@ public class MockFileOp implements IFileOp {
     public void reset() {
         mExistingFiles.clear();
         mExistingFolders.clear();
+        mOutputStreams.clear();
     }
 
     @NonNull
@@ -90,7 +91,7 @@ public class MockFileOp implements IFileOp {
      * Parent folders are not automatically created.
      */
     public void recordExistingFile(@NonNull File file) {
-        recordExistingFile(getAgnosticAbsPath(file), 0, null);
+        recordExistingFile(getAgnosticAbsPath(file), 0, (byte[])null);
     }
 
     /**
@@ -102,7 +103,7 @@ public class MockFileOp implements IFileOp {
      * @param absFilePath A unix-like file path, e.g. "/dir/file"
      */
     public void recordExistingFile(@NonNull String absFilePath) {
-        recordExistingFile(absFilePath, 0, null);
+        recordExistingFile(absFilePath, 0, (byte[])null);
     }
 
     /**
@@ -150,6 +151,22 @@ public class MockFileOp implements IFileOp {
     }
 
     /**
+     * Records a new absolute file path & its input stream content.
+     * Parent folders are not automatically created.
+     * <p/>
+     * The syntax should always look "unix-like", e.g. "/dir/file".
+     * On Windows that means you'll want to use {@link #getAgnosticAbsPath(File)}.
+     * @param absFilePath A unix-like file path, e.g. "/dir/file"
+     * @param content A non-null UTF-8 content string to return
+     *                    via {@link #newFileInputStream(File)}.
+     */
+    public void recordExistingFile(@NonNull String absFilePath,
+                                   long lastModified,
+                                   @NonNull String content) {
+        recordExistingFile(absFilePath, lastModified, content.getBytes(Charsets.UTF_8));
+    }
+
+    /**
      * Records a new absolute folder path.
      * Parent folders are not automatically created.
      */
@@ -167,6 +184,20 @@ public class MockFileOp implements IFileOp {
      */
     public void recordExistingFolder(String absFolderPath) {
         mExistingFolders.add(absFolderPath);
+    }
+
+    /**
+     * Returns true if a file with the given path has been recorded.
+     */
+    public boolean hasRecordedExistingFile(File file) {
+        return mExistingFiles.containsKey(getAgnosticAbsPath(file));
+    }
+
+    /**
+     * Returns true if a folder with the given path has been recorded.
+     */
+    public boolean hasRecordedExistingFolder(File folder) {
+        return mExistingFolders.contains(getAgnosticAbsPath(folder));
     }
 
     /**
@@ -484,15 +515,14 @@ public class MockFileOp implements IFileOp {
      * records the write rather than actually performing it.</em>
      */
     @Override
-    public boolean saveProperties(@NonNull File file, @NonNull Properties props,
-            @NonNull String comments) {
+    public void saveProperties(
+            @NonNull File file,
+            @NonNull Properties props,
+            @NonNull String comments) throws IOException {
         OutputStream fos = null;
         try {
             fos = newFileOutputStream(file);
-
             props.store(fos, comments);
-            return true;
-        } catch (IOException ignore) {
         } finally {
             if (fos != null) {
                 try {
@@ -501,8 +531,6 @@ public class MockFileOp implements IFileOp {
                 }
             }
         }
-
-        return false;
     }
 
     /**
