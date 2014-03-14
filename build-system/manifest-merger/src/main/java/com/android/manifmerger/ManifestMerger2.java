@@ -40,8 +40,9 @@ public class ManifestMerger2 {
     private final File mMainManifestFile;
     private final ImmutableList<File> mLibraryFiles;
     private final ImmutableList<File> mFlavorsAndBuildTypeFiles;
-    private final ImmutableList<Invoker.Features> mOptionalFeatures;
-    private final KeyBasedValueResolver mPlaceHolderValueResolver;
+    private final ImmutableList<Invoker.Feature> mOptionalFeatures;
+    private final KeyBasedValueResolver<String> mPlaceHolderValueResolver;
+    private final KeyBasedValueResolver<Invoker.SystemProperty> mSystemPropertyResolver;
     private final ILogger mLogger;
 
     private ManifestMerger2(
@@ -49,14 +50,16 @@ public class ManifestMerger2 {
             @NonNull File mainManifestFile,
             @NonNull ImmutableList<File> libraryFiles,
             @NonNull ImmutableList<File> flavorsAndBuildTypeFiles,
-            @NonNull ImmutableList<Invoker.Features> optionalFeatures,
-            @NonNull KeyBasedValueResolver placeHolderValueResolver) {
+            @NonNull ImmutableList<Invoker.Feature> optionalFeatures,
+            @NonNull KeyBasedValueResolver<String> placeHolderValueResolver,
+            @NonNull KeyBasedValueResolver<Invoker.SystemProperty> systemPropertiesResolver) {
         this.mLogger = logger;
         this.mMainManifestFile = mainManifestFile;
         this.mLibraryFiles = libraryFiles;
         this.mFlavorsAndBuildTypeFiles = flavorsAndBuildTypeFiles;
         this.mOptionalFeatures = optionalFeatures;
         this.mPlaceHolderValueResolver = placeHolderValueResolver;
+        this.mSystemPropertyResolver = systemPropertiesResolver;
     }
 
     /**
@@ -99,6 +102,7 @@ public class ManifestMerger2 {
         placeholderHandler.visit(
                 xmlDocumentOptional.get(),
                 mPlaceHolderValueResolver,
+                mSystemPropertyResolver,
                 mergingReportBuilder);
         if (mergingReportBuilder.hasErrors()) {
             return mergingReportBuilder.build();
@@ -144,7 +148,7 @@ public class ManifestMerger2 {
                 : Optional.of(lowerPriorityDocument);
 
         // if requested, dump each intermediary merging stage into the report.
-        if (mOptionalFeatures.contains(Invoker.Features.KEEP_INTERMEDIARY_STAGES)) {
+        if (mOptionalFeatures.contains(Invoker.Feature.KEEP_INTERMEDIARY_STAGES)) {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             result.get().write(byteArrayOutputStream);
             mergingReportBuilder.addMergingStage(byteArrayOutputStream.toString());
@@ -200,9 +204,20 @@ public class ManifestMerger2 {
     public static final class Invoker {
 
         /**
-         * Optional behavior of the merging tool can be turned on by setting these Features.
+         * List of manifest files properties that can be directly overridden without using a
+         * placeholder.
          */
-        public enum Features {
+        public enum SystemProperty {
+            /**
+             * Allow setting the merged manifest file package name.
+             */
+            PACKAGE,
+        }
+
+        /**
+         * Optional behavior of the merging tool can be turned on by setting these Feature.
+         */
+        public enum Feature {
 
             /**
              * Keep all intermediary merged files during the merging process. This is particularly
@@ -222,9 +237,10 @@ public class ManifestMerger2 {
                 new ImmutableList.Builder<File>();
         private final ImmutableList.Builder<File> mFlavorsAndBuildTypeFiles =
                 new ImmutableList.Builder<File>();
-        private final ImmutableList.Builder<Features> mFeaturesBuilder =
-                new ImmutableList.Builder<Features>();
-        private KeyBasedValueResolver mKeyBasedValueResolver;
+        private final ImmutableList.Builder<Feature> mFeaturesBuilder =
+                new ImmutableList.Builder<Feature>();
+        @Nullable private String packageOverride;
+        private KeyBasedValueResolver<String> mKeyBasedValueResolver;
         private final ILogger mLogger;
 
 
@@ -288,7 +304,7 @@ public class ManifestMerger2 {
          * @param features one to many features to set.
          * @return itself.
          */
-        public Invoker withFeatures(Features...features) {
+        public Invoker withFeatures(Feature...features) {
             mFeaturesBuilder.add(features);
             return this;
         }
@@ -304,6 +320,24 @@ public class ManifestMerger2 {
         }
 
         /**
+         * Sets a value for a {@link Invoker.SystemProperty}
+         * @param override the property to set
+         * @param value the value for the property
+         * @return itself.
+         */
+        public Invoker setOverride(SystemProperty override, String value) {
+            switch(override) {
+                case PACKAGE:
+                    packageOverride = value;
+                    break;
+                default:
+                    throw new IllegalStateException(
+                            "Unhandled system property :" + override.name());
+            }
+            return this;
+        }
+
+        /**
          * Perform the merging and return the result.
          *
          * @return an instance of {@link com.android.manifmerger.MergingReport} that will give
@@ -314,9 +348,9 @@ public class ManifestMerger2 {
          * @throws MergeFailureException if the merging cannot be completed successfully.
          */
         public MergingReport merge() throws MergeFailureException {
-            KeyBasedValueResolver keyBasedValueResolver = mKeyBasedValueResolver != null
+            KeyBasedValueResolver<String> keyBasedValueResolver = mKeyBasedValueResolver != null
                     ? mKeyBasedValueResolver
-                    : new KeyBasedValueResolver() {
+                    : new KeyBasedValueResolver<String>() {
                         @Nullable
                         @Override
                         public String getValue(@NonNull String key) {
@@ -326,6 +360,20 @@ public class ManifestMerger2 {
                         }
                     };
 
+            KeyBasedValueResolver<SystemProperty> systemPropertiesResolver =
+                    new KeyBasedValueResolver<SystemProperty>() {
+                @Nullable
+                @Override
+                public String getValue(@NonNull SystemProperty key) {
+                    switch(key) {
+                        case PACKAGE:
+                            return packageOverride;
+                        default:
+                            return null;
+                    }
+                }
+            };
+
             ManifestMerger2 manifestMerger =
                     new ManifestMerger2(
                             mLogger,
@@ -333,7 +381,8 @@ public class ManifestMerger2 {
                             mLibraryFilesBuilder.build(),
                             mFlavorsAndBuildTypeFiles.build(),
                             mFeaturesBuilder.build(),
-                            keyBasedValueResolver);
+                            keyBasedValueResolver,
+                            systemPropertiesResolver);
             return manifestMerger.merge();
         }
     }
@@ -341,7 +390,7 @@ public class ManifestMerger2 {
     /**
      * Helper class for map based placeholders key value pairs.
      */
-    public static class MapBasedKeyBasedValueResolver implements KeyBasedValueResolver {
+    public static class MapBasedKeyBasedValueResolver implements KeyBasedValueResolver<String> {
 
         private final ImmutableMap<String, String> mKeyValues;
 
