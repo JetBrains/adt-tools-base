@@ -20,6 +20,7 @@ import static com.android.SdkConstants.CURRENT_PLATFORM;
 import static com.android.SdkConstants.DOT_9PNG;
 import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.PLATFORM_LINUX;
+import static com.android.SdkConstants.UTF_8;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 import static java.io.File.separatorChar;
 
@@ -165,7 +166,7 @@ public abstract class Reporter {
     static String encodeUrl(String url) {
         try {
             url = url.replace('\\', '/');
-            return URLEncoder.encode(url, "UTF-8").replace("%2F", "/");         //$NON-NLS-1$
+            return URLEncoder.encode(url, UTF_8).replace("%2F", "/");         //$NON-NLS-1$
         } catch (UnsupportedEncodingException e) {
             // This shouldn't happen for UTF-8
             System.err.println("Invalid string " + e.getLocalizedMessage());

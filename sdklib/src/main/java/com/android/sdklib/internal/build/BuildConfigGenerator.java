@@ -16,6 +16,8 @@
 
 package com.android.sdklib.internal.build;
 
+import com.android.SdkConstants;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -120,7 +122,7 @@ public class BuildConfigGenerator {
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(file);
-            InputStream source = new ByteArrayInputStream(content.getBytes("UTF-8"));
+            InputStream source = new ByteArrayInputStream(content.getBytes(SdkConstants.UTF_8));
 
             byte[] buffer = new byte[1024];
             int count = 0;

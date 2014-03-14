@@ -16,6 +16,9 @@
 
 package com.android.utils;
 
+import static com.android.SdkConstants.UTF_8;
+
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
@@ -53,7 +56,6 @@ import javax.xml.parsers.SAXParserFactory;
  * (and line and column numbers) for element nodes as well as attribute nodes.
  */
 public class PositionXmlParser {
-    private static final String UTF_8 = "UTF-8";                 //$NON-NLS-1$
     private static final String UTF_16 = "UTF_16";               //$NON-NLS-1$
     private static final String UTF_16LE = "UTF_16LE";           //$NON-NLS-1$
     private static final String CONTENT_KEY = "contents";        //$NON-NLS-1$
