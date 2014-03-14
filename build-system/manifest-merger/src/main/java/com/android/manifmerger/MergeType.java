@@ -24,13 +24,13 @@ package com.android.manifmerger;
 public enum MergeType {
 
     /**
-     * use tools:node instructions for merging.
+     * Merge this element's children with lower priority element's children. Do not merge
+     * element's attributes.
      */
-    RESPECT_TOOLS_INSTRUCTIONS,
+    MERGE_CHILDREN_ONLY,
 
     /**
-     * Merge this element with lower priority elements.
-     */
+     * Merge this element with lower priority elements.     */
     MERGE,
 
     /**

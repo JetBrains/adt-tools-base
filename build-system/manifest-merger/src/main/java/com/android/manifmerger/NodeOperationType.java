@@ -34,6 +34,11 @@ import com.android.utils.SdkUtils;
 public enum NodeOperationType implements ConvertibleName {
 
     /**
+     * Merges further definitions of the same element with this one.
+     */
+    MERGE,
+
+    /**
      * Replace further definitions of the same element with this one. There can be 0..n similar
      * elements replaced with the annotated xml element.
      */
