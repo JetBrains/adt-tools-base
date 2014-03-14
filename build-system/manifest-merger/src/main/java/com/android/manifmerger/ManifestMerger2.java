@@ -16,16 +16,24 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.ManifestModel.NodeTypes;
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.android.utils.ILogger;
+import com.android.utils.SdkUtils;
+import com.android.utils.XmlUtils;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -42,7 +50,7 @@ public class ManifestMerger2 {
     private final ImmutableList<File> mFlavorsAndBuildTypeFiles;
     private final ImmutableList<Invoker.Feature> mOptionalFeatures;
     private final KeyBasedValueResolver<String> mPlaceHolderValueResolver;
-    private final KeyBasedValueResolver<Invoker.SystemProperty> mSystemPropertyResolver;
+    private final KeyBasedValueResolver<SystemProperty> mSystemPropertyResolver;
     private final ILogger mLogger;
 
     private ManifestMerger2(
@@ -52,7 +60,7 @@ public class ManifestMerger2 {
             @NonNull ImmutableList<File> flavorsAndBuildTypeFiles,
             @NonNull ImmutableList<Invoker.Feature> optionalFeatures,
             @NonNull KeyBasedValueResolver<String> placeHolderValueResolver,
-            @NonNull KeyBasedValueResolver<Invoker.SystemProperty> systemPropertiesResolver) {
+            @NonNull KeyBasedValueResolver<SystemProperty> systemPropertiesResolver) {
         this.mLogger = logger;
         this.mMainManifestFile = mainManifestFile;
         this.mLibraryFiles = libraryFiles;
@@ -102,11 +110,13 @@ public class ManifestMerger2 {
         placeholderHandler.visit(
                 xmlDocumentOptional.get(),
                 mPlaceHolderValueResolver,
-                mSystemPropertyResolver,
                 mergingReportBuilder);
         if (mergingReportBuilder.hasErrors()) {
             return mergingReportBuilder.build();
         }
+
+        // perform system property injection.
+        performSystemPropertiesInjection(xmlDocumentOptional.get());
 
         XmlDocument finalMergedDocument = xmlDocumentOptional.get();
         MergingReport.Result validate = PostValidator.validate(
@@ -158,6 +168,124 @@ public class ManifestMerger2 {
     }
 
     /**
+     * Defines a property that can add or override itself into an XML document.
+     */
+    public interface AutoAddingProperty {
+
+        /**
+         * Add itself (possibly just override the current value) with the passed value
+         * @param document the xml document to add itself to.
+         * @param value the value to set of this property.
+         */
+        void addTo(@NonNull Document document,@NonNull String value);
+    }
+
+    /**
+     * List of manifest files properties that can be directly overridden without using a
+     * placeholder.
+     */
+    public static enum SystemProperty implements AutoAddingProperty {
+
+        /**
+         * Allow setting the merged manifest file package name.
+         */
+        PACKAGE {
+            @Override
+            public void addTo(Document document, String value) {
+                addToElement(this, value, document.getDocumentElement());
+            }
+        },
+        /**
+         * http://developer.android.com/guide/topics/manifest/manifest-element.html#vcode
+         */
+        VERSION_CODE {
+            @Override
+            public void addTo(Document document, String value) {
+                addToElementInAndroidNS(this, value, document.getDocumentElement());
+            }
+        },
+        /**
+         * http://developer.android.com/guide/topics/manifest/manifest-element.html#vname
+         */
+        VERSION_NAME {
+            @Override
+            public void addTo(Document document, String value) {
+                addToElementInAndroidNS(this, value, document.getDocumentElement());
+            }
+        },
+        /**
+         * http://developer.android.com/guide/topics/manifest/uses-sdk-element.html#min
+         */
+        MIN_SDK_VERSION {
+            @Override
+            public void addTo(Document document, String value) {
+                addToElementInAndroidNS(this, value, createOrGetUseSdk(document));
+            }
+        },
+        /**
+         * http://developer.android.com/guide/topics/manifest/uses-sdk-element.html#target
+         */
+        TARGET_SDK_VERSION {
+            @Override
+            public void addTo(Document document, String value) {
+                addToElementInAndroidNS(this, value, createOrGetUseSdk(document));
+            }
+        };
+
+        public String toCamelCase() {
+            return SdkUtils.constantNameToCamelCase(name());
+        }
+
+        // utility method to add an attribute which name is derived from the enum name().
+        private static void addToElement(SystemProperty systemProperty, String value, Element to) {
+            to.setAttribute(systemProperty.toCamelCase(), value);
+        }
+
+        // utility method to add an attribute in android namespace which local name is derived from
+        // the enum name().
+        private static void addToElementInAndroidNS(SystemProperty systemProperty,
+                String value,
+                Element to) {
+            String toolsPrefix = XmlUtils.lookupNamespacePrefix(
+                    to, SdkConstants.ANDROID_URI, SdkConstants.ANDROID_NS_NAME, false);
+            to.setAttributeNS(SdkConstants.ANDROID_URI,
+                    toolsPrefix + XmlUtils.NS_SEPARATOR + systemProperty.toCamelCase(),
+                    value);
+        }
+
+        // utility method to create or get an existing use-sdk xml element under manifest.
+        // this could be made more generic by adding more metadata to the enum but since there is
+        // only one case so far, keep it simple.
+        private static Element createOrGetUseSdk(Document document) {
+            Element manifest = document.getDocumentElement();
+            NodeList usesSdks = manifest
+                    .getElementsByTagName(NodeTypes.USES_SDK.toXmlName());
+            if (usesSdks.getLength() == 0) {
+                // create it first.
+                Element useSdk = manifest.getOwnerDocument().createElement(
+                        NodeTypes.USES_SDK.toXmlName());
+                manifest.appendChild(useSdk);
+                return useSdk;
+            } else {
+                return (Element) usesSdks.item(0);
+            }
+        }
+    }
+
+    /**
+     * Perform {@link com.android.manifmerger.ManifestMerger2.SystemProperty} injection.
+     * @param xmlDocument the xml document to inject into.
+     */
+    private void performSystemPropertiesInjection(XmlDocument xmlDocument) {
+        for (SystemProperty systemProperty : SystemProperty.values()) {
+            String propertyOverride = mSystemPropertyResolver.getValue(systemProperty);
+            if (propertyOverride != null) {
+                systemProperty.addTo(xmlDocument.getXml(), propertyOverride);
+            }
+        }
+    }
+
+    /**
      * Creates a new {@link com.android.manifmerger.ManifestMerger2.Invoker} instance to invoke
      * the merging tool.
      *
@@ -204,17 +332,6 @@ public class ManifestMerger2 {
     public static final class Invoker {
 
         /**
-         * List of manifest files properties that can be directly overridden without using a
-         * placeholder.
-         */
-        public enum SystemProperty {
-            /**
-             * Allow setting the merged manifest file package name.
-             */
-            PACKAGE,
-        }
-
-        /**
          * Optional behavior of the merging tool can be turned on by setting these Feature.
          */
         public enum Feature {
@@ -239,8 +356,10 @@ public class ManifestMerger2 {
                 new ImmutableList.Builder<File>();
         private final ImmutableList.Builder<Feature> mFeaturesBuilder =
                 new ImmutableList.Builder<Feature>();
-        @Nullable private String packageOverride;
-        private KeyBasedValueResolver<String> mKeyBasedValueResolver;
+        private final ImmutableMap.Builder<SystemProperty, String> mSystemProperties =
+                new ImmutableMap.Builder<SystemProperty, String>();
+        private final ImmutableMap.Builder<String, String> mPlaceHolders =
+                new ImmutableMap.Builder<String, String>();
         private final ILogger mLogger;
 
 
@@ -310,30 +429,22 @@ public class ManifestMerger2 {
         }
 
         /**
-         * Sets the {@link KeyBasedValueResolver} to obtain place holder's values.
-         * @param resolver the resolver object.
+         * Adds a new placeholder name and value for substitution.
          * @return itself.
          */
-        public Invoker setPlaceHolderResolver(KeyBasedValueResolver resolver) {
-            mKeyBasedValueResolver = resolver;
+        public Invoker setPlaceHolderValue(String placeHolderName, String value) {
+            mPlaceHolders.put(placeHolderName, value);
             return this;
         }
 
         /**
-         * Sets a value for a {@link Invoker.SystemProperty}
+         * Sets a value for a {@link SystemProperty}
          * @param override the property to set
          * @param value the value for the property
          * @return itself.
          */
         public Invoker setOverride(SystemProperty override, String value) {
-            switch(override) {
-                case PACKAGE:
-                    packageOverride = value;
-                    break;
-                default:
-                    throw new IllegalStateException(
-                            "Unhandled system property :" + override.name());
-            }
+            mSystemProperties.put(override, value);
             return this;
         }
 
@@ -348,31 +459,6 @@ public class ManifestMerger2 {
          * @throws MergeFailureException if the merging cannot be completed successfully.
          */
         public MergingReport merge() throws MergeFailureException {
-            KeyBasedValueResolver<String> keyBasedValueResolver = mKeyBasedValueResolver != null
-                    ? mKeyBasedValueResolver
-                    : new KeyBasedValueResolver<String>() {
-                        @Nullable
-                        @Override
-                        public String getValue(@NonNull String key) {
-                            // this will generate an error if the document contains any
-                            // placeholders.
-                            return null;
-                        }
-                    };
-
-            KeyBasedValueResolver<SystemProperty> systemPropertiesResolver =
-                    new KeyBasedValueResolver<SystemProperty>() {
-                @Nullable
-                @Override
-                public String getValue(@NonNull SystemProperty key) {
-                    switch(key) {
-                        case PACKAGE:
-                            return packageOverride;
-                        default:
-                            return null;
-                    }
-                }
-            };
 
             ManifestMerger2 manifestMerger =
                     new ManifestMerger2(
@@ -381,8 +467,9 @@ public class ManifestMerger2 {
                             mLibraryFilesBuilder.build(),
                             mFlavorsAndBuildTypeFiles.build(),
                             mFeaturesBuilder.build(),
-                            keyBasedValueResolver,
-                            systemPropertiesResolver);
+                            new MapBasedKeyBasedValueResolver<String>(mPlaceHolders.build()),
+                            new MapBasedKeyBasedValueResolver<SystemProperty>(
+                                    mSystemProperties.build()));
             return manifestMerger.merge();
         }
     }
@@ -390,18 +477,18 @@ public class ManifestMerger2 {
     /**
      * Helper class for map based placeholders key value pairs.
      */
-    public static class MapBasedKeyBasedValueResolver implements KeyBasedValueResolver<String> {
+    public static class MapBasedKeyBasedValueResolver<T> implements KeyBasedValueResolver<T> {
 
-        private final ImmutableMap<String, String> mKeyValues;
+        private final ImmutableMap<T, String> keyValues;
 
-        public MapBasedKeyBasedValueResolver(Map<String, String> keyValues) {
-            this.mKeyValues = ImmutableMap.copyOf(keyValues);
+        public MapBasedKeyBasedValueResolver(Map<T, String> keyValues) {
+            this.keyValues = ImmutableMap.copyOf(keyValues);
         }
 
         @Nullable
         @Override
-        public String getValue(@NonNull String key) {
-            return mKeyValues.get(key);
+        public String getValue(@NonNull T key) {
+            return keyValues.get(key);
         }
     }
 }
