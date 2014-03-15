@@ -67,4 +67,21 @@ public class LibraryExtension extends BaseExtension {
     public boolean getPublishNonDefault() {
         return publishNonDefault
     }
+
+    // ---------------
+    // TEMP for compatibility
+
+    private boolean packageBuildConfig = true
+
+    public void packageBuildConfig(boolean value) {
+        if (!value) {
+            logger.warning("WARNING: support for not packaging BuildConfig is deprecated and will be removed in 1.0")
+        }
+
+        packageBuildConfig = value
+    }
+
+    boolean getPackageBuildConfig() {
+        return packageBuildConfig
+    }
 }
