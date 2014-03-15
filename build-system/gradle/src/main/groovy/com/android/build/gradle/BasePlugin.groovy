@@ -799,6 +799,7 @@ public abstract class BasePlugin {
 
         processResources.plugin = this
         processResources.variant = variantData
+        processResources.enforceUniquePackageName = extension.getEnforceUniquePackageName()
 
         VariantConfiguration variantConfiguration = variantData.variantConfiguration
 
