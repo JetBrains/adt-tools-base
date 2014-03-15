@@ -17,6 +17,7 @@
 package com.android.manifmerger;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.annotations.concurrency.Immutable;
@@ -107,13 +108,17 @@ public class ActionRecorder {
          */
         ADDED,
         /**
+         * The element was injected from the merger invocation parameters.
+         */
+        INJECTED,
+        /**
          * The element was merged with another element into the resulting merged manifest.
          */
         MERGED,
         /**
          * The element was rejected.
          */
-        REJECTED
+        REJECTED,
     }
 
     enum ActionTarget {
@@ -246,9 +251,9 @@ public class ActionRecorder {
         private AttributeRecord(
                 @NonNull ActionType actionType,
                 @NonNull ActionLocation actionLocation,
-                @NonNull AttributeOperationType operationType) {
+                @Nullable AttributeOperationType operationType) {
             super(actionType, actionLocation);
-            this.mOperationType = Preconditions.checkNotNull(operationType);
+            this.mOperationType = operationType;
         }
 
         @Override
@@ -256,6 +261,7 @@ public class ActionRecorder {
             return ActionTarget.ATTRIBUTE;
         }
 
+        @Nullable
         public AttributeOperationType getOperationType() {
             return mOperationType;
         }
