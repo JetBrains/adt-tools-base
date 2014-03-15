@@ -16,8 +16,11 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.ManifestMerger2.Invoker.SystemProperty;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.Optional;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,14 +37,15 @@ public class PlaceholderHandler {
 
     /**
      * Interface to provide a value for a placeholder key.
+     * @param <T> the key type
      */
-    public interface KeyBasedValueResolver {
+    public interface KeyBasedValueResolver<T> {
 
         /**
          * Returns a placeholder value for the placeholder key or null if none exists.
          */
         @Nullable
-        String getValue(@NonNull String key);
+        String getValue(@NonNull T key);
     }
 
     /**
@@ -56,10 +60,25 @@ public class PlaceholderHandler {
      * @param mergingReportBuilder to report errors and log actions.
      */
     public void visit(@NonNull XmlDocument xmlDocument,
-            @NonNull KeyBasedValueResolver valueProvider,
+            @NonNull KeyBasedValueResolver<String> valueProvider,
+            @NonNull KeyBasedValueResolver<SystemProperty> systemPropertiesResolver,
             @NonNull MergingReport.Builder mergingReportBuilder) {
 
         visit(xmlDocument.getRootNode(), valueProvider, mergingReportBuilder);
+
+        // finally perform system properties override.
+        // this code is not as generic as it could be, if we get more system properties in the
+        // future, this will need another pass.
+        String packageOverride = systemPropertiesResolver.getValue(SystemProperty.PACKAGE);
+        if (packageOverride != null) {
+            Optional<XmlAttribute> packageAttribute = xmlDocument.getRootNode()
+                    .getAttribute(XmlNode.fromXmlName("package"));
+            if (packageAttribute.isPresent()) {
+                packageAttribute.get().getXml().setValue(packageOverride);
+            } else {
+                xmlDocument.getRootNode().getXml().setAttribute("package", packageOverride);
+            }
+        }
     }
 
     private void visit(XmlElement xmlElement,
