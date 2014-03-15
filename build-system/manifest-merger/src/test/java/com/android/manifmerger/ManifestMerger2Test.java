@@ -16,8 +16,11 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.ManifestMerger2.Invoker.SystemProperty;
+
 import com.android.utils.StdLogger;
 import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -36,6 +39,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
     // so far, I only support 3 original tests.
     private static String[] sDataFiles = new String[]{
             "00_noop",
+            "05_inject_package.xml",
             "10_activity_merge",
             "11_activity_dup",
     };
@@ -85,10 +89,15 @@ public class ManifestMerger2Test extends ManifestMergerTest {
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         StdLogger stdLogger = new StdLogger(StdLogger.Level.VERBOSE);
-        MergingReport mergeReport = ManifestMerger2.newInvoker(testFiles.getMain(),
+        ManifestMerger2.Invoker invoker = ManifestMerger2.newInvoker(testFiles.getMain(),
                 stdLogger)
-                .addLibraryManifests(testFiles.getLibs())
-                .merge();
+                .addLibraryManifests(testFiles.getLibs());
+
+        if (!Strings.isNullOrEmpty(testFiles.getPackageOverride())) {
+            invoker.setOverride(SystemProperty.PACKAGE, testFiles.getPackageOverride());
+        }
+
+        MergingReport mergeReport = invoker.merge();
 
         XmlDocument expectedResult = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), testFiles.getMain().getName()),
