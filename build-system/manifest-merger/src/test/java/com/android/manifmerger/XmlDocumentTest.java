@@ -39,14 +39,12 @@ import javax.xml.parsers.ParserConfigurationException;
  */
 public class XmlDocumentTest extends TestCase {
 
-    @Mock MergingReport.Builder mergingReport;
     @Mock ILogger mLogger;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         MockitoAnnotations.initMocks(this);
-        when(mergingReport.getLogger()).thenReturn(mLogger);
     }
 
     public void testMergeableElementsIdentification()
@@ -153,9 +151,7 @@ public class XmlDocumentTest extends TestCase {
                 new TestUtils.TestSourceLocation(getClass(), "testDiff1()"), main);
         XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "testDiff1()"), library);
-        assertFalse(
-                mainDocument.getRootNode().compareTo(libraryDocument.getRootNode(),
-                        mergingReport));
+        assertTrue(mainDocument.compareTo(libraryDocument).isPresent());
     }
 
     public void testDiff2()
@@ -184,8 +180,7 @@ public class XmlDocumentTest extends TestCase {
                 new TestUtils.TestSourceLocation(getClass(), "testDiff2()"), main);
         XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "testDiff2()"), library);
-        assertTrue(mainDocument.getRootNode().compareTo(
-                libraryDocument.getRootNode(), mergingReport));
+        assertFalse(mainDocument.compareTo(libraryDocument).isPresent());
     }
 
     public void testDiff3()
@@ -216,8 +211,7 @@ public class XmlDocumentTest extends TestCase {
                 new TestUtils.TestSourceLocation(getClass(), "testDiff3()"), main);
         XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "testDiff3()"), library);
-        assertTrue(mainDocument.getRootNode().compareTo(libraryDocument.getRootNode(),
-                mergingReport));
+        assertFalse(mainDocument.compareTo(libraryDocument).isPresent());
     }
 
     public void testWriting() throws ParserConfigurationException, SAXException, IOException {

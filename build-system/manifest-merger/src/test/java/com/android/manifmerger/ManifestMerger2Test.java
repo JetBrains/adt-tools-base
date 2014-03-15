@@ -17,6 +17,7 @@
 package com.android.manifmerger;
 
 import com.android.utils.StdLogger;
+import com.google.common.base.Optional;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -25,6 +26,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.logging.Logger;
 
 /**
  * Tests for the {@link com.android.manifmerger.ManifestMerger2} class
@@ -37,6 +39,11 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "10_activity_merge",
             "11_activity_dup",
     };
+
+    @Override
+    protected String getTestDataDirectory() {
+        return "data2";
+    }
 
     /**
      * This overrides the default test suite created by junit. The test suite is a bland TestSuite
@@ -83,34 +90,47 @@ public class ManifestMerger2Test extends ManifestMergerTest {
                 .addLibraryManifests(testFiles.getLibs())
                 .merge();
 
-        assertTrue(mergeReport.getMergedDocument().isPresent());
-        XmlDocument actualResult = mergeReport.getMergedDocument().get();
-        actualResult.write(byteArrayOutputStream);
-
-        mergeReport.log(stdLogger);
-
         XmlDocument expectedResult = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), testFiles.getMain().getName()),
                 testFiles.getExpectedResult());
 
-        // saves the result to the external file for easier human parsing.
-        OutputStream fos = null;
-        try {
-            fos = new BufferedOutputStream(new FileOutputStream(testFiles.getActualResult()));
-            actualResult.write(fos);
-        } finally {
-            if (fos != null) fos.close();
-        }
-
-        MergingReport.Builder comparingReport = new MergingReport.Builder(stdLogger);
-        stdLogger.info(byteArrayOutputStream.toString());
-        stdLogger.info(testFiles.getExpectedErrors());
         // this is obviously quite hacky, refine once merge output is better defined.
         boolean notExpectingError =
                 testFiles.getExpectedErrors().isEmpty() ||
-                testFiles.getExpectedErrors().charAt(0) != 'E';
-        assertEquals(notExpectingError,
-                expectedResult.compareXml(actualResult, comparingReport));
+                        testFiles.getExpectedErrors().charAt(0) != 'E';
+        assertEquals(notExpectingError, mergeReport.getMergedDocument().isPresent());
+        if (notExpectingError) {
+
+            XmlDocument actualResult = mergeReport.getMergedDocument().get();
+            actualResult.write(byteArrayOutputStream);
+
+            mergeReport.log(stdLogger);
+
+            // saves the result to the external file for easier human parsing.
+            OutputStream fos = null;
+            try {
+                fos = new BufferedOutputStream(new FileOutputStream(testFiles.getActualResult()));
+                actualResult.write(fos);
+            } finally {
+                if (fos != null)
+                    fos.close();
+            }
+
+            stdLogger.info(byteArrayOutputStream.toString());
+            stdLogger.info(testFiles.getExpectedErrors());
+
+            Optional<String> comparingMessage =
+                    expectedResult.compareTo(actualResult);
+
+            if (comparingMessage.isPresent()) {
+                Logger.getAnonymousLogger().severe(comparingMessage.get());
+                fail(comparingMessage.get());
+            }
+        } else {
+            for (MergingReport.Record record : mergeReport.getLoggingRecords()) {
+                Logger.getAnonymousLogger().info("Expected test error: " + record);
+            }
+        }
 
     }
 }
