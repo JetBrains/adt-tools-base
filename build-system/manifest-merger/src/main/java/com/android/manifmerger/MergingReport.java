@@ -144,7 +144,7 @@ public class MergingReport {
         }
 
 
-        Builder setMergedDocument(XmlDocument mergedDocument) {
+        Builder setMergedDocument(@NonNull XmlDocument mergedDocument) {
             mMergedDocument = Optional.of(mergedDocument);
             return this;
         }

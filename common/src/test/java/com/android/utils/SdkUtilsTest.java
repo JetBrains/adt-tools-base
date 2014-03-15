@@ -332,4 +332,11 @@ public class SdkUtilsTest extends TestCase {
         deleted = dest.delete();
         assertTrue(deleted);
     }
+
+    public void testNameConversionRoutines() {
+        assertEquals("xml-name", SdkUtils.constantNameToXmlName("XML_NAME"));
+        assertEquals("XML_NAME", SdkUtils.xmlNameToConstantName("xml-name"));
+        assertEquals("xmlName", SdkUtils.constantNameToCamelCase("XML_NAME"));
+        assertEquals("XML_NAME", SdkUtils.camelCaseToConstantName("xmlName"));
+    }
 }

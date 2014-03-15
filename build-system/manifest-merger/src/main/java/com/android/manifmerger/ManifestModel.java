@@ -20,7 +20,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
-import com.android.utils.XmlUtils;
+import com.android.utils.SdkUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
@@ -350,7 +350,7 @@ class ManifestModel {
          * @return the {@link NodeTypes} associated with that element name.
          */
         static NodeTypes fromXmlSimpleName(String xmlSimpleName) {
-            String constantName = XmlUtils.xmlNameToConstantName(xmlSimpleName);
+            String constantName = SdkUtils.xmlNameToConstantName(xmlSimpleName);
 
             // TODO: is legal to have non standard xml elements in manifest files ? if yes
             // consider adding a CUSTOM NodeTypes and not generate exception here.
