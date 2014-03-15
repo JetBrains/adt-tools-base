@@ -66,7 +66,7 @@ public class ViewHolderDetector extends Detector implements Detector.JavaScanner
             "smoother.",
 
             Category.PERFORMANCE,
-            9,
+            5,
             Severity.WARNING,
             IMPLEMENTATION)
             .addMoreInfo(
