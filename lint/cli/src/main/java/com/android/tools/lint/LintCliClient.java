@@ -26,8 +26,8 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.DefaultConfiguration;
-import com.android.tools.lint.client.api.IDomParser;
-import com.android.tools.lint.client.api.IJavaParser;
+import com.android.tools.lint.client.api.XmlParser;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
@@ -160,7 +160,7 @@ public class LintCliClient extends LintClient {
     }
 
     @Override
-    public IDomParser getDomParser() {
+    public XmlParser getXmlParser() {
         return new LintCliXmlParser();
     }
 
@@ -184,8 +184,8 @@ public class LintCliClient extends LintClient {
     }
 
     @Override
-    public IJavaParser getJavaParser() {
-        return new EcjParser(this);
+    public JavaParser getJavaParser(@Nullable Project project) {
+        return new EcjParser(this, project);
     }
 
     @Override

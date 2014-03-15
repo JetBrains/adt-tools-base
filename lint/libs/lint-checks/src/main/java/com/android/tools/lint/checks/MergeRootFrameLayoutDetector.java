@@ -169,7 +169,7 @@ public class MergeRootFrameLayoutDetector extends LayoutDetector implements Dete
                     && !element.hasAttributeNS(ANDROID_URI, ATTR_FOREGROUND)
                     && !hasPadding(element)) {
                 String layout = LintUtils.getLayoutName(context.file);
-                Handle handle = context.parser.createLocationHandle(context, element);
+                Handle handle = context.createLocationHandle(element);
                 handle.setClientData(element);
 
                 if (!context.getProject().getReportIssues()) {

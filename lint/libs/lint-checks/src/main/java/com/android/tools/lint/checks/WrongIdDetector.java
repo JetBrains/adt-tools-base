@@ -39,7 +39,6 @@ import com.android.ide.common.res2.ResourceFile;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
-import com.android.tools.lint.client.api.IDomParser;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -233,8 +232,7 @@ public class WrongIdDetector extends LayoutDetector {
                                 // since it's too early to conclude here that the id does
                                 // not exist (you are allowed to have forward references)
                                 XmlContext xmlContext = (XmlContext) context;
-                                IDomParser parser = xmlContext.parser;
-                                Handle handle = parser.createLocationHandle(xmlContext, attr);
+                                Handle handle = xmlContext.createLocationHandle(attr);
                                 handle.setClientData(attr);
 
                                 if (mHandles == null) {

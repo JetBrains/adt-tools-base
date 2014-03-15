@@ -21,9 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.client.api.LintDriver;
 import com.google.common.annotations.Beta;
-import lombok.ast.AstVisitor;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Node;
+
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodInsnNode;
@@ -38,6 +36,10 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+
+import lombok.ast.AstVisitor;
+import lombok.ast.MethodInvocation;
+import lombok.ast.Node;
 
 /**
  * A detector is able to find a particular problem. It might also be thought of as enforcing

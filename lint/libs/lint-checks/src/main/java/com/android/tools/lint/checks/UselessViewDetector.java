@@ -33,12 +33,12 @@ import static com.android.SdkConstants.GRID_LAYOUT;
 import static com.android.SdkConstants.GRID_VIEW;
 import static com.android.SdkConstants.HORIZONTAL_SCROLL_VIEW;
 import static com.android.SdkConstants.LINEAR_LAYOUT;
-import static com.android.SdkConstants.VIEW_MERGE;
 import static com.android.SdkConstants.RADIO_GROUP;
 import static com.android.SdkConstants.RELATIVE_LAYOUT;
 import static com.android.SdkConstants.SCROLL_VIEW;
 import static com.android.SdkConstants.TABLE_LAYOUT;
 import static com.android.SdkConstants.TABLE_ROW;
+import static com.android.SdkConstants.VIEW_MERGE;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;

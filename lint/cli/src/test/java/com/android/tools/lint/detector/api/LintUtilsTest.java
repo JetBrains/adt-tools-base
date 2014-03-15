@@ -20,11 +20,13 @@ import static com.android.tools.lint.detector.api.LintUtils.getLocaleAndRegion;
 import static com.android.tools.lint.detector.api.LintUtils.isImported;
 import static com.android.tools.lint.detector.api.LintUtils.splitPath;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.EcjParser;
 import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
-import com.android.tools.lint.client.api.IJavaParser;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintDriver;
 import com.google.common.collect.Iterables;
 
@@ -35,6 +37,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Locale;
 
 import lombok.ast.Node;
@@ -336,8 +340,44 @@ public class LintUtilsTest extends TestCase {
     }
 
     public static Node getCompilationUnit(String javaSource) {
-        TestContext context = new TestContext(javaSource, new File("test"));
-        IJavaParser parser = new EcjParser(new LintCliClient());
+        return getCompilationUnit(javaSource, new File("test"));
+    }
+
+    public static Node getCompilationUnit(final String javaSource, final File relativePath) {
+        File dir = new File("projectDir");
+        final File fullPath = new File(dir, relativePath.getPath());
+        LintCliClient client = new LintCliClient() {
+            @NonNull
+            @Override
+            public String readFile(@NonNull File file) {
+                if (file.getPath().equals(fullPath.getPath())) {
+                    return javaSource;
+                }
+                return super.readFile(file);
+            }
+
+            @Nullable
+            @Override
+            public IAndroidTarget getCompileTarget(@NonNull Project project) {
+                IAndroidTarget[] targets = getTargets();
+                for (int i = targets.length - 1; i >= 0; i--) {
+                    IAndroidTarget target = targets[i];
+                    if (target.isPlatform()) {
+                        return target;
+                    }
+                }
+
+                return super.getCompileTarget(project);
+            }
+        };
+        Project project = client.getProject(dir, dir);
+
+        LintDriver driver = new LintDriver(new BuiltinIssueRegistry(),
+                new LintCliClient());
+        driver.setScope(Scope.JAVA_FILE_SCOPE);
+        TestContext context = new TestContext(driver, client, project, javaSource, fullPath);
+        JavaParser parser = new EcjParser(client, project);
+        parser.prepareJavaParse(Collections.<JavaContext>singletonList(context));
         Node compilationUnit = parser.parseJava(context);
         assertNotNull(javaSource, compilationUnit);
         return compilationUnit;
@@ -345,11 +385,11 @@ public class LintUtilsTest extends TestCase {
 
     private static class TestContext extends JavaContext {
         private final String mJavaSource;
-        public TestContext(String javaSource, File file) {
-            super(new LintDriver(new BuiltinIssueRegistry(),
-                    new LintCliClient()), new LintCliClient().getProject(new File("dummy"),
-                    new File("dummy")),
-                    null, file);
+        public TestContext(LintDriver driver, LintCliClient client, Project project,
+                String javaSource, File file) {
+            //noinspection ConstantConditions
+            super(driver, project,
+                    null, file, client.getJavaParser(null));
 
             mJavaSource = javaSource;
         }
