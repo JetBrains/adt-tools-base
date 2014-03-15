@@ -227,7 +227,7 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
                 list = Lists.newArrayList();
                 mLocations.put(type, list);
             }
-            Location.Handle handle = context.parser.createLocationHandle(context, attribute);
+            Location.Handle handle = context.createLocationHandle(attribute);
             list.add(Pair.of(name, handle));
         }
     }

@@ -170,6 +170,15 @@ public class LintDriver {
     }
 
     /**
+     * Sets the scope for the lint job
+     *
+     * @param scope the scope to use
+     */
+    public void setScope(@NonNull EnumSet<Scope> scope) {
+        mScope = scope;
+    }
+
+    /**
      * Returns the lint client requesting the lint check. This may not be the same
      * instance as the one passed in to this driver; lint uses a wrapper which performs
      * additional validation to ensure that for example badly behaved detectors which report
@@ -905,9 +914,10 @@ public class LintDriver {
         // Look up manifest information (but not for library projects)
         if (project.isAndroidProject()) {
             for (File manifestFile : project.getManifestFiles()) {
-                XmlContext context = new XmlContext(this, project, main, manifestFile, null);
-                IDomParser parser = mClient.getDomParser();
+                XmlParser parser = mClient.getXmlParser();
                 if (parser != null) {
+                    XmlContext context = new XmlContext(this, project, main, manifestFile, null,
+                            parser);
                     context.document = parser.parseXml(context);
                     if (context.document != null) {
                         try {
@@ -1589,7 +1599,7 @@ public class LintDriver {
             @Nullable Project main,
             @NonNull List<File> sourceFolders,
             @NonNull List<Detector> checks) {
-        IJavaParser javaParser = mClient.getJavaParser();
+        JavaParser javaParser = mClient.getJavaParser(project);
         if (javaParser == null) {
             mClient.log(null, "No java parser provided to lint: not running Java checks");
             return;
@@ -1604,10 +1614,16 @@ public class LintDriver {
         }
         if (!sources.isEmpty()) {
             JavaVisitor visitor = new JavaVisitor(javaParser, checks);
+            List<JavaContext> contexts = Lists.newArrayListWithExpectedSize(sources.size());
             for (File file : sources) {
-                JavaContext context = new JavaContext(this, project, main, file);
+                JavaContext context = new JavaContext(this, project, main, file, javaParser);
+                contexts.add(context);
+            }
+
+            visitor.prepare(contexts);
+            for (JavaContext context : contexts) {
                 fireEvent(EventType.SCANNING_FILE, context);
-                visitor.visitFile(context, file);
+                visitor.visitFile(context);
                 if (mCanceled) {
                     return;
                 }
@@ -1621,7 +1637,7 @@ public class LintDriver {
             @NonNull List<Detector> checks,
             @NonNull List<File> files) {
 
-        IJavaParser javaParser = mClient.getJavaParser();
+        JavaParser javaParser = mClient.getJavaParser(project);
         if (javaParser == null) {
             mClient.log(null, "No java parser provided to lint: not running Java checks");
             return;
@@ -1631,9 +1647,9 @@ public class LintDriver {
 
         for (File file : files) {
             if (file.isFile() && file.getPath().endsWith(DOT_JAVA)) {
-                JavaContext context = new JavaContext(this, project, main, file);
+                JavaContext context = new JavaContext(this, project, main, file, javaParser);
                 fireEvent(EventType.SCANNING_FILE, context);
-                visitor.visitFile(context, file);
+                visitor.visitFile(context);
                 if (mCanceled) {
                     return;
                 }
@@ -1684,7 +1700,7 @@ public class LintDriver {
                 return null;
             }
 
-            IDomParser parser = mClient.getDomParser();
+            XmlParser parser = mClient.getXmlParser();
             if (parser != null) {
                 mCurrentVisitor = new XmlVisitor(parser, applicableChecks);
             }
@@ -1736,7 +1752,8 @@ public class LintDriver {
                 Arrays.sort(xmlFiles);
                 for (File file : xmlFiles) {
                     if (LintUtils.isXmlFile(file)) {
-                        XmlContext context = new XmlContext(this, project, main, file, type);
+                        XmlContext context = new XmlContext(this, project, main, file, type,
+                                visitor.getParser());
                         fireEvent(EventType.SCANNING_FILE, context);
                         visitor.visitFile(context, file);
                         if (mCanceled) {
@@ -1776,7 +1793,8 @@ public class LintDriver {
                 if (type != null) {
                     XmlVisitor visitor = getVisitor(type, xmlDetectors);
                     if (visitor != null) {
-                        XmlContext context = new XmlContext(this, project, main, file, type);
+                        XmlContext context = new XmlContext(this, project, main, file, type,
+                                visitor.getParser());
                         fireEvent(EventType.SCANNING_FILE, context);
                         visitor.visitFile(context, file);
                     }
@@ -1919,8 +1937,8 @@ public class LintDriver {
 
         @Override
         @Nullable
-        public IDomParser getDomParser() {
-            return mDelegate.getDomParser();
+        public XmlParser getXmlParser() {
+            return mDelegate.getXmlParser();
         }
 
         @Override
@@ -1942,10 +1960,10 @@ public class LintDriver {
             return mDelegate.getProject(dir, referenceDir);
         }
 
-        @Override
         @Nullable
-        public IJavaParser getJavaParser() {
-            return mDelegate.getJavaParser();
+        @Override
+        public JavaParser getJavaParser(@Nullable Project project) {
+            return mDelegate.getJavaParser(project);
         }
 
         @Override
@@ -1981,6 +1999,12 @@ public class LintDriver {
         @NonNull
         public IAndroidTarget[] getTargets() {
             return mDelegate.getTargets();
+        }
+
+        @Nullable
+        @Override
+        public IAndroidTarget getCompileTarget(@NonNull Project project) {
+            return mDelegate.getCompileTarget(project);
         }
 
         @Override

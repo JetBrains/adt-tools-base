@@ -34,7 +34,7 @@ import org.w3c.dom.Node;
  * to adjust your code for the next tools release.</b>
  */
 @Beta
-public interface IDomParser {
+public abstract class XmlParser {
     /**
      * Parse the file pointed to by the given context and return as a Document
      *
@@ -45,7 +45,7 @@ public interface IDomParser {
      * @return the parsed DOM document, or null if parsing fails
      */
     @Nullable
-    Document parseXml(@NonNull XmlContext context);
+    public abstract Document parseXml(@NonNull XmlContext context);
 
     /**
      * Returns a {@link Location} for the given DOM node
@@ -55,7 +55,7 @@ public interface IDomParser {
      * @return a location for the given node
      */
     @NonNull
-    Location getLocation(@NonNull XmlContext context, @NonNull Node node);
+    public abstract Location getLocation(@NonNull XmlContext context, @NonNull Node node);
 
     /**
      * Returns a {@link Location} for the given DOM node. Like
@@ -69,7 +69,8 @@ public interface IDomParser {
      * @return a location for the given node
      */
     @NonNull
-    Location getLocation(@NonNull XmlContext context, @NonNull Node node, int start, int end);
+    public abstract Location getLocation(@NonNull XmlContext context, @NonNull Node node,
+            int start, int end);
 
     /**
      * Creates a light-weight handle to a location for the given node. It can be
@@ -82,14 +83,16 @@ public interface IDomParser {
      * @return a location handle
      */
     @NonNull
-    Location.Handle createLocationHandle(@NonNull XmlContext context, @NonNull Node node);
+    public abstract Location.Handle createLocationHandle(@NonNull XmlContext context,
+            @NonNull Node node);
 
     /**
      * Dispose any data structures held for the given context.
      * @param context information about the file previously parsed
      * @param document the document that was parsed and is now being disposed
      */
-    void dispose(@NonNull XmlContext context, @NonNull Document document);
+    public void dispose(@NonNull XmlContext context, @NonNull Document document) {
+    }
 
     /**
      * Returns the start offset of the given node, or -1 if not known
@@ -99,7 +102,7 @@ public interface IDomParser {
      *            for
      * @return the start offset, or -1 if not known
      */
-    int getNodeStartOffset(@NonNull XmlContext context, @NonNull Node node);
+    public abstract int getNodeStartOffset(@NonNull XmlContext context, @NonNull Node node);
 
     /**
      * Returns the end offset of the given node, or -1 if not known
@@ -109,5 +112,5 @@ public interface IDomParser {
      *            for
      * @return the end offset, or -1 if not known
      */
-    int getNodeEndOffset(@NonNull XmlContext context, @NonNull Node node);
+    public abstract int getNodeEndOffset(@NonNull XmlContext context, @NonNull Node node);
 }

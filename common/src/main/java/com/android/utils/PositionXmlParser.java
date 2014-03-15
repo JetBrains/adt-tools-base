@@ -473,7 +473,7 @@ public class PositionXmlParser {
      * SAX parser handler which incrementally builds up a DOM document as we go
      * along, and updates position information along the way. Position
      * information is attached to the DOM nodes by setting user data with the
-     * {@link POS_KEY} key.
+     * {@link #POS_KEY} key.
      */
     private final class DomBuilder extends DefaultHandler2 {
         private final String mXml;
@@ -513,7 +513,7 @@ public class PositionXmlParser {
                 flushText();
                 Element element = mDocument.createElement(qName);
                 for (int i = 0; i < attributes.getLength(); i++) {
-                    if (attributes.getURI(i) != null && attributes.getURI(i).length() > 0) {
+                    if (attributes.getURI(i) != null && !attributes.getURI(i).isEmpty()) {
                         Attr attr = mDocument.createAttributeNS(attributes.getURI(i),
                                 attributes.getQName(i));
                         attr.setValue(attributes.getValue(i));

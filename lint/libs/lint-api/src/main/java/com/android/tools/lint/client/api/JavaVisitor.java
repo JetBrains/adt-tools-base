@@ -26,7 +26,6 @@ import com.android.tools.lint.detector.api.Detector.XmlScanner;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.google.common.collect.Maps;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -141,9 +140,9 @@ public class JavaVisitor {
     private final List<VisitingDetector> mFullTreeDetectors;
     private final Map<Class<? extends Node>, List<VisitingDetector>> mNodeTypeDetectors =
             new HashMap<Class<? extends Node>, List<VisitingDetector>>();
-    private final IJavaParser mParser;
+    private final JavaParser mParser;
 
-    JavaVisitor(@NonNull IJavaParser parser, @NonNull List<Detector> detectors) {
+    JavaVisitor(@NonNull JavaParser parser, @NonNull List<Detector> detectors) {
         mParser = parser;
         mAllDetectors = new ArrayList<VisitingDetector>(detectors.size());
         mFullTreeDetectors = new ArrayList<VisitingDetector>(detectors.size());
@@ -189,9 +188,7 @@ public class JavaVisitor {
         }
     }
 
-    void visitFile(@NonNull JavaContext context, @NonNull File file) {
-        context.parser = mParser;
-
+    void visitFile(@NonNull JavaContext context) {
         Node compilationUnit = null;
         try {
             compilationUnit = mParser.parseJava(context);
@@ -201,7 +198,7 @@ public class JavaVisitor {
                 // with details, location, etc.
                 return;
             }
-            context.compilationUnit = compilationUnit;
+            context.setCompilationUnit(compilationUnit);
 
             for (VisitingDetector v : mAllDetectors) {
                 v.setContext(context);
@@ -231,6 +228,10 @@ public class JavaVisitor {
                 mParser.dispose(context, compilationUnit);
             }
         }
+    }
+
+    public void prepare(@NonNull List<JavaContext> contexts) {
+        mParser.prepareJavaParse(contexts);
     }
 
     private static class VisitingDetector {

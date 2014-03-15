@@ -579,7 +579,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             }
             if (parent instanceof VariableReference) {
                 // No operand: make sure it's statically imported
-                if (!LintUtils.isImported(mContext.compilationUnit,
+                if (!LintUtils.isImported(mContext.getCompilationUnit(),
                         FQCN_GRAVITY_PREFIX + identifier)) {
                     return false;
                 }
