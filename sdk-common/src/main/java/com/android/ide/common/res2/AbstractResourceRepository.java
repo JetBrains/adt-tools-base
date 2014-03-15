@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ATTR_REF_PREFIX;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
 import static com.android.SdkConstants.PREFIX_THEME_REF;
 import static com.android.SdkConstants.RESOURCE_CLZ_ATTR;
+import static com.android.ide.common.resources.ResourceResolver.MAX_RESOURCE_INDIRECTION;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -261,7 +262,7 @@ public abstract class AbstractResourceRepository {
                 return null;
             }
 
-            for (int depth = 0; depth < 20; depth++) {
+            for (int depth = 0; depth < MAX_RESOURCE_INDIRECTION; depth++) {
                 List<ResourceItem> matchingItems = typeItems.get(name);
                 if (matchingItems == null || matchingItems.isEmpty()) {
                     return null;
