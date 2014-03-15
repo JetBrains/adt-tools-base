@@ -24,14 +24,12 @@ import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ZipAlign;
-import com.android.builder.DefaultProductFlavor;
 import com.android.builder.model.SigningConfig;
 
 import org.gradle.api.DefaultTask;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.List;
 
 public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVariant {
 
@@ -44,12 +42,6 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
 
     @NonNull
     protected abstract ApkVariantData getApkVariantData();
-
-    @Override
-    @NonNull
-    public List<DefaultProductFlavor> getProductFlavors() {
-        return getVariantData().getVariantConfiguration().getFlavorConfigs();
-    }
 
     @Override
     @Nullable

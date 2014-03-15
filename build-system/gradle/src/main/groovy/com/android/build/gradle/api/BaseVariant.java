@@ -98,6 +98,14 @@ public interface BaseVariant {
     DefaultProductFlavor getMergedFlavor();
 
     /**
+     * Returns the list of {@link com.android.builder.DefaultProductFlavor} for this build variant.
+     *
+     * This is always non-null but could be empty.
+     */
+    @NonNull
+    List<DefaultProductFlavor> getProductFlavors();
+
+    /**
      * Returns a list of sorted SourceProvider in order of ascending order, meaning, the earlier
      * items are meant to be overridden by later items.
      *
