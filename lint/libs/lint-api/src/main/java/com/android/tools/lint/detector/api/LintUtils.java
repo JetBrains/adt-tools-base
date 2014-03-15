@@ -23,7 +23,9 @@ import static com.android.SdkConstants.BIN_FOLDER;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.ID_PREFIX;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
+import static com.android.SdkConstants.UTF_8;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.rendering.api.ResourceValue;
@@ -440,7 +442,6 @@ public class LintUtils {
         return null;
     }
 
-    private static final String UTF_8 = "UTF-8";                 //$NON-NLS-1$
     private static final String UTF_16 = "UTF_16";               //$NON-NLS-1$
     private static final String UTF_16LE = "UTF_16LE";           //$NON-NLS-1$
 

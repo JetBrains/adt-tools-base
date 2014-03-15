@@ -16,6 +16,8 @@
 
 package com.android.sdklib.build;
 
+import com.android.SdkConstants;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -320,7 +322,7 @@ public class JarListSanitizer {
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(cacheFile),
-                    "UTF-8"));
+                    SdkConstants.UTF_8));
 
             String line = null;
             while ((line = reader.readLine()) != null) {
@@ -367,7 +369,7 @@ public class JarListSanitizer {
         OutputStreamWriter writer = null;
         try {
             writer = new OutputStreamWriter(
-                    new FileOutputStream(cacheFile), "UTF-8");
+                    new FileOutputStream(cacheFile), SdkConstants.UTF_8);
 
             writer.write("# cache for current jar dependency. DO NOT EDIT.\n");
             writer.write("# format is <lastModified> <length> <SHA-1> <path>\n");
