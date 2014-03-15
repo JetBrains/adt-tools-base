@@ -27,9 +27,12 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -46,6 +49,8 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "06_inject_attributes_with_specific_prefix.xml",
             "10_activity_merge",
             "11_activity_dup",
+            "12_alias_dup",
+            "13_service_dup",
     };
 
     @Override
@@ -116,17 +121,21 @@ public class ManifestMerger2Test extends ManifestMergerTest {
                 new TestUtils.TestSourceLocation(getClass(), testFiles.getMain().getName()),
                 testFiles.getExpectedResult());
 
-        // this is obviously quite hacky, refine once merge output is better defined.
-        boolean notExpectingError =
-                testFiles.getExpectedErrors().isEmpty() ||
-                        testFiles.getExpectedErrors().charAt(0) != 'E';
-        assertEquals(notExpectingError, mergeReport.getMergedDocument().isPresent());
-        if (notExpectingError) {
-
+        if (mergeReport.getMergedDocument().isPresent()) {
             XmlDocument actualResult = mergeReport.getMergedDocument().get();
             actualResult.write(byteArrayOutputStream);
 
             mergeReport.log(stdLogger);
+            stdLogger.info(byteArrayOutputStream.toString());
+        }
+
+        // this is obviously quite hacky, refine once merge output is better defined.
+        boolean notExpectingError = !isExpectingError(testFiles.getExpectedErrors());
+
+        assertEquals(notExpectingError, mergeReport.getMergedDocument().isPresent());
+        if (notExpectingError) {
+
+            XmlDocument actualResult = mergeReport.getMergedDocument().get();
 
             // saves the result to the external file for easier human parsing.
             OutputStream fos = null;
@@ -154,6 +163,16 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             }
         }
 
+    }
+
+    private boolean isExpectingError(String expectedOutput) throws IOException {
+        StringReader stringReader = new StringReader(expectedOutput);
+        BufferedReader reader = new BufferedReader(stringReader);
+        String line;
+        while ((line = reader.readLine()) != null) {
+            if (line.charAt(0) == 'E') return true;
+        }
+        return false;
     }
 
     @Nullable
