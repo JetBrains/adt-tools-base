@@ -92,6 +92,11 @@ public class ToolsInstructionsCleaner {
                                 attribute.getNamespaceURI(), attribute.getLocalName());
                     }
                 }
+                // this could also be the xmlns:tools declaration.
+                if (attribute.getNodeName().startsWith(SdkConstants.XMLNS_PREFIX)
+                    && SdkConstants.TOOLS_URI.equals(attribute.getNodeValue())) {
+                    element.removeAttribute(attribute.getNodeName());
+                }
             }
         }
         NodeList childNodes = element.getChildNodes();

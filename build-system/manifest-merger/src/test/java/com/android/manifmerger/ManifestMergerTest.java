@@ -323,6 +323,13 @@ public class ManifestMergerTest extends TestCase {
     }
 
     /**
+     * Returns the relative path the test data directory
+     */
+    protected String getTestDataDirectory() {
+        return "data";
+    }
+
+    /**
      * Loads test data for a given test case.
      * The input (main + libs) are stored in temp files.
      * A new destination temp file is created to store the actual result output.
@@ -347,7 +354,7 @@ public class ManifestMergerTest extends TestCase {
     @NonNull
     TestFiles loadTestData(@NonNull String filename) throws Exception {
 
-        String resName = "data" + File.separator + filename;
+        String resName = getTestDataDirectory() + File.separator + filename;
         InputStream is = null;
         BufferedReader reader = null;
         BufferedWriter writer = null;

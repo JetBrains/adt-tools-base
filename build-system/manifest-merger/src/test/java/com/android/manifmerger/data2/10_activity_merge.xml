@@ -20,6 +20,7 @@
 
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.app1"
     android:versionCode="100"
     android:versionName="1.0.0">
@@ -50,7 +51,8 @@
         android:restoreAnyVersion="true"
         android:allowBackup="true"
         android:killAfterRestore="true"
-        android:name="com.example.TheApp" >
+        android:name="com.example.TheApp"
+        tools:replace="label">
 
         <activity
             android:name="com.example.MainActivity"
