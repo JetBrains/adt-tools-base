@@ -54,7 +54,7 @@ public class ViewHolderDetector extends Detector implements Detector.JavaScanner
             ViewHolderDetector.class,
             Scope.JAVA_FILE_SCOPE);
 
-    /** Allocating objects during a paint method */
+    /** Using a view inflater unconditionally in an AdapterView */
     public static final Issue ISSUE = Issue.create(
             "ViewHolder", //$NON-NLS-1$
             "View Holder Candidates",
@@ -73,7 +73,7 @@ public class ViewHolderDetector extends Detector implements Detector.JavaScanner
             "http://developer.android.com/training/improving-layouts/smooth-scrolling.html#ViewHolder");
 
     private static final String GET_VIEW = "getView";  //$NON-NLS-1$
-    private static final String INFLATE = "inflate";   //$NON-NLS-1$
+    static final String INFLATE = "inflate";           //$NON-NLS-1$
 
     /** Constructs a new {@link ViewHolderDetector} check */
     public ViewHolderDetector() {
