@@ -27,13 +27,13 @@ public class TitleDetectorTest extends AbstractCheckTest {
 
     public void test() throws Exception {
         assertEquals(
-            "res/menu/titles.xml:3: Warning: Menu items should specify a title [MenuTitle]\n" +
+            "res/menu/titles.xml:3: Error: Menu items should specify a title [MenuTitle]\n" +
             "    <item android:id=\"@+id/action_bar_progress_spinner\"\n" +
             "    ^\n" +
-            "res/menu/titles.xml:12: Warning: Menu items should specify a title [MenuTitle]\n" +
+            "res/menu/titles.xml:12: Error: Menu items should specify a title [MenuTitle]\n" +
             "    <item android:id=\"@+id/menu_plus_one\"\n" +
             "    ^\n" +
-            "0 errors, 2 warnings\n",
+            "2 errors, 0 warnings\n",
 
             lintProject(
                     "apicheck/minsdk14.xml=>AndroidManifest.xml",
