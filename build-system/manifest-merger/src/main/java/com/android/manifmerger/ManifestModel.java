@@ -333,6 +333,13 @@ class ManifestModel {
         }
 
         /**
+         * Returns the Xml name for this node type
+         */
+        String toXmlName() {
+            return SdkUtils.constantNameToXmlName(this.name());
+        }
+
+        /**
          * Returns the {@link NodeTypes} instance from an xml element name (without namespace
          * decoration). For instance, an xml element
          * <pre>

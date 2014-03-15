@@ -16,8 +16,9 @@
 
 package com.android.manifmerger;
 
-import static com.android.manifmerger.ManifestMerger2.Invoker.SystemProperty;
+import static com.android.manifmerger.ManifestMerger2.SystemProperty;
 
+import com.android.annotations.Nullable;
 import com.android.utils.StdLogger;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
@@ -29,6 +30,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -39,7 +41,9 @@ public class ManifestMerger2Test extends ManifestMergerTest {
     // so far, I only support 3 original tests.
     private static String[] sDataFiles = new String[]{
             "00_noop",
+            "03_inject_attributes.xml",
             "05_inject_package.xml",
+            "06_inject_attributes_with_specific_prefix.xml",
             "10_activity_merge",
             "11_activity_dup",
     };
@@ -97,6 +101,15 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             invoker.setOverride(SystemProperty.PACKAGE, testFiles.getPackageOverride());
         }
 
+        for (Map.Entry<String, String> injectable : testFiles.getInjectAttributes().entrySet()) {
+            SystemProperty systemProperty = getSystemProperty(injectable.getKey());
+            if (systemProperty != null) {
+                invoker.setOverride(systemProperty, injectable.getValue());
+            } else {
+                invoker.setPlaceHolderValue(injectable.getKey(), injectable.getValue());
+            }
+        }
+
         MergingReport mergeReport = invoker.merge();
 
         XmlDocument expectedResult = TestUtils.xmlDocumentFromString(
@@ -141,5 +154,15 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             }
         }
 
+    }
+
+    @Nullable
+    private SystemProperty getSystemProperty(String name) {
+        for (SystemProperty systemProperty : SystemProperty.values()) {
+            if (systemProperty.toCamelCase().equals(name)) {
+                return systemProperty;
+            }
+        }
+        return null;
     }
 }

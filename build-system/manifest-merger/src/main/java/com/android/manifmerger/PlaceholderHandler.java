@@ -16,12 +16,8 @@
 
 package com.android.manifmerger;
 
-import static com.android.manifmerger.ManifestMerger2.Invoker.SystemProperty;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.google.common.base.Optional;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,7 +29,7 @@ public class PlaceholderHandler {
     // regular expression to recognize placeholders like @{name}, potentially surrounded by a
     // prefix and suffix string. this will split in 3 groups, the prefix, the placeholder name, and
     // the suffix.
-    private static final Pattern PATTERN = Pattern.compile("([^@]*)@\\{([^\\}]*)\\}(.*)");
+    private final Pattern mPattern = Pattern.compile("([^@]*)@\\{([^\\}]*)\\}(.*)");
 
     /**
      * Interface to provide a value for a placeholder key.
@@ -61,33 +57,18 @@ public class PlaceholderHandler {
      */
     public void visit(@NonNull XmlDocument xmlDocument,
             @NonNull KeyBasedValueResolver<String> valueProvider,
-            @NonNull KeyBasedValueResolver<SystemProperty> systemPropertiesResolver,
             @NonNull MergingReport.Builder mergingReportBuilder) {
 
         visit(xmlDocument.getRootNode(), valueProvider, mergingReportBuilder);
-
-        // finally perform system properties override.
-        // this code is not as generic as it could be, if we get more system properties in the
-        // future, this will need another pass.
-        String packageOverride = systemPropertiesResolver.getValue(SystemProperty.PACKAGE);
-        if (packageOverride != null) {
-            Optional<XmlAttribute> packageAttribute = xmlDocument.getRootNode()
-                    .getAttribute(XmlNode.fromXmlName("package"));
-            if (packageAttribute.isPresent()) {
-                packageAttribute.get().getXml().setValue(packageOverride);
-            } else {
-                xmlDocument.getRootNode().getXml().setAttribute("package", packageOverride);
-            }
-        }
     }
 
     private void visit(XmlElement xmlElement,
-            KeyBasedValueResolver valueProvider,
+            KeyBasedValueResolver<String> valueProvider,
             MergingReport.Builder mergingReportBuilder) {
 
         for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
 
-            Matcher matcher = PATTERN.matcher(xmlAttribute.getValue());
+            Matcher matcher = mPattern.matcher(xmlAttribute.getValue());
             if (matcher.matches()) {
                 String placeholderValue = valueProvider.getValue(matcher.group(2));
                 if (placeholderValue == null) {
