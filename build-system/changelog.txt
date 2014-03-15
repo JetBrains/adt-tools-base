@@ -3,6 +3,10 @@
       android.packagingOptions {
           pickFirst 'META-INF/foo.txt'
       }
+- New PNG processor.
+   * Should be much faster when processing many files
+   * Fix issue where crunched png are bigger than original file
+   * to revert to the old cruncher: android.aaptOptions.useAaptPngCruncher = true
 
 0.9.0:
 - Compatible with Gradle 1.10 and 1.11
