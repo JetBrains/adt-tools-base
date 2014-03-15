@@ -16,14 +16,12 @@
 
 package com.android.manifmerger;
 
-import static com.android.manifmerger.ManifestMerger2.Invoker.SystemProperty;
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.sdklib.mock.MockLog;
 import com.google.common.base.Optional;
 
@@ -58,27 +56,6 @@ public class PlaceholderHandlerTest extends TestCase {
         }
     };
 
-    KeyBasedValueResolver<SystemProperty> nullSystemResolver =
-            new KeyBasedValueResolver<SystemProperty>() {
-        @Nullable
-        @Override
-        public String getValue(@NonNull SystemProperty key) {
-            return null;
-        }
-    };
-
-    KeyBasedValueResolver<SystemProperty> keyBasedValueResolver =
-            new KeyBasedValueResolver<SystemProperty>() {
-                @Nullable
-                @Override
-                public String getValue(@NonNull SystemProperty key) {
-                    if (key == SystemProperty.PACKAGE) {
-                        return "com.bar.new";
-                    }
-                    return null;
-                }
-            };
-
     @Override
     protected void setUp() throws Exception {
         super.setUp();
@@ -109,7 +86,7 @@ public class PlaceholderHandlerTest extends TestCase {
             public String getValue(@NonNull String key) {
                 return "newValue";
             }
-        }, nullSystemResolver, mBuilder);
+        }, mBuilder);
 
         Optional<XmlElement> activityOne = refDocument.getRootNode()
                 .getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY, ".activityOne");
@@ -153,43 +130,8 @@ public class PlaceholderHandlerTest extends TestCase {
                 new TestUtils.TestSourceLocation(getClass(), "testPlaceholders#xml"), xml);
 
         PlaceholderHandler handler = new PlaceholderHandler();
-        handler.visit(refDocument, nullResolver, nullSystemResolver, mBuilder);
+        handler.visit(refDocument, nullResolver, mBuilder);
         // verify the error was recorded.
         verify(mBuilder).addError(anyString());
-    }
-
-    public void testPackageOverride()
-            throws ParserConfigurationException, SAXException, IOException {
-        String xml = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\""
-                + "    package=\"com.foo.old\" >\n"
-                + "    <activity android:name=\"activityOne\"/>\n"
-                + "</manifest>";
-
-        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "testPlaceholders#xml"), xml);
-
-        PlaceholderHandler handler = new PlaceholderHandler();
-        handler.visit(refDocument, nullResolver, keyBasedValueResolver, mBuilder);
-        // verify the package value was overriden.
-        assertEquals("com.bar.new", refDocument.getRootNode().getXml().getAttribute("package"));
-    }
-
-    public void testMissingPackageOverride()
-            throws ParserConfigurationException, SAXException, IOException {
-        String xml = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
-                + "    <activity android:name=\"activityOne\"/>\n"
-                + "</manifest>";
-
-        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "testPlaceholders#xml"), xml);
-
-        PlaceholderHandler handler = new PlaceholderHandler();
-        handler.visit(refDocument, nullResolver, keyBasedValueResolver, mBuilder);
-        // verify the package value was added.
-        assertEquals("com.bar.new", refDocument.getRootNode().getXml().getAttribute("package"));
     }
 }
