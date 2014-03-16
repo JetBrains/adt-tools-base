@@ -994,6 +994,8 @@ public final class SdkConstants {
     public static final String EXT_GRADLE = "gradle"; //$NON-NLS-1$
     /** Extension of jar files, i.e. "jar" */
     public static final String EXT_JAR = "jar"; //$NON-NLS-1$
+    /** Extension of ZIP files, i.e. "zip" */
+    public static final String EXT_ZIP = "zip"; //$NON-NLS-1$
     /** Extension of aidl files, i.e. "aidl" */
     public static final String EXT_AIDL = "aidl"; //$NON-NLS-1$
     /** Extension of Renderscript files, i.e. "rs" */
@@ -1318,4 +1320,12 @@ public final class SdkConstants {
     public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.9.+";
     public static final String SUPPORT_LIB_ARTIFACT = "com.android.support:support-v4";
     public static final String APPCOMPAT_LIB_ARTIFACT = "com.android.support:appcompat-v7";
+
+    // Annotations
+    public static final String SUPPORT_ANNOTATIONS_PREFIX = "android.support.annotation.";
+    public static final String INT_DEF_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "IntDef";
+    public static final String STRING_DEF_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "StringDef";
+    public static final String TYPE_DEF_VALUE_ATTRIBUTE = "value";
+    public static final String TYPE_DEF_FLAG_ATTRIBUTE = "flag";
+    public static final String FN_ANNOTATIONS_ZIP = "annotations.zip";
 }

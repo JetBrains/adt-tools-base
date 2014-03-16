@@ -51,6 +51,12 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
     @NonNull
     private final List<JarDependency> localJars = []
 
+    /**
+     *  Whether we have a direct dependency on com.android.support:support-annotations; this
+     * is used to drive whether we extract annotations when building libraries for example
+     */
+    boolean annotationsPresent
+
     DependencyChecker checker
 
     static VariantDependencies compute(@NonNull Project project,

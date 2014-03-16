@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package com.android.build.gradle
+
 import com.android.build.gradle.internal.variant.LibraryVariantFactory
 import com.android.build.gradle.internal.variant.VariantFactory
 import org.gradle.api.Plugin
@@ -22,6 +23,7 @@ import org.gradle.internal.reflect.Instantiator
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 import javax.inject.Inject
+
 /**
  * Gradle plugin class for 'library' projects.
  */

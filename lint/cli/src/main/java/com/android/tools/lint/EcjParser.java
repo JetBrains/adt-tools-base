@@ -95,7 +95,7 @@ import lombok.ast.ecj.EcjTreeConverter;
 /**
  * Java parser which uses ECJ for parsing and type attribution
  */
-public class EcjParser extends JavaParser implements ICompilerRequestor {
+public class EcjParser extends JavaParser {
 
     private final LintClient mClient;
     private final Project mProject;
@@ -109,8 +109,12 @@ public class EcjParser extends JavaParser implements ICompilerRequestor {
         mParser = getParser();
     }
 
-    private static CompilerOptions getCompilerOptions() {
+    /**
+     * Create the default compiler options
+     */
+    public static CompilerOptions createCompilerOptions() {
         CompilerOptions options = new CompilerOptions();
+
         // Always using JDK 7 rather than basing it on project metadata since we
         // don't do compilation error validation in lint (we leave that to the IDE's
         // error parser or the command line build's compilation step); we want an
@@ -142,9 +146,20 @@ public class EcjParser extends JavaParser implements ICompilerRequestor {
         return options;
     }
 
+    public static long getLanguageLevel(int major, int minor) {
+        assert major == 1;
+        switch (minor) {
+            case 5: return ClassFileConstants.JDK1_5;
+            case 6: return ClassFileConstants.JDK1_6;
+            case 7:
+            default:
+                return ClassFileConstants.JDK1_7;
+        }
+    }
+
     private Parser getParser() {
         if (mParser == null) {
-            CompilerOptions options = getCompilerOptions();
+            CompilerOptions options = createCompilerOptions();
             ProblemReporter problemReporter = new ProblemReporter(
                     DefaultErrorHandlingPolicies.exitOnFirstError(),
                     options,
@@ -162,18 +177,8 @@ public class EcjParser extends JavaParser implements ICompilerRequestor {
             return;
         }
 
-        mCompiled = null;
-        String[] classPath = computeClassPath(contexts);
-        INameEnvironment environment = new FileSystem(classPath, new String[0], UTF_8);
-        IErrorHandlingPolicy policy = DefaultErrorHandlingPolicies.proceedWithAllProblems();
-        ICompilerRequestor requestor = this;
-        IProblemFactory problemFactory = new DefaultProblemFactory(Locale.getDefault());
-        CompilerOptions options = getCompilerOptions();
-        Compiler compiler = new NonGeneratingCompiler(environment, policy, options, requestor,
-                problemFactory);
-
-        List<CompilationUnit> sources = Lists.newArrayListWithExpectedSize(contexts.size());
-        mSourceUnits = Maps.newHashMapWithExpectedSize(contexts.size());
+        List<ICompilationUnit> sources = Lists.newArrayListWithExpectedSize(contexts.size());
+        mSourceUnits = Maps.newHashMapWithExpectedSize(sources.size());
         for (JavaContext context : contexts) {
             String contents = context.getContents();
             if (contents == null) {
@@ -185,13 +190,37 @@ public class EcjParser extends JavaParser implements ICompilerRequestor {
             sources.add(unit);
             mSourceUnits.put(file, unit);
         }
+        List<String> classPath = computeClassPath(contexts);
+        mCompiled = Maps.newHashMapWithExpectedSize(mSourceUnits.size());
+        parse(createCompilerOptions(), sources, classPath, mCompiled);
+    }
 
-        mCompiled = Maps.newHashMapWithExpectedSize(contexts.size());
-        compiler.compile(sources.toArray(new ICompilationUnit[sources.size()]));
+    /** Parse the given source units and class path and store it into the given output map */
+    public static void parse(
+            CompilerOptions options,
+            @NonNull List<ICompilationUnit> sourceUnits,
+            @NonNull List<String> classPath,
+            @NonNull Map<ICompilationUnit, CompilationUnitDeclaration> outputMap) {
+        INameEnvironment environment = new FileSystem(
+                classPath.toArray(new String[classPath.size()]), new String[0],
+                options.defaultEncoding);
+        IErrorHandlingPolicy policy = DefaultErrorHandlingPolicies.proceedWithAllProblems();
+        IProblemFactory problemFactory = new DefaultProblemFactory(Locale.getDefault());
+        ICompilerRequestor requestor = new ICompilerRequestor() {
+            @Override
+            public void acceptResult(CompilationResult result) {
+                // Not used; we need the corresponding CompilationUnitDeclaration for the source
+                // units (the AST parsed from source) which we don't get access to here, so we
+                // instead subclass AST to get our hands on them.
+            }
+        };
+        Compiler compiler = new NonGeneratingCompiler(environment, policy, options, requestor,
+                problemFactory, outputMap);
+        compiler.compile(sourceUnits.toArray(new ICompilationUnit[sourceUnits.size()]));
     }
 
     @NonNull
-    private String[] computeClassPath(@NonNull List<JavaContext> contexts) {
+    private List<String> computeClassPath(@NonNull List<JavaContext> contexts) {
         assert mProject != null;
         List<String> classPath = Lists.newArrayList();
 
@@ -236,7 +265,7 @@ public class EcjParser extends JavaParser implements ICompilerRequestor {
             }
         }
 
-        return classPath.toArray(new String[classPath.size()]);
+        return classPath;
     }
 
     @Override
@@ -511,15 +540,6 @@ public class EcjParser extends JavaParser implements ICompilerRequestor {
         return new DefaultTypeDescriptor(fqn);
     }
 
-    // ---- Implements ICompilerRequestor ----
-
-    @Override
-    public void acceptResult(CompilationResult result) {
-        // Not used; we need the corresponding CompilationUnitDeclaration for the source
-        // units (the AST parsed from source) which we don't get access to here, so we
-        // instead subclass AST to get our hands on them.
-    }
-
     /* Handle for creating positions cheaply and returning full fledged locations later */
     private static class LocationHandle implements Location.Handle {
         private File mFile;
@@ -551,18 +571,22 @@ public class EcjParser extends JavaParser implements ICompilerRequestor {
     }
 
     // Custom version of the compiler which skips code generation and records source units
-    private class NonGeneratingCompiler extends Compiler {
+    private static class NonGeneratingCompiler extends Compiler {
+        private Map<ICompilationUnit, CompilationUnitDeclaration> mUnits;
+
         public NonGeneratingCompiler(INameEnvironment environment, IErrorHandlingPolicy policy,
                 CompilerOptions options, ICompilerRequestor requestor,
-                IProblemFactory problemFactory) {
+                IProblemFactory problemFactory,
+                Map<ICompilationUnit, CompilationUnitDeclaration> units) {
             super(environment, policy, options, requestor, problemFactory, null, null);
+            mUnits = units;
         }
 
         @Override
         protected synchronized void addCompilationUnit(ICompilationUnit sourceUnit,
                 CompilationUnitDeclaration parsedUnit) {
             super.addCompilationUnit(sourceUnit, parsedUnit);
-            mCompiled.put(sourceUnit, parsedUnit);
+            mUnits.put(sourceUnit, parsedUnit);
         }
 
         @Override
