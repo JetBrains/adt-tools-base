@@ -344,7 +344,10 @@ public final class AvdInfo implements Comparable<AvdInfo> {
                         getConfigFile());
             case ERROR_IMAGE_DIR:
                 return String.format(
-                        "Invalid value in image.sysdir. Run 'android update avd -n %1$s'",
+                        "Missing system image for %1$s%2$s %3$s. Run 'android update avd -n %4$s'",
+                        SystemImage.DEFAULT_TAG.equals(mTag.getId()) ? "" : (mTag.getDisplay() + " "),
+                        mAbiType,
+                        mTarget.getFullName(),
                         mName);
             case ERROR_DEVICE_CHANGED:
                 return String.format("%1$s %2$s configuration has changed since AVD creation",
