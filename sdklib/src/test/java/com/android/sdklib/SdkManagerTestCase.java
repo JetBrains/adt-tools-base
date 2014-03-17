@@ -550,7 +550,7 @@ public class SdkManagerTestCase extends TestCase {
      *
      * @param root directory to delete
      */
-    private void deleteDir(File root) {
+    protected void deleteDir(File root) {
         if (root.exists()) {
             for (File file : root.listFiles()) {
                 if (file.isDirectory()) {
