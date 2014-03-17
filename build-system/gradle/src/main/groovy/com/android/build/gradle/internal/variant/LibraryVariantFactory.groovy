@@ -241,9 +241,9 @@ public class LibraryVariantFactory implements VariantFactory {
 
             jar.exclude(packageName + "/R.class")
             jar.exclude(packageName + "/R\$*.class")
-            jar.exclude(packageName + "/Manifest.class")
-            jar.exclude(packageName + "/Manifest\$*.class")
             if (!extension.packageBuildConfig) {
+                jar.exclude(packageName + "/Manifest.class")
+                jar.exclude(packageName + "/Manifest\$*.class")
                 jar.exclude(packageName + "/BuildConfig.class")
             }
 
