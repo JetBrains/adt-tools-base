@@ -132,6 +132,3 @@
 </manifest>
 
 @errors
-
-P [ManifestMergerTest0_main.xml:6, ManifestMergerTest2_lib2_activity.xml:5] Skipping identical /manifest/application/activity[@name=com.example.lib2.LibActivity] element.
-P [ManifestMergerTest0_main.xml, ManifestMergerTest3_lib3_alias.xml:8] Skipping identical /manifest/application/activity[@name=com.example.lib2.LibActivity2] element.

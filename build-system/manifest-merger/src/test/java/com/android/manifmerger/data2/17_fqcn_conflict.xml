@@ -4,7 +4,8 @@
 # - A library application can be merged if it has the same class name as the app.
 # - A partial class name is expanded using the package name in a library or app.
 #
-# All tests fail with just warnings, no solid errors.
+# Test fail since com.example.lib1 has a different application name than the main
+# manifest.
 #
 
 @main
@@ -113,8 +114,4 @@
 </manifest>
 
 @errors
-
-W [ManifestMergerTest0_main.xml:3, ManifestMergerTest1_lib1_widget.xml:4] Main manifest has <application android:name='com.example.app1.TheApp'> but library uses name='com.example.lib1.TheApp'.
-W [ManifestMergerTest0_main.xml:3, ManifestMergerTest2_lib2_widget.xml:4] Main manifest has <application android:backupAgent='com.example.app1.MyBackupAgent'> but library uses backupAgent='com.example.lib2.MyBackupAgent'.
-P [ManifestMergerTest0_main.xml:6, ManifestMergerTest2_lib2_widget.xml:6] Skipping identical /manifest/application/activity[@name=com.example.lib2.LibActivity] element.
-W [ManifestMergerTest4_lib4_not_package.xml:1] Missing 'package' attribute in manifest.
+ERROR:Attribute application@android:name value=(com.example.app1.TheApp) is also present at (6,18) file:ManifestMerger2Test1_lib1_widget.xml:6 value=(com.example.lib1.TheApp), use tools:replace to override it.
