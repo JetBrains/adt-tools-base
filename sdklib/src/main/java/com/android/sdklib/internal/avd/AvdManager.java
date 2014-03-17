@@ -1575,21 +1575,23 @@ public class AvdManager {
                 d = devMan.getDevice(deviceName, deviceMfctr);
                 deviceStatus = d == null ? DeviceStatus.MISSING : DeviceStatus.EXISTS;
 
-                updateHashV2 = true;
-                String hashV2 = properties.get(AVD_INI_DEVICE_HASH_V2);
-                if (hashV2 != null) {
-                    String newHashV2 = DeviceManager.hasHardwarePropHashChanged(d, hashV2);
-                    if (newHashV2 == null) {
-                        updateHashV2 = false;
-                    } else {
-                        properties.put(AVD_INI_DEVICE_HASH_V2, newHashV2);
+                if (d != null) {
+                    updateHashV2 = true;
+                    String hashV2 = properties.get(AVD_INI_DEVICE_HASH_V2);
+                    if (hashV2 != null) {
+                        String newHashV2 = DeviceManager.hasHardwarePropHashChanged(d, hashV2);
+                        if (newHashV2 == null) {
+                            updateHashV2 = false;
+                        } else {
+                            properties.put(AVD_INI_DEVICE_HASH_V2, newHashV2);
+                        }
                     }
-                }
 
-                String hashV1 = properties.get(AVD_INI_DEVICE_HASH_V1);
-                if (hashV1 != null) {
-                    // will recompute a hash v2 and save it below
-                    properties.remove(AVD_INI_DEVICE_HASH_V1);
+                    String hashV1 = properties.get(AVD_INI_DEVICE_HASH_V1);
+                    if (hashV1 != null) {
+                        // will recompute a hash v2 and save it below
+                        properties.remove(AVD_INI_DEVICE_HASH_V1);
+                    }
                 }
             }
         }
