@@ -219,7 +219,7 @@ public class ManifestMergerTest extends TestCase {
                 @NonNull Map<String, Boolean> features,
                 @NonNull Map<String, String> injectAttributes,
                 @Nullable String packageOverride,
-                @NonNull File actualResult,
+                @Nullable File actualResult,
                 @NonNull String expectedResult,
                 @NonNull String expectedErrors) {
             mShouldFail = shouldFail;
@@ -262,7 +262,7 @@ public class ManifestMergerTest extends TestCase {
             return mPackageOverride;
         }
 
-        @NonNull
+        @Nullable
         public File getActualResult() {
             return mActualResult;
         }
@@ -498,10 +498,8 @@ public class ManifestMergerTest extends TestCase {
             }
 
             assertNotNull("Missing @" + DELIM_MAIN + " in " + filename, mainFile);
-            assertNotNull("Missing @" + DELIM_RESULT + " in " + filename, actualResultFile);
 
             assert mainFile != null;
-            assert actualResultFile != null;
 
             Collections.sort(libFiles);
 

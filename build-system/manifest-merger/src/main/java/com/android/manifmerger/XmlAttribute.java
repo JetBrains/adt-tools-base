@@ -108,6 +108,11 @@ public class XmlAttribute extends XmlNode {
         return mXml;
     }
 
+    @Nullable
+    public AttributeModel getModel() {
+        return mAttributeModel;
+    }
+
     XmlElement getOwnerElement() {
         return mOwnerElement;
     }

@@ -148,7 +148,7 @@ public class ManifestMerger2 {
             throw new MergeFailureException(e);
         }
         MergingReport.Result validationResult = PreValidator
-                .validate(lowerPriorityDocument, mergingReportBuilder.getLogger());
+                .validate(mergingReportBuilder, lowerPriorityDocument);
         if (validationResult == MergingReport.Result.ERROR) {
             mergingReportBuilder.addError("Validation failed, exiting");
             return Optional.absent();

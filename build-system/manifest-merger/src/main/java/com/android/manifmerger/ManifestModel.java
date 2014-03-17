@@ -23,6 +23,7 @@ import com.android.annotations.concurrency.Immutable;
 import com.android.utils.SdkUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.sun.istack.internal.NotNull;
 
 /**
  * Model for the manifest file merging activities.
@@ -55,6 +56,12 @@ class ManifestModel {
          * in the xml document or null if there is no key.
          */
         @Nullable String getKey(XmlElement xmlElement);
+
+        /**
+         * Returns the attribute used to store the xml element key.
+         * @return the key attribute name or null of this element does not have a key.
+         */
+        @Nullable String getKeyAttributeName();
     }
 
     /**
@@ -68,6 +75,12 @@ class ManifestModel {
         public String getKey(XmlElement xmlElement) {
             return null;
         }
+
+        @Nullable
+        @Override
+        public String getKeyAttributeName() {
+            return null;
+        }
     }
 
     /**
@@ -76,8 +89,8 @@ class ManifestModel {
      */
     private static class AttributeBasedNodeKeyResolver implements NodeKeyResolver {
 
-        @Nullable private final String namespaceUri;
-        private final String attributeName;
+        @Nullable private final String mNamespaceUri;
+        private final String mAttributeName;
 
         /**
          * Build a new instance capable of resolving an xml element key from the passed attribute
@@ -87,16 +100,22 @@ class ManifestModel {
          */
         private AttributeBasedNodeKeyResolver(@Nullable String namespaceUri,
                 @NonNull String attributeName) {
-            this.namespaceUri = namespaceUri;
-            this.attributeName = Preconditions.checkNotNull(attributeName);
+            this.mNamespaceUri = namespaceUri;
+            this.mAttributeName = Preconditions.checkNotNull(attributeName);
         }
 
         @Override
         @Nullable
         public String getKey(XmlElement xmlElement) {
-            return namespaceUri == null
-                ? xmlElement.getXml().getAttribute(attributeName)
-                : xmlElement.getXml().getAttributeNS(namespaceUri, attributeName);
+            return mNamespaceUri == null
+                ? xmlElement.getXml().getAttribute(mAttributeName)
+                : xmlElement.getXml().getAttributeNS(mNamespaceUri, mAttributeName);
+        }
+
+        @Nullable
+        @Override
+        public String getKeyAttributeName() {
+            return mAttributeName;
         }
     }
 
@@ -341,10 +360,9 @@ class ManifestModel {
             this.mAttributeModels = ImmutableList.copyOf(attributeModels);
         }
 
-        // TODO: we need to support cases where the key is actually provided by a sub-element
-        // like intent-filter.
-        String getKey(XmlElement xmlElement) {
-            return mNodeKeyResolver.getKey(xmlElement);
+        @NotNull
+        NodeKeyResolver getNodeKeyResolver() {
+            return mNodeKeyResolver;
         }
 
         @Nullable

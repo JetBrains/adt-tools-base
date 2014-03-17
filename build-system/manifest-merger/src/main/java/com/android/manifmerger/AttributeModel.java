@@ -71,6 +71,11 @@ class AttributeModel {
         return mDefaultValue;
     }
 
+    @Nullable
+    public Validator getValidator() {
+        return mValidator;
+    }
+
     /**
      * Validates an attribute value.
      *
