@@ -56,6 +56,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "15_provider_dup",
             "16_fqcn_merge",
             "17_fqcn_conflict",
+            "18_fqcn_success",
 //            "20_uses_lib_merge",
 //            "21_uses_lib_errors",
 //            "25_permission_merge",
@@ -178,8 +179,9 @@ public class ManifestMerger2Test extends ManifestMergerTest {
                     fos.close();
             }
 
-            stdLogger.info(byteArrayOutputStream.toString());
-            stdLogger.info(testFiles.getExpectedErrors());
+            if (!notExpectingError) {
+                fail("Did not get expected error : " + testFiles.getExpectedErrors());
+            }
 
             Optional<String> comparingMessage =
                     expectedResult.compareTo(actualResult);
@@ -190,12 +192,11 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             }
         } else {
             for (MergingReport.Record record : mergeReport.getLoggingRecords()) {
-                Logger.getAnonymousLogger().info("Expected test error: " + record);
+                Logger.getAnonymousLogger().info("Returned errors: " + record);
             }
             compareExpectedAndActualErrors(mergeReport, testFiles.getExpectedErrors());
+            assertFalse(notExpectingError);
         }
-        assertEquals(notExpectingError, mergeReport.getMergedDocument().isPresent());
-
     }
 
     private boolean isExpectingError(String expectedOutput) throws IOException {

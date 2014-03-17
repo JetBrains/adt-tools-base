@@ -16,6 +16,7 @@
 
 package com.android.manifmerger;
 
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import com.android.SdkConstants;
@@ -33,6 +34,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -63,7 +65,12 @@ public class XmlAttributeTest extends TestCase {
 
         when(mAttr.getValue()).thenReturn("ActivityOne");
         // this will reset the package.
-        assertNotNull(new XmlAttribute(mXmlElement, mAttr));
+        assertNotNull(new XmlAttribute(mXmlElement, mAttr,
+                new AttributeModel("ActivityOne",
+                        true /* packageDependent */,
+                        null /* defaultValue */,
+                        null /* validator */)
+        ));
         Mockito.verify(mAttr).setValue("com.foo.bar.ActivityOne");
     }
 
@@ -71,7 +78,11 @@ public class XmlAttributeTest extends TestCase {
 
         when(mAttr.getValue()).thenReturn(".ActivityOne");
         // this will reset the package.
-        assertNotNull(new XmlAttribute(mXmlElement, mAttr));
+        assertNotNull(new XmlAttribute(mXmlElement, mAttr,
+                new AttributeModel("ActivityOne",
+                        true /* packageDependent */,
+                        null /* defaultValue */,
+                        null /* validator */)));
         Mockito.verify(mAttr).setValue("com.foo.bar.ActivityOne");
     }
 
@@ -79,9 +90,12 @@ public class XmlAttributeTest extends TestCase {
 
         when(mAttr.getValue()).thenReturn("com.foo.foo2.ActivityOne");
         // this will NOT reset the package.
-        assertNotNull(new XmlAttribute(mXmlElement, mAttr));
-        Mockito.verify(mAttr).getNamespaceURI();
-        Mockito.verify(mAttr).getLocalName();
+        assertNotNull(new XmlAttribute(mXmlElement, mAttr,
+                new AttributeModel("ActivityOne",
+                        true /* packageDependent */,
+                        null /* defaultValue */,
+                        null /* validator */)
+        ));
         Mockito.verify(mAttr).getValue();
         Mockito.verifyNoMoreInteractions(mAttr);
     }
@@ -335,5 +349,42 @@ public class XmlAttributeTest extends TestCase {
         assertEquals("XmlAttributeTest#lowestPriority",
                 attributeRecord.getActionLocation().getSourceLocation().print(true));
         assertEquals(7, attributeRecord.getActionLocation().getPosition().getLine());
+    }
+
+    public void testDefaultValueIllegalOverriding()
+            throws ParserConfigurationException, SAXException, IOException {
+        String higherPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                        // implicit required=true attribute present.
+                + "    <uses-library android:name=\"libraryOne\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        String lowerPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <uses-library android:name=\"libraryOne\" android:required=\"false\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+        XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
+                new StdLogger(StdLogger.Level.VERBOSE));
+        Optional<XmlDocument> result = refDocument.merge(otherDocument, mergingReportBuilder);
+        assertFalse(result.isPresent());
+        MergingReport.Record errorRecord = mergingReportBuilder.build().getLoggingRecords().iterator()
+                .next();
+        assertTrue(errorRecord.toString().contains("android:required"));
     }
 }

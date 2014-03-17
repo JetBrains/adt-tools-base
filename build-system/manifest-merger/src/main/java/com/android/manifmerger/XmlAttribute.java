@@ -17,9 +17,11 @@
 package com.android.manifmerger;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 
 import org.w3c.dom.Attr;
 
@@ -37,6 +39,8 @@ public class XmlAttribute extends XmlNode {
 
     private final XmlElement mOwnerElement;
     private final Attr mXml;
+    @Nullable
+    private final AttributeModel mAttributeModel;
 
     /**
      * Creates a new facade object to a {@link Attr} xml attribute in a
@@ -45,10 +49,14 @@ public class XmlAttribute extends XmlNode {
      * @param ownerElement the xml node object owning this attribute.
      * @param xml the xml definition of the attribute.
      */
-    public XmlAttribute(@NonNull XmlElement ownerElement, @NonNull Attr xml) {
+    public XmlAttribute(
+            @NonNull XmlElement ownerElement,
+            @NonNull Attr xml,
+            @Nullable AttributeModel attributeModel) {
         this.mOwnerElement = Preconditions.checkNotNull(ownerElement);
         this.mXml = Preconditions.checkNotNull(xml);
-        if (mOwnerElement.getType().isAttributePackageDependent(mXml)) {
+        this.mAttributeModel = attributeModel;
+        if (mAttributeModel != null && mAttributeModel.isPackageDependent()) {
             String value = mXml.getValue();
             String pkg = mOwnerElement.getDocument().getPackageName();
             // We know it's a shortened FQCN if it starts with a dot
@@ -128,33 +136,54 @@ public class XmlAttribute extends XmlNode {
             } else {
                 // if the values are the same, then it's fine, otherwise flag the error.
                 if (!getValue().equals(higherPriorityAttribute.getValue())) {
-                    String error = "Attribute " + higherPriorityAttribute.getId()
-                            + " value=(" + higherPriorityAttribute.getValue() + ")"
-                            + " is also present at " + printPosition()
-                            + " value=(" + getValue() + ")"
-                            + ", use tools:replace to override it.";
+                    String error = String.format(
+                            "Attribute %1$s value=(%2$s) is also present at %3$s"
+                                    + " value=(%4$s), use tools:replace to override it.",
+                            higherPriorityAttribute.getId(),
+                            higherPriorityAttribute.getValue(),
+                            printPosition(),
+                            getValue()
+                    );
                     mergingReport.addError(error);
                 }
             }
-        } else {
-            // it does not exist, verify if we are supposed to remove it.
-            if (attributeOperationType == AttributeOperationType.REMOVE) {
-                // record the fact the attribute was actively removed.
-                mergingReport.getActionRecorder().recordAttributeAction(
-                        this,
-                        ActionRecorder.ActionType.REJECTED,
-                        AttributeOperationType.REMOVE);
-            } else {
-                // ok merge it in the higher priority element.
-                getName().addToNode(higherPriorityElement.getXml(), getValue());
+            return;
+        }
 
-                // and record the action.
-                mergingReport.getActionRecorder().recordAttributeAction(
-                        this,
-                        ActionRecorder.ActionType.ADDED,
-                        getOwnerElement().getAttributeOperationType(getName()));
+        // it does not exist, verify if we are supposed to remove it.
+        if (attributeOperationType == AttributeOperationType.REMOVE) {
+            // record the fact the attribute was actively removed.
+            mergingReport.getActionRecorder().recordAttributeAction(
+                    this,
+                    ActionRecorder.ActionType.REJECTED,
+                    AttributeOperationType.REMOVE);
+            return;
+        }
+
+        // now check for possible default value for the attribute.
+        if (mAttributeModel != null) {
+            String attributeDefaultValue = mAttributeModel.getDefaultValue();
+            if (attributeDefaultValue != null && !attributeDefaultValue.equals(getValue())) {
+                String error = String.format("Attribute %1$s value=(%2$s) at %3$s"
+                                + " cannot override implicit default value=(%4$s)",
+                        getId(),
+                        getValue(),
+                        printPosition(),
+                        attributeDefaultValue
+                );
+                mergingReport.addError(error);
+                return;
             }
         }
+
+        // ok merge it in the higher priority element.
+        getName().addToNode(higherPriorityElement.getXml(), getValue());
+
+        // and record the action.
+        mergingReport.getActionRecorder().recordAttributeAction(
+                this,
+                ActionRecorder.ActionType.ADDED,
+                getOwnerElement().getAttributeOperationType(getName()));
     }
 
     /**

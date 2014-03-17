@@ -82,16 +82,18 @@
             android:icon="@drawable/widget_icon"
             android:label="Configure Widget"
             android:name="com.example.WidgetConfigurationUI"
-            android:theme="@style/Theme.WidgetConfigurationUI">
-            <!-- intent-filter child should be merged. -->
+            android:theme="@style/Theme.WidgetConfigurationUI"
+            tools:node="strict">
+            <!-- missing the intent-filter -->
         </activity>
 
 
-        <!-- Conflict with lib2, no conflict, should be merged -->
+        <!-- Conflict with lib2 -->
         <activity
             android:name="com.example.LibActivity"
             android:label="@string/lib_activity_name"
-            android:icon="@drawable/lib_activity_icon">
+            android:icon="@drawable/lib_activity_icon"
+            tools:node="strict">
             <!-- missing attribute android:theme="@style/Lib.Theme" -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -296,20 +298,16 @@
             android:label="Configure Widget"
             android:name="com.example.WidgetConfigurationUI"
             android:theme="@style/Theme.WidgetConfigurationUI" >
-            <!-- intent-filter child should be merged. -->
-            <intent-filter >
-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
-            </intent-filter>
+            <!-- missing the intent-filter -->
         </activity>
 
 
-        <!-- Conflict with lib2, no conflict, should be merged -->
+        <!-- Conflict with lib2 -->
         <activity
             android:name="com.example.LibActivity"
             android:label="@string/lib_activity_name"
-            android:icon="@drawable/lib_activity_icon"
-            android:theme="@style/Lib.Theme">
-
+            android:icon="@drawable/lib_activity_icon">
+            <!-- missing attribute android:theme="@style/Lib.Theme" -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -341,7 +339,6 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
-                <category android:name="android.intent.category.MOARCATZPLZ"/>
             </intent-filter>
         </activity>
 
@@ -375,3 +372,5 @@
 
 
 @errors
+
+ERROR:Node activity#com.example.WidgetConfigurationUI at (59,9) file:ManifestMerger2Test0_main.xml:59 is tagged with tools:node="strict", yet activity#com.example.WidgetConfigurationUI at (26,9) file:ManifestMerger2Test1_lib1_widget.xml:26 is different : activity#com.example.WidgetConfigurationUI: Number of children do not match up: expected 0 versus 1 at (26,9) file:ManifestMerger2Test1_lib1_widget.xml:26
