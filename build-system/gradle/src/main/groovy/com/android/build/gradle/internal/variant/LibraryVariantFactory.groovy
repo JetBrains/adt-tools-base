@@ -35,9 +35,11 @@ import com.google.common.collect.Sets
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.maven.MavenDeployer
 import org.gradle.api.plugins.MavenPlugin
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Sync
+import org.gradle.api.tasks.Upload
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.tooling.BuildException
@@ -329,10 +331,14 @@ public class LibraryVariantFactory implements VariantFactory {
         Set<Configuration> flattenedConfigs = flattenConfigurations(configuration)
 
         project.plugins.withType(MavenPlugin) {
-            for (Configuration config : flattenedConfigs) {
-                project.conf2ScopeMappings.addMapping(300,
-                        project.configurations[config.name],
-                        "compile")
+            project.tasks.withType(Upload) { task ->
+                task.repositories.withType(MavenDeployer) { repo ->
+                    for (Configuration config : flattenedConfigs) {
+                        repo.pom.scopeMappings.addMapping(300,
+                                project.configurations[config.name],
+                                "compile")
+                    }
+                }
             }
         }
     }
