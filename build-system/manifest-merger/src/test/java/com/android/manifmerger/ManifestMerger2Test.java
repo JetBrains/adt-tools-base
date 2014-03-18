@@ -22,6 +22,7 @@ import com.android.annotations.Nullable;
 import com.android.utils.StdLogger;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
+import com.google.common.collect.UnmodifiableIterator;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -51,6 +52,38 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "11_activity_dup",
             "12_alias_dup",
             "13_service_dup",
+            "14_receiver_dup",
+            "15_provider_dup",
+            "16_fqcn_merge",
+            "17_fqcn_conflict",
+//            "20_uses_lib_merge",
+//            "21_uses_lib_errors",
+//            "25_permission_merge",
+//            "26_permission_dup",
+//            "28_uses_perm_merge",
+//            "30_uses_sdk_ok",
+//            "32_uses_sdk_minsdk_ok",
+//            "33_uses_sdk_minsdk_conflict",
+//            "36_uses_sdk_targetsdk_warning",
+//            "40_uses_feat_merge",
+//            "41_uses_feat_errors",
+//            "45_uses_feat_gles_once",
+//            "47_uses_feat_gles_conflict",
+//            "50_uses_conf_warning",
+//            "52_support_screens_warning",
+//            "54_compat_screens_warning",
+//            "56_support_gltext_warning",
+//            "60_merge_order",
+//            "65_override_app",
+//            "66_remove_app",
+//            "67_override_activities",
+//            "68_override_uses",
+//            "69_remove_uses",
+//            "70_expand_fqcns",
+//            "71_extract_package_prefix",
+//            "75_app_metadata_merge",
+//            "76_app_metadata_ignore",
+//            "77_app_metadata_conflict",
     };
 
     @Override
@@ -121,19 +154,17 @@ public class ManifestMerger2Test extends ManifestMergerTest {
                 new TestUtils.TestSourceLocation(getClass(), testFiles.getMain().getName()),
                 testFiles.getExpectedResult());
 
+        mergeReport.log(stdLogger);
         if (mergeReport.getMergedDocument().isPresent()) {
             XmlDocument actualResult = mergeReport.getMergedDocument().get();
             actualResult.write(byteArrayOutputStream);
-
-            mergeReport.log(stdLogger);
             stdLogger.info(byteArrayOutputStream.toString());
         }
 
         // this is obviously quite hacky, refine once merge output is better defined.
         boolean notExpectingError = !isExpectingError(testFiles.getExpectedErrors());
 
-        assertEquals(notExpectingError, mergeReport.getMergedDocument().isPresent());
-        if (notExpectingError) {
+        if (mergeReport.getMergedDocument().isPresent()) {
 
             XmlDocument actualResult = mergeReport.getMergedDocument().get();
 
@@ -161,7 +192,9 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             for (MergingReport.Record record : mergeReport.getLoggingRecords()) {
                 Logger.getAnonymousLogger().info("Expected test error: " + record);
             }
+            compareExpectedAndActualErrors(mergeReport, testFiles.getExpectedErrors());
         }
+        assertEquals(notExpectingError, mergeReport.getMergedDocument().isPresent());
 
     }
 
@@ -170,9 +203,29 @@ public class ManifestMerger2Test extends ManifestMergerTest {
         BufferedReader reader = new BufferedReader(stringReader);
         String line;
         while ((line = reader.readLine()) != null) {
-            if (line.charAt(0) == 'E') return true;
+            if (line.startsWith("SEVERE") || line.startsWith("ERROR")) return true;
         }
         return false;
+    }
+
+    private boolean compareExpectedAndActualErrors(
+            MergingReport mergeReport,
+            String expectedOutput) throws IOException {
+
+        StringReader stringReader = new StringReader(expectedOutput);
+        BufferedReader reader = new BufferedReader(stringReader);
+        String line;
+        UnmodifiableIterator<MergingReport.Record> recordIterator =
+                mergeReport.getLoggingRecords().iterator();
+        while ((line = reader.readLine()) != null) {
+            if (line.startsWith("SEVERE") || line.startsWith("ERROR")) {
+                // next might generate an exception which will make the test fail when we
+                // get unexpected error message.
+                assertEquals(line, recordIterator.next().toString());
+            }
+        }
+        return false;
+
     }
 
     @Nullable
