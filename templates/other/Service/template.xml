@@ -5,6 +5,8 @@
     name="Service"
     description="Creates a new service component and adds it to your Android manifest.">
 
+    <category value="Service" />
+
     <parameter
         id="className"
         name="Class Name"

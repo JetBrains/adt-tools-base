@@ -6,6 +6,8 @@
     description="Creates a new helper class that can show or cancel a status bar notification."
     minApi="4">
 
+    <category value="UI Component" />
+
     <dependency name="android-support-v4" revision="10" />
 
     <parameter
