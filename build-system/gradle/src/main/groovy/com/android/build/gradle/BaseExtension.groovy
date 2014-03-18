@@ -356,6 +356,7 @@ public abstract class BaseExtension {
 
     // ---------------
     // TEMP for compatibility
+    // STOPSHIP Remove in 1.0
 
     private boolean enforceUniquePackageName = true
 
@@ -364,6 +365,10 @@ public abstract class BaseExtension {
             logger.warning("WARNING: support for libraries with same package name is deprecated and will be removed in 1.0")
         }
         enforceUniquePackageName = value
+    }
+
+    public void setEnforceUniquePackageName(boolean value) {
+        enforceUniquePackageName(value)
     }
 
     public getEnforceUniquePackageName() {
