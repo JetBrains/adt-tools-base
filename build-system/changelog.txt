@@ -13,6 +13,7 @@
 - Fixes:
    * Generated POM files now have the proper dependencies even if the pom object is manipulated in build.gradle
    * libraryVariant API now gives access to the list of flavors.
+   * fixed issue where changes to the manifests of libraries didn't trigger a new manifest merge.
    * BuildConfig.VERSION_NAME is always generated even if the value is not set in the current variant.
    * BuildConfig is now package in the library. This requires that all your libraries have a unique package name.
      If you are disabling enforcement of package name, then you should disable packaging of BuildConfig with:
