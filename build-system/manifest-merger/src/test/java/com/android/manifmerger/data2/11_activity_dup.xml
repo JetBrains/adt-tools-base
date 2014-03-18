@@ -372,39 +372,4 @@
 
 
 @errors
-
-E [ManifestMergerTest0_main.xml:32, ManifestMergerTest1_lib1_widget.xml:16] Trying to merge incompatible /manifest/application/activity[@name=com.example.WidgetConfigurationUI] element:
-  <activity
-      @android:name="com.example.WidgetConfigurationUI"
---</activity>
---(end reached)
-  <activity
-      @android:name="com.example.WidgetConfigurationUI"
-++    <intent-filter>
-++        <action
-++            @android:name="android.appwidget.action.APPWIDGET_CONFIGURE">
-E [ManifestMergerTest0_main.xml:38, ManifestMergerTest2_lib2_activity.xml:6] Trying to merge incompatible /manifest/application/activity[@name=com.example.LibActivity] element:
-  <activity
---    @android:name="com.example.LibActivity">
---    <intent-filter>
---        <action
-  <activity
-++    @android:name="com.example.LibActivity"
-++    @android:theme="@style/Lib.Theme">
-++    <intent-filter>
-E [ManifestMergerTest0_main.xml, ManifestMergerTest3_lib3_alias.xml:19] Trying to merge incompatible /manifest/application/activity[@name=com.example.LibActivity2] element:
-  <activity
-      @android:name="com.example.LibActivity2"
-              @android:name="android.intent.action.MAIN">
-              @android:name="android.intent.category.LAUNCHER">
---    </intent-filter>
---</activity>
---(end reached)
-  <activity
-      @android:name="com.example.LibActivity2"
-      <intent-filter>
-              @android:name="android.intent.action.MAIN">
-              @android:name="android.intent.category.LAUNCHER">
-++        <category
-++            @android:name="android.intent.category.MOARCATZPLZ">
-++        </category>
+ERROR:Node activity#com.example.WidgetConfigurationUI at (59,9) file:ManifestMerger2Test0_main.xml:59 is tagged with tools:node="strict", yet activity#com.example.WidgetConfigurationUI at (26,9) file:ManifestMerger2Test1_lib1_widget.xml:26 is different : activity#com.example.WidgetConfigurationUI: Number of children do not match up: 0 versus 1 at (26,9) file:ManifestMerger2Test1_lib1_widget.xml:26
