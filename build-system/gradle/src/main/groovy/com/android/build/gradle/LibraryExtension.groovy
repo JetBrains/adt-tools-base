@@ -70,6 +70,7 @@ public class LibraryExtension extends BaseExtension {
 
     // ---------------
     // TEMP for compatibility
+    // STOPSHIP Remove in 1.0
 
     private boolean packageBuildConfig = true
 
@@ -79,6 +80,10 @@ public class LibraryExtension extends BaseExtension {
         }
 
         packageBuildConfig = value
+    }
+
+    public void setPackageBuildConfig(boolean value) {
+        packageBuildConfig(value)
     }
 
     boolean getPackageBuildConfig() {
