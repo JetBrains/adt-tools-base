@@ -88,6 +88,11 @@ public class GenerateBuildConfig extends BaseTask {
                 getSourceOutputDir(),
                 getBuildConfigPackageName());
 
+        String vn = getVersionName()
+        if (vn == null) {
+            vn = ""
+        }
+
         // Hack (see IDEA-100046): We want to avoid reporting "condition is always true"
         // from the data flow inspection, so use a non-constant value. However, that defeats
         // the purpose of this flag (when not in debug mode, if (BuildConfig.DEBUG && ...) will
@@ -100,20 +105,17 @@ public class GenerateBuildConfig extends BaseTask {
             .addField("String", "BUILD_TYPE", "\"${getBuildTypeName()}\"")
             .addField("String", "FLAVOR", "\"${getFlavorName()}\"")
             .addField("int", "VERSION_CODE", Integer.toString(getVersionCode()))
-            .addItems(getItems());
+            .addField("String", "VERSION_NAME", "\"${vn}\"")
+            .addItems(getItems())
 
-        if (getVersionName() != null) {
-            generator.addField("String", "VERSION_NAME", "\"${getVersionName()}\"")
-        }
-
-        List<String> flavors = getFlavorNamesWithDimensionNames();
-        int count = flavors.size();
+        List<String> flavors = getFlavorNamesWithDimensionNames()
+        int count = flavors.size()
         if (count > 1) {
             for (int i = 0; i < count ; i+=2) {
                 generator.addField("String", "FLAVOR_${flavors.get(i+1)}", "\"${flavors.get(i)}\"")
             }
         }
 
-        generator.generate();
+        generator.generate()
     }
 }
