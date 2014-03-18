@@ -18,8 +18,7 @@ package com.android.build.gradle.internal.dependency;
 
 import com.android.annotations.NonNull;
 import com.android.builder.dependency.ManifestDependency;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.Nested;
+import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.List;
@@ -29,7 +28,9 @@ import java.util.List;
  */
 public class ManifestDependencyImpl implements ManifestDependency{
 
+    @NonNull
     private final File manifest;
+    @NonNull
     private final List<ManifestDependencyImpl> dependencies;
 
     public ManifestDependencyImpl(@NonNull File manifest,
@@ -38,7 +39,6 @@ public class ManifestDependencyImpl implements ManifestDependency{
         this.dependencies = dependencies;
     }
 
-    @InputFile
     @Override
     @NonNull
     public File getManifest() {
@@ -51,9 +51,18 @@ public class ManifestDependencyImpl implements ManifestDependency{
         return dependencies;
     }
 
-    @Nested
     @NonNull
     public List<ManifestDependencyImpl> getManifestDependenciesForInput() {
         return dependencies;
+    }
+
+    public List<File> getAllManifests() {
+        List<File> files = Lists.newArrayListWithExpectedSize(1 + dependencies.size() * 2);
+        files.add(manifest);
+        for (ManifestDependencyImpl manifestDep : dependencies) {
+            files.addAll(manifestDep.getAllManifests());
+        }
+
+        return files;
     }
 }
