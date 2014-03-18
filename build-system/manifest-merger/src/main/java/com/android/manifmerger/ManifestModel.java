@@ -376,7 +376,15 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/uses-sdk-element.html>
          *     Uses-sdk Xml documentation</a>}
          */
-        USES_SDK(MergeType.CONFLICT, DEFAULT_NO_KEY_NODE_RESOLVER);
+        USES_SDK(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER,
+                AttributeModel.newModel("minSdkVersion")
+                        .setDefaultValue("1")
+                        .setOnReadValidator(new AttributeModel.IntegerValueValidator()),
+                AttributeModel.newModel("maxSdkVersion").setOnReadValidator(
+                        new AttributeModel.IntegerValueValidator()),
+                AttributeModel.newModel("targetSdkVersion").setOnReadValidator(
+                        new AttributeModel.IntegerValueValidator())
+        );
 
 
         private final MergeType mMergeType;
