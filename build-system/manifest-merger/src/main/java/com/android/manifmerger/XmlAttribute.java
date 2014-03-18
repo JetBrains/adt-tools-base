@@ -129,7 +129,9 @@ public class XmlAttribute extends XmlNode {
                 // if the values are the same, then it's fine, otherwise flag the error.
                 if (!getValue().equals(higherPriorityAttribute.getValue())) {
                     String error = "Attribute " + higherPriorityAttribute.getId()
+                            + " value=(" + higherPriorityAttribute.getValue() + ")"
                             + " is also present at " + printPosition()
+                            + " value=(" + getValue() + ")"
                             + ", use tools:replace to override it.";
                     mergingReport.addError(error);
                 }
