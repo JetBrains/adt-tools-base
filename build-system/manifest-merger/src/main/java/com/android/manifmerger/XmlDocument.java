@@ -168,6 +168,13 @@ public class XmlDocument {
         return mRootNode.get();
     }
 
+    public Optional<XmlElement> getNodeByTypeAndKey(
+            ManifestModel.NodeTypes type,
+            @Nullable String keyValue) {
+
+        return getRootNode().getNodeByTypeAndKey(type, keyValue);
+    }
+
     public String getPackageName() {
         // TODO: allow injection through invocation parameters.
         return mRootElement.getAttribute("package");
