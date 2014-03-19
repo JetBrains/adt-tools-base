@@ -37,6 +37,7 @@ public interface ProductFlavor extends BaseConfig {
      *
      * @return the name of the flavor.
      */
+    @Override
     @NonNull
     String getName();
 
