@@ -21,6 +21,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation;
+import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.prefs.AndroidLocation.EnvVar;
 import com.android.resources.Density;
 import com.android.resources.Keyboard;
@@ -53,6 +54,7 @@ import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.local.LocalPlatformPkgInfo;
 import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
+import com.android.utils.ILogger;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -102,13 +104,38 @@ public class SdkManagerTestCase extends TestCase {
         mLog = new MockLog();
         makeFakeAndroidHome();
         makeFakeSdk();
+        createSdkAvdManagers();
+    }
+
+    /**
+     * Recreate the SDK and AVD Managers from scratch even if they already existed.
+     * Useful for tests that want to reset their state without recreating the
+     * android-home or the fake SDK. The SDK will be reparsed.
+     */
+    protected void createSdkAvdManagers() throws AndroidLocationException {
         mSdkManager = SdkManager.createManager(mFakeSdk.getAbsolutePath(), mLog);
         assertNotNull("SdkManager location was invalid", mSdkManager);
         // Note: it's safe to use the default AvdManager implementation since makeFakeAndroidHome
         // above overrides the ANDROID_HOME folder to use a temp folder; consequently all
         // the AVDs created here will be located in this temp folder and will not alter
         // or pollute the default user's AVD folder.
-        mAvdManager = AvdManager.getInstance(mSdkManager.getLocalSdk(), mLog);
+        mAvdManager = new AvdManager(mSdkManager.getLocalSdk(), mLog) {
+            @Override
+            protected boolean createSdCard(
+                    String toolLocation,
+                    String size,
+                    String location,
+                    ILogger log) {
+                if (new File(toolLocation).exists()) {
+                    log.info("[EXEC] %1$s %2$s %3$s\n", toolLocation, size, location);
+                    return true;
+                } else {
+                    log.error(null, "Failed to create the SD card.\n");
+                    return false;
+                }
+
+            };
+        };
     }
 
     /**
@@ -189,6 +216,7 @@ public class SdkManagerTestCase extends TestCase {
         createSourceProps(toolsDir, PkgProps.PKG_REVISION, "1.0.1");
         new File(toolsDir, SdkConstants.androidCmdName()).createNewFile();
         new File(toolsDir, SdkConstants.FN_EMULATOR).createNewFile();
+        new File(toolsDir, SdkConstants.mkSdCardCmdName()).createNewFile();
 
         makePlatformTools(new File(mFakeSdk, SdkConstants.FD_PLATFORM_TOOLS));
 
