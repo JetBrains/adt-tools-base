@@ -61,13 +61,13 @@ public class AttributeModelTest extends TestCase {
                 .setOnReadValidator(mValidator)
                 .build();
 
-        assertEquals("someName", attributeModel.getName());
+        assertEquals(XmlNode.fromXmlName("android:someName"), attributeModel.getName());
         assertTrue(attributeModel.isPackageDependent());
         assertEquals("default_value", attributeModel.getDefaultValue());
 
         attributeModel = AttributeModel.newModel("someName").build();
 
-        assertEquals("someName", attributeModel.getName());
+        assertEquals(XmlNode.fromXmlName("android:someName"), attributeModel.getName());
         assertFalse(attributeModel.isPackageDependent());
         assertEquals(null, attributeModel.getDefaultValue());
 
@@ -178,5 +178,23 @@ public class AttributeModelTest extends TestCase {
                 "123456789123456789"));
         assertFalse(integerValueValidator.validates(mergingReport, mXmlAttribute,
                 "0xFFFFFFFFFFFFFFFF"));
+    }
+
+    public void testStrictMergingPolicy() {
+        assertEquals("ok", AttributeModel.STRICT_MERGING_POLICY.merge("ok", "ok"));
+        assertNull(AttributeModel.STRICT_MERGING_POLICY.merge("one", "two"));
+    }
+
+    public void testOrMergingPolicy() {
+        assertEquals("true", AttributeModel.OR_MERGING_POLICY.merge("true", "true"));
+        assertEquals("true", AttributeModel.OR_MERGING_POLICY.merge("true", "false"));
+        assertEquals("true", AttributeModel.OR_MERGING_POLICY.merge("false", "true"));
+        assertEquals("false", AttributeModel.OR_MERGING_POLICY.merge("false", "false"));
+    }
+
+    public void testNumericalSuperiorityPolicy() {
+        assertEquals(null, AttributeModel.NUMERICAL_SUPERIORITY_POLICY.merge("5", "10"));
+        assertEquals("10", AttributeModel.NUMERICAL_SUPERIORITY_POLICY.merge("10", "5"));
+        assertEquals("5", AttributeModel.NUMERICAL_SUPERIORITY_POLICY.merge("5", "5"));
     }
 }

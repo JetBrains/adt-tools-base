@@ -350,10 +350,43 @@ public class ActionRecorder {
          *                               decision.
          */
         synchronized void recordAttributeAction(
-                XmlAttribute attribute,
-                ActionType actionType,
-                AttributeOperationType attributeOperationType) {
+                @NonNull XmlAttribute attribute,
+                @NonNull ActionType actionType,
+                @Nullable AttributeOperationType attributeOperationType) {
 
+            XmlElement originElement = attribute.getOwnerElement();
+            List<AttributeRecord> attributeRecords = getAttributeRecords(attribute);
+            AttributeRecord attributeRecord = new AttributeRecord(
+                    actionType,
+                    new ActionLocation(
+                            originElement.getDocument().getSourceLocation(),
+                            attribute.getPosition()),
+                    attributeOperationType);
+            attributeRecords.add(attributeRecord);
+        }
+
+        /**
+         * Records when a default value that should be merged was rejected due to
+         * a tools:replace annotation.
+         * @param attribute the attribute which default value was ignored.
+         * @param implicitAttributeOwner the element owning the implicit default
+         *                               value.
+         */
+        synchronized void recordImplicitRejection(
+                @NonNull XmlAttribute attribute,
+                @NonNull XmlElement implicitAttributeOwner) {
+
+            List<AttributeRecord> attributeRecords = getAttributeRecords(attribute);
+            AttributeRecord attributeRecord = new AttributeRecord(
+                    ActionType.REJECTED,
+                    new ActionLocation(
+                            implicitAttributeOwner.getDocument().getSourceLocation(),
+                            implicitAttributeOwner.getPosition()),
+                    AttributeOperationType.REPLACE);
+            attributeRecords.add(attributeRecord);
+        }
+
+        private List<AttributeRecord> getAttributeRecords(XmlAttribute attribute) {
             XmlElement originElement = attribute.getOwnerElement();
             String storageKey = originElement.getId();
             DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
@@ -365,13 +398,7 @@ public class ActionRecorder {
                 attributeRecords = new ArrayList<AttributeRecord>();
                 nodeDecisionTree.mAttributeRecords.put(attribute.getName(), attributeRecords);
             }
-            AttributeRecord attributeRecord = new AttributeRecord(
-                    actionType,
-                    new ActionLocation(
-                            originElement.getDocument().getSourceLocation(), 
-                            attribute.getPosition()),
-                    attributeOperationType);
-            attributeRecords.add(attributeRecord);
+            return attributeRecords;
         }
 
         ActionRecorder build() {
