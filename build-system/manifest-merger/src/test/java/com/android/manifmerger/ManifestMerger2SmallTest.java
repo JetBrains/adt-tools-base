@@ -28,6 +28,7 @@ import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -82,7 +83,7 @@ public class ManifestMerger2SmallTest extends TestCase {
             MergingReport mergingReport = ManifestMerger2.newInvoker(tmpFile, mockLog).merge();
             assertEquals(MergingReport.Result.ERROR, mergingReport.getResult());
             // check the log complains about the incorrect "tools:replace"
-            assertTrue(mockLog.toString().contains("tools:replace"));
+            assertStringPresenceInLogRecords(mergingReport, "tools:replace");
             assertFalse(mergingReport.getMergedDocument().isPresent());
         } finally {
             assertTrue(tmpFile.delete());
@@ -225,5 +226,18 @@ public class ManifestMerger2SmallTest extends TestCase {
             if (fw != null) fw.close();
         }
         return tmpFile;
+    }
+
+    private void assertStringPresenceInLogRecords(MergingReport mergingReport, String s) {
+        for (MergingReport.Record record : mergingReport.getLoggingRecords()) {
+            if (record.toString().contains(s)) {
+                return;
+            }
+        }
+        // failed, dump the records
+        for (MergingReport.Record record : mergingReport.getLoggingRecords()) {
+            Logger.getAnonymousLogger().info(record.toString());
+        }
+        fail("could not find " + s + " in logging records");
     }
 }
