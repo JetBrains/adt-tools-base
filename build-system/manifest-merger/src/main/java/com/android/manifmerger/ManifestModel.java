@@ -24,8 +24,6 @@ import com.android.utils.SdkUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
-import org.w3c.dom.Attr;
-
 /**
  * Model for the manifest file merging activities.
  * <p>
@@ -37,6 +35,10 @@ import org.w3c.dom.Attr;
  */
 @Immutable
 class ManifestModel {
+
+    private static final boolean IS_PACKAGE_DEPENDENT = true;
+    private static final AttributeModel.Validator NO_VALIDATOR = null;
+    private static final String NO_DEFAULT_VALUE = null;
 
     /**
      * Interface responsible for providing a key extraction capability from a xml element.
@@ -109,10 +111,12 @@ class ManifestModel {
         }
     }
 
-    private static final NameAttributeNodeKeyResolver defaultNameAttributeResolver =
+    private static final NameAttributeNodeKeyResolver DEFAULT_NAME_ATTRIBUTE_RESOLVER =
             new NameAttributeNodeKeyResolver();
 
-    private static final NoKeyNodeResolver defaultNoKeyNodeResolver = new NoKeyNodeResolver();
+    private static final NoKeyNodeResolver DEFAULT_NO_KEY_NODE_RESOLVER = new NoKeyNodeResolver();
+    private static final AttributeModel.BooleanValidator BOOLEAN_VALIDATOR =
+            new AttributeModel.BooleanValidator();
 
     /**
      * Definitions of the support node types in the Android Manifest file.
@@ -129,8 +133,13 @@ class ManifestModel {
      *     <li>{@link com.android.manifmerger.ManifestModel.NodeKeyResolver} to resolve the
      *     element's key. Elements can have an attribute like "android:name", others can use
      *     a sub-element, and finally some do not have a key and are meant to be unique.</li>
-     *     <li>List of attributes that support smart substitution of class names to fully qualified
-     *     class names using the document's package declaration. The list's size can be 0..n</li>
+     *     <li>List of attributes models with special behaviors :
+     *     <ul>
+     *         <li>Smart substitution of class names to fully qualified class names using the
+     *         document's package declaration. The list's size can be 0..n</li>
+     *         <li>Implicit default value when no defined on the xml element.</li>
+     *         <li>{@link AttributeModel.Validator} to validate attribute value against.</li>
+     *     </ul>
      * </ul>
      *
      * It is of the outermost importance to keep this model correct as it is used by the merging
@@ -149,7 +158,7 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/action-element.html>
          *     Action Xml documentation</a>}
          */
-        ACTION(MergeType.MERGE, defaultNameAttributeResolver),
+        ACTION(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER),
 
         /**
          * Activity (contained in application)
@@ -158,8 +167,11 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/activity-element.html>
          *     Activity Xml documentation</a>}
          */
-        ACTIVITY(MergeType.MERGE, defaultNameAttributeResolver,
-                "parentActivityName", SdkConstants.ATTR_NAME),
+        ACTIVITY(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                new AttributeModel("parentActivityName",
+                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR),
+                new AttributeModel(SdkConstants.ATTR_NAME,
+                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR)),
 
         /**
          * Activity-alias (contained in application)
@@ -168,8 +180,11 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/activity-alias-element.html>
          *     Activity-alias Xml documentation</a>}
          */
-        ACTIVITY_ALIAS(MergeType.MERGE, defaultNameAttributeResolver,
-                "targetActivity", SdkConstants.ATTR_NAME),
+        ACTIVITY_ALIAS(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                new AttributeModel("targetActivity",
+                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR),
+                new AttributeModel(SdkConstants.ATTR_NAME,
+                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR)),
 
         /**
          * Application (contained in manifest)
@@ -178,7 +193,11 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/application-element.html>
          *     Application Xml documentation</a>}
          */
-        APPLICATION(MergeType.MERGE, defaultNoKeyNodeResolver, "backupAgent", SdkConstants.ATTR_NAME),
+        APPLICATION(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER,
+                new AttributeModel("backupAgent",
+                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR),
+                new AttributeModel(SdkConstants.ATTR_NAME,
+                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR)),
 
         /**
          * Category (contained in intent-filter)
@@ -187,7 +206,7 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/category-element.html>
          *     Category Xml documentation</a>}
          */
-        CATEGORY(MergeType.MERGE, defaultNameAttributeResolver),
+        CATEGORY(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER),
 
         /**
          * Instrumentation (contained in intent-filter)
@@ -196,7 +215,9 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/instrumentation-element.html>
          *     Instrunentation Xml documentation</a>}
          */
-        INSTRUMENTATION(MergeType.MERGE, defaultNameAttributeResolver, SdkConstants.ATTR_NAME),
+        INSTRUMENTATION(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                new AttributeModel(SdkConstants.ATTR_NAME,
+                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR)),
 
         /**
          * Intent-filter (contained in activity, activity-alias, service, receiver)
@@ -215,7 +236,7 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/manifest-element.html>
          *     Manifest Xml documentation</a>}
          */
-        MANIFEST(MergeType.MERGE_CHILDREN_ONLY, defaultNoKeyNodeResolver),
+        MANIFEST(MergeType.MERGE_CHILDREN_ONLY, DEFAULT_NO_KEY_NODE_RESOLVER),
 
         /**
          * Meta-data (contained in activity, activity-alias, application, provider, receiver)
@@ -224,7 +245,7 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/meta-data-element.html>
          *     Meta-data Xml documentation</a>}
          */
-        META_DATA(MergeType.MERGE, defaultNameAttributeResolver),
+        META_DATA(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER),
 
         /**
          * Provider (contained in application)
@@ -233,7 +254,9 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/provider-element.html>
          *     Provider Xml documentation</a>}
          */
-        PROVIDER(MergeType.MERGE, defaultNameAttributeResolver, SdkConstants.ATTR_NAME),
+        PROVIDER(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                new AttributeModel(SdkConstants.ATTR_NAME,
+                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR)),
 
         /**
          * Receiver (contained in application)
@@ -242,7 +265,9 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/receiver-element.html>
          *     Receiver Xml documentation</a>}
          */
-        RECEIVER(MergeType.MERGE, defaultNameAttributeResolver, SdkConstants.ATTR_NAME),
+        RECEIVER(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                new AttributeModel(SdkConstants.ATTR_NAME,
+                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR)),
 
         /**
          * Service (contained in application)
@@ -251,7 +276,9 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/application-element.html>
          *     Service Xml documentation</a>}
          */
-        SERVICE(MergeType.MERGE, defaultNameAttributeResolver, SdkConstants.ATTR_NAME),
+        SERVICE(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                new AttributeModel(SdkConstants.ATTR_NAME,
+                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR)),
 
         /**
          * Support-screens (contained in manifest)
@@ -260,7 +287,7 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/supports-screens-element.html>
          *     Support-screens Xml documentation</a>}
          */
-        SUPPORTS_SCREENS(MergeType.MERGE, defaultNoKeyNodeResolver),
+        SUPPORTS_SCREENS(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER),
 
         /**
          * Uses-feature (contained in manifest)
@@ -269,7 +296,7 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/uses-feature-element.html>
          *     Uses-feature Xml documentation</a>}
          */
-        USES_FEATURE(MergeType.MERGE, defaultNameAttributeResolver),
+        USES_FEATURE(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER),
 
         /**
          * Use-library (contained in application)
@@ -278,7 +305,9 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/uses-library-element.html>
          *     Use-library Xml documentation</a>}
          */
-        USE_LIBRARY(MergeType.CONFLICT, defaultNameAttributeResolver),
+        USES_LIBRARY(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                new AttributeModel("required",
+                        !IS_PACKAGE_DEPENDENT, "true", BOOLEAN_VALIDATOR)),
 
         /**
          * Uses-permission (contained in application)
@@ -287,7 +316,7 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/uses-permission-element.html>
          *     Uses-permission Xml documentation</a>}
          */
-        USES_PERMISSION(MergeType.MERGE, defaultNameAttributeResolver),
+        USES_PERMISSION(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER),
 
         /**
          * Uses-sdk (contained in manifest)
@@ -296,20 +325,20 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/uses-sdk-element.html>
          *     Uses-sdk Xml documentation</a>}
          */
-        USES_SDK(MergeType.CONFLICT, defaultNoKeyNodeResolver);
+        USES_SDK(MergeType.CONFLICT, DEFAULT_NO_KEY_NODE_RESOLVER);
 
 
         private final MergeType mMergeType;
         private final NodeKeyResolver mNodeKeyResolver;
-        private final ImmutableList<String> mFqcnAttributes;
+        private final ImmutableList<AttributeModel> mAttributeModels;
 
         private NodeTypes(
                 @NonNull MergeType mergeType,
                 @NonNull NodeKeyResolver nodeKeyResolver,
-                @Nullable String... fqcnAttributes) {
+                @Nullable AttributeModel... attributeModels) {
             this.mMergeType = Preconditions.checkNotNull(mergeType);
             this.mNodeKeyResolver = Preconditions.checkNotNull(nodeKeyResolver);
-            this.mFqcnAttributes = ImmutableList.copyOf(fqcnAttributes);
+            this.mAttributeModels = ImmutableList.copyOf(attributeModels);
         }
 
         // TODO: we need to support cases where the key is actually provided by a sub-element
@@ -318,18 +347,15 @@ class ManifestModel {
             return mNodeKeyResolver.getKey(xmlElement);
         }
 
-        /**
-         * Return true if the attribute support smart substitution of partially fully qualified
-         * class names with package settings as provided by the manifest node's package attribute
-         * {@link <a href=http://developer.android.com/guide/topics/manifest/manifest-element.html>}
-         *
-         * @param attribute the xml attribute definition.
-         * @return true if this name supports smart substitution or false if not.
-         */
-        boolean isAttributePackageDependent(Attr attribute) {
-            return mFqcnAttributes != null
-                    && SdkConstants.ANDROID_URI.equals(attribute.getNamespaceURI())
-                    && mFqcnAttributes.contains(attribute.getLocalName());
+        @Nullable
+        AttributeModel getAttributeModel(String attributeLocalName) {
+            // mAttributeModels could be replaced with a Map if the number of models grows.
+            for (AttributeModel attributeModel : mAttributeModels) {
+                if (attributeModel.getName().equals(attributeLocalName)) {
+                    return attributeModel;
+                }
+            }
+            return null;
         }
 
         /**

@@ -118,7 +118,8 @@ public class XmlElement extends XmlNode {
             Node attribute = namedNodeMap.item(i);
             if (!SdkConstants.TOOLS_URI.equals(attribute.getNamespaceURI())) {
 
-                XmlAttribute xmlAttribute = new XmlAttribute(this, (Attr) attribute);
+                XmlAttribute xmlAttribute = new XmlAttribute(
+                        this, (Attr) attribute, mType.getAttributeModel(attribute.getLocalName()));
                 attributesListBuilder.add(xmlAttribute);
             }
 
@@ -441,7 +442,7 @@ public class XmlElement extends XmlNode {
         List<Node> actualChildren = filterUninterestingNodes(otherNode.mXml.getChildNodes());
         if (expectedChildren.size() != actualChildren.size()) {
             return Optional.of(String.format(
-                    "%1$s: Number of children do not match up: %2$d versus %3$d at %4$s",
+                    "%1$s: Number of children do not match up: expected %2$d versus %3$d at %4$s",
                     getId(),
                     expectedChildren.size(),
                     actualChildren.size(),
