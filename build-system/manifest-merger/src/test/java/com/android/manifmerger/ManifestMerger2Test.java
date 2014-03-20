@@ -17,6 +17,7 @@
 package com.android.manifmerger;
 
 import static com.android.manifmerger.ManifestMerger2.SystemProperty;
+import static com.android.manifmerger.MergingReport.Record;
 
 import com.android.annotations.Nullable;
 import com.android.utils.StdLogger;
@@ -34,6 +35,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -57,8 +60,9 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "16_fqcn_merge",
             "17_fqcn_conflict",
             "18_fqcn_success",
-//            "20_uses_lib_merge",
-//            "21_uses_lib_errors",
+            "20_uses_lib_merge",
+            "21_uses_main_errors",
+            "22_uses_lib_errors",
 //            "25_permission_merge",
 //            "26_permission_dup",
 //            "28_uses_perm_merge",
@@ -151,9 +155,6 @@ public class ManifestMerger2Test extends ManifestMergerTest {
 
         MergingReport mergeReport = invoker.merge();
 
-        XmlDocument expectedResult = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), testFiles.getMain().getName()),
-                testFiles.getExpectedResult());
 
         mergeReport.log(stdLogger);
         if (mergeReport.getMergedDocument().isPresent()) {
@@ -166,6 +167,10 @@ public class ManifestMerger2Test extends ManifestMergerTest {
         boolean notExpectingError = !isExpectingError(testFiles.getExpectedErrors());
 
         if (mergeReport.getMergedDocument().isPresent()) {
+
+            XmlDocument expectedResult = TestUtils.xmlDocumentFromString(
+                    new TestUtils.TestSourceLocation(getClass(), testFiles.getMain().getName()),
+                    testFiles.getExpectedResult());
 
             XmlDocument actualResult = mergeReport.getMergedDocument().get();
 
@@ -191,8 +196,8 @@ public class ManifestMerger2Test extends ManifestMergerTest {
                 fail(comparingMessage.get());
             }
         } else {
-            for (MergingReport.Record record : mergeReport.getLoggingRecords()) {
-                Logger.getAnonymousLogger().info("Returned errors: " + record);
+            for (Record record : mergeReport.getLoggingRecords()) {
+                Logger.getAnonymousLogger().info("Returned log: " + record);
             }
             compareExpectedAndActualErrors(mergeReport, testFiles.getExpectedErrors());
             assertFalse(notExpectingError);
@@ -204,29 +209,46 @@ public class ManifestMerger2Test extends ManifestMergerTest {
         BufferedReader reader = new BufferedReader(stringReader);
         String line;
         while ((line = reader.readLine()) != null) {
-            if (line.startsWith("SEVERE") || line.startsWith("ERROR")) return true;
+            if (line.startsWith("ERROR")) return true;
         }
         return false;
     }
 
-    private boolean compareExpectedAndActualErrors(
+    private void compareExpectedAndActualErrors(
             MergingReport mergeReport,
             String expectedOutput) throws IOException {
 
         StringReader stringReader = new StringReader(expectedOutput);
         BufferedReader reader = new BufferedReader(stringReader);
         String line;
-        UnmodifiableIterator<MergingReport.Record> recordIterator =
-                mergeReport.getLoggingRecords().iterator();
+        List<Record> records = new ArrayList<Record>(mergeReport.getLoggingRecords());
         while ((line = reader.readLine()) != null) {
-            if (line.startsWith("SEVERE") || line.startsWith("ERROR")) {
+            if (line.startsWith("WARNING") || line.startsWith("ERROR")) {
                 // next might generate an exception which will make the test fail when we
                 // get unexpected error message.
-                assertEquals(line, recordIterator.next().toString());
+                if (!findLineInRecords(line, records)) {
+                    fail("Cannot find expected error : " + line);
+                }
+            }
+        }
+        // check that we do not have any unexpected error messages.
+        if (!records.isEmpty()) {
+            for (Record record : records) {
+                Logger.getAnonymousLogger().severe(
+                        "Unexpected error message : " + record.toString());
+            }
+            fail("Unexpected error message(s)");
+        }
+    }
+
+    private boolean findLineInRecords(String errorLine, List<Record> records) {
+        for (Record record : records) {
+            if (record.toString().equals(errorLine)) {
+                records.remove(record);
+                return true;
             }
         }
         return false;
-
     }
 
     @Nullable
