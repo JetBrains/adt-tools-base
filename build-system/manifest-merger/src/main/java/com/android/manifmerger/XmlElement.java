@@ -120,7 +120,8 @@ public class XmlElement extends XmlNode {
             if (!SdkConstants.TOOLS_URI.equals(attribute.getNamespaceURI())) {
 
                 XmlAttribute xmlAttribute = new XmlAttribute(
-                        this, (Attr) attribute, mType.getAttributeModel(attribute.getLocalName()));
+                        this, (Attr) attribute, mType.getAttributeModel(XmlNode.fromXmlName(
+                                ((Attr) attribute).getName())));
                 attributesListBuilder.add(xmlAttribute);
             }
 
@@ -274,9 +275,30 @@ public class XmlElement extends XmlNode {
                 + " with lower " + lowerPriorityNode.printPosition());
 
         if (getType().getMergeType() != MergeType.MERGE_CHILDREN_ONLY) {
-            // merge attributes.
+            // make a copy of all the attributes metadata, it will eliminate elements from this
+            // list as it finds them explicitly defined in the lower priority node.
+            // At the end of the explicit attributes processing, the remaining elements of this
+            // list will need to be checked for default value that may clash with a locally
+            // defined attribute.
+            List<AttributeModel> attributeModels =
+                    new ArrayList<AttributeModel>(lowerPriorityNode.getType().getAttributeModels());
+
+            // merge explicit attributes from lower priority node.
             for (XmlAttribute lowerPriorityAttribute : lowerPriorityNode.getAttributes()) {
                 lowerPriorityAttribute.mergeInHigherPriorityElement(this, mergingReport);
+                if (lowerPriorityAttribute.getModel() != null) {
+                    attributeModels.remove(lowerPriorityAttribute.getModel());
+                }
+            }
+            // merge implicit default values from lower priority node when we have an explicit
+            // attribute declared on this node.
+            for (AttributeModel attributeModel : attributeModels) {
+                if (attributeModel.getDefaultValue() != null) {
+                    Optional<XmlAttribute> myAttribute = getAttribute(attributeModel.getName());
+                    if (myAttribute.isPresent()) {
+                        myAttribute.get().mergeWithLowerPriorityDefaultValue(mergingReport, lowerPriorityNode);
+                    }
+                }
             }
         }
         // merge children.

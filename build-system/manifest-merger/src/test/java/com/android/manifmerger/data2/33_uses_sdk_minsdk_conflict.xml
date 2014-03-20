@@ -134,4 +134,4 @@
 
 
 @errors
-ERROR:Attribute uses-sdk@android:minSdkVersion value=(4) at (6,15) file:ManifestMerger2Test1_lib1.xml:6 cannot override implicit default value=(1)
+ERROR:Attribute uses-sdk@android:minSdkVersion value=(4) at (6,15) file:ManifestMerger2Test1_lib1.xml:6 cannot override implicit default value=(1) at (8,5) file:ManifestMerger2Test0_main.xml:8
