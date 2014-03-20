@@ -18,6 +18,8 @@ package com.android.manifmerger;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 
 import java.util.regex.Pattern;
 
@@ -30,7 +32,8 @@ class AttributeModel {
     @NonNull private final String mName;
     private final boolean mIsPackageDependent;
     @Nullable private final String mDefaultValue;
-    @Nullable private final Validator mValidator;
+    @Nullable private final Validator mOnReadValidator;
+    @Nullable private final Validator mOnWriteValidator;
 
     /**
      * Define a new attribute with specific characteristics.
@@ -39,18 +42,21 @@ class AttributeModel {
      *             {@link com.android.SdkConstants#ANDROID_URI} namespace.
      * @param isPackageDependent true if the attribute support smart substitution of package name.
      * @param defaultValue an optional default value.
-     * @param validator an optional validator to validate values against.
+     * @param onReadValidator an optional validator to validate values against.
      */
-    AttributeModel(@NonNull String name,
+    private AttributeModel(@NonNull String name,
             boolean isPackageDependent,
             @Nullable String defaultValue,
-            @Nullable Validator validator) {
+            @Nullable Validator onReadValidator,
+            @Nullable Validator onWriteValidator) {
         mName = name;
         mIsPackageDependent = isPackageDependent;
         mDefaultValue = defaultValue;
-        mValidator = validator;
+        mOnReadValidator = onReadValidator;
+        mOnWriteValidator = onWriteValidator;
     }
 
+    @NonNull
     String getName() {
         return mName;
     }
@@ -66,14 +72,95 @@ class AttributeModel {
         return mIsPackageDependent;
     }
 
+    /**
+     * Returns the attribute's default value or null if none.
+     */
     @Nullable
     String getDefaultValue() {
         return mDefaultValue;
     }
 
+    /**
+     * Returns the attribute's {@link com.android.manifmerger.AttributeModel.Validator} to
+     * validate its value when read from xml files or null if no validation is necessary.
+     */
     @Nullable
-    public Validator getValidator() {
-        return mValidator;
+    public Validator getOnReadValidator() {
+        return mOnReadValidator;
+    }
+
+    /**
+     * Returns the attribute's {@link com.android.manifmerger.AttributeModel.Validator} to
+     * validate its value when the merged file is about to be persisted.
+     */
+    @Nullable
+    public Validator getOnWriteValidator() {
+        return mOnWriteValidator;
+    }
+
+    /**
+     * Creates a new {@link Builder} to describe an attribute.
+     * @param attributeName the to be described attribute name
+     */
+    static Builder newModel(String attributeName) {
+        return new Builder(attributeName);
+    }
+
+    static class Builder {
+
+        private final String mName;
+        private boolean mIsPackageDependent = false;
+        private String mDefaultValue;
+        private Validator mOnReadValidator;
+        private Validator mOnWriteValidator;
+
+        Builder(String name) {
+            this.mName = name;
+        }
+
+        /**
+         * Sets the attribute support for smart substitution of partially fully qualified
+         * class names with package settings as provided by the manifest node's package attribute
+         * {@link <a href=http://developer.android.com/guide/topics/manifest/manifest-element.html>}
+         */
+        Builder setIsPackageDependent() {
+            mIsPackageDependent = true;
+            return this;
+        }
+
+        /**
+         * Sets the attribute default value.
+         */
+        Builder setDefaultValue(String value) {
+            mDefaultValue =  value;
+            return this;
+        }
+
+        /**
+         * Sets a {@link com.android.manifmerger.AttributeModel.Validator} to validate the
+         * attribute's values coming from xml files.
+         */
+        Builder setOnReadValidator(Validator validator) {
+            mOnReadValidator = validator;
+            return this;
+        }
+
+        /**
+         * Sets a {@link com.android.manifmerger.AttributeModel.Validator} to validate values
+         * before they are written to the final merged document.
+         */
+        Builder setOnWriteValidator(Validator validator) {
+            mOnWriteValidator = validator;
+            return this;
+        }
+
+        /**
+         * Build an immutable {@link com.android.manifmerger.AttributeModel}
+         */
+        AttributeModel build() {
+            return new AttributeModel(
+                    mName, mIsPackageDependent, mDefaultValue, mOnReadValidator, mOnWriteValidator);
+        }
     }
 
     /**
@@ -126,4 +213,69 @@ class AttributeModel {
         }
     }
 
+    /**
+     * A {@link com.android.manifmerger.AttributeModel.Validator} that validates a reference.
+     * The referenced item must be present in the same document for a successful validation.
+     */
+    static class ReferenceValidator implements Validator {
+
+        private final ManifestModel.NodeTypes referencedType;
+
+        ReferenceValidator(ManifestModel.NodeTypes referencedType) {
+            this.referencedType = referencedType;
+        }
+
+
+        @Override
+        public boolean validates(@NonNull MergingReport.Builder mergingReport,
+                @NonNull XmlAttribute attribute, @NonNull String value) {
+
+            Optional<XmlElement> referencedElement = attribute.getOwnerElement().getDocument()
+                    .getNodeByTypeAndKey(referencedType, value);
+            if (!referencedElement.isPresent()) {
+                mergingReport.addError(String.format(
+                        "Referenced element %1$s=%2$s, in element %3$s declared at %4$s "
+                                + "does not exist",
+                        attribute.getName(),
+                        value,
+                        attribute.getOwnerElement().getId(),
+                        attribute.printPosition()));
+                return false;
+            }
+            return true;
+        }
+    }
+
+    /**
+     * A {@link com.android.manifmerger.AttributeModel.Validator} for verifying that a proposed
+     * value is part of the acceptable list of possible values.
+     */
+    static class MultiValueValidator implements Validator {
+
+        private final String[] multiValues;
+        private final String allValues;
+
+        MultiValueValidator(String... multiValues) {
+            this.multiValues = multiValues;
+            allValues = Joiner.on(',').join(multiValues);
+        }
+
+        @Override
+        public boolean validates(@NonNull MergingReport.Builder mergingReport,
+                @NonNull XmlAttribute attribute, @NonNull String value) {
+            for (String multiValue : multiValues) {
+                if (multiValue.equals(value)) {
+                    return true;
+                }
+            }
+            mergingReport.addError(String.format(
+                    "Invalid value for attribute %1$s at %2$s, value=(%3$s), "
+                            + "acceptable values are (%4$s)",
+                    attribute.getId(),
+                    attribute.printPosition(),
+                    value,
+                    allValues));
+            return false;
+        }
+    }
 }

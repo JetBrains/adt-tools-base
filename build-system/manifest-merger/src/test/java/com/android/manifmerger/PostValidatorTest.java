@@ -17,12 +17,17 @@
 package com.android.manifmerger;
 
 import com.android.sdklib.mock.MockLog;
+import com.android.utils.ILogger;
+import com.google.common.base.Optional;
 
 import junit.framework.TestCase;
 
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -31,10 +36,18 @@ import javax.xml.parsers.ParserConfigurationException;
  */
 public class PostValidatorTest extends TestCase {
 
+    @Mock
+    ILogger mILogger;
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        MockitoAnnotations.initMocks(this);
+    }
+
     public void testIncorrectRemove()
             throws ParserConfigurationException, SAXException, IOException {
 
-        MockLog mockLog = new MockLog();
         String main = ""
                 + "<manifest\n"
                 + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
@@ -67,14 +80,13 @@ public class PostValidatorTest extends TestCase {
                 new TestUtils.TestSourceLocation(
                         getClass(), "testIncorrectRemoveLib"), library);
 
-        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mockLog);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
         mainDocument.merge(libraryDocument, mergingReportBuilder);
 
-        PostValidator.validate(
-                mainDocument, mergingReportBuilder.getActionRecorder().build(), mockLog);
-        for (String message : mockLog.getMessages()) {
-            if (message.charAt(0) == 'W'
-                    && message.contains("PostValidatorTest#testIncorrectRemoveMain:8")) {
+        PostValidator.validate(mainDocument, mergingReportBuilder);
+        for (MergingReport.Record record : mergingReportBuilder.build().getLoggingRecords()) {
+            if (record.getSeverity() == MergingReport.Record.Severity.WARNING
+                    && record.toString().contains("PostValidatorTest#testIncorrectRemoveMain:8")) {
                 return;
             }
         }
@@ -84,7 +96,6 @@ public class PostValidatorTest extends TestCase {
     public void testIncorrectReplace()
             throws ParserConfigurationException, SAXException, IOException {
 
-        MockLog mockLog = new MockLog();
         String main = ""
                 + "<manifest\n"
                 + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
@@ -119,17 +130,48 @@ public class PostValidatorTest extends TestCase {
                 new TestUtils.TestSourceLocation(
                         getClass(), "testIncorrectReplaceLib"), library);
 
-        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mockLog);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
         mainDocument.merge(libraryDocument, mergingReportBuilder);
 
-        PostValidator.validate(
-                mainDocument, mergingReportBuilder.getActionRecorder().build(), mockLog);
-        for (String message : mockLog.getMessages()) {
-            if (message.charAt(0) == 'W'
-                    && message.contains("PostValidatorTest#testIncorrectReplaceMain:8")) {
+        PostValidator.validate(mainDocument, mergingReportBuilder);
+        for (MergingReport.Record record : mergingReportBuilder.build().getLoggingRecords()) {
+            if (record.getSeverity() == MergingReport.Record.Severity.WARNING
+                    && record.toString().contains("PostValidatorTest#testIncorrectReplaceMain:8")) {
                 return;
             }
         }
         fail("No reference to faulty PostValidatorTest#testIncorrectRemoveMain:8 found");
+    }
+
+    public void testInvalidReferenceValidator()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <permission android:name=\"permissionOne\" "
+                + "         android:permissionGroup=\"permissionGroupOne\"/>\n"
+                + "\n"
+                + "    <permission-group android:name=\"permissionGroupXXX\" "
+                + "         android:label=\"@res/foo\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "testInvalidReferenceValidator"), input);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
+        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        for (MergingReport.Record record : mergingReportBuilder.build().getLoggingRecords()) {
+            Logger.getAnonymousLogger().severe(record.toString());
+            if (record.getSeverity() == MergingReport.Record.Severity.ERROR
+                    && record.toString().contains("PostValidatorTest#testInvalidReferenceValidator:6 ")) {
+                return;
+            }
+        }
+        fail("No reference to faulty PostValidatorTest#testInvalidReferenceValidator:6 found");
     }
 }
