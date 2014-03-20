@@ -26,7 +26,6 @@ import com.android.annotations.concurrency.Immutable;
 import com.android.utils.SdkUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.sun.istack.internal.NotNull;
 
 /**
  * Model for the manifest file merging activities.
@@ -416,7 +415,7 @@ class ManifestModel {
             this.mAttributeModels = attributeModels.build();
         }
 
-        @NotNull
+        @NonNull
         NodeKeyResolver getNodeKeyResolver() {
             return mNodeKeyResolver;
         }
