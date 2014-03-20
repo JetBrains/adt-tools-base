@@ -278,4 +278,26 @@ class AttributeModel {
             return false;
         }
     }
+
+    /**
+     * A {@link com.android.manifmerger.AttributeModel.Validator} for verifying that a proposed
+     * value is a numerical integer value.
+     */
+    static class IntegerValueValidator implements Validator {
+
+        @Override
+        public boolean validates(@NonNull MergingReport.Builder mergingReport,
+                @NonNull XmlAttribute attribute, @NonNull String value) {
+            try {
+                return Integer.parseInt(value) > 0;
+            } catch (NumberFormatException e) {
+                mergingReport.addError(String.format(
+                        "Attribute %1$s at %2$s must be an integer, found %3$s",
+                        attribute.getId(),
+                        attribute.printPosition(),
+                        value));
+                return false;
+            }
+        }
+    }
 }
