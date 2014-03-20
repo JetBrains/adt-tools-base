@@ -6,11 +6,12 @@
 
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.app1"
     android:versionCode="100"
     android:versionName="1.0.0">
 
-    <uses-sdk android:minSdkVersion="14" />
+    <uses-sdk android:minSdkVersion="14" tools:replace="minSdkVersion"/>
 
     <application />
 

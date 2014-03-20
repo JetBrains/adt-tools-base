@@ -168,4 +168,15 @@ public class AttributeModelTest extends TestCase {
                 permissionGroup.get(), permissionGroup.get().getValue()));
         assertFalse(mergingReport.build().getLoggingRecords().isEmpty());
     }
+
+    public void testIntegerValueValidator() {
+        AttributeModel.IntegerValueValidator integerValueValidator =
+                new AttributeModel.IntegerValueValidator();
+        MergingReport.Builder mergingReport = new MergingReport.Builder(mMockLog);
+        assertFalse(integerValueValidator.validates(mergingReport, mXmlAttribute, "abcd"));
+        assertFalse(integerValueValidator.validates(mergingReport, mXmlAttribute,
+                "123456789123456789"));
+        assertFalse(integerValueValidator.validates(mergingReport, mXmlAttribute,
+                "0xFFFFFFFFFFFFFFFF"));
+    }
 }
