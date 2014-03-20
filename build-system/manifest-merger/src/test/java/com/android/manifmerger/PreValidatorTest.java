@@ -16,12 +16,17 @@
 
 package com.android.manifmerger;
 
+import com.android.SdkConstants;
 import com.android.sdklib.mock.MockLog;
+import com.google.common.collect.ImmutableList;
 
 import junit.framework.TestCase;
 
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.logging.Logger;
 
@@ -128,5 +133,55 @@ public class PreValidatorTest extends TestCase {
             Logger.getAnonymousLogger().info(record.toString());
         }
         fail("could not find " + s + " in logging records");
+    }
+
+    public void testUsesFeatureSplit()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        MockLog mockLog = new MockLog();
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <uses-feature android:name=\"@string/lib_name\""
+                + "             android:required=\"false\""
+                + "             android:glEsVersion=\"0x00020000\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(
+                        getClass(), "testUsesFeatureSplit"), input);
+
+        MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
+        MergingReport.Result validated = PreValidator.validate(mergingReport, xmlDocument);
+        assertEquals(MergingReport.Result.SUCCESS, validated);
+
+        // check that we have now 2 uses-feature with separated keys.
+        NodeList elementsByTagName = xmlDocument.getRootNode().getXml()
+                .getElementsByTagName("uses-feature");
+        assertEquals(2, elementsByTagName.getLength());
+
+        for (int i = 0; i < elementsByTagName.getLength(); i++) {
+            NamedNodeMap attributes = elementsByTagName.item(i).getAttributes();
+            assertEquals(2, attributes.getLength());
+            ensureOnlyOneKey(attributes, ManifestModel.NodeTypes.USES_FEATURE);
+        }
+    }
+
+    private void ensureOnlyOneKey(NamedNodeMap namedNodeMap, ManifestModel.NodeTypes nodeType) {
+        String firstKey = null;
+        ImmutableList<String> keyAttributesNames =
+                nodeType.getNodeKeyResolver().getKeyAttributesNames();
+        for (String keyAttributesName : keyAttributesNames) {
+            if (namedNodeMap.getNamedItemNS(SdkConstants. ANDROID_URI, keyAttributesName) != null) {
+                if (firstKey != null) {
+                    fail("Found 2 keys : " + firstKey + " and " + keyAttributesName);
+                }
+                firstKey = keyAttributesName;
+            }
+        }
     }
 }
