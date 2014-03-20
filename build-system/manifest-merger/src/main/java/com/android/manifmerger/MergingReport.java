@@ -54,7 +54,7 @@ public class MergingReport {
      */
     public void log(ILogger logger) {
         for (Record record : mRecords) {
-            switch(record.mType) {
+            switch(record.mSeverity) {
                 case WARNING:
                     logger.warning(record.mLog);
                     break;
@@ -65,7 +65,7 @@ public class MergingReport {
                     logger.info(record.mLog);
                     break;
                 default:
-                    logger.error(null /* throwable */, "Unhandled record type " + record.mType);
+                    logger.error(null /* throwable */, "Unhandled record type " + record.mSeverity);
             }
         }
         mActionRecorder.log(logger);
@@ -116,19 +116,23 @@ public class MergingReport {
      */
     public static class Record {
 
-        private Record(Type type, String mLog) {
-            this.mType = type;
+        private Record(Severity severity, String mLog) {
+            this.mSeverity = severity;
             this.mLog = mLog;
         }
 
-        enum Type {WARNING, ERROR, INFO }
+        enum Severity {WARNING, ERROR, INFO }
 
-        private final Type mType;
+        private final Severity mSeverity;
         private final String mLog;
+
+        public Severity getSeverity() {
+            return mSeverity;
+        }
 
         @Override
         public String toString() {
-            return mType.toString() + ":" + mLog;
+            return mSeverity.toString() + ":" + mLog;
         }
     }
 
@@ -161,19 +165,19 @@ public class MergingReport {
         }
 
         Builder addInfo(String info) {
-            mRecordBuilder.add(new Record(Record.Type.INFO, info));
+            mRecordBuilder.add(new Record(Record.Severity.INFO, info));
             return this;
         }
 
         Builder addWarning(String warning) {
             mHasWarnings = true;
-            mRecordBuilder.add(new Record(Record.Type.WARNING, warning));
+            mRecordBuilder.add(new Record(Record.Severity.WARNING, warning));
             return this;
         }
 
         Builder addError(String error) {
             mHasErrors = true;
-            mRecordBuilder.add(new Record(Record.Type.ERROR, error));
+            mRecordBuilder.add(new Record(Record.Severity.ERROR, error));
             return this;
         }
 

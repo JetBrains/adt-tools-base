@@ -119,9 +119,8 @@ public class ManifestMerger2 {
         performSystemPropertiesInjection(xmlDocumentOptional.get());
 
         XmlDocument finalMergedDocument = xmlDocumentOptional.get();
-        MergingReport.Result validate = PostValidator.validate(
-                finalMergedDocument, mergingReportBuilder.getActionRecorder().build(), mLogger);
-        if (validate != MergingReport.Result.SUCCESS) {
+        PostValidator.validate(finalMergedDocument, mergingReportBuilder);
+        if (mergingReportBuilder.hasErrors()) {
             mergingReportBuilder.addWarning("Post merge validation failed");
         }
         XmlDocument cleanedDocument =
