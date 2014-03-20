@@ -9,6 +9,7 @@
 
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.app1"
     android:versionCode="100"
     android:versionName="1.0.0">
@@ -20,7 +21,8 @@
         android:restoreAnyVersion="true"
         android:allowBackup="true"
         android:killAfterRestore="true"
-        android:name="com.example.TheApp" >
+        android:name="com.example.TheApp"
+        tools:replace="label">
 
         <!-- A library that is implicitly marked as required=true -->
         <uses-library
@@ -173,4 +175,5 @@
 
 
 @errors
+ERROR:Attribute uses-library#com.example.SomeLibrary1_DefaultTrue@android:required value=(false) at (10,13) file:ManifestMerger2Test1_lib1.xml:10 cannot override implicit default value=(true)
 

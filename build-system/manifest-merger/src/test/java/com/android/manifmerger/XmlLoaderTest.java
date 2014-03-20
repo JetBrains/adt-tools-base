@@ -88,14 +88,16 @@ public class XmlLoaderTest extends TestCase {
         assertEquals(6, applicationPosition.getLine());
         assertEquals(5, applicationPosition.getColumn());
 
-        XmlAttribute xmlAttribute = new XmlAttribute(applicationOptional.get(), tools);
+        XmlAttribute xmlAttribute =
+                new XmlAttribute(applicationOptional.get(), tools, null /* AttributeModel */);
         PositionXmlParser.Position toolsPosition = xmlAttribute.getPosition();
         assertNotNull(toolsPosition);
         assertEquals(6, toolsPosition.getLine());
         assertEquals(51, toolsPosition.getColumn());
     }
 
-    public void testUnusualPrefixes() throws IOException, SAXException, ParserConfigurationException {
+    public void testUnusualPrefixes()
+            throws IOException, SAXException, ParserConfigurationException {
 
         String input = ""
                 + "<manifest\n"
