@@ -155,8 +155,6 @@
 
 @errors
 
-W [ManifestMergerTest0_main.xml:1, ManifestMergerTest2_lib2.xml:4] /manifest/uses-configuration defined in library, missing from main manifest:
-<uses-configuration>
-    @android:reqFiveWayNav = false
-    @android:reqNavigation = trackball
-    @android:reqTouchScreen = finger
+ERROR:Attribute uses-configuration@android:reqFiveWayNav value=(true) is also present at (7,9) file:ManifestMerger2Test2_lib2.xml:7 value=(false), use tools:replace to override it.
+ERROR:Attribute uses-configuration@android:reqNavigation value=(nonav) is also present at (8,9) file:ManifestMerger2Test2_lib2.xml:8 value=(trackball), use tools:replace to override it.
+ERROR:Attribute uses-configuration@android:reqTouchScreen value=(stylus) is also present at (9,9) file:ManifestMerger2Test2_lib2.xml:9 value=(finger), use tools:replace to override it.
