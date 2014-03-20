@@ -17,11 +17,8 @@
 package com.android.manifmerger;
 
 import static com.android.manifmerger.ActionRecorder.ActionType;
-import static com.android.manifmerger.MergingReport.Result.SUCCESS;
-import static com.android.manifmerger.MergingReport.Result.WARNING;
 
 import com.android.annotations.NonNull;
-import com.android.utils.ILogger;
 import com.google.common.base.Preconditions;
 
 import java.util.Collection;
@@ -46,18 +43,17 @@ public class PostValidator {
      * instructions were applied at least once.
      *
      * @param xmlDocument merged document to check.
-     * @param actionRecorder the actions recorded during the merging activities.
-     * @param logger logger for errors and warnings.
+     * @param mergingReport report for errors and warnings.
      */
-    public static MergingReport.Result validate(
+    public static void validate(
             @NonNull XmlDocument xmlDocument,
-            @NonNull ActionRecorder actionRecorder,
-            @NonNull ILogger logger) {
+            @NonNull MergingReport.Builder mergingReport) {
 
         Preconditions.checkNotNull(xmlDocument);
-        Preconditions.checkNotNull(actionRecorder);
-        Preconditions.checkNotNull(logger);
-        return validate(xmlDocument.getRootNode(), actionRecorder, logger);
+        Preconditions.checkNotNull(mergingReport);
+        validate(xmlDocument.getRootNode(),
+                mergingReport.getActionRecorder().build(),
+                mergingReport);
     }
 
     /**
@@ -66,51 +62,45 @@ public class PostValidator {
      *
      * @param xmlElement xml element to validate.
      * @param recorder the actions recorded during the merging activities.
-     * @param logger logger for errors and warnings.
-     * @return {@link MergingReport.Result#SUCCESS} if all the merging
+     * @param mergingReport report for errors and warnings.
      * instructions were applied once or {@link MergingReport.Result#WARNING} otherwise.
      */
-    private static MergingReport.Result validate(
+    private static void validate(
             XmlElement xmlElement,
             ActionRecorder recorder,
-            ILogger logger) {
+            MergingReport.Builder mergingReport) {
 
-        MergingReport.Result result = SUCCESS;
         NodeOperationType operationType = xmlElement.getOperationType();
         switch (operationType) {
             case REPLACE:
                 // we should find at least one rejected twin.
                 if (!isNodeOperationPresent(xmlElement, recorder, ActionType.REJECTED)) {
-                    logger.warning("%1$s was tagged at %2$s:%3$d to replace another declaration "
+                    mergingReport.addWarning(String.format(
+                            "%1$s was tagged at %2$s:%3$d to replace another declaration "
                                     + "but no other declaration present",
                             xmlElement.getId(),
                             xmlElement.getDocument().getSourceLocation().print(true),
-                            xmlElement.getPosition().getLine()
-                    );
-                    result = WARNING;
+                            xmlElement.getPosition().getLine()));
                 }
                 break;
             case REMOVE:
             case REMOVE_ALL:
                 // we should find at least one rejected twin.
                 if (!isNodeOperationPresent(xmlElement, recorder, ActionType.REJECTED)) {
-                    logger.warning("%1$s was tagged at %2$s:%3$d to remove other declarations "
+                    mergingReport.addWarning(String.format(
+                            "%1$s was tagged at %2$s:%3$d to remove other declarations "
                                     + "but no other declaration present",
                             xmlElement.getId(),
                             xmlElement.getDocument().getSourceLocation().print(true),
-                            xmlElement.getPosition().getLine()
-                    );
-                    result = WARNING;
+                            xmlElement.getPosition().getLine()));
                 }
                 break;
         }
-        validateAttributes(xmlElement, recorder, logger);
+        validateAttributes(xmlElement, recorder, mergingReport);
+        validateAndroidAttributes(xmlElement, mergingReport);
         for (XmlElement child : xmlElement.getMergeableElements()) {
-            if (validate(child, recorder, logger) == WARNING) {
-                result = WARNING;
-            }
+            validate(child, recorder, mergingReport);
         }
-        return result;
     }
 
 
@@ -120,7 +110,7 @@ public class PostValidator {
     private static void validateAttributes(
             XmlElement xmlElement,
             ActionRecorder recorder,
-            ILogger logger) {
+            MergingReport.Builder mergingReport) {
 
         Collection<Map.Entry<XmlNode.NodeName, AttributeOperationType>> attributeOperations
                 = xmlElement.getAttributeOperations();
@@ -130,25 +120,25 @@ public class PostValidator {
                 case REMOVE:
                     if (!isAttributeOperationPresent(
                             xmlElement, attributeOperation, recorder, ActionType.REJECTED)) {
-                        logger.warning("%1$s@%2$s was tagged at %3$s:%4$d to remove other"
+                        mergingReport.addWarning(String.format(
+                                "%1$s@%2$s was tagged at %3$s:%4$d to remove other"
                                         + " declarations but no other declaration present",
                                 xmlElement.getId(),
                                 attributeOperation.getKey(),
                                 xmlElement.getDocument().getSourceLocation().print(true),
-                                xmlElement.getPosition().getLine()
-                        );
+                                xmlElement.getPosition().getLine()));
                     }
                     break;
                 case REPLACE:
                     if (!isAttributeOperationPresent(
                             xmlElement, attributeOperation, recorder, ActionType.REJECTED)) {
-                        logger.warning("%1$s@%2$s was tagged at %3$s:%4$d to replace other"
+                        mergingReport.addWarning(String.format(
+                                "%1$s@%2$s was tagged at %3$s:%4$d to replace other"
                                         + " declarations but no other declaration present",
                                 xmlElement.getId(),
                                 attributeOperation.getKey(),
                                 xmlElement.getDocument().getSourceLocation().print(true),
-                                xmlElement.getPosition().getLine()
-                        );
+                                xmlElement.getPosition().getLine()));
                     }
                     break;
             }
@@ -192,5 +182,27 @@ public class PostValidator {
             }
         }
         return false;
+    }
+
+    /**
+     * Validates all {@link com.android.manifmerger.XmlElement} attributes belonging to the
+     * {@link com.android.SdkConstants#ANDROID_URI} namespace.
+     *
+     * @param xmlElement xml element to check the attributes from.
+     * @param mergingReport report for errors and warnings.
+     */
+    private static void validateAndroidAttributes(XmlElement xmlElement,
+            MergingReport.Builder mergingReport) {
+
+        for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
+            if (xmlAttribute.getModel() != null) {
+                AttributeModel.Validator onWriteValidator = xmlAttribute.getModel()
+                        .getOnWriteValidator();
+                if (onWriteValidator != null) {
+                    onWriteValidator.validates(
+                            mergingReport, xmlAttribute, xmlAttribute.getValue());
+                }
+            }
+        }
     }
 }

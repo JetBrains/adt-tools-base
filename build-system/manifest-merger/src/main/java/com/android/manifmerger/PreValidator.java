@@ -135,8 +135,8 @@ public class PreValidator {
             XmlElement xmlElement) {
         for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
             AttributeModel model = xmlAttribute.getModel();
-            if (model != null && model.getValidator() != null) {
-                model.getValidator().validates(
+            if (model != null && model.getOnReadValidator() != null) {
+                model.getOnReadValidator().validates(
                         mergingReport, xmlAttribute, xmlAttribute.getValue());
             }
         }

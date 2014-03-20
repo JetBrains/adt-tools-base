@@ -16,6 +16,9 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.AttributeModel.MultiValueValidator;
+import static com.android.manifmerger.AttributeModel.ReferenceValidator;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -36,10 +39,6 @@ import com.sun.istack.internal.NotNull;
  */
 @Immutable
 class ManifestModel {
-
-    private static final boolean IS_PACKAGE_DEPENDENT = true;
-    private static final AttributeModel.Validator NO_VALIDATOR = null;
-    private static final String NO_DEFAULT_VALUE = null;
 
     /**
      * Interface responsible for providing a key extraction capability from a xml element.
@@ -187,10 +186,8 @@ class ManifestModel {
          *     Activity Xml documentation</a>}
          */
         ACTIVITY(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
-                new AttributeModel("parentActivityName",
-                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR),
-                new AttributeModel(SdkConstants.ATTR_NAME,
-                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR)),
+                AttributeModel.newModel("parentActivityName").setIsPackageDependent(),
+                AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent()),
 
         /**
          * Activity-alias (contained in application)
@@ -200,10 +197,8 @@ class ManifestModel {
          *     Activity-alias Xml documentation</a>}
          */
         ACTIVITY_ALIAS(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
-                new AttributeModel("targetActivity",
-                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR),
-                new AttributeModel(SdkConstants.ATTR_NAME,
-                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR)),
+                AttributeModel.newModel("targetActivity").setIsPackageDependent(),
+                AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent()),
 
         /**
          * Application (contained in manifest)
@@ -213,10 +208,8 @@ class ManifestModel {
          *     Application Xml documentation</a>}
          */
         APPLICATION(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER,
-                new AttributeModel("backupAgent",
-                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR),
-                new AttributeModel(SdkConstants.ATTR_NAME,
-                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR)),
+                AttributeModel.newModel("backupAgent").setIsPackageDependent(),
+                AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent()),
 
         /**
          * Category (contained in intent-filter)
@@ -235,8 +228,7 @@ class ManifestModel {
          *     Instrunentation Xml documentation</a>}
          */
         INSTRUMENTATION(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
-                new AttributeModel(SdkConstants.ATTR_NAME,
-                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR)),
+                AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent()),
 
         /**
          * Intent-filter (contained in activity, activity-alias, service, receiver)
@@ -274,8 +266,49 @@ class ManifestModel {
          *     Provider Xml documentation</a>}
          */
         PROVIDER(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
-                new AttributeModel(SdkConstants.ATTR_NAME,
-                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR)),
+                AttributeModel.newModel(SdkConstants.ATTR_NAME)
+                    .setIsPackageDependent()),
+
+        /**
+         * Permission-group (contained in manifest).
+         * <br>
+         * <b>See also : </b>
+         * {@link <a href=http://developer.android.com/guide/topics/manifest/permission-group-element.html>
+         *     Permission-group Xml documentation</a>}
+         *
+         */
+        PERMISSION_GROUP(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                AttributeModel.newModel(SdkConstants.ATTR_NAME)),
+
+        /**
+         * Permission (contained in manifest).
+         * <br>
+         * <b>See also : </b>
+         * {@link <a href=http://developer.android.com/guide/topics/manifest/permission-element.html>
+         *     Permission Xml documentation</a>}
+         *
+         */
+        PERMISSION(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                AttributeModel.newModel(SdkConstants.ATTR_NAME),
+                AttributeModel.newModel("permissionGroup")
+                        .setOnWriteValidator(new ReferenceValidator(PERMISSION_GROUP)),
+                AttributeModel.newModel("protectionLevel")
+                        .setDefaultValue("normal")
+                        // TODO : this will need to be populated from
+                        // sdk/platforms/android-19/data/res/values.attrs_manifest.xml
+                        .setOnReadValidator(new MultiValueValidator(
+                                "normal", "dangerous", "signature", "signatureOrSystem"))),
+
+        /**
+         * Permission-tree (contained in manifest).
+         * <br>
+         * <b>See also : </b>
+         * {@link <a href=http://developer.android.com/guide/topics/manifest/permission-tree-element.html>
+         *     Permission-tree Xml documentation</a>}
+         *
+         */
+        PERMISSION_TREE(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                AttributeModel.newModel(SdkConstants.ATTR_NAME)),
 
         /**
          * Receiver (contained in application)
@@ -285,8 +318,7 @@ class ManifestModel {
          *     Receiver Xml documentation</a>}
          */
         RECEIVER(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
-                new AttributeModel(SdkConstants.ATTR_NAME,
-                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR)),
+                AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent()),
 
         /**
          * Service (contained in application)
@@ -296,8 +328,7 @@ class ManifestModel {
          *     Service Xml documentation</a>}
          */
         SERVICE(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
-                new AttributeModel(SdkConstants.ATTR_NAME,
-                        IS_PACKAGE_DEPENDENT, NO_DEFAULT_VALUE, NO_VALIDATOR)),
+                AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent()),
 
         /**
          * Support-screens (contained in manifest)
@@ -325,8 +356,9 @@ class ManifestModel {
          *     Use-library Xml documentation</a>}
          */
         USES_LIBRARY(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
-                new AttributeModel("required",
-                        !IS_PACKAGE_DEPENDENT, "true", BOOLEAN_VALIDATOR)),
+                AttributeModel.newModel("required")
+                        .setDefaultValue("true")
+                        .setOnReadValidator(BOOLEAN_VALIDATOR)),
 
         /**
          * Uses-permission (contained in application)
@@ -354,10 +386,17 @@ class ManifestModel {
         private NodeTypes(
                 @NonNull MergeType mergeType,
                 @NonNull NodeKeyResolver nodeKeyResolver,
-                @Nullable AttributeModel... attributeModels) {
+                @Nullable AttributeModel.Builder... attributeModelBuilders) {
             this.mMergeType = Preconditions.checkNotNull(mergeType);
             this.mNodeKeyResolver = Preconditions.checkNotNull(nodeKeyResolver);
-            this.mAttributeModels = ImmutableList.copyOf(attributeModels);
+            ImmutableList.Builder<AttributeModel> attributeModels =
+                    new ImmutableList.Builder<AttributeModel>();
+            if (attributeModelBuilders != null) {
+                for (AttributeModel.Builder attributeModelBuilder : attributeModelBuilders) {
+                    attributeModels.add(attributeModelBuilder.build());
+                }
+            }
+            this.mAttributeModels = attributeModels.build();
         }
 
         @NotNull

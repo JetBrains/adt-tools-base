@@ -66,11 +66,7 @@ public class XmlAttributeTest extends TestCase {
         when(mAttr.getValue()).thenReturn("ActivityOne");
         // this will reset the package.
         assertNotNull(new XmlAttribute(mXmlElement, mAttr,
-                new AttributeModel("ActivityOne",
-                        true /* packageDependent */,
-                        null /* defaultValue */,
-                        null /* validator */)
-        ));
+                AttributeModel.newModel("ActivityOne").setIsPackageDependent().build()));
         Mockito.verify(mAttr).setValue("com.foo.bar.ActivityOne");
     }
 
@@ -79,10 +75,7 @@ public class XmlAttributeTest extends TestCase {
         when(mAttr.getValue()).thenReturn(".ActivityOne");
         // this will reset the package.
         assertNotNull(new XmlAttribute(mXmlElement, mAttr,
-                new AttributeModel("ActivityOne",
-                        true /* packageDependent */,
-                        null /* defaultValue */,
-                        null /* validator */)));
+                AttributeModel.newModel("ActivityOne").setIsPackageDependent().build()));
         Mockito.verify(mAttr).setValue("com.foo.bar.ActivityOne");
     }
 
@@ -91,11 +84,7 @@ public class XmlAttributeTest extends TestCase {
         when(mAttr.getValue()).thenReturn("com.foo.foo2.ActivityOne");
         // this will NOT reset the package.
         assertNotNull(new XmlAttribute(mXmlElement, mAttr,
-                new AttributeModel("ActivityOne",
-                        true /* packageDependent */,
-                        null /* defaultValue */,
-                        null /* validator */)
-        ));
+                AttributeModel.newModel("ActivityOne").setIsPackageDependent().build()));
         Mockito.verify(mAttr).getValue();
         Mockito.verifyNoMoreInteractions(mAttr);
     }
