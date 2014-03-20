@@ -175,5 +175,4 @@
 
 
 @errors
-ERROR:Attribute uses-library#com.example.SomeLibrary1_DefaultTrue@android:required value=(false) at (10,13) file:ManifestMerger2Test1_lib1.xml:10 cannot override implicit default value=(true)
 

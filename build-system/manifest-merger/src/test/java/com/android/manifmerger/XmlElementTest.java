@@ -1074,4 +1074,136 @@ public class XmlElementTest extends TestCase {
                 .getLoggingRecords();
         assertTrue(loggingRecords.isEmpty());
     }
+
+    /**
+     * test attributes merging of elements with some conflicts between children.
+     */
+    public void testHigherPriorityDefaultValue_NoOverride()
+            throws ParserConfigurationException, SAXException, IOException {
+        String higherPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <permission android:name=\"permissionOne\">\n"
+                + "    </permission>\n"
+                + "\n"
+                + "</manifest>";
+
+        String lowerPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <permission android:name=\"permissionOne\""
+                + "             android:protectionLevel=\"dangerous\">\n"
+                + "    </permission>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+        XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
+                new StdLogger(StdLogger.Level.VERBOSE));
+        Optional<XmlDocument> result = refDocument.merge(otherDocument, mergingReportBuilder);
+        assertTrue(result.isPresent());
+
+        Optional<XmlElement> activityOptional = result.get().getRootNode()
+                .getNodeByTypeAndKey(ManifestModel.NodeTypes.PERMISSION, "permissionOne");
+        assertTrue(activityOptional.get()
+                .getAttribute(XmlNode.fromXmlName("android:protectionLevel")).isPresent());
+    }
+
+    /**
+     * test attributes merging of elements with some conflicts between children.
+     */
+    public void testLowerPriorityDefaultValue_NoOverride()
+            throws ParserConfigurationException, SAXException, IOException {
+        String higherPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <permission android:name=\"permissionOne\"\n"
+                + "             android:protectionLevel=\"dangerous\">\n"
+                + "    </permission>\n"
+                + "\n"
+                + "</manifest>";
+
+        String lowerPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <permission android:name=\"permissionOne\">"
+                + "    </permission>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+        XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
+                new StdLogger(StdLogger.Level.VERBOSE));
+        Optional<XmlDocument> result = refDocument.merge(otherDocument, mergingReportBuilder);
+        assertTrue(result.isPresent());
+
+        Optional<XmlElement> activityOptional = result.get().getRootNode()
+                .getNodeByTypeAndKey(ManifestModel.NodeTypes.PERMISSION, "permissionOne");
+        assertTrue(activityOptional.get()
+                .getAttribute(XmlNode.fromXmlName("android:protectionLevel")).isPresent());
+    }
+
+    /**
+     * test attributes merging of elements with some conflicts between children.
+     */
+    public void testHigherPriorityDefaultValue_SameOverride()
+            throws ParserConfigurationException, SAXException, IOException {
+        String higherPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <permission android:name=\"permissionOne\">\n"
+                + "    </permission>\n"
+                + "\n"
+                + "</manifest>";
+
+        String lowerPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <permission android:name=\"permissionOne\""
+                + "             android:protectionLevel=\"normal\">\n"
+                + "    </permission>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+        XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
+                new StdLogger(StdLogger.Level.VERBOSE));
+        Optional<XmlDocument> result = refDocument.merge(otherDocument, mergingReportBuilder);
+        assertTrue(result.isPresent());
+
+        Optional<XmlElement> activityOptional = result.get().getRootNode()
+                .getNodeByTypeAndKey(ManifestModel.NodeTypes.PERMISSION, "permissionOne");
+        assertTrue(activityOptional.get()
+                .getAttribute(XmlNode.fromXmlName("android:protectionLevel")).isPresent());
+    }
 }

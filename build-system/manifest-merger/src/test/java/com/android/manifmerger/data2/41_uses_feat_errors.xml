@@ -28,7 +28,7 @@
     <!-- A feature that is explicitly marked as required=true -->
     <uses-feature
         android:name="com.example.SomeFeature2_RequiredTrue"
-        android:required="booh!" />
+        android:required="true" />
 
     <!-- A feature that is explicitly marked as required=false -->
     <uses-feature
@@ -78,7 +78,7 @@
     <!-- Same as 3 from main. Warning because destination as a duplicate. -->
     <uses-feature
         android:name="com.example.SomeFeature3_RequiredFalse"
-        android:required="false" />
+        android:required="booh!" />
 
     <!-- Same as 4 from main. Warning because required isn't true or false. -->
     <uses-feature
@@ -194,12 +194,10 @@
 
 @errors
 
-E [ManifestMergerTest1_lib1.xml:4] Undefined 'name' attribute in /manifest/uses-feature.
-E [ManifestMergerTest1_lib1.xml:5] Undefined 'name' attribute in /manifest/uses-feature.
-E [ManifestMergerTest1_lib1.xml:6] Undefined 'name' attribute in /manifest/uses-feature.
-W [ManifestMergerTest0_main.xml:10] Invalid attribute 'required' in /manifest/uses-feature[@name=com.example.SomeFeature2_RequiredTrue] element:
-Expected 'true' or 'false' but found 'booh!'.
-W [ManifestMergerTest0_main.xml:13] Manifest has more than one /manifest/uses-feature[@name=com.example.SomeFeature3_RequiredFalse] element.
-W [ManifestMergerTest1_lib1.xml:15] Invalid attribute 'required' in /manifest/uses-feature[@name=com.example.SomeFeature4_RequiredFalse] element:
-Expected 'true' or 'false' but found 'foo'.
-W [ManifestMergerTest0_main.xml:13] Manifest has more than one /manifest/uses-feature[@name=com.example.SomeFeature3_RequiredFalse] element.
+ERROR:Missing 'name' attribute on element uses-feature at (6,5) file:ManifestMerger2Test1_lib1.xml:6
+ERROR:Missing 'name' attribute on element uses-feature at (7,5) file:ManifestMerger2Test1_lib1.xml:7
+ERROR:Missing 'name' attribute on element uses-feature at (8,5) file:ManifestMerger2Test1_lib1.xml:8
+ERROR:Attribute uses-feature#com.example.SomeFeature3_RequiredFalse@android:required at (18,9) file:ManifestMerger2Test1_lib1.xml:18 has an illegal value=(booh!), expected 'true' or 'false'
+ERROR:Attribute uses-feature#com.example.SomeFeature4_RequiredFalse@android:required at (23,9) file:ManifestMerger2Test1_lib1.xml:23 has an illegal value=(foo), expected 'true' or 'false'
+ERROR:Validation failed, exiting
+WARNING:Element uses-feature#com.example.SomeFeature3_RequiredFalse at (26,5) file:ManifestMerger2Test0_main.xml:26 duplicated with element declared at (21,5) file:ManifestMerger2Test0_main.xml:21

@@ -21,7 +21,6 @@ import com.android.annotations.Nullable;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 
 import org.w3c.dom.Attr;
 
@@ -128,30 +127,10 @@ public class XmlAttribute extends XmlNode {
                 higherPriorityElement.getAttributeOperationType(getName());
 
         if (higherPriorityAttributeOptional.isPresent()) {
+
             XmlAttribute higherPriorityAttribute = higherPriorityAttributeOptional.get();
-            // the attribute is present on both elements, there are 2 possibilities :
-            // 1. tools:replace was specified, replace the value.
-            // 2. nothing was specified, the values should be equal or this is an error.
-            if (attributeOperationType == AttributeOperationType.REPLACE) {
-                // record the fact the lower priority attribute was rejected.
-                mergingReport.getActionRecorder().recordAttributeAction(
-                        this,
-                        ActionRecorder.ActionType.REJECTED,
-                        AttributeOperationType.REPLACE);
-            } else {
-                // if the values are the same, then it's fine, otherwise flag the error.
-                if (!getValue().equals(higherPriorityAttribute.getValue())) {
-                    String error = String.format(
-                            "Attribute %1$s value=(%2$s) is also present at %3$s"
-                                    + " value=(%4$s), use tools:replace to override it.",
-                            higherPriorityAttribute.getId(),
-                            higherPriorityAttribute.getValue(),
-                            printPosition(),
-                            getValue()
-                    );
-                    mergingReport.addError(error);
-                }
-            }
+            handleBothAttributePresent(
+                    mergingReport, higherPriorityAttribute, attributeOperationType);
             return;
         }
 
@@ -165,30 +144,163 @@ public class XmlAttribute extends XmlNode {
             return;
         }
 
-        // now check for possible default value for the attribute.
-        if (mAttributeModel != null) {
-            String attributeDefaultValue = mAttributeModel.getDefaultValue();
-            if (attributeDefaultValue != null && !attributeDefaultValue.equals(getValue())) {
-                String error = String.format("Attribute %1$s value=(%2$s) at %3$s"
-                                + " cannot override implicit default value=(%4$s)",
-                        getId(),
-                        getValue(),
-                        printPosition(),
-                        attributeDefaultValue
-                );
-                mergingReport.addError(error);
-                return;
-            }
+        // the node is not defined in the higher priority element, it's defined in this lower
+        // priority element, we need to merge this lower priority attribute value with a potential
+        // higher priority default value (implicitly set on the higher priority element).
+        String mergedValue = mergeThisAndDefaultValue(mergingReport, higherPriorityElement);
+        if (mergedValue == null) {
+            return;
         }
 
         // ok merge it in the higher priority element.
-        getName().addToNode(higherPriorityElement.getXml(), getValue());
+        getName().addToNode(higherPriorityElement.getXml(), mergedValue);
 
         // and record the action.
         mergingReport.getActionRecorder().recordAttributeAction(
                 this,
                 ActionRecorder.ActionType.ADDED,
                 getOwnerElement().getAttributeOperationType(getName()));
+    }
+
+    /**
+     * Handles merging of two attributes value explicitly declared in xml elements.
+     *
+     * @param report report to log errors and actions.
+     * @param higherPriority higher priority attribute we should merge this attribute with.
+     * @param operationType user operation type optionally requested by the user.
+     */
+    private void handleBothAttributePresent(
+            MergingReport.Builder report,
+            XmlAttribute higherPriority,
+            AttributeOperationType operationType) {
+
+        // the attribute is present on both elements, there are 2 possibilities :
+        // 1. tools:replace was specified, replace the value.
+        // 2. nothing was specified, the values should be equal or this is an error.
+        if (operationType == AttributeOperationType.REPLACE) {
+            // record the fact the lower priority attribute was rejected.
+            report.getActionRecorder().recordAttributeAction(
+                    this,
+                    ActionRecorder.ActionType.REJECTED,
+                    AttributeOperationType.REPLACE);
+            return;
+        }
+        // if the values are the same, then it's fine, otherwise flag the error.
+        if (mAttributeModel != null) {
+            String mergedValue = mAttributeModel.getMergingPolicy()
+                    .merge(higherPriority.getValue(), getValue());
+            if (mergedValue != null) {
+                higherPriority.mXml.setValue(mergedValue);
+            } else {
+                addConflictingValueMessage(report, higherPriority);
+            }
+            return;
+        }
+        // no merging policy, for now revert on checking manually for equality.
+        if (!getValue().equals(higherPriority.getValue())) {
+            addConflictingValueMessage(report, higherPriority);
+        }
+    }
+
+    /**
+     * Merge this attribute value (on a lower priority element) with a implicit default value
+     * (implicitly declared on the implicitNode).
+     * @param mergingReport report to log errors and actions.
+     * @param implicitNode the lower priority node where the implicit attribute value resides.
+     * @return the merged value that should be stored in the attribute or null if nothing should
+     * be stored.
+     */
+    private String mergeThisAndDefaultValue(MergingReport.Builder mergingReport,
+            XmlElement implicitNode) {
+
+        String mergedValue = getValue();
+        if (mAttributeModel == null || mAttributeModel.getDefaultValue() == null
+                || !mAttributeModel.getMergingPolicy().shouldMergeDefaultValues()) {
+            return mergedValue;
+        }
+        String defaultValue = mAttributeModel.getDefaultValue();
+        if (defaultValue.equals(mergedValue)) {
+            // even though the lower priority attribute is only declared and its value is the same
+            // as the default value, ensure it gets added to the higher priority node.
+            return mergedValue;
+        } else {
+            // ok, the default value and actual declaration are different, delegate to the
+            // merging policy to figure out what value should be used if any.
+            mergedValue = mAttributeModel.getMergingPolicy().merge(defaultValue, mergedValue);
+            if (mergedValue == null) {
+                addIllegalImplicitOverrideMessage(mergingReport, mAttributeModel, implicitNode);
+                return null;
+            }
+            if (mergedValue.equals(defaultValue)) {
+                // no need to forcefully add an attribute to the parent with its default value
+                // since it was not declared to start with.
+                return null;
+            }
+        }
+        return mergedValue;
+    }
+
+    /**
+     * Merge this attribute value with a lower priority node attribute default value.
+     * The attribute is not explicitly set on the implicitNode, yet it exist on this attribute
+     * {@link com.android.manifmerger.XmlElement} higher priority owner.
+     *
+     * @param mergingReport report to log errors and actions.
+     * @param implicitNode the lower priority node where the implicit attribute value resides.
+     */
+    void mergeWithLowerPriorityDefaultValue(
+            MergingReport.Builder mergingReport, XmlElement implicitNode) {
+
+        if (mAttributeModel == null || mAttributeModel.getDefaultValue() == null
+                || !mAttributeModel.getMergingPolicy().shouldMergeDefaultValues()) {
+            return;
+        }
+        // if this value has been explicitly set to replace the implicit default value, just
+        // log the action.
+        if (mOwnerElement.getAttributeOperationType(getName()) == AttributeOperationType.REPLACE) {
+            mergingReport.getActionRecorder().recordImplicitRejection(this, implicitNode);
+            return;
+        }
+        String mergedValue = mAttributeModel.getMergingPolicy().merge(
+                getValue(), mAttributeModel.getDefaultValue());
+        if (mergedValue == null) {
+            addIllegalImplicitOverrideMessage(mergingReport, mAttributeModel, implicitNode);
+        } else {
+            getXml().setValue(mergedValue);
+            mergingReport.getActionRecorder().recordAttributeAction(
+                    this,
+                    ActionRecorder.ActionType.MERGED,
+                    null /* attributeOperationType */);
+        }
+    }
+
+    private void addIllegalImplicitOverrideMessage(
+            @NonNull MergingReport.Builder mergingReport,
+            @NonNull AttributeModel attributeModel,
+            @NonNull XmlElement implicitNode) {
+        String error = String.format("Attribute %1$s value=(%2$s) at %3$s"
+                        + " cannot override implicit default value=(%4$s) at %5$s",
+                getId(),
+                getValue(),
+                printPosition(),
+                attributeModel.getDefaultValue(),
+                implicitNode.printPosition());
+        mergingReport.addError(error);
+    }
+
+    private void addConflictingValueMessage(
+            MergingReport.Builder report,
+            XmlAttribute higherPriority) {
+
+        String error = String.format(
+                "Attribute %1$s value=(%2$s) is also present at %3$s"
+                        + " value=(%4$s), use tools:replace to override it.",
+                higherPriority.getId(),
+                higherPriority.getValue(),
+                printPosition(),
+                getValue()
+        );
+        report.addError(error);
     }
 
     /**

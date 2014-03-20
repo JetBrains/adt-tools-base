@@ -43,9 +43,14 @@ import javax.xml.parsers.ParserConfigurationException;
  */
 public class XmlAttributeTest extends TestCase {
 
-    @Mock XmlDocument mXmlDocument;
-    @Mock XmlElement mXmlElement;
-    @Mock Attr mAttr;
+    @Mock
+    XmlDocument mXmlDocument;
+
+    @Mock
+    XmlElement mXmlElement;
+
+    @Mock
+    Attr mAttr;
 
     @Override
     protected void setUp() throws Exception {
@@ -136,7 +141,7 @@ public class XmlAttributeTest extends TestCase {
                 XmlNode.fromXmlName("android:name")).isPresent());
 
         // check the recorded actions.
-        ImmutableMap<String,ActionRecorder.DecisionTreeRecord> allRecords = mergingReportBuilder
+        ImmutableMap<String, ActionRecorder.DecisionTreeRecord> allRecords = mergingReportBuilder
                 .getActionRecorder().build().getAllRecords();
         ActionRecorder.DecisionTreeRecord activityOneRecords =
                 allRecords.get(activityOne.get().getId());
@@ -299,7 +304,6 @@ public class XmlAttributeTest extends TestCase {
         assertTrue(result.isPresent());
         resultDocument = result.get();
 
-
         Optional<XmlElement> activityOne = resultDocument.getRootNode()
                 .getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,
                         "com.example.lib3.activityOne");
@@ -314,7 +318,7 @@ public class XmlAttributeTest extends TestCase {
                 XmlNode.fromXmlName("android:screenOrientation")).isPresent());
 
         // check the recorded actions.
-        ImmutableMap<String,ActionRecorder.DecisionTreeRecord> allRecords = mergingReportBuilder
+        ImmutableMap<String, ActionRecorder.DecisionTreeRecord> allRecords = mergingReportBuilder
                 .getActionRecorder().build().getAllRecords();
         ActionRecorder.DecisionTreeRecord activityOneRecords =
                 allRecords.get(activityOne.get().getId());
@@ -348,8 +352,9 @@ public class XmlAttributeTest extends TestCase {
                 + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                 + "    package=\"com.example.lib3\">\n"
                 + "\n"
-                        // implicit required=true attribute present.
+                // implicit required=true attribute present.
                 + "    <uses-library android:name=\"libraryOne\"/>\n"
+                + "    <permission android:name=\"permissionOne\"/>\n"
                 + "\n"
                 + "</manifest>";
 
@@ -360,6 +365,8 @@ public class XmlAttributeTest extends TestCase {
                 + "    package=\"com.example.lib3\">\n"
                 + "\n"
                 + "    <uses-library android:name=\"libraryOne\" android:required=\"false\"/>\n"
+                + "    <permission android:name=\"permissionOne\" "
+                + "          android:protectionLevel=\"dangerous\"/>\n"
                 + "\n"
                 + "</manifest>";
 
@@ -371,9 +378,6 @@ public class XmlAttributeTest extends TestCase {
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
                 new StdLogger(StdLogger.Level.VERBOSE));
         Optional<XmlDocument> result = refDocument.merge(otherDocument, mergingReportBuilder);
-        assertFalse(result.isPresent());
-        MergingReport.Record errorRecord = mergingReportBuilder.build().getLoggingRecords().iterator()
-                .next();
-        assertTrue(errorRecord.toString().contains("android:required"));
+        assertTrue(result.isPresent());
     }
 }
