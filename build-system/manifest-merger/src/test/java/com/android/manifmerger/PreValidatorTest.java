@@ -23,6 +23,7 @@ import junit.framework.TestCase;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -53,7 +54,8 @@ public class PreValidatorTest extends TestCase {
                 new TestUtils.TestSourceLocation(
                         getClass(), "testIncorrectRemove"), input);
 
-        MergingReport.Result validated = PreValidator.validate(xmlDocument, mockLog);
+        MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
+        MergingReport.Result validated = PreValidator.validate(mergingReport, xmlDocument);
         assertEquals(MergingReport.Result.SUCCESS, validated);
         assertTrue(mockLog.toString().isEmpty());
     }
@@ -79,10 +81,11 @@ public class PreValidatorTest extends TestCase {
                 new TestUtils.TestSourceLocation(
                         getClass(), "testIncorrectRemove"), input);
 
-        MergingReport.Result validated = PreValidator.validate(xmlDocument, mockLog);
+        MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
+        MergingReport.Result validated = PreValidator.validate(mergingReport, xmlDocument);
         assertEquals(MergingReport.Result.ERROR, validated);
         // assert the error message complains about the bad instruction usage.
-        assertTrue(mockLog.toString().contains("tools:replace"));
+        assertStringPresenceInLogRecords(mergingReport, "tools:replace");
     }
 
     public void testIncorrectRemove()
@@ -107,9 +110,23 @@ public class PreValidatorTest extends TestCase {
                 new TestUtils.TestSourceLocation(
                         getClass(), "testIncorrectRemove"), input);
 
-        MergingReport.Result validated = PreValidator.validate(xmlDocument, mockLog);
+        MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
+        MergingReport.Result validated = PreValidator.validate(mergingReport, xmlDocument);
         assertEquals(MergingReport.Result.ERROR, validated);
         // assert the error message complains about the bad instruction usage.
-        assertTrue(mockLog.toString().contains("tools:remove"));
+        assertStringPresenceInLogRecords(mergingReport, "tools:remove");
+    }
+
+    private void assertStringPresenceInLogRecords(MergingReport.Builder mergingReport, String s) {
+        for (MergingReport.Record record : mergingReport.build().getLoggingRecords()) {
+            if (record.toString().contains(s)) {
+                return;
+            }
+        }
+        // failed, dump the records
+        for (MergingReport.Record record : mergingReport.build().getLoggingRecords()) {
+            Logger.getAnonymousLogger().info(record.toString());
+        }
+        fail("could not find " + s + " in logging records");
     }
 }
