@@ -108,6 +108,11 @@ public class MergingReport {
         return mRecords;
     }
 
+    @NonNull
+    public ActionRecorder getActionRecorder() {
+        return mActionRecorder;
+    }
+
     /**
      * Log record. This is used to give users some information about what is happening and
      * what might have gone wrong.
