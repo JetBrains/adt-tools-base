@@ -12,21 +12,21 @@ android {
     compileSdkVersion 19
     buildToolsVersion "19.0.2"
 
-    flavorGroups   "group1", "group2"
+    flavorDimensions   "group1", "group2"
 
     productFlavors {
         f1 {
-            flavorGroup   "group1"
+            flavorDimension   "group1"
         }
         f2 {
-            flavorGroup   "group1"
+            flavorDimension   "group1"
         }
 
         fa {
-            flavorGroup   "group2"
+            flavorDimension   "group2"
         }
         fb {
-            flavorGroup   "group2"
+            flavorDimension   "group2"
         }
     }
 }

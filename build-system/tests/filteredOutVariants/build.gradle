@@ -20,23 +20,23 @@ android {
         }
     }
 
-    flavorGroups "abi", "api"
+    flavorDimensions "abi", "api"
 
     productFlavors {
         x86 {
-            flavorGroup "abi"
+            flavorDimension "abi"
         }
         mips {
-            flavorGroup "abi"
+            flavorDimension "abi"
         }
         arm {
-            flavorGroup "abi"
+            flavorDimension "abi"
         }
         cupcake {
-            flavorGroup "api"
+            flavorDimension "api"
         }
         gingerbread {
-            flavorGroup "api"
+            flavorDimension "api"
         }
     }
 }

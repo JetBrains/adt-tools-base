@@ -194,24 +194,24 @@ public class AppPluginInternalTest extends BaseTest {
             compileSdkVersion 15
             buildToolsVersion "19"
 
-            flavorGroups   "group1", "group2"
+            flavorDimensions   "dimension1", "dimension2"
 
             productFlavors {
                 f1 {
-                    flavorGroup   "group1"
+                    flavorDimension "dimension1"
                 }
                 f2 {
-                    flavorGroup   "group1"
+                    flavorDimension "dimension1"
                 }
 
                 fa {
-                    flavorGroup   "group2"
+                    flavorDimension "dimension2"
                 }
                 fb {
-                    flavorGroup   "group2"
+                    flavorDimension "dimension2"
                 }
                 fc {
-                    flavorGroup   "group2"
+                    flavorDimension "dimension2"
                 }
             }
         }
