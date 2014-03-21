@@ -28,7 +28,7 @@ public class AaptOptionsImpl implements AaptOptions {
     private List<String> noCompressList
 
     @Input
-    private boolean useAaptPngCruncher = false;
+    private boolean useAaptPngCruncher = true;
 
     public void setIgnoreAssetsPattern(String ignoreAssetsPattern) {
         this.ignoreAssetsPattern = ignoreAssetsPattern
