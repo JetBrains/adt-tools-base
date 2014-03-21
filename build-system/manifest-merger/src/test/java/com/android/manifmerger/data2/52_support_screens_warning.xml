@@ -9,6 +9,7 @@
 
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.app1"
     android:versionCode="100"
     android:versionName="1.0.0">
@@ -21,6 +22,7 @@
         android:normalScreens="true"
         android:resizeable="true"
         android:xlargeScreens="true"
+        tools:replace="resizeable, smallScreens"
         />
 
     <uses-configuration

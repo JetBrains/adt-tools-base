@@ -16,6 +16,7 @@
 
 package com.android.manifmerger;
 
+import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.manifmerger.AttributeModel.Hexadecimal32BitsWithMinimumValue;
 import static com.android.manifmerger.AttributeModel.MultiValueValidator;
 import static com.android.manifmerger.AttributeModel.ReferenceValidator;
@@ -128,7 +129,7 @@ class ManifestModel {
      * uses "android:name" as the attribute.
      */
     private static final NodeKeyResolver DEFAULT_NAME_ATTRIBUTE_RESOLVER =
-            new AttributeBasedNodeKeyResolver(SdkConstants.ANDROID_URI, SdkConstants.ATTR_NAME);
+            new AttributeBasedNodeKeyResolver(ANDROID_URI, SdkConstants.ATTR_NAME);
 
     private static final NoKeyNodeResolver DEFAULT_NO_KEY_NODE_RESOLVER = new NoKeyNodeResolver();
 
@@ -140,7 +141,7 @@ class ManifestModel {
     private static final NodeKeyResolver NAME_AND_GLESVERSION_KEY_RESOLVER = new NodeKeyResolver() {
         private final NodeKeyResolver nameAttrResolver = DEFAULT_NAME_ATTRIBUTE_RESOLVER;
         private final NodeKeyResolver glEsVersionResolver =
-                new AttributeBasedNodeKeyResolver(SdkConstants.ANDROID_URI,
+                new AttributeBasedNodeKeyResolver(ANDROID_URI,
                         AndroidManifest.ATTRIBUTE_GLESVERSION);
 
         @Nullable
@@ -247,6 +248,33 @@ class ManifestModel {
         CATEGORY(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER),
 
         /**
+         * Compatible-screens (contained in manifest)
+         * <br>
+         * <b>See also : </b>
+         * {@link <a href=http://developer.android.com/guide/topics/manifest/compatible-screens-element.html>
+         *     Category Xml documentation</a>}
+         */
+        COMPATIBLE_SCREENS(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER),
+
+        /**
+         * Data (contained in intent-filter)
+         * <br>
+         * <b>See also : </b>
+         * {@link <a href=http://developer.android.com/guide/topics/manifest/data-element.html>
+         *     Category Xml documentation</a>}
+         */
+        DATA(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER),
+
+        /**
+         * Grant-uri-permission (contained in intent-filter)
+         * <br>
+         * <b>See also : </b>
+         * {@link <a href=http://developer.android.com/guide/topics/manifest/grant-uri-permission-element.html>
+         *     Category Xml documentation</a>}
+         */
+        GRANT_URI_PERMISSION(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER),
+
+        /**
          * Instrumentation (contained in intent-filter)
          * <br>
          * <b>See also : </b>
@@ -285,15 +313,13 @@ class ManifestModel {
         META_DATA(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER),
 
         /**
-         * Provider (contained in application)
+         * Path-permission (contained in provider)
          * <br>
          * <b>See also : </b>
-         * {@link <a href=http://developer.android.com/guide/topics/manifest/provider-element.html>
-         *     Provider Xml documentation</a>}
+         * {@link <a href=http://developer.android.com/guide/topics/manifest/path-permission-element.html>
+         *     Meta-data Xml documentation</a>}
          */
-        PROVIDER(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
-                AttributeModel.newModel(SdkConstants.ATTR_NAME)
-                    .setIsPackageDependent()),
+        PATH_PERMISSION(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER),
 
         /**
          * Permission-group (contained in manifest).
@@ -337,6 +363,17 @@ class ManifestModel {
                 AttributeModel.newModel(SdkConstants.ATTR_NAME)),
 
         /**
+         * Provider (contained in application)
+         * <br>
+         * <b>See also : </b>
+         * {@link <a href=http://developer.android.com/guide/topics/manifest/provider-element.html>
+         *     Provider Xml documentation</a>}
+         */
+        PROVIDER(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                AttributeModel.newModel(SdkConstants.ATTR_NAME)
+                        .setIsPackageDependent()),
+
+        /**
          * Receiver (contained in application)
          * <br>
          * <b>See also : </b>
@@ -345,6 +382,15 @@ class ManifestModel {
          */
         RECEIVER(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
                 AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent()),
+
+        /**
+         * Screen (contained in compatible-screens)
+         * <br>
+         * <b>See also : </b>
+         * {@link <a href=http://developer.android.com/guide/topics/manifest/compatible-screens-element.html>
+         *     Receiver Xml documentation</a>}
+         */
+        SCREEN(MergeType.MERGE, new AttributeBasedNodeKeyResolver(ANDROID_URI, "screenSize")),
 
         /**
          * Service (contained in application)
@@ -357,6 +403,15 @@ class ManifestModel {
                 AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent()),
 
         /**
+         * Supports-gl-texture (contained in manifest)
+         * <br>
+         * <b>See also : </b>
+         * {@link <a href=http://developer.android.com/guide/topics/manifest/supports-gl-texture-element.html>
+         *     Support-screens Xml documentation</a>}
+         */
+        SUPPORTS_GL_TEXTURE(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER),
+
+        /**
          * Support-screens (contained in manifest)
          * <br>
          * <b>See also : </b>
@@ -364,6 +419,15 @@ class ManifestModel {
          *     Support-screens Xml documentation</a>}
          */
         SUPPORTS_SCREENS(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER),
+
+        /**
+         * Uses-configuration (contained in manifest)
+         * <br>
+         * <b>See also : </b>
+         * {@link <a href=http://developer.android.com/guide/topics/manifest/uses-configuration-element.html>
+         *     Support-screens Xml documentation</a>}
+         */
+        USES_CONFIGURATION(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER),
 
         /**
          * Uses-feature (contained in manifest)
