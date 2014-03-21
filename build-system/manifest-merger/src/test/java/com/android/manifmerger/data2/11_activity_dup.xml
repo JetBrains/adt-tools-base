@@ -338,10 +338,15 @@
 # from @lib2_activity
         <!-- This one does not conflict with the main -->
         <activity android:icon="@drawable/lib_activity_icon" android:label="@string/lib_activity_name" android:name="com.example.LibActivity2" android:theme="@style/Lib.Theme">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
                 <category android:name="android.intent.category.MOARCATZPLZ"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
 

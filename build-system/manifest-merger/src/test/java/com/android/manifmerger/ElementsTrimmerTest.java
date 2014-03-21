@@ -16,7 +16,13 @@
 
 package com.android.manifmerger;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.android.SdkConstants;
+import com.android.sdklib.mock.MockLog;
 import com.android.utils.ILogger;
 import com.android.xml.AndroidManifest;
 import com.google.common.collect.ImmutableList;
@@ -28,6 +34,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
@@ -286,6 +293,106 @@ public class ElementsTrimmerTest extends TestCase {
         checkResults(xmlDocument,
                 ImmutableList.of("0x00011000", "0x00012000", "0x00022000", "0x00030000"));
     }
+
+    public void testUsesFeatureSplit_attributeDeleted()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <uses-feature android:name=\"@string/lib_name\""
+                + "             android:required=\"false\""
+                + "             android:glEsVersion=\"0x00020000\"/>\n"
+                + "    <uses-feature"
+                + "             android:required=\"false\""
+                + "             android:glEsVersion=\"0x00030000\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(
+                        getClass(), "testUsesFeatureSplit"), input);
+
+        ActionRecorder.Builder mockActionRecorder = Mockito.mock(ActionRecorder.Builder.class);
+        MergingReport.Builder mockReport = Mockito.mock(MergingReport.Builder.class);
+        when(mockReport.getActionRecorder()).thenReturn(mockActionRecorder);
+        ElementsTrimmer.trim(xmlDocument, mockReport);
+
+        // check that we have now 2 uses-feature with separated keys.
+        NodeList elementsByTagName = xmlDocument.getRootNode().getXml()
+                .getElementsByTagName("uses-feature");
+        assertEquals(2, elementsByTagName.getLength());
+
+        // verify the action was recorded.
+        verify(mockActionRecorder).recordAttributeAction(any(XmlAttribute.class),
+                eq(ActionRecorder.ActionType.REJECTED), (AttributeOperationType) eq(null));
+
+        for (int i = 0; i < elementsByTagName.getLength(); i++) {
+            NamedNodeMap attributes = elementsByTagName.item(i).getAttributes();
+            assertEquals(2, attributes.getLength());
+            ensureOnlyOneKey(attributes, ManifestModel.NodeTypes.USES_FEATURE);
+        }
+    }
+
+    public void testUsesFeatureSplit_elementDeleted()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <uses-feature android:required=\"false\""
+                + "             android:glEsVersion=\"0x00020000\"/>\n"
+                + "    <uses-feature"
+                + "             android:required=\"false\""
+                + "             android:glEsVersion=\"0x00030000\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(
+                        getClass(), "testUsesFeatureSplit"), input);
+
+        ActionRecorder.Builder mockActionRecorder = Mockito.mock(ActionRecorder.Builder.class);
+        MergingReport.Builder mockReport = Mockito.mock(MergingReport.Builder.class);
+        when(mockReport.getActionRecorder()).thenReturn(mockActionRecorder);
+        ElementsTrimmer.trim(xmlDocument, mockReport);
+
+        // check that we have now 2 uses-feature with separated keys.
+        NodeList elementsByTagName = xmlDocument.getRootNode().getXml()
+                .getElementsByTagName("uses-feature");
+        assertEquals(1, elementsByTagName.getLength());
+
+        // verify the action was recorded.
+        verify(mockActionRecorder).recordNodeAction(any(XmlElement.class),
+                eq(ActionRecorder.ActionType.REJECTED));
+
+        for (int i = 0; i < elementsByTagName.getLength(); i++) {
+            NamedNodeMap attributes = elementsByTagName.item(i).getAttributes();
+            assertEquals(2, attributes.getLength());
+            ensureOnlyOneKey(attributes, ManifestModel.NodeTypes.USES_FEATURE);
+        }
+    }
+
+    private void ensureOnlyOneKey(NamedNodeMap namedNodeMap, ManifestModel.NodeTypes nodeType) {
+        String firstKey = null;
+        ImmutableList<String> keyAttributesNames =
+                nodeType.getNodeKeyResolver().getKeyAttributesNames();
+        for (String keyAttributesName : keyAttributesNames) {
+            if (namedNodeMap.getNamedItemNS(SdkConstants. ANDROID_URI, keyAttributesName) != null) {
+                if (firstKey != null) {
+                    fail("Found 2 keys : " + firstKey + " and " + keyAttributesName);
+                }
+                firstKey = keyAttributesName;
+            }
+        }
+    }
+
 
     private static void checkActionsRecording(
             MergingReport.Builder mergingReport,

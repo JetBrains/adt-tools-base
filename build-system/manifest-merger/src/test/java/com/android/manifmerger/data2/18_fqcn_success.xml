@@ -115,3 +115,4 @@
 </manifest>
 
 @errors
+WARNING:Missing 'package' declaration in manifest at (1,1) file:ManifestMerger2Test4_lib4_not_package.xml:1
