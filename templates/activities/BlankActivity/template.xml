@@ -80,6 +80,14 @@
         constraints="package"
         default="com.mycompany.myapp" />
 
+    <parameter
+        id="navigationDrawerLayout"
+        name="Navigation Drawer Fragment Name"
+        type="string"
+        constraints="layout|unique"
+        default="fragment_navigation_drawer"
+        visibility="features == 'drawer'" />
+
     <!-- 128x128 thumbnails relative to template.xml -->
     <thumbs>
         <!-- default thumbnail is required -->
