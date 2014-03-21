@@ -139,7 +139,7 @@
         <!-- A library that is implicitly marked as required=true -->
 # required=false from lib1 is ignored, it stays at the default
         <uses-library
-            android:name="com.example.SomeLibrary1_DefaultTrue" />
+            android:name="com.example.SomeLibrary1_DefaultTrue"/>
 
         <!-- A library that is explicitly marked as required=true -->
         <uses-library
