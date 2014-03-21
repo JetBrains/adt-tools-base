@@ -597,13 +597,14 @@ public class GradleImport {
 
     public void exportProject(@NonNull File destDir, boolean allowNonEmpty) throws IOException {
         mSummary.setDestDir(destDir);
-        createDestDir(destDir, allowNonEmpty);
-        createProjectBuildGradle(new File(destDir, FN_BUILD_GRADLE));
-        exportSettingsGradle(new File(destDir, FN_SETTINGS_GRADLE), false);
+        if (!isImportIntoExisting()) {
+            createDestDir(destDir, allowNonEmpty);
+            createProjectBuildGradle(new File(destDir, FN_BUILD_GRADLE));
 
-        exportGradleWrapper(destDir);
-        exportLocalProperties(destDir);
-
+            exportGradleWrapper(destDir);
+            exportLocalProperties(destDir);
+        }
+        exportSettingsGradle(new File(destDir, FN_SETTINGS_GRADLE), isImportIntoExisting());
         for (ImportModule module : mRootModules) {
             exportModule(new File(destDir, module.getModuleName()), module);
         }
@@ -692,10 +693,10 @@ public class GradleImport {
         if (mNdkLocation != null && needsNdk || mSdkLocation != null) {
             Properties properties = new Properties();
             if (mSdkLocation != null) {
-                properties.put(PROPERTY_SDK, mSdkLocation.getPath());
+                properties.setProperty(PROPERTY_SDK, mSdkLocation.getPath());
             }
             if (mNdkLocation != null && needsNdk) {
-                properties.put(PROPERTY_NDK, mNdkLocation.getPath());
+                properties.setProperty(PROPERTY_NDK, mNdkLocation.getPath());
             }
 
             FileOutputStream out = null;
