@@ -74,6 +74,6 @@ public class NinePatchException extends Exception {
                     mFile, mTickException.getMessage(), info);
         }
 
-        return String.format("%s: Error: 9-patch image malformed: %s", mFile, getMessage());
+        return String.format("%s: Error: 9-patch image malformed: %s", mFile, super.getMessage());
     }
 }
