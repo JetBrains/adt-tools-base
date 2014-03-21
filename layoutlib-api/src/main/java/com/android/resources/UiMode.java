@@ -79,12 +79,9 @@ public enum UiMode implements ResourceEnum {
     }
 
     public static UiMode getByIndex(int index) {
-        int i = 0;
-        for (UiMode value : values()) {
-            if (i == index) {
-                return value;
-            }
-            i++;
+        UiMode[] values = values();
+        if (index >= 0 && index < values.length) {
+            return values[index];
         }
         return null;
     }
