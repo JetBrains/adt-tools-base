@@ -44,7 +44,7 @@
         <instantiate from="res/layout/activity_drawer.xml.ftl"
                        to="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
         <instantiate from="res/layout/fragment_navigation_drawer.xml.ftl"
-                       to="${escapeXmlAttribute(resOut)}/layout/fragment_navigation_drawer.xml" />
+                       to="${escapeXmlAttribute(resOut)}/layout/${navigationDrawerLayout}.xml" />
 
     <#elseif features == 'none'>
         <instantiate from="res/layout/activity_simple.xml.ftl"
