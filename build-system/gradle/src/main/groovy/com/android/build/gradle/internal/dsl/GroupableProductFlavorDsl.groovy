@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.annotations.NonNull
 import org.gradle.api.internal.file.FileResolver
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
 
@@ -27,7 +28,7 @@ import org.gradle.internal.reflect.Instantiator
 public class GroupableProductFlavorDsl extends ProductFlavorDsl {
     private static final long serialVersionUID = 1L
 
-    String flavorGroup
+    String flavorDimension
 
     public GroupableProductFlavorDsl(
             @NonNull String name,
@@ -35,5 +36,19 @@ public class GroupableProductFlavorDsl extends ProductFlavorDsl {
             @NonNull Instantiator instantiator,
             @NonNull Logger logger) {
         super(name, fileResolver, instantiator, logger)
+    }
+
+    // ---------------
+    // TEMP for compatibility
+    // STOPSHIP Remove in 1.0
+
+    public void flavorGroup(String value) {
+        logger.log(LogLevel.WARN,
+                "WARNING: flavorGroup has been renamed flavorDimension. It will be removed in 1.0")
+        flavorDimension = value
+    }
+
+    public void setFlavorGroup(String value) {
+        flavorGroup(value)
     }
 }
