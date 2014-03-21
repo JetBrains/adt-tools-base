@@ -16,6 +16,7 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.AttributeModel.Hexadecimal32BitsWithMinimumValue;
 import static com.android.manifmerger.AttributeModel.MultiValueValidator;
 import static com.android.manifmerger.AttributeModel.ReferenceValidator;
 
@@ -24,7 +25,9 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.android.utils.SdkUtils;
+import com.android.xml.AndroidManifest;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -56,10 +59,11 @@ class ManifestModel {
         @Nullable String getKey(XmlElement xmlElement);
 
         /**
-         * Returns the attribute used to store the xml element key.
-         * @return the key attribute name or null of this element does not have a key.
+         * Returns the attribute(s) used to store the xml element key.
+         * @return the key attribute(s) name(s) or null of this element does not have a key.
          */
-        @Nullable String getKeyAttributeName();
+        @NonNull
+        ImmutableList<String> getKeyAttributesNames();
     }
 
     /**
@@ -74,10 +78,10 @@ class ManifestModel {
             return null;
         }
 
-        @Nullable
+        @NonNull
         @Override
-        public String getKeyAttributeName() {
-            return null;
+        public ImmutableList<String> getKeyAttributesNames() {
+            return ImmutableList.of();
         }
     }
 
@@ -105,15 +109,17 @@ class ManifestModel {
         @Override
         @Nullable
         public String getKey(XmlElement xmlElement) {
-            return mNamespaceUri == null
+            String key = mNamespaceUri == null
                 ? xmlElement.getXml().getAttribute(mAttributeName)
                 : xmlElement.getXml().getAttributeNS(mNamespaceUri, mAttributeName);
+            if (Strings.isNullOrEmpty(key)) return null;
+            return key;
         }
 
-        @Nullable
+        @NonNull
         @Override
-        public String getKeyAttributeName() {
-            return mAttributeName;
+        public ImmutableList<String> getKeyAttributesNames() {
+            return ImmutableList.of(mAttributeName);
         }
     }
 
@@ -121,17 +127,38 @@ class ManifestModel {
      * Subclass of {@link com.android.manifmerger.ManifestModel.AttributeBasedNodeKeyResolver} that
      * uses "android:name" as the attribute.
      */
-    private static class NameAttributeNodeKeyResolver extends AttributeBasedNodeKeyResolver {
-
-        private NameAttributeNodeKeyResolver() {
-            super(SdkConstants.ANDROID_URI, SdkConstants.ATTR_NAME);
-        }
-    }
-
-    private static final NameAttributeNodeKeyResolver DEFAULT_NAME_ATTRIBUTE_RESOLVER =
-            new NameAttributeNodeKeyResolver();
+    private static final NodeKeyResolver DEFAULT_NAME_ATTRIBUTE_RESOLVER =
+            new AttributeBasedNodeKeyResolver(SdkConstants.ANDROID_URI, SdkConstants.ATTR_NAME);
 
     private static final NoKeyNodeResolver DEFAULT_NO_KEY_NODE_RESOLVER = new NoKeyNodeResolver();
+
+    /**
+     * A {@link com.android.manifmerger.ManifestModel.NodeKeyResolver} capable of extracting the
+     * element key first in an "android:name" attribute and if not value found there, in the
+     * "android:glEsVersion" attribute.
+     */
+    private static final NodeKeyResolver NAME_AND_GLESVERSION_KEY_RESOLVER = new NodeKeyResolver() {
+        private final NodeKeyResolver nameAttrResolver = DEFAULT_NAME_ATTRIBUTE_RESOLVER;
+        private final NodeKeyResolver glEsVersionResolver =
+                new AttributeBasedNodeKeyResolver(SdkConstants.ANDROID_URI,
+                        AndroidManifest.ATTRIBUTE_GLESVERSION);
+
+        @Nullable
+        @Override
+        public String getKey(XmlElement xmlElement) {
+            String key = nameAttrResolver.getKey(xmlElement);
+            return Strings.isNullOrEmpty(key)
+                    ? glEsVersionResolver.getKey(xmlElement)
+                    : key;
+        }
+
+        @NonNull
+        @Override
+        public ImmutableList<String> getKeyAttributesNames() {
+            return ImmutableList.of(SdkConstants.ATTR_NAME, AndroidManifest.ATTRIBUTE_GLESVERSION);
+        }
+    };
+
     private static final AttributeModel.BooleanValidator BOOLEAN_VALIDATOR =
             new AttributeModel.BooleanValidator();
 
@@ -345,11 +372,14 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/uses-feature-element.html>
          *     Uses-feature Xml documentation</a>}
          */
-        USES_FEATURE(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
-                AttributeModel.newModel("required")
-                        .setDefaultValue("true")
+        USES_FEATURE(MergeType.MERGE, NAME_AND_GLESVERSION_KEY_RESOLVER,
+                AttributeModel.newModel(AndroidManifest.ATTRIBUTE_REQUIRED)
+                        .setDefaultValue(SdkConstants.VALUE_TRUE)
                         .setOnReadValidator(BOOLEAN_VALIDATOR)
-                        .setMergingPolicy(AttributeModel.OR_MERGING_POLICY)),
+                        .setMergingPolicy(AttributeModel.OR_MERGING_POLICY),
+                AttributeModel.newModel(AndroidManifest.ATTRIBUTE_GLESVERSION)
+                        .setDefaultValue("0x00010000")
+                        .setOnReadValidator(new Hexadecimal32BitsWithMinimumValue(0x00010000))),
 
         /**
          * Use-library (contained in application)
@@ -359,8 +389,8 @@ class ManifestModel {
          *     Use-library Xml documentation</a>}
          */
         USES_LIBRARY(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
-                AttributeModel.newModel("required")
-                        .setDefaultValue("true")
+                AttributeModel.newModel(AndroidManifest.ATTRIBUTE_REQUIRED)
+                        .setDefaultValue(SdkConstants.VALUE_TRUE)
                         .setOnReadValidator(BOOLEAN_VALIDATOR)
                         .setMergingPolicy(AttributeModel.OR_MERGING_POLICY)),
 
@@ -382,7 +412,7 @@ class ManifestModel {
          */
         USES_SDK(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER,
                 AttributeModel.newModel("minSdkVersion")
-                        .setDefaultValue("1")
+                        .setDefaultValue(SdkConstants.VALUE_1)
                         .setOnReadValidator(new AttributeModel.IntegerValueValidator())
                         .setMergingPolicy(AttributeModel.NUMERICAL_SUPERIORITY_POLICY),
                 AttributeModel.newModel("maxSdkVersion").setOnReadValidator(

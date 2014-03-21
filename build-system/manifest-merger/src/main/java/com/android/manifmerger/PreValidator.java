@@ -16,9 +16,18 @@
 
 package com.android.manifmerger;
 
+import static com.android.SdkConstants.ANDROID_URI;
+
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.xml.AndroidManifest;
+import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -65,7 +74,11 @@ public class PreValidator {
             @NonNull MergingReport.Builder mergingReport,
             @NonNull XmlDocument xmlDocument) {
 
-        return validate(mergingReport, xmlDocument.getRootNode());
+        MergingReport.Result validated = validate(mergingReport, xmlDocument.getRootNode());
+        if (validated == MergingReport.Result.SUCCESS) {
+            splitUsesFeatureDeclarations(mergingReport, xmlDocument.getRootNode());
+        }
+        return validated;
     }
 
     private static MergingReport.Result validate(MergingReport.Builder mergingReport,
@@ -83,8 +96,8 @@ public class PreValidator {
 
                 XmlElement twin = childrenKeys.get(childElement.getId());
                 if (twin != null) {
-                    // we have 2 elements with the same identity, if they are equals, issue a warning
-                    // if not, issue an error.
+                    // we have 2 elements with the same identity, if they are equals,
+                    // issue a warning, if not, issue an error.
                     String message = String.format(
                             "Element %1$s at %2$s duplicated with element declared at %3$s",
                             childElement.getId(),
@@ -100,7 +113,6 @@ public class PreValidator {
                 validate(mergingReport, childElement);
             }
         }
-
         return mergingReport.hasErrors()
                 ? MergingReport.Result.ERROR : MergingReport.Result.SUCCESS;
     }
@@ -111,16 +123,26 @@ public class PreValidator {
      * @param xmlElement xml element to check for key presence.
      * @return true if the element has a valid key or does not need one, false otherwise.
      */
-    private static boolean checkKeyPresence(MergingReport.Builder mergingReport, XmlElement xmlElement) {
+    private static boolean checkKeyPresence(
+            MergingReport.Builder mergingReport,
+            XmlElement xmlElement) {
+
         ManifestModel.NodeKeyResolver nodeKeyResolver = xmlElement.getType().getNodeKeyResolver();
-        if (nodeKeyResolver.getKeyAttributeName() != null
-                && Strings.isNullOrEmpty(xmlElement.getKey())) {
+        ImmutableList<String> keyAttributesNames = nodeKeyResolver.getKeyAttributesNames();
+        if (keyAttributesNames.size() > 0 && Strings.isNullOrEmpty(xmlElement.getKey())) {
             // we should have a key but we don't.
-            mergingReport.addError(String.format(
-                    "Missing '%1$s' attribute on element %2$s at %3$s",
-                    nodeKeyResolver.getKeyAttributeName(),
-                    xmlElement.getId(),
-                    xmlElement.printPosition()));
+            String message = keyAttributesNames.size() > 1
+                    ? String.format(
+                            "Missing one of the key attributes '%1$s' on element %2$s at %3$s",
+                            Joiner.on(',').join(keyAttributesNames),
+                            xmlElement.getId(),
+                            xmlElement.printPosition())
+                    : String.format(
+                            "Missing '%1$s' key attribute on element %2$s at %3$s",
+                            keyAttributesNames.get(0),
+                            xmlElement.getId(),
+                            xmlElement.printPosition());
+            mergingReport.addError(message);
             return false;
         }
         return true;
@@ -187,5 +209,37 @@ public class PreValidator {
                             attributeOperationTypeEntry.getValue());
             }
         }
+    }
+
+    /**
+     * Finds {@link com.android.manifmerger.ManifestModel.NodeTypes#USES_FEATURE} elements which
+     * have both android:name and android:glEsVersion attributes set and split such element into
+     * two elements, one with each attribute value.
+     *
+     * @param mergingReport report to log warnings and errors.
+     * @param xmlElement the {@link com.android.manifmerger.XmlElement} to check for such elements
+     *                   presence.
+     */
+    private static void splitUsesFeatureDeclarations(MergingReport.Builder mergingReport,
+            XmlElement xmlElement) {
+
+        for (XmlElement childElement : xmlElement.getMergeableElements()) {
+
+            if (childElement.getType() == ManifestModel.NodeTypes.USES_FEATURE) {
+                // check if has name AND glEsVersion attributes.
+                Element childXml = childElement.getXml();
+                Attr name = childXml.getAttributeNodeNS(ANDROID_URI, SdkConstants.ATTR_NAME);
+                Attr glEsVersion = childXml.getAttributeNodeNS(
+                        ANDROID_URI, AndroidManifest.ATTRIBUTE_GLESVERSION);
+                if (name != null && glEsVersion != null) {
+                    // spit these declarations into 2.
+                    Element sibling = (Element) childXml.cloneNode(true);
+                    sibling.removeAttributeNS(ANDROID_URI, "name");
+                    xmlElement.getXml().appendChild(sibling);
+                    childXml.removeAttributeNS(ANDROID_URI, AndroidManifest.ATTRIBUTE_GLESVERSION);
+                }
+            }
+        }
+
     }
 }
