@@ -40,7 +40,7 @@
         <!-- The library has a maps API key that would conflict but it will
              actually be ignored since the merge-override flag is set. -->
         <meta-data
-            tools:merge="override"
+            tools:node="replace"
             android:name="name.for.maps.api.key"
             android:value="the_apps_maps_api_key"/>
 
@@ -122,10 +122,4 @@
 
 @errors
 
-E [ManifestMergerTest0_main.xml:17, ManifestMergerTest1_lib1.xml:10] Trying to merge incompatible /manifest/application/meta-data[@name=name.for.backup.api.key] element:
-  <meta-data
-      @android:name="name.for.backup.api.key"
---    @android:value="the_apps_backup_api_key">
-  <meta-data
-      @android:name="name.for.backup.api.key"
-++    @android:value="the_library1_backup_api_key">
+ERROR:Attribute meta-data#name.for.backup.api.key@android:value value=(the_apps_backup_api_key) is also present at (16,13) file:ManifestMerger2Test1_lib1.xml:16 value=(the_library1_backup_api_key), use tools:replace to override it.

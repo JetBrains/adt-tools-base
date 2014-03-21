@@ -1,5 +1,5 @@
 #
-# Test how elements are overriden by tools:merge="override".
+# Test how elements are overriden by tools:node="replace".
 # The removal prevents the actual merge operation.
 # However items are still checked out for consistency (just not merged anymore)
 # and thus still produce warnings.
@@ -15,48 +15,49 @@
     android:versionName="1.0.0">
 
     <!-- This is the same as writing android:minSdkVersion="1" -->
-    <uses-sdk android:targetSdkVersion="14" tools:merge="override" />
+    <uses-sdk android:targetSdkVersion="14" tools:node="replace" />
 
     <!-- Ignore permissions elements from lib that would conflict because
          their definition is different. -->
     <permission
-        tools:merge="override"
+        tools:node="replace"
         android:name="com.example.WhatWereYouThinking"
         android:permissionGroup="com.example.MasterControlPermission"
         android:protectionLevel="signatureOrSystem" />
 
     <permission-group
-        tools:merge="override"
+        tools:node="replace"
         android:description="Nobody expects..."
         android:icon="@drawable/ignored_icon"
         android:label="the Spanish Inquisition"
         android:name="com.example.MasterControlPermission" />
 
     <permission-tree
-        tools:merge="override"
+        tools:node="replace"
         android:label="This is not a label"
         android:name="com.example.PermTree" />
 
     <!-- uses-feature is never merged, only checked, so tools:merge=override does nothing. -->
     <uses-feature
         android:name="com.example.SomeFeature0"
-        android:glEsVersion="0x00020001" />
+        android:glEsVersion="0x00020001"
+        tools:replace="glEsVersion"/>
     <!-- Ignore uses-feature from library, which would change required to
          true if it were merged. -->
     <uses-feature
-        tools:merge="override"
+        tools:node="replace"
         android:name="com.example.SomeFeature1"
         android:required="false" />
 
     <!-- supports-screens is never merged, only checked, so tools:merge=override does nothing. -->
     <supports-screens
-        tools:merge="override"
+        tools:node="replace"
         android:smallScreens="true"
         android:resizeable="false"
         />
 
     <!-- supports-gl-texture-screens-feature is never merged, only checked, so tools:merge=override does nothing. -->
-    <supports-gl-texture android:name="some.gl.texture1" tools:merge="override" />
+    <supports-gl-texture android:name="some.gl.texture1" tools:node="replace" />
 
     <application android:name="com.example.TheApp" >
         <!-- Ignore uses-library from library, which would change required to
@@ -64,7 +65,7 @@
         <uses-library
             android:name="com.example.SomeLibrary4_RequiredFalse"
             android:required="false"
-            tools:merge="override" />
+            tools:node="replace" />
 
     </application>
 
@@ -75,6 +76,7 @@
 
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.example">
 
     <!-- The app can cope with API 1 but this library can only cope with API 4. -->
@@ -84,7 +86,7 @@
     <permission
         android:name="com.example.WhatWereYouThinking"
         android:permissionGroup="com.example.AnotherGroup"
-        android:protectionLevel="system" />
+        android:protectionLevel="normal" />
 
     <permission-group
         android:label="Nobody expects the Spanish Inquisition"
@@ -97,7 +99,7 @@
     <!-- GL 0.0 is a warning which is not prevented by tools:merge=override. -->
     <uses-feature
         android:name="com.example.SomeFeature0"
-        android:glEsVersion="0x00000000" />
+        android:glEsVersion="0x00020000"/>
     <uses-feature
         android:name="com.example.SomeFeature1"
         android:required="true" />
@@ -191,16 +193,12 @@
             android:required="false" />
 
     </application>
+    <!-- supports-gl-texture isn't really merged, just checked, so tools:merge=override does nothing. -->
+    <!-- this is the not same supports-gl-texture than in the main. -->
+    <supports-gl-texture android:name="some.gl.texture3" />
 
 </manifest>
 
 @errors
 
-W [ManifestMergerTest0_main.xml:1, ManifestMergerTest1_lib1.xml:19] /manifest/supports-screens defined in library, missing from main manifest:
-<supports-screens>
-    @android:resizeable = false
-    @android:smallScreens = false
-W [ManifestMergerTest0_main.xml:1, ManifestMergerTest1_lib1.xml:23] /manifest/supports-gl-texture defined in library, missing from main manifest:
-<supports-gl-texture>
-    @android:name = some.gl.texture3
-W [ManifestMergerTest1_lib1.xml:14] Ignoring <uses-feature android:glEsVersion='0x00000000'> because it's smaller than 1.0.
+WARNING:supports-gl-texture#some.gl.texture1 was tagged at file:ManifestMerger2Test0_main.xml:51 to replace another declaration but no other declaration present

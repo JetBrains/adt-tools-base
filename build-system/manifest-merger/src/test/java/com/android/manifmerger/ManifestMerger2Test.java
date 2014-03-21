@@ -76,18 +76,18 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "50_uses_conf_warning",
             "52_support_screens_warning",
             "54_compat_screens_warning",
-//            "56_support_gltext_warning",
-//            "60_merge_order",
-//            "65_override_app",
-//            "66_remove_app",
-//            "67_override_activities",
-//            "68_override_uses",
-//            "69_remove_uses",
-//            "70_expand_fqcns",
-//            "71_extract_package_prefix",
-//            "75_app_metadata_merge",
-//            "76_app_metadata_ignore",
-//            "77_app_metadata_conflict",
+            "56_support_gltext_warning",
+            "60_merge_order",
+            "65_override_app",
+            "66_remove_app",
+            "67_override_activities",
+            "68_override_uses",
+            "69_remove_uses",
+            "70_expand_fqcns",
+            "71_extract_package_prefix",
+            "75_app_metadata_merge",
+            "76_app_metadata_ignore",
+            "77_app_metadata_conflict",
     };
 
     @Override
@@ -137,7 +137,8 @@ public class ManifestMerger2Test extends ManifestMergerTest {
         StdLogger stdLogger = new StdLogger(StdLogger.Level.VERBOSE);
         ManifestMerger2.Invoker invoker = ManifestMerger2.newInvoker(testFiles.getMain(),
                 stdLogger)
-                .addLibraryManifests(testFiles.getLibs());
+                .addLibraryManifests(testFiles.getLibs())
+                .withFeatures(ManifestMerger2.Invoker.Feature.KEEP_INTERMEDIARY_STAGES);
 
         if (!Strings.isNullOrEmpty(testFiles.getPackageOverride())) {
             invoker.setOverride(SystemProperty.PACKAGE, testFiles.getPackageOverride());
@@ -194,6 +195,10 @@ public class ManifestMerger2Test extends ManifestMergerTest {
                 Logger.getAnonymousLogger().severe(comparingMessage.get());
                 fail(comparingMessage.get());
             }
+            // process any warnings.
+            if (mergeReport.getResult() == MergingReport.Result.WARNING) {
+                compareExpectedAndActualErrors(mergeReport, testFiles.getExpectedErrors());
+            }
         } else {
             for (Record record : mergeReport.getLoggingRecords()) {
                 Logger.getAnonymousLogger().info("Returned log: " + record);
@@ -228,12 +233,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
                 if (!findLineInRecords(line, records)) {
 
                     StringBuilder message = new StringBuilder();
-                    message.append("\n------------ Records : \n");
-                    for (Record record : records) {
-                        message.append(record.toString());
-                        message.append("\n");
-                    }
-                    message.append("------------End of records.\n");
+                    dumpRecords(records, message);
                     message.append("Cannot find expected error : \n").append(line);
                     fail(message.toString());
                 }
@@ -241,11 +241,10 @@ public class ManifestMerger2Test extends ManifestMergerTest {
         }
         // check that we do not have any unexpected error messages.
         if (!records.isEmpty()) {
-            for (Record record : records) {
-                Logger.getAnonymousLogger().severe(
-                        "Unexpected error message : " + record.toString());
-            }
-            fail("Unexpected error message(s)");
+            StringBuilder message = new StringBuilder();
+            dumpRecords(records, message);
+            message.append("Unexpected error message(s)");
+            fail(message.toString());
         }
     }
 
@@ -267,5 +266,14 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             }
         }
         return null;
+    }
+
+    private void dumpRecords(List<Record> records, StringBuilder stringBuilder) {
+        stringBuilder.append("\n------------ Records : \n");
+        for (Record record : records) {
+            stringBuilder.append(record.toString());
+            stringBuilder.append("\n");
+        }
+        stringBuilder.append("------------ End of records.\n");
     }
 }

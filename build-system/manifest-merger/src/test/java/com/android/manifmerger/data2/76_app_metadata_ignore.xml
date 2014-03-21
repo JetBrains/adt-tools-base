@@ -33,7 +33,7 @@
         <!-- We do not want any maps API key to be merged here. -->
         <meta-data
             android:name="name.for.maps.api.key"
-            tools:merge="remove" />
+            tools:node="remove" />
 
         <!-- Merged elements will be appended here at the end. -->
     </application>

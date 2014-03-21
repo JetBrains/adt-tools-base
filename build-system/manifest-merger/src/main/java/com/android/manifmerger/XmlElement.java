@@ -63,9 +63,9 @@ public class XmlElement extends XmlNode {
      */
     public static final String TOOLS_NODE_LOCAL_NAME = "node";      //$NON-NLS-1$
 
-    private final Element mXml;
-    private final ManifestModel.NodeTypes mType;
-    private final XmlDocument mDocument;
+    @NonNull private final Element mXml;
+    @NonNull private final ManifestModel.NodeTypes mType;
+    @NonNull private final XmlDocument mDocument;
 
     private final NodeOperationType mNodeOperationType;
     // list of non tools related attributes.
@@ -139,6 +139,7 @@ public class XmlElement extends XmlNode {
         return this.mType == type;
     }
 
+    @NonNull
     @Override
     public Element getXml() {
         return mXml;
@@ -167,6 +168,7 @@ public class XmlElement extends XmlNode {
     /**
      * Returns this xml element {@link com.android.manifmerger.ManifestModel.NodeTypes}
      */
+    @NonNull
     public ManifestModel.NodeTypes getType() {
         return mType;
     }
@@ -331,88 +333,123 @@ public class XmlElement extends XmlNode {
         // if the same node is not defined in this document merge it in.
         // if the same is defined, so far, give an error message.
         for (XmlElement lowerPriorityChild : lowerPriorityNode.getMergeableElements()) {
-            if (lowerPriorityChild.getType() != null &&
-                    lowerPriorityChild.getType().getMergeType() == MergeType.IGNORE) {
+            if (lowerPriorityChild.getType().getMergeType() == MergeType.IGNORE) {
                 continue;
             }
             Optional<XmlElement> thisChildOptional =
                     getNodeByTypeAndKey(lowerPriorityChild.getType(),lowerPriorityChild.getKey());
 
-            if (thisChildOptional.isPresent()) {
-                // it's defined in both files
-                logger.verbose(
-                        lowerPriorityChild.getId() + " defined in both files...");
+            // only in the lower priority document ?
+            if (!thisChildOptional.isPresent()) {
+                addElement(lowerPriorityChild, mergingReport);
+                continue;
+            }
+            // it's defined in both files.
+            logger.verbose(lowerPriorityChild.getId() + " defined in both files...");
 
-                XmlElement thisChild = thisChildOptional.get();
-
-                if (thisChild.getType().getMergeType() == MergeType.CONFLICT) {
+            XmlElement thisChild = thisChildOptional.get();
+            switch (thisChild.getType().getMergeType()) {
+                case CONFLICT:
                     mergingReport.addError(String.format(
                             "Node %1$s cannot be present in more than one input file and it's "
                                     + "present at %2$s and %3$s",
                             thisChild.getType(),
                             thisChild.printPosition(),
                             lowerPriorityChild.printPosition()));
-                    return;
-                }
-
-                // 2 nodes exist, 3 possibilities :
-                //  higher priority one has a tools:node="remove", remove the low priority one
-                //  higher priority one has a tools:node="replace", replace the low priority one
-                //  higher priority one has a tools:node="strict", flag the error if not equals.
-                switch(thisChild.getOperationType()) {
-                    case MERGE:
-                        // record the action
-                        mergingReport.getActionRecorder().recordNodeAction(thisChild,
-                                ActionRecorder.ActionType.MERGED, lowerPriorityChild);
-                        // and perform the merge
-                        thisChildOptional.get().mergeWithLowerPriorityNode(lowerPriorityChild,
-                                mergingReport);
-                        break;
-                    case REMOVE:
-                    case REPLACE:
-                        // so far remove and replace and similar, the post validation will take
-                        // care of removing this node in the case of REMOVE.
-
-                        // just don't import the lower priority node and record the action.
-                        mergingReport.getActionRecorder().recordNodeAction(thisChild,
-                                ActionRecorder.ActionType.REJECTED, lowerPriorityChild);
-                        break;
-                    case STRICT:
-                        Optional<String> compareMessage = thisChild.compareTo(lowerPriorityChild);
-                        if (compareMessage.isPresent()) {
-                            // flag error.
-                            mergingReport.addError(String.format(
-                                    "Node %1$s at %2$s is tagged with tools:node=\"strict\", yet "
-                                            + "%3$s at %4$s is different : %5$s",
-                                    thisChild.getId(),
-                                    thisChild.printPosition(),
-                                    lowerPriorityChild.getId(),
-                                    lowerPriorityChild.printPosition(),
-                                    compareMessage.get()));
-                        }
-                        break;
-                    default:
-                        mergingReport.getLogger().error(null /* throwable */,
-                                "Unhandled node operation type %s", thisChild.getOperationType());
-                        break;
-                }
-            } else {
-                List<Node> comments = getLeadingComments(lowerPriorityChild.getXml());
-                // only in the new file, just import it.
-                Node node = mXml.getOwnerDocument().adoptNode(lowerPriorityChild.getXml());
-                mXml.appendChild(node);
-
-                // also adopt the child's comments if any.
-                for (Node comment : comments) {
-                    Node newComment = mXml.getOwnerDocument().adoptNode(comment);
-                    mXml.insertBefore(newComment, node);
-                }
-
-                mergingReport.getActionRecorder().recordNodeAction(lowerPriorityChild,
-                        ActionRecorder.ActionType.ADDED);
-                logger.verbose("Adopted " + node);
+                    break;
+                case ALWAYS:
+                    // no merging, we consume the lower priority node unmodified.
+                    // if the two elements are equal, just skip it.
+                    if (thisChild.compareTo(lowerPriorityChild).isPresent()) {
+                        addElement(lowerPriorityChild, mergingReport);
+                    }
+                    break;
+                default:
+                    // 2 nodes exist, some merging need to happen
+                    handleTwoElementsExistence(thisChild, lowerPriorityChild, mergingReport);
             }
         }
+    }
+
+    /**
+     * Handle 2 elements (of same identity) merging.
+     * higher priority one has a tools:node="remove", remove the low priority one
+     * higher priority one has a tools:node="replace", replace the low priority one
+     * higher priority one has a tools:node="strict", flag the error if not equals.
+     * default or tools:node="merge", merge the two elements.
+     * @param higherPriority the higher priority node.
+     * @param lowerPriority the lower priority element.
+     * @param mergingReport the merging report to log errors and actions.
+     */
+    private void handleTwoElementsExistence(
+            XmlElement higherPriority,
+            XmlElement lowerPriority,
+            MergingReport.Builder mergingReport) {
+
+        // 2 nodes exist, 3 possibilities :
+        //  higher priority one has a tools:node="remove", remove the low priority one
+        //  higher priority one has a tools:node="replace", replace the low priority one
+        //  higher priority one has a tools:node="strict", flag the error if not equals.
+        switch(higherPriority.getOperationType()) {
+            case MERGE:
+                // record the action
+                mergingReport.getActionRecorder().recordNodeAction(higherPriority,
+                        ActionRecorder.ActionType.MERGED, lowerPriority);
+                // and perform the merge
+                higherPriority.mergeWithLowerPriorityNode(lowerPriority, mergingReport);
+                break;
+            case REMOVE:
+            case REPLACE:
+                // so far remove and replace and similar, the post validation will take
+                // care of removing this node in the case of REMOVE.
+
+                // just don't import the lower priority node and record the action.
+                mergingReport.getActionRecorder().recordNodeAction(higherPriority,
+                        ActionRecorder.ActionType.REJECTED, lowerPriority);
+                break;
+            case STRICT:
+                Optional<String> compareMessage = higherPriority.compareTo(lowerPriority);
+                if (compareMessage.isPresent()) {
+                    // flag error.
+                    mergingReport.addError(String.format(
+                            "Node %1$s at %2$s is tagged with tools:node=\"strict\", yet "
+                                    + "%3$s at %4$s is different : %5$s",
+                            higherPriority.getId(),
+                            higherPriority.printPosition(),
+                            lowerPriority.getId(),
+                            lowerPriority.printPosition(),
+                            compareMessage.get()
+                    ));
+                }
+                break;
+            default:
+                mergingReport.getLogger().error(null /* throwable */,
+                        "Unhandled node operation type %s", higherPriority.getOperationType());
+                break;
+        }
+    }
+
+    /**
+     * Add an element and its leading comments as the last sub-element of the current element.
+     * @param elementToBeAdded xml element to be added to the current element.
+     * @param mergingReport the merging report to log errors and actions.
+     */
+    private void addElement(XmlElement elementToBeAdded, MergingReport.Builder mergingReport) {
+
+        List<Node> comments = getLeadingComments(elementToBeAdded.getXml());
+        // only in the new file, just import it.
+        Node node = mXml.getOwnerDocument().adoptNode(elementToBeAdded.getXml());
+        mXml.appendChild(node);
+
+        // also adopt the child's comments if any.
+        for (Node comment : comments) {
+            Node newComment = mXml.getOwnerDocument().adoptNode(comment);
+            mXml.insertBefore(newComment, node);
+        }
+
+        mergingReport.getActionRecorder().recordNodeAction(elementToBeAdded,
+                ActionRecorder.ActionType.ADDED);
+        mergingReport.getLogger().verbose("Adopted " + node);
     }
 
     /**

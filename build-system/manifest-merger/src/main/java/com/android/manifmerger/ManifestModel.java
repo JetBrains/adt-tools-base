@@ -17,6 +17,7 @@
 package com.android.manifmerger;
 
 import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.manifmerger.AttributeModel.Hexadecimal32BitsWithMinimumValue;
 import static com.android.manifmerger.AttributeModel.MultiValueValidator;
 import static com.android.manifmerger.AttributeModel.ReferenceValidator;
@@ -27,9 +28,16 @@ import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.android.utils.SdkUtils;
 import com.android.xml.AndroidManifest;
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+
+import org.w3c.dom.Attr;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Model for the manifest file merging activities.
@@ -157,6 +165,42 @@ class ManifestModel {
         @Override
         public ImmutableList<String> getKeyAttributesNames() {
             return ImmutableList.of(SdkConstants.ATTR_NAME, AndroidManifest.ATTRIBUTE_GLESVERSION);
+        }
+    };
+
+    /**
+     * Specific {@link com.android.manifmerger.ManifestModel.NodeKeyResolver} for intent-filter
+     * elements.
+     * Intent filters do not have a proper key, therefore their identity is really carried by
+     * the presence of the action and category sub-elements.
+     * We concatenate such elements sub-keys (after sorting them to work around declaration order)
+     * and use that for the intent-filter unique key.
+     */
+    private static final NodeKeyResolver INTENT_FILTER_KEY_RESOLVER = new NodeKeyResolver() {
+        @Nullable
+        @Override
+        public String getKey(XmlElement xmlElement) {
+            assert(xmlElement.getType() == NodeTypes.INTENT_FILTER);
+            // concatenate all actions and categories attribute names.
+            List<String> allSubElementKeys = new ArrayList<String>();
+            for (XmlElement subElement : xmlElement.getMergeableElements()) {
+                if (subElement.getType() == NodeTypes.ACTION
+                        || subElement.getType() == NodeTypes.CATEGORY) {
+                    Attr nameAttribute = subElement.getXml()
+                            .getAttributeNodeNS(ANDROID_URI, ATTR_NAME);
+                    if (nameAttribute != null) {
+                        allSubElementKeys.add(nameAttribute.getValue());
+                    }
+                }
+            }
+            Collections.sort(allSubElementKeys);
+            return Joiner.on('+').join(allSubElementKeys);
+        }
+
+        @NonNull
+        @Override
+        public ImmutableList<String> getKeyAttributesNames() {
+            return ImmutableList.of("action#name", "category#name");
         }
     };
 
@@ -292,7 +336,7 @@ class ManifestModel {
          *     Intent-filter Xml documentation</a>}
          */
         // TODO: key is provided by sub elements...
-        INTENT_FILTER(MergeType.MERGE, new NoKeyNodeResolver()),
+        INTENT_FILTER(MergeType.ALWAYS, INTENT_FILTER_KEY_RESOLVER),
 
         /**
          * Manifest (top level node)

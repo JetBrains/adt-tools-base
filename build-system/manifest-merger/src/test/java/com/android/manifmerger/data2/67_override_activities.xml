@@ -15,12 +15,12 @@
     <application
             android:name="TheApp"
             android:backupAgent=".MyBackupAgent" >
-        <activity android:name=".MainActivity" tools:merge="override" />
-        <receiver android:name="AppReceiver"   tools:merge="override"/>
+        <activity android:name=".MainActivity" tools:node="replace" />
+        <receiver android:name="AppReceiver"   tools:node="replace"/>
         <activity android:name="com.example.lib2.LibActivity" />
-        <service  android:name="com.example.AppService1" tools:merge="override" />
-        <provider android:name="com.example.Provider1"   tools:merge="override"  />
-        <activity-alias android:name="AliasActivity1"    tools:merge="override" />
+        <service  android:name="com.example.AppService1" tools:node="replace" />
+        <provider android:name="com.example.Provider1"   tools:node="replace"  />
+        <activity-alias android:name="AliasActivity1"    tools:node="replace" />
 
     </application>
 </manifest>

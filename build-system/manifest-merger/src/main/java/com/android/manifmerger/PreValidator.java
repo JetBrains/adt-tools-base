@@ -16,9 +16,6 @@
 
 package com.android.manifmerger;
 
-import static com.android.SdkConstants.ANDROID_URI;
-
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.xml.AndroidManifest;
 import com.google.common.base.Joiner;
@@ -27,7 +24,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
 import org.w3c.dom.Attr;
-import org.w3c.dom.Element;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -74,11 +70,8 @@ public class PreValidator {
             @NonNull MergingReport.Builder mergingReport,
             @NonNull XmlDocument xmlDocument) {
 
-        MergingReport.Result validated = validate(mergingReport, xmlDocument.getRootNode());
-        if (validated == MergingReport.Result.SUCCESS) {
-            splitUsesFeatureDeclarations(mergingReport, xmlDocument.getRootNode());
-        }
-        return validated;
+        validateManifestAttribute(mergingReport, xmlDocument.getRootNode());
+        return validate(mergingReport, xmlDocument.getRootNode());
     }
 
     private static MergingReport.Result validate(MergingReport.Builder mergingReport,
@@ -114,6 +107,16 @@ public class PreValidator {
         }
         return mergingReport.hasErrors()
                 ? MergingReport.Result.ERROR : MergingReport.Result.SUCCESS;
+    }
+
+    private static void validateManifestAttribute(
+            MergingReport.Builder mergingReport, XmlElement manifest) {
+        Attr attributeNode = manifest.getXml().getAttributeNode(AndroidManifest.ATTRIBUTE_PACKAGE);
+        if (attributeNode == null) {
+            mergingReport.addWarning(String.format(
+                    "Missing 'package' declaration in manifest at %1$s",
+                    manifest.printPosition()));
+        }
     }
 
     /**
@@ -210,37 +213,5 @@ public class PreValidator {
                             attributeOperationTypeEntry.getValue());
             }
         }
-    }
-
-    /**
-     * Finds {@link com.android.manifmerger.ManifestModel.NodeTypes#USES_FEATURE} elements which
-     * have both android:name and android:glEsVersion attributes set and split such element into
-     * two elements, one with each attribute value.
-     *
-     * @param mergingReport report to log warnings and errors.
-     * @param xmlElement the {@link com.android.manifmerger.XmlElement} to check for such elements
-     *                   presence.
-     */
-    private static void splitUsesFeatureDeclarations(MergingReport.Builder mergingReport,
-            XmlElement xmlElement) {
-
-        for (XmlElement childElement : xmlElement.getMergeableElements()) {
-
-            if (childElement.getType() == ManifestModel.NodeTypes.USES_FEATURE) {
-                // check if has name AND glEsVersion attributes.
-                Element childXml = childElement.getXml();
-                Attr name = childXml.getAttributeNodeNS(ANDROID_URI, SdkConstants.ATTR_NAME);
-                Attr glEsVersion = childXml.getAttributeNodeNS(
-                        ANDROID_URI, AndroidManifest.ATTRIBUTE_GLESVERSION);
-                if (name != null && glEsVersion != null) {
-                    // spit these declarations into 2.
-                    Element sibling = (Element) childXml.cloneNode(true);
-                    sibling.removeAttributeNS(ANDROID_URI, "name");
-                    xmlElement.getXml().appendChild(sibling);
-                    childXml.removeAttributeNS(ANDROID_URI, AndroidManifest.ATTRIBUTE_GLESVERSION);
-                }
-            }
-        }
-
     }
 }

@@ -43,6 +43,7 @@ public abstract class XmlNode {
     /**
      * Returns the element's xml
      */
+    @NonNull
     public abstract Node getXml();
 
     /**
