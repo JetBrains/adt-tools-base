@@ -144,7 +144,9 @@
             android:name="com.example.AppReceiver3"
             android:icon="@drawable/app_icon">
             <intent-filter>
-                <action android:name="com.example.action.ACTION_CUSTOM" />
+                <action android:name="com.example.action.ACTION_CUSTOM"/>
+            </intent-filter>
+            <intent-filter>
                 <action android:name="com.example.action.ACTION_CUSTOM1" />
                 <action android:name="com.example.action.ACTION_CUSTOM2" />
                 <action android:name="com.example.action.ACTION_CUSTOM3" />

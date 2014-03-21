@@ -310,9 +310,6 @@
 
 @errors
 
-P [ManifestMergerTest0_main.xml:37, ManifestMergerTest1_lib1.xml:26] Skipping identical /manifest/application/activity[@name=com.example.LibActivity] element.
-P [ManifestMergerTest0_main.xml:5, ManifestMergerTest1_lib1.xml:41] Skipping identical /manifest/application/activity[@name=com.example.Activity1] element.
-P [ManifestMergerTest0_main.xml:18, ManifestMergerTest1_lib1.xml:7] Skipping identical /manifest/application/receiver[@name=com.example.AppReceiver] element.
-P [ManifestMergerTest0_main.xml:5, ManifestMergerTest2_lib2.xml:6] Skipping identical /manifest/application/activity[@name=com.example.Activity1] element.
-P [ManifestMergerTest0_main.xml:37, ManifestMergerTest2_lib2.xml:11] Skipping identical /manifest/application/activity[@name=com.example.LibActivity] element.
-P [ManifestMergerTest0_main.xml:18, ManifestMergerTest2_lib2.xml:20] Skipping identical /manifest/application/receiver[@name=com.example.AppReceiver] element.
+WARNING:Element intent-filter#android.intent.action.MAIN+android.intent.category.LAUNCHER at (23,13) file:ManifestMerger2Test0_main.xml:23 duplicated with element declared at (19,13) file:ManifestMerger2Test0_main.xml:19
+WARNING:Element intent-filter#android.intent.action.MAIN+android.intent.category.LAUNCHER at (76,13) file:ManifestMerger2Test1_lib1.xml:76 duplicated with element declared at (72,13) file:ManifestMerger2Test1_lib1.xml:72
+WARNING:Element intent-filter#android.intent.action.MAIN+android.intent.category.LAUNCHER at (19,13) file:ManifestMerger2Test2_lib2.xml:19 duplicated with element declared at (18,13) file:ManifestMerger2Test2_lib2.xml:18

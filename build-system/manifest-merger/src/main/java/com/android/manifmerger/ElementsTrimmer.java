@@ -18,6 +18,7 @@ package com.android.manifmerger;
 
 import static com.android.SdkConstants.ANDROID_URI;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.xml.AndroidManifest;
 
@@ -110,11 +111,25 @@ public class ElementsTrimmer {
                 }
             }
             if (removeElement) {
-                xmlDocument.getRootNode().getXml().removeChild(
-                        glEsVersionDeclaration.getValue().getXml());
-                mergingReport.getActionRecorder().recordNodeAction(
-                        glEsVersionDeclaration.getValue(),
-                        ActionRecorder.ActionType.REJECTED);
+                // if the node only contains glEsVersion, then remove the entire node,
+                // if it also contains android:name, just remove the glEsVersion attribute
+                if (glEsVersionDeclaration.getValue().getXml().getAttributeNodeNS(ANDROID_URI,
+                        SdkConstants.ATTR_NAME) != null) {
+                    glEsVersionDeclaration.getValue().getXml().removeAttributeNS(ANDROID_URI,
+                            AndroidManifest.ATTRIBUTE_GLESVERSION);
+                    mergingReport.getActionRecorder().recordAttributeAction(
+                            glEsVersionDeclaration.getValue().getAttribute(XmlNode.fromXmlName(
+                                    "android:" + AndroidManifest.ATTRIBUTE_GLESVERSION)).get(),
+                            ActionRecorder.ActionType.REJECTED,
+                            null /* attributeOperationType */);
+                } else {
+                    xmlDocument.getRootNode().getXml().removeChild(
+                            glEsVersionDeclaration.getValue().getXml());
+                    mergingReport.getActionRecorder().recordNodeAction(
+                            glEsVersionDeclaration.getValue(),
+                            ActionRecorder.ActionType.REJECTED);
+
+                }
             }
 
         }

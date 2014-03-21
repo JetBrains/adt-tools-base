@@ -13,7 +13,7 @@
 
     <!-- The "remove" tag will eradicate this element from the output. -->
     <application
-            tools:merge="remove"
+            tools:node="remove"
             android:name="TheApp"
             android:backupAgent=".MyBackupAgent" >
         <activity android:name=".MainActivity" />
