@@ -102,6 +102,7 @@ public class XmlAttribute extends XmlNode {
         return mOwnerElement.getDocument().getNodePosition(this);
     }
 
+    @NonNull
     @Override
     public Attr getXml() {
         return mXml;

@@ -164,7 +164,8 @@ public class ManifestMerger2 {
                 : Optional.of(lowerPriorityDocument);
 
         // if requested, dump each intermediary merging stage into the report.
-        if (mOptionalFeatures.contains(Invoker.Feature.KEEP_INTERMEDIARY_STAGES)) {
+        if (mOptionalFeatures.contains(Invoker.Feature.KEEP_INTERMEDIARY_STAGES)
+                && result.isPresent()) {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             result.get().write(byteArrayOutputStream);
             mergingReportBuilder.addMergingStage(byteArrayOutputStream.toString());
@@ -197,7 +198,7 @@ public class ManifestMerger2 {
          */
         PACKAGE {
             @Override
-            public void addTo(Document document, String value) {
+            public void addTo(@NonNull Document document, @NonNull String value) {
                 addToElement(this, value, document.getDocumentElement());
             }
         },
@@ -206,7 +207,7 @@ public class ManifestMerger2 {
          */
         VERSION_CODE {
             @Override
-            public void addTo(Document document, String value) {
+            public void addTo(@NonNull Document document, @NonNull String value) {
                 addToElementInAndroidNS(this, value, document.getDocumentElement());
             }
         },
@@ -215,7 +216,7 @@ public class ManifestMerger2 {
          */
         VERSION_NAME {
             @Override
-            public void addTo(Document document, String value) {
+            public void addTo(@NonNull Document document, @NonNull String value) {
                 addToElementInAndroidNS(this, value, document.getDocumentElement());
             }
         },
@@ -224,7 +225,7 @@ public class ManifestMerger2 {
          */
         MIN_SDK_VERSION {
             @Override
-            public void addTo(Document document, String value) {
+            public void addTo(@NonNull Document document, @NonNull String value) {
                 addToElementInAndroidNS(this, value, createOrGetUseSdk(document));
             }
         },
@@ -233,7 +234,7 @@ public class ManifestMerger2 {
          */
         TARGET_SDK_VERSION {
             @Override
-            public void addTo(Document document, String value) {
+            public void addTo(@NonNull Document document, @NonNull String value) {
                 addToElementInAndroidNS(this, value, createOrGetUseSdk(document));
             }
         };

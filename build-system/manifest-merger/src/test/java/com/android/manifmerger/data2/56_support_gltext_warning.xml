@@ -118,6 +118,7 @@
 
     <supports-gl-texture android:name="some.gl.texture1" />
     <supports-gl-texture android:name="some.gl.texture2" />
+    <supports-gl-texture android:name="some.gl.texture3" />
 
     <application
         android:label="@string/app_name"
@@ -145,7 +146,3 @@
 
 
 @errors
-
-W [ManifestMergerTest0_main.xml:1, ManifestMergerTest2_lib2.xml:4] /manifest/supports-gl-texture defined in library, missing from main manifest:
-<supports-gl-texture>
-    @android:name = some.gl.texture3
