@@ -173,34 +173,35 @@ public class VariantManager {
             basePlugin.setAssembleTest(assembleTest);
 
             // check whether we have multi flavor builds
-            List<String> flavorGroupList = extension.getFlavorGroupList();
-            if (flavorGroupList == null || flavorGroupList.size() < 2) {
+            List<String> flavorDimensionList = extension.getFlavorDimensionList();
+            if (flavorDimensionList == null || flavorDimensionList.size() < 2) {
                 for (ProductFlavorData productFlavorData : productFlavors.values()) {
                     createTasksForFlavoredBuild(productFlavorData);
                 }
             } else {
-                // need to group the flavor per group.
-                // First a map of group -> list(ProductFlavor)
+                // need to group the flavor per dimension.
+                // First a map of dimension -> list(ProductFlavor)
                 ArrayListMultimap<String, ProductFlavorData<GroupableProductFlavorDsl>> map = ArrayListMultimap.create();
                 for (ProductFlavorData<GroupableProductFlavorDsl> productFlavorData : productFlavors.values()) {
 
                     GroupableProductFlavorDsl flavor = productFlavorData.getProductFlavor();
-                    String flavorGroup = flavor.getFlavorGroup();
+                    String flavorDimension = flavor.getFlavorDimension();
 
-                    if (flavorGroup == null) {
+                    if (flavorDimension == null) {
                         throw new RuntimeException(String.format(
-                                "Flavor '%1$s' has no flavor group.", flavor.getName()));
+                                "Flavor '%1$s' has no flavor dimension.", flavor.getName()));
                     }
-                    if (!flavorGroupList.contains(flavorGroup)) {
+                    if (!flavorDimensionList.contains(flavorDimension)) {
                         throw new RuntimeException(String.format(
-                                "Flavor '%1$s' has unknown group '%2$s'.", flavor.getName(), flavor.getFlavorGroup()));
+                                "Flavor '%1$s' has unknown dimension '%2$s'.",
+                                flavor.getName(), flavor.getFlavorDimension()));
                     }
 
-                    map.put(flavorGroup, productFlavorData);
+                    map.put(flavorDimension, productFlavorData);
                 }
 
-                // now we use the flavor groups to generate an ordered array of flavor to use
-                ProductFlavorData[] array = new ProductFlavorData[flavorGroupList.size()];
+                // now we use the flavor dimensions to generate an ordered array of flavor to use
+                ProductFlavorData[] array = new ProductFlavorData[flavorDimensionList.size()];
                 createTasksForMultiFlavoredBuilds(array, 0, map);
             }
         }
@@ -219,11 +220,11 @@ public class VariantManager {
      * Creates the tasks for multi-flavor builds.
      *
      * This recursively fills the array of ProductFlavorData (in the order defined
-     * in extension.flavorGroupList), creating all possible combination.
+     * in extension.flavorDimensionList), creating all possible combination.
      *
      * @param datas the arrays to fill
      * @param index the current index to fill
-     * @param map the map of group -> list(ProductFlavor)
+     * @param map the map of dimension -> list(ProductFlavor)
      */
     private void createTasksForMultiFlavoredBuilds(
             ProductFlavorData[] datas,
@@ -235,11 +236,11 @@ public class VariantManager {
         }
 
         // fill the array at the current index.
-        // get the group name that matches the index we are filling.
-        String group = extension.getFlavorGroupList().get(index);
+        // get the dimension name that matches the index we are filling.
+        String dimension = extension.getFlavorDimensionList().get(index);
 
-        // from our map, get all the possible flavors in that group.
-        List<? extends ProductFlavorData> flavorList = map.get(group);
+        // from our map, get all the possible flavors in that dimension.
+        List<? extends ProductFlavorData> flavorList = map.get(dimension);
 
         // loop on all the flavors to add them to the current index and recursively fill the next
         // indices.
@@ -361,7 +362,7 @@ public class VariantManager {
 
         BaseVariantData testedVariantData = null;
 
-        // assembleTask for this flavor(group), created on demand if needed.
+        // assembleTask for this flavor(dimension), created on demand if needed.
         Task assembleTask = null;
 
         ProductFlavorData defaultConfigData = basePlugin.getDefaultConfigData();
@@ -409,7 +410,7 @@ public class VariantManager {
                     DefaultProductFlavor productFlavor = data.getProductFlavor();
 
                     if (productFlavor instanceof GroupableProductFlavorDsl) {
-                        dimensionName = ((GroupableProductFlavorDsl) productFlavor).getFlavorGroup();
+                        dimensionName = ((GroupableProductFlavorDsl) productFlavor).getFlavorDimension();
                     }
                     variantConfig.addProductFlavor(
                             productFlavor,
@@ -497,7 +498,7 @@ public class VariantManager {
                 DefaultProductFlavor productFlavor = data.getProductFlavor();
 
                 if (productFlavor instanceof GroupableProductFlavorDsl) {
-                    dimensionName = ((GroupableProductFlavorDsl) productFlavor).getFlavorGroup();
+                    dimensionName = ((GroupableProductFlavorDsl) productFlavor).getFlavorDimension();
                 }
                 testVariantConfig.addProductFlavor(
                         productFlavor,
