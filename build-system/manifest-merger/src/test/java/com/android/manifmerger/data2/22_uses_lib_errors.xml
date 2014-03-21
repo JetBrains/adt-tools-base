@@ -100,9 +100,9 @@
 
 @errors
 
-ERROR:Missing 'name' attribute on element uses-library at (10,9) file:ManifestMerger2Test1_lib1.xml:10
-ERROR:Missing 'name' attribute on element uses-library at (9,9) file:ManifestMerger2Test1_lib1.xml:9
-ERROR:Missing 'name' attribute on element uses-library at (8,9) file:ManifestMerger2Test1_lib1.xml:8
+ERROR:Missing 'name' key attribute on element uses-library at (10,9) file:ManifestMerger2Test1_lib1.xml:10
+ERROR:Missing 'name' key attribute on element uses-library at (9,9) file:ManifestMerger2Test1_lib1.xml:9
+ERROR:Missing 'name' key attribute on element uses-library at (8,9) file:ManifestMerger2Test1_lib1.xml:8
 WARNING:Element uses-library#com.example.SomeLibrary3_RequiredFalse at (35,9) file:ManifestMerger2Test0_main.xml:35 duplicated with element declared at (30,9) file:ManifestMerger2Test0_main.xml:30
 ERROR:Attribute uses-library#com.example.SomeLibrary4_RequiredFalse@android:required at (25,13) file:ManifestMerger2Test1_lib1.xml:25 has an illegal value=(foo), expected 'true' or 'false'
 ERROR:Validation failed, exiting

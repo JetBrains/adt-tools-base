@@ -105,6 +105,13 @@ public class ManifestMerger2 {
             }
         }
 
+        // done with proper merging phase, now we need to trim unwanted elements, placeholder
+        // substitution and system properties injection.
+        ElementsTrimmer.trim(xmlDocumentOptional.get(), mergingReportBuilder);
+        if (mergingReportBuilder.hasErrors()) {
+            return mergingReportBuilder.build();
+        }
+
         // do placeholder substitution
         PlaceholderHandler placeholderHandler = new PlaceholderHandler();
         placeholderHandler.visit(

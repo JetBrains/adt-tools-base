@@ -71,9 +71,8 @@ public class ManifestMerger2Test extends ManifestMergerTest {
 //            "36_uses_sdk_targetsdk_warning",
             "40_uses_feat_merge",
             "41_uses_feat_errors",
-
-//            "45_uses_feat_gles_once",
-//            "47_uses_feat_gles_conflict",
+            "45_uses_feat_gles_once",
+            "47_uses_feat_gles_conflict",
 //            "50_uses_conf_warning",
 //            "52_support_screens_warning",
 //            "54_compat_screens_warning",
@@ -227,7 +226,16 @@ public class ManifestMerger2Test extends ManifestMergerTest {
                 // next might generate an exception which will make the test fail when we
                 // get unexpected error message.
                 if (!findLineInRecords(line, records)) {
-                    fail("Cannot find expected error : " + line);
+
+                    StringBuilder message = new StringBuilder();
+                    message.append("\n------------ Records : \n");
+                    for (Record record : records) {
+                        message.append(record.toString());
+                        message.append("\n");
+                    }
+                    message.append("------------End of records.\n");
+                    message.append("Cannot find expected error : \n").append(line);
+                    fail(message.toString());
                 }
             }
         }

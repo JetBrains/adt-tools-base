@@ -194,9 +194,9 @@
 
 @errors
 
-ERROR:Missing 'name' attribute on element uses-feature at (6,5) file:ManifestMerger2Test1_lib1.xml:6
-ERROR:Missing 'name' attribute on element uses-feature at (7,5) file:ManifestMerger2Test1_lib1.xml:7
-ERROR:Missing 'name' attribute on element uses-feature at (8,5) file:ManifestMerger2Test1_lib1.xml:8
+ERROR:Missing one of the key attributes 'name,glEsVersion' on element uses-feature at (6,5) file:ManifestMerger2Test1_lib1.xml:6
+ERROR:Missing one of the key attributes 'name,glEsVersion' on element uses-feature at (7,5) file:ManifestMerger2Test1_lib1.xml:7
+ERROR:Missing one of the key attributes 'name,glEsVersion' on element uses-feature at (8,5) file:ManifestMerger2Test1_lib1.xml:8
 ERROR:Attribute uses-feature#com.example.SomeFeature3_RequiredFalse@android:required at (18,9) file:ManifestMerger2Test1_lib1.xml:18 has an illegal value=(booh!), expected 'true' or 'false'
 ERROR:Attribute uses-feature#com.example.SomeFeature4_RequiredFalse@android:required at (23,9) file:ManifestMerger2Test1_lib1.xml:23 has an illegal value=(foo), expected 'true' or 'false'
 ERROR:Validation failed, exiting

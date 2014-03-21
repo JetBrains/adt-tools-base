@@ -132,7 +132,7 @@
     <!-- A feature that is implicitly marked as required=true -->
 # required=false from lib1 is ignored, it stays at the default
     <uses-feature
-        android:name="com.example.SomeFeature1_DefaultTrue" />
+        android:name="com.example.SomeFeature1_DefaultTrue"/>
 
     <!-- A feature that is explicitly marked as required=true -->
     <uses-feature

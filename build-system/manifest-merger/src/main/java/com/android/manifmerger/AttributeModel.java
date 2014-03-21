@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -260,11 +261,26 @@ class AttributeModel {
         @Nullable
         @Override
         public String merge(@NonNull String higherPriority, @NonNull String lowerPriority) {
-            return Integer.parseInt(higherPriority) >= Integer.parseInt(lowerPriority)
+            return decodeDecOrHexString(higherPriority) >= decodeDecOrHexString(lowerPriority)
                     ? higherPriority
                     : null;
         }
     };
+
+    /**
+     * Decode a decimal or hexadecimal {@link String} into an {@link Integer}.
+     * String starting with 0 will be considered decimal, not octal.
+     */
+    private static int decodeDecOrHexString(String s) {
+        long decodedValue = s.startsWith("0x") || s.startsWith("0X")
+                ? Long.decode(s)
+                : Long.parseLong(s);
+        if (decodedValue < 0xFFFFFFFFL) {
+            return (int) decodedValue;
+        } else {
+            throw new IllegalArgumentException("Value " + s + " too big for 32 bits.");
+        }
+    }
 
     /**
      * Validates an attribute value.
@@ -407,6 +423,69 @@ class AttributeModel {
                         value));
                 return false;
             }
+        }
+    }
+
+    /**
+     * A {@link com.android.manifmerger.AttributeModel.Validator} to validate that a string is
+     * a valid 32 bits hexadecimal representation.
+     */
+    static class Hexadecimal32Bits implements Validator {
+        protected static final Pattern PATTERN = Pattern.compile("0[xX]([0-9a-fA-F]+)");
+
+        @Override
+        public boolean validates(@NonNull MergingReport.Builder mergingReport,
+                @NonNull XmlAttribute attribute, @NonNull String value) {
+            Matcher matcher = PATTERN.matcher(value);
+            boolean valid = matcher.matches() && matcher.group(1).length() <= 8;
+            if (!valid) {
+                mergingReport.addError(String.format(
+                        "Attribute %1$s at %2$s is not a valid hexadecimal 32 bit value,"
+                                + " found %3$s",
+                        attribute.getId(),
+                        attribute.printPosition(),
+                        value));
+            }
+            return valid;
+        }
+    }
+
+    /**
+     * A {@link com.android.manifmerger.AttributeModel.Validator} to validate that a string is
+     * a valid 32 positive hexadecimal representation with a minimum value requirement.
+     */
+    static class Hexadecimal32BitsWithMinimumValue extends Hexadecimal32Bits {
+
+        private final int mMinimumValue;
+
+        Hexadecimal32BitsWithMinimumValue(int minimumValue) {
+            mMinimumValue = minimumValue;
+        }
+
+        @Override
+        public boolean validates(@NonNull MergingReport.Builder mergingReport,
+                @NonNull XmlAttribute attribute, @NonNull String value) {
+            boolean valid = super.validates(mergingReport, attribute, value);
+            if (valid) {
+                try {
+                    Long decodedValue = Long.decode(value);
+                    valid = decodedValue >= mMinimumValue && decodedValue < 0xFFFFFFFFL;
+                } catch(NumberFormatException e) {
+                    valid = false;
+                }
+                if (!valid) {
+                    mergingReport.addError(String.format(
+                            "Attribute %1$s at %2$s is not a valid hexadecimal value,"
+                                    + " minimum is 0x%3$08X, maximum is 0x%4$08X, found %5$s",
+                            attribute.getId(),
+                            attribute.printPosition(),
+                            mMinimumValue,
+                            Integer.MAX_VALUE,
+                            value));
+                }
+                return valid;
+            }
+            return false;
         }
     }
 }
