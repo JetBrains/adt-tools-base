@@ -93,7 +93,6 @@ public class PreValidator {
         for (XmlElement childElement : xmlElement.getMergeableElements()) {
 
             if (checkKeyPresence(mergingReport, childElement)) {
-
                 XmlElement twin = childrenKeys.get(childElement.getId());
                 if (twin != null) {
                     // we have 2 elements with the same identity, if they are equals,
@@ -110,8 +109,8 @@ public class PreValidator {
                     }
                 }
                 childrenKeys.put(childElement.getId(), childElement);
-                validate(mergingReport, childElement);
             }
+            validate(mergingReport, childElement);
         }
         return mergingReport.hasErrors()
                 ? MergingReport.Result.ERROR : MergingReport.Result.SUCCESS;
@@ -121,15 +120,17 @@ public class PreValidator {
      * Checks that an element which is supposed to have a key does have one.
      * @param mergingReport report to log warnings and errors.
      * @param xmlElement xml element to check for key presence.
-     * @return true if the element has a valid key or does not need one, false otherwise.
+     * @return true if the element has a valid key or false it does not need one or it is invalid.
      */
     private static boolean checkKeyPresence(
             MergingReport.Builder mergingReport,
             XmlElement xmlElement) {
-
         ManifestModel.NodeKeyResolver nodeKeyResolver = xmlElement.getType().getNodeKeyResolver();
         ImmutableList<String> keyAttributesNames = nodeKeyResolver.getKeyAttributesNames();
-        if (keyAttributesNames.size() > 0 && Strings.isNullOrEmpty(xmlElement.getKey())) {
+        if (keyAttributesNames.isEmpty()) {
+            return false;
+        }
+        if (Strings.isNullOrEmpty(xmlElement.getKey())) {
             // we should have a key but we don't.
             String message = keyAttributesNames.size() > 1
                     ? String.format(
