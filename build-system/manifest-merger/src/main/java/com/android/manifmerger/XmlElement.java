@@ -298,8 +298,17 @@ public class XmlElement extends XmlNode {
                 }
             }
         }
-        // merge children.
-        mergeChildren(lowerPriorityNode, mergingReport);
+        // are we supposed to merge children ?
+        if (mNodeOperationType != NodeOperationType.MERGE_ONLY_ATTRIBUTES) {
+            mergeChildren(lowerPriorityNode, mergingReport);
+        } else {
+            // record rejection of the lower priority node's children .
+            for (XmlElement lowerPriorityChild : lowerPriorityNode.getMergeableElements()) {
+                mergingReport.getActionRecorder().recordNodeAction(this,
+                        ActionRecorder.ActionType.REJECTED,
+                        lowerPriorityChild);
+            }
+        }
     }
 
     public ImmutableList<XmlElement> getMergeableElements() {
@@ -423,6 +432,7 @@ public class XmlElement extends XmlNode {
         //  higher priority one has a tools:node="strict", flag the error if not equals.
         switch(higherPriority.getOperationType()) {
             case MERGE:
+            case MERGE_ONLY_ATTRIBUTES:
                 // record the action
                 mergingReport.getActionRecorder().recordNodeAction(higherPriority,
                         ActionRecorder.ActionType.MERGED, lowerPriority);
