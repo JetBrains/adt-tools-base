@@ -479,4 +479,15 @@ public class IconDetectorTest extends AbstractCheckTest {
                         "res/drawable-mdpi/sample_icon.gif=>res/drawable-mdpi/ic_launcher_2.gif"
                 ));
     }
+
+    public void test67486() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=67486
+        mEnabled = Collections.singleton(IconDetector.ICON_COLORS);
+        assertEquals("No warnings.",
+
+                lintProject(
+                        "apicheck/minsdk14.xml=>AndroidManifest.xml",
+                        "res/drawable-xhdpi/ic_stat_notify.png=>res/drawable-xhdpi/ic_stat_notify.png"
+                ));
+    }
 }
