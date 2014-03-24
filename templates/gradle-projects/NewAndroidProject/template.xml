@@ -5,6 +5,8 @@
     name="Android Project"
     description="Creates a new Android project.">
 
+    <category value="Application" />
+
     <thumbs>
         <thumb>template_new_project.png</thumb>
     </thumbs>
