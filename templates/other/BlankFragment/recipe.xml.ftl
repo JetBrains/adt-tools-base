@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <recipe>
 
-    <dependency mavenUrl="com.android.support:support-v4:+"/>
+    <dependency mavenUrl="com.android.support:support-v4:19.+"/>
     <merge from="res/values/strings.xml" to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
 
     <#if includeLayout>
