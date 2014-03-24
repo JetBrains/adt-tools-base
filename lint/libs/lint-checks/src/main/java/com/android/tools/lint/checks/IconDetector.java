@@ -1359,8 +1359,9 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                         for (int y = 0, height = image.getHeight(); y < height; y++) {
                             for (int x = 0, width = image.getWidth(); x < width; x++) {
                                 int rgb = image.getRGB(x, y);
-                                if ((rgb & 0xFF000000) != 0
-                                        && rgb != 0xFFFFFFFF) {
+                                // If the pixel is not completely transparent, insist that
+                                // its RGB channel must be white (with any alpha value)
+                                if ((rgb & 0xFF000000) != 0 && (rgb & 0xFFFFFF) != 0xFFFFFF) {
                                     int r = (rgb & 0xFF0000) >>> 16;
                                     int g = (rgb & 0x00FF00) >>> 8;
                                     int b = (rgb & 0x0000FF);
