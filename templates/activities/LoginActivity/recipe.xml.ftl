@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <recipe>
-    <dependency mavenUrl="com.google.android.gms:play-services:4.0.30" />
-    <dependency mavenUrl="com.android.support:appcompat-v7:+" />
+    <dependency mavenUrl="com.google.android.gms:play-services:4.2.42" />
+    <dependency mavenUrl="com.android.support:appcompat-v7:19.+" />
 
     <merge from="AndroidManifest.xml.ftl"
              to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
