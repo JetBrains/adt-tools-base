@@ -7,6 +7,8 @@
     minApi="4"
     minBuildApi="16">
 
+    <category value="Widget" />
+
     <parameter
         id="className"
         name="Class Name"
