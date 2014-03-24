@@ -58,11 +58,6 @@ import java.util.Map;
  */
 public class XmlElement extends XmlNode {
 
-    /**
-     * Local name used in node level tools instructions attribute
-     */
-    public static final String TOOLS_NODE_LOCAL_NAME = "node";      //$NON-NLS-1$
-
     @NonNull private final Element mXml;
     @NonNull private final ManifestModel.NodeTypes mType;
     @NonNull private final XmlDocument mDocument;
@@ -90,7 +85,7 @@ public class XmlElement extends XmlNode {
             Node attribute = namedNodeMap.item(i);
             if (SdkConstants.TOOLS_URI.equals(attribute.getNamespaceURI())) {
                 String instruction = attribute.getLocalName();
-                if (instruction.equals(TOOLS_NODE_LOCAL_NAME)) {
+                if (instruction.equals(NodeOperationType.NODE_LOCAL_NAME)) {
                     // should we flag an error when there are more than one operation type on a node ?
                     lastNodeOperationType = NodeOperationType.valueOf(
                             SdkUtils.camelCaseToConstantName(
@@ -333,7 +328,7 @@ public class XmlElement extends XmlNode {
         // if the same node is not defined in this document merge it in.
         // if the same is defined, so far, give an error message.
         for (XmlElement lowerPriorityChild : lowerPriorityNode.getMergeableElements()) {
-            if (lowerPriorityChild.getType().getMergeType() == MergeType.IGNORE) {
+            if (shouldIgnore(lowerPriorityChild, mergingReport)) {
                 continue;
             }
             Optional<XmlElement> thisChildOptional =
@@ -369,6 +364,42 @@ public class XmlElement extends XmlNode {
                     handleTwoElementsExistence(thisChild, lowerPriorityChild, mergingReport);
             }
         }
+    }
+
+    /**
+     * Determine if we should completely ignore a child from any merging activity.
+     * There are 2 situations where we should ignore a lower priority child :
+     * <p>
+     * <ul>
+     *     <li>The associate {@link com.android.manifmerger.ManifestModel.NodeTypes} is
+     *     annotated with {@link com.android.manifmerger.MergeType#IGNORE}</li>
+     *     <li>This element has a child of the same type with no key that has a '
+     *     tools:node="removeAll' attribute.</li>
+     * </ul>
+     * @param lowerPriorityChild the lower priority child we should determine eligibility for
+     *                           merging.
+     * @return true if the element should be ignored, false otherwise.
+     */
+    private boolean shouldIgnore(
+            XmlElement lowerPriorityChild,
+            MergingReport.Builder mergingReport) {
+
+        if (lowerPriorityChild.getType().getMergeType() == MergeType.IGNORE) {
+            return true;
+        }
+
+        // do we have an element of the same type of that child with no key ?
+        Optional<XmlElement> thisChildElement =
+                getNodeByTypeAndKey(lowerPriorityChild.getType(), null /* keyValue */);
+        boolean shouldDelete = thisChildElement.isPresent()
+                && thisChildElement.get().mNodeOperationType == NodeOperationType.REMOVE_ALL;
+        // if we should discard this child element, record the action.
+        if (shouldDelete) {
+            mergingReport.getActionRecorder().recordNodeAction(thisChildElement.get(),
+                    ActionRecorder.ActionType.REJECTED,
+                    lowerPriorityChild);
+        }
+        return shouldDelete;
     }
 
     /**

@@ -85,6 +85,25 @@ public class ToolsInstructionsCleanerTest extends TestCase {
         assertNull(ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog));
     }
 
+    public void testInvalidToolsRemoveAllOperation()
+            throws ParserConfigurationException, SAXException, IOException {
+        MockLog mockLog = new MockLog();
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\""
+                + "    tools:node=\"removeAll\">\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(
+                        getClass(), "testNodeRemoveOperation"), main);
+
+        assertNull(ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog));
+    }
+
     public void testNodeReplaceOperation()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();
