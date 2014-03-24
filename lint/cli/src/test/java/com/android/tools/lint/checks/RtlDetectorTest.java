@@ -16,10 +16,18 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ATTR_DRAWABLE_RIGHT;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_END;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_LEFT;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_START;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_RIGHT;
+import static com.android.SdkConstants.ATTR_LAYOUT_MARGIN_END;
+import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.tools.lint.checks.RtlDetector.ATTRIBUTES;
 import static com.android.tools.lint.checks.RtlDetector.convertNewToOld;
 import static com.android.tools.lint.checks.RtlDetector.convertOldToNew;
 import static com.android.tools.lint.checks.RtlDetector.convertToOppositeDirection;
+import static com.android.tools.lint.checks.RtlDetector.isRtlAttributeName;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.client.api.LintClient;
@@ -45,6 +53,16 @@ public class RtlDetectorTest extends AbstractCheckTest {
         ALL.add(RtlDetector.ENABLED);
         ALL.add(RtlDetector.COMPAT);
         ALL.add(RtlDetector.SYMMETRY);
+    }
+
+    public void testIsRtlAttributeName() {
+        assertTrue(isRtlAttributeName(ATTR_LAYOUT_ALIGN_PARENT_START));
+        assertTrue(isRtlAttributeName(ATTR_LAYOUT_MARGIN_END));
+        assertTrue(isRtlAttributeName(ATTR_LAYOUT_ALIGN_END));
+        assertFalse(isRtlAttributeName(ATTR_LAYOUT_ALIGN_PARENT_LEFT));
+        assertFalse(isRtlAttributeName(ATTR_DRAWABLE_RIGHT));
+        assertFalse(isRtlAttributeName(ATTR_LAYOUT_ALIGN_RIGHT));
+        assertFalse(isRtlAttributeName(ATTR_NAME));
     }
 
     @Override
