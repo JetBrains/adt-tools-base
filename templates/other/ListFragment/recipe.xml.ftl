@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <recipe>
 
-    <dependency mavenUrl="com.android.support:support-v4:+"/>
+    <dependency mavenUrl="com.android.support:support-v4:19.+"/>
 <#if switchGrid == true>
     <merge from="res/values/refs.xml.ftl"
              to="${escapeXmlAttribute(resOut)}/values/refs.xml" />

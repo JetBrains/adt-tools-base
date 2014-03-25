@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <recipe>
 
-    <#if appCompat?has_content><dependency mavenUrl="com.android.support:appcompat-v7:+"/></#if>
-    <#if !appCompat?has_content && hasViewPager?has_content><dependency mavenUrl="com.android.support:support-v13:+"/></#if>
-    <#if !appCompat?has_content && features == 'drawer'><dependency mavenUrl="com.android.support:support-v4:+"/></#if>
+    <#if appCompat?has_content><dependency mavenUrl="com.android.support:appcompat-v7:19.+"/></#if>
+    <#if !appCompat?has_content && hasViewPager?has_content><dependency mavenUrl="com.android.support:support-v13:19.+"/></#if>
+    <#if !appCompat?has_content && features == 'drawer'><dependency mavenUrl="com.android.support:support-v4:19.+"/></#if>
 
     <merge from="AndroidManifest.xml.ftl"
              to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
