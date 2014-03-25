@@ -16,6 +16,7 @@
 
 package com.android.manifmerger;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.xml.AndroidManifest;
 import com.google.common.base.Joiner;
@@ -24,8 +25,12 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
 import org.w3c.dom.Attr;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -85,28 +90,62 @@ public class PreValidator {
         Map<String, XmlElement> childrenKeys = new HashMap<String, XmlElement>();
         for (XmlElement childElement : xmlElement.getMergeableElements()) {
 
-            if (checkKeyPresence(mergingReport, childElement)) {
-                XmlElement twin = childrenKeys.get(childElement.getId());
-                if (twin != null) {
-                    // we have 2 elements with the same identity, if they are equals,
-                    // issue a warning, if not, issue an error.
-                    String message = String.format(
-                            "Element %1$s at %2$s duplicated with element declared at %3$s",
-                            childElement.getId(),
-                            childElement.printPosition(),
-                            childrenKeys.get(childElement.getId()).printPosition());
-                    if (twin.compareTo(childElement).isPresent()) {
-                        mergingReport.addError(message);
-                    } else {
-                        mergingReport.addWarning(message);
+            // if this element is tagged with 'tools:node=removeAll', ensure it has no other
+            // attributes.
+            if (childElement.getOperationType() == NodeOperationType.REMOVE_ALL) {
+                validateRemoveAllOperation(mergingReport, childElement);
+            } else {
+                if (checkKeyPresence(mergingReport, childElement)) {
+                    XmlElement twin = childrenKeys.get(childElement.getId());
+                    if (twin != null) {
+                        // we have 2 elements with the same identity, if they are equals,
+                        // issue a warning, if not, issue an error.
+                        String message = String.format(
+                                "Element %1$s at %2$s duplicated with element declared at %3$s",
+                                childElement.getId(),
+                                childElement.printPosition(),
+                                childrenKeys.get(childElement.getId()).printPosition());
+                        if (twin.compareTo(childElement).isPresent()) {
+                            mergingReport.addError(message);
+                        } else {
+                            mergingReport.addWarning(message);
+                        }
                     }
+                    childrenKeys.put(childElement.getId(), childElement);
                 }
-                childrenKeys.put(childElement.getId(), childElement);
+                validate(mergingReport, childElement);
             }
-            validate(mergingReport, childElement);
         }
         return mergingReport.hasErrors()
                 ? MergingReport.Result.ERROR : MergingReport.Result.SUCCESS;
+    }
+
+    /**
+     * Validate an xml declaration with 'tools:node="removeAll" annotation. There should not
+     * be any other attribute declaration on this element.
+     */
+    private static void validateRemoveAllOperation(MergingReport.Builder mergingReport,
+            XmlElement element) {
+
+        NamedNodeMap attributes = element.getXml().getAttributes();
+        if (attributes.getLength() > 1) {
+            List<String> extraAttributeNames = new ArrayList<String>();
+            for (int i = 0; i < attributes.getLength(); i++) {
+                Node item = attributes.item(i);
+                if (!(SdkConstants.TOOLS_URI.equals(item.getNamespaceURI()) &&
+                        NodeOperationType.NODE_LOCAL_NAME.equals(item.getLocalName()))) {
+                    extraAttributeNames.add(item.getNodeName());
+                }
+            }
+            String message = String.format(
+                    "Element %1$s at %2$s annotated with 'tools:node=\"removeAll\"' cannot "
+                            + "have other attributes : %3$s",
+                    element.getId(),
+                    element.printPosition(),
+                    Joiner.on(',').join(extraAttributeNames)
+            );
+            mergingReport.addError(message);
+        }
     }
 
     private static void validateManifestAttribute(
