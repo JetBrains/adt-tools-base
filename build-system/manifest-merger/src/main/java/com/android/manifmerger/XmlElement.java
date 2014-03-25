@@ -69,12 +69,15 @@ public class XmlElement extends XmlNode {
     private final Map<NodeName, AttributeOperationType> mAttributesOperationTypes;
     // list of mergeable children elements.
     private final ImmutableList<XmlElement> mMergeableChildren;
+    // optional selector declared on this xml element.
+    @Nullable private final Selector mSelector;
 
     public XmlElement(@NonNull Element xml, @NonNull XmlDocument document) {
 
-        this.mXml = Preconditions.checkNotNull(xml);
-        this.mType = ManifestModel.NodeTypes.fromXmlSimpleName(mXml.getNodeName());
-        this.mDocument = Preconditions.checkNotNull(document);
+        mXml = Preconditions.checkNotNull(xml);
+        mType = ManifestModel.NodeTypes.fromXmlSimpleName(mXml.getNodeName());
+        mDocument = Preconditions.checkNotNull(document);
+        Selector selector = null;
 
         ImmutableMap.Builder<NodeName, AttributeOperationType> attributeOperationTypeBuilder =
                 ImmutableMap.builder();
@@ -90,6 +93,8 @@ public class XmlElement extends XmlNode {
                     lastNodeOperationType = NodeOperationType.valueOf(
                             SdkUtils.camelCaseToConstantName(
                                     attribute.getNodeValue()));
+                } else if (instruction.equals(Selector.SELECTOR_LOCAL_NAME)) {
+                    selector = new Selector(attribute.getNodeValue());
                 } else {
                     AttributeOperationType attributeOperationType =
                             AttributeOperationType.valueOf(
@@ -124,6 +129,7 @@ public class XmlElement extends XmlNode {
         mNodeOperationType = lastNodeOperationType;
         mAttributes = attributesListBuilder.build();
         mMergeableChildren = initMergeableChildren();
+        mSelector = selector;
     }
 
     /**
@@ -156,6 +162,7 @@ public class XmlElement extends XmlNode {
     /**
      * Returns the owning {@link com.android.manifmerger.XmlDocument}
      */
+    @NonNull
     public XmlDocument getDocument() {
         return mDocument;
     }
@@ -293,7 +300,8 @@ public class XmlElement extends XmlNode {
                 if (attributeModel.getDefaultValue() != null) {
                     Optional<XmlAttribute> myAttribute = getAttribute(attributeModel.getName());
                     if (myAttribute.isPresent()) {
-                        myAttribute.get().mergeWithLowerPriorityDefaultValue(mergingReport, lowerPriorityNode);
+                        myAttribute.get().mergeWithLowerPriorityDefaultValue(
+                                mergingReport, lowerPriorityNode);
                     }
                 }
             }
@@ -337,9 +345,11 @@ public class XmlElement extends XmlNode {
         // if the same node is not defined in this document merge it in.
         // if the same is defined, so far, give an error message.
         for (XmlElement lowerPriorityChild : lowerPriorityNode.getMergeableElements()) {
+
             if (shouldIgnore(lowerPriorityChild, mergingReport)) {
                 continue;
             }
+
             Optional<XmlElement> thisChildOptional =
                     getNodeByTypeAndKey(lowerPriorityChild.getType(),lowerPriorityChild.getKey());
 
@@ -398,13 +408,21 @@ public class XmlElement extends XmlNode {
         }
 
         // do we have an element of the same type of that child with no key ?
-        Optional<XmlElement> thisChildElement =
+        Optional<XmlElement> thisChildElementOptional =
                 getNodeByTypeAndKey(lowerPriorityChild.getType(), null /* keyValue */);
-        boolean shouldDelete = thisChildElement.isPresent()
-                && thisChildElement.get().mNodeOperationType == NodeOperationType.REMOVE_ALL;
+        if (!thisChildElementOptional.isPresent()) {
+            return false;
+        }
+        XmlElement thisChild = thisChildElementOptional.get();
+
+        // are we supposed to delete all occurrences and if yes, is there a selector defined to
+        // filter which elements should be deleted.
+        boolean shouldDelete = thisChild.mNodeOperationType == NodeOperationType.REMOVE_ALL
+                && (thisChild.mSelector == null
+                        || thisChild.mSelector.appliesTo(lowerPriorityChild));
         // if we should discard this child element, record the action.
         if (shouldDelete) {
-            mergingReport.getActionRecorder().recordNodeAction(thisChildElement.get(),
+            mergingReport.getActionRecorder().recordNodeAction(thisChildElementOptional.get(),
                     ActionRecorder.ActionType.REJECTED,
                     lowerPriorityChild);
         }
@@ -421,16 +439,17 @@ public class XmlElement extends XmlNode {
      * @param lowerPriority the lower priority element.
      * @param mergingReport the merging report to log errors and actions.
      */
-    private void handleTwoElementsExistence(
+    private static void handleTwoElementsExistence(
             XmlElement higherPriority,
             XmlElement lowerPriority,
             MergingReport.Builder mergingReport) {
 
+        NodeOperationType operationType = calculateNodeOperationType(higherPriority, lowerPriority);
         // 2 nodes exist, 3 possibilities :
         //  higher priority one has a tools:node="remove", remove the low priority one
         //  higher priority one has a tools:node="replace", replace the low priority one
         //  higher priority one has a tools:node="strict", flag the error if not equals.
-        switch(higherPriority.getOperationType()) {
+        switch(operationType) {
             case MERGE:
             case MERGE_ONLY_ATTRIBUTES:
                 // record the action
@@ -468,6 +487,31 @@ public class XmlElement extends XmlNode {
                         "Unhandled node operation type %s", higherPriority.getOperationType());
                 break;
         }
+    }
+
+    /**
+     * Calculate the effective node operation type for a higher priority node when a lower priority
+     * node is queried for merge.
+     * @param higherPriority the higher priority node which may have a {@link NodeOperationType}
+     *                       declaration and may also have a {@link Selector} declaration.
+     * @param lowerPriority the lower priority node that is elected for merging with the higher
+     *                      priority node.
+     * @return the effective {@link NodeOperationType} that should be used to affect higher and
+     * lower priority nodes merging.
+     */
+    private static NodeOperationType calculateNodeOperationType(
+            @NonNull XmlElement higherPriority,
+            @NonNull XmlElement lowerPriority) {
+
+        NodeOperationType operationType = higherPriority.getOperationType();
+        // if the operation's selector exists and the lower priority node is not selected,
+        // we revert to default operation type which is merge.
+        if (operationType.isSelectable()
+                && higherPriority.mSelector != null
+                && !higherPriority.mSelector.appliesTo(lowerPriority)) {
+            operationType = NodeOperationType.MERGE;
+        }
+        return operationType;
     }
 
     /**
