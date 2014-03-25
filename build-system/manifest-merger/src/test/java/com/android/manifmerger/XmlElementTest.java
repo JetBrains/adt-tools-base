@@ -19,7 +19,6 @@ package com.android.manifmerger;
 import com.android.SdkConstants;
 import com.android.utils.StdLogger;
 import com.google.common.base.Optional;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
 import junit.framework.TestCase;
@@ -28,7 +27,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.xml.sax.SAXException;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
@@ -709,9 +707,7 @@ public class XmlElementTest extends TestCase {
                         "com.example.lib3.activityOne");
         assertTrue(activityOne.isPresent());
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        resultDocument.write(byteArrayOutputStream);
-        Logger.getAnonymousLogger().info(byteArrayOutputStream.toString());
+        Logger.getAnonymousLogger().info(resultDocument.prettyPrint());
 
 
         assertFalse(refDocument.getRootNode().getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,
@@ -766,9 +762,7 @@ public class XmlElementTest extends TestCase {
                         "com.example.lib3.activityOne");
         assertTrue(activityOne.isPresent());
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        resultDocument.write(byteArrayOutputStream);
-        Logger.getAnonymousLogger().info(byteArrayOutputStream.toString());
+        Logger.getAnonymousLogger().info(resultDocument.prettyPrint());
 
 
         assertFalse(refDocument.getRootNode().getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,

@@ -35,7 +35,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.Map;
 
@@ -166,9 +165,7 @@ public class ManifestMerger2 {
         // if requested, dump each intermediary merging stage into the report.
         if (mOptionalFeatures.contains(Invoker.Feature.KEEP_INTERMEDIARY_STAGES)
                 && result.isPresent()) {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            result.get().write(byteArrayOutputStream);
-            mergingReportBuilder.addMergingStage(byteArrayOutputStream.toString());
+            mergingReportBuilder.addMergingStage(result.get().prettyPrint());
         }
 
         return result;

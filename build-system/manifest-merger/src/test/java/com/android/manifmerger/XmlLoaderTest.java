@@ -17,6 +17,9 @@
 package com.android.manifmerger;
 
 import com.android.SdkConstants;
+import com.android.ide.common.xml.XmlFormatPreferences;
+import com.android.ide.common.xml.XmlFormatStyle;
+import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
 
@@ -56,6 +59,42 @@ public class XmlLoaderTest extends TestCase {
         assertEquals("label", label.getLocalName());
         assertEquals(SdkConstants.ANDROID_URI, label.getNamespaceURI());
         assertEquals("android:label", label.getNodeName());
+    }
+
+    public void testPrettyPrint() throws IOException, SAXException, ParserConfigurationException {
+
+        String input = ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\" >\n"
+                + "\n"
+                + "    <!-- this is a comment -->\n"
+                + "    <application android:label=\"@string/lib_name\" >\n"
+                + "\n"
+                + "        <!-- The activity name will be expanded to its full FQCN by default. -->\n"
+                + "        <activity\n"
+                + "            android:name=\"com.example.lib3.MainActivity\"\n"
+                + "            android:label=\"@string/app_name\" >\n"
+                + "            <intent-filter>\n\n"
+                + "                <!-- some other comment -->\n"
+                + "                <action android:name=\"android.intent.action.MAIN\" />\n"
+                + "\n"
+                + "                <category android:name=\"android.intent.category.LAUNCHER\" />\n"
+                + "            </intent-filter>\n"
+                + "        </activity>\n"
+                + "    </application>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(),"testPrettyPrint()"), input);
+        Optional<XmlElement> applicationOptional = xmlDocument.getRootNode()
+                .getNodeByTypeAndKey(ManifestModel.NodeTypes.APPLICATION, null);
+        assertTrue(applicationOptional.isPresent());
+        String prettyPrinted = XmlPrettyPrinter
+                .prettyPrint(xmlDocument.getXml(), XmlFormatPreferences.defaults(),
+                        XmlFormatStyle.get(xmlDocument.getRootNode().getXml()), null, false);
+        assertEquals(input, prettyPrinted);
     }
 
     public void testToolsPrefix() throws IOException, SAXException, ParserConfigurationException {

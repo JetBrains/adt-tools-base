@@ -564,6 +564,7 @@ public class PositionXmlParser {
         @Override
         public void comment(char[] chars, int start, int length) throws SAXException {
 
+            flushText();
             String comment = new String(chars, start, length);
             Comment domComment = mDocument.createComment(comment);
 
