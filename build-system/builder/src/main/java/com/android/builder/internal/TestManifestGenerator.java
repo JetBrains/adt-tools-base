@@ -16,6 +16,7 @@
 package com.android.builder.internal;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,19 +28,19 @@ import java.util.Map;
  */
 public class TestManifestGenerator {
 
-    private final static String TEMPLATE = "AndroidManifest.template";
-    private final static String PH_PACKAGE = "#PACKAGE#";
-    private final static String PH_MIN_SDK_VERSION = "#MINSDKVERSION#";
-    private final static String PH_TARGET_SDK_VERSION = "#TARGETSDKVERSION#";
-    private final static String PH_TESTED_PACKAGE = "#TESTEDPACKAGE#";
-    private final static String PH_TEST_RUNNER = "#TESTRUNNER#";
-    private final static String PH_HANDLE_PROFILING = "#HANDLEPROFILING#";
-    private final static String PH_FUNCTIONAL_TEST = "#FUNCTIONALTEST#";
+    private static final String TEMPLATE = "AndroidManifest.template";
+    private static final String PH_PACKAGE = "#PACKAGE#";
+    private static final String PH_MIN_SDK_VERSION = "#MINSDKVERSION#";
+    private static final String PH_TARGET_SDK_VERSION = "#TARGETSDKVERSION#";
+    private static final String PH_TESTED_PACKAGE = "#TESTEDPACKAGE#";
+    private static final String PH_TEST_RUNNER = "#TESTRUNNER#";
+    private static final String PH_HANDLE_PROFILING = "#HANDLEPROFILING#";
+    private static final String PH_FUNCTIONAL_TEST = "#FUNCTIONALTEST#";
 
     private final String mOutputFile;
     private final String mPackageName;
-    private final int mMinSdkVersion;
-    private final int mTargetSdkVersion;
+    private final String mMinSdkVersion;
+    private final String mTargetSdkVersion;
     private final String mTestedPackageName;
     private final String mTestRunnerName;
     private final boolean mHandleProfiling;
@@ -47,7 +48,7 @@ public class TestManifestGenerator {
 
     public TestManifestGenerator(@NonNull String outputFile,
                           @NonNull String packageName,
-                          int minSdkVersion,
+                          @Nullable String minSdkVersion,
                           int targetSdkVersion,
                           @NonNull String testedPackageName,
                           @NonNull String testRunnerName,
@@ -56,7 +57,7 @@ public class TestManifestGenerator {
         mOutputFile = outputFile;
         mPackageName = packageName;
         mMinSdkVersion = minSdkVersion;
-        mTargetSdkVersion = targetSdkVersion != -1 ? targetSdkVersion : minSdkVersion;
+        mTargetSdkVersion = targetSdkVersion != -1 ? Integer.toString(targetSdkVersion) : minSdkVersion;
         mTestedPackageName = testedPackageName;
         mTestRunnerName = testRunnerName;
         mHandleProfiling = handleProfiling;
@@ -66,8 +67,8 @@ public class TestManifestGenerator {
     public void generate() throws IOException {
         Map<String, String> map = new HashMap<String, String>();
         map.put(PH_PACKAGE, mPackageName);
-        map.put(PH_MIN_SDK_VERSION, Integer.toString(mMinSdkVersion));
-        map.put(PH_TARGET_SDK_VERSION, Integer.toString(mTargetSdkVersion));
+        map.put(PH_MIN_SDK_VERSION, mMinSdkVersion);
+        map.put(PH_TARGET_SDK_VERSION, mTargetSdkVersion);
         map.put(PH_TESTED_PACKAGE, mTestedPackageName);
         map.put(PH_TEST_RUNNER, mTestRunnerName);
         map.put(PH_HANDLE_PROFILING, Boolean.toString(mHandleProfiling));
