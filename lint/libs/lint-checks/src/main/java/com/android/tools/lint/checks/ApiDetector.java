@@ -18,7 +18,11 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_PREFIX;
 import static com.android.SdkConstants.ANDROID_THEME_PREFIX;
+import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_CLASS;
+import static com.android.SdkConstants.ATTR_ID;
+import static com.android.SdkConstants.ATTR_LAYOUT_HEIGHT;
+import static com.android.SdkConstants.ATTR_LAYOUT_WIDTH;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_TARGET_API;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
@@ -36,6 +40,7 @@ import static com.android.tools.lint.detector.api.Location.SearchDirection.BACKW
 import static com.android.tools.lint.detector.api.Location.SearchDirection.FORWARD;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.NEAREST;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.sdk.SdkVersionInfo;
@@ -236,6 +241,29 @@ public class ApiDetector extends ResourceXmlDetector
                     ApiDetector.class,
                     Scope.CLASS_FILE_SCOPE));
 
+    /** Accessing an inlined API on older platforms */
+    public static final Issue UNUSED = Issue.create(
+            "UnusedAttribute", //$NON-NLS-1$
+            "Attribute unused on older versions",
+            "Finds usages of attributes that will not be used (read) on all targeted versions",
+
+            "This check finds attributes set in XML files that were introduced in a version " +
+            "newer than the oldest version targeted by your application (with the the " +
+            "`minSdkVersion` attribute).\n" +
+            "\n" +
+            "This is not an error; the application will simply ignore the attribute. However, " +
+            "if the attribute is important to the appearance of functionality of your " +
+            "application, you should consider finding an alternative way to achieve the " +
+            "same result with only available attributes, and then you can optionally create " +
+            "a copy of the layout in a layout-vNN folder which will be used on API NN or " +
+            "higher where you can take advantage of the newer attribute.",
+            Category.CORRECTNESS,
+            6,
+            Severity.WARNING,
+            new Implementation(
+                    ApiDetector.class,
+                    Scope.RESOURCE_FILE_SCOPE));
+
     private static final String TARGET_API_VMSIG = '/' + TARGET_API + ';';
     private static final String SWITCH_TABLE_PREFIX = "$SWITCH_TABLE$";  //$NON-NLS-1$
     private static final String ORDINAL_METHOD = "ordinal"; //$NON-NLS-1$
@@ -293,11 +321,43 @@ public class ApiDetector extends ResourceXmlDetector
             return;
         }
 
-        String value = attribute.getValue();
+        int attributeApiLevel = -1;
+        if (ANDROID_URI.equals(attribute.getNamespaceURI())) {
+            String name = attribute.getLocalName();
+            if (!(name.equals(ATTR_LAYOUT_WIDTH) && !(name.equals(ATTR_LAYOUT_HEIGHT)) &&
+                !(name.equals(ATTR_ID)))) {
+                String owner = "android/R$attr"; //$NON-NLS-1$
+                attributeApiLevel = mApiDatabase.getFieldVersion(owner, name);
+                int minSdk = getMinSdk(context);
+                if (attributeApiLevel > minSdk && attributeApiLevel > context.getFolderVersion()
+                        && attributeApiLevel > getLocalMinSdk(attribute.getOwnerElement())
+                        // No need to warn for example that
+                        //  "layout_alignParentStart will only be used in API level 17 and higher"
+                        // since we have a dedicated RTL lint rule dealing with those attributes
+                        && !RtlDetector.isRtlAttributeName(name)) {
+                    Location location = context.getLocation(attribute);
+                    String message = String.format(
+                            "Attribute \"%1$s\" is only used in API level %2$d and higher "
+                                    + "(current min is %3$d)",
+                            attribute.getLocalName(), attributeApiLevel, minSdk
+                    );
+                    context.report(UNUSED, attribute, location, message, null);
+                }
+            }
 
+            // Special case:
+            // the dividers attribute is present in API 1, but it won't be read on older
+            // versions, so don't flag the common pattern
+            //    android:divider="?android:attr/dividerHorizontal"
+            // since this will work just fine. See issue 67440 for more.
+            if (name.equals("divider")) {
+                return;
+            }
+        }
+
+        String value = attribute.getValue();
         String owner = null;
         String name = null;
-
         String prefix;
         if (value.startsWith(ANDROID_PREFIX)) {
             prefix = ANDROID_PREFIX;
@@ -343,11 +403,28 @@ public class ApiDetector extends ResourceXmlDetector
                 return;
             }
 
-            Location location = context.getLocation(attribute);
-            String message = String.format(
-                    "%1$s requires API level %2$d (current min is %3$d)",
-                    value, api, minSdk);
-            context.report(UNSUPPORTED, attribute, location, message, null);
+            //noinspection StatementWithEmptyBody
+            if (attributeApiLevel >= api) {
+                // The attribute will only be *read* on platforms >= attributeApiLevel.
+                // If this isn't lower than the attribute reference's API level, it
+                // won't be a problem
+            } else if (attributeApiLevel > minSdk) {
+                String attributeName = attribute.getLocalName();
+                Location location = context.getLocation(attribute);
+                String message = String.format(
+                        "%1$s requires API level %2$d (current min is %3$d), but note "
+                                + "that attribute %4$s is only used in API level %5$d "
+                                + "and higher",
+                        name, api, minSdk, attributeName, attributeApiLevel
+                );
+                context.report(UNSUPPORTED, attribute, location, message, null);
+            } else {
+                Location location = context.getLocation(attribute);
+                String message = String.format(
+                        "%1$s requires API level %2$d (current min is %3$d)",
+                        value, api, minSdk);
+                context.report(UNSUPPORTED, attribute, location, message, null);
+            }
         }
     }
 

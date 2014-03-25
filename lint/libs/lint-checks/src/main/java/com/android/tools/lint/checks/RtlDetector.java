@@ -286,6 +286,15 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         }
     }
 
+    public static boolean isRtlAttributeName(@NonNull String attribute) {
+        for (int i = 1; i < ATTRIBUTES.length; i += 2) {
+            if (attribute.equals(ATTRIBUTES[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @VisibleForTesting
     static String convertOldToNew(String attribute) {
         if (attribute.contains(LEFT)) {
