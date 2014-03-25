@@ -18,6 +18,8 @@ import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
 import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Optional
+
 /**
  * A task that processes the manifest
  */
@@ -28,8 +30,8 @@ public class ProcessTestManifest extends ProcessManifest {
     @Input
     String testPackageName
 
-    @Input
-    int minSdkVersion
+    @Input @Optional
+    String minSdkVersion
 
     @Input
     int targetSdkVersion

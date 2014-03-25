@@ -51,6 +51,7 @@ import com.android.ide.common.internal.AaptCruncher;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.PngCruncher;
+import com.android.manifmerger.ICallback;
 import com.android.manifmerger.ManifestMerger;
 import com.android.manifmerger.MergerLog;
 import com.android.sdklib.BuildToolInfo;
@@ -319,19 +320,29 @@ public class AndroidBuilder {
      * @see DefaultProductFlavor#getTargetSdkVersion()
      */
     public void processManifest(
-            @NonNull File mainManifest,
-            @NonNull List<File> manifestOverlays,
-            @NonNull List<? extends ManifestDependency> libraries,
-                     String packageOverride,
-                     int versionCode,
-                     String versionName,
-                     int minSdkVersion,
-                     int targetSdkVersion,
-            @NonNull String outManifestLocation) {
+            @NonNull  File mainManifest,
+            @NonNull  List<File> manifestOverlays,
+            @NonNull  List<? extends ManifestDependency> libraries,
+                      String packageOverride,
+                      int versionCode,
+                      String versionName,
+            @Nullable String minSdkVersion,
+                      int targetSdkVersion,
+            @NonNull  String outManifestLocation) {
         checkNotNull(mainManifest, "mainManifest cannot be null.");
         checkNotNull(manifestOverlays, "manifestOverlays cannot be null.");
         checkNotNull(libraries, "libraries cannot be null.");
         checkNotNull(outManifestLocation, "outManifestLocation cannot be null.");
+
+        ICallback callback = new ICallback() {
+            @Override
+            public int queryCodenameApiLevel(@NonNull String codename) {
+                if (codename.equals(mTarget.getVersion().getCodename())) {
+                    return mTarget.getVersion().getApiLevel();
+                }
+                return ICallback.UNKNOWN_CODENAME;
+            }
+        };
 
         try {
             Map<String, String> attributeInjection = getAttributeInjectionMap(
@@ -344,7 +355,8 @@ public class AndroidBuilder {
                     SdkUtils.copyXmlWithSourceReference(mainManifest,
                             new File(outManifestLocation));
                 } else {
-                    ManifestMerger merger = new ManifestMerger(MergerLog.wrapSdkLog(mLogger), null);
+                    ManifestMerger merger = new ManifestMerger(MergerLog.wrapSdkLog(mLogger),
+                            callback);
                     merger.setInsertSourceMarkers(isInsertSourceMarkers());
                     doMerge(merger, new File(outManifestLocation), mainManifest,
                             attributeInjection, packageOverride);
@@ -363,7 +375,8 @@ public class AndroidBuilder {
                         mainManifestOut.deleteOnExit();
                     }
 
-                    ManifestMerger merger = new ManifestMerger(MergerLog.wrapSdkLog(mLogger), null);
+                    ManifestMerger merger = new ManifestMerger(MergerLog.wrapSdkLog(mLogger),
+                            callback);
                     merger.setInsertSourceMarkers(isInsertSourceMarkers());
                     doMerge(merger, mainManifestOut, mainManifest, manifestOverlays,
                             attributeInjection, packageOverride);
@@ -378,7 +391,8 @@ public class AndroidBuilder {
                     // recursively merge all manifests starting with the leaves and up toward the
                     // root (the app)
                     mergeLibraryManifests(mainManifest, libraries,
-                            new File(outManifestLocation), attributeInjection, packageOverride);
+                            new File(outManifestLocation), attributeInjection, packageOverride,
+                            callback);
                 }
             }
         } catch (IOException e) {
@@ -409,15 +423,15 @@ public class AndroidBuilder {
      * @see com.android.builder.VariantConfiguration#getDirectLibraries()
      */
     public void processTestManifest(
-            @NonNull String testPackageName,
-                     int minSdkVersion,
-                     int targetSdkVersion,
-            @NonNull String testedPackageName,
-            @NonNull String instrumentationRunner,
-            @NonNull Boolean handleProfiling,
-            @NonNull Boolean functionalTest,
-            @NonNull List<? extends ManifestDependency> libraries,
-            @NonNull String outManifestLocation) {
+            @NonNull  String testPackageName,
+            @Nullable String minSdkVersion,
+                      int targetSdkVersion,
+            @NonNull  String testedPackageName,
+            @NonNull  String instrumentationRunner,
+            @NonNull  Boolean handleProfiling,
+            @NonNull  Boolean functionalTest,
+            @NonNull  List<? extends ManifestDependency> libraries,
+            @NonNull  String outManifestLocation) {
         checkNotNull(testPackageName, "testPackageName cannot be null.");
         checkNotNull(testedPackageName, "testedPackageName cannot be null.");
         checkNotNull(instrumentationRunner, "instrumentationRunner cannot be null.");
@@ -425,6 +439,16 @@ public class AndroidBuilder {
         checkNotNull(functionalTest, "functionalTest cannot be null.");
         checkNotNull(libraries, "libraries cannot be null.");
         checkNotNull(outManifestLocation, "outManifestLocation cannot be null.");
+
+        ICallback callback = new ICallback() {
+            @Override
+            public int queryCodenameApiLevel(@NonNull String codename) {
+                if (codename.equals(mTarget.getVersion().getCodename())) {
+                    return mTarget.getVersion().getApiLevel();
+                }
+                return ICallback.UNKNOWN_CODENAME;
+            }
+        };
 
         if (!libraries.isEmpty()) {
             try {
@@ -445,7 +469,8 @@ public class AndroidBuilder {
                         generatedTestManifest,
                         libraries,
                         new File(outManifestLocation),
-                        null, null);
+                        null, null,
+                        callback);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -462,9 +487,9 @@ public class AndroidBuilder {
         }
     }
 
-    private void generateTestManifest(
+    private static void generateTestManifest(
             String testPackageName,
-            int minSdkVersion,
+            String minSdkVersion,
             int targetSdkVersion,
             String testedPackageName,
             String instrumentationRunner,
@@ -488,10 +513,10 @@ public class AndroidBuilder {
     }
 
     @NonNull
-    private Map<String, String> getAttributeInjectionMap(
+    private static Map<String, String> getAttributeInjectionMap(
                       int versionCode,
             @Nullable String versionName,
-                      int minSdkVersion,
+            @Nullable String minSdkVersion,
                       int targetSdkVersion) {
 
         Map<String, String> attributeInjection = Maps.newHashMap();
@@ -508,10 +533,10 @@ public class AndroidBuilder {
                     versionName);
         }
 
-        if (minSdkVersion != -1) {
+        if (minSdkVersion != null) {
             attributeInjection.put(
                     "/manifest/uses-sdk|http://schemas.android.com/apk/res/android minSdkVersion",
-                    Integer.toString(minSdkVersion));
+                    minSdkVersion);
         }
 
         if (targetSdkVersion != -1) {
@@ -532,7 +557,9 @@ public class AndroidBuilder {
     private void mergeLibraryManifests(
             File mainManifest,
             Iterable<? extends ManifestDependency> directLibraries,
-            File outManifest, Map<String, String> attributeInjection, String packageOverride)
+            File outManifest, Map<String, String> attributeInjection,
+            String packageOverride,
+            @NonNull ICallback callback)
             throws IOException {
 
         List<File> manifests = Lists.newArrayList();
@@ -546,13 +573,13 @@ public class AndroidBuilder {
 
                 // don't insert the attribute injection into libraries
                 mergeLibraryManifests(
-                        library.getManifest(), subLibraries, mergeLibManifest, null, null);
+                        library.getManifest(), subLibraries, mergeLibManifest, null, null, callback);
 
                 manifests.add(mergeLibManifest);
             }
         }
 
-        ManifestMerger merger = new ManifestMerger(MergerLog.wrapSdkLog(mLogger), null);
+        ManifestMerger merger = new ManifestMerger(MergerLog.wrapSdkLog(mLogger), callback);
         merger.setInsertSourceMarkers(isInsertSourceMarkers());
         doMerge(merger, outManifest, mainManifest, manifests, attributeInjection, packageOverride);
     }

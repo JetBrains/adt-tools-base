@@ -44,8 +44,8 @@ public class ProcessAppManifest extends ProcessManifest {
     @Input @Optional
     String versionName
 
-    @Input
-    int minSdkVersion
+    @Input @Optional
+    String minSdkVersion
 
     @Input
     int targetSdkVersion
