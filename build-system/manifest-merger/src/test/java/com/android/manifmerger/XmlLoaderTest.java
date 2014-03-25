@@ -79,7 +79,8 @@ public class XmlLoaderTest extends TestCase {
         assertEquals(2, application.getAttributes().getLength());
         Attr label = application.getAttributeNodeNS(SdkConstants.ANDROID_URI, "label");
         assertEquals("android:label", label.getNodeName());
-        Attr tools = application.getAttributeNodeNS(SdkConstants.TOOLS_URI, "node");
+        Attr tools = application.getAttributeNodeNS(SdkConstants.TOOLS_URI,
+                NodeOperationType.NODE_LOCAL_NAME);
         assertEquals("replace", tools.getNodeValue());
 
         // check positions.
@@ -118,7 +119,8 @@ public class XmlLoaderTest extends TestCase {
         assertEquals(2, application.getAttributes().getLength());
         Node label = application.getAttributeNodeNS(SdkConstants.ANDROID_URI, "label");
         assertEquals("x:label", label.getNodeName());
-        Node tools = application.getAttributeNodeNS(SdkConstants.TOOLS_URI, "node");
+        Node tools = application.getAttributeNodeNS(SdkConstants.TOOLS_URI,
+                NodeOperationType.NODE_LOCAL_NAME);
         assertEquals("y:node", tools.getNodeName());
         assertEquals("replace", tools.getNodeValue());
     }

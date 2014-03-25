@@ -88,6 +88,8 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "75_app_metadata_merge",
             "76_app_metadata_ignore",
             "77_app_metadata_conflict",
+            "78_removeAll",
+
     };
 
     @Override

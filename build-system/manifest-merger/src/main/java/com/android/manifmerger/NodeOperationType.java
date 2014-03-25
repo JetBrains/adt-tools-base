@@ -78,4 +78,9 @@ public enum NodeOperationType implements ConvertibleName {
         return SdkUtils.constantNameToCamelCase(name());
     }
 
+
+    /**
+     * Local xml name of node operation types.
+     */
+    static final String NODE_LOCAL_NAME = "node"; //$NON-NLS-1$
 }

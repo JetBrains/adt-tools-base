@@ -41,7 +41,10 @@ import org.w3c.dom.NodeList;
 @Immutable
 public class ToolsInstructionsCleaner {
 
-    private static final String REMOVE_OPERATION_XML_MAME = NodeOperationType.REMOVE.toXmlName();
+    private static final String REMOVE_OPERATION_XML_MAME =
+            NodeOperationType.REMOVE.toCamelCaseName();
+    private static final String REMOVE_ALL_OPERATION_XML_MAME =
+            NodeOperationType.REMOVE_ALL.toCamelCaseName();
 
     /**
      * Cleans all attributes belonging to the {@link com.android.SdkConstants#TOOLS_URI} namespace.
@@ -75,13 +78,16 @@ public class ToolsInstructionsCleaner {
                 if (SdkConstants.TOOLS_URI.equals(attribute.getNamespaceURI())) {
                     // we need to special case when the element contained tools:node="remove"
                     // since it also needs to be deleted.
-                    if (attribute.getLocalName().equals(XmlElement.TOOLS_NODE_LOCAL_NAME)
-                            && attribute.getNodeValue().equals(REMOVE_OPERATION_XML_MAME)) {
+                    if (attribute.getLocalName().equals(NodeOperationType.NODE_LOCAL_NAME)
+                            && (attribute.getNodeValue().equals(REMOVE_ALL_OPERATION_XML_MAME)
+                                || attribute.getNodeValue().equals(REMOVE_OPERATION_XML_MAME))) {
 
                         if (element.getParentNode().getNodeType() == Node.DOCUMENT_NODE) {
-                            logger.error(null /* throwable */,
-                                    "tools:node=\"remove\" specified on top level %s element",
-                                    XmlNode.unwrapName(element));
+                            logger.error(null /* Throwable */,
+                                    String.format(
+                                        "tools:node=\"%1$s\" not allowed on top level %2$s element",
+                                        attribute.getNodeValue(),
+                                        XmlNode.unwrapName(element)));
                             return ERROR;
                         } else {
                             element.getParentNode().removeChild(element);
