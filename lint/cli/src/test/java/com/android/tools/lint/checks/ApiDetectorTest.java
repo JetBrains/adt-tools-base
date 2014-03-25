@@ -65,14 +65,68 @@ public class ApiDetectorTest extends AbstractCheckTest {
 
     public void testAttrWithoutSlash() throws Exception {
         assertEquals(""
-                + "res/layout/divider.xml:7: Error: ?android:dividerHorizontal requires API level 11 (current min is 1) [NewApi]\n"
-                + "    android:divider=\"?android:dividerHorizontal\"\n"
-                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/attribute.xml:4: Error: ?android:autoMirrored requires API level 19 (current min is 1) [NewApi]\n"
+                + "    android:enabled=\"?android:autoMirrored\"\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
 
                 lintProject(
                         "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "apicheck/attribute.xml=>res/layout/attribute.xml"
+                ));
+    }
+
+    public void testUnusedShowDividers() throws Exception {
+        assertEquals(""
+                + "res/layout/divider.xml:9: Warning: Attribute \"showDividers\" is only used in API level 11 and higher (current min is 1) [UnusedAttribute]\n"
+                + "    android:showDividers=\"middle\"\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
                         "apicheck/divider.xml=>res/layout/divider.xml"
+                ));
+    }
+
+    public void testUnusedOnSomeVersions1() throws Exception {
+        assertEquals(""
+                + "res/layout/attribute2.xml:4: Error: switchTextAppearance requires API level 14 (current min is 1), but note that attribute editTextColor is only used in API level 11 and higher [NewApi]\n"
+                + "    android:editTextColor=\"?android:switchTextAppearance\"\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/attribute2.xml:4: Warning: Attribute \"editTextColor\" is only used in API level 11 and higher (current min is 1) [UnusedAttribute]\n"
+                + "    android:editTextColor=\"?android:switchTextAppearance\"\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 1 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "apicheck/attribute2.xml=>res/layout/attribute2.xml"
+                ));
+    }
+
+    public void testXmlApi() throws Exception {
+        assertEquals(""
+                + "res/layout/attribute2.xml:4: Error: ?android:switchTextAppearance requires API level 14 (current min is 11) [NewApi]\n"
+                + "    android:editTextColor=\"?android:switchTextAppearance\"\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk11.xml=>AndroidManifest.xml",
+                        "apicheck/attribute2.xml=>res/layout/attribute2.xml"
+                ));
+    }
+
+    public void testReportAttributeName() throws Exception {
+        assertEquals("res/layout/layout.xml:13: Warning: Attribute \"layout_row\" is only used in API level 14 and higher (current min is 4) [UnusedAttribute]\n"
+                + "            android:layout_row=\"2\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "apicheck/layoutattr.xml=>res/layout/layout.xml"
                 ));
     }
 
