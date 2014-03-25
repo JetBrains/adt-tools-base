@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle
+
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.api.AndroidSourceSet
@@ -101,6 +102,7 @@ import com.android.builder.testing.ConnectedDeviceProvider
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
 import com.android.ide.common.internal.ExecutorSingleton
+import com.android.sdklib.IAndroidTarget
 import com.android.utils.ILogger
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.ListMultimap
@@ -140,19 +142,20 @@ import java.lang.reflect.Method
 import java.util.jar.Attributes
 import java.util.jar.Manifest
 
+import static com.android.builder.BuilderConstants.ANDROID_TEST
 import static com.android.builder.BuilderConstants.CONNECTED
 import static com.android.builder.BuilderConstants.DEBUG
 import static com.android.builder.BuilderConstants.DEVICE
 import static com.android.builder.BuilderConstants.EXT_LIB_ARCHIVE
-import static com.android.builder.BuilderConstants.FD_FLAVORS
-import static com.android.builder.BuilderConstants.FD_FLAVORS_ALL
 import static com.android.builder.BuilderConstants.FD_ANDROID_RESULTS
 import static com.android.builder.BuilderConstants.FD_ANDROID_TESTS
+import static com.android.builder.BuilderConstants.FD_FLAVORS
+import static com.android.builder.BuilderConstants.FD_FLAVORS_ALL
 import static com.android.builder.BuilderConstants.FD_REPORTS
-import static com.android.builder.BuilderConstants.ANDROID_TEST
 import static com.android.builder.BuilderConstants.RELEASE
 import static com.android.builder.VariantConfiguration.Type.TEST
 import static java.io.File.separator
+
 /**
  * Base class for all Android plugins
  */
@@ -463,7 +466,7 @@ public abstract class BasePlugin {
             SdkParser parser = getLoadedSdkParser()
             androidBuilder = new AndroidBuilder(parser, creator, logger, verbose)
             if (this instanceof LibraryPlugin) {
-                androidBuilder.setBuildingLibrary(true);
+                androidBuilder.setBuildingLibrary(true)
             }
 
             builders.put(variantData, androidBuilder)
@@ -479,7 +482,23 @@ public abstract class BasePlugin {
 
     public List<String> getRuntimeJarList() {
         SdkParser sdkParser = getLoadedSdkParser()
-        return AndroidBuilder.getBootClasspath(sdkParser);
+        return AndroidBuilder.getBootClasspath(sdkParser)
+    }
+
+    boolean isTargetPlatformAPreview() {
+        SdkParser sdkParser = getLoadedSdkParser()
+        return sdkParser.getTarget().getVersion().isPreview()
+    }
+
+    @Nullable
+    String getTargetCodeName() {
+        SdkParser sdkParser = getLoadedSdkParser()
+        IAndroidTarget target = sdkParser.getTarget()
+        if (target.getVersion().isPreview()) {
+            return target.getVersion().getCodename()
+        }
+
+        return null
     }
 
     public void createProcessManifestTask(BaseVariantData variantData,
@@ -519,8 +538,17 @@ public abstract class BasePlugin {
             config.versionCode
         }
         processManifestTask.conventionMapping.minSdkVersion = {
-            mergedFlavor.minSdkVersion
+            if (isTargetPlatformAPreview()) {
+                return getTargetCodeName()
+            }
+
+            if (mergedFlavor.minSdkVersion >= 1) {
+                return Integer.toString(mergedFlavor.minSdkVersion)
+            }
+
+            return null
         }
+
         processManifestTask.conventionMapping.targetSdkVersion = {
             mergedFlavor.targetSdkVersion
         }
@@ -547,7 +575,15 @@ public abstract class BasePlugin {
             config.packageName
         }
         processTestManifestTask.conventionMapping.minSdkVersion = {
-            config.minSdkVersion
+            if (isTargetPlatformAPreview()) {
+                return getTargetCodeName()
+            }
+
+            if (config.minSdkVersion >= 1) {
+                return Integer.toString(config.minSdkVersion)
+            }
+
+            return null
         }
         processTestManifestTask.conventionMapping.targetSdkVersion = {
             config.targetSdkVersion
