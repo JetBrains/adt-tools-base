@@ -36,7 +36,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
     static {
-        final int initialCapacity = 174;
+        final int initialCapacity = 179;
         List<Issue> issues = new ArrayList<Issue>(initialCapacity);
 
         issues.add(AccessibilityDetector.ISSUE);
@@ -48,10 +48,12 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ApiDetector.UNSUPPORTED);
         issues.add(ApiDetector.INLINED);
         issues.add(ApiDetector.OVERRIDE);
+        issues.add(ApiDetector.UNUSED);
         issues.add(InvalidPackageDetector.ISSUE);
         issues.add(DuplicateIdDetector.CROSS_LAYOUT);
         issues.add(DuplicateIdDetector.WITHIN_LAYOUT);
         issues.add(DuplicateResourceDetector.ISSUE);
+        issues.add(DuplicateResourceDetector.TYPE_MISMATCH);
         issues.add(WrongIdDetector.UNKNOWN_ID);
         issues.add(WrongIdDetector.UNKNOWN_ID_LAYOUT);
         issues.add(WrongIdDetector.NOT_SIBLING);
@@ -82,6 +84,8 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(CallSuperDetector.ISSUE);
         issues.add(OnClickDetector.ISSUE);
         issues.add(ViewTagDetector.ISSUE);
+        issues.add(ViewHolderDetector.ISSUE);
+        issues.add(LayoutInflationDetector.ISSUE);
         issues.add(LocaleDetector.STRING_LOCALE);
         issues.add(LocaleDetector.DATE_FORMAT);
         issues.add(RegistrationDetector.ISSUE);
@@ -104,6 +108,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(CommentDetector.STOP_SHIP);
         issues.add(ProguardDetector.WRONG_KEEP);
         issues.add(ProguardDetector.SPLIT_CONFIG);
+        issues.add(PropertyFileDetector.ISSUE);
         issues.add(PxUsageDetector.PX_ISSUE);
         issues.add(PxUsageDetector.DP_ISSUE);
         issues.add(PxUsageDetector.IN_MM_ISSUE);

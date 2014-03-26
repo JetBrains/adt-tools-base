@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import com.android.tests.libstest.libapp.R;
+
 public class LibApp {
     
     public static void handleTextView(Activity a) {

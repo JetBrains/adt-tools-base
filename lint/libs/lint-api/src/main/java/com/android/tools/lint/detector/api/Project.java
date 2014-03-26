@@ -39,6 +39,7 @@ import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Variant;
 import com.android.ide.common.sdk.SdkVersionInfo;
+import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.client.api.CircularDependencyException;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.LintClient;
@@ -86,6 +87,7 @@ public class Project {
     protected int mMinSdk = 1;
     protected int mTargetSdk = -1;
     protected int mBuildSdk = -1;
+    protected IAndroidTarget mTarget;
     protected boolean mLibrary;
     protected String mName;
     protected String mProguardPath;
@@ -580,6 +582,20 @@ public class Project {
      */
     public int getBuildSdk() {
         return mBuildSdk;
+    }
+
+    /**
+     * Returns the target used to build the project, or null if not known
+     *
+     * @return the build target, or null
+     */
+    @Nullable
+    public IAndroidTarget getBuildTarget() {
+        if (mTarget == null) {
+            mTarget = mClient.getCompileTarget(this);
+        }
+
+        return mTarget;
     }
 
     /**

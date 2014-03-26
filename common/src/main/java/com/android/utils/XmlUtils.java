@@ -29,6 +29,7 @@ import static com.android.SdkConstants.XMLNS_URI;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.CaseFormat;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -51,6 +52,11 @@ public class XmlUtils {
     public static final String XML_COMMENT_END = "-->";    //$NON-NLS-1$
     public static final String XML_PROLOG =
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";  //$NON-NLS-1$
+
+    /**
+     * Separator for xml namespace and localname
+     */
+    public static final char NS_SEPARATOR = ':';                  //$NON-NLS-1$
 
     /**
      * Returns the namespace prefix matching the requested namespace URI.

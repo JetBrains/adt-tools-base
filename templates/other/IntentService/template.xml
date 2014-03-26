@@ -7,6 +7,8 @@
     minApi="3"
     minBuildApi="3">
 
+    <category value="Service" />
+
     <parameter
         id="className"
         name="Class Name"

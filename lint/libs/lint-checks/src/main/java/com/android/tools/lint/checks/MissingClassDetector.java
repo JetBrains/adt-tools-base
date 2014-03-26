@@ -267,7 +267,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                 mCustomViews = Sets.newHashSetWithExpectedSize(8);
             }
 
-            handle = context.parser.createLocationHandle(context, element);
+            handle = context.createLocationHandle(element);
             mReferencedClasses.put(signature, handle);
             if (folderType == LAYOUT && !tag.equals(VIEW_FRAGMENT)) {
                 mCustomViews.add(ClassContext.getInternalName(className));

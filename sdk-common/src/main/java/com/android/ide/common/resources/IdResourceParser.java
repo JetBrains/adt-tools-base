@@ -16,6 +16,7 @@
 
 package com.android.ide.common.resources;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.ValueResourceParser.IValueResourceRepository;
@@ -78,7 +79,7 @@ public class IdResourceParser {
             if (input instanceof FileInputStream) {
                 input = new BufferedInputStream(input);
             }
-            parser.setInput(input, "UTF-8"); //$NON-NLS-1$
+            parser.setInput(input, SdkConstants.UTF_8);
 
             return parse(type, path, parser);
         } catch (XmlPullParserException e) {

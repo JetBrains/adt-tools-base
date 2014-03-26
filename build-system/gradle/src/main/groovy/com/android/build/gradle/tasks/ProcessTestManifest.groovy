@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 package com.android.build.gradle.tasks
-
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
+import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Nested
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Optional
 
 /**
  * A task that processes the manifest
@@ -29,8 +30,8 @@ public class ProcessTestManifest extends ProcessManifest {
     @Input
     String testPackageName
 
-    @Input
-    int minSdkVersion
+    @Input @Optional
+    String minSdkVersion
 
     @Input
     int targetSdkVersion
@@ -47,8 +48,26 @@ public class ProcessTestManifest extends ProcessManifest {
     @Input
     Boolean functionalTest;
 
-    @Nested
     List<ManifestDependencyImpl> libraries
+
+    /*
+     * since libraries above can't return it's input files (@Nested doesn't
+     * work on lists), so do a method that will gather them and return them.
+     */
+    @InputFiles
+    List<File> getLibraryManifests() {
+        List<ManifestDependencyImpl> libs = getLibraries()
+        if (libs == null || libs.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<File> files = Lists.newArrayListWithCapacity(libs.size() * 2)
+        for (ManifestDependencyImpl mdi : libs) {
+            files.addAll(mdi.getAllManifests())
+        }
+
+        return files;
+    }
 
     @Override
     protected void doFullTaskAction() {

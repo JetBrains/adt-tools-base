@@ -59,6 +59,7 @@ public class DeviceTest extends BuildTest {
             "ndkLibPrebuilts",
             "overlay1",
             "overlay2",
+            "packagingOptions",
             "pkgOverride",
             "proguard",
             "proguardLib",

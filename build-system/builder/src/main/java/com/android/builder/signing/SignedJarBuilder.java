@@ -16,6 +16,7 @@
 
 package com.android.builder.signing;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.signing.SignedJarBuilder.IZipEntryFilter.ZipAbortException;
@@ -373,7 +374,7 @@ public class SignedJarBuilder {
         MessageDigest md = MessageDigest.getInstance(DIGEST_ALGORITHM);
         PrintStream print = new PrintStream(
                 new DigestOutputStream(new ByteArrayOutputStream(), md),
-                true, "UTF-8");
+                true, SdkConstants.UTF_8);
 
         // Digest of the entire manifest
         mManifest.write(print);

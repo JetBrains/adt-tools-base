@@ -77,14 +77,10 @@ public enum LayoutDirection implements ResourceEnum {
     }
 
     public static LayoutDirection getByIndex(int index) {
-        int i = 0;
-        for (LayoutDirection orient : values()) {
-            if (i == index) {
-                return orient;
-            }
-            i++;
+        LayoutDirection[] values = values();
+        if (index >= 0 && index < values.length) {
+            return values[index];
         }
-
         return null;
     }
 

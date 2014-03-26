@@ -54,9 +54,18 @@ public final class SdkConstants {
     public static final String SDK_DIR_PROPERTY = "sdk.dir";
 
     /**
+     * The encoding we strive to use for all files we write.
+     * <p>
+     * When possible, use the APIs which take a {@link java.nio.charset.Charset} and pass in
+     * {@link com.google.common.base.Charsets#UTF_8} instead of using the String encoding
+     * method.
+     */
+    public static final String UTF_8 = "UTF-8";                                       //$NON-NLS-1$
+
+    /**
      * Charset for the ini file handled by the SDK.
      */
-    public static final String INI_CHARSET = "UTF-8";                                 //$NON-NLS-1$
+    public static final String INI_CHARSET = UTF_8;
 
     /** Path separator used by Gradle */
     public static final String GRADLE_PATH_SEPARATOR = ":";                           //$NON-NLS-1$
@@ -229,8 +238,8 @@ public final class SdkConstants {
     public static final String FD_SOURCES = "src";                      //$NON-NLS-1$
     /** Default main source set folder name, i.e. "main" */
     public static final String FD_MAIN = "main";                        //$NON-NLS-1$
-    /** Default test source set folder name, i.e. "instrumentTest" */
-    public static final String FD_TEST = "instrumentTest";              //$NON-NLS-1$
+    /** Default test source set folder name, i.e. "androidTest" */
+    public static final String FD_TEST = "androidTest";                 //$NON-NLS-1$
     /** Default java code folder name, i.e. "java" */
     public static final String FD_JAVA = "java";                        //$NON-NLS-1$
     /** Default generated source folder name, i.e. "gen" */
@@ -913,6 +922,9 @@ public final class SdkConstants {
     // Attributes: Drawables
     public static final String ATTR_TILE_MODE = "tileMode";            //$NON-NLS-1$
 
+    // Values: Manifest
+    public static final String VALUE_SPLIT_ACTION_BAR_WHEN_NARROW = "splitActionBarWhenNarrow"; // NON-NLS-$1
+
     // Values: Layouts
     public static final String VALUE_FILL_PARENT = "fill_parent";       //$NON-NLS-1$
     public static final String VALUE_MATCH_PARENT = "match_parent";     //$NON-NLS-1$
@@ -968,7 +980,7 @@ public final class SdkConstants {
     public static final String DOT_CLASS = ".class";                   //$NON-NLS-1$
     public static final String DOT_JAR = ".jar";                       //$NON-NLS-1$
     public static final String DOT_GRADLE = ".gradle";                 //$NON-NLS-1$
-
+    public static final String DOT_PROPERTIES = ".properties";         //$NON-NLS-1$
 
     /** Extension of the Application package Files, i.e. "apk". */
     public static final String EXT_ANDROID_PACKAGE = "apk"; //$NON-NLS-1$
@@ -1074,6 +1086,7 @@ public final class SdkConstants {
     public static final String ID_PREFIX = "@id/";                      //$NON-NLS-1$
     public static final String DRAWABLE_PREFIX = "@drawable/";          //$NON-NLS-1$
     public static final String STRING_PREFIX = "@string/";              //$NON-NLS-1$
+    public static final String DIMEN_PREFIX = "@dimen/";                //$NON-NLS-1$
 
     public static final String ANDROID_LAYOUT_RESOURCE_PREFIX = "@android:layout/"; //$NON-NLS-1$
     public static final String ANDROID_STYLE_RESOURCE_PREFIX = "@android:style/";   //$NON-NLS-1$
@@ -1299,10 +1312,10 @@ public final class SdkConstants {
     public static final String VALUE_HORIZONTAL = "horizontal"; //$NON-NLS-1$
 
     public static final String GRADLE_PLUGIN_NAME = "com.android.tools.build:gradle:";
-    public static final String GRADLE_MINIMUM_VERSION = "1.9";
-    public static final String GRADLE_LATEST_VERSION = "1.10";
-    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "0.7.0";
-    public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.8.+";
+    public static final String GRADLE_MINIMUM_VERSION = "1.10";
+    public static final String GRADLE_LATEST_VERSION = "1.11";
+    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "0.9.0";
+    public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.9.+";
     public static final String SUPPORT_LIB_ARTIFACT = "com.android.support:support-v4";
     public static final String APPCOMPAT_LIB_ARTIFACT = "com.android.support:appcompat-v7";
 }

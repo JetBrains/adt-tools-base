@@ -37,14 +37,6 @@ public interface ApkVariant extends BaseVariant {
 
 
     /**
-     * Returns the list of {@link com.android.builder.DefaultProductFlavor} for this build variant.
-     *
-     * This is always non-null but could be empty.
-     */
-    @NonNull
-    List<DefaultProductFlavor> getProductFlavors();
-
-    /**
      * Return the app versionCode. Even the value is not found, then 1 is returned as this
      * is the implicit value that the platform would use.
      */

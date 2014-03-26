@@ -88,4 +88,23 @@ public class DuplicateResourceDetectorTest extends AbstractCheckTest {
                 "res/values-es/donottranslate.xml",
                 "res/values-nl-rNL/strings.xml"));
     }
+
+    public void testResourceAliases() throws Exception {
+        assertEquals(""
+                + "res/values/refs.xml:3: Error: Unexpected resource reference type; expected value of type @string/ [ReferenceType]\n"
+                + "    <item name=\"invalid1\" type=\"string\">@layout/other</item>\n"
+                + "                                        ^\n"
+                + "res/values/refs.xml:5: Error: Unexpected resource reference type; expected value of type @drawable/ [ReferenceType]\n"
+                + "          @layout/other\n"
+                + "          ^\n"
+                + "res/values/refs.xml:10: Error: Unexpected resource reference type; expected value of type @string/ [ReferenceType]\n"
+                + "    <string name=\"invalid4\">@layout/indirect</string>\n"
+                + "                            ^\n"
+                + "res/values/refs.xml:15: Error: Unexpected resource reference type; expected value of type @color/ [ReferenceType]\n"
+                + "    <item name=\"drawableAsColor\" type=\"color\">@drawable/my_drawable</item>\n"
+                + "                                              ^\n"
+                + "4 errors, 0 warnings\n",
+
+            lintProject("res/values/refs.xml"));
+    }
 }

@@ -16,9 +16,12 @@
 
 package com.android.tools.lint.detector.api;
 
+import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.IJavaParser;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintDriver;
 
 import java.io.File;
@@ -39,9 +42,10 @@ public class JavaContext extends Context {
     static final String SUPPRESS_COMMENT_PREFIX = "//noinspection "; //$NON-NLS-1$
 
     /** The parse tree */
-    public Node compilationUnit;
+    private Node mCompilationUnit;
+
     /** The parser which produced the parse tree */
-    public IJavaParser parser;
+    private final JavaParser mParser;
 
     /**
      * Constructs a {@link JavaContext} for running lint on the given file, with
@@ -55,13 +59,16 @@ public class JavaContext extends Context {
      *            the root project of all library projects, not necessarily the
      *            directly including project.
      * @param file the file to be analyzed
+     * @param parser the parser to use
      */
     public JavaContext(
             @NonNull LintDriver driver,
             @NonNull Project project,
             @Nullable Project main,
-            @NonNull File file) {
+            @NonNull File file,
+            @NonNull JavaParser parser) {
         super(driver, project, main, file);
+        mParser = parser;
     }
 
     /**
@@ -72,17 +79,33 @@ public class JavaContext extends Context {
      */
     @NonNull
     public Location getLocation(@NonNull Node node) {
-        if (parser != null) {
-            return parser.getLocation(this, node);
-        }
+        return mParser.getLocation(this, node);
+    }
 
-        return new Location(file, null, null);
+    @NonNull
+    public JavaParser getParser() {
+        return mParser;
+    }
+
+    @Nullable
+    public Node getCompilationUnit() {
+        return mCompilationUnit;
+    }
+
+    /**
+     * Sets the compilation result. Not intended for client usage; the lint infrastructure
+     * will set this when a context has been processed
+     *
+     * @param compilationUnit the parse tree
+     */
+    public void setCompilationUnit(@Nullable Node compilationUnit) {
+        mCompilationUnit = compilationUnit;
     }
 
     @Override
     public void report(@NonNull Issue issue, @Nullable Location location,
             @NonNull String message, @Nullable Object data) {
-        if (mDriver.isSuppressed(this, issue, compilationUnit)) {
+        if (mDriver.isSuppressed(this, issue, mCompilationUnit)) {
             return;
         }
         super.report(issue, location, message, data);
@@ -162,5 +185,20 @@ public class JavaContext extends Context {
 
         int start = position.getStart();
         return isSuppressedWithComment(start, issue);
+    }
+
+    @NonNull
+    public Location.Handle createLocationHandle(@NonNull Node node) {
+        return mParser.createLocationHandle(this, node);
+    }
+
+    @Nullable
+    public ResolvedNode resolve(@NonNull Node node) {
+        return mParser.resolve(this, node);
+    }
+
+    @Nullable
+    public TypeDescriptor getType(@NonNull Node node) {
+        return mParser.getType(this, node);
     }
 }

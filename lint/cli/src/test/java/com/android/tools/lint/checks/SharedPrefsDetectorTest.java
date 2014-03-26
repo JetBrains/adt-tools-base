@@ -105,5 +105,4 @@ public class SharedPrefsDetectorTest extends AbstractCheckTest {
             lintProject("src/test/pkg/SharedPrefsTest5.java.txt=>" +
                     "src/test/pkg/SharedPrefsTest5.java"));
     }
-
 }

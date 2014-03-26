@@ -26,4 +26,7 @@ import java.util.Set;
 public interface PackagingOptions {
     @NonNull
     Set<String> getExcludes();
+
+    @NonNull
+    Set<String> getPickFirsts();
 }

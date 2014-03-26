@@ -16,6 +16,10 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
@@ -66,6 +70,9 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
                     SharedPrefsDetector.class,
                     Scope.JAVA_FILE_SCOPE));
 
+    private static final String ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR =
+            "android.content.SharedPreferences.Editor"; //$NON-NLS-1$
+
     /** Constructs a new {@link SharedPrefsDetector} check */
     public SharedPrefsDetector() {
     }
@@ -104,6 +111,17 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
     public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
             @NonNull MethodInvocation node) {
         assert node.astName().astValue().equals("edit");
+
+        ResolvedNode resolve = context.resolve(node);
+        if (resolve instanceof ResolvedMethod) {
+            ResolvedMethod method = (ResolvedMethod) resolve;
+            TypeDescriptor returnType = method.getReturnType();
+            if (returnType == null ||
+                    !returnType.matchesName(ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR)) {
+                return;
+            }
+        }
+
         Expression operand = node.astOperand();
         if (operand == null) {
             return;
@@ -114,6 +132,7 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
         // of the API (e.g. assigning it to a previously declared variable) but
         // is needed until we have type attribution in the AST itself.
         Node parent = node.getParent();
+
         VariableDefinition definition = getLhs(parent);
         boolean allowCommitBeforeTarget;
         if (definition == null) {
@@ -135,8 +154,8 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
             String type = definition.astTypeReference().toString();
             if (!type.endsWith("SharedPreferences.Editor")) {                   //$NON-NLS-1$
                 if (!type.equals("Editor") ||                                   //$NON-NLS-1$
-                        !LintUtils.isImported(context.compilationUnit,
-                                "android.content.SharedPreferences.Editor")) {  //$NON-NLS-1$
+                        !LintUtils.isImported(context.getCompilationUnit(),
+                                ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR)) {
                     return;
                 }
             }

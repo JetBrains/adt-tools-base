@@ -16,6 +16,8 @@
 
 package com.android.ide.common.internal;
 
+import com.android.annotations.NonNull;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -27,6 +29,7 @@ public interface PngCruncher {
     /**
      * Crunch a given file into another given file.
      *
+     *
      * @param from the file to crunch
      * @param to the output file
      *
@@ -34,6 +37,6 @@ public interface PngCruncher {
      * @throws InterruptedException
      * @throws com.android.ide.common.internal.LoggedErrorException
      */
-    void crunchPng(File from, File to)
+    void crunchPng(@NonNull File from, @NonNull File to)
             throws InterruptedException, LoggedErrorException, IOException;
 }

@@ -770,7 +770,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             }
             if (recordLocation && !context.getProject().isLibrary() &&
                     (mApplicationTagHandle == null || isMainManifest(context, context.file))) {
-                mApplicationTagHandle = context.parser.createLocationHandle(context, element);
+                mApplicationTagHandle = context.createLocationHandle(element);
             }
         } else if (mSeenApplication) {
             if (context.isEnabled(ORDER)) {

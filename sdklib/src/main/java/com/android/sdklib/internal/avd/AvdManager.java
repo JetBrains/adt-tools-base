@@ -19,6 +19,8 @@ package com.android.sdklib.internal.avd;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
+import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.io.FileWrapper;
 import com.android.io.IAbstractFile;
 import com.android.io.StreamException;
@@ -28,6 +30,7 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.SystemImage;
+import com.android.sdklib.devices.Device;
 import com.android.sdklib.devices.DeviceManager;
 import com.android.sdklib.devices.DeviceManager.DeviceStatus;
 import com.android.sdklib.internal.avd.AvdInfo.AvdStatus;
@@ -59,8 +62,8 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -232,9 +235,21 @@ public class AvdManager {
     public static final String AVD_INI_DATA_PARTITION_SIZE = "disk.dataPartition.size";
 
     /**
-     * AVD/config.ini key name representing the hash of the device this AVD is based on
+     * AVD/config.ini key name representing the hash of the device this AVD is based on. <br/>
+     * This old hash is deprecated and shouldn't be used anymore.
+     * It represents the Device.hashCode() and is not stable accross implementations.
+     * @see #AVD_INI_DEVICE_HASH_V2
      */
-    public static final String AVD_INI_DEVICE_HASH = "hw.device.hash";
+    public static final String AVD_INI_DEVICE_HASH_V1 = "hw.device.hash";
+
+    /**
+     * AVD/config.ini key name representing the hash of the device hardware properties
+     * actually present in the config.ini. This replaces {@link #AVD_INI_DEVICE_HASH_V1}.
+     * <p/>
+     * To find this hash, use
+     * {@code DeviceManager.getHardwareProperties(device).get(AVD_INI_DEVICE_HASH_V2)}.
+     */
+    public static final String AVD_INI_DEVICE_HASH_V2 = "hw.device.hash2";
 
     /**
      * Pattern to match pixel-sized skin "names", e.g. "320x480".
@@ -961,8 +976,11 @@ public class AvdManager {
             // display the chosen hardware config
             if (finalHardwareValues.size() > 0) {
                 report.append(",\nwith the following hardware config:\n");
-                for (Entry<String, String> entry : finalHardwareValues.entrySet()) {
-                    report.append(String.format("%s=%s\n",entry.getKey(), entry.getValue()));
+                List<String> keys = new ArrayList<String>(finalHardwareValues.keySet());
+                Collections.sort(keys);
+                for (String key : keys) {
+                    String value = finalHardwareValues.get(key);
+                    report.append(String.format("%s=%s\n", key, value));
                 }
             } else {
                 report.append("\n");
@@ -1441,7 +1459,7 @@ public class AvdManager {
         if (avds != null) {
             for (File avd : avds) {
                 AvdInfo info = parseAvdInfo(avd, log);
-                if (info != null) {
+                if (info != null && !allList.contains(info)) {
                     allList.add(info);
                 }
             }
@@ -1547,14 +1565,36 @@ public class AvdManager {
 
         // Get the device status if this AVD is associated with a device
         DeviceStatus deviceStatus = null;
+        boolean updateHashV2 = false;
         if (properties != null) {
             String deviceName = properties.get(AVD_INI_DEVICE_NAME);
             String deviceMfctr = properties.get(AVD_INI_DEVICE_MANUFACTURER);
-            String hash = properties.get(AVD_INI_DEVICE_HASH);
-            if (deviceName != null && deviceMfctr != null && hash != null) {
-                int deviceHash = Integer.parseInt(hash);
+
+            Device d = null;
+
+            if (deviceName != null && deviceMfctr != null) {
                 DeviceManager devMan = DeviceManager.createInstance(myLocalSdk.getLocation(), log);
-                deviceStatus = devMan.getDeviceStatus(deviceName, deviceMfctr, deviceHash);
+                d = devMan.getDevice(deviceName, deviceMfctr);
+                deviceStatus = d == null ? DeviceStatus.MISSING : DeviceStatus.EXISTS;
+
+                if (d != null) {
+                    updateHashV2 = true;
+                    String hashV2 = properties.get(AVD_INI_DEVICE_HASH_V2);
+                    if (hashV2 != null) {
+                        String newHashV2 = DeviceManager.hasHardwarePropHashChanged(d, hashV2);
+                        if (newHashV2 == null) {
+                            updateHashV2 = false;
+                        } else {
+                            properties.put(AVD_INI_DEVICE_HASH_V2, newHashV2);
+                        }
+                    }
+
+                    String hashV1 = properties.get(AVD_INI_DEVICE_HASH_V1);
+                    if (hashV1 != null) {
+                        // will recompute a hash v2 and save it below
+                        properties.remove(AVD_INI_DEVICE_HASH_V1);
+                    }
+                }
             }
         }
 
@@ -1594,11 +1634,18 @@ public class AvdManager {
                 properties,
                 status);
 
+        if (updateHashV2) {
+            try {
+                return updateDeviceChanged(info, log);
+            } catch (IOException ignore) {}
+        }
+
         return info;
     }
 
     /**
      * Writes a .ini file from a set of properties, using UTF-8 encoding.
+     * The keys are sorted.
      * The file should be read back later by {@link #parseIniFile(IAbstractFile, ILogger)}.
      *
      * @param iniFile The file to generate.
@@ -1618,8 +1665,12 @@ public class AvdManager {
             writer.write(String.format("%1$s=%2$s\n", AVD_INI_ENCODING, charset.name()));
         }
 
-        for (Entry<String, String> entry : values.entrySet()) {
-            writer.write(String.format("%1$s=%2$s\n", entry.getKey(), entry.getValue()));
+        ArrayList<String> keys = new ArrayList<String>(values.keySet());
+        Collections.sort(keys);
+
+        for (String key : keys) {
+            String value = values.get(key);
+            writer.write(String.format("%1$s=%2$s\n", key, value));
         }
         writer.close();
     }
@@ -1735,7 +1786,8 @@ public class AvdManager {
      * @param log the log object to receive action logs. Cannot be null.
      * @return True if the sdcard could be created.
      */
-    private boolean createSdCard(String toolLocation, String size, String location, ILogger log) {
+    @VisibleForTesting(visibility=Visibility.PRIVATE)
+    protected boolean createSdCard(String toolLocation, String size, String location, ILogger log) {
         try {
             String[] command = new String[3];
             command[0] = toolLocation;
@@ -1834,7 +1886,7 @@ public class AvdManager {
      * @param log the log object to receive action logs. Cannot be null.
      * @throws IOException
      */
-    public void updateAvd(AvdInfo avd, ILogger log) throws IOException {
+    public AvdInfo updateAvd(AvdInfo avd, ILogger log) throws IOException {
         // get the properties. This is a unmodifiable Map.
         Map<String, String> oldProperties = avd.getProperties();
 
@@ -1869,10 +1921,11 @@ public class AvdManager {
             //FIXME: display paths to empty image folders?
             status = AvdStatus.ERROR_IMAGE_DIR;
         }
-        updateAvd(avd, properties, status, log);
+
+        return updateAvd(avd, properties, status, log);
     }
 
-    public void updateAvd(AvdInfo avd,
+    public AvdInfo updateAvd(AvdInfo avd,
             Map<String, String> newProperties,
             AvdStatus status,
             ILogger log) throws IOException {
@@ -1895,6 +1948,42 @@ public class AvdManager {
                 newProperties);
 
         replaceAvd(avd, newAvd);
+
+        return newAvd;
+    }
+
+    /**
+     * Updates the device-specific part of an AVD ini.
+     * @param avd the AVD to update.
+     * @param log the log object to receive action logs. Cannot be null.
+     * @return The new AVD on success.
+     * @throws IOException
+     */
+    public AvdInfo updateDeviceChanged(AvdInfo avd, ILogger log) throws IOException {
+
+        // Overwrite the properties derived from the device and nothing else
+        Map<String, String> properties = new HashMap<String, String>(avd.getProperties());
+
+        DeviceManager devMan = DeviceManager.createInstance(myLocalSdk.getLocation(), log);
+        List<Device>  devices = devMan.getDevices(DeviceManager.ALL_DEVICES);
+        String name = properties.get(AvdManager.AVD_INI_DEVICE_NAME);
+        String manufacturer = properties.get(AvdManager.AVD_INI_DEVICE_MANUFACTURER);
+
+        if (properties != null && devices != null && name != null && manufacturer != null) {
+            for (Device d : devices) {
+                if (d.getId().equals(name) && d.getManufacturer().equals(manufacturer)) {
+                    properties.putAll(DeviceManager.getHardwareProperties(d));
+                    try {
+                        return updateAvd(avd, properties, AvdStatus.OK, log);
+                    } catch (IOException e) {
+                        log.error(e, null);
+                    }
+                }
+            }
+        } else {
+            log.error(null, "Base device information incomplete or missing.");
+        }
+        return null;
     }
 
     /**

@@ -11,4 +11,8 @@ android {
         flavor1 { }
         flavor2 { }
     }
+
+    libraryVariants.all { variant ->
+        assert variant.productFlavors.size() != 0
+    }
 }

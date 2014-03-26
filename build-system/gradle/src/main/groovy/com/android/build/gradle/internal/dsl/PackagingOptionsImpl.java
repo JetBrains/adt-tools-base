@@ -27,6 +27,7 @@ import java.util.Set;
 public class PackagingOptionsImpl implements PackagingOptions {
 
     private Set<String> excludes;
+    private Set<String> pickFirsts;
 
     @Override
     @NonNull
@@ -44,5 +45,23 @@ public class PackagingOptionsImpl implements PackagingOptions {
         }
 
         excludes.add(path);
+    }
+
+    @Override
+    @NonNull
+    @Input
+    public Set<String> getPickFirsts() {
+        if (pickFirsts == null) {
+            return Collections.emptySet();
+        }
+        return pickFirsts;
+    }
+
+    public void pickFirst(String path) {
+        if (pickFirsts == null) {
+            pickFirsts = Sets.newHashSet();
+        }
+
+        pickFirsts.add(path);
     }
 }

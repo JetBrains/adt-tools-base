@@ -16,6 +16,9 @@
 
 package com.android.utils;
 
+import static com.android.SdkConstants.UTF_8;
+
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
@@ -53,7 +56,6 @@ import javax.xml.parsers.SAXParserFactory;
  * (and line and column numbers) for element nodes as well as attribute nodes.
  */
 public class PositionXmlParser {
-    private static final String UTF_8 = "UTF-8";                 //$NON-NLS-1$
     private static final String UTF_16 = "UTF_16";               //$NON-NLS-1$
     private static final String UTF_16LE = "UTF_16LE";           //$NON-NLS-1$
     private static final String CONTENT_KEY = "contents";        //$NON-NLS-1$
@@ -62,6 +64,8 @@ public class PositionXmlParser {
             "http://xml.org/sax/features/namespace-prefixes";    //$NON-NLS-1$
     private static final String NAMESPACE_FEATURE =
             "http://xml.org/sax/features/namespaces";            //$NON-NLS-1$
+    private static final String PROVIDE_XMLNS_URIS =
+            "http://xml.org/sax/features/xmlns-uris";            //$NON-NLS-1$
     /** See http://www.w3.org/TR/REC-xml/#NT-EncodingDecl */
     private static final Pattern ENCODING_PATTERN =
             Pattern.compile("encoding=['\"](\\S*)['\"]");//$NON-NLS-1$
@@ -137,6 +141,7 @@ public class PositionXmlParser {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setFeature(NAMESPACE_FEATURE, true);
             factory.setFeature(NAMESPACE_PREFIX_FEATURE, true);
+            factory.setFeature(PROVIDE_XMLNS_URIS, true);
             SAXParser parser = factory.newSAXParser();
             DomBuilder handler = new DomBuilder(xml);
             XMLReader xmlReader = parser.getXMLReader();
@@ -473,7 +478,7 @@ public class PositionXmlParser {
      * SAX parser handler which incrementally builds up a DOM document as we go
      * along, and updates position information along the way. Position
      * information is attached to the DOM nodes by setting user data with the
-     * {@link POS_KEY} key.
+     * {@link #POS_KEY} key.
      */
     private final class DomBuilder extends DefaultHandler2 {
         private final String mXml;
@@ -513,7 +518,7 @@ public class PositionXmlParser {
                 flushText();
                 Element element = mDocument.createElement(qName);
                 for (int i = 0; i < attributes.getLength(); i++) {
-                    if (attributes.getURI(i) != null && attributes.getURI(i).length() > 0) {
+                    if (attributes.getURI(i) != null && !attributes.getURI(i).isEmpty()) {
                         Attr attr = mDocument.createAttributeNS(attributes.getURI(i),
                                 attributes.getQName(i));
                         attr.setValue(attributes.getValue(i));
@@ -694,7 +699,7 @@ public class PositionXmlParser {
         return new DefaultPosition(line, column, offset);
     }
 
-    protected interface Position {
+    public interface Position {
         /**
          * Linked position: for a begin position this will point to the
          * corresponding end position. For an end position this will be null.

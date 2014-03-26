@@ -121,12 +121,9 @@ public enum Density implements ResourceEnum {
     }
 
     public static Density getByIndex(int index) {
-        int i = 0;
-        for (Density value : values()) {
-            if (i == index) {
-                return value;
-            }
-            i++;
+        Density[] values = values();
+        if (index >=0 && index < values.length) {
+            return values[index];
         }
         return null;
     }

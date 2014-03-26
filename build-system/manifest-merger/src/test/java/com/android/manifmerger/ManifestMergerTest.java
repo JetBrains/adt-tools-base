@@ -219,7 +219,7 @@ public class ManifestMergerTest extends TestCase {
                 @NonNull Map<String, Boolean> features,
                 @NonNull Map<String, String> injectAttributes,
                 @Nullable String packageOverride,
-                @NonNull File actualResult,
+                @Nullable File actualResult,
                 @NonNull String expectedResult,
                 @NonNull String expectedErrors) {
             mShouldFail = shouldFail;
@@ -262,7 +262,7 @@ public class ManifestMergerTest extends TestCase {
             return mPackageOverride;
         }
 
-        @NonNull
+        @Nullable
         public File getActualResult() {
             return mActualResult;
         }
@@ -323,6 +323,13 @@ public class ManifestMergerTest extends TestCase {
     }
 
     /**
+     * Returns the relative path the test data directory
+     */
+    protected String getTestDataDirectory() {
+        return "data";
+    }
+
+    /**
      * Loads test data for a given test case.
      * The input (main + libs) are stored in temp files.
      * A new destination temp file is created to store the actual result output.
@@ -347,7 +354,7 @@ public class ManifestMergerTest extends TestCase {
     @NonNull
     TestFiles loadTestData(@NonNull String filename) throws Exception {
 
-        String resName = "data" + File.separator + filename;
+        String resName = getTestDataDirectory() + File.separator + filename;
         InputStream is = null;
         BufferedReader reader = null;
         BufferedWriter writer = null;
@@ -491,10 +498,8 @@ public class ManifestMergerTest extends TestCase {
             }
 
             assertNotNull("Missing @" + DELIM_MAIN + " in " + filename, mainFile);
-            assertNotNull("Missing @" + DELIM_RESULT + " in " + filename, actualResultFile);
 
             assert mainFile != null;
-            assert actualResultFile != null;
 
             Collections.sort(libFiles);
 
