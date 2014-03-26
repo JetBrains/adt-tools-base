@@ -1,3 +1,7 @@
+0.9.2:
+- Aapt-based PNG processor is now default again while we investigate some issues with the old one.
+- flavorGroups have been renamed flavorDimensions and the DSL has been updated. The old DSL is still available until 1.0 at which time it'll be removed.
+
 0.9.1:
 - It's now possible to include a file when there's a conflict during packaging:
       android.packagingOptions {
