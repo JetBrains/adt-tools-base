@@ -254,48 +254,6 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                         "src/test/pkg/StringFormat8.java.txt=>src/test/pkg/StringFormat8.java"));
     }
 
-    public void testWarningComparator() throws Exception {
-        // This test doesn't test anything interesting in the StringDetector,
-        // but it actually tests that the Warning comparator is correct.
-        // The comparator used to only compare based on file basenames,
-        // whereas equality is based on full paths, so there were scenarios
-        // (the one below in particular) where you could have two warnings
-        // that were not equal but whose compareTo returned 0.
-        assertEquals(
-              "src/test/pkg/StringFormatActivity.java:21: Error: Wrong argument type for formatting argument '#1' in score: conversion is 'd', received boolean (argument #2 in method call) [StringFormatMatches]\n" +
-              "        String output4 = String.format(score, true);  // wrong\n" +
-              "                                              ~~~~\n" +
-              "    res/values-es/formatstrings.xml:6: Conflicting argument declaration here\n" +
-              "src/test/pkg/StringFormatActivity.java:21: Error: Wrong argument type for formatting argument '#1' in score: conversion is 'd', received boolean (argument #2 in method call) [StringFormatMatches]\n" +
-              "        String output4 = String.format(score, true);  // wrong\n" +
-              "                                              ~~~~\n" +
-              "    res/values/formatstrings.xml:6: Conflicting argument declaration here\n" +
-              "src/test/pkg/StringFormatActivity.java:22: Error: Wrong argument type for formatting argument '#1' in score: conversion is 'd', received boolean (argument #2 in method call) [StringFormatMatches]\n" +
-              "        String output4 = String.format(score, won);   // wrong\n" +
-              "                                              ~~~\n" +
-              // TODO: This only varies from the previous error in the secondary location.
-              // Try to combine these
-              "    res/values-es/formatstrings.xml:6: Conflicting argument declaration here\n" +
-              "src/test/pkg/StringFormatActivity.java:22: Error: Wrong argument type for formatting argument '#1' in score: conversion is 'd', received boolean (argument #2 in method call) [StringFormatMatches]\n" +
-              "        String output4 = String.format(score, won);   // wrong\n" +
-              "                                              ~~~\n" +
-              "    res/values/formatstrings.xml:6: Conflicting argument declaration here\n" +
-              "res/values-es/formatstrings.xml:5: Warning: Formatting string 'missing' is not referencing numbered arguments [1, 2] [StringFormatCount]\n" +
-              "    <string name=\"missing\">Hello %3$s World</string>\n" +
-              "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-              "res/values/formatstrings.xml:5: Warning: Formatting string 'missing' is not referencing numbered arguments [1, 2] [StringFormatCount]\n" +
-              "    <string name=\"missing\">Hello %3$s World</string>\n" +
-              "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-              "4 errors, 2 warnings\n",
-
-            lintProject(
-                    "res/values/formatstrings.xml",
-                    "res/values/formatstrings.xml=>res/values-es/formatstrings.xml",
-                    "src/test/pkg/StringFormatActivity.java.txt=>src/test/pkg/StringFormatActivity.java"
-            )
-        );
-    }
-
     public void testIncremental() throws Exception {
         assertEquals(
                 "src/test/pkg/StringFormatActivity.java:13: Error: Wrong argument type for formatting argument '#1' in hello: conversion is 'd', received String (argument #2 in method call) [StringFormatMatches]\n" +
@@ -343,5 +301,27 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                 // Java files must be renamed in source tree
                 "src/test/pkg/StringFormatActivity.java.txt=>src/test/pkg/StringFormatActivity.java"
         ));
+    }
+
+    public void testNotStringFormat() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=67597
+        assertEquals("No warnings.",
+
+                lintProject(
+                        "res/values/formatstrings3.xml",//"res/values/formatstrings.xml",
+                        "res/values/shared_prefs_keys.xml",
+                        "src/test/pkg/SharedPrefsTest6.java.txt=>src/test/pkg/SharedPrefsTest6.java"));
+    }
+
+    public void testNotStringFormatIncrementally() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=67597
+        assertEquals("No warnings.",
+
+                lintProjectIncrementally(
+                        "src/test/pkg/SharedPrefsTest6.java",
+
+                        "res/values/formatstrings3.xml",//"res/values/formatstrings.xml",
+                        "res/values/shared_prefs_keys.xml",
+                        "src/test/pkg/SharedPrefsTest6.java.txt=>src/test/pkg/SharedPrefsTest6.java"));
     }
 }

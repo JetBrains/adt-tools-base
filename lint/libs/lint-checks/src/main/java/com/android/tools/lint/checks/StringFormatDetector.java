@@ -23,6 +23,7 @@ import static com.android.SdkConstants.GET_STRING_METHOD;
 import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.R_PREFIX;
 import static com.android.SdkConstants.TAG_STRING;
+import static com.android.tools.lint.checks.SharedPrefsDetector.ANDROID_CONTENT_SHARED_PREFERENCES;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_CHAR;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE;
@@ -41,6 +42,7 @@ import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -59,6 +61,7 @@ import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.Pair;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -1006,8 +1009,10 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                             if (value != null) {
                                 // Make sure it's really a formatting string,
                                 // not for example "Battery remaining: 90%"
-                                boolean isFormattingString = true;
-                                for (int j = 0, m = value.length(); j < m; j++) {
+                                boolean isFormattingString = value.indexOf('%') != -1;
+                                for (int j = 0, m = value.length();
+                                        j < m && isFormattingString;
+                                        j++) {
                                     char c = value.charAt(j);
                                     if (c == '\\') {
                                         j++;
@@ -1050,11 +1055,19 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
         }
 
         if (list != null) {
+            Set<String> reported = null;
             for (Pair<Handle, String> pair : list) {
                 String s = pair.getSecond();
+                if (reported != null && reported.contains(s)) {
+                    continue;
+                }
                 int count = getFormatArgumentCount(s, null);
                 Handle handle = pair.getFirst();
                 if (count != args.size() - 1 - (specifiesLocale ? 1 : 0)) {
+                    if (isSharedPreferenceGetString(context, call)) {
+                        continue;
+                    }
+
                     Location location = context.getLocation(call);
                     Location secondary = handle.resolve();
                     secondary.setMessage(String.format("This definition requires %1$d arguments",
@@ -1065,6 +1078,10 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                             "call supplies %3$d",
                             name, count, args.size() - 1 - (specifiesLocale ? 1 : 0));
                     context.report(ARG_TYPES, method, location, message, null);
+                    if (reported == null) {
+                        reported = Sets.newHashSet();
+                    }
+                    reported.add(s);
                 } else {
                     for (int i = 1; i <= count; i++) {
                         int argumentIndex = i + (specifiesLocale ? 1 : 0);
@@ -1123,6 +1140,10 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                             }
 
                             if (!valid) {
+                                if (isSharedPreferenceGetString(context, call)) {
+                                    continue;
+                                }
+
                                 Expression argument = tracker.getArgument(argumentIndex);
                                 Location location = context.getLocation(argument);
                                 Location secondary = handle.resolve();
@@ -1136,12 +1157,32 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                                         i, name, formatType, type.getSimpleName(),
                                         argumentIndex + 1);
                                 context.report(ARG_TYPES, method, location, message, null);
+                                if (reported == null) {
+                                    reported = Sets.newHashSet();
+                                }
+                                reported.add(s);
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    private static boolean isSharedPreferenceGetString(@NonNull JavaContext context,
+            @NonNull MethodInvocation call) {
+        if (!GET_STRING_METHOD.equals(call.astName().astValue())) {
+            return false;
+        }
+
+        JavaParser.ResolvedNode resolved = context.resolve(call);
+        if (resolved instanceof JavaParser.ResolvedMethod) {
+            JavaParser.ResolvedMethod resolvedMethod = (JavaParser.ResolvedMethod) resolved;
+            TypeDescriptor containingClass = resolvedMethod.getContainingClass();
+            return ANDROID_CONTENT_SHARED_PREFERENCES.equals(containingClass.getName());
+        }
+
+        return false; // not certain
     }
 
     private static boolean isLocaleReference(@Nullable TypeDescriptor reference) {
