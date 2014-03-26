@@ -70,6 +70,8 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
                     SharedPrefsDetector.class,
                     Scope.JAVA_FILE_SCOPE));
 
+    public static final String ANDROID_CONTENT_SHARED_PREFERENCES =
+            "android.content.SharedPreferences"; //$NON-NLS-1$
     private static final String ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR =
             "android.content.SharedPreferences.Editor"; //$NON-NLS-1$
 

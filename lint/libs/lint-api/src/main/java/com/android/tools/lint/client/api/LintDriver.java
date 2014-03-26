@@ -1645,14 +1645,28 @@ public class LintDriver {
 
         JavaVisitor visitor = new JavaVisitor(javaParser, checks);
 
+        List<JavaContext> contexts = Lists.newArrayListWithExpectedSize(files.size());
         for (File file : files) {
             if (file.isFile() && file.getPath().endsWith(DOT_JAVA)) {
-                JavaContext context = new JavaContext(this, project, main, file, javaParser);
-                fireEvent(EventType.SCANNING_FILE, context);
-                visitor.visitFile(context);
-                if (mCanceled) {
-                    return;
-                }
+                contexts.add(new JavaContext(this, project, main, file, javaParser));
+            }
+        }
+
+        if (contexts.isEmpty()) {
+            return;
+        }
+
+        visitor.prepare(contexts);
+
+        if (mCanceled) {
+            return;
+        }
+
+        for (JavaContext context : contexts) {
+            fireEvent(EventType.SCANNING_FILE, context);
+            visitor.visitFile(context);
+            if (mCanceled) {
+                return;
             }
         }
     }
