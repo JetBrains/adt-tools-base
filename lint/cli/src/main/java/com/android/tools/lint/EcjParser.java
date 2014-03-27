@@ -115,9 +115,14 @@ public class EcjParser extends JavaParser implements ICompilerRequestor {
         // don't do compilation error validation in lint (we leave that to the IDE's
         // error parser or the command line build's compilation step); we want an
         // AST that is as tolerant as possible.
-        options.complianceLevel = ClassFileConstants.JDK1_7;
-        options.sourceLevel = ClassFileConstants.JDK1_7;
-        options.targetJDK = ClassFileConstants.JDK1_7;
+        long languageLevel = ClassFileConstants.JDK1_7;
+        options.complianceLevel = languageLevel;
+        options.sourceLevel = languageLevel;
+        options.targetJDK = languageLevel;
+        options.originalComplianceLevel = languageLevel;
+        options.originalSourceLevel = languageLevel;
+        options.inlineJsrBytecode = true; // >1.5
+
         options.parseLiteralExpressionsAsConstants = true;
         options.analyseResourceLeaks = false;
         options.docCommentSupport = false;
