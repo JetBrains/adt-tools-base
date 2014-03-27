@@ -41,7 +41,7 @@ import javax.xml.parsers.ParserConfigurationException;
 public class PlaceholderHandlerTest extends TestCase {
 
     @Mock
-    ActionRecorder.Builder mActionRecorder;
+    ActionRecorder mActionRecorder;
 
     @Mock
     MergingReport.Builder mBuilder;
@@ -111,7 +111,7 @@ public class PlaceholderHandlerTest extends TestCase {
             if (!xmlAttribute.getName().toString().contains("name")) {
                 verify(mActionRecorder).recordAttributeAction(
                         xmlAttribute,
-                        ActionRecorder.ActionType.INJECTED,
+                        Actions.ActionType.INJECTED,
                         null);
             }
         }

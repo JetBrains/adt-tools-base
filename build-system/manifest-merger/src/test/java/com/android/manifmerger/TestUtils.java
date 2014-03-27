@@ -16,6 +16,9 @@
 
 package com.android.manifmerger;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -29,14 +32,21 @@ public class TestUtils {
 
     static class TestSourceLocation implements XmlLoader.SourceLocation {
 
-        private final String location;
+        private final String mLocation;
 
         TestSourceLocation(Class sourceClass, String location) {
-            this.location = sourceClass.getSimpleName() + "#" + location;
+            this.mLocation = sourceClass.getSimpleName() + "#" + location;
         }
 
         @Override
         public String print(boolean shortFormat) {
+            return mLocation;
+        }
+
+        @Override
+        public Node toXml(Document document) {
+            Element location = document.createElement("source");
+            location.setAttribute("value", mLocation);
             return location;
         }
     }

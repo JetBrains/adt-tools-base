@@ -120,14 +120,14 @@ public class ElementsTrimmer {
                     mergingReport.getActionRecorder().recordAttributeAction(
                             glEsVersionDeclaration.getValue().getAttribute(XmlNode.fromXmlName(
                                     "android:" + AndroidManifest.ATTRIBUTE_GLESVERSION)).get(),
-                            ActionRecorder.ActionType.REJECTED,
+                            Actions.ActionType.REJECTED,
                             null /* attributeOperationType */);
                 } else {
                     xmlDocument.getRootNode().getXml().removeChild(
                             glEsVersionDeclaration.getValue().getXml());
                     mergingReport.getActionRecorder().recordNodeAction(
                             glEsVersionDeclaration.getValue(),
-                            ActionRecorder.ActionType.REJECTED);
+                            Actions.ActionType.REJECTED);
 
                 }
             }

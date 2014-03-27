@@ -16,19 +16,14 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.XmlNode.NodeKey;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
-import com.android.annotations.concurrency.Immutable;
-import com.android.utils.ILogger;
-import com.android.utils.PositionXmlParser;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +31,7 @@ import java.util.Map;
 /**
  * Records all the actions taken by the merging tool.
  * <p>
- * Each action generates at least one {@link com.android.manifmerger.ActionRecorder.Record}
+ * Each action generates at least one {@link com.android.manifmerger.Actions.Record}
  * containing enough information to generate a machine or human readable report.
  * <p>
  *
@@ -59,11 +54,9 @@ import java.util.Map;
  * <p>
  *
  * <ul>
- *     <li>{@link com.android.manifmerger.ActionRecorder.ActionTarget} to identify the action
- *     taken by the merging tool.</li>
- *     <li>{@link com.android.manifmerger.ActionRecorder.ActionType} to identify whether the action
+ *     <li>{@link com.android.manifmerger.Actions.ActionType} to identify whether the action
  *     applies to an attribute or an element.</li>
- *     <li>{@link com.android.manifmerger.ActionRecorder.ActionLocation} to identify the source xml
+ *     <li>{@link com.android.manifmerger.Actions.ActionLocation} to identify the source xml
  *     location for the node.</li>
  * </ul>
  *
@@ -84,379 +77,144 @@ import java.util.Map;
  *     tool decision.</li>
  * </ul>
  */
-@Immutable
 public class ActionRecorder {
 
-    // TODO: i18n
-    @VisibleForTesting
-    static final String HEADER = "-- Merging decision tree log ---\n";
-
     // defines all the records for the merging tool activity, indexed by element name+key.
-    // iterator should be ordered by the key insertion order.
-    private final ImmutableMap<String, DecisionTreeRecord> mRecords;
-
-    private ActionRecorder(ImmutableMap<String, DecisionTreeRecord> records) {
-        mRecords = records;
-    }
-
-    /**
-     * Defines all possible actions taken from the merging tool for an xml element or attribute.
-     */
-    enum ActionType {
-        /**
-         * The element was added into the resulting merged manifest.
-         */
-        ADDED,
-        /**
-         * The element was injected from the merger invocation parameters.
-         */
-        INJECTED,
-        /**
-         * The element was merged with another element into the resulting merged manifest.
-         */
-        MERGED,
-        /**
-         * The element was rejected.
-         */
-        REJECTED,
-    }
-
-    enum ActionTarget {
-        NODE,
-        ATTRIBUTE
-    }
+    // iterator should be ordered by the key insertion order. This is not a concurrent map so we
+    // will need to guard multi-threaded access when adding/removing elements.
+    @GuardedBy("this")
+    private final Map<NodeKey, Actions.DecisionTreeRecord> mRecords =
+            new LinkedHashMap<NodeKey, Actions.DecisionTreeRecord>();
 
     /**
-     * Defines an action location which is composed of a pointer to the source location (e.g. a
-     * file) and a position within that source location.
-     */
-    static final class ActionLocation {
-        private final XmlLoader.SourceLocation mSourceLocation;
-        private final PositionXmlParser.Position mPosition;
-
-        public ActionLocation(@NonNull XmlLoader.SourceLocation sourceLocation,
-                @NonNull PositionXmlParser.Position position) {
-            mSourceLocation = Preconditions.checkNotNull(sourceLocation);
-            mPosition = Preconditions.checkNotNull(position);
-        }
-
-        public PositionXmlParser.Position getPosition() {
-            return mPosition;
-        }
-
-        public XmlLoader.SourceLocation getSourceLocation() {
-            return mSourceLocation;
-        }
-
-        @Override
-        public String toString() {
-            return mSourceLocation.print(true) + ":" + mPosition.getLine();
-        }
-    }
-
-    /**
-     * Defines an abstract record contain common metadata for elements and attributes actions.
-     */
-    abstract static class Record {
-        protected final ActionType mActionType;
-        protected final ActionLocation mActionLocation;
-        protected final String mTargetId;
-
-        private Record(@NonNull ActionType actionType,
-                @NonNull ActionLocation actionLocation,
-                @NonNull String targetId) {
-            mActionType = Preconditions.checkNotNull(actionType);
-            mActionLocation = Preconditions.checkNotNull(actionLocation);
-            mTargetId = Preconditions.checkNotNull(targetId);
-        }
-
-        abstract ActionTarget getActionTarget();
-
-        public ActionType getActionType() {
-            return mActionType;
-        }
-
-        public String getTargetId() {
-            return mTargetId;
-        }
-
-        public ActionLocation getActionLocation() {
-            return mActionLocation;
-        }
-
-        public void print(StringBuilder stringBuilder) {
-            stringBuilder.append(mActionType)
-                    .append(" from ")
-                    .append(mActionLocation);
-        }
-    }
-
-    /**
-     * Defines a merging tool action for an xml element.
-     */
-    static class NodeRecord extends Record {
-
-        private final NodeOperationType mNodeOperationType;
-
-        private NodeRecord(@NonNull ActionType actionType,
-                ActionLocation actionLocation,
-                String targetId,
-                NodeOperationType nodeOperationType) {
-            super(actionType, actionLocation, targetId);
-            this.mNodeOperationType = Preconditions.checkNotNull(nodeOperationType);
-        }
-
-        @Override
-        ActionTarget getActionTarget() {
-            return ActionTarget.NODE;
-        }
-    }
-
-    /**
-     * Structure on how {@link Record}s are kept for an xml element.
+     * When the first xml file is loaded, there is nothing to merge with, however, each xml element
+     * and attribute added to the initial merged file need to be recorded.
      *
-     * Each xml element should have an associated DecisionTreeRecord which keeps a list of
-     * {@link com.android.manifmerger.ActionRecorder.NodeRecord} for all the node actions related
-     * to this xml element.
+     * @param xmlElement xml element added to the initial merged document.
+     */
+    void recordDefaultNodeAction(XmlElement xmlElement) {
+        if (!mRecords.containsKey(xmlElement.getId())) {
+            recordNodeAction(xmlElement, Actions.ActionType.ADDED);
+            for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
+                AttributeOperationType attributeOperation = xmlElement
+                        .getAttributeOperationType(xmlAttribute.getName());
+                recordAttributeAction(
+                        xmlAttribute, Actions.ActionType.ADDED,
+                        attributeOperation);
+            }
+            for (XmlElement childNode : xmlElement.getMergeableElements()) {
+                recordDefaultNodeAction(childNode);
+            }
+        }
+    }
+
+    /**
+     * Record a node action taken by the merging tool.
      *
-     * It will also contain a map indexed by attribute name on all the attribute actions related
-     * to that particular attribute within the xml element.
+     * @param xmlElement the action's target xml element
+     * @param actionType the action's type
+     */
+    synchronized void recordNodeAction(
+            XmlElement xmlElement,
+            Actions.ActionType actionType) {
+        recordNodeAction(xmlElement, actionType, xmlElement);
+    }
+
+    /**
+     * Record a node action taken by the merging tool.
      *
+     * @param mergedElement the merged xml element
+     * @param actionType    the action's type
+     * @param targetElement the action's target when the action is rejected or replaced, it
+     *                      indicates what is the element being rejected or replaced.
      */
-    static class DecisionTreeRecord {
-        // all other occurrences of the nodes decisions, in order of decisions.
-        private final List<NodeRecord> mNodeRecords = new ArrayList<NodeRecord>();
+    synchronized void recordNodeAction(
+            XmlElement mergedElement,
+            Actions.ActionType actionType,
+            XmlElement targetElement) {
 
-        // all attributes decisions indexed by attribute name.
-        private final Map<XmlNode.NodeName, List<AttributeRecord>> mAttributeRecords =
-                new HashMap<XmlNode.NodeName, List<AttributeRecord>>();
-
-        ImmutableList<NodeRecord> getNodeRecords() {
-            return ImmutableList.copyOf(mNodeRecords);
+        NodeKey storageKey = mergedElement.getId();
+        Actions.DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
+        if (nodeDecisionTree == null) {
+            nodeDecisionTree = new Actions.DecisionTreeRecord();
+            mRecords.put(storageKey, nodeDecisionTree);
         }
-
-        ImmutableMap<XmlNode.NodeName, List<AttributeRecord>> getAttributesRecords() {
-            return ImmutableMap.copyOf(mAttributeRecords);
-        }
-
-        List<AttributeRecord> getAttributeRecords(XmlNode.NodeName attributeName) {
-            List<AttributeRecord> attributeRecords = mAttributeRecords.get(attributeName);
-            return attributeRecords == null
-                    ? ImmutableList.<AttributeRecord>of()
-                    : ImmutableList.copyOf(attributeRecords);
-        }
+        Actions.NodeRecord record = new Actions.NodeRecord(actionType,
+                new Actions.ActionLocation(
+                        targetElement.getDocument().getSourceLocation(),
+                        targetElement.getPosition()),
+                targetElement.getId(),
+                mergedElement.getOperationType()
+        );
+        nodeDecisionTree.addNodeRecord(record);
     }
 
     /**
-     * Defines a merging tool action for an xml attribute
-     */
-    static class AttributeRecord extends Record {
-
-        // first in wins which should be fine, the first
-        // operation type will be the highest priority one
-        private final AttributeOperationType mOperationType;
-
-        private AttributeRecord(
-                @NonNull ActionType actionType,
-                @NonNull ActionLocation actionLocation,
-                @NonNull String targetId,
-                @Nullable AttributeOperationType operationType) {
-            super(actionType, actionLocation, targetId);
-            this.mOperationType = operationType;
-        }
-
-        @Override
-        ActionTarget getActionTarget() {
-            return ActionTarget.ATTRIBUTE;
-        }
-
-        @Nullable
-        public AttributeOperationType getOperationType() {
-            return mOperationType;
-        }
-    }
-
-    /**
-     * Mutable package private recorder to record all operations.
-     */
-    static class Builder {
-
-        // defines all the records for the merging tool activity, indexed by element name+key.
-        // iterator should be ordered by the key insertion order. This is not a concurrent map so we
-        // will need to guard multi-threaded access when adding/removing elements.
-        @GuardedBy("this")
-        private final Map<String, DecisionTreeRecord> mRecords =
-                new LinkedHashMap<String, DecisionTreeRecord>();
-
-        /**
-         * When the first xml file is loaded, there is nothing to merge with, however, each xml
-         * element and attribute added to the initial merged file need to be recorded.
-         *
-         * @param xmlElement xml element added to the initial merged document.
-         */
-        void recordDefaultNodeAction(XmlElement xmlElement) {
-            String storageKey = xmlElement.getId();
-            if (!mRecords.containsKey(storageKey)) {
-                recordNodeAction(xmlElement, ActionType.ADDED);
-                for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
-                    AttributeOperationType attributeOperation = xmlElement
-                            .getAttributeOperationType(xmlAttribute.getName());
-                    recordAttributeAction(
-                            xmlAttribute, ActionType.ADDED,
-                            attributeOperation);
-                }
-                for (XmlElement childNode : xmlElement.getMergeableElements()) {
-                    recordDefaultNodeAction(childNode);
-                }
-            }
-        }
-
-        /**
-         * Record a node action taken by the merging tool.
-         *
-         * @param xmlElement the action's target xml element
-         * @param actionType the action's type
-         */
-        synchronized void recordNodeAction(
-                XmlElement xmlElement,
-                ActionType actionType) {
-            recordNodeAction(xmlElement, actionType, xmlElement);
-        }
-
-        /**
-         * Record a node action taken by the merging tool.
-         *
-         * @param mergedElement the merged xml element
-         * @param actionType    the action's type
-         * @param targetElement the action's target when the action is rejected or replaced, it
-         *                      indicates what is the element being rejected or replaced.
-         */
-        synchronized void recordNodeAction(
-                XmlElement mergedElement,
-                ActionType actionType,
-                XmlElement targetElement) {
-
-            String storageKey = mergedElement.getId();
-            DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
-            if (nodeDecisionTree == null) {
-                nodeDecisionTree = new DecisionTreeRecord();
-                mRecords.put(storageKey, nodeDecisionTree);
-            }
-            NodeRecord record = new NodeRecord(actionType,
-                    new ActionLocation(
-                            targetElement.getDocument().getSourceLocation(),
-                            targetElement.getPosition()),
-                    targetElement.getId(),
-                    mergedElement.getOperationType());
-            nodeDecisionTree.mNodeRecords.add(record);
-        }
-
-        /**
-         * Records an attribute action taken by the merging tool
-         *
-         * @param attribute              the attribute in question.
-         * @param actionType             the action's type
-         * @param attributeOperationType the original tool annotation leading to the merging tool
-         *                               decision.
-         */
-        synchronized void recordAttributeAction(
-                @NonNull XmlAttribute attribute,
-                @NonNull ActionType actionType,
-                @Nullable AttributeOperationType attributeOperationType) {
-
-            XmlElement originElement = attribute.getOwnerElement();
-            List<AttributeRecord> attributeRecords = getAttributeRecords(attribute);
-            AttributeRecord attributeRecord = new AttributeRecord(
-                    actionType,
-                    new ActionLocation(
-                            originElement.getDocument().getSourceLocation(),
-                            attribute.getPosition()),
-                    attribute.getId(),
-                    attributeOperationType);
-            attributeRecords.add(attributeRecord);
-        }
-
-        /**
-         * Records when a default value that should be merged was rejected due to
-         * a tools:replace annotation.
-         * @param attribute the attribute which default value was ignored.
-         * @param implicitAttributeOwner the element owning the implicit default
-         *                               value.
-         */
-        synchronized void recordImplicitRejection(
-                @NonNull XmlAttribute attribute,
-                @NonNull XmlElement implicitAttributeOwner) {
-
-            List<AttributeRecord> attributeRecords = getAttributeRecords(attribute);
-            AttributeRecord attributeRecord = new AttributeRecord(
-                    ActionType.REJECTED,
-                    new ActionLocation(
-                            implicitAttributeOwner.getDocument().getSourceLocation(),
-                            implicitAttributeOwner.getPosition()),
-                    attribute.getId(),
-                    AttributeOperationType.REPLACE);
-            attributeRecords.add(attributeRecord);
-        }
-
-        private List<AttributeRecord> getAttributeRecords(XmlAttribute attribute) {
-            XmlElement originElement = attribute.getOwnerElement();
-            String storageKey = originElement.getId();
-            DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
-            // by now the node should have been added for this element.
-            Preconditions.checkState(nodeDecisionTree != null);
-            List<AttributeRecord> attributeRecords =
-                    nodeDecisionTree.mAttributeRecords.get(attribute.getName());
-            if (attributeRecords == null) {
-                attributeRecords = new ArrayList<AttributeRecord>();
-                nodeDecisionTree.mAttributeRecords.put(attribute.getName(), attributeRecords);
-            }
-            return attributeRecords;
-        }
-
-        ActionRecorder build() {
-            return new ActionRecorder(new ImmutableMap.Builder<String, DecisionTreeRecord>()
-                    .putAll(mRecords).build());
-        }
-    }
-
-    /**
-     * Returns all recorded activities from the merging tool as map indexed by
-     * {@link XmlElement#getId()}. For each element, a
-     * {@link com.android.manifmerger.ActionRecorder.DecisionTreeRecord} represents all decisions
-     * made for that particular XML element, including the element's attributes
-     * {@link com.android.manifmerger.ActionRecorder.DecisionTreeRecord#getAttributesRecords()}
+     * Records an attribute action taken by the merging tool
      *
-     * @return a map of {@link com.android.manifmerger.ActionRecorder.DecisionTreeRecord} indexed
-     * by {@link XmlElement#getId()}
+     * @param attribute              the attribute in question.
+     * @param actionType             the action's type
+     * @param attributeOperationType the original tool annotation leading to the merging tool
+     *                               decision.
      */
-    ImmutableMap<String, DecisionTreeRecord> getAllRecords() {
-        return mRecords;
+    synchronized void recordAttributeAction(
+            @NonNull XmlAttribute attribute,
+            @NonNull Actions.ActionType actionType,
+            @Nullable AttributeOperationType attributeOperationType) {
+
+        XmlElement originElement = attribute.getOwnerElement();
+        List<Actions.AttributeRecord> attributeRecords = getAttributeRecords(attribute);
+        Actions.AttributeRecord attributeRecord = new Actions.AttributeRecord(
+                actionType,
+                new Actions.ActionLocation(
+                        originElement.getDocument().getSourceLocation(),
+                        attribute.getPosition()),
+                attribute.getId(),
+                attributeOperationType
+        );
+        attributeRecords.add(attributeRecord);
     }
 
     /**
-     * Initial dump of the merging tool actions, need to be refined and spec'ed out properly.
-     * @param logger logger to log to at INFO level.
+     * Records when a default value that should be merged was rejected due to a tools:replace
+     * annotation.
+     *
+     * @param attribute              the attribute which default value was ignored.
+     * @param implicitAttributeOwner the element owning the implicit default value.
      */
-    void log(ILogger logger) {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(HEADER);
-        for (Map.Entry<String, DecisionTreeRecord> record : mRecords.entrySet()) {
-            stringBuilder.append(record.getKey()).append("\n");
-            for (NodeRecord nodeRecord : record.getValue().mNodeRecords) {
-                nodeRecord.print(stringBuilder);
-                stringBuilder.append("\n");
-            }
-            for (Map.Entry<XmlNode.NodeName, List<AttributeRecord>> attributeRecords :
-                    record.getValue().mAttributeRecords.entrySet()) {
-                stringBuilder.append("\t").append(attributeRecords.getKey());
-                for (AttributeRecord attributeRecord : attributeRecords.getValue()) {
-                    stringBuilder.append("\t\t");
-                    attributeRecord.print(stringBuilder);
-                    stringBuilder.append("\n");
-                }
+    synchronized void recordImplicitRejection(
+            @NonNull XmlAttribute attribute,
+            @NonNull XmlElement implicitAttributeOwner) {
 
-            }
+        List<Actions.AttributeRecord> attributeRecords = getAttributeRecords(attribute);
+        Actions.AttributeRecord attributeRecord = new Actions.AttributeRecord(
+                Actions.ActionType.REJECTED,
+                new Actions.ActionLocation(
+                        implicitAttributeOwner.getDocument().getSourceLocation(),
+                        implicitAttributeOwner.getPosition()),
+                attribute.getId(),
+                AttributeOperationType.REPLACE
+        );
+        attributeRecords.add(attributeRecord);
+    }
+
+    private List<Actions.AttributeRecord> getAttributeRecords(XmlAttribute attribute) {
+        XmlElement originElement = attribute.getOwnerElement();
+        NodeKey storageKey = originElement.getId();
+        Actions.DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
+        // by now the node should have been added for this element.
+        assert (nodeDecisionTree != null);
+        List<Actions.AttributeRecord> attributeRecords =
+                nodeDecisionTree.mAttributeRecords.get(attribute.getName());
+        if (attributeRecords == null) {
+            attributeRecords = new ArrayList<Actions.AttributeRecord>();
+            nodeDecisionTree.mAttributeRecords.put(attribute.getName(), attributeRecords);
         }
-        logger.info(stringBuilder.toString());
+        return attributeRecords;
+    }
+
+    Actions build() {
+        return new Actions(new ImmutableMap.Builder<NodeKey, Actions.DecisionTreeRecord>()
+                .putAll(mRecords).build());
     }
 }

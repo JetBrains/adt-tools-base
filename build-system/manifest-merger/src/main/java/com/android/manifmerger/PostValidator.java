@@ -16,7 +16,7 @@
 
 package com.android.manifmerger;
 
-import static com.android.manifmerger.ActionRecorder.ActionType;
+import static com.android.manifmerger.Actions.ActionType;
 
 import com.android.annotations.NonNull;
 import com.google.common.base.Preconditions;
@@ -61,20 +61,20 @@ public class PostValidator {
      * instructions were applied.
      *
      * @param xmlElement xml element to validate.
-     * @param recorder the actions recorded during the merging activities.
+     * @param actions the actions recorded during the merging activities.
      * @param mergingReport report for errors and warnings.
      * instructions were applied once or {@link MergingReport.Result#WARNING} otherwise.
      */
     private static void validate(
             XmlElement xmlElement,
-            ActionRecorder recorder,
+            Actions actions,
             MergingReport.Builder mergingReport) {
 
         NodeOperationType operationType = xmlElement.getOperationType();
         switch (operationType) {
             case REPLACE:
                 // we should find at least one rejected twin.
-                if (!isNodeOperationPresent(xmlElement, recorder, ActionType.REJECTED)) {
+                if (!isNodeOperationPresent(xmlElement, actions, ActionType.REJECTED)) {
                     mergingReport.addWarning(String.format(
                             "%1$s was tagged at %2$s:%3$d to replace another declaration "
                                     + "but no other declaration present",
@@ -86,7 +86,7 @@ public class PostValidator {
             case REMOVE:
             case REMOVE_ALL:
                 // we should find at least one rejected twin.
-                if (!isNodeOperationPresent(xmlElement, recorder, ActionType.REJECTED)) {
+                if (!isNodeOperationPresent(xmlElement, actions, ActionType.REJECTED)) {
                     mergingReport.addWarning(String.format(
                             "%1$s was tagged at %2$s:%3$d to remove other declarations "
                                     + "but no other declaration present",
@@ -96,10 +96,10 @@ public class PostValidator {
                 }
                 break;
         }
-        validateAttributes(xmlElement, recorder, mergingReport);
+        validateAttributes(xmlElement, actions, mergingReport);
         validateAndroidAttributes(xmlElement, mergingReport);
         for (XmlElement child : xmlElement.getMergeableElements()) {
-            validate(child, recorder, mergingReport);
+            validate(child, actions, mergingReport);
         }
     }
 
@@ -109,7 +109,7 @@ public class PostValidator {
      */
     private static void validateAttributes(
             XmlElement xmlElement,
-            ActionRecorder recorder,
+            Actions actions,
             MergingReport.Builder mergingReport) {
 
         Collection<Map.Entry<XmlNode.NodeName, AttributeOperationType>> attributeOperations
@@ -119,7 +119,7 @@ public class PostValidator {
             switch (attributeOperation.getValue()) {
                 case REMOVE:
                     if (!isAttributeOperationPresent(
-                            xmlElement, attributeOperation, recorder, ActionType.REJECTED)) {
+                            xmlElement, attributeOperation, actions, ActionType.REJECTED)) {
                         mergingReport.addWarning(String.format(
                                 "%1$s@%2$s was tagged at %3$s:%4$d to remove other"
                                         + " declarations but no other declaration present",
@@ -131,7 +131,7 @@ public class PostValidator {
                     break;
                 case REPLACE:
                     if (!isAttributeOperationPresent(
-                            xmlElement, attributeOperation, recorder, ActionType.REJECTED)) {
+                            xmlElement, attributeOperation, actions, ActionType.REJECTED)) {
                         mergingReport.addWarning(String.format(
                                 "%1$s@%2$s was tagged at %3$s:%4$d to replace other"
                                         + " declarations but no other declaration present",
@@ -147,16 +147,15 @@ public class PostValidator {
     }
 
     /**
-     * Check in our list of applied actions that a particular {@link ActionRecorder.ActionType}
+     * Check in our list of applied actions that a particular {@link com.android.manifmerger.Actions.ActionType}
      * action was recorded on the passed element.
      * @return true if it was applied, false otherwise.
      */
     private static boolean isNodeOperationPresent(XmlElement xmlElement,
-            ActionRecorder recorder,
+            Actions actions,
             ActionType action) {
 
-        ActionRecorder.DecisionTreeRecord record = recorder.getAllRecords().get(xmlElement.getId());
-        for (ActionRecorder.NodeRecord nodeRecord : record.getNodeRecords()) {
+        for (Actions.NodeRecord nodeRecord : actions.getNodeRecords(xmlElement.getId())) {
             if (nodeRecord.getActionType() == action) {
                 return true;
             }
@@ -165,18 +164,17 @@ public class PostValidator {
     }
 
     /**
-     * Check in our list of attribute actions that a particular {@link ActionRecorder.ActionType}
+     * Check in our list of attribute actions that a particular {@link com.android.manifmerger.Actions.ActionType}
      * action was recorded on the passed element.
      * @return true if it was applied, false otherwise.
      */
     private static boolean isAttributeOperationPresent(XmlElement xmlElement,
             Map.Entry<XmlNode.NodeName, AttributeOperationType> attributeOperation,
-            ActionRecorder recorder,
+            Actions actions,
             ActionType action) {
 
-        ActionRecorder.DecisionTreeRecord record = recorder.getAllRecords().get(xmlElement.getId());
-        for (ActionRecorder.AttributeRecord attributeRecord : record
-                .getAttributeRecords(attributeOperation.getKey())) {
+        for (Actions.AttributeRecord attributeRecord : actions.getAttributeRecords(
+                xmlElement.getId(), attributeOperation.getKey())) {
             if (attributeRecord.getActionType() == action) {
                 return true;
             }

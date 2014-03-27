@@ -92,9 +92,9 @@ public class XmlAttribute extends XmlNode {
      * readable messages.
      */
     @Override
-    public String getId() {
+    public NodeKey getId() {
         // (Id of the parent element)@(my name)
-        return mOwnerElement.getId() + "@" + mXml.getName();
+        return new NodeKey(mOwnerElement.getId() + "@" + mXml.getName());
     }
 
     @Override
@@ -140,7 +140,7 @@ public class XmlAttribute extends XmlNode {
             // record the fact the attribute was actively removed.
             mergingReport.getActionRecorder().recordAttributeAction(
                     this,
-                    ActionRecorder.ActionType.REJECTED,
+                    Actions.ActionType.REJECTED,
                     AttributeOperationType.REMOVE);
             return;
         }
@@ -159,7 +159,7 @@ public class XmlAttribute extends XmlNode {
         // and record the action.
         mergingReport.getActionRecorder().recordAttributeAction(
                 this,
-                ActionRecorder.ActionType.ADDED,
+                Actions.ActionType.ADDED,
                 getOwnerElement().getAttributeOperationType(getName()));
     }
 
@@ -182,7 +182,7 @@ public class XmlAttribute extends XmlNode {
             // record the fact the lower priority attribute was rejected.
             report.getActionRecorder().recordAttributeAction(
                     this,
-                    ActionRecorder.ActionType.REJECTED,
+                    Actions.ActionType.REJECTED,
                     AttributeOperationType.REPLACE);
             return;
         }
@@ -270,7 +270,7 @@ public class XmlAttribute extends XmlNode {
             getXml().setValue(mergedValue);
             mergingReport.getActionRecorder().recordAttributeAction(
                     this,
-                    ActionRecorder.ActionType.MERGED,
+                    Actions.ActionType.MERGED,
                     null /* attributeOperationType */);
         }
     }

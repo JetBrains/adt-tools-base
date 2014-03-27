@@ -16,7 +16,6 @@
 
 package com.android.manifmerger;
 
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import com.android.SdkConstants;
@@ -34,7 +33,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -140,18 +138,15 @@ public class XmlAttributeTest extends TestCase {
         assertTrue(activityOne.get().getAttribute(
                 XmlNode.fromXmlName("android:name")).isPresent());
 
+        Actions actions = mergingReportBuilder.getActionRecorder().build();
         // check the recorded actions.
-        ImmutableMap<String, ActionRecorder.DecisionTreeRecord> allRecords = mergingReportBuilder
-                .getActionRecorder().build().getAllRecords();
-        ActionRecorder.DecisionTreeRecord activityOneRecords =
-                allRecords.get(activityOne.get().getId());
-        assertNotNull(activityOneRecords);
-        List<ActionRecorder.AttributeRecord> attributeRecords = activityOneRecords
-                .getAttributeRecords(XmlNode.fromXmlName("android:theme"));
+        List<Actions.AttributeRecord> attributeRecords =
+                actions.getAttributeRecords(activityOne.get().getId(),
+                        XmlNode.fromXmlName("android:theme"));
         assertNotNull(attributeRecords);
         assertEquals(1, attributeRecords.size());
-        ActionRecorder.AttributeRecord attributeRecord = attributeRecords.get(0);
-        assertEquals(ActionRecorder.ActionType.REJECTED, attributeRecord.getActionType());
+        Actions.AttributeRecord attributeRecord = attributeRecords.get(0);
+        assertEquals(Actions.ActionType.REJECTED, attributeRecord.getActionType());
         assertEquals(AttributeOperationType.REMOVE, attributeRecord.getOperationType());
         assertEquals(7, attributeRecord.getActionLocation().getPosition().getLine());
     }
@@ -317,27 +312,24 @@ public class XmlAttributeTest extends TestCase {
         assertTrue(activityOne.get().getAttribute(
                 XmlNode.fromXmlName("android:screenOrientation")).isPresent());
 
+        Actions actions = mergingReportBuilder.getActionRecorder().build();
         // check the recorded actions.
-        ImmutableMap<String, ActionRecorder.DecisionTreeRecord> allRecords = mergingReportBuilder
-                .getActionRecorder().build().getAllRecords();
-        ActionRecorder.DecisionTreeRecord activityOneRecords =
-                allRecords.get(activityOne.get().getId());
-        assertNotNull(activityOneRecords);
-        List<ActionRecorder.AttributeRecord> attributeRecords = activityOneRecords
-                .getAttributeRecords(XmlNode.fromXmlName("android:theme"));
+        List<Actions.AttributeRecord> attributeRecords =
+                actions.getAttributeRecords(activityOne.get().getId(),
+                        XmlNode.fromXmlName("android:theme"));
         assertNotNull(attributeRecords);
 
         // theme was removed twice...
         assertEquals(2, attributeRecords.size());
-        ActionRecorder.AttributeRecord attributeRecord = attributeRecords.get(0);
-        assertEquals(ActionRecorder.ActionType.REJECTED, attributeRecord.getActionType());
+        Actions.AttributeRecord attributeRecord = attributeRecords.get(0);
+        assertEquals(Actions.ActionType.REJECTED, attributeRecord.getActionType());
         assertEquals(AttributeOperationType.REMOVE, attributeRecord.getOperationType());
         assertEquals("XmlAttributeTest#lowPriority",
                 attributeRecord.getActionLocation().getSourceLocation().print(true));
         assertEquals(8, attributeRecord.getActionLocation().getPosition().getLine());
 
         attributeRecord = attributeRecords.get(1);
-        assertEquals(ActionRecorder.ActionType.REJECTED, attributeRecord.getActionType());
+        assertEquals(Actions.ActionType.REJECTED, attributeRecord.getActionType());
         assertEquals(AttributeOperationType.REMOVE, attributeRecord.getOperationType());
         assertEquals("XmlAttributeTest#lowestPriority",
                 attributeRecord.getActionLocation().getSourceLocation().print(true));
