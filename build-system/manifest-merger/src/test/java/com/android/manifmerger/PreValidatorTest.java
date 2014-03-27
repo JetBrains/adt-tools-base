@@ -152,7 +152,36 @@ public class PreValidatorTest extends TestCase {
     }
 
 
-    private void assertStringPresenceInLogRecords(MergingReport.Builder mergingReport, String s) {
+    public void testIncorrectSelector()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        MockLog mockLog = new MockLog();
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <permission "
+                + "             android:label=\"@string/lib_name\""
+                + "             android:name=\"permissionOne\""
+                + "             tools:node=\"replace\" tools:selector=\"foo\">\n"
+                + "    </permission>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(
+                        getClass(), "testIncorrectRemove"), input);
+
+        MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
+        MergingReport.Result validated = PreValidator.validate(mergingReport, xmlDocument);
+        assertEquals(MergingReport.Result.ERROR, validated);
+        // assert the error message complains about the bad instruction usage.
+        assertStringPresenceInLogRecords(mergingReport, "tools:selector=\"foo\"");
+    }
+
+    private static void assertStringPresenceInLogRecords(MergingReport.Builder mergingReport, String s) {
         for (MergingReport.Record record : mergingReport.build().getLoggingRecords()) {
             if (record.toString().contains(s)) {
                 return;
