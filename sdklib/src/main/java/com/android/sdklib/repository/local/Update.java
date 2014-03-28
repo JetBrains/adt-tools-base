@@ -28,39 +28,14 @@ import java.util.Set;
 
 
 /**
- * Computes updates available for local packages.
+ * Helper methods to compute updates available for local packages.
  */
-public class Update {
+public abstract class Update {
 
-    public static class Result {
-        final Set<LocalPkgInfo> mUpdatedPkgs = Sets.newTreeSet();
-        final Set<RemotePkgInfo> mNewPkgs = Sets.newTreeSet();
-
-        /**
-         * Returns the set of packages that have local updates available.
-         * Use {@link LocalPkgInfo#getUpdate()} to retrieve the computed updated candidate.
-         *
-         * @return A non-null, possibly empty list of update candidates.
-         */
-        public Set<LocalPkgInfo> getUpdatedPkgs() {
-            return mUpdatedPkgs;
-        }
-
-        /**
-         * Returns the set of new remote packages that are not locally present
-         * and that the user could install.
-         *
-         * @return A non-null, possibly empty list of new install candidates.
-         */
-        public Set<RemotePkgInfo> getNewPkgs() {
-            return mNewPkgs;
-        }
-    }
-
-    public static Result computeUpdates(@NonNull LocalPkgInfo[] localPkgs,
+    public static UpdateResult computeUpdates(@NonNull LocalPkgInfo[] localPkgs,
                                         @NonNull Multimap<PkgType, RemotePkgInfo> remotePkgs) {
 
-        Result result = new Result();
+      UpdateResult result = new UpdateResult();
         Set<RemotePkgInfo> updates = Sets.newTreeSet();
 
         // Find updates to locally installed packages
@@ -87,7 +62,7 @@ public class Update {
                 }
             }
 
-            result.mNewPkgs.add(remote);
+            result.addNewPkgs(remote);
         }
 
         return result;
@@ -95,7 +70,7 @@ public class Update {
 
     private static RemotePkgInfo findUpdate(@NonNull LocalPkgInfo local,
                                             @NonNull Multimap<PkgType, RemotePkgInfo> remotePkgs,
-                                            @NonNull Result result) {
+                                            @NonNull UpdateResult result) {
         RemotePkgInfo currUpdatePkg = null;
         IPkgDesc currUpdateDesc = null;
         IPkgDesc localDesc = local.getDesc();
@@ -111,7 +86,7 @@ public class Update {
 
         local.setUpdate(currUpdatePkg);
         if (currUpdatePkg != null) {
-            result.mUpdatedPkgs.add(local);
+            result.addUpdatedPkgs(local);
         }
 
         return currUpdatePkg;
