@@ -22,7 +22,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
-import com.android.prefs.AndroidLocation.EnvVar;
 import com.android.resources.Density;
 import com.android.resources.Keyboard;
 import com.android.resources.KeyboardState;
@@ -63,13 +62,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 /**
  * Test case that allocates a temporary SDK, a temporary AVD base folder
  * with an SdkManager and an AvdManager that points to them.
+ * <p/>
+ * Also overrides the {@link AndroidLocation} to point to temp one.
  */
-public class SdkManagerTestCase extends TestCase {
+public class SdkManagerTestCase extends AndroidLocationTestCase {
 
     protected static final String TARGET_DIR_NAME_0 = "v0_0";
     private File mFakeSdk;
@@ -77,8 +76,6 @@ public class SdkManagerTestCase extends TestCase {
     private SdkManager mSdkManager;
     private AvdManager mAvdManager;
     private int mRepoXsdLevel;
-    private String mOldAndroidHomeProp;
-    private File mAndroidHome;
 
     /** Returns the {@link MockLog} for this test case. */
     public MockLog getLog() {
@@ -100,9 +97,9 @@ public class SdkManagerTestCase extends TestCase {
      * and an AVD Manager pointing to an initially-empty AVD directory.
      */
     public void setUp(int repoXsdLevel) throws Exception {
+        super.setUp();
         mRepoXsdLevel = repoXsdLevel;
         mLog = new MockLog();
-        makeFakeAndroidHome();
         makeFakeSdk();
         createSdkAvdManagers();
     }
@@ -153,45 +150,7 @@ public class SdkManagerTestCase extends TestCase {
     @Override
     public void tearDown() throws Exception {
         tearDownSdk();
-        tearDownAndroidHome();
-    }
-
-    /**
-     * A empty test method to please the JUnit test runner, which doesn't
-     * like TestCase classes with no test methods.
-     */
-    public void testPlaceholder() {
-    }
-
-    private void makeFakeAndroidHome() throws IOException {
-        // First we create a temp file to "reserve" the temp directory name we want to use.
-        mAndroidHome = File.createTempFile(
-                "androidhome_" + this.getClass().getSimpleName() + '_' + this.getName(), null);
-        // Then erase the file and make the directory
-        mAndroidHome.delete();
-        mAndroidHome.mkdirs();
-
-        // Set the system property that will force AndroidLocation to use this
-        mOldAndroidHomeProp = System.getProperty(EnvVar.ANDROID_SDK_HOME.getName());
-        System.setProperty(EnvVar.ANDROID_SDK_HOME.getName(), mAndroidHome.getAbsolutePath());
-        AndroidLocation.resetFolder();
-    }
-
-    private void tearDownAndroidHome() {
-        if (mOldAndroidHomeProp == null) {
-            System.clearProperty(EnvVar.ANDROID_SDK_HOME.getName());
-        } else {
-            System.setProperty(EnvVar.ANDROID_SDK_HOME.getName(), mOldAndroidHomeProp);
-        }
-        AndroidLocation.resetFolder();
-        deleteDir(mAndroidHome);
-    }
-
-    /** Clear the .android home folder and reconstruct it empty. */
-    protected void clearAndroidHome() {
-        deleteDir(mAndroidHome);
-        mAndroidHome.mkdirs();
-        AndroidLocation.resetFolder();
+        super.tearDown();
     }
 
     /**

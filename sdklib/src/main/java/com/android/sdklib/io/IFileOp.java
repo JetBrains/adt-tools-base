@@ -143,12 +143,12 @@ public interface IFileOp {
      * @param file A non-null file to write to.
      * @param props The properties to write.
      * @param comments A non-null description of the properly list, written in the file.
-     * @return True if the properties could be saved, false otherwise.
+     * @throws IOException if the write operation failed.
      */
-    public boolean saveProperties(
+    public void saveProperties(
             @NonNull File file,
             @NonNull Properties props,
-            @NonNull String comments);
+            @NonNull String comments) throws IOException;
 
     /**
      * Returns the lastModified attribute of the file.
