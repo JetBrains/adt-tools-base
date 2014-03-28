@@ -80,7 +80,7 @@ public class MockFileOp implements IFileOp {
         if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS) {
             // Try to convert the windows-looking path to a unix-looking one
             path = path.replace('\\', '/');
-            path = path.replace("C:", "");      //$NON-NLS-1$ //$NON-NLS-2$
+            path = path.replaceAll("^[A-Z]:", "");      //$NON-NLS-1$ //$NON-NLS-2$
         }
         return path;
     }
