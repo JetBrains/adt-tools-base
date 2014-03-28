@@ -47,6 +47,10 @@ public class MockMonitor implements ITaskMonitor {
         return mCapturedDescriptions;
     }
 
+    public String getAllCapturedLogs() {
+        return mCapturedLog + mCapturedVerboseLog + mCapturedDescriptions + mCapturedErrorLog;
+    }
+
     @Override
     public void log(String format, Object... args) {
         mCapturedLog += String.format(format, args) + "\n";             //$NON-NLS-1$

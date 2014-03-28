@@ -421,7 +421,9 @@ public class ArchiveInstaller {
                                   resp.getFirstHeader(HttpHeaders.LAST_MODIFIED).getValue());
             }
 
-            mFileOp.saveProperties(propsFile, props, "## Android SDK Download.");  //$NON-NLS-1$
+            try {
+                mFileOp.saveProperties(propsFile, props, "## Android SDK Download.");  //$NON-NLS-1$
+            } catch (IOException ignore) {}
 
             // On success, status can be:
             // - 206 (Partial content), if resumeHeaders is not null (we asked for a partial
@@ -1094,10 +1096,15 @@ public class ArchiveInstaller {
             pkg.saveProperties(props);
         }
 
-        return mFileOp.saveProperties(
+        try {
+            mFileOp.saveProperties(
                 new File(unzipDestFolder, SdkConstants.FN_SOURCE_PROP),
                 props,
                 "## Android Tool: Source of this archive.");  //$NON-NLS-1$
+            return true;
+        } catch (IOException ignore) {
+            return false;
+        }
     }
 
     /**

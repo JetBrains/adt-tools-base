@@ -23,6 +23,8 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
+import com.android.sdklib.io.FileOp;
+import com.android.sdklib.io.IFileOp;
 import com.android.utils.Pair;
 
 import org.apache.http.Header;
@@ -33,9 +35,7 @@ import org.apache.http.message.BasicHeader;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -131,8 +131,9 @@ public class DownloadCache {
         HttpHeaders.DATE
     };
 
-    private final Strategy mStrategy;
+    private final IFileOp mFileOp;
     private final File mCacheRoot;
+    private final Strategy mStrategy;
 
     public enum Strategy {
         /**
@@ -162,7 +163,13 @@ public class DownloadCache {
     }
 
     /** Creates a default instance of the URL cache */
-    public DownloadCache(Strategy strategy) {
+    public DownloadCache(@NonNull Strategy strategy) {
+        this(new FileOp(), strategy);
+    }
+
+    /** Creates a default instance of the URL cache */
+    public DownloadCache(@NonNull IFileOp fileOp, @NonNull Strategy strategy) {
+        mFileOp = fileOp;
         mCacheRoot = initCacheRoot();
 
         // If this is defined in the environment, never use the cache. Useful for testing.
@@ -173,10 +180,12 @@ public class DownloadCache {
         mStrategy = mCacheRoot == null ? Strategy.DIRECT : strategy;
     }
 
+    @NonNull
     public Strategy getStrategy() {
         return mStrategy;
     }
 
+    @Nullable
     public File getCacheRoot() {
         return mCacheRoot;
     }
@@ -190,15 +199,12 @@ public class DownloadCache {
         long size = 0;
 
         if (mCacheRoot != null) {
-            File[] files = mCacheRoot.listFiles();
-            if (files != null) {
-                for (File f : files) {
-                    if (f.isFile()) {
-                        String name = f.getName();
-                        if (name.startsWith(BIN_FILE_PREFIX) ||
-                                name.startsWith(INFO_FILE_PREFIX)) {
-                            size += f.length();
-                        }
+            File[] files = mFileOp.listFiles(mCacheRoot);
+            for (File f : files) {
+                if (mFileOp.isFile(f)) {
+                    String name = f.getName();
+                    if (name.startsWith(BIN_FILE_PREFIX) || name.startsWith(INFO_FILE_PREFIX)) {
+                        size += f.length();
                     }
                 }
             }
@@ -212,15 +218,12 @@ public class DownloadCache {
      */
     public void clearCache() {
         if (mCacheRoot != null) {
-            File[] files = mCacheRoot.listFiles();
-            if (files != null) {
-                for (File f : files) {
-                    if (f.isFile()) {
-                        String name = f.getName();
-                        if (name.startsWith(BIN_FILE_PREFIX) ||
-                                name.startsWith(INFO_FILE_PREFIX)) {
-                            f.delete();
-                        }
+            File[] files = mFileOp.listFiles(mCacheRoot);
+            for (File f : files) {
+                if (mFileOp.isFile(f)) {
+                    String name = f.getName();
+                    if (name.startsWith(BIN_FILE_PREFIX) || name.startsWith(INFO_FILE_PREFIX)) {
+                        mFileOp.delete(f);
                     }
                 }
             }
@@ -235,16 +238,14 @@ public class DownloadCache {
         String prefix1 = BIN_FILE_PREFIX + REV_FILE_PREFIX;
         String prefix2 = INFO_FILE_PREFIX + REV_FILE_PREFIX;
         if (mCacheRoot != null) {
-            File[] files = mCacheRoot.listFiles();
-            if (files != null) {
-                for (File f : files) {
-                    if (f.isFile()) {
-                        String name = f.getName();
-                        if (name.startsWith(BIN_FILE_PREFIX) ||
-                                name.startsWith(INFO_FILE_PREFIX)) {
-                            if (!name.startsWith(prefix1) && !name.startsWith(prefix2)) {
-                                f.delete();
-                            }
+            File[] files = mFileOp.listFiles(mCacheRoot);
+            for (File f : files) {
+                if (mFileOp.isFile(f)) {
+                    String name = f.getName();
+                    if (name.startsWith(BIN_FILE_PREFIX) ||
+                            name.startsWith(INFO_FILE_PREFIX)) {
+                        if (!name.startsWith(prefix1) && !name.startsWith(prefix2)) {
+                            mFileOp.delete(f);
                         }
                     }
                 }
@@ -261,12 +262,13 @@ public class DownloadCache {
      *   or null in case of error in which case the cache will be disabled.
      */
     @VisibleForTesting(visibility=Visibility.PRIVATE)
+    @Nullable
     protected File initCacheRoot() {
         try {
             File root = new File(AndroidLocation.getFolder());
             root = new File(root, SdkConstants.FD_CACHE);
-            if (!root.exists()) {
-                root.mkdirs();
+            if (!mFileOp.exists(root)) {
+                mFileOp.mkdirs(root);
             }
             return root;
         } catch (AndroidLocationException e) {
@@ -274,6 +276,23 @@ public class DownloadCache {
             return null;
         }
     }
+
+    /**
+     * Calls {@link UrlOpener#openUrl(String, boolean, ITaskMonitor, Header[])}
+     * to actually perform a download.
+     * <p/>
+     * Isolated so that it can be overridden by unit tests.
+     */
+    @VisibleForTesting(visibility=Visibility.PRIVATE)
+    @NonNull
+    protected Pair<InputStream, HttpResponse> openUrl(
+            @NonNull String url,
+            boolean needsMarkResetSupport,
+            @NonNull ITaskMonitor monitor,
+            @Nullable Header[] headers) throws IOException, CanceledByUserException {
+        return UrlOpener.openUrl(url, needsMarkResetSupport, monitor, headers);
+    }
+
 
     /**
      * Does a direct download of the given URL using {@link UrlOpener}.
@@ -301,6 +320,7 @@ public class DownloadCache {
      * @throws CanceledByUserException Exception thrown if the user cancels the
      *              authentication dialog.
      */
+    @NonNull
     public Pair<InputStream, HttpResponse> openDirectUrl(
             @NonNull  String urlString,
             @Nullable Header[] headers,
@@ -309,7 +329,7 @@ public class DownloadCache {
         if (DEBUG) {
             System.out.println(String.format("%s : Direct download", urlString)); //$NON-NLS-1$
         }
-        return UrlOpener.openUrl(
+        return openUrl(
                 urlString,
                 false /*needsMarkResetSupport*/,
                 monitor,
@@ -344,6 +364,7 @@ public class DownloadCache {
      *              authentication dialog.
      * @see #openDirectUrl(String, Header[], ITaskMonitor)
      */
+    @NonNull
     public Pair<InputStream, Integer> openDirectUrl(
             @NonNull  String urlString,
             @NonNull  ITaskMonitor monitor)
@@ -351,7 +372,7 @@ public class DownloadCache {
         if (DEBUG) {
             System.out.println(String.format("%s : Direct download", urlString)); //$NON-NLS-1$
         }
-        Pair<InputStream, HttpResponse> result = UrlOpener.openUrl(
+        Pair<InputStream, HttpResponse> result = openUrl(
                 urlString,
                 false /*needsMarkResetSupport*/,
                 monitor,
@@ -382,11 +403,12 @@ public class DownloadCache {
      * @throws CanceledByUserException Exception thrown if the user cancels the
      *              authentication dialog.
      */
-    public InputStream openCachedUrl(String urlString, ITaskMonitor monitor)
+    @NonNull
+    public InputStream openCachedUrl(@NonNull String urlString, @NonNull ITaskMonitor monitor)
             throws IOException, CanceledByUserException {
         // Don't cache in direct mode.
         if (mStrategy == Strategy.DIRECT) {
-            Pair<InputStream, HttpResponse> result = UrlOpener.openUrl(
+            Pair<InputStream, HttpResponse> result = openUrl(
                     urlString,
                     true /*needsMarkResetSupport*/,
                     monitor,
@@ -397,13 +419,13 @@ public class DownloadCache {
         File cached = new File(mCacheRoot, getCacheFilename(urlString));
         File info   = new File(mCacheRoot, getInfoFilename(cached.getName()));
 
-        boolean useCached = cached.exists();
+        boolean useCached = mFileOp.exists(cached);
 
         if (useCached && mStrategy == Strategy.FRESH_CACHE) {
             // Check whether the file should be served from the cache or
             // refreshed first.
 
-            long cacheModifiedMs = cached.lastModified(); /* last mod time in epoch/millis */
+            long cacheModifiedMs = mFileOp.lastModified(cached); /* last mod time in epoch/millis */
             boolean checkCache = true;
 
             Properties props = readInfo(info);
@@ -440,7 +462,7 @@ public class DownloadCache {
                         long length = Long.parseLong(props.getProperty(HttpHeaders.CONTENT_LENGTH,
                                                         "-1")); //$NON-NLS-1$
                         if (length >= 0) {
-                            useCached = length == cached.length();
+                            useCached = length == mFileOp.length(cached);
 
                             if (!useCached && DEBUG) {
                                 System.out.println(String.format(
@@ -569,8 +591,8 @@ public class DownloadCache {
 
         // If we're not using the cache, try to remove the cache and download again.
         try {
-            cached.delete();
-            info.delete();
+            mFileOp.delete(cached);
+            mFileOp.delete(info);
         } catch (SecurityException ignore) {}
 
         return downloadAndCache(urlString, monitor, cached, info,
@@ -581,7 +603,8 @@ public class DownloadCache {
 
     // --------------
 
-    private InputStream readCachedFile(File cached) throws IOException {
+    @Nullable
+    private InputStream readCachedFile(@NonNull File cached) throws IOException {
         InputStream is = null;
 
         int inc = 65536;
@@ -595,7 +618,7 @@ public class DownloadCache {
         byte[] result = new byte[(int) (len > 0 ? len : inc)];
 
         try {
-            is = new FileInputStream(cached);
+            is = mFileOp.newFileInputStream(cached);
 
             int n;
             while ((n = is.read(result, curr, result.length - curr)) != -1) {
@@ -633,11 +656,12 @@ public class DownloadCache {
      *   and locally cached file, or null if nothing was downloaded
      *   (including if it was a 304 Not-Modified status code.)
      */
+    @Nullable
     private InputStream downloadAndCache(
-            String urlString,
-            ITaskMonitor monitor,
-            File cached,
-            File info,
+            @NonNull String urlString,
+            @NonNull ITaskMonitor monitor,
+            @NonNull File cached,
+            @NonNull File info,
             @Nullable Header[] headers,
             @Nullable AtomicInteger outStatusCode)
                 throws FileNotFoundException, IOException, CanceledByUserException {
@@ -650,7 +674,7 @@ public class DownloadCache {
 
         try {
             Pair<InputStream, HttpResponse> r =
-                UrlOpener.openUrl(urlString, true /*needsMarkResetSupport*/, monitor, headers);
+                openUrl(urlString, true /*needsMarkResetSupport*/, monitor, headers);
 
             is = r.getFirst();
             HttpResponse response = r.getSecond();
@@ -676,7 +700,7 @@ public class DownloadCache {
                 return null;
             }
 
-            os = new FileOutputStream(cached);
+            os = mFileOp.newFileOutputStream(cached);
 
             int n;
             while ((n = is.read(result, curr, result.length - curr)) != -1) {
@@ -731,8 +755,8 @@ public class DownloadCache {
                 // was an issue and we don't want to keep that file. We'll try to
                 // delete it.
                 try {
-                    cached.delete();
-                    info.delete();
+                    mFileOp.delete(cached);
+                    mFileOp.delete(info);
                 } catch (SecurityException ignore) {}
             }
         }
@@ -741,7 +765,10 @@ public class DownloadCache {
     /**
      * Saves part of the HTTP Response to the info file.
      */
-    private void saveInfo(String urlString, HttpResponse response, File info) throws IOException {
+    private void saveInfo(
+            @NonNull String urlString,
+            @NonNull HttpResponse response,
+            @NonNull File info) throws IOException {
         Properties props = new Properties();
 
         // we don't need the status code & URL right now.
@@ -757,38 +784,17 @@ public class DownloadCache {
             }
         }
 
-        FileOutputStream os = null;
-        try {
-            os = new FileOutputStream(info);
-            props.store(os, "## Meta data for SDK Manager cache. Do not modify."); //$NON-NLS-1$
-        } finally {
-            if (os != null) {
-                os.close();
-            }
-        }
+        mFileOp.saveProperties(info, props, "## Meta data for SDK Manager cache. Do not modify."); //$NON-NLS-1$
     }
 
     /**
      * Reads the info properties file.
      * @return The properties found or null if there's no file or it can't be read.
      */
-    private Properties readInfo(File info) {
-        if (info.exists()) {
-            Properties props = new Properties();
-
-            InputStream is = null;
-            try {
-                is = new FileInputStream(info);
-                props.load(is);
-                return props;
-            } catch (IOException ignore) {
-            } finally {
-                if (is != null) {
-                    try {
-                        is.close();
-                    } catch (IOException ignore) {}
-                }
-            }
+    @Nullable
+    private Properties readInfo(@NonNull File info) {
+        if (mFileOp.exists(info)) {
+            return mFileOp.loadProperties(info);
         }
         return null;
     }
@@ -802,8 +808,14 @@ public class DownloadCache {
      * @param urlString The download URL.
      * @return A leaf filename for the cached download file.
      */
-    private String getCacheFilename(String urlString) {
-        String hash = String.format("%08x", urlString.hashCode());
+    @NonNull
+    private String getCacheFilename(@NonNull String urlString) {
+
+        int code = 0;
+        for (int i = 0, j = urlString.length(); i < j; i++) {
+            code = code * 31 + urlString.charAt(i);
+        }
+        String hash = String.format("%08x", code);
 
         String leaf = urlString.toLowerCase(Locale.US);
         if (leaf.length() >= 2) {
@@ -824,7 +836,8 @@ public class DownloadCache {
         return prefix + leaf;
     }
 
-    private String getInfoFilename(String cacheFilename) {
+    @NonNull
+    private String getInfoFilename(@NonNull String cacheFilename) {
         return cacheFilename.replaceFirst(BIN_FILE_PREFIX, INFO_FILE_PREFIX);
     }
 }
