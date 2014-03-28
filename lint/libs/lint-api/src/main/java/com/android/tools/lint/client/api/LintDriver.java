@@ -1308,7 +1308,14 @@ public class LintDriver {
                 String sourceContents = null;
                 String sourceName = "";
                 mOuterClasses = new ArrayDeque<ClassNode>();
+                ClassEntry prev = null;
                 for (ClassEntry entry : entries) {
+                    if (prev != null && prev.compareTo(entry) == 0) {
+                        // Duplicate entries for some reason: ignore
+                        continue;
+                    }
+                    prev = entry;
+
                     ClassReader reader;
                     ClassNode classNode;
                     try {
@@ -2556,11 +2563,14 @@ public class LintDriver {
         }
 
         @Override
-        public int compareTo(ClassEntry other) {
+        public int compareTo(@NonNull ClassEntry other) {
             String p1 = file.getPath();
             String p2 = other.file.getPath();
             int m1 = p1.length();
             int m2 = p2.length();
+            if (m1 == m2 && p1.equals(p2)) {
+                return 0;
+            }
             int m = Math.min(m1, m2);
 
             for (int i = 0; i < m; i++) {
