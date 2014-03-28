@@ -461,6 +461,18 @@ public class XmlPrettyPrinter {
             if (mStyle != XmlFormatStyle.RESOURCE) {
                 mOut.append(mLineSeparator);
             }
+        } else {
+            // Ensure that if we're in the middle of a markup string, we preserve spacing.
+            // In other words, "<b>first</b> <b>second</b>" - we don't want that middle
+            // space to disappear, but we do want repeated spaces to collapse into one.
+            Node left = node.getPreviousSibling();
+            Node right = node.getNextSibling();
+            if (left != null && right != null
+                    && left.getNodeType() == Node.ELEMENT_NODE
+                    && right.getNodeType() == Node.ELEMENT_NODE
+                    && isMarkupElement((Element)left)) {
+                mOut.append(' ');
+            }
         }
     }
 
