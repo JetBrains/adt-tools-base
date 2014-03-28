@@ -16,9 +16,13 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.ManifestModel.NodeTypes;
+
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.utils.PositionXmlParser;
+import com.android.utils.XmlUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 
@@ -62,19 +66,35 @@ public class OrphanXmlElement extends XmlNode {
     private final Element mXml;
 
     @NonNull
-    private final ManifestModel.NodeTypes mType;
+    private final NodeTypes mType;
 
     public OrphanXmlElement(@NonNull Element xml) {
 
         mXml = Preconditions.checkNotNull(xml);
-        mType = ManifestModel.NodeTypes.fromXmlSimpleName(mXml.getNodeName());
+        NodeTypes nodeType;
+        String elementName = mXml.getNodeName();
+        // this is bit more complicated than it should be. Look first if there is a namespace
+        // prefix in the name, most elements don't. If they do, however, strip it off if it is the
+        // android prefix, but if it's custom namespace prefix, classify the node as CUSTOM.
+        int indexOfColon = elementName.indexOf(':');
+        if (indexOfColon != -1) {
+            String androidPrefix = XmlUtils.lookupNamespacePrefix(xml, SdkConstants.ANDROID_URI);
+            if (androidPrefix.equals(elementName.substring(0, indexOfColon))) {
+                nodeType = NodeTypes.fromXmlSimpleName(elementName.substring(indexOfColon + 1));
+            } else {
+                nodeType = NodeTypes.CUSTOM;
+            }
+        } else {
+            nodeType = NodeTypes.fromXmlSimpleName(elementName);
+        }
+        mType = nodeType;
     }
 
     /**
-     * Returns true if this xml element's {@link com.android.manifmerger.ManifestModel.NodeTypes} is
+     * Returns true if this xml element's {@link NodeTypes} is
      * the passed one.
      */
-    public boolean isA(ManifestModel.NodeTypes type) {
+    public boolean isA(NodeTypes type) {
         return this.mType == type;
     }
 
@@ -98,10 +118,10 @@ public class OrphanXmlElement extends XmlNode {
     }
 
     /**
-     * Returns this xml element {@link com.android.manifmerger.ManifestModel.NodeTypes}
+     * Returns this xml element {@link NodeTypes}
      */
     @NonNull
-    public ManifestModel.NodeTypes getType() {
+    public NodeTypes getType() {
         return mType;
     }
 

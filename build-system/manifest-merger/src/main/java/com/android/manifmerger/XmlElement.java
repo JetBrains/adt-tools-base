@@ -301,39 +301,53 @@ public class XmlElement extends OrphanXmlElement {
             if (shouldIgnore(lowerPriorityChild, mergingReport)) {
                 continue;
             }
+            mergeChild(lowerPriorityChild, mergingReport);
+        }
+    }
 
-            Optional<XmlElement> thisChildOptional =
-                    getNodeByTypeAndKey(lowerPriorityChild.getType(),lowerPriorityChild.getKey());
+    // merge a child of a lower priority node into this higher priority node.
+    private void mergeChild(XmlElement lowerPriorityChild, MergingReport.Builder mergingReport) {
 
-            // only in the lower priority document ?
-            if (!thisChildOptional.isPresent()) {
-                addElement(lowerPriorityChild, mergingReport);
-                continue;
-            }
-            // it's defined in both files.
-            logger.verbose(lowerPriorityChild.getId() + " defined in both files...");
+        ILogger logger = mergingReport.getLogger();
 
-            XmlElement thisChild = thisChildOptional.get();
-            switch (thisChild.getType().getMergeType()) {
-                case CONFLICT:
-                    mergingReport.addError(String.format(
-                            "Node %1$s cannot be present in more than one input file and it's "
-                                    + "present at %2$s and %3$s",
-                            thisChild.getType(),
-                            thisChild.printPosition(),
-                            lowerPriorityChild.printPosition()));
-                    break;
-                case ALWAYS:
-                    // no merging, we consume the lower priority node unmodified.
-                    // if the two elements are equal, just skip it.
-                    if (thisChild.compareTo(lowerPriorityChild).isPresent()) {
-                        addElement(lowerPriorityChild, mergingReport);
-                    }
-                    break;
-                default:
-                    // 2 nodes exist, some merging need to happen
-                    handleTwoElementsExistence(thisChild, lowerPriorityChild, mergingReport);
-            }
+        // If this a custom element, we just blindly merge it in.
+        if (lowerPriorityChild.getType() == ManifestModel.NodeTypes.CUSTOM) {
+            addElement(lowerPriorityChild, mergingReport);
+            return;
+        }
+
+        Optional<XmlElement> thisChildOptional =
+                getNodeByTypeAndKey(lowerPriorityChild.getType(),lowerPriorityChild.getKey());
+
+        // only in the lower priority document ?
+        if (!thisChildOptional.isPresent()) {
+            addElement(lowerPriorityChild, mergingReport);
+            return;
+        }
+        // it's defined in both files.
+        logger.verbose(lowerPriorityChild.getId() + " defined in both files...");
+
+        XmlElement thisChild = thisChildOptional.get();
+        switch (thisChild.getType().getMergeType()) {
+            case CONFLICT:
+                mergingReport.addError(String.format(
+                        "Node %1$s cannot be present in more than one input file and it's "
+                                + "present at %2$s and %3$s",
+                        thisChild.getType(),
+                        thisChild.printPosition(),
+                        lowerPriorityChild.printPosition()));
+                break;
+            case ALWAYS:
+                // no merging, we consume the lower priority node unmodified.
+                // if the two elements are equal, just skip it.
+                if (thisChild.compareTo(lowerPriorityChild).isPresent()) {
+                    addElement(lowerPriorityChild, mergingReport);
+                }
+                break;
+            default:
+                // 2 nodes exist, some merging need to happen
+                handleTwoElementsExistence(thisChild, lowerPriorityChild, mergingReport);
+                break;
         }
     }
 
