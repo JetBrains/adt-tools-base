@@ -91,6 +91,10 @@ public abstract class XmlNode {
                 : new Name(name);
     }
 
+    public static NodeName fromNSName(String namespaceUri, String prefix, String localName) {
+        return new NamespaceAwareName(namespaceUri, prefix, localName);
+    }
+
     /**
      * Implementation of {@link com.android.manifmerger.XmlNode.NodeName} for an
      * node's declaration not using a namespace.

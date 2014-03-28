@@ -18,6 +18,8 @@ package com.android.manifmerger;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.utils.SdkUtils;
+import com.android.utils.XmlUtils;
 import com.android.xml.AndroidManifest;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
@@ -86,6 +88,8 @@ public class PreValidator {
 
         validateAndroidAttributes(mergingReport, xmlElement);
 
+        checkSelectorPresence(mergingReport, xmlElement);
+
         // create a temporary hash map of children indexed by key to ensure key uniqueness.
         Map<String, XmlElement> childrenKeys = new HashMap<String, XmlElement>();
         for (XmlElement childElement : xmlElement.getMergeableElements()) {
@@ -144,6 +148,21 @@ public class PreValidator {
                     element.printPosition(),
                     Joiner.on(',').join(extraAttributeNames)
             );
+            mergingReport.addError(message);
+        }
+    }
+
+    private static void checkSelectorPresence(MergingReport.Builder mergingReport,
+            XmlElement element) {
+
+        Attr selectorAttribute =
+                element.getXml().getAttributeNodeNS(SdkConstants.TOOLS_URI, Selector.SELECTOR_LOCAL_NAME);
+        if (selectorAttribute!=null && !element.getOperationType().isSelectable()) {
+            String message = String.format(
+                    "Unsupported tools:selector=\"%1$s\" found on node %2$s at %3$s",
+                    selectorAttribute.getValue(),
+                    element.getId(),
+                    element.printPosition());
             mergingReport.addError(message);
         }
     }
