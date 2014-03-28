@@ -49,4 +49,11 @@ public class LintDriverTest extends TestCase {
         Collections.sort(list3);
         assertEquals(expected, list3);
     }
+
+    public void testClassEntryCompareContract() throws Exception {
+        ClassEntry c0 = new ClassEntry(new File("abcde"), null, null, null);
+        ClassEntry c1 = new ClassEntry(new File("abcde"), null, null, null);
+        assertTrue(c0.compareTo(c1) <= 0);
+        assertTrue(c1.compareTo(c0) <= 0);
+    }
 }
