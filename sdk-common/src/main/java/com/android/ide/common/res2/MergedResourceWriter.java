@@ -302,7 +302,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     try {
                         content = XmlPrettyPrinter.prettyPrint(document, true);
                     } catch (Throwable t) {
-                        content = XmlUtils.toXml(document, false);
+                        content = XmlUtils.toXml(document, true);
                     }
 
                     Files.write(content, outFile, Charsets.UTF_8);

@@ -10,7 +10,7 @@
     <color name="color">#00000000</color>
 
     <string name="basic_string">basic_string</string>
-    <string name="xliff_string"><xliff:g id="number" example="123">%1$s</xliff:g><xliff:g id="unit" example="KB">%2$s</xliff:g></string>
+    <string name="xliff_string"><xliff:g id="firstName">%1$s</xliff:g> <xliff:g id="lastName">%2$s</xliff:g></string>
     <string name="styled_string">Forgot your username or password\?\nVisit <b>google.com/accounts/recovery</b>.</string>
 
     <style name="style" parent="@android:style/Holo.Light">
