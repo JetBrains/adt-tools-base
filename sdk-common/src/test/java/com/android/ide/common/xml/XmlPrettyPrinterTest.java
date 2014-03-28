@@ -1101,6 +1101,43 @@ public class XmlPrettyPrinterTest extends TestCase {
                 xml);
     }
 
+    public void testMarkupSpacing() throws Exception {
+        String xml = ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources xmlns:xliff=\"urn:oasis:names:tc:xliff:document:1.2\">\n"
+                + "\n"
+                + "    <string name=\"basic_string\">basic_string</string>\n"
+                + "    <string name=\"markup\">this is a <b>bold</b>  <b>string</b> </string>\n"
+                + "    <string name=\"xliff_string\"><xliff:g id=\"firstName\">%1$s</xliff:g> <xliff:g id=\"lastName\">%2$s</xliff:g></string>\n"
+                + "    <string name=\"styled_string\">Forgot your username or password\\?\\nVisit <b>google.com/accounts/recovery</b>.</string>\n"
+                + "\n"
+                + "    <plurals name=\"plurals\">\n"
+                + "        <item quantity=\"one\">test2 <xliff:g xmlns=\"urn:oasis:names:tc:xliff:document:1.2\" id=\"test3\">%s</xliff:g> test4</item>\n"
+                + "    </plurals>\n"
+                + "</resources>\n";
+
+        Document doc = parse(xml);
+        assertNotNull(doc);
+
+        xml = XmlPrettyPrinter.prettyPrint(doc, false);
+        assertEquals(""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources xmlns:xliff=\"urn:oasis:names:tc:xliff:document:1.2\">\n"
+                + "\n"
+                + "    <string name=\"basic_string\">basic_string</string>\n"
+                + "    <string name=\"markup\">this is a <b>bold</b> <b>string</b></string>\n"
+                + "    <string name=\"xliff_string\"><xliff:g id=\"firstName\">%1$s</xliff:g> <xliff:g id=\"lastName\">%2$s</xliff:g></string>\n"
+                + "    <string name=\"styled_string\">Forgot your username or password\\?\\nVisit <b>google.com/accounts/recovery</b>.</string>\n"
+                + "\n"
+                + "    <plurals name=\"plurals\">\n"
+                + "        <item quantity=\"one\">test2 <xliff:g id=\"test3\" xmlns=\"urn:oasis:names:tc:xliff:document:1.2\">%s</xliff:g> test4</item>\n"
+                + "    </plurals>\n"
+                + "\n"
+                + "</resources>",
+
+                xml);
+    }
+
     public void test52887() throws Exception {
         // https://code.google.com/p/android/issues/detail?id=52887
         String xml = ""
