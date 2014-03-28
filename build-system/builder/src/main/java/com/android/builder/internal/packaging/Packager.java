@@ -29,6 +29,7 @@ import com.android.builder.signing.SignedJarBuilder;
 import com.android.builder.signing.SignedJarBuilder.IZipEntryFilter;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.android.utils.ILogger;
+import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
 
 import java.io.File;
@@ -40,6 +41,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -95,15 +97,27 @@ public final class Packager implements IArchiveBuilder {
      */
     private final class JavaAndNativeResourceFilter implements IZipEntryFilter {
         private final List<String> mNativeLibs = new ArrayList<String>();
+        private Set<String> mUsedPickFirsts = null;
 
         @Nullable
         private final PackagingOptions mPackagingOptions;
+
+        @NonNull
+        private final Set<String> mExcludes;
+        @NonNull
+        private final Set<String> mPickFirsts;
 
         private boolean mNativeLibsConflict = false;
         private File mInputFile;
 
         private JavaAndNativeResourceFilter(@Nullable PackagingOptions packagingOptions) {
             mPackagingOptions = packagingOptions;
+
+            mExcludes = mPackagingOptions != null ? mPackagingOptions.getExcludes() :
+                    Collections.<String>emptySet();
+            mPickFirsts = mPackagingOptions != null ? mPackagingOptions.getPickFirsts() :
+                    Collections.<String>emptySet();
+
         }
 
         @Override
@@ -116,10 +130,22 @@ public final class Packager implements IArchiveBuilder {
                 return false;
             }
 
+            //noinspection VariableNotUsedInsideIf
             if (mPackagingOptions != null) {
-                Set<String> excludes = mPackagingOptions.getExcludes();
-                if (excludes.contains(archivePath)) {
+                if (mExcludes.contains(archivePath)) {
                     return false;
+                }
+
+                if (mPickFirsts.contains(archivePath)) {
+                    if (mUsedPickFirsts == null) {
+                        mUsedPickFirsts = Sets.newHashSetWithExpectedSize(mPickFirsts.size());
+                    }
+
+                    if (mUsedPickFirsts.contains(archivePath)) {
+                        return false;
+                    } else {
+                        mUsedPickFirsts.add(archivePath);
+                    }
                 }
             }
 

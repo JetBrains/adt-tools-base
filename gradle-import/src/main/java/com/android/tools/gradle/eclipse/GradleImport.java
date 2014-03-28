@@ -114,7 +114,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 public class GradleImport {
     public static final String NL = SdkUtils.getLineSeparator();
     public static final int CURRENT_COMPILE_VERSION = 19;
-    public static final String CURRENT_BUILD_TOOLS_VERSION = "19.0.1";
+    public static final String CURRENT_BUILD_TOOLS_VERSION = "19.0.3";
     public static final String ANDROID_GRADLE_PLUGIN =
             GRADLE_PLUGIN_NAME + GRADLE_PLUGIN_LATEST_VERSION;
     public static final String MAVEN_URL_PROPERTY = "android.mavenRepoUrl";
@@ -159,7 +159,7 @@ public class GradleImport {
     /** Whether we should try to replace libs with dependencies */
     private boolean mReplaceLibs = true;
     /** Whether the importer is in "import into existing project" mode. In that case,
-     * some differente choices are made; for example, we don't rewrite the module name
+     * some different choices are made; for example, we don't rewrite the module name
      * to "app" when importing a single project; we preserve the project name.*/
     private boolean mImportIntoExisting;
     /** Whether we should emit per-module repository definitions */
@@ -597,13 +597,14 @@ public class GradleImport {
 
     public void exportProject(@NonNull File destDir, boolean allowNonEmpty) throws IOException {
         mSummary.setDestDir(destDir);
-        createDestDir(destDir, allowNonEmpty);
-        createProjectBuildGradle(new File(destDir, FN_BUILD_GRADLE));
-        exportSettingsGradle(new File(destDir, FN_SETTINGS_GRADLE), false);
+        if (!isImportIntoExisting()) {
+            createDestDir(destDir, allowNonEmpty);
+            createProjectBuildGradle(new File(destDir, FN_BUILD_GRADLE));
 
-        exportGradleWrapper(destDir);
-        exportLocalProperties(destDir);
-
+            exportGradleWrapper(destDir);
+            exportLocalProperties(destDir);
+        }
+        exportSettingsGradle(new File(destDir, FN_SETTINGS_GRADLE), isImportIntoExisting());
         for (ImportModule module : mRootModules) {
             exportModule(new File(destDir, module.getModuleName()), module);
         }
@@ -692,10 +693,10 @@ public class GradleImport {
         if (mNdkLocation != null && needsNdk || mSdkLocation != null) {
             Properties properties = new Properties();
             if (mSdkLocation != null) {
-                properties.put(PROPERTY_SDK, mSdkLocation.getPath());
+                properties.setProperty(PROPERTY_SDK, mSdkLocation.getPath());
             }
             if (mNdkLocation != null && needsNdk) {
-                properties.put(PROPERTY_NDK, mNdkLocation.getPath());
+                properties.setProperty(PROPERTY_NDK, mNdkLocation.getPath());
             }
 
             FileOutputStream out = null;
@@ -838,39 +839,22 @@ public class GradleImport {
             List<File> sdkRules = module.getSdkProguardFiles();
             if (!localRules.isEmpty() || !sdkRules.isEmpty()) {
                 // User specified ProGuard rules; replicate exactly
-                if (module.isAndroidLibrary()) {
-                    sb.append("    release {").append(NL);
-                    sb.append("        runProguard true").append(NL);
-                    sb.append("        proguardFiles ");
-                    sb.append(generateProguardFileList(localRules, sdkRules)).append(NL);
-                    sb.append("    }").append(NL);
-                } else {
-                    sb.append("    buildTypes {").append(NL);
-                    sb.append("        release {").append(NL);
-                    sb.append("            runProguard true").append(NL);
-                    sb.append("            proguardFiles ");
-                    sb.append(generateProguardFileList(localRules, sdkRules)).append(NL);
-                    sb.append("        }").append(NL);
-                    sb.append("    }").append(NL);
-                }
-
+                sb.append("    buildTypes {").append(NL);
+                sb.append("        release {").append(NL);
+                sb.append("            runProguard true").append(NL);
+                sb.append("            proguardFiles ");
+                sb.append(generateProguardFileList(localRules, sdkRules)).append(NL);
+                sb.append("        }").append(NL);
+                sb.append("    }").append(NL);
             } else {
                 // User didn't specify ProGuard rules; put in defaults (but off)
-                if (module.isAndroidLibrary()) {
-                    sb.append("    release {").append(NL);
-                    sb.append("        runProguard false").append(NL);
-                    sb.append("        proguardFiles getDefaultProguardFile('proguard-"
-                            + "android.txt'), 'proguard-rules.txt'").append(NL);
-                    sb.append("    }").append(NL);
-                } else {
-                    sb.append("    buildTypes {").append(NL);
-                    sb.append("        release {").append(NL);
-                    sb.append("            runProguard false").append(NL);
-                    sb.append("            proguardFiles getDefaultProguardFile('proguard-"
-                            + "android.txt'), 'proguard-rules.txt'").append(NL);
-                    sb.append("        }").append(NL);
-                    sb.append("    }").append(NL);
-                }
+                sb.append("    buildTypes {").append(NL);
+                sb.append("        release {").append(NL);
+                sb.append("            runProguard false").append(NL);
+                sb.append("            proguardFiles getDefaultProguardFile('proguard-"
+                        + "android.txt'), 'proguard-rules.txt'").append(NL);
+                sb.append("        }").append(NL);
+                sb.append("    }").append(NL);
             }
             sb.append("}").append(NL);
             appendDependencies(sb, module);
@@ -966,12 +950,12 @@ public class GradleImport {
                         .append("')").append(NL);
             }
             for (GradleCoordinate dependency : module.getTestDependencies()) {
-                sb.append("    instrumentTestCompile '").append(dependency.toString()).append("'")
+                sb.append("    androidTestCompile '").append(dependency.toString()).append("'")
                         .append(NL);
             }
             for (File jar : module.getTestJarDependencies()) {
                 String path = jar.getPath().replace(separatorChar, '/');
-                sb.append("    instrumentTestCompile files('")
+                sb.append("    androidTestCompile files('")
                         .append(escapeGroovyStringLiteral(path)).append("')").append(NL);
             }
             sb.append("}").append(NL);

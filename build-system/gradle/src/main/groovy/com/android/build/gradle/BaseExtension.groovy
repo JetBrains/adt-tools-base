@@ -70,7 +70,7 @@ public abstract class BaseExtension {
     final NamedDomainObjectContainer<DefaultBuildType> buildTypes
     final NamedDomainObjectContainer<SigningConfig> signingConfigs
 
-    List<String> flavorGroupList
+    List<String> flavorDimensionList
     String testBuildType = "debug"
 
     private Closure<Void> variantFilter
@@ -199,9 +199,9 @@ public abstract class BaseExtension {
         action.execute(signingConfigs)
     }
 
-    public void flavorGroups(String... groups) {
+    public void flavorDimensions(String... dimensions) {
         plugin.checkTasksAlreadyCreated();
-        flavorGroupList = Arrays.asList(groups)
+        flavorDimensionList = Arrays.asList(dimensions)
     }
 
     void sourceSets(Action<NamedDomainObjectContainer<AndroidSourceSet>> action) {
@@ -352,5 +352,31 @@ public abstract class BaseExtension {
                 SdkConstants.FD_TOOLS + File.separatorChar
                         + SdkConstants.FD_PROGUARD + File.separatorChar
                         + name);
+    }
+
+    // ---------------
+    // TEMP for compatibility
+    // STOPSHIP Remove in 1.0
+
+    private boolean enforceUniquePackageName = true
+
+    public void enforceUniquePackageName(boolean value) {
+        if (!value) {
+            logger.warning("WARNING: support for libraries with same package name is deprecated and will be removed in 1.0")
+        }
+        enforceUniquePackageName = value
+    }
+
+    public void setEnforceUniquePackageName(boolean value) {
+        enforceUniquePackageName(value)
+    }
+
+    public getEnforceUniquePackageName() {
+        return enforceUniquePackageName
+    }
+
+    public void flavorGroups(String... groups) {
+        logger.warning("WARNING: flavorGroups has been renamed flavorDimensions. It will be removed in 1.0")
+        flavorDimensions(groups);
     }
 }

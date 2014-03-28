@@ -3,7 +3,7 @@ buildscript {
         maven { url '../../../../../../out/host/gradle/repo' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.9.0-SNAPSHOT'
+        classpath 'com.android.tools.build:gradle:0.9.3-SNAPSHOT'
     }
 }
 
@@ -32,6 +32,7 @@ uploadArchives {
     repositories {
         mavenDeployer {
             repository(url: uri("../testrepo"))
+            pom.groupId = 'com.example.android.multiproject'
         }
     }
 }

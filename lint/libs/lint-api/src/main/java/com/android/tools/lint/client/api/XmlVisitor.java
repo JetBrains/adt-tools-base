@@ -68,13 +68,13 @@ class XmlVisitor {
     private final List<Detector.XmlScanner> mAllAttributeDetectors =
             new ArrayList<Detector.XmlScanner>();
     private final List<? extends Detector> mAllDetectors;
-    private final IDomParser mParser;
+    private final XmlParser mParser;
 
     // Really want this:
     //<T extends List<Detector> & Detector.XmlScanner> XmlVisitor(IDomParser parser,
     //    T xmlDetectors) {
     // but it makes client code tricky and ugly.
-    XmlVisitor(@NonNull IDomParser parser, @NonNull List<? extends Detector> xmlDetectors) {
+    XmlVisitor(@NonNull XmlParser parser, @NonNull List<? extends Detector> xmlDetectors) {
         mParser = parser;
         mAllDetectors = xmlDetectors;
 
@@ -120,7 +120,6 @@ class XmlVisitor {
 
     void visitFile(@NonNull XmlContext context, @NonNull File file) {
         assert LintUtils.isXmlFile(file);
-        context.parser = mParser;
 
         try {
             if (context.document == null) {
@@ -217,5 +216,10 @@ class XmlVisitor {
                 check.visitElementAfter(context, element);
             }
         }
+    }
+
+    @NonNull
+    public XmlParser getParser() {
+        return mParser;
     }
 }

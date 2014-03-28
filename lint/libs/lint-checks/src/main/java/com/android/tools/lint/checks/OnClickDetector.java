@@ -144,7 +144,7 @@ public class OnClickDetector extends LayoutDetector implements ClassScanner {
             if (mNames == null) {
                 mNames = new HashMap<String, Location.Handle>();
             }
-            Handle handle = context.parser.createLocationHandle(context, attribute);
+            Handle handle = context.createLocationHandle(attribute);
             handle.setClientData(attribute);
 
             // Replace unicode characters with the actual value since that's how they

@@ -13,6 +13,7 @@ dependencies {
 
     testCompile project(':sdklib').sourceSets.test.output
     testCompile 'junit:junit:3.8.1'
+    testCompile 'org.mockito:mockito-all:1.9.5'
 }
 
 sourceSets {

@@ -23,6 +23,7 @@ import static com.android.SdkConstants.BIN_FOLDER;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.ID_PREFIX;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
+import static com.android.SdkConstants.UTF_8;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -31,7 +32,6 @@ import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
-import com.android.ide.common.res2.ResourceRepository;
 import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
@@ -41,7 +41,6 @@ import com.android.utils.PositionXmlParser;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -59,7 +58,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
@@ -444,7 +442,6 @@ public class LintUtils {
         return null;
     }
 
-    private static final String UTF_8 = "UTF-8";                 //$NON-NLS-1$
     private static final String UTF_16 = "UTF_16";               //$NON-NLS-1$
     private static final String UTF_16LE = "UTF_16LE";           //$NON-NLS-1$
 
@@ -759,8 +756,11 @@ public class LintUtils {
      *         qualified name
      */
     public static boolean isImported(
-            @NonNull lombok.ast.Node compilationUnit,
+            @Nullable lombok.ast.Node compilationUnit,
             @NonNull String fullyQualifiedName) {
+        if (compilationUnit == null) {
+            return false;
+        }
         int dotIndex = fullyQualifiedName.lastIndexOf('.');
         int dotLength = fullyQualifiedName.length() - dotIndex;
 

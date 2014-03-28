@@ -33,10 +33,9 @@ import com.android.resources.ScreenRatio;
 import com.android.resources.ScreenSize;
 import com.android.resources.TouchScreen;
 import com.android.sdklib.ISystemImage.LocationType;
+import com.android.sdklib.devices.ButtonType;
 import com.android.sdklib.devices.Device;
 import com.android.sdklib.devices.Device.Builder;
-import com.android.sdklib.devices.Storage.Unit;
-import com.android.sdklib.devices.ButtonType;
 import com.android.sdklib.devices.DeviceWriter;
 import com.android.sdklib.devices.Hardware;
 import com.android.sdklib.devices.Multitouch;
@@ -46,6 +45,7 @@ import com.android.sdklib.devices.ScreenType;
 import com.android.sdklib.devices.Software;
 import com.android.sdklib.devices.State;
 import com.android.sdklib.devices.Storage;
+import com.android.sdklib.devices.Storage.Unit;
 import com.android.sdklib.internal.avd.AvdManager;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.mock.MockLog;
@@ -55,7 +55,6 @@ import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.local.LocalPlatformPkgInfo;
 import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
 import com.android.utils.ILogger;
-import junit.framework.TestCase;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -64,9 +63,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactoryConfigurationError;
+import junit.framework.TestCase;
 
 /**
  * Test case that allocates a temporary SDK, a temporary AVD base folder
@@ -78,7 +75,7 @@ public class SdkManagerTestCase extends TestCase {
     private File mFakeSdk;
     private MockLog mLog;
     private SdkManager mSdkManager;
-    private TmpAvdManager mAvdManager;
+    private AvdManager mAvdManager;
     private int mRepoXsdLevel;
     private String mOldAndroidHomeProp;
     private File mAndroidHome;
@@ -94,7 +91,7 @@ public class SdkManagerTestCase extends TestCase {
     }
 
     /** Returns the {@link AvdManager} for this test case. */
-    public TmpAvdManager getAvdManager() {
+    public AvdManager getAvdManager() {
         return mAvdManager;
     }
 
@@ -107,10 +104,38 @@ public class SdkManagerTestCase extends TestCase {
         mLog = new MockLog();
         makeFakeAndroidHome();
         makeFakeSdk();
+        createSdkAvdManagers();
+    }
+
+    /**
+     * Recreate the SDK and AVD Managers from scratch even if they already existed.
+     * Useful for tests that want to reset their state without recreating the
+     * android-home or the fake SDK. The SDK will be reparsed.
+     */
+    protected void createSdkAvdManagers() throws AndroidLocationException {
         mSdkManager = SdkManager.createManager(mFakeSdk.getAbsolutePath(), mLog);
         assertNotNull("SdkManager location was invalid", mSdkManager);
+        // Note: it's safe to use the default AvdManager implementation since makeFakeAndroidHome
+        // above overrides the ANDROID_HOME folder to use a temp folder; consequently all
+        // the AVDs created here will be located in this temp folder and will not alter
+        // or pollute the default user's AVD folder.
+        mAvdManager = new AvdManager(mSdkManager.getLocalSdk(), mLog) {
+            @Override
+            protected boolean createSdCard(
+                    String toolLocation,
+                    String size,
+                    String location,
+                    ILogger log) {
+                if (new File(toolLocation).exists()) {
+                    log.info("[EXEC] %1$s %2$s %3$s\n", toolLocation, size, location);
+                    return true;
+                } else {
+                    log.error(null, "Failed to create the SD card.\n");
+                    return false;
+                }
 
-        mAvdManager = new TmpAvdManager(mSdkManager, mLog);
+            };
+        };
     }
 
     /**
@@ -132,46 +157,10 @@ public class SdkManagerTestCase extends TestCase {
     }
 
     /**
-     * A empty test method to placate the JUnit test runner, which doesn't
+     * A empty test method to please the JUnit test runner, which doesn't
      * like TestCase classes with no test methods.
      */
     public void testPlaceholder() {
-    }
-
-    /**
-     * An {@link AvdManager} that uses a temporary directory
-     * located <em>inside</em> the SDK directory for testing.
-     * The AVD list should be initially empty.
-     */
-    protected static class TmpAvdManager extends AvdManager {
-
-        /*
-         * Implementation detail:
-         * - When the super.AvdManager constructor is invoked, it will invoke
-         *   the buildAvdFilesList() to fill the initial AVD list, which will in
-         *   turn call getBaseAvdFolder().
-         * - That's why mTmpAvdRoot is initialized in getAvdRoot() rather than
-         *   in the constructor, since we can't initialize fields before the super()
-         *   call.
-         */
-
-        /**
-         * AVD Root, initialized "lazily" when the AVD root is first requested.
-         */
-        private File mTmpAvdRoot;
-
-        public TmpAvdManager(SdkManager sdkManager, ILogger log) throws AndroidLocationException {
-            super(sdkManager.getLocalSdk(), log);
-        }
-
-        @Override
-        public String getBaseAvdFolder() throws AndroidLocationException {
-            if (mTmpAvdRoot == null) {
-                mTmpAvdRoot = new File(getLocalSdk().getLocation(), "tmp_avds");
-                mTmpAvdRoot.mkdirs();
-            }
-            return mTmpAvdRoot.getAbsolutePath();
-        }
     }
 
     private void makeFakeAndroidHome() throws IOException {
@@ -182,7 +171,7 @@ public class SdkManagerTestCase extends TestCase {
         mAndroidHome.delete();
         mAndroidHome.mkdirs();
 
-        //Set the system property that will force AndroidLocation to use this
+        // Set the system property that will force AndroidLocation to use this
         mOldAndroidHomeProp = System.getProperty(EnvVar.ANDROID_SDK_HOME.getName());
         System.setProperty(EnvVar.ANDROID_SDK_HOME.getName(), mAndroidHome.getAbsolutePath());
         AndroidLocation.resetFolder();
@@ -209,9 +198,7 @@ public class SdkManagerTestCase extends TestCase {
      * Build enough of a skeleton SDK to make the tests pass.
      * <p/>
      * Ideally this wouldn't touch the file system but the current
-     * structure of the SdkManager and AvdManager makes this difficult.
-     *
-     * @throws IOException
+     * structure of the SdkManager and AvdManager makes this impossible.
      */
     private void makeFakeSdk() throws IOException {
         // First we create a temp file to "reserve" the temp directory name we want to use.
@@ -229,6 +216,7 @@ public class SdkManagerTestCase extends TestCase {
         createSourceProps(toolsDir, PkgProps.PKG_REVISION, "1.0.1");
         new File(toolsDir, SdkConstants.androidCmdName()).createNewFile();
         new File(toolsDir, SdkConstants.FN_EMULATOR).createNewFile();
+        new File(toolsDir, SdkConstants.mkSdCardCmdName()).createNewFile();
 
         makePlatformTools(new File(mFakeSdk, SdkConstants.FD_PLATFORM_TOOLS));
 
@@ -590,7 +578,7 @@ public class SdkManagerTestCase extends TestCase {
      *
      * @param root directory to delete
      */
-    private void deleteDir(File root) {
+    protected void deleteDir(File root) {
         if (root.exists()) {
             for (File file : root.listFiles()) {
                 if (file.isDirectory()) {

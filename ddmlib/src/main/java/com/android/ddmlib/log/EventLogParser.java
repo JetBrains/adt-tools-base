@@ -23,13 +23,13 @@ import com.android.ddmlib.log.EventContainer.EventValueType;
 import com.android.ddmlib.log.EventValueDescription.ValueType;
 import com.android.ddmlib.log.LogReceiver.LogEntry;
 import com.android.ddmlib.utils.ArrayHelper;
+import com.google.common.base.Charsets;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Map;
@@ -423,11 +423,8 @@ public final class EventLogParser {
                     return -1;
 
                 // get the string
-                try {
-                    String str = new String(eventData, offset, strLen, "UTF-8"); //$NON-NLS-1$
-                    list.add(str);
-                } catch (UnsupportedEncodingException e) {
-                }
+                String str = new String(eventData, offset, strLen, Charsets.UTF_8);
+                list.add(str);
                 offset += strLen;
                 break;
             }

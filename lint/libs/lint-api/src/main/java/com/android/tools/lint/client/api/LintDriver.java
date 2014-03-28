@@ -16,16 +16,12 @@
 
 package com.android.tools.lint.client.api;
 
-import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ATTR_IGNORE;
 import static com.android.SdkConstants.CLASS_CONSTRUCTOR;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
 import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.DOT_JAVA;
-import static com.android.SdkConstants.DOT_XML;
-import static com.android.SdkConstants.FN_PROJECT_PROGUARD_FILE;
-import static com.android.SdkConstants.OLD_PROGUARD_FILE;
 import static com.android.SdkConstants.RES_FOLDER;
 import static com.android.SdkConstants.SUPPRESS_ALL;
 import static com.android.SdkConstants.SUPPRESS_LINT;
@@ -54,8 +50,6 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.annotations.Beta;
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -93,6 +87,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -109,7 +104,6 @@ import lombok.ast.Expression;
 import lombok.ast.MethodDeclaration;
 import lombok.ast.Modifiers;
 import lombok.ast.Node;
-import lombok.ast.Statement;
 import lombok.ast.StrictListAccessor;
 import lombok.ast.StringLiteral;
 import lombok.ast.TypeReference;
@@ -173,6 +167,15 @@ public class LintDriver {
     @NonNull
     public EnumSet<Scope> getScope() {
         return mScope;
+    }
+
+    /**
+     * Sets the scope for the lint job
+     *
+     * @param scope the scope to use
+     */
+    public void setScope(@NonNull EnumSet<Scope> scope) {
+        mScope = scope;
     }
 
     /**
@@ -669,7 +672,7 @@ public class LintDriver {
 
     private Collection<Project> computeProjects(@NonNull List<File> files) {
         // Compute list of projects
-        Map<File, Project> fileToProject = new HashMap<File, Project>();
+        Map<File, Project> fileToProject = new LinkedHashMap<File, Project>();
 
         File sharedRoot = null;
 
@@ -911,9 +914,10 @@ public class LintDriver {
         // Look up manifest information (but not for library projects)
         if (project.isAndroidProject()) {
             for (File manifestFile : project.getManifestFiles()) {
-                XmlContext context = new XmlContext(this, project, main, manifestFile, null);
-                IDomParser parser = mClient.getDomParser();
+                XmlParser parser = mClient.getXmlParser();
                 if (parser != null) {
+                    XmlContext context = new XmlContext(this, project, main, manifestFile, null,
+                            parser);
                     context.document = parser.parseXml(context);
                     if (context.document != null) {
                         try {
@@ -1025,6 +1029,11 @@ public class LintDriver {
                 project.isAndroidProject()) {
             checkProGuard(project, main);
         }
+
+        if (project == main && mScope.contains(Scope.PROPERTY_FILE) &&
+                project.isAndroidProject()) {
+            checkProperties(project, main);
+        }
     }
 
     private void checkBuildScripts(Project project, Project main) {
@@ -1053,6 +1062,24 @@ public class LintDriver {
         if (detectors != null) {
             List<File> files = project.getProguardFiles();
             for (File file : files) {
+                Context context = new Context(this, project, main, file);
+                fireEvent(EventType.SCANNING_FILE, context);
+                for (Detector detector : detectors) {
+                    if (detector.appliesTo(context, file)) {
+                        detector.beforeCheckFile(context);
+                        detector.run(context);
+                        detector.afterCheckFile(context);
+                    }
+                }
+            }
+        }
+    }
+
+    private void checkProperties(Project project, Project main) {
+        List<Detector> detectors = mScopeDetectors.get(Scope.PROPERTY_FILE);
+        if (detectors != null) {
+            File file = new File(project.getDir(), "local.properties");
+            if (file.exists()) {
                 Context context = new Context(this, project, main, file);
                 fireEvent(EventType.SCANNING_FILE, context);
                 for (Detector detector : detectors) {
@@ -1572,7 +1599,7 @@ public class LintDriver {
             @Nullable Project main,
             @NonNull List<File> sourceFolders,
             @NonNull List<Detector> checks) {
-        IJavaParser javaParser = mClient.getJavaParser();
+        JavaParser javaParser = mClient.getJavaParser(project);
         if (javaParser == null) {
             mClient.log(null, "No java parser provided to lint: not running Java checks");
             return;
@@ -1587,10 +1614,16 @@ public class LintDriver {
         }
         if (!sources.isEmpty()) {
             JavaVisitor visitor = new JavaVisitor(javaParser, checks);
+            List<JavaContext> contexts = Lists.newArrayListWithExpectedSize(sources.size());
             for (File file : sources) {
-                JavaContext context = new JavaContext(this, project, main, file);
+                JavaContext context = new JavaContext(this, project, main, file, javaParser);
+                contexts.add(context);
+            }
+
+            visitor.prepare(contexts);
+            for (JavaContext context : contexts) {
                 fireEvent(EventType.SCANNING_FILE, context);
-                visitor.visitFile(context, file);
+                visitor.visitFile(context);
                 if (mCanceled) {
                     return;
                 }
@@ -1604,7 +1637,7 @@ public class LintDriver {
             @NonNull List<Detector> checks,
             @NonNull List<File> files) {
 
-        IJavaParser javaParser = mClient.getJavaParser();
+        JavaParser javaParser = mClient.getJavaParser(project);
         if (javaParser == null) {
             mClient.log(null, "No java parser provided to lint: not running Java checks");
             return;
@@ -1612,14 +1645,28 @@ public class LintDriver {
 
         JavaVisitor visitor = new JavaVisitor(javaParser, checks);
 
+        List<JavaContext> contexts = Lists.newArrayListWithExpectedSize(files.size());
         for (File file : files) {
             if (file.isFile() && file.getPath().endsWith(DOT_JAVA)) {
-                JavaContext context = new JavaContext(this, project, main, file);
-                fireEvent(EventType.SCANNING_FILE, context);
-                visitor.visitFile(context, file);
-                if (mCanceled) {
-                    return;
-                }
+                contexts.add(new JavaContext(this, project, main, file, javaParser));
+            }
+        }
+
+        if (contexts.isEmpty()) {
+            return;
+        }
+
+        visitor.prepare(contexts);
+
+        if (mCanceled) {
+            return;
+        }
+
+        for (JavaContext context : contexts) {
+            fireEvent(EventType.SCANNING_FILE, context);
+            visitor.visitFile(context);
+            if (mCanceled) {
+                return;
             }
         }
     }
@@ -1667,7 +1714,7 @@ public class LintDriver {
                 return null;
             }
 
-            IDomParser parser = mClient.getDomParser();
+            XmlParser parser = mClient.getXmlParser();
             if (parser != null) {
                 mCurrentVisitor = new XmlVisitor(parser, applicableChecks);
             }
@@ -1719,7 +1766,8 @@ public class LintDriver {
                 Arrays.sort(xmlFiles);
                 for (File file : xmlFiles) {
                     if (LintUtils.isXmlFile(file)) {
-                        XmlContext context = new XmlContext(this, project, main, file, type);
+                        XmlContext context = new XmlContext(this, project, main, file, type,
+                                visitor.getParser());
                         fireEvent(EventType.SCANNING_FILE, context);
                         visitor.visitFile(context, file);
                         if (mCanceled) {
@@ -1759,7 +1807,8 @@ public class LintDriver {
                 if (type != null) {
                     XmlVisitor visitor = getVisitor(type, xmlDetectors);
                     if (visitor != null) {
-                        XmlContext context = new XmlContext(this, project, main, file, type);
+                        XmlContext context = new XmlContext(this, project, main, file, type,
+                                visitor.getParser());
                         fireEvent(EventType.SCANNING_FILE, context);
                         visitor.visitFile(context, file);
                     }
@@ -1902,8 +1951,8 @@ public class LintDriver {
 
         @Override
         @Nullable
-        public IDomParser getDomParser() {
-            return mDelegate.getDomParser();
+        public XmlParser getXmlParser() {
+            return mDelegate.getXmlParser();
         }
 
         @Override
@@ -1925,10 +1974,10 @@ public class LintDriver {
             return mDelegate.getProject(dir, referenceDir);
         }
 
-        @Override
         @Nullable
-        public IJavaParser getJavaParser() {
-            return mDelegate.getJavaParser();
+        @Override
+        public JavaParser getJavaParser(@Nullable Project project) {
+            return mDelegate.getJavaParser(project);
         }
 
         @Override
@@ -1964,6 +2013,12 @@ public class LintDriver {
         @NonNull
         public IAndroidTarget[] getTargets() {
             return mDelegate.getTargets();
+        }
+
+        @Nullable
+        @Override
+        public IAndroidTarget getCompileTarget(@NonNull Project project) {
+            return mDelegate.getCompileTarget(project);
         }
 
         @Override

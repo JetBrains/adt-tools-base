@@ -524,7 +524,7 @@ public class SamplePackage extends MinToolsPackage
                 }
 
                 try {
-                    md.update(name.getBytes("UTF-8"));   //$NON-NLS-1$
+                    md.update(name.getBytes(SdkConstants.UTF_8));
                 } catch (UnsupportedEncodingException e) {
                     // There is no valid reason for UTF-8 to be unsupported. Ignore.
                 }

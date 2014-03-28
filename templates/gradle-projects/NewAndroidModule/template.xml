@@ -5,6 +5,8 @@
     name="Android Module"
     description="Creates a new Android module.">
 
+    <category value="Application" />
+
     <thumbs>
         <thumb>template_new_project.png</thumb>
     </thumbs>

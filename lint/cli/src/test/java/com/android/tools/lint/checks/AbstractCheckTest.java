@@ -18,10 +18,8 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_ID;
-import static com.android.SdkConstants.FD_RES_VALUES;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.res2.AbstractResourceRepository;
@@ -32,7 +30,9 @@ import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.res2.ResourceMerger;
 import com.android.ide.common.res2.ResourceRepository;
 import com.android.ide.common.res2.ResourceSet;
+import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
+import com.android.sdklib.IAndroidTarget;
 import com.android.testutils.SdkTestCase;
 import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.LintCliFlags;
@@ -82,8 +82,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.CodeSource;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -141,6 +141,20 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             assertNotNull(file);
             files.add(file);
         }
+
+        Collections.sort(files, new Comparator<File>() {
+            @Override
+            public int compare(File file1, File file2) {
+                ResourceFolderType folder1 = ResourceFolderType.getFolderType(
+                        file1.getParentFile().getName());
+                ResourceFolderType folder2 = ResourceFolderType.getFolderType(
+                        file2.getParentFile().getName());
+                if (folder1 != null && folder2 != null && folder1 != folder2) {
+                    return folder1.compareTo(folder2);
+                }
+                return file1.compareTo(file2);
+            }
+        });
 
         addManifestFile(targetDir);
 
@@ -441,6 +455,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             // Make sure errors are unique!
             Warning prev = null;
             for (Warning warning : mWarnings) {
+                assertNotSame(warning, prev);
                 assert prev == null || !warning.equals(prev);
                 prev = warning;
             }
@@ -633,6 +648,23 @@ public abstract class AbstractCheckTest extends SdkTestCase {
                 Node child = children.item(i);
                 addIds(ids, child);
             }
+        }
+
+        @Nullable
+        @Override
+        public IAndroidTarget getCompileTarget(@NonNull Project project) {
+            IAndroidTarget compileTarget = super.getCompileTarget(project);
+            if (compileTarget == null) {
+                IAndroidTarget[] targets = getTargets();
+                for (int i = targets.length - 1; i >= 0; i--) {
+                    IAndroidTarget target = targets[i];
+                    if (target.isPlatform()) {
+                        return target;
+                    }
+                }
+            }
+
+            return compileTarget;
         }
     }
 

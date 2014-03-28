@@ -1,3 +1,29 @@
+0.9.2:
+- Aapt-based PNG processor is now default again while we investigate some issues with the old one.
+- flavorGroups have been renamed flavorDimensions and the DSL has been updated. The old DSL is still available until 1.0 at which time it'll be removed.
+
+0.9.1:
+- It's now possible to include a file when there's a conflict during packaging:
+      android.packagingOptions {
+          pickFirst 'META-INF/foo.txt'
+      }
+- New PNG processor.
+   * Should be much faster when processing many files
+   * Fix issue where crunched png are bigger than original file
+   * To revert to the old cruncher: android.aaptOptions.useAaptPngCruncher = true
+- The plugin now enforces that all library dependencies have a unique package name.
+  To disable this you can use android.enforceUniquePackageName = false
+  WARNING: The ability to disable enforcement will disappear in 1.0
+- Fixes:
+   * Generated POM files now have the proper dependencies even if the pom object is manipulated in build.gradle
+   * libraryVariant API now gives access to the list of flavors.
+   * fixed issue where changes to the manifests of libraries didn't trigger a new manifest merge.
+   * BuildConfig.VERSION_NAME is always generated even if the value is not set in the current variant.
+   * BuildConfig is now package in the library. This requires that all your libraries have a unique package name.
+     If you are disabling enforcement of package name, then you should disable packaging of BuildConfig with:
+     android.packageBuildConfig = false
+     WARNING: the ability to disable packaging will disappear in 1.0
+
 0.9.0:
 - Compatible with Gradle 1.10 and 1.11
 - BREAKING CHANGES:

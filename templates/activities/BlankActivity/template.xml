@@ -7,6 +7,8 @@
     minBuildApi="14"
     description="Creates a new blank activity, with an action bar and optional navigational elements such as tabs or horizontal swipe.">
 
+    <category value="Activity" />
+
     <parameter
         id="activityClass"
         name="Activity Name"
@@ -79,6 +81,14 @@
         type="string"
         constraints="package"
         default="com.mycompany.myapp" />
+
+    <parameter
+        id="navigationDrawerLayout"
+        name="Navigation Drawer Fragment Name"
+        type="string"
+        constraints="layout|unique"
+        default="fragment_navigation_drawer"
+        visibility="features == 'drawer'" />
 
     <!-- 128x128 thumbnails relative to template.xml -->
     <thumbs>

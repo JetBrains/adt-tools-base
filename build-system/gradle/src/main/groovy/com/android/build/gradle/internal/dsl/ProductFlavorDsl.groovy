@@ -36,7 +36,7 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     @NonNull
     private final FileResolver fileResolver
     @NonNull
-    private final Logger logger
+    protected final Logger logger
 
     private final NdkConfigDsl ndkConfig
 

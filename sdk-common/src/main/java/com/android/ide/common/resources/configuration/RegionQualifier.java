@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
  * Resource Qualifier for Region.
  */
 public final class RegionQualifier extends ResourceQualifier {
-    private static final Pattern sRegionPattern = Pattern.compile("^r([A-Z]{2})$"); //$NON-NLS-1$
+    private static final Pattern sRegionPattern = Pattern.compile("^r([a-zA-Z]{2})$"); //$NON-NLS-1$
 
     public static final String FAKE_REGION_VALUE = "__"; //$NON-NLS-1$
     public static final String NAME = "Region";
@@ -41,7 +41,11 @@ public final class RegionQualifier extends ResourceQualifier {
         Matcher m = sRegionPattern.matcher(segment);
         if (m.matches()) {
             RegionQualifier qualifier = new RegionQualifier();
-            qualifier.mValue = m.group(1);
+            assert m.group(1).length() == 2;
+            qualifier.mValue = new String(new char[] {
+                    Character.toUpperCase(segment.charAt(1)),
+                    Character.toUpperCase(segment.charAt(2))
+            });
 
             return qualifier;
         }
@@ -70,7 +74,7 @@ public final class RegionQualifier extends ResourceQualifier {
     }
 
     public RegionQualifier(String value) {
-        mValue = value;
+        mValue = value.toUpperCase(Locale.US);
     }
 
     public String getValue() {
@@ -108,6 +112,9 @@ public final class RegionQualifier extends ResourceQualifier {
 
     @Override
     public boolean checkAndSet(String value, FolderConfiguration config) {
+        if (value.length() != 3) {
+            return false;
+        }
         RegionQualifier qualifier = getQualifier(value);
         if (qualifier != null) {
             config.setRegionQualifier(qualifier);
