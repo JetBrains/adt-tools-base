@@ -16,6 +16,7 @@
 
 package com.android.manifmerger;
 
+import com.android.SdkConstants;
 import com.android.utils.StdLogger;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -62,7 +63,7 @@ public class XmlElementTest extends TestCase {
                 + "         tools:node=\"removeAll\"/>\n"
                 + "\n"
                 + "    <activity android:name=\"activityThree\" "
-                + "         tools:node=\"removeChildren\"/>\n"
+                + "         tools:node=\"mergeOnlyAttributes\"/>\n"
                 + "\n"
                 + "</manifest>";
 
@@ -81,7 +82,7 @@ public class XmlElementTest extends TestCase {
         activity = xmlDocument.getRootNode().getNodeByTypeAndKey(
                 ManifestModel.NodeTypes.ACTIVITY, "com.example.lib3.activityThree");
         assertTrue(activity.isPresent());
-        assertEquals(NodeOperationType.REMOVE_CHILDREN,
+        assertEquals(NodeOperationType.MERGE_ONLY_ATTRIBUTES,
                 activity.get().getOperationType());
     }
 
@@ -318,7 +319,7 @@ public class XmlElementTest extends TestCase {
                 "com.example.lib3.activityOne").get()
                 .compareTo(otherDocument.getRootNode().getNodeByTypeAndKey(
                         ManifestModel.NodeTypes.ACTIVITY, "com.example.lib3.activityOne")
-                                .get()).isPresent());
+                        .get()).isPresent());
     }
 
     public void testDiff2()
@@ -432,7 +433,8 @@ public class XmlElementTest extends TestCase {
                 .compareTo(
                         otherDocument.getRootNode().getNodeByTypeAndKey(
                                 ManifestModel.NodeTypes.ACTIVITY, "com.example.lib3.activityOne")
-                                .get()).isPresent());
+                                .get()
+                ).isPresent());
     }
 
     public void testDiff5()
@@ -508,7 +510,8 @@ public class XmlElementTest extends TestCase {
                                 otherDocument.getRootNode().getNodeByTypeAndKey(
                                         ManifestModel.NodeTypes.ACTIVITY,
                                         "com.example.lib3.activityOne")
-                                        .get()).isPresent()
+                                        .get()
+                        ).isPresent()
         );
     }
 
@@ -1336,5 +1339,76 @@ public class XmlElementTest extends TestCase {
         ImmutableList<XmlElement> mergeableElements = result.get().getRootNode()
                 .getMergeableElements();
         assertEquals(1, mergeableElements.size());
+    }
+
+    /**
+     * test tools:node="removeAll" with several target elements to be removed.
+     */
+    public void testMergeOnlyAttributes()
+            throws ParserConfigurationException, SAXException, IOException {
+        String higherPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" "
+                + "         android:exported=\"true\""
+                + "         tools:node=\"mergeOnlyAttributes\">\n"
+                + "       <meta-data android:name=\"bird\" android:value=\"@string/hawk\" />\n"
+                + "    </activity>\n"
+                + "\n"
+                + "</manifest>";
+
+        String lowerPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\"\n"
+                + "         android:screenOrientation=\"landscape\">\n"
+                + "       <meta-data android:name=\"dog\" android:value=\"@string/dog\" />\n"
+                + "    </activity>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+        XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
+                new StdLogger(StdLogger.Level.VERBOSE));
+        Optional<XmlDocument> result = refDocument.merge(otherDocument, mergingReportBuilder);
+        assertTrue(result.isPresent());
+
+        Optional<XmlElement> activityOne = result.get().getRootNode().getNodeByTypeAndKey(
+                ManifestModel.NodeTypes.ACTIVITY, "com.example.lib3.activityOne");
+        assertTrue(activityOne.isPresent());
+
+        assertEquals(1, activityOne.get().getMergeableElements().size());
+        assertEquals(3, activityOne.get().getAttributes().size());
+
+        // check that we kept the right child from the higher priority node.
+        XmlNode.NodeName nodeName = XmlNode.fromXmlName(
+                SdkConstants.ANDROID_NS_NAME_PREFIX + SdkConstants.ATTR_NAME);
+        assertEquals("bird", activityOne.get().getMergeableElements().get(0)
+                .getAttribute(nodeName).get().getValue());
+
+        // check the records.
+        ActionRecorder actionRecorder = mergingReportBuilder.getActionRecorder().build();
+        assertEquals(3, actionRecorder.getAllRecords().size());
+        ActionRecorder.DecisionTreeRecord decisionTreeRecord = actionRecorder.getAllRecords()
+                .get("activity#com.example.lib3.activityOne");
+        for (int i = 0; i < decisionTreeRecord.getNodeRecords().size(); i++) {
+            ActionRecorder.NodeRecord nodeRecord = decisionTreeRecord.getNodeRecords().get(i);
+            if ("meta-data#dog".equals(nodeRecord.getTargetId())) {
+                assertEquals(ActionRecorder.ActionType.REJECTED,
+                        nodeRecord.getActionType());
+                return;
+            }
+        }
+        fail("Did not find the meta-data rejection record");
     }
 }

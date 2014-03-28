@@ -39,6 +39,12 @@ public enum NodeOperationType implements ConvertibleName {
     MERGE,
 
     /**
+     * Remove all children from the target element before merging it into the resulting merged
+     * manifest. This basically merges attributes only (attributes annotation still applies).
+     */
+    MERGE_ONLY_ATTRIBUTES,
+
+    /**
      * Replace further definitions of the same element with this one. There can be 0..n similar
      * elements replaced with the annotated xml element.
      */
@@ -55,12 +61,6 @@ public enum NodeOperationType implements ConvertibleName {
      * Remove all definitions of the same element from the resulting merged manifest.
      */
     REMOVE_ALL,
-
-    /**
-     * Remove all children from the target element before merging it into the resulting merged
-     * manifest. This basically merges all attributes only (attributes annotation still applies).
-     */
-    REMOVE_CHILDREN,
 
     /**
      * No further definition of this element should be encountered. A merging tool failure will be

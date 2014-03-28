@@ -160,17 +160,24 @@ public class ActionRecorder {
     abstract static class Record {
         protected final ActionType mActionType;
         protected final ActionLocation mActionLocation;
+        protected final String mTargetId;
 
         private Record(@NonNull ActionType actionType,
-                @NonNull ActionLocation actionLocation) {
+                @NonNull ActionLocation actionLocation,
+                @NonNull String targetId) {
             mActionType = Preconditions.checkNotNull(actionType);
             mActionLocation = Preconditions.checkNotNull(actionLocation);
+            mTargetId = Preconditions.checkNotNull(targetId);
         }
 
         abstract ActionTarget getActionTarget();
 
         public ActionType getActionType() {
             return mActionType;
+        }
+
+        public String getTargetId() {
+            return mTargetId;
         }
 
         public ActionLocation getActionLocation() {
@@ -193,8 +200,9 @@ public class ActionRecorder {
 
         private NodeRecord(@NonNull ActionType actionType,
                 ActionLocation actionLocation,
+                String targetId,
                 NodeOperationType nodeOperationType) {
-            super(actionType, actionLocation);
+            super(actionType, actionLocation, targetId);
             this.mNodeOperationType = Preconditions.checkNotNull(nodeOperationType);
         }
 
@@ -251,8 +259,9 @@ public class ActionRecorder {
         private AttributeRecord(
                 @NonNull ActionType actionType,
                 @NonNull ActionLocation actionLocation,
+                @NonNull String targetId,
                 @Nullable AttributeOperationType operationType) {
-            super(actionType, actionLocation);
+            super(actionType, actionLocation, targetId);
             this.mOperationType = operationType;
         }
 
@@ -337,6 +346,7 @@ public class ActionRecorder {
                     new ActionLocation(
                             targetElement.getDocument().getSourceLocation(),
                             targetElement.getPosition()),
+                    targetElement.getId(),
                     mergedElement.getOperationType());
             nodeDecisionTree.mNodeRecords.add(record);
         }
@@ -361,6 +371,7 @@ public class ActionRecorder {
                     new ActionLocation(
                             originElement.getDocument().getSourceLocation(),
                             attribute.getPosition()),
+                    attribute.getId(),
                     attributeOperationType);
             attributeRecords.add(attributeRecord);
         }
@@ -382,6 +393,7 @@ public class ActionRecorder {
                     new ActionLocation(
                             implicitAttributeOwner.getDocument().getSourceLocation(),
                             implicitAttributeOwner.getPosition()),
+                    attribute.getId(),
                     AttributeOperationType.REPLACE);
             attributeRecords.add(attributeRecord);
         }
