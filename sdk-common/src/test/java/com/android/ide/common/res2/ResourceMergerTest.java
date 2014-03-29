@@ -150,6 +150,44 @@ public class ResourceMergerTest extends BaseTestCase {
         checkLogger(logger);
     }
 
+    public void testXliffString() throws Exception {
+        ResourceMerger merger = getResourceMerger();
+
+        // check the result of the load
+        List<ResourceItem> values = merger.getDataMap().get("string/xliff_string");
+
+        assertEquals(1, values.size());
+        ResourceItem string = values.get(0);
+
+        // Even though the content is
+        //     <xliff:g id="firstName">%1$s</xliff:g> <xliff:g id="lastName">%2$s</xliff:g>
+        // The valueText is going to skip the <g> node so we skip them from the comparison.
+        // What matters here is that the whitespaces are kept.
+        assertEquals("Loaded String in merger",
+                "%1$s %2$s",
+                string.getValueText());
+
+        File folder = getWrittenResources();
+
+        RecordingLogger logger =  new RecordingLogger();
+        ResourceSet writtenSet = new ResourceSet("unused");
+        writtenSet.addSource(folder);
+        writtenSet.loadFromFiles(logger);
+
+        values = writtenSet.getDataMap().get("string/xliff_string");
+
+        assertEquals(1, values.size());
+        string = values.get(0);
+
+        // Even though the content is
+        //     <xliff:g id="firstName">%1$s</xliff:g> <xliff:g id="lastName">%2$s</xliff:g>
+        // The valueText is going to skip the <g> node so we skip them from the comparison.
+        // What matters here is that the whitespaces are kept.
+        assertEquals("Rewritten String through merger",
+                "%1$s %2$s",
+                string.getValueText());
+    }
+
     public void testNotMergedAttr() throws Exception {
         RecordingLogger logger =  new RecordingLogger();
 
