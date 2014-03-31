@@ -16,8 +16,6 @@
 
 package com.android.manifmerger;
 
-import static org.mockito.Mockito.when;
-
 import com.android.utils.ILogger;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -28,7 +26,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.xml.sax.SAXException;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.logging.Logger;
 
@@ -116,9 +113,7 @@ public class XmlDocumentTest extends TestCase {
                 mainDocument.merge(libraryDocument, mergingReportBuilder);
 
         assertTrue(mergedDocument.isPresent());
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        mergedDocument.get().write(byteArrayOutputStream);
-        Logger.getAnonymousLogger().info(byteArrayOutputStream.toString());
+        Logger.getAnonymousLogger().info(mergedDocument.get().prettyPrint());
         assertTrue(mergedDocument.get().getRootNode().getNodeByTypeAndKey(
                 ManifestModel.NodeTypes.APPLICATION, null).isPresent());
         Optional<XmlElement> activityOne = mergedDocument.get()
@@ -215,20 +210,19 @@ public class XmlDocumentTest extends TestCase {
     }
 
     public void testWriting() throws ParserConfigurationException, SAXException, IOException {
-        String input = ""
-                + "<manifest"
-                + " xmlns:x=\"http://schemas.android.com/apk/res/android\""
-                + " xmlns:y=\"http://schemas.android.com/apk/res/android/tools\""
-                + " package=\"com.example.lib3\">\n"
+        String input = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<manifest xmlns:x=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:y=\"http://schemas.android.com/apk/res/android/tools\"\n"
+                + "    package=\"com.example.lib3\" >\n"
                 + "\n"
-                + "    <application x:label=\"@string/lib_name\" y:node=\"replace\"/>\n"
+                + "    <application\n"
+                + "        x:label=\"@string/lib_name\"\n"
+                + "        y:node=\"replace\" />\n"
                 + "\n"
-                + "</manifest>\n";
+                + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "testWriting()"), input);
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        xmlDocument.write(byteArrayOutputStream);
-        assertEquals(input, byteArrayOutputStream.toString());
+        assertEquals(input, xmlDocument.prettyPrint());
     }
 }

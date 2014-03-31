@@ -18,6 +18,9 @@ package com.android.manifmerger;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.xml.XmlFormatPreferences;
+import com.android.ide.common.xml.XmlFormatStyle;
+import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -25,15 +28,8 @@ import com.google.common.base.Preconditions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.io.OutputStream;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
 /**
  * Represents a loaded xml document.
@@ -60,20 +56,16 @@ public class XmlDocument {
         this.mRootElement = Preconditions.checkNotNull(element);
     }
 
-    public boolean write(OutputStream outputStream) {
-
-        try {
-            Transformer tf = TransformerFactory.newInstance().newTransformer();
-            tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");         //$NON-NLS-1$
-            tf.setOutputProperty(OutputKeys.ENCODING, "UTF-8");                   //$NON-NLS-1$
-            tf.setOutputProperty(OutputKeys.INDENT, "yes");                       //$NON-NLS-1$
-            tf.setOutputProperty("{http://xml.apache.org/xslt}indent-amount",     //$NON-NLS-1$
-                    "4");                                            //$NON-NLS-1$
-            tf.transform(new DOMSource(getRootNode().getXml()), new StreamResult(outputStream));
-            return true;
-        } catch (TransformerException e) {
-            return false;
-        }
+    /**
+     * Returns a pretty string representation of this document.
+     */
+    public String prettyPrint() {
+        return XmlPrettyPrinter.prettyPrint(
+                getXml(),
+                XmlFormatPreferences.defaults(),
+                XmlFormatStyle.get(getRootNode().getXml()),
+                null, /* endOfLineSeparator */
+                false /* endWithNewLine */);
     }
 
     /**
