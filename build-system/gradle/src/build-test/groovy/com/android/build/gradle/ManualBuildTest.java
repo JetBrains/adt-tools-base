@@ -116,6 +116,15 @@ public class ManualBuildTest extends BuildTest {
         }
     }
 
+    public void testLibsManifestMerging() throws Exception {
+        File project = new File(testDir, "libsTest");
+        File fileOutput = new File(project, "libapp/build/bundles/release/AndroidManifest.xml");
+
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
+                project, "clean", "build");
+        assertTrue(fileOutput.exists());
+    }
+
     // test whether a library project has its fields ProGuarded
     public void testLibProguard() throws Exception {
         File project = new File(testDir, "libProguard");

@@ -16,6 +16,7 @@
 
 package com.android.builder;
 
+import static com.android.manifmerger.ManifestMerger2.Invoker;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -51,16 +52,23 @@ import com.android.ide.common.internal.AaptCruncher;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.PngCruncher;
+import com.android.manifmerger.Actions;
 import com.android.manifmerger.ICallback;
 import com.android.manifmerger.ManifestMerger;
+import com.android.manifmerger.ManifestMerger2;
 import com.android.manifmerger.MergerLog;
+import com.android.manifmerger.MergingReport;
+import com.android.manifmerger.XmlDocument;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
+import com.android.utils.Pair;
 import com.android.utils.SdkUtils;
 import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -68,10 +76,17 @@ import com.google.common.collect.Sets;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
+import com.google.common.io.LineReader;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -295,6 +310,133 @@ public class AndroidBuilder {
     @NonNull
     public static ClassField createClassField(@NonNull String type, @NonNull String name, @NonNull String value) {
         return new ClassFieldImpl(type, name, value);
+    }
+
+    /**
+     * Invoke the Manifest Merger version 2.
+     */
+    public void processManifest2(
+            @NonNull File mainManifest,
+            @NonNull List<File> manifestOverlays,
+            @NonNull List<? extends ManifestDependency> libraries,
+            String packageOverride,
+            int versionCode,
+            String versionName,
+            @Nullable String minSdkVersion,
+            int targetSdkVersion,
+            @NonNull String outManifestLocation) {
+
+        try {
+            Invoker manifestMergerInvoker = ManifestMerger2.newInvoker(mainManifest, mLogger)
+                    .addFlavorAndBuildTypeManifests(
+                            manifestOverlays.toArray(new File[manifestOverlays.size()]))
+                    .addLibraryManifests(collectLibraries(libraries));
+            if (!Strings.isNullOrEmpty(packageOverride)) {
+                manifestMergerInvoker.setOverride(ManifestMerger2.SystemProperty.PACKAGE,
+                        packageOverride);
+            }
+            if (versionCode > 0) {
+                manifestMergerInvoker.setOverride(ManifestMerger2.SystemProperty.VERSION_CODE,
+                        String.valueOf(versionCode));
+            }
+            if (!Strings.isNullOrEmpty(versionName)) {
+                manifestMergerInvoker.setOverride(ManifestMerger2.SystemProperty.VERSION_NAME,
+                        versionName);
+            }
+            if (!Strings.isNullOrEmpty(minSdkVersion)) {
+                manifestMergerInvoker.setOverride(ManifestMerger2.SystemProperty.MIN_SDK_VERSION,
+                        minSdkVersion);
+            }
+            if (targetSdkVersion > 0) {
+                manifestMergerInvoker.setOverride(ManifestMerger2.SystemProperty.TARGET_SDK_VERSION,
+                        String.valueOf(targetSdkVersion));
+            }
+            MergingReport mergingReport = manifestMergerInvoker.merge();
+            mLogger.info("Merging result:" + mergingReport.getResult());
+            switch (mergingReport.getResult()) {
+                case WARNING:
+                    mergingReport.log(mLogger);
+                    // fall through since these are just warnings.
+                case SUCCESS:
+                    XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+                    try {
+                        String annotatedDocument = mergingReport.getActions().blame(xmlDocument);
+                        mLogger.verbose(annotatedDocument);
+                    } catch (Exception e) {
+                        mLogger.error(e, "cannot print resulting xml");
+                    }
+                    save(xmlDocument, new File(outManifestLocation));
+                    mLogger.info("Merged manifest saved to " + outManifestLocation);
+                    break;
+                case ERROR:
+                    mergingReport.log(mLogger);
+                    throw new RuntimeException(mergingReport.getReportString());
+                default:
+                    throw new RuntimeException("Unhandled result type : "
+                            + mergingReport.getResult());
+            }
+        } catch (ManifestMerger2.MergeFailureException e) {
+            // TODO: unacceptable.
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Saves the {@link com.android.manifmerger.XmlDocument} to a file.
+     * @param xmlDocument xml document to save.
+     * @param out file to save to.
+     */
+    private void save(XmlDocument xmlDocument, File out) {
+        FileWriter os;
+        try {
+            os = new FileWriter(out);
+        } catch(IOException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            os.write(xmlDocument.prettyPrint());
+        } catch(IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                os.close();
+            } catch (IOException e) {
+                mLogger.error(e, "Cannot close output stream");
+            }
+        }
+    }
+
+    /**
+     * Collect the list of libraries' manifest files.
+     * @param libraries declared dependencies
+     * @return a list of files and names for the libraries' manifest files.
+     */
+    private static ImmutableList<Pair<String, File>> collectLibraries(
+            List<? extends ManifestDependency> libraries) {
+
+        ImmutableList.Builder<Pair<String, File>> manifestFiles = ImmutableList.builder();
+        if (libraries != null) {
+            collectLibraries(libraries, manifestFiles);
+        }
+        return manifestFiles.build();
+    }
+
+    /**
+     * recursively calculate the list of libraries to merge the manifests files from.
+     * @param libraries the dependencies
+     * @param manifestFiles list of files and names identifiers for the libraries' manifest files.
+     */
+    private static void collectLibraries(List<? extends ManifestDependency> libraries,
+            ImmutableList.Builder<Pair<String, File>> manifestFiles) {
+
+        for (ManifestDependency library : libraries) {
+            manifestFiles.add(Pair.of(library.getName(), library.getManifest()));
+            List<? extends ManifestDependency> manifestDependencies = library
+                    .getManifestDependencies();
+            if (!manifestDependencies.isEmpty()) {
+                collectLibraries(manifestDependencies, manifestFiles);
+            }
+        }
     }
 
     /**
