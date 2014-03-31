@@ -27,7 +27,6 @@ import com.android.utils.XmlUtils;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -56,10 +55,8 @@ import java.util.Map;
  * The two main responsibilities of this class is to be capable of comparing itself against
  * another instance of the same type as well as providing XML element merging capabilities.
  */
-public class XmlElement extends XmlNode {
+public class XmlElement extends OrphanXmlElement {
 
-    @NonNull private final Element mXml;
-    @NonNull private final ManifestModel.NodeTypes mType;
     @NonNull private final XmlDocument mDocument;
 
     private final NodeOperationType mNodeOperationType;
@@ -73,16 +70,15 @@ public class XmlElement extends XmlNode {
     @Nullable private final Selector mSelector;
 
     public XmlElement(@NonNull Element xml, @NonNull XmlDocument document) {
+        super(xml);
 
-        mXml = Preconditions.checkNotNull(xml);
-        mType = ManifestModel.NodeTypes.fromXmlSimpleName(mXml.getNodeName());
         mDocument = Preconditions.checkNotNull(document);
         Selector selector = null;
 
         ImmutableMap.Builder<NodeName, AttributeOperationType> attributeOperationTypeBuilder =
                 ImmutableMap.builder();
         ImmutableList.Builder<XmlAttribute> attributesListBuilder = ImmutableList.builder();
-        NamedNodeMap namedNodeMap = mXml.getAttributes();
+        NamedNodeMap namedNodeMap = getXml().getAttributes();
         NodeOperationType lastNodeOperationType = null;
         for (int i = 0; i < namedNodeMap.getLength(); i++) {
             Node attribute = namedNodeMap.item(i);
@@ -120,7 +116,7 @@ public class XmlElement extends XmlNode {
             if (!SdkConstants.TOOLS_URI.equals(attribute.getNamespaceURI())) {
 
                 XmlAttribute xmlAttribute = new XmlAttribute(
-                        this, (Attr) attribute, mType.getAttributeModel(XmlNode.fromXmlName(
+                        this, (Attr) attribute, getType().getAttributeModel(XmlNode.fromXmlName(
                                 ((Attr) attribute).getName())));
                 attributesListBuilder.add(xmlAttribute);
             }
@@ -133,55 +129,11 @@ public class XmlElement extends XmlNode {
     }
 
     /**
-     * Returns true if this xml element's {@link com.android.manifmerger.ManifestModel.NodeTypes} is
-     * the passed one.
-     */
-    public boolean isA(ManifestModel.NodeTypes type) {
-        return this.mType == type;
-    }
-
-    @NonNull
-    @Override
-    public Element getXml() {
-        return mXml;
-    }
-
-
-    @Override
-    public String getId() {
-        return Strings.isNullOrEmpty(getKey())
-                ? getName().toString()
-                : getName().toString() + "#" + getKey();
-    }
-
-    @Override
-    public NodeName getName() {
-        return XmlNode.unwrapName(mXml);
-    }
-
-    /**
      * Returns the owning {@link com.android.manifmerger.XmlDocument}
      */
     @NonNull
     public XmlDocument getDocument() {
         return mDocument;
-    }
-
-    /**
-     * Returns this xml element {@link com.android.manifmerger.ManifestModel.NodeTypes}
-     */
-    @NonNull
-    public ManifestModel.NodeTypes getType() {
-        return mType;
-    }
-
-    /**
-     * Returns the unique key for this xml element within the xml file or null if there can be only
-     * one element of this type.
-     */
-    @Nullable
-    public String getKey() {
-        return mType.getNodeKeyResolver().getKey(this);
     }
 
     /**
@@ -313,7 +265,7 @@ public class XmlElement extends XmlNode {
             // record rejection of the lower priority node's children .
             for (XmlElement lowerPriorityChild : lowerPriorityNode.getMergeableElements()) {
                 mergingReport.getActionRecorder().recordNodeAction(this,
-                        ActionRecorder.ActionType.REJECTED,
+                        Actions.ActionType.REJECTED,
                         lowerPriorityChild);
             }
         }
@@ -423,7 +375,7 @@ public class XmlElement extends XmlNode {
         // if we should discard this child element, record the action.
         if (shouldDelete) {
             mergingReport.getActionRecorder().recordNodeAction(thisChildElementOptional.get(),
-                    ActionRecorder.ActionType.REJECTED,
+                    Actions.ActionType.REJECTED,
                     lowerPriorityChild);
         }
         return shouldDelete;
@@ -454,7 +406,7 @@ public class XmlElement extends XmlNode {
             case MERGE_ONLY_ATTRIBUTES:
                 // record the action
                 mergingReport.getActionRecorder().recordNodeAction(higherPriority,
-                        ActionRecorder.ActionType.MERGED, lowerPriority);
+                        Actions.ActionType.MERGED, lowerPriority);
                 // and perform the merge
                 higherPriority.mergeWithLowerPriorityNode(lowerPriority, mergingReport);
                 break;
@@ -465,7 +417,7 @@ public class XmlElement extends XmlNode {
 
                 // just don't import the lower priority node and record the action.
                 mergingReport.getActionRecorder().recordNodeAction(higherPriority,
-                        ActionRecorder.ActionType.REJECTED, lowerPriority);
+                        Actions.ActionType.REJECTED, lowerPriority);
                 break;
             case STRICT:
                 Optional<String> compareMessage = higherPriority.compareTo(lowerPriority);
@@ -522,18 +474,20 @@ public class XmlElement extends XmlNode {
     private void addElement(XmlElement elementToBeAdded, MergingReport.Builder mergingReport) {
 
         List<Node> comments = getLeadingComments(elementToBeAdded.getXml());
+        // record all the actions before the node is moved from the library document to the main
+        // merged document.
+        mergingReport.getActionRecorder().recordDefaultNodeAction(elementToBeAdded);
+
         // only in the new file, just import it.
-        Node node = mXml.getOwnerDocument().adoptNode(elementToBeAdded.getXml());
-        mXml.appendChild(node);
+        Node node = getXml().getOwnerDocument().adoptNode(elementToBeAdded.getXml());
+        getXml().appendChild(node);
 
         // also adopt the child's comments if any.
         for (Node comment : comments) {
-            Node newComment = mXml.getOwnerDocument().adoptNode(comment);
-            mXml.insertBefore(newComment, node);
+            Node newComment = getXml().getOwnerDocument().adoptNode(comment);
+            getXml().insertBefore(newComment, node);
         }
 
-        mergingReport.getActionRecorder().recordNodeAction(elementToBeAdded,
-                ActionRecorder.ActionType.ADDED);
         mergingReport.getLogger().verbose("Adopted " + node);
     }
 
@@ -548,16 +502,16 @@ public class XmlElement extends XmlNode {
     public Optional<String> compareTo(XmlElement otherNode) {
 
         // compare element names
-        if (mXml.getNamespaceURI() != null) {
-            if (!mXml.getLocalName().equals(otherNode.mXml.getLocalName())) {
+        if (getXml().getNamespaceURI() != null) {
+            if (!getXml().getLocalName().equals(otherNode.getXml().getLocalName())) {
                 return Optional.of(
                         String.format("Element names do not match: %1$s versus %2$s",
-                                mXml.getLocalName(),
-                                otherNode.mXml.getLocalName()));
+                                getXml().getLocalName(),
+                                otherNode.getXml().getLocalName()));
             }
             // compare element ns
-            String thisNS = mXml.getNamespaceURI();
-            String otherNS = otherNode.mXml.getNamespaceURI();
+            String thisNS = getXml().getNamespaceURI();
+            String otherNS = otherNode.getXml().getNamespaceURI();
             if ((thisNS == null && otherNS != null)
                     || (thisNS != null && !thisNS.equals(otherNS))) {
                 return Optional.of(
@@ -565,10 +519,10 @@ public class XmlElement extends XmlNode {
                                 thisNS, otherNS));
             }
         } else {
-            if (!mXml.getNodeName().equals(otherNode.mXml.getNodeName())) {
+            if (!getXml().getNodeName().equals(otherNode.getXml().getNodeName())) {
                 return Optional.of(String.format("Element names do not match: %1$s versus %2$s",
-                        mXml.getNodeName(),
-                        otherNode.mXml.getNodeName()));
+                        getXml().getNodeName(),
+                        otherNode.getXml().getNodeName()));
             }
         }
 
@@ -583,8 +537,8 @@ public class XmlElement extends XmlNode {
         }
 
         // compare children
-        List<Node> expectedChildren = filterUninterestingNodes(mXml.getChildNodes());
-        List<Node> actualChildren = filterUninterestingNodes(otherNode.mXml.getChildNodes());
+        List<Node> expectedChildren = filterUninterestingNodes(getXml().getChildNodes());
+        List<Node> actualChildren = filterUninterestingNodes(otherNode.getXml().getChildNodes());
         if (expectedChildren.size() != actualChildren.size()) {
             return Optional.of(String.format(
                     "%1$s: Number of children do not match up: expected %2$d versus %3$d at %4$s",
@@ -671,7 +625,7 @@ public class XmlElement extends XmlNode {
 
     private ImmutableList<XmlElement> initMergeableChildren() {
         ImmutableList.Builder<XmlElement> mergeableNodes = new ImmutableList.Builder<XmlElement>();
-        NodeList nodeList = mXml.getChildNodes();
+        NodeList nodeList = getXml().getChildNodes();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
             if (node instanceof Element) {

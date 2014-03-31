@@ -16,6 +16,9 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.Actions.DecisionTreeRecord;
+import static com.android.manifmerger.Actions.NodeRecord;
+
 import com.android.SdkConstants;
 import com.android.utils.StdLogger;
 import com.google.common.base.Optional;
@@ -1393,14 +1396,13 @@ public class XmlElementTest extends TestCase {
                 .getAttribute(nodeName).get().getValue());
 
         // check the records.
-        ActionRecorder actionRecorder = mergingReportBuilder.getActionRecorder().build();
-        assertEquals(3, actionRecorder.getAllRecords().size());
-        ActionRecorder.DecisionTreeRecord decisionTreeRecord = actionRecorder.getAllRecords()
-                .get("activity#com.example.lib3.activityOne");
-        for (int i = 0; i < decisionTreeRecord.getNodeRecords().size(); i++) {
-            ActionRecorder.NodeRecord nodeRecord = decisionTreeRecord.getNodeRecords().get(i);
-            if ("meta-data#dog".equals(nodeRecord.getTargetId())) {
-                assertEquals(ActionRecorder.ActionType.REJECTED,
+        Actions actionRecorder = mergingReportBuilder.getActionRecorder().build();
+        assertEquals(3, actionRecorder.getNodeKeys().size());
+        ImmutableList<NodeRecord> nodeRecords = actionRecorder.getNodeRecords(
+                new XmlNode.NodeKey("activity#com.example.lib3.activityOne"));
+        for (NodeRecord nodeRecord : nodeRecords) {
+            if ("meta-data#dog".equals(nodeRecord.getTargetId().toString())) {
+                assertEquals(Actions.ActionType.REJECTED,
                         nodeRecord.getActionType());
                 return;
             }

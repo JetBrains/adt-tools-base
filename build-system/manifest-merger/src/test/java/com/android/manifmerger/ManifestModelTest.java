@@ -16,6 +16,7 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.XmlNode.NodeKey;
 import static org.mockito.Mockito.when;
 
 import com.android.sdklib.mock.MockLog;
@@ -87,7 +88,7 @@ public class ManifestModelTest extends TestCase {
         MockLog mockLog = new MockLog();
 
         MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
-        when(xmlAttribute.getId()).thenReturn(AndroidManifest.ATTRIBUTE_GLESVERSION);
+        when(xmlAttribute.getId()).thenReturn(new NodeKey(AndroidManifest.ATTRIBUTE_GLESVERSION));
         when(xmlAttribute.printPosition()).thenReturn("unknown");
         assertFalse(validator.validates(mergingReport, xmlAttribute, "0xFFFFFFFFFFFF"));
         assertTrue(mergingReport.hasErrors());
@@ -106,7 +107,7 @@ public class ManifestModelTest extends TestCase {
         MockLog mockLog = new MockLog();
 
         MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
-        when(xmlAttribute.getId()).thenReturn(AndroidManifest.ATTRIBUTE_GLESVERSION);
+        when(xmlAttribute.getId()).thenReturn(new NodeKey(AndroidManifest.ATTRIBUTE_GLESVERSION));
         when(xmlAttribute.printPosition()).thenReturn("unknown");
         assertFalse(validator.validates(mergingReport, xmlAttribute, "0xFFF"));
         assertTrue(mergingReport.hasErrors());
@@ -124,7 +125,7 @@ public class ManifestModelTest extends TestCase {
         MockLog mockLog = new MockLog();
 
         MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
-        when(xmlAttribute.getId()).thenReturn(AndroidManifest.ATTRIBUTE_GLESVERSION);
+        when(xmlAttribute.getId()).thenReturn(new NodeKey(AndroidManifest.ATTRIBUTE_GLESVERSION));
         when(xmlAttribute.printPosition()).thenReturn("unknown");
         assertTrue(validator.validates(mergingReport, xmlAttribute, "0x00020001"));
         assertFalse(mergingReport.hasErrors());
@@ -139,7 +140,7 @@ public class ManifestModelTest extends TestCase {
         MockLog mockLog = new MockLog();
 
         MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
-        when(xmlAttribute.getId()).thenReturn(AndroidManifest.ATTRIBUTE_GLESVERSION);
+        when(xmlAttribute.getId()).thenReturn(new NodeKey(AndroidManifest.ATTRIBUTE_GLESVERSION));
         when(xmlAttribute.printPosition()).thenReturn("unknown");
         assertFalse(validator.validates(mergingReport, xmlAttribute, "0xFFFFFFFF"));
         assertTrue(mergingReport.hasErrors());

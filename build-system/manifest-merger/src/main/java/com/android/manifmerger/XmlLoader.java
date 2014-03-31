@@ -19,6 +19,8 @@ package com.android.manifmerger;
 import com.android.utils.PositionXmlParser;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.BufferedInputStream;
@@ -48,6 +50,8 @@ public final class XmlLoader {
          * @return the human and machine readable source location.
          */
         String print(boolean shortFormat);
+
+        Node toXml(Document document);
     }
 
     private XmlLoader() {}
@@ -107,6 +111,14 @@ public final class XmlLoader {
         @Override
         public String print(boolean shortFormat) {
             return "file:" + (shortFormat ? mFile.getName() : mFile.getPath());
+        }
+
+        @Override
+        public Node toXml(Document document) {
+            Element location = document.createElement("source");
+            location.setAttribute("scheme", "file://");
+            location.setAttribute("value", mFile.getAbsolutePath());
+            return location;
         }
     }
 }

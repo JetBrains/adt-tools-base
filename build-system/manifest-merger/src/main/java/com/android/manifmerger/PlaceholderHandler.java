@@ -86,7 +86,7 @@ public class PlaceholderHandler {
                     // record the attribute set
                     mergingReportBuilder.getActionRecorder().recordAttributeAction(
                             xmlAttribute,
-                            ActionRecorder.ActionType.INJECTED,
+                            Actions.ActionType.INJECTED,
                             null /* attributeOperationType */);
                 }
             }
