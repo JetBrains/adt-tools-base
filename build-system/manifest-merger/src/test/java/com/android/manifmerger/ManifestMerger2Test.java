@@ -27,12 +27,10 @@ import com.google.common.base.Strings;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -158,38 +156,31 @@ public class ManifestMerger2Test extends ManifestMergerTest {
         MergingReport mergeReport = invoker.merge();
 
 
-        mergeReport.log(stdLogger);
-        if (mergeReport.getMergedDocument().isPresent()) {
-            XmlDocument actualResult = mergeReport.getMergedDocument().get();
-            actualResult.write(byteArrayOutputStream);
-            stdLogger.info(byteArrayOutputStream.toString());
-        }
-
         // this is obviously quite hacky, refine once merge output is better defined.
         boolean notExpectingError = !isExpectingError(testFiles.getExpectedErrors());
-
+        mergeReport.log(stdLogger);
         if (mergeReport.getMergedDocument().isPresent()) {
 
-            XmlDocument expectedResult = TestUtils.xmlDocumentFromString(
-                    new TestUtils.TestSourceLocation(getClass(), testFiles.getMain().getName()),
-                    testFiles.getExpectedResult());
-
             XmlDocument actualResult = mergeReport.getMergedDocument().get();
+            String prettyResult = actualResult.prettyPrint();
+            stdLogger.info(prettyResult);
 
-            // saves the result to the external file for easier human parsing.
-            OutputStream fos = null;
-            try {
-                fos = new BufferedOutputStream(new FileOutputStream(testFiles.getActualResult()));
-                actualResult.write(fos);
-            } finally {
-                if (fos != null)
-                    fos.close();
+            if (testFiles.getActualResult() != null) {
+                FileWriter writer = new FileWriter(testFiles.getActualResult());
+                try {
+                    writer.append(prettyResult);
+                } finally {
+                    writer.close();
+                }
             }
 
             if (!notExpectingError) {
                 fail("Did not get expected error : " + testFiles.getExpectedErrors());
             }
 
+            XmlDocument expectedResult = TestUtils.xmlDocumentFromString(
+                    new TestUtils.TestSourceLocation(getClass(), testFiles.getMain().getName()),
+                    testFiles.getExpectedResult());
             Optional<String> comparingMessage =
                     expectedResult.compareTo(actualResult);
 

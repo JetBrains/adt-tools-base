@@ -9,6 +9,7 @@ archivesBaseName = 'manifest-merger'
 dependencies {
     compile project(':common')
     compile project(':sdklib')
+    compile project(':sdk-common')
     compile 'kxml2:kxml2:2.3.0'
 
     testCompile project(':sdklib').sourceSets.test.output
