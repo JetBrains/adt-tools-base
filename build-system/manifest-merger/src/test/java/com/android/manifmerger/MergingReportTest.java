@@ -114,7 +114,7 @@ public class MergingReportTest extends TestCase {
         Mockito.verify(mLoggerMock).info("merging info");
         Mockito.verify(mLoggerMock).warning("something weird happened");
         Mockito.verify(mLoggerMock).error(null /* throwable */, "something bad happened");
-        Mockito.verify(mLoggerMock).info(ActionRecorder.HEADER);
+        Mockito.verify(mLoggerMock).info(Actions.HEADER);
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }
 

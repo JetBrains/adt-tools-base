@@ -18,6 +18,7 @@ package com.android.manifmerger;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.concurrency.Immutable;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
@@ -33,7 +34,7 @@ public abstract class XmlNode {
     /**
      * Returns an unique id within the manifest file for the element.
      */
-    public abstract String getId();
+    public abstract NodeKey getId();
 
     /**
      * Returns the element's position
@@ -68,6 +69,11 @@ public abstract class XmlNode {
          * @param withValue the new attribute's value.
          */
         void addToNode(Element to, String withValue);
+
+        /**
+         * Persist itself inside a {@link org.w3c.dom.Element}
+         */
+        void persistTo(Element node);
     }
 
     /**
@@ -130,6 +136,11 @@ public abstract class XmlNode {
         public String toString() {
             return mName;
         }
+
+        @Override
+        public void persistTo(Element node) {
+            node.setAttribute("name", mName);
+        }
     }
 
     /**
@@ -182,6 +193,46 @@ public abstract class XmlNode {
         @Override
         public String toString() {
             return mPrefix + ":" + mLocalName;
+        }
+
+        @Override
+        public void persistTo(Element node) {
+            node.setAttribute("prefix", mPrefix);
+            node.setAttribute("local-name", mLocalName);
+            node.setAttribute("namespace-uri", mNamespaceURI);
+        }
+    }
+
+    /**
+     * A xml element or attribute key.
+     */
+    @Immutable
+    public static class NodeKey {
+
+        @NonNull
+        private final String mKey;
+
+        NodeKey(@NonNull String key) {
+            mKey = key;
+        }
+
+        public static NodeKey fromXml(Element element) {
+            return new OrphanXmlElement(element).getId();
+        }
+
+        @Override
+        public String toString() {
+            return mKey;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return (o != null && o instanceof NodeKey && ((NodeKey) o).mKey.equals(this.mKey));
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(mKey);
         }
     }
 }

@@ -22,7 +22,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.android.SdkConstants;
-import com.android.sdklib.mock.MockLog;
 import com.android.utils.ILogger;
 import com.android.xml.AndroidManifest;
 import com.google.common.collect.ImmutableList;
@@ -78,7 +77,7 @@ public class ElementsTrimmerTest extends TestCase {
         ElementsTrimmer.trim(xmlDocument, mergingReport);
         assertFalse(mergingReport.hasErrors());
         Mockito.verifyZeroInteractions(mILogger);
-        assertEquals(0, mergingReport.getActionRecorder().build().getAllRecords().size());
+        assertEquals(0, mergingReport.getActionRecorder().build().getNodeKeys().size());
     }
 
 
@@ -105,7 +104,7 @@ public class ElementsTrimmerTest extends TestCase {
         ElementsTrimmer.trim(xmlDocument, mergingReport);
         assertFalse(mergingReport.hasErrors());
         Mockito.verifyZeroInteractions(mILogger);
-        assertEquals(0, mergingReport.getActionRecorder().build().getAllRecords().size());
+        assertEquals(0, mergingReport.getActionRecorder().build().getNodeKeys().size());
     }
 
 
@@ -316,7 +315,7 @@ public class ElementsTrimmerTest extends TestCase {
                 new TestUtils.TestSourceLocation(
                         getClass(), "testUsesFeatureSplit"), input);
 
-        ActionRecorder.Builder mockActionRecorder = Mockito.mock(ActionRecorder.Builder.class);
+        ActionRecorder mockActionRecorder = Mockito.mock(ActionRecorder.class);
         MergingReport.Builder mockReport = Mockito.mock(MergingReport.Builder.class);
         when(mockReport.getActionRecorder()).thenReturn(mockActionRecorder);
         ElementsTrimmer.trim(xmlDocument, mockReport);
@@ -328,7 +327,7 @@ public class ElementsTrimmerTest extends TestCase {
 
         // verify the action was recorded.
         verify(mockActionRecorder).recordAttributeAction(any(XmlAttribute.class),
-                eq(ActionRecorder.ActionType.REJECTED), (AttributeOperationType) eq(null));
+                eq(Actions.ActionType.REJECTED), (AttributeOperationType) eq(null));
 
         for (int i = 0; i < elementsByTagName.getLength(); i++) {
             NamedNodeMap attributes = elementsByTagName.item(i).getAttributes();
@@ -358,7 +357,7 @@ public class ElementsTrimmerTest extends TestCase {
                 new TestUtils.TestSourceLocation(
                         getClass(), "testUsesFeatureSplit"), input);
 
-        ActionRecorder.Builder mockActionRecorder = Mockito.mock(ActionRecorder.Builder.class);
+        ActionRecorder mockActionRecorder = Mockito.mock(ActionRecorder.class);
         MergingReport.Builder mockReport = Mockito.mock(MergingReport.Builder.class);
         when(mockReport.getActionRecorder()).thenReturn(mockActionRecorder);
         ElementsTrimmer.trim(xmlDocument, mockReport);
@@ -370,7 +369,7 @@ public class ElementsTrimmerTest extends TestCase {
 
         // verify the action was recorded.
         verify(mockActionRecorder).recordNodeAction(any(XmlElement.class),
-                eq(ActionRecorder.ActionType.REJECTED));
+                eq(Actions.ActionType.REJECTED));
 
         for (int i = 0; i < elementsByTagName.getLength(); i++) {
             NamedNodeMap attributes = elementsByTagName.item(i).getAttributes();
@@ -398,14 +397,12 @@ public class ElementsTrimmerTest extends TestCase {
             MergingReport.Builder mergingReport,
             int expectedActionsNumber) {
 
-        ActionRecorder actionRecorder = mergingReport.getActionRecorder().build();
-        assertEquals(expectedActionsNumber, actionRecorder.getAllRecords().size());
-        for (int i = 0; i < expectedActionsNumber; i++) {
-            ActionRecorder.DecisionTreeRecord decisionTreeRecord = actionRecorder.getAllRecords()
-                    .values().asList().get(i);
-            assertEquals(1, decisionTreeRecord.getNodeRecords().size());
-            assertEquals(ActionRecorder.ActionType.REJECTED,
-                    decisionTreeRecord.getNodeRecords().get(0).getActionType());
+        Actions actions = mergingReport.build().getActions();
+        assertEquals(expectedActionsNumber, actions.getNodeKeys().size());
+        for (XmlNode.NodeKey nodeKey : actions.getNodeKeys()) {
+            assertEquals(1, actions.getNodeRecords(nodeKey).size());
+            assertEquals(Actions.ActionType.REJECTED,
+                    actions.getNodeRecords(nodeKey).get(0).getActionType());
         }
     }
 

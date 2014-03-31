@@ -16,6 +16,8 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.XmlNode.NodeKey;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.utils.SdkUtils;
@@ -91,7 +93,7 @@ public class PreValidator {
         checkSelectorPresence(mergingReport, xmlElement);
 
         // create a temporary hash map of children indexed by key to ensure key uniqueness.
-        Map<String, XmlElement> childrenKeys = new HashMap<String, XmlElement>();
+        Map<NodeKey, XmlElement> childrenKeys = new HashMap<NodeKey, XmlElement>();
         for (XmlElement childElement : xmlElement.getMergeableElements()) {
 
             // if this element is tagged with 'tools:node=removeAll', ensure it has no other
