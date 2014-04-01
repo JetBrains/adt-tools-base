@@ -1,0 +1,13 @@
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "19.0.2"
+}
+
+//
+// A basic Android application split over a library and a main project.
+//
+dependencies {
+    compile project(':lib1')
+}
