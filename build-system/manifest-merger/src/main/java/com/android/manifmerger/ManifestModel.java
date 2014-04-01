@@ -538,7 +538,12 @@ class ManifestModel {
                 AttributeModel.newModel("targetSdkVersion")
                         .setOnReadValidator(new AttributeModel.IntegerValueValidator())
                         .setMergingPolicy(AttributeModel.NUMERICAL_SUPERIORITY_POLICY)
-        );
+        ),
+
+        /**
+         * Custom tag for any application specific element
+         */
+        CUSTOM(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER);
 
 
         private final MergeType mMergeType;
@@ -608,9 +613,14 @@ class ManifestModel {
         static NodeTypes fromXmlSimpleName(String xmlSimpleName) {
             String constantName = SdkUtils.xmlNameToConstantName(xmlSimpleName);
 
-            // TODO: is legal to have non standard xml elements in manifest files ? if yes
-            // consider adding a CUSTOM NodeTypes and not generate exception here.
-            return NodeTypes.valueOf(constantName);
+            try {
+                return NodeTypes.valueOf(constantName);
+            } catch (IllegalArgumentException e) {
+                // if this element name is not a known tag, we categorize it as 'custom' which will
+                // be simply merged. It will prevent us from catching simple spelling mistakes but
+                // extensibility is a must have feature.
+                return NodeTypes.CUSTOM;
+            }
         }
 
         MergeType getMergeType() {
