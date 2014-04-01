@@ -35,6 +35,7 @@ public interface BuildType extends BaseConfig {
      *
      * @return the name of the build type.
      */
+    @Override
     @NonNull
     String getName();
 
