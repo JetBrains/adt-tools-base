@@ -18,6 +18,8 @@ package com.android.ide.common.rendering.api;
 
 import com.android.resources.ResourceType;
 
+import java.util.List;
+
 /**
  * A class containing all the resources needed to do a rendering.
  * <p/>
@@ -43,9 +45,51 @@ public class RenderResources {
     /**
      * Returns the {@link StyleResourceValue} representing the current theme.
      * @return the theme or null if there is no current theme.
+     * @deprecated Use {@link #getDefaultTheme()} or {@link #getAllThemes()}
      */
+    @Deprecated
     public StyleResourceValue getCurrentTheme() {
+        // Default theme is same as the current theme was on older versions of the API.
+        // With the introduction of applyStyle() "current" theme makes little sense.
+        // Hence, simply return defaultTheme.
+        return getDefaultTheme();
+    }
+
+    /**
+     * Returns the {@link StyleResourceValue} representing the default theme.
+     */
+    public StyleResourceValue getDefaultTheme() {
         return null;
+    }
+
+    /**
+     * Use this theme to resolve resources.
+     * <p/>
+     * Remember to call {@link #clearStyles()} to clear the applied styles, so the default theme
+     * may be restored.
+     *
+     * @param theme The style to use for resource resolution in addition to the the default theme
+     *      and the styles applied earlier. If null, the operation is a no-op.
+     * @param useAsPrimary If true, the {@code theme} is used first to resolve attributes. If
+     *      false, the theme is used if the resource cannot be resolved using the default theme and
+     *      all the themes that have been applied prior to this call.
+     */
+    public void applyStyle(StyleResourceValue theme, boolean useAsPrimary) {
+    }
+
+    /**
+     * Clear all the themes applied with {@link #applyStyle(StyleResourceValue, boolean)}
+     */
+    public void clearStyles() {
+    }
+
+    /**
+     * Returns a list of {@link StyleResourceValue} containing a list of themes to be used for
+     * resolving resources. The order of the themes in the list specifies the order in which they
+     * should be used to resolve resources.
+     */
+    public List<StyleResourceValue> getAllThemes() {
+       return null;
     }
 
     /**
@@ -88,8 +132,9 @@ public class RenderResources {
     }
 
     /**
-     * Returns the {@link ResourceValue} matching a given name in the current theme. If the
-     * item is not directly available in the theme, the method looks in its parent theme.
+     * Returns the {@link ResourceValue} matching a given name in the all themes returned by
+     * {@link #getAllThemes()}. If the item is not directly available in the a theme, its parent
+     * theme is used before checking the next theme from the list.
      *
      * @param itemName the name of the item to search for.
      * @return the {@link ResourceValue} object or <code>null</code>
@@ -98,28 +143,40 @@ public class RenderResources {
      */
     @Deprecated
     public ResourceValue findItemInTheme(String itemName) {
-        StyleResourceValue currentTheme = getCurrentTheme();
-        if (currentTheme != null) {
-            return findItemInStyle(currentTheme, itemName);
+        List<StyleResourceValue> allThemes = getAllThemes();
+        if (allThemes == null) {
+            return null;
         }
-
+        for (StyleResourceValue theme : allThemes) {
+            //noinspection deprecation
+            ResourceValue value = findItemInStyle(theme, itemName);
+            if (value != null) {
+                return value;
+            }
+        }
         return null;
     }
 
     /**
-     * Returns the {@link ResourceValue} matching a given attribute in the current theme. If the
-     * item is not directly available in the theme, the method looks in its parent theme.
+     * Returns the {@link ResourceValue} matching a given name in the all themes returned by
+     * {@link #getAllThemes()}. If the item is not directly available in the a theme, its parent
+     * theme is used before checking the next theme from the list.
      *
      * @param attrName the name of the attribute to search for.
      * @param isFrameworkAttr whether the attribute is a framework attribute
      * @return the {@link ResourceValue} object or <code>null</code>
      */
     public ResourceValue findItemInTheme(String attrName, boolean isFrameworkAttr) {
-        StyleResourceValue currentTheme = getCurrentTheme();
-        if (currentTheme != null) {
-            return findItemInStyle(currentTheme, attrName, isFrameworkAttr);
+        List<StyleResourceValue> allThemes = getAllThemes();
+        if (allThemes == null) {
+            return null;
         }
-
+        for (StyleResourceValue theme : allThemes) {
+            ResourceValue value = findItemInStyle(theme, attrName, isFrameworkAttr);
+            if (value != null) {
+                return value;
+            }
+        }
         return null;
     }
 
