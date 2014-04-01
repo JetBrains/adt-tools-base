@@ -16,6 +16,9 @@
 
 package com.android.manifmerger;
 
+import static org.mockito.Mockito.when;
+
+import com.android.SdkConstants;
 import com.android.utils.ILogger;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -24,6 +27,9 @@ import junit.framework.TestCase;
 
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -62,6 +68,55 @@ public class XmlDocumentTest extends TestCase {
                         getClass(), "testMergeableElementsIdentification()"), input);
         ImmutableList<XmlElement> mergeableElements = xmlDocument.getRootNode().getMergeableElements();
         assertEquals(2, mergeableElements.size());
+    }
+
+    public void testNamespaceEnabledElements()
+            throws ParserConfigurationException, SAXException, IOException {
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <android:application android:label=\"@string/lib_name\" />\n"
+                + "\n"
+                + "    <android:activity android:name=\"activityOne\" />\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(
+                        getClass(), "testMergeableElementsIdentification()"), input);
+        ImmutableList<XmlElement> mergeableElements = xmlDocument.getRootNode().getMergeableElements();
+        assertEquals(2, mergeableElements.size());
+        assertEquals(ManifestModel.NodeTypes.APPLICATION, mergeableElements.get(0).getType());
+        assertEquals(ManifestModel.NodeTypes.ACTIVITY, mergeableElements.get(1).getType());
+    }
+
+    public void testMultipleNamespaceEnabledElements()
+            throws ParserConfigurationException, SAXException, IOException {
+        String input = ""
+                + "<android:manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <android:application android:label=\"@string/lib_name\" \n"
+                + "         tools:node=\"replace\" />\n"
+                + "    <acme:custom-tag android:label=\"@string/lib_name\" />\n"
+                + "    <acme:application acme:label=\"@string/lib_name\" />\n"
+                + "\n"
+                + "</android:manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(
+                        getClass(), "testMergeableElementsIdentification()"), input);
+        ImmutableList<XmlElement> mergeableElements = xmlDocument.getRootNode().getMergeableElements();
+        assertEquals(3, mergeableElements.size());
+        assertEquals(ManifestModel.NodeTypes.APPLICATION, mergeableElements.get(0).getType());
+        assertEquals(ManifestModel.NodeTypes.CUSTOM, mergeableElements.get(1).getType());
+        assertEquals(ManifestModel.NodeTypes.CUSTOM, mergeableElements.get(2).getType());
+
     }
 
     public void testGetXmlNodeByTypeAndKey()
@@ -120,7 +175,6 @@ public class XmlDocumentTest extends TestCase {
                 .getRootNode().getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,
                         "com.example.lib3.activityOne");
         assertTrue(activityOne.isPresent());
-
     }
 
     public void testDiff1()
@@ -225,4 +279,75 @@ public class XmlDocumentTest extends TestCase {
                 new TestUtils.TestSourceLocation(getClass(), "testWriting()"), input);
         assertEquals(input, xmlDocument.prettyPrint());
     }
+
+    public void testCustomElements()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <fantasy android:name=\"fantasyOne\" \n"
+                + "         no-ns-attribute=\"no-ns\" >\n"
+                + "    </fantasy>\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <fantasy android:name=\"fantasyTwo\" \n"
+                + "         no-ns-attribute=\"no-ns\" >\n"
+                + "    </fantasy>\n"
+                + "    <acme:another acme:name=\"anotherOne\" \n"
+                + "         acme:ns-attribute=\"ns-value\" >\n"
+                + "        <some-child acme:child-attr=\"foo\" /> \n"
+                + "    </acme:another>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        Logger.getAnonymousLogger().info(mergedDocument.get().prettyPrint());
+        XmlElement rootNode = mergedDocument.get().getRootNode();
+        assertTrue(rootNode.getNodeByTypeAndKey(
+                ManifestModel.NodeTypes.APPLICATION, null).isPresent());
+        Optional<XmlElement> activityOne = rootNode
+                .getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,
+                        "com.example.lib3.activityOne");
+        assertTrue(activityOne.isPresent());
+
+        boolean foundFantasyOne = false;
+        boolean foundFantasyTwo = false;
+        boolean foundAnother = false;
+        NodeList childNodes = rootNode.getXml().getChildNodes();
+        for (int i =0; i < childNodes.getLength(); i++) {
+            Node item = childNodes.item(i);
+            if (item.getNodeName().equals("fantasy")) {
+                String name = ((Element) item).getAttributeNS(SdkConstants.ANDROID_URI, "name");
+                if (name.equals("fantasyOne"))
+                    foundFantasyOne = true;
+                if (name.equals("fantasyTwo"))
+                    foundFantasyTwo = true;
+            }
+            if (item.getNodeName().equals("acme:another")) {
+                foundAnother = true;
+            }
+        }
+        assertTrue(foundAnother);
+        assertTrue(foundFantasyOne);
+        assertTrue(foundFantasyTwo);
+    }
+
 }
