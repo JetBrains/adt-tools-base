@@ -102,7 +102,7 @@ public abstract class BaseVariantData {
     @NonNull
     public abstract String getDescription();
 
-    @Nullable
+    @NonNull
     public String getPackageName() {
         return variantConfiguration.getPackageName();
     }
