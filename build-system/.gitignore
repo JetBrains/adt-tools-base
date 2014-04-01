@@ -16,6 +16,7 @@ tests/libProguardJarDep/*/build
 tests/libProguardLibDep/*/build
 tests/libsTest/*/build
 tests/multiproject/*/build
+tests/localAarTest/*/build
 tests/localJars/*/build
 tests/ndkJniLib/*/build
 tests/packagingOptions/jars/*/build
