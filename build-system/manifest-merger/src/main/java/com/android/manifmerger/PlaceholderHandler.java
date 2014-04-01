@@ -80,14 +80,14 @@ public class PlaceholderHandler {
                                     xmlAttribute.printPosition(),
                                     matcher.group(2)));
                 } else {
-                    String attrValue = matcher.group(1) + placeholderValue + matcher.group(3);
-                    xmlAttribute.getXml().setValue(attrValue);
-
                     // record the attribute set
                     mergingReportBuilder.getActionRecorder().recordAttributeAction(
                             xmlAttribute,
                             Actions.ActionType.INJECTED,
                             null /* attributeOperationType */);
+
+                    String attrValue = matcher.group(1) + placeholderValue + matcher.group(3);
+                    xmlAttribute.getXml().setValue(attrValue);
                 }
             }
         }
