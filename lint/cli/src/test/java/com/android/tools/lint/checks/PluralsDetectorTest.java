@@ -40,7 +40,7 @@ public class PluralsDetectorTest extends AbstractCheckTest {
 
     public void test2() throws Exception {
         assertEquals(""
-                + "res/values-cs/plurals3.xml:3: Error: For locale \"cs\" the following quantities should also be defined: few [MissingQuantity]\n" +
+                + "res/values-cs/plurals3.xml:3: Error: For locale \"cs\" the following quantities should also be defined: few, many [MissingQuantity]\n" +
                 "  <plurals name=\"draft\">\n" +
                 "  ^\n" +
                 "res/values-zh-rCN/plurals3.xml:3: Warning: For language \"zh\" the following quantities are not relevant: one [UnusedQuantity]\n" +
@@ -65,5 +65,20 @@ public class PluralsDetectorTest extends AbstractCheckTest {
 
                 lintProject(
                         "res/values/plurals4.xml"));
+    }
+
+    public void testPolish() throws Exception {
+        // Test for https://code.google.com/p/android/issues/detail?id=67803
+        assertEquals(""
+                        + "res/values-pl/plurals5.xml:3: Error: For locale \"pl\" the following quantities should also be defined: many [MissingQuantity]\n"
+                        + "    <plurals name=\"my_plural\">\n"
+                        + "    ^\n"
+                        + "res/values-pl/plurals5.xml:3: Warning: For language \"pl\" the following quantities are not relevant: zero [UnusedQuantity]\n"
+                        + "    <plurals name=\"my_plural\">\n"
+                        + "    ^\n"
+                        + "1 errors, 1 warnings\n",
+
+                lintProject(
+                        "res/values/plurals5.xml=>res/values-pl/plurals5.xml"));
     }
 }
