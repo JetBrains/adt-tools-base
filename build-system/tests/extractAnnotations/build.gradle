@@ -1,0 +1,26 @@
+buildscript {
+    repositories {
+        maven { url '../../../../../out/host/gradle/repo' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.9.3-SNAPSHOT'
+    }
+}
+
+apply plugin: 'android-library'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'com.android.support:support-annotations:+'
+    compile 'com.android.support:support-v4:+'
+}
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "19.0.2"
+}
+
+defaultTasks 'extractDebugAnnotations'

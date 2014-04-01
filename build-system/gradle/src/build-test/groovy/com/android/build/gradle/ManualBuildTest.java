@@ -17,11 +17,19 @@
 package com.android.build.gradle;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+import java.util.jar.JarInputStream;
+import java.util.zip.ZipEntry;
 
 import javax.imageio.ImageIO;
 
@@ -36,7 +44,6 @@ public class ManualBuildTest extends BuildTest {
     private static final int RED = 0xFFFF0000;
     private static final int GREEN = 0xFF00FF00;
     private static final int BLUE = 0xFF0000FF;
-
 
     public void testOverlay1Content() throws Exception {
         File project = buildProject("overlay1", BasePlugin.GRADLE_MIN_VERSION);
@@ -132,6 +139,95 @@ public class ManualBuildTest extends BuildTest {
         checkFile(releaseFileOutput, "proguard.txt", new String[]{"A", "B", "C"});
     }
 
+    public void testAnnotations() throws Exception {
+        File project = new File(testDir, "extractAnnotations");
+        File debugFileOutput = new File(project, "build/bundles/debug");
+
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
+                project, "clean", "extractDebugAnnotations");
+        File file = new File(debugFileOutput, "annotations.zip");
+
+        Map<String,String> map = Maps.newHashMap();
+        //noinspection SpellCheckingInspection
+        map.put("com/android/tests/extractannotations/annotations.xml", ""
+                + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<root>\n"
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest ExtractTest(int, java.lang.String) 0\">\n"
+                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
+                + "  </item>\n"
+                // This item should be removed when I start supporting @hide
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest int getHiddenMethod()\">\n"
+                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
+                + "  </item>\n"
+                // This item should be removed when I start supporting @hide
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest int getPrivate()\">\n"
+                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
+                + "  </item>\n"
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest int getVisibility()\">\n"
+                + "    <annotation name=\"android.support.annotation.IntDef\">\n"
+                + "      <val name=\"value\" val=\"{com.android.tests.extractannotations.ExtractTest.VISIBLE, com.android.tests.extractannotations.ExtractTest.INVISIBLE, com.android.tests.extractannotations.ExtractTest.GONE, 5, 17, com.android.tests.extractannotations.Constants.CONSTANT_1}\" />\n"
+                + "    </annotation>\n"
+                + "  </item>\n"
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest int resourceTypeMethod(int, int)\">\n"
+                + "    <annotation name=\"android.support.annotation.StringRes\" />\n"
+                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
+                + "  </item>\n"
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest int resourceTypeMethod(int, int) 0\">\n"
+                + "    <annotation name=\"android.support.annotation.DrawableRes\" />\n"
+                + "  </item>\n"
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest int resourceTypeMethod(int, int) 1\">\n"
+                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
+                + "    <annotation name=\"android.support.annotation.ColorRes\" />\n"
+                + "  </item>\n"
+                // This item should be removed when I start supporting @hide
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest java.lang.Object getPackagePrivate()\">\n"
+                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
+                + "  </item>\n"
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest java.lang.String getStringMode(int)\">\n"
+                + "    <annotation name=\"android.support.annotation.StringDef\">\n"
+                + "      <val name=\"value\" val=\"{com.android.tests.extractannotations.ExtractTest.STRING_1, com.android.tests.extractannotations.ExtractTest.STRING_2, &quot;literalValue&quot;, &quot;concatenated&quot;}\" />\n"
+                + "    </annotation>\n"
+                + "  </item>\n"
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest java.lang.String getStringMode(int) 0\">\n"
+                + "    <annotation name=\"android.support.annotation.IntDef\">\n"
+                + "      <val name=\"value\" val=\"{com.android.tests.extractannotations.ExtractTest.VISIBLE, com.android.tests.extractannotations.ExtractTest.INVISIBLE, com.android.tests.extractannotations.ExtractTest.GONE, 5, 17, com.android.tests.extractannotations.Constants.CONSTANT_1}\" />\n"
+                + "    </annotation>\n"
+                + "  </item>\n"
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest void checkForeignTypeDef(int) 0\">\n"
+                + "    <annotation name=\"android.support.annotation.IntDef\">\n"
+                + "      <val name=\"value\" val=\"{com.android.tests.extractannotations.Constants.CONSTANT_1, com.android.tests.extractannotations.Constants.CONSTANT_2}\" />\n"
+                + "      <val name=\"flag\" val=\"true\" />\n"
+                + "    </annotation>\n"
+                + "  </item>\n"
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest void resourceTypeMethodWithTypeArgs(java.util.Map&lt;java.lang.String,? extends java.lang.Number&gt;, T, int) 0\">\n"
+                + "    <annotation name=\"android.support.annotation.StringRes\" />\n"
+                + "  </item>\n"
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest void resourceTypeMethodWithTypeArgs(java.util.Map&lt;java.lang.String,? extends java.lang.Number&gt;, T, int) 1\">\n"
+                + "    <annotation name=\"android.support.annotation.DrawableRes\" />\n"
+                + "  </item>\n"
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest void resourceTypeMethodWithTypeArgs(java.util.Map&lt;java.lang.String,? extends java.lang.Number&gt;, T, int) 2\">\n"
+                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
+                + "  </item>\n"
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest void testMask(int) 0\">\n"
+                + "    <annotation name=\"android.support.annotation.IntDef\">\n"
+                + "      <val name=\"value\" val=\"{0, com.android.tests.extractannotations.Constants.FLAG_VALUE_1, com.android.tests.extractannotations.Constants.FLAG_VALUE_2}\" />\n"
+                + "      <val name=\"flag\" val=\"true\" />\n"
+                + "    </annotation>\n"
+                + "  </item>\n"
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest void testNonMask(int) 0\">\n"
+                + "    <annotation name=\"android.support.annotation.IntDef\">\n"
+                + "      <val name=\"value\" val=\"{0, com.android.tests.extractannotations.Constants.CONSTANT_1, com.android.tests.extractannotations.Constants.CONSTANT_3}\" />\n"
+                + "    </annotation>\n"
+                + "  </item>\n"
+                // This should be hidden when we start filtering out hidden classes on @hide!
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest.HiddenClass int getHiddenMember()\">\n"
+                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
+                + "  </item>\n"
+                + "</root>");
+
+        checkJar(file, map);
+    }
+
     public void test3rdPartyTests() throws Exception {
         // custom because we want to run deviceCheck even without devices, since we use
         // a fake DeviceProvider that doesn't use a device, but only record the calls made
@@ -162,5 +258,44 @@ public class ManualBuildTest extends BuildTest {
             assertTrue("File '" + f.getAbsolutePath() + "' does not contain: " + expectedContent,
                 contents.contains(expectedContent));
         }
+    }
+
+    private static void checkJar(File jar, Map<String, String> pathToContents)
+            throws IOException {
+        assertTrue("File '" + jar.getPath() + "' does not exist.", jar.isFile());
+        JarInputStream zis = null;
+        FileInputStream fis;
+        Set<String> notFound = Sets.newHashSet();
+        notFound.addAll(pathToContents.keySet());
+        fis = new FileInputStream(jar);
+        try {
+            zis = new JarInputStream(fis);
+
+            ZipEntry entry = zis.getNextEntry();
+            while (entry != null) {
+                String name = entry.getName();
+                String expected = pathToContents.get(name);
+                if (expected != null) {
+                    notFound.remove(name);
+                    if (!entry.isDirectory()) {
+                        byte[] bytes = ByteStreams.toByteArray(zis);
+                        if (bytes != null) {
+                            String contents = new String(bytes, Charsets.UTF_8).trim();
+                            assertEquals("Contents in " + name + " did not match",
+                                    expected, contents);
+                        }
+                    }
+                }
+                entry = zis.getNextEntry();
+            }
+        } finally {
+            fis.close();
+            if (zis != null) {
+                zis.close();
+            }
+        }
+
+        assertTrue("Did not find the following paths in the " + jar.getPath() + " file: " +
+            notFound, notFound.isEmpty());
     }
 }

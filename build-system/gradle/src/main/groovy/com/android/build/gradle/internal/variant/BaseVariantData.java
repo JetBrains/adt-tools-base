@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.StringHelper;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.tasks.CheckManifest;
@@ -32,6 +33,7 @@ import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.ProcessManifest;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.VariantConfiguration;
+import com.android.builder.model.SourceProvider;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.Task;
@@ -75,6 +77,7 @@ public abstract class BaseVariantData {
     public NdkCompile ndkCompileTask;
 
     private Object outputFile;
+    private Object[] javaSources;
 
     public Task assembleTask;
 
@@ -186,5 +189,35 @@ public abstract class BaseVariantData {
         }
 
         addJavaSourceFoldersToModel(generatedSourceFolders);
+    }
+
+    /**
+     * Computes the Java sources to use for compilation. This Object[] contains
+     * {@link org.gradle.api.file.FileCollection} and {@link File} instances
+     */
+    @NonNull
+    public Object[] getJavaSources() {
+        if (javaSources == null) {
+            // Build the list of source folders.
+            List<Object> sourceList = Lists.newArrayList();
+
+            // First the actual source folders.
+            List<SourceProvider> providers = variantConfiguration.getSortedSourceProviders();
+            for (SourceProvider provider : providers) {
+                sourceList.add(((AndroidSourceSet) provider).getJava());
+            }
+
+            // then all the generated src folders.
+            sourceList.add(processResourcesTask.getSourceOutputDir());
+            sourceList.add(generateBuildConfigTask.getSourceOutputDir());
+            sourceList.add(aidlCompileTask.getSourceOutputDir());
+            if (!variantConfiguration.getMergedFlavor().getRenderscriptNdkMode()) {
+                sourceList.add(renderscriptCompileTask.getSourceOutputDir());
+            }
+
+            javaSources = sourceList.toArray();
+        }
+
+        return javaSources;
     }
 }
