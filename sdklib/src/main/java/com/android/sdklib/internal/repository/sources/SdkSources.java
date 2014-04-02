@@ -148,6 +148,16 @@ public class SdkSources {
     }
 
     /**
+     * Returns true if there are sources for the given category.
+     */
+    public boolean hasSources(SdkSourceCategory category) {
+        synchronized (mSources) {
+            ArrayList<SdkSource> list = mSources.get(category);
+            return list != null && !list.isEmpty();
+        }
+    }
+
+    /**
      * Returns an array of the sources across all categories. This is never null.
      */
     public SdkSource[] getAllSources() {
