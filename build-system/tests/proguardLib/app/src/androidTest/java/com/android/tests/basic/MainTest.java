@@ -36,7 +36,7 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
     }
 
     public void testTextViewContent() {
-        assertEquals("1234", mTextView.getText());
+        assertEquals("1234", mTextView.getText().toString());
     }
 }
 
