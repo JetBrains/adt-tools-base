@@ -37,7 +37,7 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
 
     @MediumTest
     public void testFirstPick() {
-        assertEquals("bar", mTextView.getText());
+        assertEquals("bar", mTextView.getText().toString());
     }
 }
 
