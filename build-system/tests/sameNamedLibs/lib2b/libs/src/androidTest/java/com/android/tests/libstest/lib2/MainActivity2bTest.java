@@ -76,11 +76,11 @@ public class MainActivity2bTest extends ActivityInstrumentationTestCase2<MainAct
 
     @MediumTest
     public void testAndroidStrings() {
-        assertEquals("SUCCESS-LIB2b", mTextView1.getText());
+        assertEquals("SUCCESS-LIB2b", mTextView1.getText().toString());
     }
 
     @MediumTest
     public void testJavaStrings() {
-        assertEquals("SUCCESS-LIB2b", mTextView2.getText());
+        assertEquals("SUCCESS-LIB2b", mTextView2.getText().toString());
     }
 }

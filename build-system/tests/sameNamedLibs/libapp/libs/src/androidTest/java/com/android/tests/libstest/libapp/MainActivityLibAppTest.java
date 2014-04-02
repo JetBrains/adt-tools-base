@@ -76,11 +76,11 @@ public class MainActivityLibAppTest extends ActivityInstrumentationTestCase2<Mai
 
     @MediumTest
     public void testAndroidStrings() {
-        assertEquals("SUCCESS-LIBAPP", mTextView1.getText());
+        assertEquals("SUCCESS-LIBAPP", mTextView1.getText().toString());
     }
 
     @MediumTest
     public void testJavaStrings() {
-        assertEquals("SUCCESS-LIBAPP", mTextView2.getText());
+        assertEquals("SUCCESS-LIBAPP", mTextView2.getText().toString());
     }
 }

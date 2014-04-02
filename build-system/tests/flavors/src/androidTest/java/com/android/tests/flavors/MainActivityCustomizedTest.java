@@ -79,6 +79,6 @@ public class MainActivityCustomizedTest extends ActivityInstrumentationTestCase2
 
     @MediumTest
     public void testCodeOverlay() {
-        assertEquals(testString, mCodeOverlay3.getText());
+        assertEquals(testString, mCodeOverlay3.getText().toString());
     }
 }

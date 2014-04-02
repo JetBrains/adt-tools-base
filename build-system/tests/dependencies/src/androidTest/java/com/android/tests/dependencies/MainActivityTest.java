@@ -38,7 +38,7 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
 
     @SmallTest
     public void testPackageOnly() {
-        assertEquals("Foo-helper", mTextView.getText());
+        assertEquals("Foo-helper", mTextView.getText().toString());
     }
 
     public void testProvided() {
