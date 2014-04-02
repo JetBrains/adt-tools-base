@@ -49,6 +49,9 @@ public class MergeResources extends IncrementalTask {
     @Input
     boolean useAaptCruncher
 
+    @Input
+    boolean insertSourceMarkers
+
     // actual inputs
     List<ResourceSet> inputResourceSets
 
@@ -84,7 +87,7 @@ public class MergeResources extends IncrementalTask {
             // get the merged set and write it down.
             MergedResourceWriter writer = new MergedResourceWriter(
                     destinationDir, getProcess9Patch() ? getCruncher() : null)
-            writer.setInsertSourceMarkers(builder.isInsertSourceMarkers())
+            writer.setInsertSourceMarkers(getInsertSourceMarkers())
 
             merger.mergeData(writer, false /*doCleanUp*/)
 
@@ -143,7 +146,7 @@ public class MergeResources extends IncrementalTask {
 
             MergedResourceWriter writer = new MergedResourceWriter(
                     getOutputDir(), getProcess9Patch() ? getCruncher() : null)
-            writer.setInsertSourceMarkers(builder.isInsertSourceMarkers())
+            writer.setInsertSourceMarkers(getInsertSourceMarkers())
             merger.mergeData(writer, false /*doCleanUp*/)
             // No exception? Write the known state.
             merger.writeBlobTo(getIncrementalFolder(), writer)

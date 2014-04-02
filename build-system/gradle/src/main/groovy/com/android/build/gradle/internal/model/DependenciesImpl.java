@@ -102,7 +102,10 @@ public class DependenciesImpl implements Dependencies, Serializable {
         }
 
         if (variantData.getVariantConfiguration().getMergedFlavor().getRenderscriptSupportMode()) {
-            jars.add(basePlugin.getAndroidBuilder(variantData).getRenderScriptSupportJar());
+            File supportJar = basePlugin.getAndroidBuilder().getRenderScriptSupportJar();
+            if (supportJar != null) {
+                jars.add(supportJar);
+            }
         }
 
         return new DependenciesImpl(libraries, jars, projects);

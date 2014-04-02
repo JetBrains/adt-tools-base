@@ -16,6 +16,7 @@
 package com.android.build.gradle.internal.tasks
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.test.report.TestReport
+import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.builder.testing.SimpleTestRunner
 import com.android.builder.testing.TestRunner
@@ -37,6 +38,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
     String flavorName
 
     DeviceProvider deviceProvider
+    BaseVariantData variant
 
     boolean ignoreFailures
     boolean testFailed

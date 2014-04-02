@@ -15,28 +15,24 @@
  */
 
 package com.android.build.gradle.internal.tasks
-
-import com.android.build.gradle.BaseExtension
+import com.android.build.gradle.BasePlugin
+import com.android.build.gradle.internal.SdkHandler
 import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
-
 /**
+ * Basic task loading the SDK data.
  */
-class PreBuildTask extends DefaultTask {
+class PrepareSdkTask extends DefaultTask {
 
-    BaseExtension extension
-
-    @Input
-    String getVersion() {
-        return extension.buildToolsRevision.toShortString()
-    }
+    BasePlugin plugin
 
     @TaskAction
-    void preBuild() {
-        // check on the build tools version.
-        if (extension.buildToolsRevision.major < 19) {
-            throw new RuntimeException("Build Tools Revision 19.0.0+ is required.")
-        }
+    void prepareSdk() {
+
+        SdkHandler sdkHandler = plugin.getSdkHandler()
+
+        sdkHandler.initTarget(
+                plugin.extension.getCompileSdkVersion(),
+                plugin.extension.buildToolsRevision)
     }
 }
