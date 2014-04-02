@@ -38,9 +38,9 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
     @MediumTest
     public void testStagingText() {
         if ("f1".equals(BuildConfig.FLAVOR)) {
-            assertEquals("F1-Staging text", mTextView.getText());
+            assertEquals("F1-Staging text", mTextView.getText().toString());
         } else {
-            assertEquals("default text", mTextView.getText());
+            assertEquals("default text", mTextView.getText().toString());
         }
     }
 }
