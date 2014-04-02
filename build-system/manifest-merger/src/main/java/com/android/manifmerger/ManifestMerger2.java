@@ -165,9 +165,14 @@ public class ManifestMerger2 {
             mergingReportBuilder.addError("Validation failed, exiting");
             return Optional.absent();
         }
-        Optional<XmlDocument> result = xmlDocument.isPresent()
-                ? xmlDocument.get().merge(lowerPriorityDocument, mergingReportBuilder)
-                : Optional.of(lowerPriorityDocument);
+        Optional<XmlDocument> result;
+        if (xmlDocument.isPresent()) {
+            result = xmlDocument.get().merge(lowerPriorityDocument, mergingReportBuilder);
+        } else {
+            mergingReportBuilder.getActionRecorder().recordDefaultNodeAction(
+                    lowerPriorityDocument.getRootNode());
+            result = Optional.of(lowerPriorityDocument);
+        }
 
         // if requested, dump each intermediary merging stage into the report.
         if (mOptionalFeatures.contains(Invoker.Feature.KEEP_INTERMEDIARY_STAGES)
@@ -478,6 +483,12 @@ public class ManifestMerger2 {
          */
         public MergingReport merge() throws MergeFailureException {
 
+            // provide some free placeholders values.
+            ImmutableMap<SystemProperty, String> systemProperties = mSystemProperties.build();
+            if (systemProperties.containsKey(SystemProperty.PACKAGE)) {
+                mPlaceHolders.put("packageName", systemProperties.get(SystemProperty.PACKAGE));
+            }
+
             ManifestMerger2 manifestMerger =
                     new ManifestMerger2(
                             mLogger,
@@ -487,7 +498,7 @@ public class ManifestMerger2 {
                             mFeaturesBuilder.build(),
                             new MapBasedKeyBasedValueResolver<String>(mPlaceHolders.build()),
                             new MapBasedKeyBasedValueResolver<SystemProperty>(
-                                    mSystemProperties.build()));
+                                    systemProperties));
             return manifestMerger.merge();
         }
     }

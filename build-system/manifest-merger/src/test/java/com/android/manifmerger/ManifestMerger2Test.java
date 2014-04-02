@@ -47,6 +47,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "00_noop",
             "03_inject_attributes.xml",
             "05_inject_package.xml",
+            "05_inject_package_placeholder.xml",
             "06_inject_attributes_with_specific_prefix.xml",
             "10_activity_merge",
             "11_activity_dup",
@@ -133,7 +134,6 @@ public class ManifestMerger2Test extends ManifestMergerTest {
     @Override
     void processTestFiles(TestFiles testFiles) throws Exception {
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         StdLogger stdLogger = new StdLogger(StdLogger.Level.VERBOSE);
         ManifestMerger2.Invoker invoker = ManifestMerger2.newInvoker(testFiles.getMain(),
                 stdLogger)
