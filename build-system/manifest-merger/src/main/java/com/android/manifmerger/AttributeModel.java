@@ -356,7 +356,7 @@ class AttributeModel {
                 @NonNull XmlAttribute attribute, @NonNull String value) {
 
             Optional<XmlElement> referencedElement = attribute.getOwnerElement().getDocument()
-                    .getNodeByTypeAndKey(referencedType, value);
+                    .getByTypeAndKey(referencedType, value);
             if (!referencedElement.isPresent()) {
                 mergingReport.addError(String.format(
                         "Referenced element %1$s=%2$s, in element %3$s declared at %4$s "

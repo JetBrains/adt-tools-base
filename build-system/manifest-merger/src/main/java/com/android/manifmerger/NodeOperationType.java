@@ -98,6 +98,12 @@ public enum NodeOperationType implements ConvertibleName {
         return SdkUtils.constantNameToCamelCase(name());
     }
 
+    /**
+     * Returns true if the element will override (remove or replace) lower priority elements.
+     */
+    public boolean isOverriding() {
+        return this == REMOVE || this == REMOVE_ALL || this == REPLACE;
+    }
 
     /**
      * Local xml name of node operation types.
