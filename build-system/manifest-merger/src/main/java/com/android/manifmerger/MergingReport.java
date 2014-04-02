@@ -95,7 +95,19 @@ public class MergingReport {
 
         WARNING,
 
-        ERROR
+        ERROR;
+
+        public boolean isSuccess() {
+            return this == SUCCESS || this == WARNING;
+        }
+
+        public boolean isWarning() {
+            return this == WARNING;
+        }
+
+        public boolean isError() {
+            return this == ERROR;
+        }
     }
 
     @NonNull
@@ -111,6 +123,24 @@ public class MergingReport {
     @NonNull
     public Actions getActions() {
         return mActions;
+    }
+
+    @NonNull
+    public String getReportString() {
+        switch (mResult) {
+            case SUCCESS:
+                return "Manifest merger executed successfully";
+            case WARNING:
+                return mRecords.size() > 1
+                        ? "Manifest merger exited with warnings, see logs"
+                        : "Manifest merger warning : " + mRecords.get(0).mLog;
+            case ERROR:
+                return mRecords.size() > 1
+                        ? "Manifest merger failed with multiple errors, see logs"
+                        : "Manifest merger failed : " + mRecords.get(0).mLog;
+            default:
+                return "Manifest merger returned an invalid result " + mResult;
+        }
     }
 
     /**

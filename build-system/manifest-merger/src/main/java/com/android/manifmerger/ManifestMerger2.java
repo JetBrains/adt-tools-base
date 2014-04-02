@@ -24,6 +24,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.android.utils.ILogger;
+import com.android.utils.Pair;
 import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Optional;
@@ -36,6 +37,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,7 +47,7 @@ import java.util.Map;
 public class ManifestMerger2 {
 
     private final File mMainManifestFile;
-    private final ImmutableList<File> mLibraryFiles;
+    private final ImmutableList<Pair<String, File>> mLibraryFiles;
     private final ImmutableList<File> mFlavorsAndBuildTypeFiles;
     private final ImmutableList<Invoker.Feature> mOptionalFeatures;
     private final KeyBasedValueResolver<String> mPlaceHolderValueResolver;
@@ -55,7 +57,7 @@ public class ManifestMerger2 {
     private ManifestMerger2(
             @NonNull ILogger logger,
             @NonNull File mainManifestFile,
-            @NonNull ImmutableList<File> libraryFiles,
+            @NonNull ImmutableList<Pair<String, File>> libraryFiles,
             @NonNull ImmutableList<File> flavorsAndBuildTypeFiles,
             @NonNull ImmutableList<Invoker.Feature> optionalFeatures,
             @NonNull KeyBasedValueResolver<String> placeHolderValueResolver,
@@ -86,19 +88,24 @@ public class ManifestMerger2 {
         Optional<XmlDocument> xmlDocumentOptional = Optional.absent();
         for (File inputFile : mFlavorsAndBuildTypeFiles) {
             mLogger.info("Merging flavors and build manifest %s \n", inputFile.getPath());
-            xmlDocumentOptional = merge(xmlDocumentOptional, inputFile, mergingReportBuilder);
+            xmlDocumentOptional = merge(xmlDocumentOptional,
+                    Pair.of((String) null, inputFile),
+                    mergingReportBuilder);
             if (!xmlDocumentOptional.isPresent()) {
                 return mergingReportBuilder.build();
             }
         }
         mLogger.info("Merging main manifest %s\n", mMainManifestFile.getPath());
-        xmlDocumentOptional = merge(xmlDocumentOptional, mMainManifestFile, mergingReportBuilder);
+        xmlDocumentOptional = merge(xmlDocumentOptional, Pair.of(mMainManifestFile.getName(),
+                mMainManifestFile),
+                mergingReportBuilder);
         if (!xmlDocumentOptional.isPresent()) {
             return mergingReportBuilder.build();
         }
-        for (File inputFile : mLibraryFiles) {
-            mLogger.info("Merging library manifest " + inputFile.getPath());
-            xmlDocumentOptional = merge(xmlDocumentOptional, inputFile, mergingReportBuilder);
+        for (Pair<String, File> inputFile : mLibraryFiles) {
+            mLogger.info("Merging library manifest " + inputFile.getSecond().getPath());
+            xmlDocumentOptional = merge(
+                    xmlDocumentOptional, inputFile, mergingReportBuilder);
             if (!xmlDocumentOptional.isPresent()) {
                 return mergingReportBuilder.build();
             }
@@ -143,7 +150,7 @@ public class ManifestMerger2 {
     // merge the optionally existing xmlDocument with a lower priority xml file.
     private Optional<XmlDocument> merge(
             Optional<XmlDocument> xmlDocument,
-            File lowerPriorityXmlFile,
+            Pair<String, File> lowerPriorityXmlFile,
             MergingReport.Builder mergingReportBuilder) throws MergeFailureException {
 
         XmlDocument lowerPriorityDocument;
@@ -354,8 +361,8 @@ public class ManifestMerger2 {
         }
 
         private final File mMainManifestFile;
-        private final ImmutableList.Builder<File> mLibraryFilesBuilder =
-                new ImmutableList.Builder<File>();
+        private final ImmutableList.Builder<Pair<String, File>> mLibraryFilesBuilder =
+                new ImmutableList.Builder<Pair<String, File>>();
         private final ImmutableList.Builder<File> mFlavorsAndBuildTypeFiles =
                 new ImmutableList.Builder<File>();
         private final ImmutableList.Builder<Feature> mFeaturesBuilder =
@@ -384,7 +391,12 @@ public class ManifestMerger2 {
          * @return itself.
          */
         public Invoker addLibraryManifest(File file) {
-            mLibraryFilesBuilder.add(file);
+            mLibraryFilesBuilder.add(Pair.of(file.getName(), file));
+            return this;
+        }
+
+        public Invoker addLibraryManifests(List<Pair<String, File>> namesAndFiles) {
+            mLibraryFilesBuilder.addAll(namesAndFiles);
             return this;
         }
 
@@ -396,7 +408,9 @@ public class ManifestMerger2 {
          * @return itself.
          */
         public Invoker addLibraryManifests(File... files) {
-            mLibraryFilesBuilder.add(files);
+            for (File file : files) {
+                addLibraryManifest(file);
+            }
             return this;
         }
 

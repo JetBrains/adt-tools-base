@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.dependency;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.dependency.ManifestDependency;
 import com.google.common.collect.Lists;
 
@@ -32,11 +33,28 @@ public class ManifestDependencyImpl implements ManifestDependency{
     private final File manifest;
     @NonNull
     private final List<ManifestDependencyImpl> dependencies;
+    @NonNull
+    private final String name;
 
     public ManifestDependencyImpl(@NonNull File manifest,
                                   @NonNull List<ManifestDependencyImpl> dependencies) {
         this.manifest = manifest;
         this.dependencies = dependencies;
+        this.name = manifest.getName();
+    }
+
+    public ManifestDependencyImpl(@NonNull String name,
+            @NonNull File manifest,
+            @NonNull List<ManifestDependencyImpl> dependencies) {
+        this.manifest = manifest;
+        this.dependencies = dependencies;
+        this.name = name;
+    }
+
+    @Override
+    @Nullable
+    public String getName() {
+        return name;
     }
 
     @Override

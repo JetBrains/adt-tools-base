@@ -19,6 +19,7 @@ package com.android.manifmerger;
 import static com.android.manifmerger.Actions.ActionLocation;
 import static com.android.manifmerger.Actions.DecisionTreeRecord;
 import static com.android.manifmerger.XmlNode.NodeKey;
+import static com.android.manifmerger.XmlNode.fromXmlName;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -30,6 +31,7 @@ import com.android.utils.StdLogger;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Multimap;
 import com.google.common.io.LineReader;
 
 import junit.framework.TestCase;
@@ -208,23 +210,6 @@ public class ActionsTest extends TestCase {
         assertNotNull(cleanedDocument);
 
         Actions actions = mergingReportBuilder.getActionRecorder().build();
-        Map<Integer,Actions.Record> resultingSourceMapping =
-                actions.getResultingSourceMapping(cleanedDocument);
-        LineReader lineReader = new LineReader(new StringReader(cleanedDocument.prettyPrint()));
-
-        StringBuilder actualMappings = new StringBuilder();
-        String line;
-        int count = 1;
-        while ((line = lineReader.readLine()) != null) {
-            actualMappings.append(count).append(line).append("\n");
-            if (resultingSourceMapping.containsKey(count)) {
-                actualMappings.append(count).append("-->")
-                        .append(resultingSourceMapping.get(count).getActionLocation())
-                        .append("\n");
-            }
-            count++;
-        }
-
         String expectedMappings = "1<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "2<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                 + "3    package=\"com.example.lib3\" >\n"
@@ -252,7 +237,7 @@ public class ActionsTest extends TestCase {
                 + "16    </permission>\n"
                 + "17\n"
                 + "18</manifest>\n";
-        assertEquals(expectedMappings, actualMappings.toString());
+        assertEquals(expectedMappings, actions.blame(cleanedDocument));
 
         // persist the records
         String persistedMappings = actions.persist();
