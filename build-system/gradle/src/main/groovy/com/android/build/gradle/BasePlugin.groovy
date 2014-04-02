@@ -77,6 +77,7 @@ import com.android.build.gradle.tasks.PackageApplication
 import com.android.build.gradle.tasks.PreDex
 import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.android.build.gradle.tasks.ProcessAppManifest
+import com.android.build.gradle.tasks.ProcessAppManifest2
 import com.android.build.gradle.tasks.ProcessTestManifest
 import com.android.build.gradle.tasks.RenderscriptCompile
 import com.android.build.gradle.tasks.ZipAlign
@@ -502,7 +503,52 @@ public abstract class BasePlugin {
     }
 
     public void createProcessManifestTask(BaseVariantData variantData,
-                                             String manifestOurDir) {
+                                             String manifestOutDir) {
+        if (extension.getUseOldManifestMerger()) {
+            createOldProcessManifestTask(variantData, manifestOutDir);
+            return;
+        }
+        VariantConfiguration config = variantData.variantConfiguration
+
+        def processManifestTask = project.tasks.create(
+                "process${variantData.variantConfiguration.fullName.capitalize()}Manifest",
+                ProcessAppManifest2)
+        variantData.processManifestTask = processManifestTask
+        processManifestTask.plugin = this
+        processManifestTask.variant = variantData
+
+        processManifestTask.dependsOn variantData.prepareDependenciesTask
+        processManifestTask.variantConfiguration = config
+        processManifestTask.conventionMapping.libraries = {
+            getManifestDependencies(config.directLibraries)
+        }
+
+        ProductFlavor mergedFlavor = config.mergedFlavor
+
+        processManifestTask.conventionMapping.minSdkVersion = {
+            if (isTargetPlatformAPreview()) {
+                return getTargetCodeName()
+            }
+
+            if (mergedFlavor.minSdkVersion >= 1) {
+                return Integer.toString(mergedFlavor.minSdkVersion)
+            }
+
+            return null
+        }
+
+        processManifestTask.conventionMapping.targetSdkVersion = {
+            mergedFlavor.targetSdkVersion
+        }
+        processManifestTask.conventionMapping.manifestOutputFile = {
+            project.file(
+                    "$project.buildDir/${manifestOutDir}/" +
+                            "${variantData.variantConfiguration.dirName}/AndroidManifest.xml")
+        }
+    }
+
+    public void createOldProcessManifestTask(BaseVariantData variantData,
+            String manifestOurDir) {
         VariantConfiguration config = variantData.variantConfiguration
 
         def processManifestTask = project.tasks.create(
@@ -2304,7 +2350,7 @@ public abstract class BasePlugin {
         for (LibraryDependency lib : libraries) {
             // get the dependencies
             List<ManifestDependencyImpl> children = getManifestDependencies(lib.dependencies)
-            list.add(new ManifestDependencyImpl(lib.manifest, children))
+            list.add(new ManifestDependencyImpl(lib.getName(), lib.manifest, children))
         }
 
         return list

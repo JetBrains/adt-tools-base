@@ -72,6 +72,8 @@ public abstract class BaseExtension {
 
     List<String> flavorDimensionList
     String testBuildType = "debug"
+    // for now, use the old manifest merger.
+    boolean useOldManifestMerger = true;
 
     private Closure<Void> variantFilter
 
@@ -172,6 +174,10 @@ public abstract class BaseExtension {
     void setCompileSdkVersion(String target) {
         plugin.checkTasksAlreadyCreated();
         compileSdkVersion(target)
+    }
+
+    void useOldManifestMerger(boolean flag) {
+        this.useOldManifestMerger = flag;
     }
 
     void buildToolsVersion(String version) {

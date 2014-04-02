@@ -27,7 +27,10 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimap;
+import com.google.common.io.LineReader;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -37,6 +40,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -256,8 +260,9 @@ public class Actions {
 
         @Override
         public String toString() {
-            return "actionType: " + getActionType() + " location:" + getActionLocation()
-                    + " opType:" + mNodeOperationType;
+            return "Id=" + mTargetId.toString() + " actionType=" + getActionType()
+                    + " location=" + getActionLocation()
+                    + " opType=" + mNodeOperationType;
         }
     }
 
@@ -298,8 +303,9 @@ public class Actions {
 
         @Override
         public String toString() {
-            return "actionType: " + getActionType() + " location:" + getActionLocation()
-                    + " opType:" + getOperationType();
+            return "Id=" + mTargetId + " actionType=" + getActionType()
+                    + " location=" + getActionLocation()
+                    + " opType=" + getOperationType();
         }
     }
 
@@ -466,7 +472,7 @@ public class Actions {
         return (Element) sibling;
     }
 
-    Map<Integer, Actions.Record> getResultingSourceMapping(XmlDocument xmlDocument)
+    public ImmutableMultimap<Integer, Record> getResultingSourceMapping(XmlDocument xmlDocument)
             throws ParserConfigurationException, SAXException, IOException {
 
         XmlLoader.SourceLocation inMemory = new XmlLoader.SourceLocation() {
@@ -482,7 +488,7 @@ public class Actions {
         };
 
         XmlDocument loadedWithLineNumbers = XmlLoader.load(inMemory, xmlDocument.prettyPrint());
-        ImmutableMap.Builder<Integer, Actions.Record> mappingBuilder = ImmutableMap.builder();
+        ImmutableMultimap.Builder<Integer, Record> mappingBuilder = ImmutableMultimap.builder();
         for (XmlElement xmlElement : loadedWithLineNumbers.getRootNode().getMergeableElements()) {
             parse(xmlElement, mappingBuilder);
         }
@@ -490,7 +496,7 @@ public class Actions {
     }
 
     private void parse(XmlElement element,
-            ImmutableMap.Builder<Integer, Actions.Record> mappings) {
+            ImmutableMultimap.Builder<Integer, Record> mappings) {
         DecisionTreeRecord decisionTreeRecord = mRecords.get(element.getId());
         if (decisionTreeRecord != null) {
             Actions.NodeRecord nodeRecord = findNodeRecord(decisionTreeRecord);
@@ -508,6 +514,31 @@ public class Actions {
         for (XmlElement xmlElement : element.getMergeableElements()) {
             parse(xmlElement, mappings);
         }
+    }
+
+    public String blame(XmlDocument xmlDocument)
+            throws IOException, SAXException, ParserConfigurationException {
+
+        ImmutableMultimap<Integer, Record> resultingSourceMapping =
+                getResultingSourceMapping(xmlDocument);
+        LineReader lineReader = new LineReader(
+                new StringReader(xmlDocument.prettyPrint()));
+
+        StringBuilder actualMappings = new StringBuilder();
+        String line;
+        int count = 1;
+        while ((line = lineReader.readLine()) != null) {
+            actualMappings.append(count).append(line).append("\n");
+            if (resultingSourceMapping.containsKey(count)) {
+                for (Record record : resultingSourceMapping.get(count)) {
+                    actualMappings.append(count).append("-->")
+                            .append(record.getActionLocation().toString())
+                            .append("\n");
+                }
+            }
+            count++;
+        }
+        return actualMappings.toString();
     }
 
     @Nullable
