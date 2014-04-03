@@ -592,6 +592,15 @@ public class XmlDocumentTest extends TestCase {
                 "android.permission.READ_CALL_LOG").isPresent());
         assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
                 "android.permission.WRITE_CALL_LOG").isPresent());
+
+        // check records.
+        Actions actions = mergingReportBuilder.getActionRecorder().build();
+        XmlElement xmlElement = xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_EXTERNAL_STORAGE").get();
+        ImmutableList<Actions.NodeRecord> nodeRecords = actions
+                .getNodeRecords(XmlNode.NodeKey.fromXml(xmlElement.getXml()));
+        assertEquals(1, nodeRecords.size());
+        assertEquals(nodeRecords.iterator().next().mReason, "targetSdkVersion < 4");
     }
 
     public void testLibraryVersion10Merge()
@@ -682,6 +691,22 @@ public class XmlDocumentTest extends TestCase {
                 "android.permission.READ_CALL_LOG").isPresent());
         assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
                 "android.permission.WRITE_CALL_LOG").isPresent());
+
+        // check records.
+        Actions actions = mergingReportBuilder.getActionRecorder().build();
+        XmlElement xmlElement = xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_EXTERNAL_STORAGE").get();
+        ImmutableList<Actions.NodeRecord> nodeRecords = actions
+                .getNodeRecords(XmlNode.NodeKey.fromXml(xmlElement.getXml()));
+        assertEquals(1, nodeRecords.size());
+        assertEquals(nodeRecords.iterator().next().mReason, "targetSdkVersion < 4");
+
+        xmlElement = xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_CALL_LOG").get();
+        nodeRecords = actions.getNodeRecords(XmlNode.NodeKey.fromXml(xmlElement.getXml()));
+        assertEquals(1, nodeRecords.size());
+        assertEquals(nodeRecords.iterator().next().mReason,
+                "targetSdkVersion < 16 and requested READ_CONTACTS");
     }
 
     public void testLibraryVersion10MergeWithContacts()

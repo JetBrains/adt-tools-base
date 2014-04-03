@@ -258,13 +258,15 @@ public class XmlDocument {
             Optional<Element> permission = addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
                     permission("WRITE_EXTERNAL_STORAGE"),
+                    "targetSdkVersion < 4",
                     Pair.of("maxSdkVersion", "18") // permission became implied at 19.
             );
             hasWriteToExternalStoragePermission = permission.isPresent();
 
             addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
-                    permission("READ_PHONE_STATE"));
+                    permission("READ_PHONE_STATE"),
+                    "targetSdkVersion < 4");
         }
         // If the application has requested WRITE_EXTERNAL_STORAGE, we will
         // force them to always take READ_EXTERNAL_STORAGE as well.  We always
@@ -277,6 +279,7 @@ public class XmlDocument {
             addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
                     permission("READ_EXTERNAL_STORAGE"),
+                    "requested WRITE_EXTERNAL_STORAGE",
                     // NOTE TO @xav, where can we find the list of implied permissions at versions X
                     Pair.of("maxSdkVersion", "18") // permission became implied at 19, DID IT ???
             );
@@ -286,11 +289,13 @@ public class XmlDocument {
         if (libraryTargetSdk < 16) {
             if (getByTypeAndKey(USES_PERMISSION, permission("READ_CONTACTS")).isPresent()) {
                 addIfAbsent(mergingReport.getActionRecorder(),
-                        USES_PERMISSION, permission("READ_CALL_LOG"));
+                        USES_PERMISSION, permission("READ_CALL_LOG"),
+                        "targetSdkVersion < 16 and requested READ_CONTACTS");
             }
             if (getByTypeAndKey(USES_PERMISSION, permission("WRITE_CONTACTS")).isPresent()) {
                 addIfAbsent(mergingReport.getActionRecorder(),
-                        USES_PERMISSION, permission("WRITE_CALL_LOG"));
+                        USES_PERMISSION, permission("WRITE_CALL_LOG"),
+                        "targetSdkVersion < 16 and requested WRITE_CONTACTS");
             }
         }
     }
@@ -338,6 +343,7 @@ public class XmlDocument {
             @NonNull ActionRecorder actionRecorder,
             @NonNull ManifestModel.NodeTypes nodeType,
             @Nullable String keyValue,
+            @Nullable String reason,
             @Nullable Pair<String, String>... attributes) {
 
         Optional<XmlElement> xmlElementOptional = getByTypeAndKey(nodeType, keyValue);
@@ -364,7 +370,7 @@ public class XmlDocument {
 
         // record creation.
         XmlElement xmlElement = new XmlElement(elementNS, this);
-        actionRecorder.recordImpliedNodeAction(xmlElement);
+        actionRecorder.recordImpliedNodeAction(xmlElement, reason);
 
         getRootNode().getXml().appendChild(elementNS);
         return Optional.of(elementNS);
