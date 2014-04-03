@@ -109,6 +109,28 @@ public class ActionRecorder {
     }
 
     /**
+     * Record a node that was added due to an implicit presence in earlier SDK release but requires
+     * an explicit declaration in the application targeted SDK.
+     * @param xmlElement the implied element that was added to the resulting xml.
+     */
+    void recordImpliedNodeAction(XmlElement xmlElement) {
+        NodeKey storageKey = xmlElement.getId();
+        Actions.DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
+        if (nodeDecisionTree == null) {
+            nodeDecisionTree = new Actions.DecisionTreeRecord();
+            mRecords.put(storageKey, nodeDecisionTree);
+        }
+        Actions.NodeRecord record = new Actions.NodeRecord(Actions.ActionType.IMPLIED,
+                new Actions.ActionLocation(
+                        xmlElement.getDocument().getSourceLocation(),
+                        xmlElement.getDocument().getRootNode().getPosition()),
+                xmlElement.getId(),
+                xmlElement.getOperationType()
+        );
+        nodeDecisionTree.addNodeRecord(record);
+    }
+
+    /**
      * Record a node action taken by the merging tool.
      *
      * @param xmlElement the action's target xml element
