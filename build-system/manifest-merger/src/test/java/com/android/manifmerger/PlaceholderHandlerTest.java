@@ -70,10 +70,10 @@ public class PlaceholderHandlerTest extends TestCase {
                 + "<manifest\n"
                 + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                 + "    <activity android:name=\"activityOne\"\n"
-                + "         android:attr1=\"@{landscapePH}\"\n"
-                + "         android:attr2=\"prefix.@{landscapePH}\"\n"
-                + "         android:attr3=\"@{landscapePH}.suffix\"\n"
-                + "         android:attr4=\"prefix@{landscapePH}suffix\">\n"
+                + "         android:attr1=\"${landscapePH}\"\n"
+                + "         android:attr2=\"prefix.${landscapePH}\"\n"
+                + "         android:attr3=\"${landscapePH}.suffix\"\n"
+                + "         android:attr4=\"prefix${landscapePH}suffix\">\n"
                 + "    </activity>\n"
                 + "</manifest>";
 
@@ -123,7 +123,7 @@ public class PlaceholderHandlerTest extends TestCase {
                 + "<manifest\n"
                 + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                 + "    <activity android:name=\"activityOne\"\n"
-                + "         android:attr1=\"@{landscapePH}\"/>\n"
+                + "         android:attr1=\"${landscapePH}\"/>\n"
                 + "</manifest>";
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
