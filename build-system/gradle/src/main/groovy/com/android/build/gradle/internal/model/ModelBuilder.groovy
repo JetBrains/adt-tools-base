@@ -28,7 +28,6 @@ import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.builder.DefaultProductFlavor
-import com.android.builder.SdkParser
 import com.android.builder.VariantConfiguration
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
@@ -75,12 +74,16 @@ public class ModelBuilder implements ToolingModelBuilder {
             return null
         }
 
+        // need to parse the SDK now.
+        String targetHash = basePlugin.extension.getCompileSdkVersion()
+        basePlugin.getSdkHandler().initTarget(
+                targetHash,
+                basePlugin.extension.buildToolsRevision)
+
         signingConfigs = basePlugin.extension.signingConfigs
 
-        SdkParser sdkParser = basePlugin.getLoadedSdkParser()
-        List<String> bootClasspath = basePlugin.runtimeJarList
+        List<String> bootClasspath = basePlugin.androidBuilder.bootClasspath
         List<File> frameworkSource = Collections.emptyList();
-        String compileTarget = sdkParser.target.hashString()
 
         // list of extra artifacts
         List<ArtifactMetaData> artifactMetaDataList = Lists.newArrayList(basePlugin.extraArtifacts)
@@ -97,7 +100,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         DefaultAndroidProject androidProject = new DefaultAndroidProject(
                 getModelVersion(),
                 project.name,
-                compileTarget,
+                targetHash,
                 bootClasspath,
                 frameworkSource,
                 cloneSigningConfigs(signingConfigs),

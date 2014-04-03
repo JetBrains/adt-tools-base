@@ -83,7 +83,7 @@ class NdkCompile extends NdkTask {
             return
         }
 
-        File ndkDirectory = getPlugin().ndkDirectory
+        File ndkDirectory = getPlugin().getSdkHandler().ndkFolder
         if (ndkDirectory == null || !ndkDirectory.isDirectory()) {
             throw new GradleException(
                     "NDK not configured.\n" +
@@ -198,7 +198,7 @@ class NdkCompile extends NdkTask {
         commands.add("APP_BUILD_SCRIPT=" + makefile.absolutePath)
 
         // target
-        IAndroidTarget target = getPlugin().loadedSdkParser.target
+        IAndroidTarget target = getBuilder().getTarget()
         if (!target.isPlatform()) {
             target = target.parent
         }

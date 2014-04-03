@@ -15,19 +15,16 @@
  */
 
 package com.android.build.gradle.internal.variant
-
 import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryExtension
-import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.api.LibraryVariantImpl
 import com.android.build.gradle.internal.tasks.MergeFileTask
 import com.android.build.gradle.tasks.ExtractAnnotations
 import com.android.build.gradle.tasks.MergeResources
-import com.android.build.gradle.tasks.annotations.Extractor
 import com.android.builder.BuilderConstants
 import com.android.builder.DefaultBuildType
 import com.android.builder.VariantConfiguration
@@ -35,8 +32,6 @@ import com.android.builder.dependency.LibraryBundle
 import com.android.builder.dependency.LibraryDependency
 import com.android.builder.dependency.ManifestDependency
 import com.android.builder.model.AndroidLibrary
-import com.android.builder.model.SourceProvider
-import com.google.common.collect.Lists
 import com.google.common.collect.Sets
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -53,7 +48,6 @@ import org.gradle.tooling.BuildException
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP
 import static com.android.SdkConstants.LIBS_FOLDER
 import static com.android.build.gradle.BasePlugin.DIR_BUNDLES
-
 /**
  */
 public class LibraryVariantFactory implements VariantFactory {
@@ -401,13 +395,13 @@ public class LibraryVariantFactory implements VariantFactory {
         task.source = variantData.getJavaSources()
         task.encoding = extension.compileOptions.encoding
         task.sourceCompatibility = extension.compileOptions.sourceCompatibility
-        task.classpath = project.files(basePlugin.getAndroidBuilder(variantData).getCompileClasspath(config))
+        task.classpath = project.files(basePlugin.getAndroidBuilder().getCompileClasspath(config))
         task.dependsOn variantData.javaCompileTask
 
         // Setup the boot classpath just before the task actually runs since this will
         // force the sdk to be parsed. (Same as in compileTask)
         task.doFirst {
-            task.bootClasspath = basePlugin.getRuntimeJarList()
+            task.bootClasspath = basePlugin.getAndroidBuilder().getBootClasspath()
         }
 
         return task
