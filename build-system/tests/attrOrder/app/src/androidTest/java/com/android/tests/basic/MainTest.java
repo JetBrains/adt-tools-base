@@ -37,8 +37,7 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
 
    @MediumTest
    public void testText() {
-        System.out.println("!!!! text at " + mTextView.getText());
-        assertTrue("Hello, world!".equals(mTextView.getText()));
+        assertEquals("Hello, world!", mTextView.getText().toString());
    }
 
 }
