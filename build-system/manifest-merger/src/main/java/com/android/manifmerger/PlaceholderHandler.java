@@ -22,14 +22,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Replaces all placeholders of the form @{name} with a tool invocation provided value
+ * Replaces all placeholders of the form ${name} with a tool invocation provided value
  */
 public class PlaceholderHandler {
 
-    // regular expression to recognize placeholders like @{name}, potentially surrounded by a
+    // regular expression to recognize placeholders like ${name}, potentially surrounded by a
     // prefix and suffix string. this will split in 3 groups, the prefix, the placeholder name, and
     // the suffix.
-    private final Pattern mPattern = Pattern.compile("([^@]*)@\\{([^\\}]*)\\}(.*)");
+    private final Pattern mPattern = Pattern.compile("([^\\$]*)\\$\\{([^\\}]*)\\}(.*)");
 
     /**
      * Interface to provide a value for a placeholder key.

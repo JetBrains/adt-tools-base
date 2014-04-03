@@ -36,7 +36,7 @@ com.example.app1.injected
         <activity
             android:name=".Main">
             <intent-filter>
-                <action android:name="@{packageName}.foo">
+                <action android:name="${packageName}.foo">
                 </action>
             </intent-filter>
         </activity>
