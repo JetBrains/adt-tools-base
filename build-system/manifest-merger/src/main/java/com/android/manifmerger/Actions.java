@@ -176,6 +176,11 @@ public class Actions {
          * The element was rejected.
          */
         REJECTED,
+        /**
+         * The implied element was added was added when importing a library that expected the
+         * element to be present by default while targeted SDK requires its declaration.
+         */
+        IMPLIED,
     }
 
     /**

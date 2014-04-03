@@ -16,20 +16,25 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.ManifestModel.NodeTypes.USES_PERMISSION;
+import static com.android.manifmerger.ManifestModel.NodeTypes.USES_SDK;
+
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.xml.XmlFormatPreferences;
 import com.android.ide.common.xml.XmlFormatStyle;
 import com.android.ide.common.xml.XmlPrettyPrinter;
+import com.android.utils.Pair;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.concurrent.atomic.AtomicReference;
-
 
 /**
  * Represents a loaded xml document.
@@ -41,6 +46,8 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  */
 public class XmlDocument {
+
+    private static final int DEFAULT_SDK_VERSION = 1;
 
     private final Element mRootElement;
     // this is initialized lazily to avoid un-necessary early parsing.
@@ -83,6 +90,8 @@ public class XmlDocument {
 
         getRootNode().mergeWithLowerPriorityNode(
                 lowerPriorityDocument.getRootNode(), mergingReportBuilder);
+
+        addImplicitElements(lowerPriorityDocument, mergingReportBuilder);
 
         // force re-parsing as new nodes may have appeared.
         return mergingReportBuilder.hasErrors()
@@ -160,7 +169,7 @@ public class XmlDocument {
         return mRootNode.get();
     }
 
-    public Optional<XmlElement> getNodeByTypeAndKey(
+    public Optional<XmlElement> getByTypeAndKey(
             ManifestModel.NodeTypes type,
             @Nullable String keyValue) {
 
@@ -174,5 +183,194 @@ public class XmlDocument {
 
     public Document getXml() {
         return mRootElement.getOwnerDocument();
+    }
+
+    public int getMinSdkVersion() {
+        Optional<XmlElement> usesSdk = getByTypeAndKey(
+                ManifestModel.NodeTypes.USES_SDK, null);
+        if (!usesSdk.isPresent()) {
+            return DEFAULT_SDK_VERSION;
+        }
+
+        Optional<XmlAttribute> minSdkVersion = usesSdk.get()
+                .getAttribute(XmlNode.fromXmlName("android:minSdkVersion"));
+        return minSdkVersion.isPresent()
+                ? Integer.parseInt(minSdkVersion.get().getValue())
+                : DEFAULT_SDK_VERSION;
+    }
+
+    public int getTargetSdkVersion() {
+
+        Optional<XmlElement> usesSdk = getByTypeAndKey(
+                ManifestModel.NodeTypes.USES_SDK, null);
+        if (!usesSdk.isPresent()) {
+            return DEFAULT_SDK_VERSION;
+        }
+
+        Optional<XmlAttribute> targetSdkVersion = usesSdk.get()
+                .getAttribute(XmlNode.fromXmlName("android:targetSdkVersion"));
+        if (targetSdkVersion.isPresent()) {
+            return Integer.parseInt(targetSdkVersion.get().getValue());
+        }
+        return getMinSdkVersion();
+    }
+
+    /**
+     * Add all implicit elements from the passed lower priority document that are
+     * required in the target SDK.
+     */
+    @SuppressWarnings("unchecked") // compiler confused about varargs and generics.
+    public void addImplicitElements(XmlDocument lowerPriorityDocument,
+            MergingReport.Builder mergingReport) {
+
+        int thisTargetSdk = getTargetSdkVersion();
+        int thisMinSdk = getMinSdkVersion();
+        int libraryTargetSdk = lowerPriorityDocument.getTargetSdkVersion();
+        int libraryMinSdk = lowerPriorityDocument.getMinSdkVersion();
+
+        if (!checkUsesSdkMinVersion(thisMinSdk, libraryMinSdk)) {
+            mergingReport.addError(
+                    String.format(
+                            "uses-sdk:minSdkVersion %1$s cannot be smaller than version "
+                                    + "%2$s declared in library %3$s",
+                            thisMinSdk,
+                            libraryMinSdk,
+                            lowerPriorityDocument.getSourceLocation().print(true)
+                    )
+            );
+            return;
+        }
+
+        // if the merged document target SDK is equal or smaller than the library's, nothing to do.
+        if (thisTargetSdk <= libraryTargetSdk) {
+            return;
+        }
+
+        // There is no need to add any implied permissions when targeting an old runtime.
+        if (thisTargetSdk < 4) {
+            return;
+        }
+
+        boolean hasWriteToExternalStoragePermission =
+                getByTypeAndKey(USES_PERMISSION, permission("WRITE_EXTERNAL_STORAGE")).isPresent();
+
+        if (libraryTargetSdk < 4) {
+            Optional<Element> permission = addIfAbsent(mergingReport.getActionRecorder(),
+                    USES_PERMISSION,
+                    permission("WRITE_EXTERNAL_STORAGE"),
+                    Pair.of("maxSdkVersion", "18") // permission became implied at 19.
+            );
+            hasWriteToExternalStoragePermission = permission.isPresent();
+
+            addIfAbsent(mergingReport.getActionRecorder(),
+                    USES_PERMISSION,
+                    permission("READ_PHONE_STATE"));
+        }
+        // If the application has requested WRITE_EXTERNAL_STORAGE, we will
+        // force them to always take READ_EXTERNAL_STORAGE as well.  We always
+        // do this (regardless of target API version) because we can't have
+        // an app with write permission but not read permission.
+        if (hasWriteToExternalStoragePermission
+                && !getByTypeAndKey(USES_PERMISSION, permission("READ_EXTERNAL_STORAGE"))
+                        .isPresent()) {
+
+            addIfAbsent(mergingReport.getActionRecorder(),
+                    USES_PERMISSION,
+                    permission("READ_EXTERNAL_STORAGE"),
+                    // NOTE TO @xav, where can we find the list of implied permissions at versions X
+                    Pair.of("maxSdkVersion", "18") // permission became implied at 19, DID IT ???
+            );
+        }
+
+        // Pre-JellyBean call log permission compatibility.
+        if (libraryTargetSdk < 16) {
+            if (getByTypeAndKey(USES_PERMISSION, permission("READ_CONTACTS")).isPresent()) {
+                addIfAbsent(mergingReport.getActionRecorder(),
+                        USES_PERMISSION, permission("READ_CALL_LOG"));
+            }
+            if (getByTypeAndKey(USES_PERMISSION, permission("WRITE_CONTACTS")).isPresent()) {
+                addIfAbsent(mergingReport.getActionRecorder(),
+                        USES_PERMISSION, permission("WRITE_CALL_LOG"));
+            }
+        }
+    }
+
+    /**
+     * Returns true if the minSdkVersion of the application and the library are compatible, false
+     * otherwise.
+     */
+    private boolean checkUsesSdkMinVersion(int thisMinSdk, int libraryMinSdk) {
+
+        // the merged document minSdk cannot be lower than a library
+        if (thisMinSdk < libraryMinSdk) {
+
+            // check if this higher priority document has any tools instructions for the node
+            // or the attribute.
+            Optional<XmlElement> xmlElementOptional = getByTypeAndKey(USES_SDK, null);
+            if (!xmlElementOptional.isPresent()) {
+                return false;
+            }
+            XmlElement xmlElement = xmlElementOptional.get();
+
+            if (!xmlElement.getOperationType().isOverriding()) {
+                // last chance, check the attribute.
+                if (xmlElement.getAttributeOperationType(XmlNode.fromXmlName(
+                        "android:minSdkVersion")) == AttributeOperationType.STRICT) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Adds a new element of type nodeType with a specific keyValue if the element is absent in this
+     * document. Will also add attributes expressed through key value pairs.
+     *
+     * @param actionRecorder to records creation actions.
+     * @param nodeType the node type to crete
+     * @param keyValue the optional key for the element.
+     * @param attributes the optional array of key value pairs for extra element attribute.
+     * @return the Xml element whether it was created or existed or {@link Optional#absent()} if
+     * it does not exist in this document.
+     */
+    private Optional<Element> addIfAbsent(
+            @NonNull ActionRecorder actionRecorder,
+            @NonNull ManifestModel.NodeTypes nodeType,
+            @Nullable String keyValue,
+            @Nullable Pair<String, String>... attributes) {
+
+        Optional<XmlElement> xmlElementOptional = getByTypeAndKey(nodeType, keyValue);
+        if (xmlElementOptional.isPresent()) {
+            return Optional.absent();
+        }
+        Element elementNS = getXml()
+                .createElementNS(SdkConstants.ANDROID_URI, "android:" + nodeType.toXmlName());
+
+
+        ImmutableList<String> keyAttributesNames = nodeType.getNodeKeyResolver()
+                .getKeyAttributesNames();
+        if (keyAttributesNames.size() == 1) {
+            elementNS.setAttributeNS(
+                    SdkConstants.ANDROID_URI, "android:" + keyAttributesNames.get(0), keyValue);
+        }
+        if (attributes != null) {
+            for (Pair<String, String> attribute : attributes) {
+                elementNS.setAttributeNS(
+                        SdkConstants.ANDROID_URI, "android:" + attribute.getFirst(),
+                        attribute.getSecond());
+            }
+        }
+
+        // record creation.
+        XmlElement xmlElement = new XmlElement(elementNS, this);
+        actionRecorder.recordImpliedNodeAction(xmlElement);
+
+        getRootNode().getXml().appendChild(elementNS);
+        return Optional.of(elementNS);
+    }
+
+    private static String permission(String permissionName) {
+        return "android.permission." + permissionName;
     }
 }
