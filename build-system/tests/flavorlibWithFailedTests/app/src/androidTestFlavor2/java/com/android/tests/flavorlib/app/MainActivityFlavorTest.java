@@ -75,12 +75,12 @@ public class MainActivityFlavorTest extends ActivityInstrumentationTestCase2<Mai
 
     @MediumTest
     public void testAndroidStrings() {
-        assertEquals(mLibTextView1.getText(), "SUCCESS-LIB2");
+        assertEquals("SUCCESS-LIB2", mLibTextView1.getText().toString());
     }
 
     @MediumTest
     public void testJavaStrings() {
-        assertEquals(mLibTextView2.getText(), "SUCCESS-LIB2");
+        assertEquals("SUCCESS-LIB2", mLibTextView2.getText().toString());
     }
 
     @SmallTest
