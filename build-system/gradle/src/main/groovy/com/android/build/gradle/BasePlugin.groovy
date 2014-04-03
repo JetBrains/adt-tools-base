@@ -79,6 +79,7 @@ import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.android.build.gradle.tasks.ProcessAppManifest
 import com.android.build.gradle.tasks.ProcessAppManifest2
 import com.android.build.gradle.tasks.ProcessTestManifest
+import com.android.build.gradle.tasks.ProcessTestManifest2
 import com.android.build.gradle.tasks.RenderscriptCompile
 import com.android.build.gradle.tasks.ZipAlign
 import com.android.builder.AndroidBuilder
@@ -606,9 +607,17 @@ public abstract class BasePlugin {
 
     protected void createProcessTestManifestTask(BaseVariantData variantData,
                                                  String manifestOurDir) {
-        def processTestManifestTask = project.tasks.create(
-                "process${variantData.variantConfiguration.fullName.capitalize()}Manifest",
-                ProcessTestManifest)
+        def processTestManifestTask;
+        if (extension.getUseOldManifestMerger()) {
+            processTestManifestTask = project.tasks.create(
+                    "process${variantData.variantConfiguration.fullName.capitalize()}Manifest",
+                    ProcessTestManifest)
+        } else {
+            processTestManifestTask = project.tasks.create(
+                    "process${variantData.variantConfiguration.fullName.capitalize()}Manifest",
+                    ProcessTestManifest2)
+        }
+
         variantData.processManifestTask = processTestManifestTask
         processTestManifestTask.dependsOn variantData.prepareDependenciesTask
 

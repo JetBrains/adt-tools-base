@@ -5,8 +5,7 @@
     android:versionName="1.0" xmlns:tools="http://schemas.android.com/tools">
 
     <uses-sdk
-        android:minSdkVersion="15"
-        tools:ignore="UsesMinSdkAttributes" />
+        android:minSdkVersion="15"/>
 
     <application
         android:icon="@drawable/ic_launcher"
