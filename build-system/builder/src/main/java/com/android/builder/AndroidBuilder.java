@@ -629,6 +629,105 @@ public class AndroidBuilder {
         }
     }
 
+    /**
+     * Creates the manifest for a test variant
+     *
+     * @param testPackageName the package name of the test application
+     * @param minSdkVersion the minSdkVersion of the test application
+     * @param targetSdkVersion the targetSdkVersion of the test application
+     * @param testedPackageName the package name of the tested application
+     * @param instrumentationRunner the name of the instrumentation runner
+     * @param handleProfiling whether or not the Instrumentation object will turn profiling on and off
+     * @param functionalTest whether or not the Instrumentation class should run as a functional test
+     * @param libraries the library dependency graph
+     * @param outManifestLocation the output location for the merged manifest
+     *
+     * @see com.android.builder.VariantConfiguration#getPackageName()
+     * @see com.android.builder.VariantConfiguration#getTestedConfig()
+     * @see com.android.builder.VariantConfiguration#getMinSdkVersion()
+     * @see com.android.builder.VariantConfiguration#getTestedPackageName()
+     * @see com.android.builder.VariantConfiguration#getInstrumentationRunner()
+     * @see com.android.builder.VariantConfiguration#getHandleProfiling()
+     * @see com.android.builder.VariantConfiguration#getFunctionalTest()
+     * @see com.android.builder.VariantConfiguration#getDirectLibraries()
+     */
+    public void processTestManifest2(
+            @NonNull  String testPackageName,
+            @Nullable String minSdkVersion,
+            int targetSdkVersion,
+            @NonNull  String testedPackageName,
+            @NonNull  String instrumentationRunner,
+            @NonNull  Boolean handleProfiling,
+            @NonNull  Boolean functionalTest,
+            @NonNull  List<? extends ManifestDependency> libraries,
+            @NonNull  String outManifestLocation) {
+        checkNotNull(testPackageName, "testPackageName cannot be null.");
+        checkNotNull(testedPackageName, "testedPackageName cannot be null.");
+        checkNotNull(instrumentationRunner, "instrumentationRunner cannot be null.");
+        checkNotNull(handleProfiling, "handleProfiling cannot be null.");
+        checkNotNull(functionalTest, "functionalTest cannot be null.");
+        checkNotNull(libraries, "libraries cannot be null.");
+        checkNotNull(outManifestLocation, "outManifestLocation cannot be null.");
+
+        if (!libraries.isEmpty()) {
+            try {
+                // create the test manifest, merge the libraries in it
+                File generatedTestManifest = File.createTempFile("manifestMerge", ".xml");
+
+                generateTestManifest(
+                        testPackageName,
+                        minSdkVersion,
+                        targetSdkVersion,
+                        testedPackageName,
+                        instrumentationRunner,
+                        handleProfiling,
+                        functionalTest,
+                        generatedTestManifest.getAbsolutePath());
+
+                MergingReport mergingReport = ManifestMerger2.newInvoker(
+                        generatedTestManifest, mLogger)
+                        .addLibraryManifests(collectLibraries(libraries))
+                        .merge();
+
+                mLogger.info("Merging result:" + mergingReport.getResult());
+                switch (mergingReport.getResult()) {
+                    case WARNING:
+                        mergingReport.log(mLogger);
+                        // fall through since these are just warnings.
+                    case SUCCESS:
+                        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+                        try {
+                            String annotatedDocument = mergingReport.getActions().blame(xmlDocument);
+                            mLogger.verbose(annotatedDocument);
+                        } catch (Exception e) {
+                            mLogger.error(e, "cannot print resulting xml");
+                        }
+                        save(xmlDocument, new File(outManifestLocation));
+                        mLogger.info("Merged manifest saved to " + outManifestLocation);
+                        break;
+                    case ERROR:
+                        mergingReport.log(mLogger);
+                        throw new RuntimeException(mergingReport.getReportString());
+                    default:
+                        throw new RuntimeException("Unhandled result type : "
+                                + mergingReport.getResult());
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            generateTestManifest(
+                    testPackageName,
+                    minSdkVersion,
+                    targetSdkVersion,
+                    testedPackageName,
+                    instrumentationRunner,
+                    handleProfiling,
+                    functionalTest,
+                    outManifestLocation);
+        }
+    }
+
     private static void generateTestManifest(
             String testPackageName,
             String minSdkVersion,
