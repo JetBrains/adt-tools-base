@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 import com.android.SdkConstants;
 import com.android.utils.StdLogger;
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableMap;
 
 import junit.framework.TestCase;
 

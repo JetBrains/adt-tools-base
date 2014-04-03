@@ -16,7 +16,6 @@
 
 package com.android.manifmerger;
 
-import static com.android.manifmerger.Actions.DecisionTreeRecord;
 import static com.android.manifmerger.Actions.NodeRecord;
 
 import com.android.SdkConstants;

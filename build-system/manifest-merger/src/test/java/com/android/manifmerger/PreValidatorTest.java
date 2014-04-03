@@ -16,17 +16,12 @@
 
 package com.android.manifmerger;
 
-import com.android.SdkConstants;
 import com.android.sdklib.mock.MockLog;
-import com.google.common.collect.ImmutableList;
 
 import junit.framework.TestCase;
 
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.logging.Logger;
 
