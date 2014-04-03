@@ -16,14 +16,12 @@
 
 package com.android.manifmerger;
 
-import com.android.SdkConstants;
 import com.android.sdklib.mock.MockLog;
 import com.google.common.base.Optional;
 
 import junit.framework.TestCase;
 
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
