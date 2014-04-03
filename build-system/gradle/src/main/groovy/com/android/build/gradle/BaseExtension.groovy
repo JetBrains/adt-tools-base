@@ -158,6 +158,7 @@ public abstract class BaseExtension {
     }
 
     void compileSdkVersion(int apiLevel) {
+        plugin.checkTasksAlreadyCreated();
         this.target = "android-" + apiLevel
     }
 
