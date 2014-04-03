@@ -184,22 +184,27 @@ public class Actions {
      */
     public abstract static class Record {
 
-        protected final ActionType mActionType;
-        protected final ActionLocation mActionLocation;
-        protected final XmlNode.NodeKey mTargetId;
+        @NonNull protected final ActionType mActionType;
+        @NonNull protected final ActionLocation mActionLocation;
+        @NonNull protected final XmlNode.NodeKey mTargetId;
+        @Nullable protected final String mReason;
 
         private Record(@NonNull ActionType actionType,
                 @NonNull ActionLocation actionLocation,
-                @NonNull XmlNode.NodeKey targetId) {
+                @NonNull XmlNode.NodeKey targetId,
+                @Nullable String reason) {
             mActionType = Preconditions.checkNotNull(actionType);
             mActionLocation = Preconditions.checkNotNull(actionLocation);
             mTargetId = Preconditions.checkNotNull(targetId);
+            mReason = reason;
         }
 
         private Record(@NonNull Element xml) {
             mActionType = ActionType.valueOf(xml.getAttribute("action-type"));
             mActionLocation = new ActionLocation(getFirstChildElement(xml));
             mTargetId = new XmlNode.NodeKey(xml.getAttribute("target-id"));
+            String reason = xml.getAttribute("reason");
+            mReason = Strings.isNullOrEmpty(reason) ? null : reason;
         }
 
         public ActionType getActionType() {
@@ -218,12 +223,19 @@ public class Actions {
             stringBuilder.append(mActionType)
                     .append(" from ")
                     .append(mActionLocation);
+            if (mReason != null) {
+                stringBuilder.append(" reason: ")
+                        .append(mReason);
+            }
         }
 
         public Element toXml(Document document) {
             Element record = document.createElement("record");
             record.setAttribute("action-type", mActionType.toString());
             record.setAttribute("target-id", mTargetId.toString());
+            if (mReason != null) {
+                record.setAttribute("reason", mReason);
+            }
             addAttributes(record);
             Element location = document.createElement("location");
             record.appendChild(mActionLocation.toXml(location));
@@ -244,8 +256,9 @@ public class Actions {
         NodeRecord(@NonNull ActionType actionType,
                 @NonNull ActionLocation actionLocation,
                 @NonNull XmlNode.NodeKey targetId,
+                @Nullable String reason,
                 @NonNull NodeOperationType nodeOperationType) {
-            super(actionType, actionLocation, targetId);
+            super(actionType, actionLocation, targetId, reason);
             this.mNodeOperationType = Preconditions.checkNotNull(nodeOperationType);
         }
 
@@ -279,8 +292,9 @@ public class Actions {
                 @NonNull ActionType actionType,
                 @NonNull ActionLocation actionLocation,
                 @NonNull XmlNode.NodeKey targetId,
+                @Nullable String reason,
                 @Nullable AttributeOperationType operationType) {
-            super(actionType, actionLocation, targetId);
+            super(actionType, actionLocation, targetId, reason);
             this.mOperationType = operationType;
         }
 

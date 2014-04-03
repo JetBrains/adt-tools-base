@@ -112,8 +112,9 @@ public class ActionRecorder {
      * Record a node that was added due to an implicit presence in earlier SDK release but requires
      * an explicit declaration in the application targeted SDK.
      * @param xmlElement the implied element that was added to the resulting xml.
+     * @param reason optional contextual information whey the implied element was added.
      */
-    void recordImpliedNodeAction(XmlElement xmlElement) {
+    void recordImpliedNodeAction(XmlElement xmlElement, String reason) {
         NodeKey storageKey = xmlElement.getId();
         Actions.DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
         if (nodeDecisionTree == null) {
@@ -125,6 +126,7 @@ public class ActionRecorder {
                         xmlElement.getDocument().getSourceLocation(),
                         xmlElement.getDocument().getRootNode().getPosition()),
                 xmlElement.getId(),
+                reason,
                 xmlElement.getOperationType()
         );
         nodeDecisionTree.addNodeRecord(record);
@@ -166,6 +168,7 @@ public class ActionRecorder {
                         targetElement.getDocument().getSourceLocation(),
                         targetElement.getPosition()),
                 targetElement.getId(),
+                null, /* reason */
                 mergedElement.getOperationType()
         );
         nodeDecisionTree.addNodeRecord(record);
@@ -192,6 +195,7 @@ public class ActionRecorder {
                         originElement.getDocument().getSourceLocation(),
                         attribute.getPosition()),
                 attribute.getId(),
+                null, /* reason */
                 attributeOperationType
         );
         attributeRecords.add(attributeRecord);
@@ -215,6 +219,7 @@ public class ActionRecorder {
                         implicitAttributeOwner.getDocument().getSourceLocation(),
                         implicitAttributeOwner.getPosition()),
                 attribute.getId(),
+                null, /* reason */
                 AttributeOperationType.REPLACE
         );
         attributeRecords.add(attributeRecord);

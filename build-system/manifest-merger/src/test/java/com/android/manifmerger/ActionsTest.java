@@ -79,6 +79,7 @@ public class ActionsTest extends TestCase {
                 new ActionLocation(mock(XmlLoader.SourceLocation.class), mock(
                         PositionXmlParser.Position.class)),
                 new NodeKey("nodeKey"),
+                null, /* reason */
                 NodeOperationType.MERGE));
         records.put(nodeKey, activityDecisionTree);
         Actions actions = new Actions(records.build());
@@ -108,6 +109,7 @@ public class ActionsTest extends TestCase {
                 new ActionLocation(mock(XmlLoader.SourceLocation.class), mock(
                         PositionXmlParser.Position.class)),
                 new NodeKey("nodeKey"),
+                null, /* reason */
                 NodeOperationType.MERGE));
         XmlNode.NodeName attributeName = XmlNode.fromXmlName("android:name");
         activityDecisionTree.mAttributeRecords.put(attributeName,
@@ -116,6 +118,7 @@ public class ActionsTest extends TestCase {
                             new ActionLocation(mock(XmlLoader.SourceLocation.class),
                                     mock(PositionXmlParser.Position.class)),
                             new NodeKey("nodeKey"),
+                            null, /* reason */
                             AttributeOperationType.STRICT)));
             records.put(nodeKey, activityDecisionTree);
         Actions actions = new Actions(records.build());
