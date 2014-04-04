@@ -162,7 +162,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
     }
 
     @Nullable
-    private static Project getProject(File outputFile, Set<Project> gradleProjects) {
+    public static Project getProject(File outputFile, Set<Project> gradleProjects) {
         // search for a project that contains this file in its output folder.
         Project projectMatch = null;
         for (Project project : gradleProjects) {

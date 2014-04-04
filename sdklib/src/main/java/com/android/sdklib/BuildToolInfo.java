@@ -86,8 +86,10 @@ public class BuildToolInfo {
     }
 
     /** The build-tool revision. */
+    @NonNull
     private final FullRevision mRevision;
     /** The path to the build-tool folder specific to this revision. */
+    @NonNull
     private final File mPath;
 
     private final Map<PathId, String> mPaths = Maps.newEnumMap(PathId.class);
@@ -109,7 +111,9 @@ public class BuildToolInfo {
         add(PathId.LD_MIPS, SdkConstants.FN_LD_MIPS);
     }
 
-    public BuildToolInfo(FullRevision revision, @NonNull File mainPath,
+    public BuildToolInfo(
+            @NonNull FullRevision revision,
+            @NonNull File mainPath,
             @NonNull File aapt,
             @NonNull File aidl,
             @NonNull File dx,

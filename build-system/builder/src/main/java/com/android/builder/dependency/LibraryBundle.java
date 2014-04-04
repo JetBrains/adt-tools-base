@@ -19,6 +19,7 @@ package com.android.builder.dependency;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.concurrency.Immutable;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
@@ -29,6 +30,7 @@ import java.util.List;
  * Default implementation of the LibraryDependency interface that handles a default bundle project
  * structure.
  */
+@Immutable
 public abstract class LibraryBundle implements LibraryDependency {
 
     public static final String FN_PROGUARD_TXT = "proguard.txt";
@@ -50,10 +52,6 @@ public abstract class LibraryBundle implements LibraryDependency {
         mBundle = bundle;
         mBundleFolder = bundleFolder;
         mName = name;
-    }
-
-    protected LibraryBundle(@NonNull File bundle, @NonNull File bundleFolder) {
-        this(bundle, bundleFolder, null);
     }
 
     @Override

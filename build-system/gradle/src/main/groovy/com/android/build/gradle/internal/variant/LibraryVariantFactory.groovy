@@ -276,11 +276,19 @@ public class LibraryVariantFactory implements VariantFactory {
         libVariantData.packageLibTask = bundle
         variantData.outputFile = bundle.archivePath
 
+        if (assembleTask == null) {
+            assembleTask = basePlugin.createAssembleTask(variantData)
+        }
+        assembleTask.dependsOn bundle
+        variantData.assembleTask = assembleTask
+
         if (extension.defaultPublishConfig.equals(fullName)) {
             setupDefaultConfig(project, variantData.variantDependency.packageConfiguration)
 
             // add the artifact that will be published
             project.artifacts.add("default", bundle)
+
+            basePlugin.assembleDefault.dependsOn variantData.assembleTask
         }
 
         // also publish the artifact with its full config name
@@ -289,11 +297,6 @@ public class LibraryVariantFactory implements VariantFactory {
             bundle.classifier = variantData.variantDependency.publishConfiguration.name
         }
 
-        if (assembleTask == null) {
-            assembleTask = basePlugin.createAssembleTask(variantData)
-        }
-        assembleTask.dependsOn bundle
-        variantData.assembleTask = assembleTask
 
         // configure the variant to be testable.
         variantConfig.output = new LibraryBundle(
