@@ -229,7 +229,7 @@ public class XmlDocument {
         int libraryMinSdk = lowerPriorityDocument.getMinSdkVersion();
 
         if (!checkUsesSdkMinVersion(thisMinSdk, libraryMinSdk)) {
-            mergingReport.addError(
+            mergingReport.addMessage(getSourceLocation(), 0, 0, MergingReport.Record.Severity.ERROR,
                     String.format(
                             "uses-sdk:minSdkVersion %1$s cannot be smaller than version "
                                     + "%2$s declared in library %3$s",

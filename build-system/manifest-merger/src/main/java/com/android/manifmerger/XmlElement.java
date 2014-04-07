@@ -24,11 +24,14 @@ import com.android.utils.PositionXmlParser;
 import com.android.utils.PositionXmlParser.Position;
 import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
@@ -189,27 +192,9 @@ public class XmlElement extends OrphanXmlElement {
         return mDocument.getNodePosition(this);
     }
 
-    public void printPosition(StringBuilder stringBuilder) {
-        PositionXmlParser.Position position = getPosition();
-        if (position == null) {
-            stringBuilder.append("Unknown position");
-            return;
-        }
-        dumpPosition(stringBuilder, position);
-    }
-
-    public String printPosition() {
-        StringBuilder stringBuilder = new StringBuilder();
-        printPosition(stringBuilder);
-        return stringBuilder.toString();
-    }
-
-    private void dumpPosition(StringBuilder stringBuilder, Position position) {
-      stringBuilder
-          .append("(").append(position.getLine())
-          .append(",").append(position.getColumn()).append(") ")
-          .append(mDocument.getSourceLocation().print(true))
-          .append(":").append(position.getLine());
+    @Override
+    public XmlLoader.SourceLocation getSourceLocation() {
+        return getDocument().getSourceLocation();
     }
 
     /**
@@ -292,7 +277,6 @@ public class XmlElement extends OrphanXmlElement {
     public void mergeChildren(XmlElement lowerPriorityNode,
             MergingReport.Builder mergingReport) {
 
-        ILogger logger = mergingReport.getLogger();
         // read all lower priority mergeable nodes.
         // if the same node is not defined in this document merge it in.
         // if the same is defined, so far, give an error message.
@@ -330,12 +314,13 @@ public class XmlElement extends OrphanXmlElement {
         XmlElement thisChild = thisChildOptional.get();
         switch (thisChild.getType().getMergeType()) {
             case CONFLICT:
-                mergingReport.addError(String.format(
+                addMessage(mergingReport, MergingReport.Record.Severity.ERROR, String.format(
                         "Node %1$s cannot be present in more than one input file and it's "
                                 + "present at %2$s and %3$s",
                         thisChild.getType(),
                         thisChild.printPosition(),
-                        lowerPriorityChild.printPosition()));
+                        lowerPriorityChild.printPosition()
+                ));
                 break;
             case ALWAYS:
                 // no merging, we consume the lower priority node unmodified.
@@ -405,7 +390,7 @@ public class XmlElement extends OrphanXmlElement {
      * @param lowerPriority the lower priority element.
      * @param mergingReport the merging report to log errors and actions.
      */
-    private static void handleTwoElementsExistence(
+    private void handleTwoElementsExistence(
             XmlElement higherPriority,
             XmlElement lowerPriority,
             MergingReport.Builder mergingReport) {
@@ -437,7 +422,7 @@ public class XmlElement extends OrphanXmlElement {
                 Optional<String> compareMessage = higherPriority.compareTo(lowerPriority);
                 if (compareMessage.isPresent()) {
                     // flag error.
-                    mergingReport.addError(String.format(
+                    addMessage(mergingReport, MergingReport.Record.Severity.ERROR, String.format(
                             "Node %1$s at %2$s is tagged with tools:node=\"strict\", yet "
                                     + "%3$s at %4$s is different : %5$s",
                             higherPriority.getId(),
@@ -554,12 +539,33 @@ public class XmlElement extends OrphanXmlElement {
         List<Node> expectedChildren = filterUninterestingNodes(getXml().getChildNodes());
         List<Node> actualChildren = filterUninterestingNodes(otherNode.getXml().getChildNodes());
         if (expectedChildren.size() != actualChildren.size()) {
-            return Optional.of(String.format(
-                    "%1$s: Number of children do not match up: expected %2$d versus %3$d at %4$s",
-                    getId(),
-                    expectedChildren.size(),
-                    actualChildren.size(),
-                    otherNode.printPosition()));
+
+            if (expectedChildren.size() > actualChildren.size()) {
+                // missing some.
+                List<String> missingChildrenNames =
+                        Lists.transform(expectedChildren, NODE_TO_NAME);
+                missingChildrenNames.removeAll(Lists.transform(actualChildren, NODE_TO_NAME));
+                return Optional.of(String.format(
+                        "%1$s: Number of children do not match up: "
+                                + "expected %2$d versus %3$d at %4$s, missing %5$s",
+                        getId(),
+                        expectedChildren.size(),
+                        actualChildren.size(),
+                        otherNode.printPosition(),
+                        Joiner.on(",").join(missingChildrenNames)));
+            } else {
+                // extra ones.
+                List<String> extraChildrenNames = Lists.transform(actualChildren, NODE_TO_NAME);
+                extraChildrenNames.removeAll(Lists.transform(expectedChildren, NODE_TO_NAME));
+                return Optional.of(String.format(
+                        "%1$s: Number of children do not match up: "
+                                + "expected %2$d versus %3$d at %4$s, extra elements found : %5$s",
+                        getId(),
+                        expectedChildren.size(),
+                        actualChildren.size(),
+                        otherNode.printPosition(),
+                        Joiner.on(",").join(expectedChildren)));
+            }
         }
         for (Node expectedChild : expectedChildren) {
             if (expectedChild.getNodeType() == Node.ELEMENT_NODE) {
@@ -667,5 +673,12 @@ public class XmlElement extends OrphanXmlElement {
             previousSibling = previousSibling.getPreviousSibling();
         }
         return nodesToAdopt.build().reverse();
+    }
+
+    void addMessage(MergingReport.Builder mergingReport,
+            MergingReport.Record.Severity severity,
+            String message) {
+        mergingReport.addMessage(getDocument().getSourceLocation(),
+                getLine(), getColumn(), severity, message);
     }
 }

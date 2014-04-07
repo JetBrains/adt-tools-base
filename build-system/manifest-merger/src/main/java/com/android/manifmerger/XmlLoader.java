@@ -131,7 +131,7 @@ public final class XmlLoader {
 
         @Override
         public String print(boolean shortFormat) {
-            return "file:" + (shortFormat ? mName : mName + ":" + mFile.getPath());
+            return shortFormat ? mName : mFile.getAbsolutePath();
         }
 
         @Override

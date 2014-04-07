@@ -201,4 +201,4 @@
 
 @errors
 
-WARNING:supports-gl-texture#some.gl.texture1 was tagged at file:ManifestMerger2Test0_main.xml:51 to replace another declaration but no other declaration present
+WARNING:supports-gl-texture#some.gl.texture1 was tagged at ManifestMerger2Test0_main.xml:51 to replace another declaration but no other declaration present

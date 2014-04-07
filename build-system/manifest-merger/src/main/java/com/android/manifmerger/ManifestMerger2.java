@@ -134,7 +134,9 @@ public class ManifestMerger2 {
         XmlDocument finalMergedDocument = xmlDocumentOptional.get();
         PostValidator.validate(finalMergedDocument, mergingReportBuilder);
         if (mergingReportBuilder.hasErrors()) {
-            mergingReportBuilder.addWarning("Post merge validation failed");
+            finalMergedDocument.getRootNode().addMessage(mergingReportBuilder,
+                    MergingReport.Record.Severity.WARNING,
+                    "Post merge validation failed");
         }
         XmlDocument cleanedDocument =
                 ToolsInstructionsCleaner.cleanToolsReferences(
@@ -162,7 +164,9 @@ public class ManifestMerger2 {
         MergingReport.Result validationResult = PreValidator
                 .validate(mergingReportBuilder, lowerPriorityDocument);
         if (validationResult == MergingReport.Result.ERROR) {
-            mergingReportBuilder.addError("Validation failed, exiting");
+            mergingReportBuilder.addMessage(lowerPriorityDocument.getSourceLocation(), 0, 0,
+                    MergingReport.Record.Severity.ERROR,
+                    "Validation failed, exiting");
             return Optional.absent();
         }
         Optional<XmlDocument> result;

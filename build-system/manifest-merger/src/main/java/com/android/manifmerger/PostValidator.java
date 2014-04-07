@@ -75,24 +75,28 @@ public class PostValidator {
             case REPLACE:
                 // we should find at least one rejected twin.
                 if (!isNodeOperationPresent(xmlElement, actions, ActionType.REJECTED)) {
-                    mergingReport.addWarning(String.format(
-                            "%1$s was tagged at %2$s:%3$d to replace another declaration "
-                                    + "but no other declaration present",
-                            xmlElement.getId(),
-                            xmlElement.getDocument().getSourceLocation().print(true),
-                            xmlElement.getPosition().getLine()));
+                    xmlElement.addMessage(mergingReport, MergingReport.Record.Severity.WARNING,
+                            String.format(
+                                    "%1$s was tagged at %2$s:%3$d to replace another declaration "
+                                            + "but no other declaration present",
+                                    xmlElement.getId(),
+                                    xmlElement.getDocument().getSourceLocation().print(true),
+                                    xmlElement.getPosition().getLine()
+                            ));
                 }
                 break;
             case REMOVE:
             case REMOVE_ALL:
                 // we should find at least one rejected twin.
                 if (!isNodeOperationPresent(xmlElement, actions, ActionType.REJECTED)) {
-                    mergingReport.addWarning(String.format(
-                            "%1$s was tagged at %2$s:%3$d to remove other declarations "
-                                    + "but no other declaration present",
-                            xmlElement.getId(),
-                            xmlElement.getDocument().getSourceLocation().print(true),
-                            xmlElement.getPosition().getLine()));
+                    xmlElement.addMessage(mergingReport, MergingReport.Record.Severity.WARNING,
+                            String.format(
+                                    "%1$s was tagged at %2$s:%3$d to remove other declarations "
+                                            + "but no other declaration present",
+                                    xmlElement.getId(),
+                                    xmlElement.getDocument().getSourceLocation().print(true),
+                                    xmlElement.getPosition().getLine()
+                            ));
                 }
                 break;
         }
@@ -120,25 +124,29 @@ public class PostValidator {
                 case REMOVE:
                     if (!isAttributeOperationPresent(
                             xmlElement, attributeOperation, actions, ActionType.REJECTED)) {
-                        mergingReport.addWarning(String.format(
-                                "%1$s@%2$s was tagged at %3$s:%4$d to remove other"
-                                        + " declarations but no other declaration present",
-                                xmlElement.getId(),
-                                attributeOperation.getKey(),
-                                xmlElement.getDocument().getSourceLocation().print(true),
-                                xmlElement.getPosition().getLine()));
+                        xmlElement.addMessage(mergingReport, MergingReport.Record.Severity.WARNING,
+                                String.format(
+                                        "%1$s@%2$s was tagged at %3$s:%4$d to remove other"
+                                                + " declarations but no other declaration present",
+                                        xmlElement.getId(),
+                                        attributeOperation.getKey(),
+                                        xmlElement.getDocument().getSourceLocation().print(true),
+                                        xmlElement.getPosition().getLine()
+                                ));
                     }
                     break;
                 case REPLACE:
                     if (!isAttributeOperationPresent(
                             xmlElement, attributeOperation, actions, ActionType.REJECTED)) {
-                        mergingReport.addWarning(String.format(
-                                "%1$s@%2$s was tagged at %3$s:%4$d to replace other"
-                                        + " declarations but no other declaration present",
-                                xmlElement.getId(),
-                                attributeOperation.getKey(),
-                                xmlElement.getDocument().getSourceLocation().print(true),
-                                xmlElement.getPosition().getLine()));
+                        xmlElement.addMessage(mergingReport, MergingReport.Record.Severity.WARNING,
+                                String.format(
+                                        "%1$s@%2$s was tagged at %3$s:%4$d to replace other"
+                                                + " declarations but no other declaration present",
+                                        xmlElement.getId(),
+                                        attributeOperation.getKey(),
+                                        xmlElement.getDocument().getSourceLocation().print(true),
+                                        xmlElement.getPosition().getLine()
+                                ));
                     }
                     break;
             }

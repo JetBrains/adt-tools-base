@@ -224,4 +224,4 @@
 
 @errors
 
-WARNING:Missing 'package' declaration in manifest at (1,1) file:ManifestMerger2Test2_lib2.xml:1
+WARNING:Missing 'package' declaration in manifest at ManifestMerger2Test2_lib2.xml:1:1

@@ -217,18 +217,26 @@ public class ManifestMerger2Test extends ManifestMergerTest {
 
         StringReader stringReader = new StringReader(expectedOutput);
         BufferedReader reader = new BufferedReader(stringReader);
-        String line;
+        String line = reader.readLine();
         List<Record> records = new ArrayList<Record>(mergeReport.getLoggingRecords());
-        while ((line = reader.readLine()) != null) {
+        while (line  != null) {
             if (line.startsWith("WARNING") || line.startsWith("ERROR")) {
+                String message = line;
+                do {
+                    line = reader.readLine();
+                    if (line != null && line.startsWith("    ")) {
+                        message = message + "\n" + line;
+                    }
+                } while (line != null && line.startsWith("    "));
+
                 // next might generate an exception which will make the test fail when we
                 // get unexpected error message.
-                if (!findLineInRecords(line, records)) {
+                if (!findLineInRecords(message, records)) {
 
-                    StringBuilder message = new StringBuilder();
-                    dumpRecords(records, message);
-                    message.append("Cannot find expected error : \n").append(line);
-                    fail(message.toString());
+                    StringBuilder errorMessage = new StringBuilder();
+                    dumpRecords(records, errorMessage);
+                    errorMessage.append("Cannot find expected error : \n").append(message);
+                    fail(errorMessage.toString());
                 }
             }
         }
@@ -242,8 +250,15 @@ public class ManifestMerger2Test extends ManifestMergerTest {
     }
 
     private boolean findLineInRecords(String errorLine, List<Record> records) {
+        String severity = errorLine.substring(0, errorLine.indexOf(':'));
+        String message = errorLine.substring(errorLine.indexOf(':') + 1);
         for (Record record : records) {
-            if (record.toString().equals(errorLine)) {
+            int indexOfSuggestions = record.getMessage().indexOf("\n\tSuggestion:");
+            String messageRecord = indexOfSuggestions != -1
+                    ? record.getMessage().substring(0, indexOfSuggestions)
+                    : record.getMessage();
+            if (messageRecord.replaceAll("\t", "    ").equals(message)
+                    && record.getSeverity() == Record.Severity.valueOf(severity)) {
                 records.remove(record);
                 return true;
             }
