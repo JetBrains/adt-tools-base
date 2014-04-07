@@ -73,6 +73,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -1068,6 +1069,18 @@ public class GradleImport {
     @NonNull
     public List<String> getErrors() {
         return mErrors;
+    }
+
+    /**
+     * Returns module names to module source locations mappings.
+     */
+    @NonNull
+    public Map<String, File> getDetectedModuleLocations() {
+        TreeMap<String, File> modules = new TreeMap<String, File>();
+        for (ImportModule module : mModules) {
+            modules.put(module.getModuleName(), module.getCanonicalModuleDir());
+        }
+        return modules;
     }
 
     private static class ImportException extends RuntimeException {
