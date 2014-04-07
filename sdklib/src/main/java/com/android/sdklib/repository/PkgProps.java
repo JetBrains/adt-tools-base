@@ -38,6 +38,7 @@ public class PkgProps {
     public static final String PKG_RELEASE_URL          = "Pkg.RelNoteUrl";         //$NON-NLS-1$
     public static final String PKG_SOURCE_URL           = "Pkg.SourceUrl";          //$NON-NLS-1$
     public static final String PKG_OBSOLETE             = "Pkg.Obsolete";           //$NON-NLS-1$
+    public static final String PKG_LIST_DISPLAY         = "Pkg.ListDisplay";        //$NON-NLS-1$
 
     // AndroidVersion
 

@@ -148,6 +148,7 @@ public class PackageTest extends TestCase {
         props.setProperty(PkgProps.PKG_LICENSE,      "The License");
         props.setProperty(PkgProps.PKG_DESC,         "Some description.");
         props.setProperty(PkgProps.PKG_DESC_URL,     "http://description/url");
+        props.setProperty(PkgProps.PKG_LIST_DISPLAY, "Some description.");
         props.setProperty(PkgProps.PKG_RELEASE_NOTE, "Release Note");
         props.setProperty(PkgProps.PKG_RELEASE_URL,  "http://release/note");
         props.setProperty(PkgProps.PKG_SOURCE_URL,   "http://source/url");

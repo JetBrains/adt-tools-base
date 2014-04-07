@@ -15,7 +15,7 @@
  * limitations under the License.
 -->
 <sdk:sdk-sys-img
-    xmlns:sdk="http://schemas.android.com/sdk/android/sys-img/2">
+    xmlns:sdk="http://schemas.android.com/sdk/android/sys-img/3">
 
     <!-- Define a couple of licenses. These will be referenced by uses-license later. -->
 
@@ -29,6 +29,7 @@
     </sdk:license>
 
     <sdk:system-image>
+        <sdk:list-display>System Image for xCPU for API 2</sdk:list-display>
         <sdk:api-level>2</sdk:api-level>
         <sdk:revision>1</sdk:revision>
         <sdk:tag-id>default</sdk:tag-id>
@@ -43,6 +44,7 @@
     </sdk:system-image>
 
     <sdk:system-image>
+        <!-- No list-display here. -->
         <sdk:api-level>2</sdk:api-level>
         <sdk:revision>2</sdk:revision>
         <sdk:tag-id>default</sdk:tag-id>
@@ -58,6 +60,7 @@
     </sdk:system-image>
 
     <sdk:system-image>
+        <!-- No list-display here. -->
         <sdk:api-level>2</sdk:api-level>
         <sdk:revision>2</sdk:revision>
         <sdk:tag-id>other</sdk:tag-id>
@@ -73,6 +76,7 @@
     </sdk:system-image>
 
     <sdk:system-image>
+        <!-- No list-display here. -->
         <sdk:api-level>42</sdk:api-level>
         <sdk:revision>12</sdk:revision>
         <sdk:tag-id>default</sdk:tag-id>
@@ -87,6 +91,7 @@
     </sdk:system-image>
 
     <sdk:system-image>
+        <!-- No list-display here. -->
         <sdk:api-level>42</sdk:api-level>
         <sdk:revision>12</sdk:revision>
         <sdk:tag-id>default</sdk:tag-id>
@@ -101,6 +106,7 @@
     </sdk:system-image>
 
     <sdk:system-image>
+        <sdk:list-display>MIPS system image for tag MIPS-only</sdk:list-display>
         <sdk:api-level>44</sdk:api-level>
         <sdk:revision>14</sdk:revision>
         <sdk:tag-id>mips-only</sdk:tag-id>
@@ -116,6 +122,7 @@
     </sdk:system-image>
 
     <sdk:system-image>
+        <!-- No list-display here. -->
         <sdk:api-level>45</sdk:api-level>
         <sdk:revision>15</sdk:revision>
         <sdk:tag-id>tag-name---is-Sanitized----if-Display-is-Missing</sdk:tag-id>

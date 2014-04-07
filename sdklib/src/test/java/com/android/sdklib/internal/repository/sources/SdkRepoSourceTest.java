@@ -183,7 +183,7 @@ public class SdkRepoSourceTest extends TestCase {
      */
     public void testFindAlternateToolsXml_3() throws Exception {
         InputStream xmlStream = getTestResource(
-                    "/com/android/sdklib/testdata/repository_sample_3.xml");
+                    "/com/android/sdklib/testdata/repository_sample_03.xml");
 
         Pair<Document, String> result = mSource._findAlternateToolsXml(xmlStream);
         assertNotNull(result.getFirst());
@@ -211,9 +211,10 @@ public class SdkRepoSourceTest extends TestCase {
     /**
      * Validate we can still load an old repository in schema version 1
      */
-    public void testLoadXml_1() throws Exception {
-        InputStream xmlStream = getTestResource(
-                    "/com/android/sdklib/testdata/repository_sample_1.xml");
+    public void testLoadRepoXml_01() throws Exception {
+        String filename = "/com/android/sdklib/testdata/repository_sample_01.xml";
+        InputStream xmlStream = getTestResource(filename);
+        assertNotNull("Missing test file: " + filename, xmlStream);
 
         // guess the version from the XML document
         int version = mSource._getXmlSchemaVersion(xmlStream);
@@ -289,9 +290,10 @@ public class SdkRepoSourceTest extends TestCase {
     /**
      * Validate we can still load an old repository in schema version 2
      */
-    public void testLoadXml_2() throws Exception {
-        InputStream xmlStream = getTestResource(
-                    "/com/android/sdklib/testdata/repository_sample_2.xml");
+    public void testLoadRepoXml_02() throws Exception {
+        String filename = "/com/android/sdklib/testdata/repository_sample_02.xml";
+        InputStream xmlStream = getTestResource(filename);
+        assertNotNull("Missing test file: " + filename, xmlStream);
 
         // guess the version from the XML document
         int version = mSource._getXmlSchemaVersion(xmlStream);
@@ -369,9 +371,10 @@ public class SdkRepoSourceTest extends TestCase {
     /**
      * Validate what we can load from repository in schema version 3
      */
-    public void testLoadXml_3() throws Exception {
-        InputStream xmlStream = getTestResource(
-                    "/com/android/sdklib/testdata/repository_sample_3.xml");
+    public void testLoadRepoXml_03() throws Exception {
+        String filename = "/com/android/sdklib/testdata/repository_sample_03.xml";
+        InputStream xmlStream = getTestResource(filename);
+        assertNotNull("Missing test file: " + filename, xmlStream);
 
         // guess the version from the XML document
         int version = mSource._getXmlSchemaVersion(xmlStream);
@@ -448,9 +451,10 @@ public class SdkRepoSourceTest extends TestCase {
     /**
      * Validate what we can load from repository in schema version 4
      */
-    public void testLoadXml_4() throws Exception {
-        InputStream xmlStream = getTestResource(
-                    "/com/android/sdklib/testdata/repository_sample_4.xml");
+    public void testLoadRepoXml_04() throws Exception {
+        String filename = "/com/android/sdklib/testdata/repository_sample_04.xml";
+        InputStream xmlStream = getTestResource(filename);
+        assertNotNull("Missing test file: " + filename, xmlStream);
 
         // guess the version from the XML document
         int version = mSource._getXmlSchemaVersion(xmlStream);
@@ -555,9 +559,10 @@ public class SdkRepoSourceTest extends TestCase {
     /**
      * Validate what we can load from repository in schema version 5
      */
-    public void testLoadXml_5() throws Exception {
-        InputStream xmlStream = getTestResource(
-                    "/com/android/sdklib/testdata/repository_sample_5.xml");
+    public void testLoadRepoXml_05() throws Exception {
+        String filename = "/com/android/sdklib/testdata/repository_sample_05.xml";
+        InputStream xmlStream = getTestResource(filename);
+        assertNotNull("Missing test file: " + filename, xmlStream);
 
         // guess the version from the XML document
         int version = mSource._getXmlSchemaVersion(xmlStream);
@@ -708,9 +713,10 @@ public class SdkRepoSourceTest extends TestCase {
     /**
      * Validate what we can load from repository in schema version 6
      */
-    public void testLoadXml_6() throws Exception {
-        InputStream xmlStream = getTestResource(
-                    "/com/android/sdklib/testdata/repository_sample_6.xml");
+    public void testLoadRepoXml_06() throws Exception {
+        String filename = "/com/android/sdklib/testdata/repository_sample_06.xml";
+        InputStream xmlStream = getTestResource(filename);
+        assertNotNull("Missing test file: " + filename, xmlStream);
 
         // guess the version from the XML document
         int version = mSource._getXmlSchemaVersion(xmlStream);
@@ -851,9 +857,10 @@ public class SdkRepoSourceTest extends TestCase {
     /**
      * Validate what we can load from repository in schema version 7
      */
-    public void testLoadXml_7() throws Exception {
-        InputStream xmlStream = getTestResource(
-                    "/com/android/sdklib/testdata/repository_sample_7.xml");
+    public void testLoadRepoXml_07() throws Exception {
+        String filename = "/com/android/sdklib/testdata/repository_sample_07.xml";
+        InputStream xmlStream = getTestResource(filename);
+        assertNotNull("Missing test file: " + filename, xmlStream);
 
         // guess the version from the XML document
         int version = mSource._getXmlSchemaVersion(xmlStream);
@@ -1028,9 +1035,10 @@ public class SdkRepoSourceTest extends TestCase {
     /**
      * Validate what we can load from repository in schema version 8
      */
-    public void testLoadXml_8() throws Exception {
-        InputStream xmlStream = getTestResource(
-                    "/com/android/sdklib/testdata/repository_sample_8.xml");
+    public void testLoadRepoXml_08() throws Exception {
+        String filename = "/com/android/sdklib/testdata/repository_sample_08.xml";
+        InputStream xmlStream = getTestResource(filename);
+        assertNotNull("Missing test file: " + filename, xmlStream);
 
         // guess the version from the XML document
         int version = mSource._getXmlSchemaVersion(xmlStream);
@@ -1204,14 +1212,44 @@ public class SdkRepoSourceTest extends TestCase {
                 "[Android SDK Tools: 4, " +
                  "Android SDK Tools: 4 rc5]",
                 Arrays.toString(minPlatToolsRevs.toArray()));
+
+        // Check the list display of the packages
+        ArrayList<String> listDescs = new ArrayList<String>();
+        for (Package p : pkgs) {
+            listDescs.add(p.getListDescription());
+        }
+        assertEquals(
+                "[Android SDK Tools, " +
+                "Android SDK Tools, " +
+                "Android SDK Platform-tools, " +
+                "Android SDK Build-tools, " +
+                "Android SDK Build-tools, " +
+                "Android SDK Build-tools, " +
+                "Android SDK Build-tools, " +
+                "Documentation for Android SDK, " +
+                "Documentation for Android SDK, " +
+                "SDK Platform Android Pastry Preview, " +
+                "SDK Platform Android 1.1, " +
+                "SDK Platform Android 1.0, " +
+                "Samples for SDK API 14 (Obsolete), " +
+                "Samples for SDK API 14 (Obsolete), " +
+                "ARM EABI System Image, " +
+                "MIPS System Image, " +
+                "ARM EABI v7a System Image, " +
+                "Intel x86 Atom System Image, " +
+                "Sources for Android SDK, " +
+                "Sources for Android SDK, " +
+                "Sources for Android SDK]",
+                Arrays.toString(listDescs.toArray()));
     }
 
     /**
-     * Validate what we can load from repository in schema version 8
+     * Validate what we can load from repository in schema version 9
      */
-    public void testLoadXml_9() throws Exception {
-        InputStream xmlStream = getTestResource(
-                    "/com/android/sdklib/testdata/repository_sample_9.xml");
+    public void testLoadRepoXml_09() throws Exception {
+        String filename = "/com/android/sdklib/testdata/repository_sample_09.xml";
+        InputStream xmlStream = getTestResource(filename);
+        assertNotNull("Missing test file: " + filename, xmlStream);
 
         // guess the version from the XML document
         int version = mSource._getXmlSchemaVersion(xmlStream);
@@ -1241,7 +1279,7 @@ public class SdkRepoSourceTest extends TestCase {
                      "Found SDK Platform Android 1.1, API 2, revision 12\n" +
                      "Found Intel x86 Atom System Image, Android API 2, revision 1\n" +
                      "Found ARM EABI v7a System Image, Android API 2, revision 2\n" +
-                     "Found Custom Thing System Image, Android API 2, revision 2\n" +
+                     "Found Custom Thing ARM EABI v7a System Image, Android API 2, revision 2\n" +
                      "Found Sources for Android SDK, API 2, revision 2\n" +
                      "Found SDK Platform Android Pastry Preview, revision 3\n" +
                      "Found Android SDK Tools, revision 1.2.3 rc4\n" +
@@ -1253,9 +1291,9 @@ public class SdkRepoSourceTest extends TestCase {
                      "Found Android SDK Build-tools, revision 3\n" +
                      "Found Samples for SDK API 14, revision 24 (Obsolete)\n" +
                      "Found Samples for SDK API 14, revision 25 (Obsolete)\n" +
-                     "Found Variant 1 System Image, Android API 42, revision 12\n" +
-                     "Found Variant 1 System Image, Android API 42, revision 12\n" +
-                     "Found Variant 2 System Image, Android API 42, revision 12\n" +
+                     "Found Variant 1 ARM EABI System Image, Android API 42, revision 12\n" +
+                     "Found Variant 1 MIPS System Image, Android API 42, revision 12\n" +
+                     "Found Variant 2 MIPS System Image, Android API 42, revision 12\n" +
                      "Found Sources for Android SDK, API 42, revision 12\n" +
                      "Found Android SDK Build-tools, revision 12.13.14\n",
                 monitor.getCapturedVerboseLog());
@@ -1393,7 +1431,250 @@ public class SdkRepoSourceTest extends TestCase {
                 "[Android SDK Tools: 4, " +
                  "Android SDK Tools: 4 rc5]",
                 Arrays.toString(minPlatToolsRevs.toArray()));
+
+        // Check the list display of the packages
+        ArrayList<String> listDescs = new ArrayList<String>();
+        for (Package p : pkgs) {
+            listDescs.add(p.getListDescription());
+        }
+        assertEquals(
+                "[Android SDK Tools, " +
+                "Android SDK Tools, " +
+                "Android SDK Platform-tools, " +
+                "Android SDK Build-tools, " +
+                "Android SDK Build-tools, " +
+                "Android SDK Build-tools, " +
+                "Android SDK Build-tools, " +
+                "Documentation for Android SDK, " +
+                "Documentation for Android SDK, " +
+                "SDK Platform Android Pastry Preview, " +
+                "SDK Platform Android 1.1, " +
+                "SDK Platform Android 1.0, " +
+                "Samples for SDK API 14 (Obsolete), " +
+                "Samples for SDK API 14 (Obsolete), " +
+                "Variant 1 ARM EABI System Image, " +
+                "Variant 1 MIPS System Image, " +
+                "Variant 2 MIPS System Image, " +
+                "Custom Thing ARM EABI v7a System Image, " +
+                "ARM EABI v7a System Image, " +
+                "Intel x86 Atom System Image, " +
+                "Sources for Android SDK, " +
+                "Sources for Android SDK, " +
+                "Sources for Android SDK]",
+                Arrays.toString(listDescs.toArray()));
     }
+
+    /**
+     * Validate what we can load from repository in schema version 10
+     */
+    public void testLoadRepoXml_10() throws Exception {
+        String filename = "/com/android/sdklib/testdata/repository_sample_10.xml";
+        InputStream xmlStream = getTestResource(filename);
+        assertNotNull("Missing test file: " + filename, xmlStream);
+
+        // guess the version from the XML document
+        int version = mSource._getXmlSchemaVersion(xmlStream);
+        assertEquals(10, version);
+
+        Boolean[] validatorFound = new Boolean[] { Boolean.FALSE };
+        String[] validationError = new String[] { null };
+        String url = "not-a-valid-url://" + SdkRepoConstants.URL_DEFAULT_FILENAME;
+
+        String uri = mSource._validateXml(xmlStream, url, version, validationError, validatorFound);
+        assertEquals(Boolean.TRUE, validatorFound[0]);
+        assertEquals(null, validationError[0]);
+        assertEquals(SdkRepoConstants.getSchemaUri(10), uri);
+
+        // Validation was successful, load the document
+        MockMonitor monitor = new MockMonitor();
+        Document doc = mSource._getDocument(xmlStream, monitor);
+        assertNotNull(doc);
+
+        // Get the packages
+        assertTrue(mSource._parsePackages(doc, uri, monitor));
+
+        // Verbose log order matches the XML order and not the sorted display order.
+        assertEquals("Found The first Android platform ever, revision 3\n" +        // list-display
+                     "Found Doc for first platform, revision 1\n" +                 // list-display
+                     "Found Sources for first platform, revision 1\n" +             // list-display
+                     "Found SDK Platform Android 1.1, API 2, revision 12\n" +
+                     "Found Sources for Android SDK, API 2, revision 2\n" +
+                     "Found SDK Platform Android Pastry Preview, revision 3\n" +
+                     "Found Tools in version 1.2.3.4, revision 1.2.3 rc4\n" +       // list-display
+                     "Found Build tools v3 (preview 5), revision 3 rc5\n" +         // list-display
+                     "Found Android SDK Build-tools, revision 3.0.1\n" +
+                     "Found Documentation for Android SDK, API 2, revision 42\n" +
+                     "Found Android SDK Tools, revision 42\n" +
+                     "Found Android SDK Platform-tools, revision 3 rc5\n" +
+                     "Found Android SDK Build-tools, revision 3\n" +
+                     "Found Samples from Android 14, revision 24 (Obsolete)\n" +    // list-display
+                     "Found Samples for SDK API 14, revision 25 (Obsolete)\n" +
+                     "Found Sources for Android SDK, API 42, revision 12\n" +
+                     "Found Android SDK Build-tools, revision 12.13.14\n",
+                monitor.getCapturedVerboseLog());
+        assertEquals("", monitor.getCapturedLog());
+        assertEquals("", monitor.getCapturedErrorLog());
+
+        // check the packages we found... we expected to find 13 packages with each at least
+        // one archive.
+        // Note the order doesn't necessary match the one from the
+        // assertEquald(getCapturedVerboseLog) because packages are sorted using the
+        // Packages' sorting order, e.g. all platforms are sorted by descending API level, etc.
+        // Order is defined by
+        // com.android.sdklib.internal.repository.packages.Package.comparisonKey()
+        Package[] pkgs = mSource.getPackages();
+
+        assertEquals(17, pkgs.length);
+        for (Package p : pkgs) {
+            assertTrue(p.getArchives().length >= 1);
+        }
+
+        // Check the layoutlib & included-abi of the platform packages.
+        ArrayList<Pair<Integer, Integer>> layoutlibVers = new ArrayList<Pair<Integer,Integer>>();
+        ArrayList<String> includedAbi = new ArrayList<String>();
+        for (Package p : pkgs) {
+            if (p instanceof PlatformPackage) {
+                layoutlibVers.add(((PlatformPackage) p).getLayoutlibVersion());
+                String abi = ((PlatformPackage) p).getIncludedAbi();
+                includedAbi.add(abi == null ? "(null)" : abi);
+            }
+        }
+        assertEquals(
+                "[Pair [first=1, second=0], " +         // platform API 5 preview
+                 "Pair [first=5, second=31415], " +     // platform API 2
+                 "Pair [first=5, second=0]]",           // platform API 1
+                Arrays.toString(layoutlibVers.toArray()));
+        assertEquals(
+                "[(null), " +                           // platform API 5 preview
+                 "x86, " +                              // platform API 2
+                 "armeabi]",                            // platform API 1
+                Arrays.toString(includedAbi.toArray()));
+
+        // Check the extra packages path, vendor, install folder, project-files, old-paths
+
+        final String osSdkPath = "SDK";
+        final SdkManager sdkManager = new MockEmptySdkManager(osSdkPath);
+
+        ArrayList<String> extraPaths    = new ArrayList<String>();
+        ArrayList<String> extraVendors  = new ArrayList<String>();
+        ArrayList<File>   extraInstall  = new ArrayList<File>();
+        ArrayList<ArrayList<String>> extraFilePaths = new ArrayList<ArrayList<String>>();
+        for (Package p : pkgs) {
+            if (p instanceof ExtraPackage) {
+                ExtraPackage ep = (ExtraPackage) p;
+                // combine path and old-paths in the form "path [old_path1, old_path2]"
+                extraPaths.add(ep.getPath() + " " + Arrays.toString(ep.getOldPaths()));
+                extraVendors.add(ep.getVendorId() + "/" + ep.getVendorDisplay());
+                extraInstall.add(ep.getInstallFolder(osSdkPath, sdkManager));
+
+                ArrayList<String> filePaths = new ArrayList<String>();
+                for (String filePath : ep.getProjectFiles()) {
+                    filePaths.add(filePath);
+                }
+                extraFilePaths.add(filePaths);
+            }
+        }
+
+        // There are no extra packages anymore in repository-6
+        assertEquals("[]", Arrays.toString(extraPaths.toArray()));
+        assertEquals("[]", Arrays.toString(extraVendors.toArray()));
+        assertEquals("[]", Arrays.toString(extraInstall.toArray()));
+        assertEquals("[]", Arrays.toString(extraFilePaths.toArray()));
+
+
+        // Check the system-image packages -- there can't be any in schema 10 anymore
+        ArrayList<String> sysImgInfo = new ArrayList<String>();
+        for (Package p : pkgs) {
+            if (p instanceof SystemImagePackage) {
+                SystemImagePackage sip = (SystemImagePackage) p;
+                sysImgInfo.add(String.format("%1$s %2$s: %3$s",     //$NON-NLS-1$
+                        sip.getAndroidVersion().getApiString(),
+                        sip.getAbi(),
+                        sip.getTag()));
+            }
+        }
+        assertEquals("[]", Arrays.toString(sysImgInfo.toArray()));
+
+
+        // Check the source packages
+        ArrayList<String> sourceVersion = new ArrayList<String>();
+        for (Package p : pkgs) {
+            if (p instanceof SourcePackage) {
+                SourcePackage sp = (SourcePackage) p;
+                String v = sp.getAndroidVersion().getApiString();
+                sourceVersion.add(v);
+            }
+        }
+        assertEquals(
+                "[42, 2, 1]",
+                Arrays.toString(sourceVersion.toArray()));
+
+
+        // Check the min-tools-rev
+        ArrayList<String> minToolsRevs = new ArrayList<String>();
+        for (Package p : pkgs) {
+            if (p instanceof IMinToolsDependency) {
+                minToolsRevs.add(p.getListDescription() + ": " +
+                        ((IMinToolsDependency) p).getMinToolsRevision().toShortString());
+            }
+        }
+        assertEquals(
+                "[SDK Platform Android Pastry Preview: 0, " +
+                 "SDK Platform Android 1.1: 0, " +
+                 "The first Android platform ever: 2.0.1, " +           // list-display
+                 "Samples from Android 14 (Obsolete): 5, " +            // list-display
+                 "Samples for SDK API 14 (Obsolete): 5.1.2 rc3]",
+                Arrays.toString(minToolsRevs.toArray()));
+
+
+        // Check the min-platform-tools-rev
+        ArrayList<String> minPlatToolsRevs = new ArrayList<String>();
+        for (Package p : pkgs) {
+            if (p instanceof IMinPlatformToolsDependency) {
+                minPlatToolsRevs.add(p.getListDescription() + ": " +
+                  ((IMinPlatformToolsDependency) p).getMinPlatformToolsRevision().toShortString());
+            }
+        }
+        assertEquals(
+                "[Tools in version 1.2.3.4: 4, " +                      // list-display
+                 "Android SDK Tools: 4 rc5]",
+                Arrays.toString(minPlatToolsRevs.toArray()));
+
+        // Check the list display of the packages
+        ArrayList<String> listDescs = new ArrayList<String>();
+        for (Package p : pkgs) {
+            listDescs.add(p.getListDescription());
+        }
+        assertEquals(
+                "[Tools in version 1.2.3.4, " +                         // list-display
+                 "Android SDK Tools, " +
+                 "Android SDK Platform-tools, " +
+                 "Android SDK Build-tools, " +
+                 "Android SDK Build-tools, " +
+                 "Android SDK Build-tools, " +
+                 "Build tools v3 (preview 5), " +                       // list-display
+                 "Documentation for Android SDK, " +
+                 "Doc for first platform, " +                           // list-display
+                 "SDK Platform Android Pastry Preview, " +
+                 "SDK Platform Android 1.1, " +
+                 "The first Android platform ever, " +                  // list-display
+                 "Samples from Android 14 (Obsolete), " +               // list-display
+                 "Samples for SDK API 14 (Obsolete), " +
+                 "Sources for Android SDK, " +
+                 "Sources for Android SDK, " +
+                 "Sources for first platform]",                         // list-display
+                Arrays.toString(listDescs.toArray()));
+    }
+
+    /**
+     * Validate there isn't a next-version we haven't tested yet
+     */
+    public void testLoadRepoXml_11() throws Exception {
+        InputStream xmlStream = getTestResource("/com/android/sdklib/testdata/repository_sample_11.xml");
+        assertNull("There is a sample for repository-11.xsd but there is not corresponding unit test", xmlStream);
+    }
+
+    // ---- helper ---
 
     /**
      * Returns an SdkLib file resource as a {@link ByteArrayInputStream},
@@ -1407,9 +1688,9 @@ public class SdkRepoSourceTest extends TestCase {
      */
     private ByteArrayInputStream getTestResource(String filename) throws IOException {
         InputStream xmlStream = this.getClass().getResourceAsStream(filename);
-
-        assertNotNull("Missing test file: " + filename, xmlStream);
-
+        if (xmlStream == null) {
+            return null;
+        }
         try {
             byte[] data = new byte[8192];
             int offset = 0;

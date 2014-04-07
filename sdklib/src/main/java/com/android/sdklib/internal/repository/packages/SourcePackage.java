@@ -230,6 +230,11 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
      */
     @Override
     public String getListDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s%2$s", ld, isObsolete() ? " (Obsolete)" : "");
+        }
+
         if (mVersion.isPreview()) {
             return String.format("Sources for Android '%1$s' Preview SDK%2$s",
                     mVersion.getCodename(),
@@ -246,6 +251,14 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
      */
     @Override
     public String getShortDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s, revision %2$s%3$s",
+                    ld,
+                    getRevision().toShortString(),
+                    isObsolete() ? " (Obsolete)" : "");
+        }
+
         if (mVersion.isPreview()) {
             return String.format("Sources for Android '%1$s' Preview SDK, revision %2$s%3$s",
                 mVersion.getCodename(),

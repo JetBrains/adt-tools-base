@@ -63,12 +63,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Test case that allocates a temporary SDK, a temporary AVD base folder
- * with an SdkManager and an AvdManager that points to them.
+ * Base Test case that allocates a temporary SDK, a temporary AVD base
+ * folder with an SdkManager and an AvdManager that points to them.
  * <p/>
  * Also overrides the {@link AndroidLocation} to point to temp one.
  */
-public class SdkManagerTestCase extends AndroidLocationTestCase {
+public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
 
     protected static final String TARGET_DIR_NAME_0 = "v0_0";
     private File mFakeSdk;
@@ -351,7 +351,8 @@ public class SdkManagerTestCase extends AndroidLocationTestCase {
                     PkgProps.VERSION_API_LEVEL, "0",
                     PkgProps.SYS_IMG_TAG_ID, tagId,
                     PkgProps.SYS_IMG_TAG_DISPLAY, tagDisplay,
-                    PkgProps.SYS_IMG_ABI, abiType);
+                    PkgProps.SYS_IMG_ABI, abiType,
+                    PkgProps.PKG_LIST_DISPLAY, "Sys-Img v0 for (" + tagDisplay + ", " + abiType + ")");
 
             // create a devices.xml file
             List<Device> devices = new ArrayList<Device>();

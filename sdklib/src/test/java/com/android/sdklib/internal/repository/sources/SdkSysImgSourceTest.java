@@ -170,10 +170,21 @@ public class SdkSysImgSourceTest extends TestCase {
                  "2 x86]",
                 Arrays.toString(sysImgVersionAbi.toArray()));
 
+        // Check the list display of the packages
+        ArrayList<String> listDescs = new ArrayList<String>();
+        for (Package p : pkgs) {
+            listDescs.add(p.getListDescription());
+        }
+        assertEquals(
+                "[ARM EABI System Image, " +
+                "MIPS System Image, " +
+                "ARM EABI v7a System Image, " +
+                "Intel x86 Atom System Image]",
+                Arrays.toString(listDescs.toArray()));
     }
 
     /**
-     * Validate we can load a valid schema version 1
+     * Validate we can load a valid schema version 2
      */
     public void testLoadSysImgXml_2() throws Exception {
         InputStream xmlStream =
@@ -204,11 +215,11 @@ public class SdkSysImgSourceTest extends TestCase {
         assertEquals(
                 "Found Intel x86 Atom System Image, Android API 2, revision 1\n" +
                 "Found ARM EABI v7a System Image, Android API 2, revision 2\n" +
-                "Found Another tag name System Image, Android API 2, revision 2\n" +
+                "Found Another tag name ARM EABI v7a System Image, Android API 2, revision 2\n" +
                 "Found ARM EABI System Image, Android API 42, revision 12\n" +
                 "Found MIPS System Image, Android API 42, revision 12\n" +
-                "Found This is an arbitrary string, System Image, Android API 44, revision 14\n" +
-                "Found Tag name is Sanitized if Display is Missing System Image, Android API 45, revision 15\n",
+                "Found This is an arbitrary string, MIPS System Image, Android API 44, revision 14\n" +
+                "Found Tag name is Sanitized if Display is Missing MIPS System Image, Android API 45, revision 15\n",
                 monitor.getCapturedVerboseLog());
         assertEquals("", monitor.getCapturedLog());
         assertEquals("", monitor.getCapturedErrorLog());
@@ -270,6 +281,143 @@ public class SdkSysImgSourceTest extends TestCase {
                 }).replace(File.separatorChar, '/'),
                 Arrays.toString(sysImgPath.toArray()).replace(File.separatorChar, '/'));
 
+        // Check the list display of the packages
+        ArrayList<String> listDescs = new ArrayList<String>();
+        for (Package p : pkgs) {
+            listDescs.add(p.getListDescription());
+        }
+        assertEquals(
+                "[Tag name is Sanitized if Display is Missing MIPS System Image, " +
+                "This is an arbitrary string, " +
+                "MIPS System Image, " +
+                "ARM EABI System Image, " +
+                "MIPS System Image, " +
+                "ARM EABI v7a System Image, " +
+                "Intel x86 Atom System Image, " +
+                "Another tag name ARM EABI v7a System Image]",
+                Arrays.toString(listDescs.toArray()));
+    }
+
+    /**
+     * Validate we can load a valid schema version 3
+     */
+    public void testLoadSysImgXml_3() throws Exception {
+        InputStream xmlStream =
+            getTestResource("/com/android/sdklib/testdata/sys_img_sample_3.xml");
+
+        // guess the version from the XML document
+        int version = mSource._getXmlSchemaVersion(xmlStream);
+        assertEquals(3, version);
+
+        Boolean[] validatorFound = new Boolean[] { Boolean.FALSE };
+        String[] validationError = new String[] { null };
+        String url = "not-a-valid-url://" + SdkSysImgConstants.URL_DEFAULT_FILENAME;
+
+        String uri = mSource._validateXml(xmlStream, url, version, validationError, validatorFound);
+        assertEquals(Boolean.TRUE, validatorFound[0]);
+        assertEquals(null, validationError[0]);
+        assertEquals(SdkSysImgConstants.getSchemaUri(3), uri);
+
+        // Validation was successful, load the document
+        MockMonitor monitor = new MockMonitor();
+        Document doc = mSource._getDocument(xmlStream, monitor);
+        assertNotNull(doc);
+
+        // Get the packages
+        assertTrue(mSource._parsePackages(doc, uri, monitor));
+
+        // Verbose log order matches the XML order and not the sorted display order.
+        assertEquals(
+                "Found System Image for xCPU for API 2, Android API 2, revision 1\n" +
+                "Found ARM EABI v7a System Image, Android API 2, revision 2\n" +
+                "Found Another tag name ARM EABI v7a System Image, Android API 2, revision 2\n" +
+                "Found ARM EABI System Image, Android API 42, revision 12\n" +
+                "Found MIPS System Image, Android API 42, revision 12\n" +
+                "Found MIPS system image for tag MIPS-only, Android API 44, revision 14\n" +
+                "Found Tag name is Sanitized if Display is Missing MIPS System Image, Android API 45, revision 15\n",
+                monitor.getCapturedVerboseLog());
+        assertEquals("", monitor.getCapturedLog());
+        assertEquals("", monitor.getCapturedErrorLog());
+
+        // check the packages we found...
+        // Note the order doesn't necessary match the one from the
+        // assertEquald(getCapturedVerboseLog) because packages are sorted using the
+        // Packages' sorting order, e.g. all platforms are sorted by descending API level, etc.
+        // Order is defined by
+        // com.android.sdklib.internal.repository.packages.SystemImagePackage.comparisonKey()
+
+        Package[] pkgs = mSource.getPackages();
+
+        assertEquals(7, pkgs.length);
+        for (Package p : pkgs) {
+            // We expected to find packages with each at least one archive.
+            assertTrue(p.getArchives().length >= 1);
+            // And only system images are supported by this source
+            assertTrue(p instanceof SystemImagePackage);
+        }
+
+        // Check the system-image packages
+        ArrayList<String> sysImgInfo = new ArrayList<String>();
+        for (Package p : pkgs) {
+            if (p instanceof SystemImagePackage) {
+                SystemImagePackage sip = (SystemImagePackage) p;
+                sysImgInfo.add(String.format("%1$s %2$s: %3$s",     //$NON-NLS-1$
+                        sip.getAndroidVersion().getApiString(),
+                        sip.getAbi(),
+                        sip.getTag()));
+            }
+        }
+        assertEquals(
+                "[45 mips: tag-name---is-Sanitized----if-Display-is-Missing [Tag name is Sanitized if Display is Missing], " +
+                 "44 mips: mips-only [This is an arbitrary string,], " +
+                 "42 armeabi: default [Default], " +
+                 "42 mips: default [Default], " +
+                 "2 armeabi-v7a: default [Ignored in description for default tag], " +
+                 "2 x86: default [Default], " +
+                 "2 armeabi-v7a: other [Another tag name]]",
+                Arrays.toString(sysImgInfo.toArray()));
+
+        // Check the default install-paths of the packages
+        ArrayList<File> sysImgPath = new ArrayList<File>();
+        for (Package p : pkgs) {
+            if (p instanceof SystemImagePackage) {
+                SystemImagePackage sip = (SystemImagePackage) p;
+                sysImgPath.add(sip.getInstallFolder("root", null /*sdkManager*/));    //$NON-NLS-1$
+            }
+        }
+        assertEquals(Arrays.toString(new File[] {
+                FileOp.append("root", "system-images", "android-45", "tag-name-is-sanitized-if-display-is-missing", "mips"),
+                FileOp.append("root", "system-images", "android-44", "mips-only", "mips"),
+                FileOp.append("root", "system-images", "android-42", "default", "armeabi"),
+                FileOp.append("root", "system-images", "android-42", "default", "mips"),
+                FileOp.append("root", "system-images", "android-2" , "default", "armeabi-v7a"),
+                FileOp.append("root", "system-images", "android-2" , "default", "x86"),
+                FileOp.append("root", "system-images", "android-2" , "other",   "armeabi-v7a"),
+                }).replace(File.separatorChar, '/'),
+                Arrays.toString(sysImgPath.toArray()).replace(File.separatorChar, '/'));
+
+        // Check the list display of the packages
+        ArrayList<String> listDescs = new ArrayList<String>();
+        for (Package p : pkgs) {
+            listDescs.add(p.getListDescription());
+        }
+        assertEquals(
+                "[Tag name is Sanitized if Display is Missing MIPS System Image, " +
+                 "MIPS system image for tag MIPS-only, " +  // list-display override
+                 "ARM EABI System Image, " +
+                 "MIPS System Image, " +
+                 "ARM EABI v7a System Image, " +
+                 "System Image for xCPU for API 2, " +      // list-display override
+                 "Another tag name ARM EABI v7a System Image]",
+                Arrays.toString(listDescs.toArray()));
+    }
+
+    /**
+     * Validate there isn't a next-version we haven't tested yet
+     */
+    public void testLoadSysImgXml_4() throws Exception {
+        InputStream xmlStream = getTestResource("/com/android/sdklib/testdata/sys_img_sample_4.xml");
+        assertNull("There is a sample for sys-img-4.xsd but there is not corresponding unit test", xmlStream);
     }
 
 
@@ -287,7 +435,9 @@ public class SdkSysImgSourceTest extends TestCase {
      */
     private ByteArrayInputStream getTestResource(String filename) throws IOException {
         InputStream xmlStream = this.getClass().getResourceAsStream(filename);
-
+        if (xmlStream == null) {
+            return null;
+        }
         try {
             byte[] data = new byte[8192];
             int offset = 0;

@@ -31,7 +31,7 @@ import junit.framework.TestCase;
  * <p/>
  * This one doesn't create a temp fake SDK (see {@link SdkManagerTestCase}.)
  */
-public class AndroidLocationTestCase extends TestCase {
+public abstract class AndroidLocationTestCase extends TestCase {
 
     private String mOldAndroidHomeProp;
     private File mAndroidHome;
@@ -51,13 +51,6 @@ public class AndroidLocationTestCase extends TestCase {
     @Override
     public void tearDown() throws Exception {
         tearDownAndroidHome();
-    }
-
-    /**
-     * A empty test method to please the JUnit test runner, which doesn't
-     * like TestCase classes with no test methods.
-     */
-    public void testPlaceholder() {
     }
 
     private void makeFakeAndroidHome() throws IOException {

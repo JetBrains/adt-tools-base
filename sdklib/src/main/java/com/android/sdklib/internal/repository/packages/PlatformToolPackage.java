@@ -202,6 +202,11 @@ public class PlatformToolPackage extends FullRevisionPackage {
      */
     @Override
     public String getListDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s%2$s", ld, isObsolete() ? " (Obsolete)" : "");
+        }
+
         return String.format("Android SDK Platform-tools%1$s",
                 isObsolete() ? " (Obsolete)" : "");
     }
@@ -211,6 +216,14 @@ public class PlatformToolPackage extends FullRevisionPackage {
      */
     @Override
     public String getShortDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s, revision %2$s%3$s",
+                    ld,
+                    getRevision().toShortString(),
+                    isObsolete() ? " (Obsolete)" : "");
+        }
+
         return String.format("Android SDK Platform-tools, revision %1$s%2$s",
                 getRevision().toShortString(),
                 isObsolete() ? " (Obsolete)" : "");

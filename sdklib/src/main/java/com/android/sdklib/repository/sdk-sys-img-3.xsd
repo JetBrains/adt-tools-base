@@ -15,9 +15,9 @@
  * limitations under the License.
 -->
 <xsd:schema
-    targetNamespace="http://schemas.android.com/sdk/android/sys-img/2"
+    targetNamespace="http://schemas.android.com/sdk/android/sys-img/3"
     xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-    xmlns:sdk="http://schemas.android.com/sdk/android/sys-img/2"
+    xmlns:sdk="http://schemas.android.com/sdk/android/sys-img/3"
     elementFormDefault="qualified"
     attributeFormDefault="unqualified"
     version="1">
@@ -35,6 +35,9 @@
 
          - v2 is used by the SDK Manager in Tools r22.6.
            It introduces a sub-tag for the <system-image> repository type.
+
+         - v3 is used by the SDK Manager in Tools r22.6.3:
+            - It introduces a <list-display> string for all package types.
     -->
 
     <xsd:element name="sdk-sys-img" type="sdk:repositoryType" />
@@ -76,6 +79,9 @@
             <xsd:element name="tag-id"      type="sdk:idType" />
             <!-- The displayed tag of the system emulated by this image. Optional. -->
             <xsd:element name="tag-display" type="xsd:normalizedString" minOccurs="0" />
+
+            <!-- The optional display list item. When missing, it is auto-computed. -->
+            <xsd:element name="list-display"   type="xsd:normalizedString" minOccurs="0" />
 
             <!-- The ABI of the system emulated by this image. -->
             <xsd:element name="abi"       type="sdk:abiType" />
