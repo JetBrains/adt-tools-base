@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -1087,7 +1088,30 @@ public class ArchiveInstaller {
      */
     @VisibleForTesting(visibility=Visibility.PRIVATE)
     protected boolean generateSourceProperties(Archive archive, File unzipDestFolder) {
-        Properties props = new Properties();
+
+        // Create a version of Properties that returns a sorted key set.
+        // This is used by Properties#saveProperties and should ensure the
+        // properties are in a stable order. Unit tests rely on this fact.
+        @SuppressWarnings("serial")
+        Properties props = new Properties() {
+            @Override
+            public synchronized Enumeration<Object> keys() {
+                Set<Object> sortedSet = new TreeSet<Object>(keySet());
+                final Iterator<Object> it = sortedSet.iterator();
+                return new Enumeration<Object>() {
+                    @Override
+                    public boolean hasMoreElements() {
+                        return it.hasNext();
+                    }
+
+                    @Override
+                    public Object nextElement() {
+                        return it.next();
+                    }
+
+                };
+            }
+        };
 
         archive.saveProperties(props);
 
