@@ -1,1 +1,0 @@
-android {sourceSets {${sourceProviderName} {res.srcDirs=['src/${sourceProviderName}/res', '${newLocation}']}}}
