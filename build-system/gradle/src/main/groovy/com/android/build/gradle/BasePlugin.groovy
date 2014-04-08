@@ -316,7 +316,19 @@ public abstract class BasePlugin {
             ExecutorSingleton.shutdown()
             PngProcessor.clearCache()
             sdkHandler.unload()
-            PreDexCache.getCache().clear()
+            PreDexCache.getCache().clear(
+                    project.rootProject.file("${project.rootProject.buildDir}/dex-cache/cache.xml"),
+                    logger)
+        }
+
+        project.gradle.taskGraph.whenReady { taskGraph ->
+            for (Task task : taskGraph.allTasks) {
+                if (task instanceof PreDex) {
+                    PreDexCache.getCache().load(
+                            project.rootProject.file("${project.rootProject.buildDir}/dex-cache/cache.xml"))
+                    break;
+                }
+            }
         }
     }
 
