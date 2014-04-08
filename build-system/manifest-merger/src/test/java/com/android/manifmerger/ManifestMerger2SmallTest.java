@@ -22,6 +22,8 @@ import com.android.sdklib.mock.MockLog;
 
 import junit.framework.TestCase;
 
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
@@ -36,6 +38,15 @@ import javax.xml.parsers.ParserConfigurationException;
  * Tests for the {@link com.android.manifmerger.ManifestMergerTest} class
  */
 public class ManifestMerger2SmallTest extends TestCase {
+
+    @Mock
+    ActionRecorder mActionRecorder;
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        MockitoAnnotations.initMocks(this);
+    }
 
     PlaceholderHandler.KeyBasedValueResolver<ManifestMerger2.SystemProperty> nullSystemResolver =
             new PlaceholderHandler.KeyBasedValueResolver<ManifestMerger2.SystemProperty>() {
@@ -102,7 +113,7 @@ public class ManifestMerger2SmallTest extends TestCase {
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "testPackageOverride#xml"), xml);
 
-        ManifestMerger2.SystemProperty.PACKAGE.addTo(refDocument.getXml(), "com.bar.new");
+        ManifestMerger2.SystemProperty.PACKAGE.addTo(mActionRecorder, refDocument, "com.bar.new");
         // verify the package value was overriden.
         assertEquals("com.bar.new", refDocument.getRootNode().getXml().getAttribute("package"));
     }
@@ -118,7 +129,7 @@ public class ManifestMerger2SmallTest extends TestCase {
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "testMissingPackageOverride#xml"), xml);
 
-        ManifestMerger2.SystemProperty.PACKAGE.addTo(refDocument.getXml(), "com.bar.new");
+        ManifestMerger2.SystemProperty.PACKAGE.addTo(mActionRecorder, refDocument, "com.bar.new");
         // verify the package value was added.
         assertEquals("com.bar.new", refDocument.getRootNode().getXml().getAttribute("package"));
     }
@@ -135,20 +146,20 @@ public class ManifestMerger2SmallTest extends TestCase {
                 new TestUtils.TestSourceLocation(getClass(),
                         "testAddingSystemProperties#xml"), xml);
 
-        ManifestMerger2.SystemProperty.VERSION_CODE.addTo(document.getXml(), "101");
+        ManifestMerger2.SystemProperty.VERSION_CODE.addTo(mActionRecorder, document, "101");
         assertEquals("101",
                 document.getXml().getDocumentElement().getAttribute("android:versionCode"));
 
-        ManifestMerger2.SystemProperty.VERSION_NAME.addTo(document.getXml(), "1.0.1");
+        ManifestMerger2.SystemProperty.VERSION_NAME.addTo(mActionRecorder, document, "1.0.1");
         assertEquals("1.0.1",
                 document.getXml().getDocumentElement().getAttribute("android:versionName"));
 
-        ManifestMerger2.SystemProperty.MIN_SDK_VERSION.addTo(document.getXml(), "10");
+        ManifestMerger2.SystemProperty.MIN_SDK_VERSION.addTo(mActionRecorder, document, "10");
         Element usesSdk = (Element) document.getXml().getElementsByTagName("uses-sdk").item(0);
         assertNotNull(usesSdk);
         assertEquals("10", usesSdk.getAttribute("android:minSdkVersion"));
 
-        ManifestMerger2.SystemProperty.TARGET_SDK_VERSION.addTo(document.getXml(), "14");
+        ManifestMerger2.SystemProperty.TARGET_SDK_VERSION.addTo(mActionRecorder, document, "14");
         usesSdk = (Element) document.getXml().getElementsByTagName("uses-sdk").item(0);
         assertNotNull(usesSdk);
         assertEquals("14", usesSdk.getAttribute("android:targetSdkVersion"));
@@ -167,7 +178,7 @@ public class ManifestMerger2SmallTest extends TestCase {
                         "testAddingSystemProperties#xml"), xml
         );
 
-        ManifestMerger2.SystemProperty.VERSION_CODE.addTo(document.getXml(), "101");
+        ManifestMerger2.SystemProperty.VERSION_CODE.addTo(mActionRecorder, document, "101");
         // using the non namespace aware API to make sure the prefix is the expected one.
         assertEquals("101",
                 document.getXml().getDocumentElement().getAttribute("t:versionCode"));
@@ -194,20 +205,20 @@ public class ManifestMerger2SmallTest extends TestCase {
         assertEquals(".9", usesSdk.getAttribute("targetSdkVersion"));
 
 
-        ManifestMerger2.SystemProperty.VERSION_CODE.addTo(document.getXml(), "101");
+        ManifestMerger2.SystemProperty.VERSION_CODE.addTo(mActionRecorder, document, "101");
         assertEquals("101",
                 document.getXml().getDocumentElement().getAttribute("android:versionCode"));
 
-        ManifestMerger2.SystemProperty.VERSION_NAME.addTo(document.getXml(), "1.0.1");
+        ManifestMerger2.SystemProperty.VERSION_NAME.addTo(mActionRecorder, document, "1.0.1");
         assertEquals("1.0.1",
                 document.getXml().getDocumentElement().getAttribute("android:versionName"));
 
-        ManifestMerger2.SystemProperty.MIN_SDK_VERSION.addTo(document.getXml(), "10");
+        ManifestMerger2.SystemProperty.MIN_SDK_VERSION.addTo(mActionRecorder, document, "10");
         usesSdk = (Element) document.getXml().getElementsByTagName("uses-sdk").item(0);
         assertNotNull(usesSdk);
         assertEquals("10", usesSdk.getAttribute("android:minSdkVersion"));
 
-        ManifestMerger2.SystemProperty.TARGET_SDK_VERSION.addTo(document.getXml(), "14");
+        ManifestMerger2.SystemProperty.TARGET_SDK_VERSION.addTo(mActionRecorder, document, "14");
         usesSdk = (Element) document.getXml().getElementsByTagName("uses-sdk").item(0);
         assertNotNull(usesSdk);
         assertEquals("14", usesSdk.getAttribute("android:targetSdkVersion"));
