@@ -54,6 +54,12 @@ public final class XmlLoader {
          */
         String print(boolean shortFormat);
 
+        /**
+         * Persist a location to an xml node.
+         *
+         * @param document the document in which the node will exist.
+         * @return the persisted location as a xml node.
+         */
         Node toXml(Document document);
     }
 
@@ -69,26 +75,25 @@ public final class XmlLoader {
      */
     public static XmlDocument load(File xmlFile)
             throws IOException, SAXException, ParserConfigurationException {
+        return load(null /* displayName */, xmlFile);
+    }
+
+    /**
+     * Loads an xml file without doing xml validation and return a {@link XmlDocument}
+     *
+     * @param displayName the xml file display name.
+     * @param xmlFile the xml file.
+     * @return the initialized {@link com.android.manifmerger.XmlDocument}
+     */
+    public static XmlDocument load(String displayName, File xmlFile)
+            throws IOException, SAXException, ParserConfigurationException {
         InputStream inputStream = new BufferedInputStream(new FileInputStream(xmlFile));
 
         PositionXmlParser positionXmlParser = new PositionXmlParser();
         Document domDocument = positionXmlParser.parse(inputStream);
         return domDocument != null
                 ? new XmlDocument(positionXmlParser,
-                        new FileSourceLocation(null /* name */, xmlFile),
-                        domDocument.getDocumentElement())
-                : null;
-    }
-
-    public static XmlDocument load(Pair<String, File> xmlFile)
-            throws IOException, SAXException, ParserConfigurationException {
-        InputStream inputStream = new BufferedInputStream(new FileInputStream(xmlFile.getSecond()));
-
-        PositionXmlParser positionXmlParser = new PositionXmlParser();
-        Document domDocument = positionXmlParser.parse(inputStream);
-        return domDocument != null
-                ? new XmlDocument(positionXmlParser,
-                new FileSourceLocation(xmlFile.getFirst(), xmlFile.getSecond()),
+                new FileSourceLocation(displayName, xmlFile),
                 domDocument.getDocumentElement())
                 : null;
     }
@@ -137,9 +142,36 @@ public final class XmlLoader {
         @Override
         public Node toXml(Document document) {
             Element location = document.createElement("source");
+            location.setAttribute("name", mName);
             location.setAttribute("scheme", "file://");
             location.setAttribute("value", mFile.getAbsolutePath());
             return location;
         }
     }
+
+    public static SourceLocation locationFromXml(Element location) {
+        String scheme = location.getAttribute("scheme");
+        if (Strings.isNullOrEmpty(scheme)) {
+            return UNKNOWN;
+        }
+        if (scheme.equals("file://")) {
+            return new FileSourceLocation(
+                    location.getAttribute("name"),
+                    new File(location.getAttribute("value")));
+        }
+        throw new RuntimeException(scheme + " scheme unsupported");
+    }
+
+    public static final SourceLocation UNKNOWN = new SourceLocation() {
+        @Override
+        public String print(boolean shortFormat) {
+            return "Unknown location";
+        }
+
+        @Override
+        public Node toXml(Document document) {
+            // empty node.
+            return document.createElement("source");
+        }
+    };
 }

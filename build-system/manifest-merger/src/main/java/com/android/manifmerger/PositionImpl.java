@@ -40,7 +40,7 @@ final class PositionImpl implements PositionXmlParser.Position {
      * but from environmental factors like placeholder injection, implicit permissions when
      * upgrading, etc...
      */
-    static final PositionXmlParser.Position UNKNOWN_POSITION = new PositionImpl(0, 0, 0);
+    static final PositionXmlParser.Position UNKNOWN = new PositionImpl(0, 0, 0);
 
     private final int mLine;
     private final int mColumn;
