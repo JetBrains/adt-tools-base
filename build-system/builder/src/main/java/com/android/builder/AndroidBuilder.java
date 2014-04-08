@@ -33,6 +33,7 @@ import com.android.builder.internal.SymbolWriter;
 import com.android.builder.internal.TestManifestGenerator;
 import com.android.builder.internal.compiler.AidlProcessor;
 import com.android.builder.internal.compiler.LeafFolderGatherer;
+import com.android.builder.internal.compiler.PreDexCache;
 import com.android.builder.internal.compiler.RenderScriptProcessor;
 import com.android.builder.internal.compiler.SourceSearcher;
 import com.android.builder.internal.packaging.JavaResourceProcessor;
@@ -55,7 +56,6 @@ import com.android.ide.common.internal.AaptCruncher;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.PngCruncher;
-import com.android.manifmerger.Actions;
 import com.android.manifmerger.ICallback;
 import com.android.manifmerger.ManifestMerger;
 import com.android.manifmerger.ManifestMerger2;
@@ -79,17 +79,11 @@ import com.google.common.collect.Sets;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
-import com.google.common.io.LineReader;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -1462,13 +1456,26 @@ public class AndroidBuilder {
             @NonNull File outFile,
             @NonNull DexOptions dexOptions)
             throws IOException, InterruptedException, LoggedErrorException {
-        checkNotNull(inputFile, "inputFile cannot be null.");
-        checkNotNull(outFile, "outFile cannot be null.");
-        checkNotNull(dexOptions, "dexOptions cannot be null.");
         checkState(mTargetInfo != null,
                 "Cannot call preDexLibrary() before setTargetInfo() is called.");
 
         BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
+
+        PreDexCache.getCache().preDexLibrary(inputFile, outFile, dexOptions, buildToolInfo,
+                mVerboseExec, mCmdLineRunner);
+    }
+
+    public static void preDexLibrary(
+            @NonNull File inputFile,
+            @NonNull File outFile,
+            @NonNull DexOptions dexOptions,
+            @NonNull BuildToolInfo buildToolInfo,
+                     boolean verbose,
+            @NonNull CommandLineRunner commandLineRunner)
+            throws IOException, InterruptedException, LoggedErrorException {
+        checkNotNull(inputFile, "inputFile cannot be null.");
+        checkNotNull(outFile, "outFile cannot be null.");
+        checkNotNull(dexOptions, "dexOptions cannot be null.");
 
         // launch dx: create the command line
         ArrayList<String> command = Lists.newArrayList();
@@ -1486,7 +1493,7 @@ public class AndroidBuilder {
 
         command.add("--dex");
 
-        if (mVerboseExec) {
+        if (verbose) {
             command.add("--verbose");
         }
 
@@ -1499,7 +1506,7 @@ public class AndroidBuilder {
 
         command.add(inputFile.getAbsolutePath());
 
-        mCmdLineRunner.runCmdLine(command, null);
+        commandLineRunner.runCmdLine(command, null);
     }
 
     /**
