@@ -22,10 +22,10 @@ import org.gradle.api.tasks.TaskAction
 
 public class PrepareLibraryTask extends DefaultTask {
     @InputFile
-    File bundle
+    public File bundle
 
     @OutputDirectory
-    File explodedDir
+    public File explodedDir
 
     @TaskAction
     def prepare() {

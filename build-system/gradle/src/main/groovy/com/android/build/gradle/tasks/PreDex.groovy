@@ -117,7 +117,7 @@ public class PreDex extends BaseTask {
      * if there are 2 libraries with the same file names (but different
      * paths)
      *
-     * @param outFolder
+     * @param outFolder the output folder.
      * @param inputFile the library
      * @return
      */
@@ -131,9 +131,10 @@ public class PreDex extends BaseTask {
             name = name.substring(0, pos)
         }
 
-        // add a hash of the original file path
+        // add a hash of the original file path.
+        String input = inputFile.getAbsolutePath();
         HashFunction hashFunction = Hashing.sha1()
-        HashCode hashCode = hashFunction.hashString(inputFile.getAbsolutePath())
+        HashCode hashCode = hashFunction.hashString(input)
 
         return new File(outFolder, name + "-" + hashCode.toString() + SdkConstants.DOT_JAR)
     }

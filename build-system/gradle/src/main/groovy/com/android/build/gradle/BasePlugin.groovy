@@ -21,6 +21,7 @@ import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.BadPluginException
 import com.android.build.gradle.internal.ConfigurationDependencies
+import com.android.build.gradle.internal.LibraryCache
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.SdkHandler
@@ -39,6 +40,7 @@ import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
 import com.android.build.gradle.internal.dsl.SigningConfigDsl
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.model.ArtifactMetaDataImpl
+import com.android.build.gradle.internal.model.DependenciesImpl
 import com.android.build.gradle.internal.model.JavaArtifactImpl
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.tasks.AndroidReportTask
@@ -88,6 +90,7 @@ import com.android.builder.VariantConfiguration
 import com.android.builder.dependency.DependencyContainer
 import com.android.builder.dependency.JarDependency
 import com.android.builder.dependency.LibraryDependency
+import com.android.builder.internal.compiler.PreDexCache
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.ArtifactMetaData
@@ -134,7 +137,6 @@ import org.gradle.internal.reflect.Instantiator
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.tooling.BuildException
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
-import org.gradle.util.GUtil
 import proguard.gradle.ProGuardTask
 
 import java.lang.reflect.Field
@@ -314,6 +316,7 @@ public abstract class BasePlugin {
             ExecutorSingleton.shutdown()
             PngProcessor.clearCache()
             sdkHandler.unload()
+            PreDexCache.getCache().clear()
         }
     }
 
@@ -454,7 +457,6 @@ public abstract class BasePlugin {
                 ProcessAppManifest2)
         variantData.processManifestTask = processManifestTask
         processManifestTask.plugin = this
-        processManifestTask.variant = variantData
 
         processManifestTask.dependsOn variantData.prepareDependenciesTask
         processManifestTask.variantConfiguration = config
@@ -1988,10 +1990,11 @@ public abstract class BasePlugin {
     //------------------------------ START DEPENDENCY STUFF ----------------------------------------
     //----------------------------------------------------------------------------------------------
 
-    private void addDependencyToPrepareTask(@NonNull BaseVariantData variantData,
-                                   @NonNull PrepareDependenciesTask prepareDependenciesTask,
-                                   @NonNull LibraryDependencyImpl lib) {
-        def prepareLibTask = prepareTaskMap.get(lib)
+    private void addDependencyToPrepareTask(
+            @NonNull BaseVariantData variantData,
+            @NonNull PrepareDependenciesTask prepareDependenciesTask,
+            @NonNull LibraryDependencyImpl lib) {
+        PrepareLibraryTask prepareLibTask = prepareTaskMap.get(lib)
         if (prepareLibTask != null) {
             prepareDependenciesTask.dependsOn prepareLibTask
             prepareLibTask.dependsOn variantData.preBuildTask
@@ -2009,32 +2012,28 @@ public abstract class BasePlugin {
 
         resolveDependencyForConfig(variantDeps, modules, artifacts, reverseMap)
 
+        Set<Project> projects = project.rootProject.allprojects;
+
         modules.values().each { List list ->
 
             if (!list.isEmpty()) {
                 // get the first item only
                 LibraryDependencyImpl androidDependency = (LibraryDependencyImpl) list.get(0)
 
-                String bundleName = GUtil.toCamelCase(androidDependency.name.replaceAll("\\:", " "))
+                PrepareLibraryTask task = LibraryCache.getCache().handleLibrary(project, androidDependency)
+                prepareTaskMap.put(androidDependency, task)
 
-                Task prepareLibraryTask = prepareTaskMap.get(androidDependency)
-                if (prepareLibraryTask == null) {
-                    prepareLibraryTask = project.tasks.create("prepare${bundleName}Library",
-                            PrepareLibraryTask)
-                    prepareLibraryTask.description = "Prepare ${androidDependency.name}"
-                    prepareLibraryTask.bundle = androidDependency.bundle
-                    prepareLibraryTask.explodedDir = androidDependency.bundleFolder
-
-                    prepareTaskMap.put(androidDependency, prepareLibraryTask)
-                }
-
-                // Use the reverse map to find all the configurations that included this android
-                // library so that we can make sure they are built.
-                List<VariantDependencies> configDepList = reverseMap.get(androidDependency)
-                if (configDepList != null && !configDepList.isEmpty()) {
-                    for (VariantDependencies configDependencies: configDepList) {
-                        prepareLibraryTask.dependsOn configDependencies.compileConfiguration.buildDependencies
+                // check if this library is created by a parent (this is based on the
+                // output file.
+                // TODO Fix this as it's fragile
+                Project parentProject = DependenciesImpl.getProject(androidDependency.getBundle(), projects)
+                if (parentProject != null) {
+                    String configName = androidDependency.getProjectVariant();
+                    if (configName == null) {
+                        configName = "default"
                     }
+
+                    task.dependsOn parentProject.getPath() + ":assemble${configName.capitalize()}"
                 }
             }
         }
@@ -2209,7 +2208,7 @@ public abstract class BasePlugin {
                         name += ":$artifact.classifier"
                     }
                     def explodedDir = project.file(
-                            "$project.buildDir/exploded-aar/$path")
+                            "$project.rootProject.buildDir/exploded-aar/$path")
                     LibraryDependencyImpl adep = new LibraryDependencyImpl(
                             artifact.file, explodedDir, nestedBundles, name, artifact.classifier)
                     bundlesForThisModule << adep
