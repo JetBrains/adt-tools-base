@@ -281,22 +281,44 @@ public class PreDexCache {
 
         // if this is a new item
         if (pair.getSecond()) {
-            // haven't process this file yet so do it and record it.
-            AndroidBuilder.preDexLibrary(inputFile, outFile, dexOptions, buildToolInfo,
-                    verbose, commandLineRunner);
+            try {
+                // haven't process this file yet so do it and record it.
+                AndroidBuilder.preDexLibrary(inputFile, outFile, dexOptions, buildToolInfo,
+                        verbose, commandLineRunner);
 
-            mMisses++;
-
-            // enable other threads to use the output of this pre-dex
-            pair.getFirst().getLatch().countDown();
+                mMisses++;
+            } catch (IOException exception) {
+                // in case of error, delete (now obsolete) output file
+                outFile.delete();
+                // and rethrow the error
+                throw exception;
+            } catch (LoggedErrorException exception) {
+                // in case of error, delete (now obsolete) output file
+                outFile.delete();
+                // and rethrow the error
+                throw exception;
+            } catch (InterruptedException exception) {
+                // in case of error, delete (now obsolete) output file
+                outFile.delete();
+                // and rethrow the error
+                throw exception;
+            } finally {
+                // enable other threads to use the output of this pre-dex.
+                // if something was thrown they'll handle the missing output file.
+                pair.getFirst().getLatch().countDown();
+            }
         } else {
             // wait until the file is pre-dexed by the first thread.
             pair.getFirst().getLatch().await();
 
-            mHits++;
+            // check that the generated file actually exists
+            File fromFile = pair.getFirst().getOutputFile();
 
-            // file already pre-dex, just copy the output.
-            Files.copy(pair.getFirst().getOutputFile(), outFile);
+            if (fromFile.isFile()) {
+                // file already pre-dex, just copy the output.
+                Files.copy(pair.getFirst().getOutputFile(), outFile);
+                mHits++;
+            }
         }
     }
 
