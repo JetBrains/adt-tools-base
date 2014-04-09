@@ -44,6 +44,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class PreDexCacheTest extends TestCase {
 
@@ -99,6 +100,24 @@ public class PreDexCacheTest extends TestCase {
 
             // write it
             Files.write(content, new File(output), Charsets.UTF_8);
+        }
+    }
+
+    /**
+     * Override the command line runner to simulate error during the dexing
+     */
+    private static class FakeCommandLineRunner2 extends CommandLineRunner {
+
+        public FakeCommandLineRunner2(ILogger logger) {
+            super(logger);
+        }
+
+        @Override
+        public void runCmdLine(@NonNull String[] command,
+                @Nullable Map<String, String> envVariableMap)
+                throws IOException, InterruptedException, LoggedErrorException {
+            Thread.sleep(1000);
+            throw new IOException("foo");
         }
     }
 
@@ -190,7 +209,7 @@ public class PreDexCacheTest extends TestCase {
                 }
             };
 
-            threads[i].run();
+            threads[i].start();
         }
 
         // wait on the threads.
@@ -208,6 +227,54 @@ public class PreDexCacheTest extends TestCase {
         assertEquals(1, cache.getMisses());
         assertEquals(threads.length - 1, cache.getHits());
     }
+
+    public void testThreadedPreDexLibraryWithError() throws IOException, InterruptedException {
+        String content = "Some Content";
+        final File input = createInputFile(content);
+        input.deleteOnExit();
+
+        Thread[] threads = new Thread[3];
+        final File[] outputFiles = new File[threads.length];
+
+        final CommandLineRunner clr = new FakeCommandLineRunner(new StdLogger(StdLogger.Level.INFO));
+        final CommandLineRunner clrWithError = new FakeCommandLineRunner2(new StdLogger(StdLogger.Level.INFO));
+        final DexOptions dexOptions = new FakeDexOptions();
+
+        final AtomicInteger threadDoneCount = new AtomicInteger();
+
+        for (int i = 0 ; i < threads.length ; i++) {
+            final int ii = i;
+            threads[i] = new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        File output = File.createTempFile("predex", ".jar");
+                        output.deleteOnExit();
+                        outputFiles[ii] = output;
+
+                        PreDexCache.getCache().preDexLibrary(
+                                input, output,
+                                dexOptions, mBuildToolInfo, false /*verbose*/,
+                                ii == 0 ? clrWithError : clr);
+                    } catch (Exception ignored) {
+
+                    }
+                    threadDoneCount.incrementAndGet();
+                }
+            };
+
+            threads[i].start();
+        }
+
+        // wait on the threads, long enough but stop after a while
+        for (Thread thread : threads) {
+            thread.join(5000);
+        }
+
+        // if the test fail, we'll have two threads still blocked on the countdownlatch.
+        assertEquals(3, threadDoneCount.get());
+    }
+
 
     public void testReload() throws IOException, LoggedErrorException, InterruptedException {
         final CommandLineRunner clr = new FakeCommandLineRunner(new StdLogger(StdLogger.Level.INFO));
