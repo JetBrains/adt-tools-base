@@ -192,6 +192,7 @@ public class XmlElement extends OrphanXmlElement {
         return mDocument.getNodePosition(this);
     }
 
+    @NonNull
     @Override
     public XmlLoader.SourceLocation getSourceLocation() {
         return getDocument().getSourceLocation();

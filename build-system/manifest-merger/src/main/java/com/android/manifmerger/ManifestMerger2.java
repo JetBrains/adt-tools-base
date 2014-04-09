@@ -35,15 +35,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * merges android manifest files, idempotent.
@@ -167,7 +164,8 @@ public class ManifestMerger2 {
 
         XmlDocument lowerPriorityDocument;
         try {
-            lowerPriorityDocument = XmlLoader.load(lowerPriorityXmlFile);
+            lowerPriorityDocument = XmlLoader.load(
+                    lowerPriorityXmlFile.getFirst(), lowerPriorityXmlFile.getSecond());
         } catch (Exception e) {
             throw new MergeFailureException(e);
         }
@@ -295,7 +293,7 @@ public class ManifestMerger2 {
                     Actions.ActionType.INJECTED,
                     new Actions.ActionLocation(
                             to.getSourceLocation(),
-                            PositionImpl.UNKNOWN_POSITION),
+                            PositionImpl.UNKNOWN),
                     xmlAttribute.getId(),
                     null, /* reason */
                     null /* attributeOperationType */));
@@ -323,7 +321,7 @@ public class ManifestMerger2 {
                             Actions.ActionType.INJECTED,
                             new Actions.ActionLocation(
                                     to.getSourceLocation(),
-                                    PositionImpl.UNKNOWN_POSITION),
+                                    PositionImpl.UNKNOWN),
                             xmlAttribute.getId(),
                             null, /* reason */
                             null /* attributeOperationType */
@@ -350,7 +348,7 @@ public class ManifestMerger2 {
                 Actions.NodeRecord nodeRecord = new Actions.NodeRecord(
                         Actions.ActionType.INJECTED,
                         new Actions.ActionLocation(xmlElement.getSourceLocation(),
-                                PositionImpl.UNKNOWN_POSITION),
+                                PositionImpl.UNKNOWN),
                         xmlElement.getId(),
                         "use-sdk injection requested",
                         NodeOperationType.STRICT);

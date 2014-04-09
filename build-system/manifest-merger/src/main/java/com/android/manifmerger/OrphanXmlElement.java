@@ -33,35 +33,6 @@ import org.w3c.dom.Element;
  */
 public class OrphanXmlElement extends XmlNode {
 
-    private static final PositionXmlParser.Position UNKNOWN_POSITION = new PositionXmlParser.Position() {
-        @Nullable
-        @Override
-        public PositionXmlParser.Position getEnd() {
-            return null;
-        }
-
-        @Override
-        public void setEnd(@NonNull PositionXmlParser.Position end) {
-
-        }
-
-        @Override
-        public int getLine() {
-            return 0;
-        }
-
-        @Override
-        public int getOffset() {
-            return 0;
-        }
-
-        @Override
-        public int getColumn() {
-            return 0;
-        }
-    };
-
-
     @NonNull
     private final Element mXml;
 
@@ -136,13 +107,13 @@ public class OrphanXmlElement extends XmlNode {
 
     @Override
     public PositionXmlParser.Position getPosition() {
-        return UNKNOWN_POSITION;
+        return PositionImpl.UNKNOWN;
     }
 
     @Override
-    @Nullable
+    @NonNull
     public XmlLoader.SourceLocation getSourceLocation() {
-        return null;
+        return XmlLoader.UNKNOWN;
     }
 }
 
