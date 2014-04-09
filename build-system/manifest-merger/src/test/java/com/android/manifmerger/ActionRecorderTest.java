@@ -302,7 +302,7 @@ public class ActionRecorderTest extends TestCase {
 
         out.append("\t")
                 .append(attributeName.toString())
-                .append("\t\t")
+                .append("\n\t\t")
                 .append(actionType.toString())
                 .append(" from ")
                 .append(getClass().getSimpleName()).append('#').append(docString)
