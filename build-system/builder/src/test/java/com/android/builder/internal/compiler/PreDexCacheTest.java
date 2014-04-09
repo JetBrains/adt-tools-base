@@ -140,7 +140,7 @@ public class PreDexCacheTest extends TestCase {
         File toolFolder = mBuildToolInfo.getLocation();
         deleteFolder(toolFolder);
 
-        PreDexCache.getCache().clear();
+        PreDexCache.getCache().clear(null, null);
 
         super.tearDown();
     }
@@ -183,8 +183,7 @@ public class PreDexCacheTest extends TestCase {
 
                         PreDexCache.getCache().preDexLibrary(
                                 input, output,
-                                dexOptions, mBuildToolInfo,
-                                false /*verbose*/, clr);
+                                dexOptions, mBuildToolInfo, false /*verbose*/, clr);
                     } catch (Exception ignored) {
 
                     }
@@ -208,6 +207,48 @@ public class PreDexCacheTest extends TestCase {
         PreDexCache cache = PreDexCache.getCache();
         assertEquals(1, cache.getMisses());
         assertEquals(threads.length - 1, cache.getHits());
+    }
+
+    public void testReload() throws IOException, LoggedErrorException, InterruptedException {
+        final CommandLineRunner clr = new FakeCommandLineRunner(new StdLogger(StdLogger.Level.INFO));
+        final DexOptions dexOptions = new FakeDexOptions();
+
+        // convert one file.
+        String content = "Some Content";
+        File input = createInputFile(content);
+
+        File output = File.createTempFile("predex", ".jar");
+        output.deleteOnExit();
+
+        PreDexCache.getCache().preDexLibrary(
+                input, output,
+                dexOptions, mBuildToolInfo, false /*verbose*/, clr);
+
+        checkOutputFile(content, output);
+
+        // store the cache
+        File cacheXml = File.createTempFile("predex", ".xml");
+        cacheXml.deleteOnExit();
+        PreDexCache.getCache().clear(cacheXml, null);
+
+        // reload.
+        PreDexCache.getCache().load(cacheXml);
+
+        // re-pre-dex into another file.
+        File output2 = File.createTempFile("predex", ".jar");
+        output2.deleteOnExit();
+
+        PreDexCache.getCache().preDexLibrary(
+                input, output2,
+                dexOptions, mBuildToolInfo, false /*verbose*/, clr);
+
+        // check the output
+        checkOutputFile(content, output2);
+
+        // check the hit/miss
+        PreDexCache cache = PreDexCache.getCache();
+        assertEquals(0, cache.getMisses());
+        assertEquals(1, cache.getHits());
     }
 
     private static File createInputFile(String content) throws IOException {
