@@ -16,6 +16,7 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.Actions.AttributeRecord;
 import static com.android.manifmerger.ManifestModel.NodeTypes;
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 
@@ -26,12 +27,14 @@ import com.android.annotations.concurrency.Immutable;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.android.utils.SdkUtils;
+import com.android.utils.StdLogger;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -39,6 +42,8 @@ import org.w3c.dom.NodeList;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * merges android manifest files, idempotent.
@@ -129,7 +134,7 @@ public class ManifestMerger2 {
         }
 
         // perform system property injection.
-        performSystemPropertiesInjection(xmlDocumentOptional.get());
+        performSystemPropertiesInjection(mergingReportBuilder, xmlDocumentOptional.get());
 
         XmlDocument finalMergedDocument = xmlDocumentOptional.get();
         PostValidator.validate(finalMergedDocument, mergingReportBuilder);
@@ -146,7 +151,12 @@ public class ManifestMerger2 {
             mergingReportBuilder.setMergedDocument(cleanedDocument);
         }
 
-        return mergingReportBuilder.build();
+        MergingReport build = mergingReportBuilder.build();
+        StdLogger stdLogger = new StdLogger(StdLogger.Level.INFO);
+        build.log(stdLogger);
+        stdLogger.error(null, build.getMergedDocument().get().prettyPrint());
+
+        return build;
     }
 
     // merge the optionally existing xmlDocument with a lower priority xml file.
@@ -194,10 +204,13 @@ public class ManifestMerger2 {
 
         /**
          * Add itself (possibly just override the current value) with the passed value
+         * @param actionRecorder to record actions.
          * @param document the xml document to add itself to.
          * @param value the value to set of this property.
          */
-        void addTo(@NonNull Document document,@NonNull String value);
+        void addTo(@NonNull ActionRecorder actionRecorder,
+                @NonNull XmlDocument document,
+                @NonNull String value);
     }
 
     /**
@@ -211,8 +224,10 @@ public class ManifestMerger2 {
          */
         PACKAGE {
             @Override
-            public void addTo(@NonNull Document document, @NonNull String value) {
-                addToElement(this, value, document.getDocumentElement());
+            public void addTo(@NonNull ActionRecorder actionRecorder,
+                    @NonNull XmlDocument document,
+                    @NonNull String value) {
+                addToElement(this, actionRecorder, value, document.getRootNode());
             }
         },
         /**
@@ -220,8 +235,10 @@ public class ManifestMerger2 {
          */
         VERSION_CODE {
             @Override
-            public void addTo(@NonNull Document document, @NonNull String value) {
-                addToElementInAndroidNS(this, value, document.getDocumentElement());
+            public void addTo(@NonNull ActionRecorder actionRecorder,
+                    @NonNull XmlDocument document,
+                    @NonNull String value) {
+                addToElementInAndroidNS(this, actionRecorder, value, document.getRootNode());
             }
         },
         /**
@@ -229,8 +246,10 @@ public class ManifestMerger2 {
          */
         VERSION_NAME {
             @Override
-            public void addTo(@NonNull Document document, @NonNull String value) {
-                addToElementInAndroidNS(this, value, document.getDocumentElement());
+            public void addTo(@NonNull ActionRecorder actionRecorder,
+                    @NonNull XmlDocument document,
+                    @NonNull String value) {
+                addToElementInAndroidNS(this, actionRecorder, value, document.getRootNode());
             }
         },
         /**
@@ -238,8 +257,11 @@ public class ManifestMerger2 {
          */
         MIN_SDK_VERSION {
             @Override
-            public void addTo(@NonNull Document document, @NonNull String value) {
-                addToElementInAndroidNS(this, value, createOrGetUseSdk(document));
+            public void addTo(@NonNull ActionRecorder actionRecorder,
+                    @NonNull XmlDocument document,
+                    @NonNull String value) {
+                addToElementInAndroidNS(this, actionRecorder, value,
+                        createOrGetUseSdk(actionRecorder, document));
             }
         },
         /**
@@ -247,8 +269,11 @@ public class ManifestMerger2 {
          */
         TARGET_SDK_VERSION {
             @Override
-            public void addTo(@NonNull Document document, @NonNull String value) {
-                addToElementInAndroidNS(this, value, createOrGetUseSdk(document));
+            public void addTo(@NonNull ActionRecorder actionRecorder,
+                    @NonNull XmlDocument document,
+                    @NonNull String value) {
+                addToElementInAndroidNS(this, actionRecorder, value,
+                        createOrGetUseSdk(actionRecorder, document));
             }
         };
 
@@ -257,27 +282,63 @@ public class ManifestMerger2 {
         }
 
         // utility method to add an attribute which name is derived from the enum name().
-        private static void addToElement(SystemProperty systemProperty, String value, Element to) {
-            to.setAttribute(systemProperty.toCamelCase(), value);
+        private static void addToElement(
+                SystemProperty systemProperty,
+                ActionRecorder actionRecorder,
+                String value,
+                XmlElement to) {
+
+            to.getXml().setAttribute(systemProperty.toCamelCase(), value);
+            XmlAttribute xmlAttribute = new XmlAttribute(to,
+                    to.getXml().getAttributeNode(systemProperty.toCamelCase()), null);
+            actionRecorder.recordAttributeAction(xmlAttribute, new AttributeRecord(
+                    Actions.ActionType.INJECTED,
+                    new Actions.ActionLocation(
+                            to.getSourceLocation(),
+                            PositionImpl.UNKNOWN_POSITION),
+                    xmlAttribute.getId(),
+                    null, /* reason */
+                    null /* attributeOperationType */));
         }
 
         // utility method to add an attribute in android namespace which local name is derived from
         // the enum name().
-        private static void addToElementInAndroidNS(SystemProperty systemProperty,
+        private static void addToElementInAndroidNS(
+                SystemProperty systemProperty,
+                ActionRecorder actionRecorder,
                 String value,
-                Element to) {
+                XmlElement to) {
+
             String toolsPrefix = XmlUtils.lookupNamespacePrefix(
-                    to, SdkConstants.ANDROID_URI, SdkConstants.ANDROID_NS_NAME, false);
-            to.setAttributeNS(SdkConstants.ANDROID_URI,
+                    to.getXml(), SdkConstants.ANDROID_URI, SdkConstants.ANDROID_NS_NAME, false);
+            to.getXml().setAttributeNS(SdkConstants.ANDROID_URI,
                     toolsPrefix + XmlUtils.NS_SEPARATOR + systemProperty.toCamelCase(),
                     value);
+            Attr attr = to.getXml().getAttributeNodeNS(SdkConstants.ANDROID_URI,
+                    systemProperty.toCamelCase());
+
+            XmlAttribute xmlAttribute = new XmlAttribute(to, attr, null);
+            actionRecorder.recordAttributeAction(xmlAttribute,
+                    new AttributeRecord(
+                            Actions.ActionType.INJECTED,
+                            new Actions.ActionLocation(
+                                    to.getSourceLocation(),
+                                    PositionImpl.UNKNOWN_POSITION),
+                            xmlAttribute.getId(),
+                            null, /* reason */
+                            null /* attributeOperationType */
+                    )
+            );
+
         }
 
         // utility method to create or get an existing use-sdk xml element under manifest.
         // this could be made more generic by adding more metadata to the enum but since there is
         // only one case so far, keep it simple.
-        private static Element createOrGetUseSdk(Document document) {
-            Element manifest = document.getDocumentElement();
+        private static XmlElement createOrGetUseSdk(
+                ActionRecorder actionRecorder, XmlDocument document) {
+
+            Element manifest = document.getXml().getDocumentElement();
             NodeList usesSdks = manifest
                     .getElementsByTagName(NodeTypes.USES_SDK.toXmlName());
             if (usesSdks.getLength() == 0) {
@@ -285,22 +346,35 @@ public class ManifestMerger2 {
                 Element useSdk = manifest.getOwnerDocument().createElement(
                         NodeTypes.USES_SDK.toXmlName());
                 manifest.appendChild(useSdk);
-                return useSdk;
+                XmlElement xmlElement = new XmlElement(useSdk, document);
+                Actions.NodeRecord nodeRecord = new Actions.NodeRecord(
+                        Actions.ActionType.INJECTED,
+                        new Actions.ActionLocation(xmlElement.getSourceLocation(),
+                                PositionImpl.UNKNOWN_POSITION),
+                        xmlElement.getId(),
+                        "use-sdk injection requested",
+                        NodeOperationType.STRICT);
+                actionRecorder.recordNodeAction(xmlElement, nodeRecord);
+                return xmlElement;
             } else {
-                return (Element) usesSdks.item(0);
+                return new XmlElement((Element) usesSdks.item(0), document);
             }
         }
     }
 
     /**
      * Perform {@link com.android.manifmerger.ManifestMerger2.SystemProperty} injection.
+     * @param mergingReport to log actions and errors.
      * @param xmlDocument the xml document to inject into.
      */
-    private void performSystemPropertiesInjection(XmlDocument xmlDocument) {
+    private void performSystemPropertiesInjection(
+            MergingReport.Builder mergingReport,
+            XmlDocument xmlDocument) {
         for (SystemProperty systemProperty : SystemProperty.values()) {
             String propertyOverride = mSystemPropertyResolver.getValue(systemProperty);
             if (propertyOverride != null) {
-                systemProperty.addTo(xmlDocument.getXml(), propertyOverride);
+                systemProperty.addTo(
+                        mergingReport.getActionRecorder(), xmlDocument, propertyOverride);
             }
         }
     }

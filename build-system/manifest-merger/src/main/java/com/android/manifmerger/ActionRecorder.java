@@ -157,12 +157,6 @@ public class ActionRecorder {
             Actions.ActionType actionType,
             XmlElement targetElement) {
 
-        NodeKey storageKey = mergedElement.getId();
-        Actions.DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
-        if (nodeDecisionTree == null) {
-            nodeDecisionTree = new Actions.DecisionTreeRecord();
-            mRecords.put(storageKey, nodeDecisionTree);
-        }
         Actions.NodeRecord record = new Actions.NodeRecord(actionType,
                 new Actions.ActionLocation(
                         targetElement.getDocument().getSourceLocation(),
@@ -171,7 +165,25 @@ public class ActionRecorder {
                 null, /* reason */
                 mergedElement.getOperationType()
         );
-        nodeDecisionTree.addNodeRecord(record);
+        recordNodeAction(mergedElement, record);
+    }
+
+    /**
+     * Records a {@link com.android.manifmerger.Actions.NodeRecord} action on a xml element.
+     * @param mergedElement the target element of the action.
+     * @param nodeRecord the record of the action.
+     */
+    synchronized void recordNodeAction(
+            XmlElement mergedElement,
+            Actions.NodeRecord nodeRecord) {
+
+        NodeKey storageKey = mergedElement.getId();
+        Actions.DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
+        if (nodeDecisionTree == null) {
+            nodeDecisionTree = new Actions.DecisionTreeRecord();
+            mRecords.put(storageKey, nodeDecisionTree);
+        }
+        nodeDecisionTree.addNodeRecord(nodeRecord);
     }
 
     /**
@@ -188,7 +200,6 @@ public class ActionRecorder {
             @Nullable AttributeOperationType attributeOperationType) {
 
         XmlElement originElement = attribute.getOwnerElement();
-        List<Actions.AttributeRecord> attributeRecords = getAttributeRecords(attribute);
         Actions.AttributeRecord attributeRecord = new Actions.AttributeRecord(
                 actionType,
                 new Actions.ActionLocation(
@@ -198,6 +209,20 @@ public class ActionRecorder {
                 null, /* reason */
                 attributeOperationType
         );
+        recordAttributeAction(attribute, attributeRecord);
+    }
+
+    /**
+     * Record a {@link com.android.manifmerger.Actions.AttributeRecord} action for an attribute of
+     * an xml element.
+     * @param attribute the attribute in question.
+     * @param attributeRecord the record of the action.
+     */
+    synchronized void recordAttributeAction(
+            XmlAttribute attribute,
+            Actions.AttributeRecord attributeRecord) {
+
+        List<Actions.AttributeRecord> attributeRecords = getAttributeRecords(attribute);
         attributeRecords.add(attributeRecord);
     }
 
