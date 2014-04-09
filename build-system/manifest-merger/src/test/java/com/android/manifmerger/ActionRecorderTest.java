@@ -90,7 +90,7 @@ public class ActionRecorderTest extends TestCase {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(Actions.HEADER)
             .append(xmlElement.getId()).append("\n");
-        appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 6);
+        appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 6, 5);
 
         Mockito.verify(mLoggerMock).info(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
@@ -141,8 +141,8 @@ public class ActionRecorderTest extends TestCase {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(Actions.HEADER)
                 .append(xmlElement.getId()).append("\n");
-        appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 6);
-        appendNode(stringBuilder, Actions.ActionType.REJECTED, "other_document", 6);
+        appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 6, 5);
+        appendNode(stringBuilder, Actions.ActionType.REJECTED, "other_document", 6, 5);
 
         Mockito.verify(mLoggerMock).info(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
@@ -173,12 +173,13 @@ public class ActionRecorderTest extends TestCase {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(Actions.HEADER)
                 .append(xmlElement.getId()).append("\n");
-        appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 6);
+        appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 6, 5);
         appendAttribute(stringBuilder,
                 XmlNode.unwrapName(xmlElement.getXml().getAttributeNode("android:name")),
                 Actions.ActionType.ADDED,
                 REFEFENCE_DOCUMENT,
-                6);
+                6,
+                15);
 
         Mockito.verify(mLoggerMock).info(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
@@ -208,12 +209,13 @@ public class ActionRecorderTest extends TestCase {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(Actions.HEADER)
                 .append(xmlElement.getId()).append("\n");
-        appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 1);
+        appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 1, 1);
         appendAttribute(stringBuilder,
                 XmlNode.unwrapName(xmlElement.getXml().getAttributeNode("package")),
                 Actions.ActionType.ADDED,
                 REFEFENCE_DOCUMENT,
-                4);
+                4,
+                5);
 
         Mockito.verify(mLoggerMock).info(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
@@ -270,10 +272,10 @@ public class ActionRecorderTest extends TestCase {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(Actions.HEADER)
                 .append(activityElement.getId()).append("\n");
-        appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 6);
-        appendNode(stringBuilder, Actions.ActionType.REJECTED, "other_document", 6);
+        appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 6, 5);
+        appendNode(stringBuilder, Actions.ActionType.REJECTED, "other_document", 6, 5);
         stringBuilder.append(applicationElement.getId()).append("\n");
-        appendNode(stringBuilder, Actions.ActionType.ADDED, "other_document", 7);
+        appendNode(stringBuilder, Actions.ActionType.ADDED, "other_document", 7, 5);
 
         Mockito.verify(mLoggerMock).info(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
@@ -282,19 +284,21 @@ public class ActionRecorderTest extends TestCase {
     private void appendNode(StringBuilder out,
             Actions.ActionType actionType,
             String docString,
-            int lineNumber) {
+            int lineNumber,
+            int columnNumber) {
 
         out.append(actionType.toString())
                 .append(" from ")
                 .append(getClass().getSimpleName()).append('#').append(docString)
-                .append(":").append(lineNumber).append("\n");
+                .append(":").append(lineNumber).append(":").append(columnNumber).append("\n");
     }
 
     private void appendAttribute(StringBuilder out,
             XmlNode.NodeName attributeName,
             Actions.ActionType actionType,
             String docString,
-            int lineNumber) {
+            int lineNumber,
+            int columnNumber) {
 
         out.append("\t")
                 .append(attributeName.toString())
@@ -302,6 +306,7 @@ public class ActionRecorderTest extends TestCase {
                 .append(actionType.toString())
                 .append(" from ")
                 .append(getClass().getSimpleName()).append('#').append(docString)
-                .append(":").append(lineNumber).append("\n");
+                .append(":").append(lineNumber)
+                .append(":").append(columnNumber).append("\n");
     }
 }

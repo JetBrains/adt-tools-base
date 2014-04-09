@@ -16,12 +16,17 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.MergingReport.Record.Severity;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
+
 import com.android.utils.ILogger;
 import com.android.utils.PositionXmlParser;
 import com.google.common.collect.ImmutableList;
 
 import junit.framework.TestCase;
 
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -44,7 +49,7 @@ public class MergingReportTest extends TestCase {
 
     public void testJustError() {
         MergingReport mergingReport = new MergingReport.Builder(mLoggerMock)
-                .addError("Something bad happened")
+                .addMessage(mSourceLocation,0, 0, Severity.ERROR,"Something bad happened")
                 .build();
 
         assertEquals(MergingReport.Result.ERROR, mergingReport.getResult());
@@ -52,7 +57,7 @@ public class MergingReportTest extends TestCase {
 
     public void testJustWarning() {
         MergingReport mergingReport = new MergingReport.Builder(mLoggerMock)
-                .addWarning("Something weird happened")
+                .addMessage(mSourceLocation,0, 0, Severity.WARNING, "Something weird happened")
                 .build();
 
         assertEquals(MergingReport.Result.WARNING, mergingReport.getResult());
@@ -60,7 +65,7 @@ public class MergingReportTest extends TestCase {
 
     public void testJustInfo() {
         MergingReport mergingReport = new MergingReport.Builder(mLoggerMock)
-                .addInfo("merging info")
+                .addMessage(mSourceLocation,0, 0, Severity.INFO, "merging info")
                 .build();
 
         assertEquals(MergingReport.Result.SUCCESS, mergingReport.getResult());
@@ -69,8 +74,8 @@ public class MergingReportTest extends TestCase {
 
     public void testJustInfoAndWarning() {
         MergingReport mergingReport = new MergingReport.Builder(mLoggerMock)
-                .addInfo("merging info")
-                .addWarning("Something weird happened")
+                .addMessage(mSourceLocation,0, 0, Severity.INFO, "merging info")
+                .addMessage(mSourceLocation,0, 0, Severity.WARNING, "Something weird happened")
                 .build();
 
         assertEquals(MergingReport.Result.WARNING, mergingReport.getResult());
@@ -78,8 +83,8 @@ public class MergingReportTest extends TestCase {
 
     public void testJustInfoAndError() {
         MergingReport mergingReport = new MergingReport.Builder(mLoggerMock)
-                .addInfo("merging info")
-                .addError("something bad happened")
+                .addMessage(mSourceLocation,0, 0, Severity.INFO, "merging info")
+                .addMessage(mSourceLocation,0, 0, Severity.ERROR, "something bad happened")
                 .build();
 
         assertEquals(MergingReport.Result.ERROR, mergingReport.getResult());
@@ -87,33 +92,35 @@ public class MergingReportTest extends TestCase {
 
     public void testJustWarningAndError() {
         MergingReport mergingReport = new MergingReport.Builder(mLoggerMock)
-                .addWarning("something weird happened")
-                .addError("something bad happened")
+                .addMessage(mSourceLocation,0, 0, Severity.WARNING, "something weird happened")
+                .addMessage(mSourceLocation,0, 0, Severity.ERROR, "something bad happened")
                 .build();
 
         assertEquals(MergingReport.Result.ERROR, mergingReport.getResult());
     }
     public void testAllTypes() {
         MergingReport mergingReport = new MergingReport.Builder(mLoggerMock)
-                .addInfo("merging info")
-                .addWarning("something weird happened")
-                .addError("something bad happened")
+                .addMessage(mSourceLocation,0, 0, Severity.INFO, "merging info")
+                .addMessage(mSourceLocation,0, 0, Severity.WARNING, "something weird happened")
+                .addMessage(mSourceLocation,0, 0, Severity.ERROR, "something bad happened")
                 .build();
 
         assertEquals(MergingReport.Result.ERROR, mergingReport.getResult());
     }
 
     public void testLogging() {
+        when(mSourceLocation.print(any(boolean.class))).thenReturn("location");
         MergingReport mergingReport = new MergingReport.Builder(mLoggerMock)
-                .addInfo("merging info")
-                .addWarning("something weird happened")
-                .addError("something bad happened")
+                .addMessage(mSourceLocation,0, 0, Severity.INFO, "merging info")
+                .addMessage(mSourceLocation,0, 0, Severity.WARNING, "something weird happened")
+                .addMessage(mSourceLocation,0, 0, Severity.ERROR, "something bad happened")
                 .build();
 
         mergingReport.log(mLoggerMock);
-        Mockito.verify(mLoggerMock).info("merging info");
-        Mockito.verify(mLoggerMock).warning("something weird happened");
-        Mockito.verify(mLoggerMock).error(null /* throwable */, "something bad happened");
+        Mockito.verify(mLoggerMock).info("location:0:0 Info:\n\tmerging info");
+        Mockito.verify(mLoggerMock).warning("location:0:0 Warning:\n\tsomething weird happened");
+        Mockito.verify(mLoggerMock).error(null /* throwable */,
+                "location:0:0 Error:\n\tsomething bad happened");
         Mockito.verify(mLoggerMock).info(Actions.HEADER);
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }

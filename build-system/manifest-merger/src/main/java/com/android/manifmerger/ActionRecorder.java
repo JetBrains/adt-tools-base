@@ -225,6 +225,20 @@ public class ActionRecorder {
         attributeRecords.add(attributeRecord);
     }
 
+    /**
+     * Returns the record for an attribute creation event. The attribute is "created" when it is
+     * added for the first time into the resulting merged xml document.
+     */
+    @Nullable
+    synchronized Actions.AttributeRecord getAttributeCreationRecord(XmlAttribute attribute) {
+        for (Actions.AttributeRecord attributeRecord : getAttributeRecords(attribute)) {
+            if (attributeRecord.getActionType() == Actions.ActionType.ADDED) {
+                return attributeRecord;
+            }
+        }
+        return null;
+    }
+
     private List<Actions.AttributeRecord> getAttributeRecords(XmlAttribute attribute) {
         XmlElement originElement = attribute.getOwnerElement();
         NodeKey storageKey = originElement.getId();

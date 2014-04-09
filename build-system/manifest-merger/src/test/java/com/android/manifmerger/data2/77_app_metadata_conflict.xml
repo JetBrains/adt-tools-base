@@ -122,4 +122,5 @@
 
 @errors
 
-ERROR:Attribute meta-data#name.for.backup.api.key@android:value value=(the_apps_backup_api_key) is also present at (16,13) file:ManifestMerger2Test1_lib1.xml:16 value=(the_library1_backup_api_key), use tools:replace to override it.
+ERROR:Attribute meta-data#name.for.backup.api.key@value value=(the_apps_backup_api_key) from ManifestMerger2Test0_main.xml:33:13
+    is also present at ManifestMerger2Test1_lib1.xml:16:13 value=(the_library1_backup_api_key)

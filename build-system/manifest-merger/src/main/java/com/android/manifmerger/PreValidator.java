@@ -16,6 +16,7 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.MergingReport.Record.Severity.*;
 import static com.android.manifmerger.XmlNode.NodeKey;
 
 import com.android.SdkConstants;
@@ -112,9 +113,9 @@ public class PreValidator {
                                 childElement.printPosition(),
                                 childrenKeys.get(childElement.getId()).printPosition());
                         if (twin.compareTo(childElement).isPresent()) {
-                            mergingReport.addError(message);
+                            childElement.addMessage(mergingReport, ERROR, message);
                         } else {
-                            mergingReport.addWarning(message);
+                            childElement.addMessage(mergingReport, WARNING, message);
                         }
                     }
                     childrenKeys.put(childElement.getId(), childElement);
@@ -150,7 +151,7 @@ public class PreValidator {
                     element.printPosition(),
                     Joiner.on(',').join(extraAttributeNames)
             );
-            mergingReport.addError(message);
+            element.addMessage(mergingReport, ERROR, message);
         }
     }
 
@@ -165,7 +166,7 @@ public class PreValidator {
                     selectorAttribute.getValue(),
                     element.getId(),
                     element.printPosition());
-            mergingReport.addError(message);
+            element.addMessage(mergingReport, ERROR, message);
         }
     }
 
@@ -173,7 +174,7 @@ public class PreValidator {
             MergingReport.Builder mergingReport, XmlElement manifest) {
         Attr attributeNode = manifest.getXml().getAttributeNode(AndroidManifest.ATTRIBUTE_PACKAGE);
         if (attributeNode == null) {
-            mergingReport.addWarning(String.format(
+            manifest.addMessage(mergingReport, WARNING, String.format(
                     "Missing 'package' declaration in manifest at %1$s",
                     manifest.printPosition()));
         }
@@ -206,7 +207,7 @@ public class PreValidator {
                             keyAttributesNames.get(0),
                             xmlElement.getId(),
                             xmlElement.printPosition());
-            mergingReport.addError(message);
+            xmlElement.addMessage(mergingReport, ERROR, message);
             return false;
         }
         return true;
@@ -248,22 +249,23 @@ public class PreValidator {
                 case REMOVE:
                     // check we are not provided a new value.
                     if (attribute.isPresent()) {
-                        mergingReport.addError(String.format(
+                        xmlElement.addMessage(mergingReport, ERROR, String.format(
                                 "tools:remove specified at line:%d for attribute %s, but "
                                         + "attribute also declared at line:%d, "
                                         + "do you want to use tools:replace instead ?",
-                                xmlElement.getPosition().getLine(),
+                                xmlElement.getLine(),
                                 attributeOperationTypeEntry.getKey(),
-                                attribute.get().getPosition().getLine()));
+                                attribute.get().getPosition().getLine()
+                        ));
                     }
                     break;
                 case REPLACE:
                     // check we are provided a new value
                     if (!attribute.isPresent()) {
-                        mergingReport.addError(String.format(
+                        xmlElement.addMessage(mergingReport, ERROR, String.format(
                                 "tools:replace specified at line:%d for attribute %s, but "
                                         + "no new value specified",
-                                xmlElement.getPosition().getLine(),
+                                xmlElement.getLine(),
                                 attributeOperationTypeEntry.getKey()
                         ));
                     }

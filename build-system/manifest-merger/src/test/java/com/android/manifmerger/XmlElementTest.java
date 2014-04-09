@@ -1018,7 +1018,7 @@ public class XmlElementTest extends TestCase {
                 .getLoggingRecords();
         assertEquals(1, loggingRecords.size());
         // check the error message complains about the right attribute.
-        assertTrue(loggingRecords.get(0).toString().contains("meta-data#bird@android:value"));
+        assertTrue(loggingRecords.get(0).toString().contains("meta-data#bird@value"));
     }
 
     /**

@@ -17,6 +17,9 @@
 package com.android.manifmerger;
 
 import static com.android.manifmerger.XmlNode.NodeKey;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.android.sdklib.mock.MockLog;
@@ -24,6 +27,8 @@ import com.android.xml.AndroidManifest;
 
 import junit.framework.TestCase;
 
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.xml.sax.SAXException;
 
@@ -85,18 +90,20 @@ public class ManifestModelTest extends TestCase {
         AttributeModel.Hexadecimal32Bits validator =
                 new AttributeModel.Hexadecimal32Bits();
         XmlAttribute xmlAttribute = Mockito.mock(XmlAttribute.class);
-        MockLog mockLog = new MockLog();
-
-        MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
+        MergingReport.Builder mergingReport = Mockito.mock(MergingReport.Builder.class);
         when(xmlAttribute.getId()).thenReturn(new NodeKey(AndroidManifest.ATTRIBUTE_GLESVERSION));
+
+        ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+        Mockito.doNothing().when(xmlAttribute).addMessage(
+                Mockito.any(MergingReport.Builder.class),
+                eq(MergingReport.Record.Severity.ERROR),
+                argumentCaptor.capture());
         when(xmlAttribute.printPosition()).thenReturn("unknown");
         assertFalse(validator.validates(mergingReport, xmlAttribute, "0xFFFFFFFFFFFF"));
-        assertTrue(mergingReport.hasErrors());
-        assertEquals("ERROR:Attribute glEsVersion at unknown is not a valid hexadecimal "
+        assertEquals("Attribute glEsVersion at unknown is not a valid hexadecimal "
                         + "32 bit value, found 0xFFFFFFFFFFFF",
-                mergingReport.build().getLoggingRecords().get(0).toString());
+                argumentCaptor.getValue());
     }
-
 
     public void testTooLowGlEsVersion()
             throws ParserConfigurationException, SAXException, IOException {
@@ -104,16 +111,20 @@ public class ManifestModelTest extends TestCase {
         AttributeModel.Hexadecimal32BitsWithMinimumValue validator =
                 new AttributeModel.Hexadecimal32BitsWithMinimumValue(0x00010000);
         XmlAttribute xmlAttribute = Mockito.mock(XmlAttribute.class);
-        MockLog mockLog = new MockLog();
+        MergingReport.Builder mergingReport = Mockito.mock(MergingReport.Builder.class);
 
-        MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
+        ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+        Mockito.doNothing().when(xmlAttribute).addMessage(
+                Mockito.any(MergingReport.Builder.class),
+                eq(MergingReport.Record.Severity.ERROR),
+                argumentCaptor.capture());
+
         when(xmlAttribute.getId()).thenReturn(new NodeKey(AndroidManifest.ATTRIBUTE_GLESVERSION));
         when(xmlAttribute.printPosition()).thenReturn("unknown");
         assertFalse(validator.validates(mergingReport, xmlAttribute, "0xFFF"));
-        assertTrue(mergingReport.hasErrors());
-        assertEquals("ERROR:Attribute glEsVersion at unknown is not a valid hexadecimal value, "
+        assertEquals("Attribute glEsVersion at unknown is not a valid hexadecimal value, "
                         + "minimum is 0x00010000, maximum is 0x7FFFFFFF, found 0xFFF",
-                mergingReport.build().getLoggingRecords().get(0).toString());
+                argumentCaptor.getValue());
     }
 
     public void testOkGlEsVersion()
@@ -122,13 +133,12 @@ public class ManifestModelTest extends TestCase {
         AttributeModel.Hexadecimal32BitsWithMinimumValue validator =
                 new AttributeModel.Hexadecimal32BitsWithMinimumValue(0x00010000);
         XmlAttribute xmlAttribute = Mockito.mock(XmlAttribute.class);
-        MockLog mockLog = new MockLog();
+        MergingReport.Builder mergingReport = Mockito.mock(MergingReport.Builder.class);
 
-        MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
         when(xmlAttribute.getId()).thenReturn(new NodeKey(AndroidManifest.ATTRIBUTE_GLESVERSION));
         when(xmlAttribute.printPosition()).thenReturn("unknown");
         assertTrue(validator.validates(mergingReport, xmlAttribute, "0x00020001"));
-        assertFalse(mergingReport.hasErrors());
+        verifyNoMoreInteractions(xmlAttribute);
     }
 
     public void testTooBigGlEsVersion()
@@ -137,16 +147,20 @@ public class ManifestModelTest extends TestCase {
         AttributeModel.Hexadecimal32BitsWithMinimumValue validator =
                 new AttributeModel.Hexadecimal32BitsWithMinimumValue(0x00010000);
         XmlAttribute xmlAttribute = Mockito.mock(XmlAttribute.class);
-        MockLog mockLog = new MockLog();
+        MergingReport.Builder mergingReport = Mockito.mock(MergingReport.Builder.class);
 
-        MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
+        ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+        Mockito.doNothing().when(xmlAttribute).addMessage(
+                Mockito.any(MergingReport.Builder.class),
+                eq(MergingReport.Record.Severity.ERROR),
+                argumentCaptor.capture());
+
         when(xmlAttribute.getId()).thenReturn(new NodeKey(AndroidManifest.ATTRIBUTE_GLESVERSION));
         when(xmlAttribute.printPosition()).thenReturn("unknown");
         assertFalse(validator.validates(mergingReport, xmlAttribute, "0xFFFFFFFF"));
-        assertTrue(mergingReport.hasErrors());
-        assertEquals("ERROR:Attribute glEsVersion at unknown is not a valid hexadecimal value,"
+        assertEquals("Attribute glEsVersion at unknown is not a valid hexadecimal value,"
                         + " minimum is 0x00010000, maximum is 0x7FFFFFFF, found 0xFFFFFFFF",
-                mergingReport.build().getLoggingRecords().get(0).toString());
+                argumentCaptor.getValue());
     }
 
     public void testNoKeyResolution()

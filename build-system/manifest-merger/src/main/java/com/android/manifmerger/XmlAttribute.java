@@ -34,8 +34,6 @@ import org.w3c.dom.Attr;
  */
 public class XmlAttribute extends XmlNode {
 
-    private static final String UNKNOWN_POSITION = "Unknown position";
-
     private final XmlElement mOwnerElement;
     private final Attr mXml;
     @Nullable
@@ -94,7 +92,7 @@ public class XmlAttribute extends XmlNode {
     @Override
     public NodeKey getId() {
         // (Id of the parent element)@(my name)
-        return new NodeKey(mOwnerElement.getId() + "@" + mXml.getName());
+        return new NodeKey(mOwnerElement.getId() + "@" + mXml.getLocalName());
     }
 
     @Override
@@ -286,45 +284,44 @@ public class XmlAttribute extends XmlNode {
                 printPosition(),
                 attributeModel.getDefaultValue(),
                 implicitNode.printPosition());
-        mergingReport.addError(error);
+        addMessage(mergingReport, MergingReport.Record.Severity.ERROR, error);
     }
 
     private void addConflictingValueMessage(
             MergingReport.Builder report,
             XmlAttribute higherPriority) {
 
+        Actions.AttributeRecord attributeRecord = report.getActionRecorder()
+                .getAttributeCreationRecord(higherPriority);
+
         String error = String.format(
-                "Attribute %1$s value=(%2$s) is also present at %3$s"
-                        + " value=(%4$s), use tools:replace to override it.",
+                "Attribute %1$s value=(%2$s) from %3$s\n"
+                        + "\tis also present at %4$s value=(%5$s)\n"
+                        + "\tSuggestion: add 'tools:replace=\"%6$s\"' to <%7$s> element "
+                        + "at %8$s to override",
                 higherPriority.getId(),
                 higherPriority.getValue(),
+                attributeRecord != null
+                        ? attributeRecord.getActionLocation().toString()
+                        : "(unknown)",
                 printPosition(),
-                getValue()
+                getValue(),
+                mXml.getLocalName(),
+                getOwnerElement().getType().toXmlName(),
+                higherPriority.getOwnerElement().printPosition(true)
         );
-        report.addError(error);
+        higherPriority.addMessage(report, MergingReport.Record.Severity.ERROR, error);
     }
 
-    /**
-     * Returns the position of this attribute in the original xml file. This may return an invalid
-     * location as this xml fragment does not exist in any xml file but is the temporary result
-     * of the merging process.
-     * @return a human readable position or {@link #UNKNOWN_POSITION}
-     */
-    public String printPosition() {
-        PositionXmlParser.Position position = getPosition();
-        if (position == null) {
-            return UNKNOWN_POSITION;
-        }
-        StringBuilder stringBuilder = new StringBuilder();
-        dumpPosition(stringBuilder, position);
-        return stringBuilder.toString();
+    void addMessage(MergingReport.Builder report,
+            MergingReport.Record.Severity severity,
+            String message) {
+        report.addMessage(getOwnerElement().getDocument().getSourceLocation(),
+                getLine(), getColumn(), severity, message);
     }
 
-    private void dumpPosition(StringBuilder stringBuilder, PositionXmlParser.Position position) {
-        stringBuilder
-                .append("(").append(position.getLine())
-                .append(",").append(position.getColumn()).append(") ")
-                .append(mOwnerElement.getDocument().getSourceLocation().print(true))
-                .append(":").append(position.getLine());
+    @Override
+    public XmlLoader.SourceLocation getSourceLocation() {
+        return getOwnerElement().getSourceLocation();
     }
 }

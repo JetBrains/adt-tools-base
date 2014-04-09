@@ -310,6 +310,6 @@
 
 @errors
 
-WARNING:Element intent-filter#android.intent.action.MAIN+android.intent.category.LAUNCHER at (23,13) file:ManifestMerger2Test0_main.xml:23 duplicated with element declared at (19,13) file:ManifestMerger2Test0_main.xml:19
-WARNING:Element intent-filter#android.intent.action.MAIN+android.intent.category.LAUNCHER at (76,13) file:ManifestMerger2Test1_lib1.xml:76 duplicated with element declared at (72,13) file:ManifestMerger2Test1_lib1.xml:72
-WARNING:Element intent-filter#android.intent.action.MAIN+android.intent.category.LAUNCHER at (19,13) file:ManifestMerger2Test2_lib2.xml:19 duplicated with element declared at (18,13) file:ManifestMerger2Test2_lib2.xml:18
+WARNING:Element intent-filter#android.intent.action.MAIN+android.intent.category.LAUNCHER at ManifestMerger2Test0_main.xml:23:13 duplicated with element declared at ManifestMerger2Test0_main.xml:19:13
+WARNING:Element intent-filter#android.intent.action.MAIN+android.intent.category.LAUNCHER at ManifestMerger2Test1_lib1.xml:76:13 duplicated with element declared at ManifestMerger2Test1_lib1.xml:72:13
+WARNING:Element intent-filter#android.intent.action.MAIN+android.intent.category.LAUNCHER at ManifestMerger2Test2_lib2.xml:19:13 duplicated with element declared at ManifestMerger2Test2_lib2.xml:18:13

@@ -166,7 +166,7 @@ public class PostValidatorTest extends TestCase {
         for (MergingReport.Record record : mergingReportBuilder.build().getLoggingRecords()) {
             Logger.getAnonymousLogger().severe(record.toString());
             if (record.getSeverity() == MergingReport.Record.Severity.ERROR
-                    && record.toString().contains("PostValidatorTest#testInvalidReferenceValidator:6 ")) {
+                    && record.toString().contains("PostValidatorTest#testInvalidReferenceValidator:6:55 ")) {
                 return;
             }
         }
