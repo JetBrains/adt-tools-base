@@ -56,7 +56,7 @@ public abstract class XmlNode {
     /**
      * Returns the element's document xml source file location.
      */
-    @Nullable
+    @NonNull
     public abstract XmlLoader.SourceLocation getSourceLocation();
 
     /**

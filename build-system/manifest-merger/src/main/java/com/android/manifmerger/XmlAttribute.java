@@ -320,6 +320,7 @@ public class XmlAttribute extends XmlNode {
                 getLine(), getColumn(), severity, message);
     }
 
+    @NonNull
     @Override
     public XmlLoader.SourceLocation getSourceLocation() {
         return getOwnerElement().getSourceLocation();

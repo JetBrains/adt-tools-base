@@ -343,17 +343,7 @@ public class Actions {
 
         ActionLocation(Element xml) {
             final Element location = getFirstChildElement(xml);
-            mSourceLocation = new XmlLoader.SourceLocation() {
-                @Override
-                public String print(boolean shortFormat) {
-                    return location.getAttribute("scheme") + location.getAttribute("value");
-                }
-
-                @Override
-                public Node toXml(Document document) {
-                    return document.adoptNode(location);
-                }
-            };
+            mSourceLocation = XmlLoader.locationFromXml(location);
             mPosition = PositionImpl.fromXml(getNextSiblingElement(location));
         }
 
@@ -450,17 +440,7 @@ public class Actions {
     public ImmutableMultimap<Integer, Record> getResultingSourceMapping(XmlDocument xmlDocument)
             throws ParserConfigurationException, SAXException, IOException {
 
-        XmlLoader.SourceLocation inMemory = new XmlLoader.SourceLocation() {
-            @Override
-            public String print(boolean shortFormat) {
-                return "memory";
-            }
-
-            @Override
-            public Node toXml(Document document) {
-                return null;
-            }
-        };
+        XmlLoader.SourceLocation inMemory = XmlLoader.UNKNOWN;
 
         XmlDocument loadedWithLineNumbers = XmlLoader.load(inMemory, xmlDocument.prettyPrint());
         ImmutableMultimap.Builder<Integer, Record> mappingBuilder = ImmutableMultimap.builder();
