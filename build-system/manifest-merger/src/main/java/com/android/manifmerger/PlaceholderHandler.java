@@ -72,13 +72,14 @@ public class PlaceholderHandler {
             if (matcher.matches()) {
                 String placeholderValue = valueProvider.getValue(matcher.group(2));
                 if (placeholderValue == null) {
-                    mergingReportBuilder.addError(
+                    xmlAttribute.addMessage(mergingReportBuilder, MergingReport.Record.Severity.ERROR,
                             String.format(
                                     "Attribute %1$s at %2$s requires a placeholder substitution"
                                             + " but no value for <%3$s> is provided.",
                                     xmlAttribute.getId(),
                                     xmlAttribute.printPosition(),
-                                    matcher.group(2)));
+                                    matcher.group(2)
+                            ));
                 } else {
                     // record the attribute set
                     mergingReportBuilder.getActionRecorder().recordAttributeAction(

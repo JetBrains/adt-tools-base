@@ -155,6 +155,9 @@
 
 @errors
 
-ERROR:Attribute uses-configuration@android:reqFiveWayNav value=(true) is also present at (7,9) file:ManifestMerger2Test2_lib2.xml:7 value=(false), use tools:replace to override it.
-ERROR:Attribute uses-configuration@android:reqNavigation value=(nonav) is also present at (8,9) file:ManifestMerger2Test2_lib2.xml:8 value=(trackball), use tools:replace to override it.
-ERROR:Attribute uses-configuration@android:reqTouchScreen value=(stylus) is also present at (9,9) file:ManifestMerger2Test2_lib2.xml:9 value=(finger), use tools:replace to override it.
+ERROR:Attribute uses-configuration@reqFiveWayNav value=(true) from ManifestMerger2Test0_main.xml:18:9
+    is also present at ManifestMerger2Test2_lib2.xml:7:9 value=(false)
+ERROR:Attribute uses-configuration@reqNavigation value=(nonav) from ManifestMerger2Test0_main.xml:21:9
+    is also present at ManifestMerger2Test2_lib2.xml:8:9 value=(trackball)
+ERROR:Attribute uses-configuration@reqTouchScreen value=(stylus) from ManifestMerger2Test0_main.xml:22:9
+    is also present at ManifestMerger2Test2_lib2.xml:9:9 value=(finger)

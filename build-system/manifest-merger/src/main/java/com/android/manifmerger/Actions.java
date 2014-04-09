@@ -29,7 +29,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Multimap;
 import com.google.common.io.LineReader;
 
 import org.w3c.dom.Document;
@@ -368,7 +367,8 @@ public class Actions {
 
         @Override
         public String toString() {
-            return mSourceLocation.print(true) + ":" + mPosition.getLine();
+            return mSourceLocation.print(true)
+                    + ":" + mPosition.getLine() + ":" + mPosition.getColumn();
         }
 
         public Node toXml(Element location) {

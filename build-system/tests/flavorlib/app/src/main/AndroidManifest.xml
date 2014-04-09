@@ -9,8 +9,7 @@
 
     <application
         android:icon="@drawable/icon"
-        android:label="@string/app_name"
-        tools:replace="icon, label">
+        android:label="@string/app_name">
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name" >
