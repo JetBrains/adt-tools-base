@@ -17,6 +17,8 @@
 package com.android.manifmerger;
 
 import static com.android.manifmerger.Actions.NodeRecord;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
 
 import com.android.SdkConstants;
 import com.android.utils.StdLogger;
@@ -26,6 +28,7 @@ import com.google.common.collect.ImmutableList;
 import junit.framework.TestCase;
 
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.xml.sax.SAXException;
 
@@ -1454,11 +1457,13 @@ public class XmlElementTest extends TestCase {
                 + "\n"
                 + "</manifest>";
 
-        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
+        KeyResolver<String> keyResolver = (KeyResolver<String>) Mockito.mock(KeyResolver.class);
+        when(keyResolver.resolve(any(String.class))).thenReturn("valid");
+        XmlDocument refDocument = TestUtils.xmlDocumentFromString(keyResolver,
                 new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
-        XmlDocument firstLibrary = TestUtils.xmlDocumentFromString(
+        XmlDocument firstLibrary = TestUtils.xmlDocumentFromString(keyResolver,
                 new TestUtils.TestSourceLocation(getClass(), "lowerPriorityOne"), lowerPriorityOne);
-        XmlDocument secondLibrary = TestUtils.xmlDocumentFromString(
+        XmlDocument secondLibrary = TestUtils.xmlDocumentFromString(keyResolver,
                 new TestUtils.TestSourceLocation(getClass(), "lowerPriorityTwo"), lowerPriorityTwo);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
@@ -1543,6 +1548,53 @@ public class XmlElementTest extends TestCase {
                 mergeableElements.get(1).getAttribute(nodeName).get().getValue());
         assertEquals("permissionFour",
                 mergeableElements.get(2).getAttribute(nodeName).get().getValue());
+    }
+
+    /**
+     * test tools:node="removeAll" with several target elements to be removed.
+     */
+    public void testInvalidSelector()
+            throws ParserConfigurationException, SAXException, IOException {
+        String higherPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <permission android:name=\"permissionOne\""
+                + "          tools:node=\"remove\""
+                + "          tools:selector=\"com.example.libXYZ\">\n"
+                + "    </permission>\n"
+                + "\n"
+                + "</manifest>";
+
+        String lowerPriorityOne = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib1\">\n"
+                + "\n"
+                + "    <permission android:name=\"permissionOne\""
+                + "             android:protectionLevel=\"signature\">\n"
+                + "    </permission>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+        XmlDocument firstLibrary = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "lowerPriorityOne"), lowerPriorityOne);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
+                new StdLogger(StdLogger.Level.VERBOSE));
+        Optional<XmlDocument> result = refDocument.merge(firstLibrary, mergingReportBuilder);
+        assertFalse(result.isPresent());
+
+        ImmutableList<MergingReport.Record> loggingRecords = mergingReportBuilder.build()
+                .getLoggingRecords();
+        assertEquals(1, loggingRecords.size());
+        assertEquals(MergingReport.Record.Severity.ERROR, loggingRecords.get(0).getSeverity());
+        assertTrue(loggingRecords.get(0).getMessage().contains("tools:selector"));
     }
 
     /**

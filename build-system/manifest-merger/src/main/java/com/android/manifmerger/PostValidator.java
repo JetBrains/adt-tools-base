@@ -57,7 +57,7 @@ public class PostValidator {
     }
 
     /**
-     * Validate an xml element and recursively its children elemnts, ensuring that all merging
+     * Validate an xml element and recursively its children elements, ensuring that all merging
      * instructions were applied.
      *
      * @param xmlElement xml element to validate.

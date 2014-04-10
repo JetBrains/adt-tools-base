@@ -40,6 +40,7 @@ public class MergingReportTest extends TestCase {
     @Mock ILogger mLoggerMock;
     @Mock Element mElement;
     @Mock XmlLoader.SourceLocation mSourceLocation;
+    @Mock KeyResolver<String> mKeyResolver;
 
     @Override
     protected void setUp() throws Exception {
@@ -141,7 +142,8 @@ public class MergingReportTest extends TestCase {
 
     public void testGetMergedDocument() {
         XmlDocument xmlDocument =
-                new XmlDocument(new PositionXmlParser(), mSourceLocation, mElement);
+                new XmlDocument(
+                        new PositionXmlParser(), mSourceLocation, mKeyResolver, mElement);
 
         MergingReport mergingReport = new MergingReport.Builder(mLoggerMock)
                 .setMergedDocument(xmlDocument)

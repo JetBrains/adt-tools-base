@@ -146,8 +146,7 @@ public class ActionsTest extends TestCase {
                 + "\n"                                                                      // 5
                 + "    <permission\n"                                                       // 6
                 + "          android:name=\"permissionOne\"\n"                              // 7
-                + "          tools:node=\"remove\"\n"                                       // 8
-                + "          tools:selector=\"com.example.lib1\">\n"                        // 9
+                + "          tools:node=\"remove\">\n"                                       // 8
                 + "    </permission>\n"                                                     // 10
                 + "    <permission \n"                                                      // 11
                 + "          tools:node=\"removeAll\"\n"                                    // 12
@@ -216,11 +215,11 @@ public class ActionsTest extends TestCase {
                 + "3    package=\"com.example.lib3\" >\n"
                 + "4\n"
                 + "5    <permission\n"
-                + "5-->ActionsTest#higherPriority:15:5\n"
+                + "5-->ActionsTest#higherPriority:14:5\n"
                 + "6        android:name=\"permissionThree\"\n"
-                + "6-->ActionsTest#higherPriority:16:14\n"
+                + "6-->ActionsTest#higherPriority:15:14\n"
                 + "7        android:protectionLevel=\"signature\" >\n"
-                + "7-->ActionsTest#higherPriority:17:14\n"
+                + "7-->ActionsTest#higherPriority:16:14\n"
                 + "8    </permission>\n"
                 + "9    <permission\n"
                 + "9-->ActionsTest#lowerPriorityOne:9:5\n"

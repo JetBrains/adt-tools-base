@@ -201,8 +201,6 @@ public class XmlElement extends OrphanXmlElement {
     /**
      * Merge this xml element with a lower priority node.
      *
-     * This is WIP.
-     *
      * For now, attributes will be merged. If present on both xml elements, a warning will be
      * issued and the attribute merge will be rejected.
      *
@@ -213,6 +211,17 @@ public class XmlElement extends OrphanXmlElement {
             XmlElement lowerPriorityNode,
             MergingReport.Builder mergingReport) {
 
+
+        if (mSelector != null && !mSelector.isResolvable(getDocument().getSelectors())) {
+            mergingReport.addMessage(getSourceLocation(), getLine(), getColumn(),
+                    MergingReport.Record.Severity.ERROR,
+                    String.format("'tools:selector=\"%1$s\"' is not a valid library identifier, "
+                            + "valid identifiers are : %2$s",
+                            mSelector.toString(),
+                            Joiner.on(',').join(mDocument.getSelectors().getKeys())));
+            return;
+
+        }
         mergingReport.getLogger().info("Merging " + getId()
                 + " with lower " + lowerPriorityNode.printPosition());
 
