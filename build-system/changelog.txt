@@ -1,3 +1,9 @@
+0.10.0:
+- New manifest merger
+- Pre-dex cache (in rootProject/build). Shared across modules and variants
+- Exploded aar are extracted in a single location (under rootProject/build) to share across all modules using it.
+- Upgraded to Proguard 4.11. Fixed incremental issues.
+
 0.9.2:
 - Aapt-based PNG processor is now default again while we investigate some issues with the old one.
 - flavorGroups have been renamed flavorDimensions and the DSL has been updated. The old DSL is still available until 1.0 at which time it'll be removed.
