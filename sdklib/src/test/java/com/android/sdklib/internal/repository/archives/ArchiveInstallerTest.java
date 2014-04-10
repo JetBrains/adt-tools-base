@@ -143,9 +143,9 @@ public class ArchiveInstallerTest extends TestCase {
         assertEquals(
              "[</sdk/mock/testPkg/source.properties: '### Android Tool: Source of this archive.\n" +
               "#...date...\n" +
+              "Archive.Arch=ANY\n" +
               "Archive.Os=ANY\n" +
               "Pkg.Revision=0\n" +
-              "Archive.Arch=ANY\n" +
               "Pkg.SourceUrl=http\\://repo.example.com/url\n" +
               "'>]",
               stripDate(Arrays.toString(mFile.getOutputStreams())));
@@ -195,16 +195,16 @@ public class ArchiveInstallerTest extends TestCase {
                 "[</sdk/extras/vendor1/oldPath/source.properties: " +
                      "'### Android Tool: Source of this archive.\n" +
                 "#...date...\n" +
-                "Extra.VendorDisplay=vendor1\n" +
-                "Pkg.Desc=desc\n" +
-                "Extra.Path=oldPath\n" +
                 "Archive.Arch=ANY\n" +
-                "Pkg.DescUrl=url\n" +
-                "Extra.NameDisplay=Vendor1 OldPath\n" +
                 "Archive.Os=ANY\n" +
-                "Pkg.SourceUrl=http\\://repo.example.com/url\n" +
-                "Pkg.Revision=2.0.0\n" +
+                "Extra.NameDisplay=Vendor1 OldPath\n" +
+                "Extra.Path=oldPath\n" +
+                "Extra.VendorDisplay=vendor1\n" +
                 "Extra.VendorId=vendor1\n" +
+                "Pkg.Desc=desc\n" +
+                "Pkg.DescUrl=url\n" +
+                "Pkg.Revision=2.0.0\n" +
+                "Pkg.SourceUrl=http\\://repo.example.com/url\n" +
                 "'>]"),
                 stripDate(Arrays.toString(mFile.getOutputStreams())));
 
@@ -271,17 +271,17 @@ public class ArchiveInstallerTest extends TestCase {
                 "[</sdk/extras/vendor1/newPath/source.properties: " +
                      "'### Android Tool: Source of this archive.\n" +
                 "#...date...\n" +
-                "Extra.VendorDisplay=vendor1\n" +
-                "Pkg.Desc=desc\n" +
+                "Archive.Arch=ANY\n" +
+                "Archive.Os=ANY\n" +
+                "Extra.NameDisplay=Vendor1 NewPath\n" +
                 "Extra.OldPaths=oldPath\n" +
                 "Extra.Path=newPath\n" +
-                "Archive.Arch=ANY\n" +
-                "Pkg.DescUrl=url\n" +
-                "Extra.NameDisplay=Vendor1 NewPath\n" +
-                "Archive.Os=ANY\n" +
-                "Pkg.SourceUrl=http\\://repo.example.com/url\n" +
-                "Pkg.Revision=2.0.0\n" +
+                "Extra.VendorDisplay=vendor1\n" +
                 "Extra.VendorId=vendor1\n" +
+                "Pkg.Desc=desc\n" +
+                "Pkg.DescUrl=url\n" +
+                "Pkg.Revision=2.0.0\n" +
+                "Pkg.SourceUrl=http\\://repo.example.com/url\n" +
                 "'>]"),
                 stripDate(Arrays.toString(mFile.getOutputStreams())));
 
