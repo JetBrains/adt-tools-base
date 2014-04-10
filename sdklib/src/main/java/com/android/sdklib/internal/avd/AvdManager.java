@@ -357,6 +357,7 @@ public class AvdManager {
      *            logging needs. Cannot be null.
      * @throws AndroidLocationException
      */
+    @NonNull
     public static AvdManager getInstance(@NonNull LocalSdk localSdk, @NonNull ILogger log)
             throws AndroidLocationException {
         synchronized(mManagers) {
@@ -376,6 +377,7 @@ public class AvdManager {
      *
      * @throws AndroidLocationException
      */
+    @NonNull
     public String getBaseAvdFolder() throws AndroidLocationException {
         assert AndroidLocation.getFolder().endsWith(File.separator);
         return AndroidLocation.getFolder() + AndroidLocation.FOLDER_AVD;
@@ -394,6 +396,7 @@ public class AvdManager {
      * Note: This is temporary and will be removed as SdkManager is phased out.
      * TODO: Remove this when SdkManager is removed
      */
+    @NonNull
     @Deprecated
     public SdkManager getSdkManager() {
         return SdkManager.createManager(myLocalSdk.getPath(), NullLogger.getLogger());
@@ -420,7 +423,7 @@ public class AvdManager {
      * @return A size in byte if > 0, or {@link #SDCARD_SIZE_NOT_IN_RANGE},
      *  {@link #SDCARD_SIZE_INVALID} or {@link #SDCARD_NOT_SIZE_PATTERN} as error codes.
      */
-    public static long parseSdcardSize(String sdcard, String[] parsedStrings) {
+    public static long parseSdcardSize(@NonNull String sdcard, @Nullable String[] parsedStrings) {
 
         if (parsedStrings != null) {
             assert parsedStrings.length == 2;
@@ -468,6 +471,7 @@ public class AvdManager {
      * Returns all the existing AVDs.
      * @return a newly allocated array containing all the AVDs.
      */
+    @NonNull
     public AvdInfo[] getAllAvds() {
         synchronized (mAllAvdList) {
             return mAllAvdList.toArray(new AvdInfo[mAllAvdList.size()]);
@@ -478,6 +482,7 @@ public class AvdManager {
      * Returns all the valid AVDs.
      * @return a newly allocated array containing all valid the AVDs.
      */
+    @NonNull
     public AvdInfo[] getValidAvds() {
         synchronized (mAllAvdList) {
             if (mValidAvdList == null) {
@@ -498,6 +503,7 @@ public class AvdManager {
      * Returns all the broken AVDs.
      * @return a newly allocated array containing all the broken AVDs.
      */
+    @NonNull
     public AvdInfo[] getBrokenAvds() {
         synchronized (mAllAvdList) {
             if (mBrokenAvdList == null) {
@@ -522,7 +528,8 @@ public class AvdManager {
      * @param validAvdOnly if <code>true</code>, only look through the list of valid AVDs.
      * @return the matching AvdInfo or <code>null</code> if none were found.
      */
-    public AvdInfo getAvd(String name, boolean validAvdOnly) {
+    @Nullable
+    public AvdInfo getAvd(@Nullable String name, boolean validAvdOnly) {
 
         boolean ignoreCase = SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS;
 
@@ -553,7 +560,8 @@ public class AvdManager {
      * @param name the name of the AVD to return
      * @return A pair of {@link AvdConflict} and the path or AVD name that conflicts.
      */
-    public Pair<AvdConflict, String> isAvdNameConflicting(String name) {
+    @NonNull
+    public Pair<AvdConflict, String> isAvdNameConflicting(@Nullable String name) {
 
         boolean ignoreCase = SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS;
 
@@ -600,7 +608,7 @@ public class AvdManager {
      * @throws AndroidLocationException if there was an error finding the location of the
      * AVD folder.
      */
-    public void reloadAvds(ILogger log) throws AndroidLocationException {
+    public void reloadAvds(@NonNull ILogger log) throws AndroidLocationException {
         // build the list in a temp list first, in case the method throws an exception.
         // It's better than deleting the whole list before reading the new one.
         ArrayList<AvdInfo> allList = new ArrayList<AvdInfo>();
@@ -638,21 +646,22 @@ public class AvdManager {
      * @return The new {@link AvdInfo} in case of success (which has just been added to the
      *         internal list) or null in case of failure.
      */
+    @Nullable
     public AvdInfo createAvd(
-            File avdFolder,
-            String avdName,
-            IAndroidTarget target,
-            IdDisplay tag,
-            String abiType,
-            File skinFolder,
-            String skinName,
-            String sdcard,
+            @NonNull  File avdFolder,
+            @NonNull  String avdName,
+            @NonNull  IAndroidTarget target,
+            @NonNull  IdDisplay tag,
+            @NonNull  String abiType,
+            @Nullable File skinFolder,
+            @Nullable String skinName,
+            @Nullable String sdcard,
             @Nullable Map<String,String> hardwareConfig,
             @Nullable Map<String,String> bootProps,
             boolean createSnapshot,
             boolean removePrevious,
             boolean editExisting,
-            ILogger log) {
+            @NonNull ILogger log) {
         if (log == null) {
             throw new IllegalArgumentException("log cannot be null");
         }
@@ -1055,7 +1064,7 @@ public class AvdManager {
      * @throws FileNotFoundException
      * @throws IOException
      */
-    private void copyImageFile(File source, File destination)
+    private void copyImageFile(@NonNull File source, @NonNull File destination)
             throws FileNotFoundException, IOException {
         FileInputStream fis = new FileInputStream(source);
         FileOutputStream fos = new FileOutputStream(destination);
@@ -1075,7 +1084,9 @@ public class AvdManager {
      * is not empty. If the image folder is empty or does not exist, <code>null</code> is returned.
      * @throws InvalidTargetPathException if the target image folder is not in the current SDK.
      */
-    private String getImageRelativePath(IAndroidTarget target, IdDisplay tag, String abiType)
+    private String getImageRelativePath(@NonNull IAndroidTarget target,
+                                        @NonNull IdDisplay tag,
+                                        @NonNull String abiType)
             throws InvalidTargetPathException {
 
         ISystemImage systemImage = target.getSystemImage(tag, abiType);
@@ -1129,7 +1140,10 @@ public class AvdManager {
      * @param target The target where to find the skin.
      * @param log the log object to receive action logs. Cannot be null.
      */
-    private String getSkinRelativePath(String skinName, IAndroidTarget target, ILogger log) {
+    @Deprecated
+    private String getSkinRelativePath(@NonNull String skinName,
+                                       @NonNull IAndroidTarget target,
+                                       @NonNull ILogger log) {
         if (log == null) {
             throw new IllegalArgumentException("log cannot be null");
         }
@@ -1169,7 +1183,7 @@ public class AvdManager {
      * @param target The target where to find the skin.
      * @return a {@link File} that may or may not actually exist.
      */
-    private File getSkinFolder(String skinName, IAndroidTarget target) {
+    private File getSkinFolder(@NonNull String skinName, @NonNull IAndroidTarget target) {
         String path = target.getPath(IAndroidTarget.SKINS);
         File skin = new File(path, skinName);
 
@@ -1193,9 +1207,9 @@ public class AvdManager {
      * @throws AndroidLocationException if there's a problem getting android root directory.
      * @throws IOException if {@link File#getAbsolutePath()} fails.
      */
-    private File createAvdIniFile(String name,
-            File avdFolder,
-            IAndroidTarget target,
+    private File createAvdIniFile(@NonNull String name,
+            @NonNull File avdFolder,
+            @NonNull IAndroidTarget target,
             boolean removePrevious)
             throws AndroidLocationException, IOException {
         File iniFile = AvdInfo.getDefaultIniFile(this, name);
@@ -1236,7 +1250,8 @@ public class AvdManager {
      * @throws AndroidLocationException if there's a problem getting android root directory.
      * @throws IOException if {@link File#getAbsolutePath()} fails.
      */
-    private File createAvdIniFile(AvdInfo info) throws AndroidLocationException, IOException {
+    private File createAvdIniFile(@NonNull AvdInfo info)
+            throws AndroidLocationException, IOException {
         return createAvdIniFile(info.getName(),
                 new File(info.getDataFolderPath()),
                 info.getTarget(),
@@ -1258,7 +1273,7 @@ public class AvdManager {
      * @param log the log object to receive action logs. Cannot be null.
      * @return True if the AVD was deleted with no error.
      */
-    public boolean deleteAvd(AvdInfo avdInfo, ILogger log) {
+    public boolean deleteAvd(@NonNull AvdInfo avdInfo, @NonNull ILogger log) {
         try {
             boolean error = false;
 
@@ -1315,7 +1330,10 @@ public class AvdManager {
      * @return True if the move succeeded or there was nothing to do.
      *         If false, this method will have had already output error in the log.
      */
-    public boolean moveAvd(AvdInfo avdInfo, String newName, String paramFolderPath, ILogger log) {
+    public boolean moveAvd(@NonNull  AvdInfo avdInfo,
+                           @Nullable String newName,
+                           @Nullable String paramFolderPath,
+                           @NonNull  ILogger log) {
 
         try {
             if (paramFolderPath != null) {
