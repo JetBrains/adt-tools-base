@@ -64,6 +64,8 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "25_permission_merge",
             "26_permission_dup",
             "28_uses_perm_merge",
+            "29_uses_perm_selector",
+            "29b_uses_perm_invalidSelector",
             "30_uses_sdk_ok",
             "32_uses_sdk_minsdk_ok",
             "33_uses_sdk_minsdk_conflict",
@@ -219,7 +221,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
         BufferedReader reader = new BufferedReader(stringReader);
         String line = reader.readLine();
         List<Record> records = new ArrayList<Record>(mergeReport.getLoggingRecords());
-        while (line  != null) {
+        while (line != null) {
             if (line.startsWith("WARNING") || line.startsWith("ERROR")) {
                 String message = line;
                 do {
