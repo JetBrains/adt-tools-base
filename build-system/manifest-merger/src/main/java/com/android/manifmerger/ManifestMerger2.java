@@ -31,6 +31,7 @@ import com.android.utils.StdLogger;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -39,6 +40,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -85,6 +87,7 @@ public class ManifestMerger2 {
         // initiate a new merging report
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
 
+        SelectorResolver selectors = new SelectorResolver();
         // invariant : xmlDocumentOptional holds the higher priority document and we try to
         // merge in lower priority documents.
         Optional<XmlDocument> xmlDocumentOptional = Optional.absent();
@@ -92,22 +95,28 @@ public class ManifestMerger2 {
             mLogger.info("Merging flavors and build manifest %s \n", inputFile.getPath());
             xmlDocumentOptional = merge(xmlDocumentOptional,
                     Pair.of((String) null, inputFile),
+                    selectors,
                     mergingReportBuilder);
             if (!xmlDocumentOptional.isPresent()) {
                 return mergingReportBuilder.build();
             }
         }
+        // load all the libraries xml files up front to have a list of all possible node:selector
+        // values.
+        List<XmlDocument> loadedLibraryDocuments = loadLibraries(selectors);
+
         mLogger.info("Merging main manifest %s\n", mMainManifestFile.getPath());
-        xmlDocumentOptional = merge(xmlDocumentOptional, Pair.of(mMainManifestFile.getName(),
-                mMainManifestFile),
+        xmlDocumentOptional = merge(xmlDocumentOptional,
+                Pair.of(mMainManifestFile.getName(), mMainManifestFile),
+                selectors,
                 mergingReportBuilder);
         if (!xmlDocumentOptional.isPresent()) {
             return mergingReportBuilder.build();
         }
-        for (Pair<String, File> inputFile : mLibraryFiles) {
-            mLogger.info("Merging library manifest " + inputFile.getSecond().getPath());
+        for (XmlDocument libraryDocument : loadedLibraryDocuments) {
+            mLogger.info("Merging library manifest " + libraryDocument.getSourceLocation());
             xmlDocumentOptional = merge(
-                    xmlDocumentOptional, inputFile, mergingReportBuilder);
+                    xmlDocumentOptional, libraryDocument, mergingReportBuilder);
             if (!xmlDocumentOptional.isPresent()) {
                 return mergingReportBuilder.build();
             }
@@ -160,15 +169,26 @@ public class ManifestMerger2 {
     private Optional<XmlDocument> merge(
             Optional<XmlDocument> xmlDocument,
             Pair<String, File> lowerPriorityXmlFile,
+            KeyResolver<String> selectors,
             MergingReport.Builder mergingReportBuilder) throws MergeFailureException {
 
         XmlDocument lowerPriorityDocument;
         try {
-            lowerPriorityDocument = XmlLoader.load(
+            lowerPriorityDocument = XmlLoader.load(selectors,
                     lowerPriorityXmlFile.getFirst(), lowerPriorityXmlFile.getSecond());
         } catch (Exception e) {
             throw new MergeFailureException(e);
         }
+        return merge(xmlDocument, lowerPriorityDocument, mergingReportBuilder);
+
+    }
+
+    // merge the optionally existing xmlDocument with a lower priority xml file.
+    private Optional<XmlDocument> merge(
+            Optional<XmlDocument> xmlDocument,
+            XmlDocument lowerPriorityDocument,
+            MergingReport.Builder mergingReportBuilder) throws MergeFailureException {
+
         MergingReport.Result validationResult = PreValidator
                 .validate(mergingReportBuilder, lowerPriorityDocument);
         if (validationResult == MergingReport.Result.ERROR) {
@@ -195,6 +215,31 @@ public class ManifestMerger2 {
         return result;
     }
 
+    private List<XmlDocument> loadLibraries(SelectorResolver selectors)
+            throws MergeFailureException {
+
+        ImmutableList.Builder<XmlDocument> loadedLibraryDocuments = ImmutableList.builder();
+        for (Pair<String, File> libraryFile : mLibraryFiles) {
+            mLogger.info("Loading library manifest " + libraryFile.getSecond().getPath());
+            XmlDocument libraryDocument;
+            try {
+                libraryDocument = XmlLoader.load(selectors,
+                        libraryFile.getFirst(), libraryFile.getSecond());
+            } catch (Exception e) {
+                throw new MergeFailureException(e);
+            }
+            // extract the package name...
+            String libraryPackage = libraryDocument.getRootNode().getXml().getAttribute("package");
+            // save it in the selector instance.
+            if (!Strings.isNullOrEmpty(libraryPackage)) {
+                selectors.addSelector(libraryPackage, libraryFile.getFirst());
+            }
+
+            loadedLibraryDocuments.add(libraryDocument);
+        }
+        return loadedLibraryDocuments.build();
+    }
+
     /**
      * Defines a property that can add or override itself into an XML document.
      */
@@ -209,6 +254,30 @@ public class ManifestMerger2 {
         void addTo(@NonNull ActionRecorder actionRecorder,
                 @NonNull XmlDocument document,
                 @NonNull String value);
+    }
+
+    /**
+     * Implementation a {@link com.android.manifmerger.KeyResolver} capable of resolving all
+     * selectors value in the context of the passed libraries to this merging activities.
+     */
+    private static class SelectorResolver implements KeyResolver<String> {
+
+        private final Map<String, String> mSelectors = new HashMap<String, String>();
+
+        private void addSelector(String key, String value) {
+            mSelectors.put(key, value);
+        }
+
+        @Nullable
+        @Override
+        public String resolve(String key) {
+            return mSelectors.get(key);
+        }
+
+        @Override
+        public Iterable<String> getKeys() {
+            return mSelectors.keySet();
+        }
     }
 
     /**

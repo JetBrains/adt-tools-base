@@ -31,6 +31,9 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Removes all "tools:" statements from the resulting xml.
  *
@@ -73,14 +76,24 @@ public class ToolsInstructionsCleaner {
 
         NamedNodeMap namedNodeMap = element.getAttributes();
         if (namedNodeMap != null) {
+            // make a copy of the original list of attributes as we will remove some during this
+            // process.
+            List<Node> attributes = new ArrayList<Node>();
             for (int i = 0; i < namedNodeMap.getLength(); i++) {
-                Node attribute = namedNodeMap.item(i);
+                attributes.add(namedNodeMap.item(i));
+            }
+            for (Node attribute : attributes) {
                 if (SdkConstants.TOOLS_URI.equals(attribute.getNamespaceURI())) {
                     // we need to special case when the element contained tools:node="remove"
-                    // since it also needs to be deleted.
+                    // since it also needs to be deleted unless it had a selector.
+                    // if this is tools:node="removeAll", we always delete the element whether or
+                    // not there is a tools:selector.
+                    boolean hasSelector = namedNodeMap.getNamedItemNS(
+                            SdkConstants.TOOLS_URI, "selector") != null;
                     if (attribute.getLocalName().equals(NodeOperationType.NODE_LOCAL_NAME)
                             && (attribute.getNodeValue().equals(REMOVE_ALL_OPERATION_XML_MAME)
-                                || attribute.getNodeValue().equals(REMOVE_OPERATION_XML_MAME))) {
+                                || (attribute.getNodeValue().equals(REMOVE_OPERATION_XML_MAME))
+                                    && !hasSelector)) {
 
                         if (element.getParentNode().getNodeType() == Node.DOCUMENT_NODE) {
                             logger.error(null /* Throwable */,

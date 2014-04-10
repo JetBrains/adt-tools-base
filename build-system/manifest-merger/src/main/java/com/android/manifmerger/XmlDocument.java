@@ -54,13 +54,16 @@ public class XmlDocument {
     private final AtomicReference<XmlElement> mRootNode = new AtomicReference<XmlElement>(null);
     private final PositionXmlParser mPositionXmlParser;
     private final XmlLoader.SourceLocation mSourceLocation;
+    private final KeyResolver<String> mSelectors;
 
     public XmlDocument(@NonNull PositionXmlParser positionXmlParser,
             @NonNull XmlLoader.SourceLocation sourceLocation,
+            @NonNull KeyResolver<String> selectors,
             @NonNull Element element) {
         this.mPositionXmlParser = Preconditions.checkNotNull(positionXmlParser);
         this.mSourceLocation = Preconditions.checkNotNull(sourceLocation);
         this.mRootElement = Preconditions.checkNotNull(element);
+        this.mSelectors = Preconditions.checkNotNull(selectors);
     }
 
     /**
@@ -104,7 +107,15 @@ public class XmlDocument {
      * @return a new {@link com.android.manifmerger.XmlDocument} with up to date information.
      */
     public XmlDocument reparse() {
-        return new XmlDocument(mPositionXmlParser, mSourceLocation, mRootElement);
+        return new XmlDocument(mPositionXmlParser, mSourceLocation, mSelectors, mRootElement);
+    }
+
+    /**
+     * Returns a {@link com.android.manifmerger.KeyResolver} capable of resolving all selectors
+     * types
+     */
+    public KeyResolver<String> getSelectors() {
+        return mSelectors;
     }
 
     /**

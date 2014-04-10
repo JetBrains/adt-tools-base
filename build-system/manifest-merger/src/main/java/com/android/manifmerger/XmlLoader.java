@@ -66,26 +66,14 @@ public final class XmlLoader {
     private XmlLoader() {}
 
     /**
-     * Loads a xml file without doing xml validation and return a {@link XmlDocument}
-     * @param xmlFile the source xml file to load.
-     * @return the initialized {@link XmlDocument}
-     * @throws IOException if the input file cannot be read.
-     * @throws SAXException if the xml is incorrect
-     * @throws ParserConfigurationException if the xml engine cannot be configured.
-     */
-    public static XmlDocument load(File xmlFile)
-            throws IOException, SAXException, ParserConfigurationException {
-        return load(null /* displayName */, xmlFile);
-    }
-
-    /**
      * Loads an xml file without doing xml validation and return a {@link XmlDocument}
      *
      * @param displayName the xml file display name.
      * @param xmlFile the xml file.
      * @return the initialized {@link com.android.manifmerger.XmlDocument}
      */
-    public static XmlDocument load(String displayName, File xmlFile)
+    public static XmlDocument load(
+            KeyResolver<String> selectors, String displayName, File xmlFile)
             throws IOException, SAXException, ParserConfigurationException {
         InputStream inputStream = new BufferedInputStream(new FileInputStream(xmlFile));
 
@@ -94,6 +82,7 @@ public final class XmlLoader {
         return domDocument != null
                 ? new XmlDocument(positionXmlParser,
                 new FileSourceLocation(displayName, xmlFile),
+                selectors,
                 domDocument.getDocumentElement())
                 : null;
     }
@@ -109,13 +98,17 @@ public final class XmlLoader {
      * @throws SAXException if the xml is incorrect
      * @throws ParserConfigurationException if the xml engine cannot be configured.
      */
-    public static XmlDocument load(SourceLocation sourceLocation, String xml)
+    public static XmlDocument load(
+            KeyResolver<String> selectors, SourceLocation sourceLocation, String xml)
             throws IOException, SAXException, ParserConfigurationException {
         PositionXmlParser positionXmlParser = new PositionXmlParser();
         Document domDocument = positionXmlParser.parse(xml);
         return domDocument != null
                 ? new XmlDocument(
-                        positionXmlParser, sourceLocation, domDocument.getDocumentElement())
+                        positionXmlParser,
+                        sourceLocation,
+                        selectors,
+                        domDocument.getDocumentElement())
                 : null;
     }
 
