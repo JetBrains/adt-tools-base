@@ -59,24 +59,23 @@ public class DependencyDataStore {
     private final Map<String, DependencyData> mMainFileMap = Maps.newHashMap();
 
     public DependencyDataStore() {
-
     }
 
-    public void addData(List<DependencyData> dataList) {
+    public void addData(@NonNull List<DependencyData> dataList) {
         for (DependencyData data : dataList) {
             mMainFileMap.put(data.getMainFile(), data);
         }
     }
 
-    public void addData(DependencyData data) {
+    public void addData(@NonNull DependencyData data) {
         mMainFileMap.put(data.getMainFile(), data);
     }
 
-    public void remove(DependencyData data) {
+    public void remove(@NonNull DependencyData data) {
         mMainFileMap.remove(data.getMainFile());
     }
 
-    public void updateAll(List<DependencyData> dataList) {
+    public void updateAll(@NonNull List<DependencyData> dataList) {
         for (DependencyData data : dataList) {
             mMainFileMap.put(data.getMainFile(), data);
         }
@@ -108,7 +107,7 @@ public class DependencyDataStore {
      * @param file the file to save the data to.
      * @throws IOException
      */
-    public void saveTo(File file) throws IOException {
+    public void saveTo(@NonNull File file) throws IOException {
         FileOutputStream fos = new FileOutputStream(file);
 
         try {
@@ -146,7 +145,7 @@ public class DependencyDataStore {
      * @return a map of file-> list of impacted dependency data.
      * @throws IOException
      */
-    public Multimap<String, DependencyData> loadFrom(File file) throws IOException {
+    public Multimap<String, DependencyData> loadFrom(@NonNull File file) throws IOException {
         Multimap<String, DependencyData> inputMap = ArrayListMultimap.create();
 
         FileInputStream fis = new FileInputStream(file);
@@ -206,20 +205,21 @@ public class DependencyDataStore {
         }
     }
 
-    private void writeInt(FileOutputStream fos, int value) throws IOException {
+    private static void writeInt(@NonNull FileOutputStream fos, int value) throws IOException {
         ByteBuffer b = ByteBuffer.allocate(4);
         b.putInt(value);
         fos.write(b.array());
     }
 
-    private void writePath(FileOutputStream fos, String path) throws IOException {
+    private static void writePath(@NonNull FileOutputStream fos, String path) throws IOException {
         byte[] pathBytes = path.getBytes(Charsets.UTF_8);
 
         writeInt(fos, pathBytes.length);
         fos.write(pathBytes);
     }
 
-    private byte readByte(FileInputStream fis, ReusableBuffer buffers) throws IOException {
+    private static byte readByte(@NonNull FileInputStream fis, @NonNull ReusableBuffer buffers)
+            throws IOException {
         int read = fis.read(buffers.intBuffer, 0, 1);
         if (read != 1) {
             return TAG_END;
@@ -228,7 +228,8 @@ public class DependencyDataStore {
         return buffers.intBuffer[0];
     }
 
-    private int readInt(FileInputStream fis, ReusableBuffer buffers) throws IOException {
+    private static int readInt(@NonNull FileInputStream fis, @NonNull ReusableBuffer buffers)
+            throws IOException {
         int read = fis.read(buffers.intBuffer);
 
         // there must always be 4 bytes for the path length
@@ -241,7 +242,8 @@ public class DependencyDataStore {
         return b.getInt();
     }
 
-    private String readPath(FileInputStream fis, ReusableBuffer buffers) throws IOException {
+    private static String readPath(@NonNull FileInputStream fis, @NonNull ReusableBuffer buffers)
+            throws IOException {
         int length = readInt(fis, buffers);
 
         if (buffers.pathBuffer == null || buffers.pathBuffer.length < length) {
