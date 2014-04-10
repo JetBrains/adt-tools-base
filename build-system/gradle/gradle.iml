@@ -20,22 +20,22 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/net/sf/proguard/proguard-gradle/4.10/proguard-gradle-4.10.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/net/sf/proguard/proguard-gradle/4.11/proguard-gradle-4.11.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/net/sf/proguard/proguard-gradle/4.10/proguard-gradle-4.10-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/net/sf/proguard/proguard-gradle/4.11/proguard-gradle-4.11-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/net/sf/proguard/proguard-base/4.10/proguard-base-4.10.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/net/sf/proguard/proguard-base/4.11/proguard-base-4.11.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/net/sf/proguard/proguard-base/4.10/proguard-base-4.10-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/internal/net/sf/proguard/proguard-base/4.11/proguard-base-4.11-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>

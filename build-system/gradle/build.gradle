@@ -22,7 +22,7 @@ dependencies {
     compile localGroovy()
     compile project(':builder')
     compile project(':lint')
-    compile 'net.sf.proguard:proguard-gradle:4.10'
+    compile 'net.sf.proguard:proguard-gradle:4.11'
 
     testCompile 'junit:junit:3.8.1'
 

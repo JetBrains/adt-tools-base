@@ -139,8 +139,6 @@ import org.gradle.tooling.BuildException
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 import proguard.gradle.ProGuardTask
 
-import java.lang.reflect.Field
-import java.lang.reflect.Method
 import java.util.jar.Attributes
 import java.util.jar.Manifest
 
@@ -1703,32 +1701,23 @@ public abstract class BasePlugin {
             String include = exclude.replace('!', '')
             proguardTask.libraryjars(variantData.javaCompileTask.destinationDir, filter: include)
 
-            proguardTask.doFirst {
-                // we need to query the list of packaged Jar just before the task
-                // runs to make sure all the created jars are present.
-                // (This is mostly for aar that needs expanding during the build, and their
-                // local jar files which aren't even known during evaluation/task creation).
-                Set<File> packagedJars = androidBuilder.getPackagedJars(variantConfig)
 
-                // injar: the local dependencies, filter out local jars from packagedJars
-                Object[] jars = getLocalJarFileList(variantData.variantDependency)
-                for (Object inJar : jars) {
-                    if (packagedJars.contains(inJar)) {
-                        packagedJars.remove(inJar);
-                    }
-                    proguardTask.injars((File) inJar, filter: '!META-INF/MANIFEST.MF')
-                }
-
-                // libjar: the library dependencies
-                for (File libJar : packagedJars) {
-                    proguardTask.libraryjars(libJar, filter: '!META-INF/MANIFEST.MF')
-                }
-
-                // Now reset the input count for the only output present in the proguard task.
-                // This is to go around the fact that proguard wants to know about the input
-                // before the output is given.
-                resetProguardInJarCounts(proguardTask)
+            // injar: the local dependencies
+            Closure inJars = {
+                Arrays.asList(getLocalJarFileList(variantData.variantDependency))
             }
+
+            proguardTask.injars(inJars, filter: '!META-INF/MANIFEST.MF')
+
+            // libjar: the library dependencies
+            Closure libJars = {
+                Set<File> packagedJars = androidBuilder.getPackagedJars(variantConfig)
+                Object[]   localJars    = getLocalJarFileList(variantData.variantDependency)
+
+                packagedJars.findAll({ !localJars.contains(it) })
+            }
+
+            proguardTask.libraryjars(libJars, filter: '!META-INF/MANIFEST.MF')
 
             // ensure local jars keep their package names
             proguardTask.keeppackagenames()
@@ -1736,28 +1725,18 @@ public abstract class BasePlugin {
             // injar: the compilation output
             proguardTask.injars(variantData.javaCompileTask.destinationDir)
 
-            proguardTask.doFirst {
-                // we need to query the list of packaged Jar just before the task
-                // runs to make sure all the created jars are present.
-                // (This is mostly for aar that needs expanding during the build, and their
-                // local jar files which aren't even known during evaluation/task creation).
-                Set<File> packagedJars = androidBuilder.getPackagedJars(variantConfig)
-
-                // injar: the dependencies
-                for (File inJar : packagedJars) {
-                    proguardTask.injars(inJar, filter: '!META-INF/MANIFEST.MF')
-                }
-
-                // now add the provided-only jars
-                for (File libJar : variantData.variantConfiguration.providedOnlyJars) {
-                    proguardTask.libraryjars(libJar)
-                }
-
-                // Now reset the input count for the only output present in the proguard task.
-                // This is to go around the fact that proguard wants to know about the input
-                // before the output is given.
-                resetProguardInJarCounts(proguardTask)
+            // injar: the dependencies
+            Closure inJars = {
+                androidBuilder.getPackagedJars(variantConfig)
             }
+
+            proguardTask.injars(inJars, filter: '!META-INF/MANIFEST.MF')
+
+            Closure libJars = {
+                variantData.variantConfiguration.providedOnlyJars
+            }
+
+            proguardTask.libraryjars(libJars)
         }
 
         // libraryJars: the runtime jars. Do this in doFirst since the boot classpath isn't
@@ -1772,10 +1751,11 @@ public abstract class BasePlugin {
             // input the tested app as library
             proguardTask.libraryjars(testedVariantData.javaCompileTask.destinationDir)
             // including its dependencies
-            Set<File> testedPackagedJars = androidBuilder.getPackagedJars(testedVariantData.variantConfiguration)
-            for (File inJar : testedPackagedJars) {
-                proguardTask.libraryjars(inJar, filter: '!META-INF/MANIFEST.MF')
+            Closure testedPackagedJars = {
+                androidBuilder.getPackagedJars(testedVariantData.variantConfiguration)
             }
+
+            proguardTask.libraryjars(testedPackagedJars, filter: '!META-INF/MANIFEST.MF')
         }
 
         // --- Out files ---
@@ -1791,35 +1771,6 @@ public abstract class BasePlugin {
                 "${project.buildDir}/proguard/${variantData.variantConfiguration.dirName}/mapping.txt")
 
         return outFile
-    }
-
-    protected static void resetProguardInJarCounts(@NonNull ProGuardTask proguardTask) {
-        // we're basically doing:
-        //     proguardTask.inJarCounts.clear()
-        //     proguardTask.inJarCounts.add(Integer.valueOf(proguardTask.inJarFiles.size()));
-
-        try {
-            Field inJarCountsField = ProGuardTask.getDeclaredField("inJarCounts")
-            inJarCountsField.setAccessible(true)
-            Field inJarFilesField = ProGuardTask.getDeclaredField("inJarFiles")
-            inJarFilesField.setAccessible(true)
-
-            Method clearMethod = ArrayList.class.getMethod("clear")
-            Method sizeMethod = ArrayList.class.getMethod("size")
-            Method addMethod = ArrayList.class.getMethod("add", Object.class)
-
-            Object inJarCountsInstance = inJarCountsField.get(proguardTask)
-            Object inJarFilesInstance = inJarFilesField.get(proguardTask)
-
-            clearMethod.invoke(inJarCountsInstance, null)
-            Object sizeValue = sizeMethod.invoke(inJarFilesInstance, null)
-
-            addMethod.invoke(inJarCountsInstance, sizeValue)
-        } catch (Throwable t) {
-            throw new RuntimeException(
-                    "Failed to change some proguard internals. There is a mismatch in the version of used.",
-                    t)
-        }
     }
 
     private void createReportTasks() {
