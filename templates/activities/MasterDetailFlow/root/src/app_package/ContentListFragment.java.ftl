@@ -2,7 +2,7 @@ package ${packageName};
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.v4.app.ListFragment;
+import android.<#if Support?has_content>support.v4.</#if>app.ListFragment;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;

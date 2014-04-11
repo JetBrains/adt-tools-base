@@ -1,7 +1,7 @@
 package ${packageName};
 
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
+import android.<#if appCompat>support.v4.</#if>app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
