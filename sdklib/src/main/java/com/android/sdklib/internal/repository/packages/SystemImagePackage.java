@@ -26,8 +26,6 @@ import com.android.sdklib.SdkManager;
 import com.android.sdklib.SystemImage;
 import com.android.sdklib.devices.Abi;
 import com.android.sdklib.internal.repository.IDescription;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.PkgProps;
@@ -129,8 +127,6 @@ public class SystemImagePackage extends MajorRevisionPackage
                 null,                       //license
                 null,                       //description
                 null,                       //descUrl
-                Os.getCurrentOs(),          //archiveOs
-                Arch.getCurrentArch(),      //archiveArch
                 localOsPath                 //archiveOsPath
                 );
         mVersion = platformVersion;

@@ -25,13 +25,11 @@ import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.FullRevision.PreviewComparison;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
-import com.android.sdklib.repository.FullRevision.PreviewComparison;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.util.GrabProcessOutput;
@@ -110,11 +108,9 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
             String license,
             String description,
             String descUrl,
-            Os archiveOs,
-            Arch archiveArch,
             String archiveOsPath) {
         return new ToolPackage(source, props, revision, license, description,
-                descUrl, archiveOs, archiveArch, archiveOsPath);
+                descUrl, archiveOsPath);
     }
 
     @VisibleForTesting(visibility=Visibility.PRIVATE)
@@ -125,8 +121,6 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
                 String license,
                 String description,
                 String descUrl,
-                Os archiveOs,
-                Arch archiveArch,
                 String archiveOsPath) {
         super(source,
                 props,
@@ -134,8 +128,6 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
                 license,
                 description,
                 descUrl,
-                archiveOs,
-                archiveArch,
                 archiveOsPath);
 
         // Setup min-platform-tool

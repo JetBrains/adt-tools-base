@@ -26,8 +26,6 @@ import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.LocalSdkParser;
 import com.android.sdklib.internal.repository.NullTaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.PkgProps;
@@ -203,11 +201,9 @@ public class ExtraPackage extends NoPreviewRevisionPackage
             String license,
             String description,
             String descUrl,
-            Os archiveOs,
-            Arch archiveArch,
             String archiveOsPath) {
         ExtraPackage ep = new ExtraPackage(source, props, vendor, path, revision, license,
-                description, descUrl, archiveOs, archiveArch, archiveOsPath);
+                description, descUrl, archiveOsPath);
         return ep;
     }
 
@@ -225,8 +221,6 @@ public class ExtraPackage extends NoPreviewRevisionPackage
             String license,
             String description,
             String descUrl,
-            Os archiveOs,
-            Arch archiveArch,
             String archiveOsPath) {
         super(source,
                 props,
@@ -234,8 +228,6 @@ public class ExtraPackage extends NoPreviewRevisionPackage
                 license,
                 description,
                 descUrl,
-                archiveOs,
-                archiveArch,
                 archiveOsPath);
 
         mMinToolsMixin = new MinToolsMixin(
@@ -245,8 +237,6 @@ public class ExtraPackage extends NoPreviewRevisionPackage
                 license,
                 description,
                 descUrl,
-                archiveOs,
-                archiveArch,
                 archiveOsPath);
 
         // The path argument comes before whatever could be in the properties

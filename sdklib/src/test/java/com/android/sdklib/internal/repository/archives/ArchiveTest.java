@@ -16,10 +16,6 @@
 
 package com.android.sdklib.internal.repository.archives;
 
-import com.android.sdklib.internal.repository.archives.Archive;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
-
 import junit.framework.TestCase;
 
 public class ArchiveTest extends TestCase {
@@ -32,8 +28,7 @@ public class ArchiveTest extends TestCase {
     public void testShortDescription() throws Exception {
         Archive a = new Archive(
                 null, //pkg,
-                Os.WINDOWS, //os
-                Arch.ANY, //arch,
+                new ArchFilter(HostOs.WINDOWS, null, null, null), //arch,
                 null, //url
                 0, //size
                 null); //checksum
@@ -41,8 +36,7 @@ public class ArchiveTest extends TestCase {
 
         a = new Archive(
                 null, //pkg,
-                Os.LINUX, //os
-                Arch.ANY, //arch,
+                new ArchFilter(HostOs.LINUX, null, null, null), //arch,
                 null, //url
                 0, //size
                 null); //checksum
@@ -50,8 +44,7 @@ public class ArchiveTest extends TestCase {
 
         a = new Archive(
                 null, //pkg,
-                Os.MACOSX, //os
-                Arch.ANY, //arch,
+                new ArchFilter(HostOs.MACOSX, null, null, null), //arch,
                 null, //url
                 0, //size
                 null); //checksum
@@ -59,8 +52,7 @@ public class ArchiveTest extends TestCase {
 
         a = new Archive(
                 null, //pkg,
-                Os.ANY, //os
-                Arch.ANY, //arch,
+                null, //arch,
                 null, //url
                 0, //size
                 null); //checksum
@@ -70,8 +62,7 @@ public class ArchiveTest extends TestCase {
     public void testLongDescription() throws Exception {
         Archive a = new Archive(
                 null, //pkg,
-                Os.WINDOWS, //os
-                Arch.ANY, //arch,
+                new ArchFilter(HostOs.WINDOWS, null, null, null), //arch,
                 null, //url
                 900, //size
                 "1234567890ABCDEF"); //checksum
@@ -81,35 +72,35 @@ public class ArchiveTest extends TestCase {
                 "SHA1: 1234567890ABCDEF",
                 a.getLongDescription());
 
-        a = new Archive(null, Os.WINDOWS, Arch.ANY, null, 1100, "1234567890ABCDEF");
+        a = new Archive(null, new ArchFilter(HostOs.WINDOWS, null, null, null), null, 1100, "1234567890ABCDEF");
         assertEquals(
                 "Archive for Windows\n" +
                 "Size: 1 KiB\n" +
                 "SHA1: 1234567890ABCDEF",
                 a.getLongDescription());
 
-        a = new Archive(null, Os.WINDOWS, Arch.ANY, null, 1900, "1234567890ABCDEF");
+        a = new Archive(null, new ArchFilter(HostOs.WINDOWS, null, null, null), null, 1900, "1234567890ABCDEF");
         assertEquals(
                 "Archive for Windows\n" +
                 "Size: 2 KiB\n" +
                 "SHA1: 1234567890ABCDEF",
                 a.getLongDescription());
 
-        a = new Archive(null, Os.WINDOWS, Arch.ANY, null, (long)2e6, "1234567890ABCDEF");
+        a = new Archive(null, new ArchFilter(HostOs.WINDOWS, null, null, null), null, (long)2e6, "1234567890ABCDEF");
         assertEquals(
                 "Archive for Windows\n" +
                 "Size: 1.9 MiB\n" +
                 "SHA1: 1234567890ABCDEF",
                 a.getLongDescription());
 
-        a = new Archive(null, Os.WINDOWS, Arch.ANY, null, (long)19e6, "1234567890ABCDEF");
+        a = new Archive(null, new ArchFilter(HostOs.WINDOWS, null, null, null), null, (long)19e6, "1234567890ABCDEF");
         assertEquals(
                 "Archive for Windows\n" +
                 "Size: 18.1 MiB\n" +
                 "SHA1: 1234567890ABCDEF",
                 a.getLongDescription());
 
-        a = new Archive(null, Os.WINDOWS, Arch.ANY, null, (long)18e9, "1234567890ABCDEF");
+        a = new Archive(null, new ArchFilter(HostOs.WINDOWS, null, null, null), null, (long)18e9, "1234567890ABCDEF");
         assertEquals(
                 "Archive for Windows\n" +
                 "Size: 16.8 GiB\n" +

@@ -25,8 +25,6 @@ import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.internal.project.ProjectProperties;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.packages.AddonPackage;
 import com.android.sdklib.internal.repository.packages.BuildToolPackage;
 import com.android.sdklib.internal.repository.packages.DocPackage;
@@ -333,8 +331,6 @@ public class LocalSdkParser {
                                 null,                       //license
                                 null,                       //description
                                 null,                       //descUrl
-                                Os.getCurrentOs(),          //archiveOs
-                                Arch.getCurrentArch(),      //archiveArch
                                 dir.getPath()               //archiveOsPath
                                 );
 
@@ -641,8 +637,6 @@ public class LocalSdkParser {
                     null,                       //license
                     "Tools",                    //description
                     null,                       //descUrl
-                    Os.getCurrentOs(),          //archiveOs
-                    Arch.getCurrentArch(),      //archiveArch
                     toolFolder.getPath()        //archiveOsPath
                     );
 
@@ -680,8 +674,6 @@ public class LocalSdkParser {
                     null,                           //license
                     "Platform Tools",               //description
                     null,                           //descUrl
-                    Os.getCurrentOs(),              //archiveOs
-                    Arch.getCurrentArch(),          //archiveArch
                     platformToolsFolder.getPath()   //archiveOsPath
                     );
 
@@ -745,8 +737,6 @@ public class LocalSdkParser {
                         null,                       //license
                         null,                       //description
                         null,                       //descUrl
-                        Os.getCurrentOs(),          //archiveOs
-                        Arch.getCurrentArch(),      //archiveArch
                         docFolder.getPath()         //archiveOsPath
                         );
 

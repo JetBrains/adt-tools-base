@@ -26,14 +26,18 @@ import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.IListDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
+import com.android.sdklib.internal.repository.archives.ArchFilter;
 import com.android.sdklib.internal.repository.archives.Archive;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
+import com.android.sdklib.internal.repository.archives.BitSize;
+import com.android.sdklib.internal.repository.archives.HostOs;
+import com.android.sdklib.internal.repository.archives.LegacyArch;
+import com.android.sdklib.internal.repository.archives.LegacyOs;
 import com.android.sdklib.internal.repository.sources.SdkAddonSource;
 import com.android.sdklib.internal.repository.sources.SdkRepoSource;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.io.IFileOp;
 import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.sdklib.repository.SdkRepoConstants;
@@ -228,8 +232,6 @@ public abstract class Package implements IDescription, IListDescription, Compara
             String license,
             String description,
             String descUrl,
-            Os archiveOs,
-            Arch archiveArch,
             String archiveOsPath) {
 
         if (description == null) {
@@ -267,7 +269,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
 
         // Note: if archiveOsPath is non-null, this makes a local archive (e.g. a locally
         // installed package.) If it's null, this makes a remote archive.
-        mArchives = initializeArchives(props, archiveOs, archiveArch, archiveOsPath);
+        mArchives = initializeArchives(props, archiveOsPath);
     }
 
     /**
@@ -291,14 +293,10 @@ public abstract class Package implements IDescription, IListDescription, Compara
     @VisibleForTesting(visibility=Visibility.PRIVATE)
     protected Archive[] initializeArchives(
             Properties props,
-            Os archiveOs,
-            Arch archiveArch,
             String archiveOsPath) {
         return new Archive[] {
                 new Archive(this,
                     props,
-                    archiveOs,
-                    archiveArch,
                     archiveOsPath) };
     }
 
@@ -345,7 +343,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * Save the properties of the current packages in the given {@link Properties} object.
      * These properties will later be give the constructor that takes a {@link Properties} object.
      */
-    public void saveProperties(Properties props) {
+    public void saveProperties(@NonNull Properties props) {
         if (mLicense != null) {
             String license = mLicense.getLicense();
             if (license != null && license.length() > 0) {
@@ -385,7 +383,8 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * definition if there's one. Returns null if there's no uses-license element or no
      * license of this name defined.
      */
-    private License parseLicense(Node packageNode, Map<String, String> licenses) {
+    @Nullable
+    private License parseLicense(@NonNull Node packageNode, @NonNull Map<String, String> licenses) {
         Node usesLicense =
             PackageParserUtils.findChildElement(packageNode, SdkRepoConstants.NODE_USES_LICENSE);
         if (usesLicense != null) {
@@ -402,7 +401,8 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * Parses an XML node to process the <archives> element.
      * Always return a non-null array. The array may be empty.
      */
-    private Archive[] parseArchives(Node archivesNode) {
+    @NonNull
+    private Archive[] parseArchives(@NonNull Node archivesNode) {
         ArrayList<Archive> archives = new ArrayList<Archive>();
 
         if (archivesNode != null) {
@@ -425,13 +425,11 @@ public abstract class Package implements IDescription, IListDescription, Compara
     /**
      * Parses one <archive> element from an <archives> container.
      */
-    private Archive parseArchive(Node archiveNode) {
+    @NonNull
+    private Archive parseArchive(@NonNull Node archiveNode) {
         Archive a = new Archive(
                     this,
-                    (Os)   PackageParserUtils.getEnumAttribute(
-                            archiveNode, SdkRepoConstants.ATTR_OS, Os.values(), null),
-                    (Arch) PackageParserUtils.getEnumAttribute(
-                            archiveNode, SdkRepoConstants.ATTR_ARCH, Arch.values(), Arch.ANY),
+                    PackageParserUtils.parseArchFilter(archiveNode),
                     PackageParserUtils.getXmlString(archiveNode, SdkRepoConstants.NODE_URL),
                     PackageParserUtils.getXmlLong  (archiveNode, SdkRepoConstants.NODE_SIZE, 0),
                     PackageParserUtils.getXmlString(archiveNode, SdkRepoConstants.NODE_CHECKSUM)
