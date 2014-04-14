@@ -204,11 +204,11 @@ public class SdkSysImgSourceTest extends TestCase {
         assertEquals(
                 "Found Intel x86 Atom System Image, Android API 2, revision 1\n" +
                 "Found ARM EABI v7a System Image, Android API 2, revision 2\n" +
-                "Found Another tag name ARM EABI v7a System Image, Android API 2, revision 2\n" +
+                "Found Another tag name System Image, Android API 2, revision 2\n" +
                 "Found ARM EABI System Image, Android API 42, revision 12\n" +
                 "Found MIPS System Image, Android API 42, revision 12\n" +
-                "Found This is an arbitrary string, MIPS System Image, Android API 44, revision 14\n" +
-                "Found Tag name is Sanitized if Display is Missing MIPS System Image, Android API 45, revision 15\n",
+                "Found This is an arbitrary string, System Image, Android API 44, revision 14\n" +
+                "Found Tag name is Sanitized if Display is Missing System Image, Android API 45, revision 15\n",
                 monitor.getCapturedVerboseLog());
         assertEquals("", monitor.getCapturedLog());
         assertEquals("", monitor.getCapturedErrorLog());
