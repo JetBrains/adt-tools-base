@@ -81,6 +81,7 @@ public final class StyleResourceValue extends ResourceValue implements IStyleRes
         assert value instanceof StyleResourceValue;
         super.replaceWith(value);
 
+        //noinspection ConstantConditions
         if (value instanceof StyleResourceValue) {
             mItems.clear();
             mItems.putAll(((StyleResourceValue)value).mItems);
@@ -94,7 +95,7 @@ public final class StyleResourceValue extends ResourceValue implements IStyleRes
     @Override
     @Deprecated
     public IResourceValue findItem(String name) {
-        return mItems.get(name);
+        return mItems.get(Pair.of(name, true));
     }
 
     /** Returns the names available in this style, intended for diagnostic purposes */
