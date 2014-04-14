@@ -36,6 +36,7 @@ import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.repository.local.LocalSdk;
 import com.android.tools.lint.client.api.LintListener.EventType;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
@@ -2020,6 +2021,12 @@ public class LintDriver {
         @NonNull
         public IAndroidTarget[] getTargets() {
             return mDelegate.getTargets();
+        }
+
+        @Nullable
+        @Override
+        public LocalSdk getSdk() {
+            return mDelegate.getSdk();
         }
 
         @Nullable

@@ -656,7 +656,7 @@ public abstract class LintClient {
         return project.getDir().getName();
     }
 
-    private IAndroidTarget[] mTargets;
+    protected IAndroidTarget[] mTargets;
 
     /**
      * Returns all the {@link IAndroidTarget} versions installed in the user's SDK install
@@ -667,9 +667,8 @@ public abstract class LintClient {
     @NonNull
     public IAndroidTarget[] getTargets() {
         if (mTargets == null) {
-            File sdkHome = getSdkHome();
-            if (sdkHome != null) {
-                LocalSdk localSdk = new LocalSdk(sdkHome);
+            LocalSdk localSdk = getSdk();
+            if (localSdk != null) {
                 mTargets = localSdk.getTargets();
             } else {
                 mTargets = new IAndroidTarget[0];
@@ -677,6 +676,25 @@ public abstract class LintClient {
         }
 
         return mTargets;
+    }
+
+    protected LocalSdk mSdk;
+
+    /**
+     * Returns the SDK installation (used to look up platforms etc)
+     *
+     * @return the SDK if known
+     */
+    @Nullable
+    public LocalSdk getSdk() {
+         if (mSdk == null) {
+             File sdkHome = getSdkHome();
+             if (sdkHome != null) {
+                 mSdk = new LocalSdk(sdkHome);
+             }
+         }
+
+        return mSdk;
     }
 
     /**
