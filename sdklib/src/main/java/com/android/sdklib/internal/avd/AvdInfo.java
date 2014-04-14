@@ -345,7 +345,7 @@ public final class AvdInfo implements Comparable<AvdInfo> {
             case ERROR_IMAGE_DIR:
                 return String.format(
                         "Missing system image for %1$s%2$s %3$s. Run 'android update avd -n %4$s'",
-                        SystemImage.DEFAULT_TAG.equals(mTag.getId()) ? "" : (mTag.getDisplay() + " "),
+                        SystemImage.DEFAULT_TAG.equals(mTag) ? "" : (mTag.getDisplay() + " "),
                         mAbiType,
                         mTarget.getFullName(),
                         mName);
