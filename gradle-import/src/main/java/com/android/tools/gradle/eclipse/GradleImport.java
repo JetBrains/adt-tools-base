@@ -48,9 +48,8 @@ import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
 import com.google.common.base.Charsets;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.base.Predicate;
+import com.google.common.collect.*;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import com.google.common.primitives.Bytes;
@@ -170,6 +169,11 @@ public class GradleImport {
     private final List<String> mWarnings = Lists.newArrayList();
     private final List<String> mErrors = Lists.newArrayList();
     private Map<String, File> mPathMap = Maps.newTreeMap();
+    /**
+     * Set of modules user chose to import. Can be <code>null</code> when all
+     * modules will be imported
+     */
+    private Set<String> mSelectedModules;
 
     public GradleImport() {
         String workspace = System.getProperty(WORKSPACE_PROPERTY);
@@ -606,11 +610,24 @@ public class GradleImport {
             exportLocalProperties(destDir);
         }
         exportSettingsGradle(new File(destDir, FN_SETTINGS_GRADLE), isImportIntoExisting());
-        for (ImportModule module : mRootModules) {
+        for (ImportModule module : getModulesToImport()) {
             exportModule(new File(destDir, module.getModuleName()), module);
         }
 
         mSummary.write(new File(destDir, IMPORT_SUMMARY_TXT));
+    }
+
+    private Iterable<? extends ImportModule> getModulesToImport() {
+        if (mSelectedModules == null) {
+            return mRootModules;
+        } else {
+            return Iterables.filter(mRootModules, new Predicate<ImportModule>() {
+                @Override
+                public boolean apply(ImportModule input) {
+                return mSelectedModules.contains(input.getModuleName());
+                }
+            });
+        }
     }
 
     /**
@@ -645,7 +662,7 @@ public class GradleImport {
         mSummary.setDestDir(projectDir);
 
         List<File> imported = Lists.newArrayListWithExpectedSize(mRootModules.size());
-        for (ImportModule module : mRootModules) {
+        for (ImportModule module : getModulesToImport()) {
             File moduleDir = null;
             if (destDirMap != null) {
                 moduleDir = destDirMap.get(module.getDir());
@@ -1033,7 +1050,7 @@ public class GradleImport {
             }
         }
 
-        for (ImportModule module : mRootModules) {
+        for (ImportModule module : getModulesToImport()) {
             sb.append("include '");
             sb.append(module.getModuleReference());
             sb.append("'");
@@ -1081,6 +1098,10 @@ public class GradleImport {
             modules.put(module.getModuleName(), module.getCanonicalModuleDir());
         }
         return modules;
+    }
+
+    public void setModulesToImport(Map<String, File> modules) {
+        mSelectedModules = ImmutableSet.copyOf(modules.keySet());
     }
 
     private static class ImportException extends RuntimeException {
@@ -1415,7 +1436,7 @@ public class GradleImport {
     }
 
     private boolean haveArtifact(String groupId) {
-        for (ImportModule module : mRootModules) {
+        for (ImportModule module : getModulesToImport()) {
             for (GradleCoordinate dependency : module.getDependencies()) {
                 if (groupId.equals(dependency.getGroupId())) {
                     return true;
