@@ -233,15 +233,18 @@ public class PreDexCache {
         return sSingleton;
     }
 
-    private volatile boolean mLoaded = false;
+    @GuardedBy("this")
+    private boolean mLoaded = false;
 
     @GuardedBy("this")
     private final Map<Key, Item> mMap = Maps.newHashMap();
     @GuardedBy("this")
     private final Map<Key, StoredItem> mStoredItems = Maps.newHashMap();
 
-    private volatile int mMisses = 0;
-    private volatile int mHits = 0;
+    @GuardedBy("this")
+    private int mMisses = 0;
+    @GuardedBy("this")
+    private int mHits = 0;
 
     /**
      * Loads the stored item. This can be called several times (per subproject), so only
@@ -286,7 +289,9 @@ public class PreDexCache {
                 AndroidBuilder.preDexLibrary(inputFile, outFile, dexOptions, buildToolInfo,
                         verbose, commandLineRunner);
 
-                mMisses++;
+                synchronized (this) {
+                    mMisses++;
+                }
             } catch (IOException exception) {
                 // in case of error, delete (now obsolete) output file
                 outFile.delete();
@@ -317,18 +322,20 @@ public class PreDexCache {
             if (fromFile.isFile()) {
                 // file already pre-dex, just copy the output.
                 Files.copy(pair.getFirst().getOutputFile(), outFile);
-                mHits++;
+                synchronized (this) {
+                    mHits++;
+                }
             }
         }
     }
 
     @VisibleForTesting
-    /*package*/ int getMisses() {
+    /*package*/ synchronized int getMisses() {
         return mMisses;
     }
 
     @VisibleForTesting
-    /*package*/ int getHits() {
+    /*package*/ synchronized int getHits() {
         return mHits;
     }
 
