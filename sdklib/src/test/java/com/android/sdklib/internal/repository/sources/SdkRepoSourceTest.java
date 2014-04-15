@@ -1241,7 +1241,7 @@ public class SdkRepoSourceTest extends TestCase {
                      "Found SDK Platform Android 1.1, API 2, revision 12\n" +
                      "Found Intel x86 Atom System Image, Android API 2, revision 1\n" +
                      "Found ARM EABI v7a System Image, Android API 2, revision 2\n" +
-                     "Found Custom Thing ARM EABI v7a System Image, Android API 2, revision 2\n" +
+                     "Found Custom Thing System Image, Android API 2, revision 2\n" +
                      "Found Sources for Android SDK, API 2, revision 2\n" +
                      "Found SDK Platform Android Pastry Preview, revision 3\n" +
                      "Found Android SDK Tools, revision 1.2.3 rc4\n" +
@@ -1253,9 +1253,9 @@ public class SdkRepoSourceTest extends TestCase {
                      "Found Android SDK Build-tools, revision 3\n" +
                      "Found Samples for SDK API 14, revision 24 (Obsolete)\n" +
                      "Found Samples for SDK API 14, revision 25 (Obsolete)\n" +
-                     "Found Variant 1 ARM EABI System Image, Android API 42, revision 12\n" +
-                     "Found Variant 1 MIPS System Image, Android API 42, revision 12\n" +
-                     "Found Variant 2 MIPS System Image, Android API 42, revision 12\n" +
+                     "Found Variant 1 System Image, Android API 42, revision 12\n" +
+                     "Found Variant 1 System Image, Android API 42, revision 12\n" +
+                     "Found Variant 2 System Image, Android API 42, revision 12\n" +
                      "Found Sources for Android SDK, API 42, revision 12\n" +
                      "Found Android SDK Build-tools, revision 12.13.14\n",
                 monitor.getCapturedVerboseLog());

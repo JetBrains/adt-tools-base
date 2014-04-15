@@ -327,9 +327,9 @@ public class SystemImagePackage extends MajorRevisionPackage
     @Override
     public String getListDescription() {
         boolean isDefaultTag = SystemImage.DEFAULT_TAG.equals(mTag);
-        return String.format("%1$s%2$s System Image%3$s",
+        return String.format("%1$s%2$sSystem Image%3$s",
                 isDefaultTag ? "" : (mTag.getDisplay() + " "),
-                getAbiDisplayName(),
+                isDefaultTag ? getAbiDisplayName() + " " : "",    // TODO change with list-display
                 isObsolete() ? " (Obsolete)" : "");
     }
 
@@ -339,9 +339,9 @@ public class SystemImagePackage extends MajorRevisionPackage
     @Override
     public String getShortDescription() {
         boolean isDefaultTag = SystemImage.DEFAULT_TAG.equals(mTag);
-        return String.format("%1$s%2$s System Image, Android API %3$s, revision %4$s%5$s",
+        return String.format("%1$s%2$sSystem Image, Android API %3$s, revision %4$s%5$s",
                 isDefaultTag ? "" : (mTag.getDisplay() + " "),
-                getAbiDisplayName(),
+                isDefaultTag ? getAbiDisplayName() + " " : "",    // TODO change with list-display
                 mVersion.getApiString(),
                 getRevision().toShortString(),
                 isObsolete() ? " (Obsolete)" : "");
