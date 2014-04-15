@@ -1282,7 +1282,7 @@ public class AndroidBuilder {
         }
 
         FullRevision minBuildToolsRev = new FullRevision(19,0,3);
-        if (supportMode && buildToolInfo.getRevision().compareTo(minBuildToolsRev) == -1) {
+        if (supportMode && buildToolInfo.getRevision().compareTo(minBuildToolsRev) < 0) {
             throw new IllegalStateException(
                     "RenderScript Support Mode requires buildToolsVersion >= " + minBuildToolsRev.toString());
         }
