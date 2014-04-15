@@ -1,8 +1,8 @@
 package ${packageName};
 
-import <#if appCompat?has_content>android.support.v7.app.ActionBarActivity<#else>android.app.Activity</#if>;
-import android.<#if appCompat?has_content>support.v7.</#if>app.ActionBar;
-import android.<#if appCompat?has_content>support.v4.</#if>app.Fragment;
+import <#if appCompat>android.support.v7.app.ActionBarActivity<#else>android.app.Activity</#if>;
+import android.<#if appCompat>support.v7.</#if>app.ActionBar;
+import android.<#if appCompat>support.v4.</#if>app.Fragment;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
@@ -16,7 +16,7 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 <#if applicationPackage??>import ${applicationPackage}.R;</#if>
 
-public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBar','')}Activity implements ActionBar.OnNavigationListener {
+public class ${activityClass} extends ${(appCompat)?string('ActionBar','')}Activity implements ActionBar.OnNavigationListener {
 
     /**
      * The serialization (saved instance state) Bundle key representing the
