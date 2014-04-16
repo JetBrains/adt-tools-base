@@ -24,5 +24,5 @@
     <open file="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
 
     <!-- Display the API key instructions. -->
-    <open file="${escapeXmlAttribute(debugResOut)}/values/strings_google_maps_api.xml" />
+    <open file="${escapeXmlAttribute(debugResOut)}/values/google_maps_api.xml" />
 </recipe>
