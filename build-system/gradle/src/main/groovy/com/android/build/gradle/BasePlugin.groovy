@@ -1692,15 +1692,16 @@ public abstract class BasePlugin {
             // exclude R files and such from output
             String exclude = '!' + packageName + "/R.class"
             exclude += (', !' + packageName + "/R\$*.class")
-            exclude += (', !' + packageName + "/Manifest.class")
-            exclude += (', !' + packageName + "/Manifest\$*.class")
-            exclude += (', !' + packageName + "/BuildConfig.class")
+            if (!((LibraryExtension)extension).packageBuildConfig) {
+                exclude += (', !' + packageName + "/Manifest.class")
+                exclude += (', !' + packageName + "/Manifest\$*.class")
+                exclude += (', !' + packageName + "/BuildConfig.class")
+            }
             proguardTask.injars(variantData.javaCompileTask.destinationDir, filter: exclude)
 
             // include R files and such for compilation
             String include = exclude.replace('!', '')
             proguardTask.libraryjars(variantData.javaCompileTask.destinationDir, filter: include)
-
 
             // injar: the local dependencies
             Closure inJars = {
@@ -1709,12 +1710,13 @@ public abstract class BasePlugin {
 
             proguardTask.injars(inJars, filter: '!META-INF/MANIFEST.MF')
 
-            // libjar: the library dependencies
+            // libjar: the library dependencies. In this case we take all the compile-scope
+            // dependencies
             Closure libJars = {
-                Set<File> packagedJars = androidBuilder.getPackagedJars(variantConfig)
-                Object[]   localJars    = getLocalJarFileList(variantData.variantDependency)
+                Set<File> compiledJars = androidBuilder.getCompileClasspath(variantConfig)
+                Object[]  localJars    = getLocalJarFileList(variantData.variantDependency)
 
-                packagedJars.findAll({ !localJars.contains(it) })
+                compiledJars.findAll({ !localJars.contains(it) })
             }
 
             proguardTask.libraryjars(libJars, filter: '!META-INF/MANIFEST.MF')
@@ -1725,13 +1727,14 @@ public abstract class BasePlugin {
             // injar: the compilation output
             proguardTask.injars(variantData.javaCompileTask.destinationDir)
 
-            // injar: the dependencies
+            // injar: the packaged dependencies
             Closure inJars = {
                 androidBuilder.getPackagedJars(variantConfig)
             }
 
             proguardTask.injars(inJars, filter: '!META-INF/MANIFEST.MF')
 
+            // the provided-only jars as libraries.
             Closure libJars = {
                 variantData.variantConfiguration.providedOnlyJars
             }
