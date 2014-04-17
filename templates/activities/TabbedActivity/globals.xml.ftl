@@ -4,6 +4,7 @@
     <global id="appCompat" type="boolean" value="${(minApiLevel lt 14)?string}" />
     <!-- e.g. getSupportActionBar vs. getActionBar -->
     <global id="Support" value="${(minApiLevel lt 14)?string('Support','')}" />
+    <global id="hasViewPager" type="boolean" value="${(features == 'pager' || features == 'tabs')?string}" />
     <global id="srcOut" value="${srcDir}/${slashedPackageName(packageName)}" />
     <global id="resOut" value="${resDir}" />
     <global id="menuName" value="${classToResource(activityClass)}" />

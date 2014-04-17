@@ -1,10 +1,10 @@
 package ${packageName};
 
 import android.app.Activity;
-<#if appCompat?has_content>import android.support.v7.app.ActionBarActivity;</#if>
-import android.<#if appCompat?has_content>support.v7.</#if>app.ActionBar;
-import android.<#if appCompat?has_content>support.v4.</#if>app.Fragment;
-import android.<#if appCompat?has_content>support.v4.</#if>app.FragmentManager;
+<#if appCompat>import android.support.v7.app.ActionBarActivity;</#if>
+import android.<#if appCompat>support.v7.</#if>app.ActionBar;
+import android.<#if appCompat>support.v4.</#if>app.Fragment;
+import android.<#if appCompat>support.v4.</#if>app.FragmentManager;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
@@ -19,7 +19,7 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 <#if applicationPackage??>import ${applicationPackage}.R;</#if>
 
-public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBar','')}Activity
+public class ${activityClass} extends ${(appCompat)?string('ActionBar','')}Activity
         implements NavigationDrawerFragment.NavigationDrawerCallbacks {
 
     /**

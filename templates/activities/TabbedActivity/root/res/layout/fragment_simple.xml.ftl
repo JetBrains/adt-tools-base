@@ -9,7 +9,7 @@
     tools:context="${packageName}.${activityClass}$PlaceholderFragment">
 
     <TextView
-        <#if hasSections?has_content>android:id="@+id/section_label"<#else>android:text="@string/hello_world"</#if>
+        <#if hasViewPager>android:id="@+id/section_label"<#else>android:text="@string/hello_world"</#if>
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 

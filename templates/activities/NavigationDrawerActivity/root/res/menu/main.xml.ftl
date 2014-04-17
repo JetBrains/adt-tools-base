@@ -2,6 +2,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"</#if>
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="${packageName}.${activityClass}" >
+    <item android:id="@+id/action_example"
+        android:title="@string/action_example"
+        ${(appCompat?has_content)?string('app','android')}:showAsAction="withText|ifRoom" />
     <item android:id="@+id/action_settings"
         android:title="@string/action_settings"
         android:orderInCategory="100"
