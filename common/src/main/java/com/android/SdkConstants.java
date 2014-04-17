@@ -53,6 +53,9 @@ public final class SdkConstants {
     /** Property in local.properties file that specifies the path of the Android SDK.  */
     public static final String SDK_DIR_PROPERTY = "sdk.dir";
 
+    /** Property in gradle-wrapper.properties file that specifies the URL to the correct Gradle distribution. */
+    public static final String GRADLE_DISTRIBUTION_URL_PROPERTY = "distributionUrl";  //$NON-NLS-1$
+
     /**
      * The encoding we strive to use for all files we write.
      * <p>
@@ -135,6 +138,9 @@ public final class SdkConstants {
 
     /** project ant property file */
     public static final String FN_ANT_PROPERTIES = "ant.properties";                  //$NON-NLS-1$
+
+    /** project local property file */
+    public static final String FN_GRADLE_WRAPPER_PROPERTIES = "gradle-wrapper.properties"; //$NON-NLS-1$
 
     /** Skin layout file */
     public static final String FN_SKIN_LAYOUT = "layout";                             //$NON-NLS-1$
