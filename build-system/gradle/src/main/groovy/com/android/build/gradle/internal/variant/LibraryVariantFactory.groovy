@@ -22,6 +22,8 @@ import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.api.LibraryVariantImpl
+import com.android.build.gradle.internal.coverage.JacocoInstrumentTask
+import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.tasks.MergeFileTask
 import com.android.build.gradle.tasks.ExtractAnnotations
 import com.android.build.gradle.tasks.MergeResources
@@ -227,17 +229,43 @@ public class LibraryVariantFactory implements VariantFactory {
                 bundle.dependsOn(extract)
             }
         } else {
+            final boolean instrumented = variantConfig.buildType.isTestCoverageEnabled()
+
+            // if needed, instrument the code
+            JacocoInstrumentTask jacocoTask = null
+            Copy agentTask = null
+            if (instrumented) {
+                jacocoTask = project.tasks.create(
+                        "instrument${variantConfig.fullName.capitalize()}", JacocoInstrumentTask)
+                jacocoTask.dependsOn variantData.javaCompileTask
+                jacocoTask.conventionMapping.jacocoClasspath = { project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME] }
+                jacocoTask.conventionMapping.inputDir = { variantData.javaCompileTask.destinationDir }
+                jacocoTask.conventionMapping.outputDir = { project.file("${project.buildDir}/coverage-instrumented-classes/${variantConfig.dirName}") }
+
+                agentTask = basePlugin.getJacocoAgentTask()
+            }
+
+            // package the local jar in libs/
             Sync packageLocalJar = project.tasks.create(
                     "package${fullName.capitalize()}LocalJar",
                     Sync)
             packageLocalJar.from(BasePlugin.getLocalJarFileList(variantData.variantDependency))
+            if (instrumented) {
+                packageLocalJar.dependsOn agentTask
+                packageLocalJar.from(new File(agentTask.destinationDir, BasePlugin.FILE_JACOCO_AGENT))
+            }
             packageLocalJar.into(project.file(
                     "$project.buildDir/$DIR_BUNDLES/${dirName}/$LIBS_FOLDER"))
 
             // jar the classes.
             Jar jar = project.tasks.create("package${fullName.capitalize()}Jar", Jar);
             jar.dependsOn variantData.javaCompileTask, variantData.processJavaResourcesTask
-            jar.from(variantData.javaCompileTask.outputs);
+            if (instrumented) {
+                jar.dependsOn jacocoTask
+                jar.from({ jacocoTask.getOutputDir() });
+            } else {
+                jar.from(variantData.javaCompileTask.outputs);
+            }
             jar.from(variantData.processJavaResourcesTask.destinationDir)
 
             jar.destinationDir = project.file(

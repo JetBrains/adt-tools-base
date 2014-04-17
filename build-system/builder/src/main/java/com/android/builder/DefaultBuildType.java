@@ -29,6 +29,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
 
     private final String mName;
     private boolean mDebuggable = false;
+    private boolean mTestCoverageEnabled = false;
     private boolean mJniDebugBuild = false;
     private boolean mRenderscriptDebugBuild = false;
     private int mRenderscriptOptimLevel = 3;
@@ -47,6 +48,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         _initWith(that);
 
         setDebuggable(that.isDebuggable());
+        setTestCoverageEnabled(that.isTestCoverageEnabled());
         setJniDebugBuild(that.isJniDebugBuild());
         setRenderscriptDebugBuild(that.isRenderscriptDebugBuild());
         setRenderscriptOptimLevel(that.getRenderscriptOptimLevel());
@@ -74,6 +76,16 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
     @Override
     public boolean isDebuggable() {
         return mDebuggable;
+    }
+
+
+    public void setTestCoverageEnabled(boolean testCoverageEnabled) {
+        mTestCoverageEnabled = testCoverageEnabled;
+    }
+
+    @Override
+    public boolean isTestCoverageEnabled() {
+        return mTestCoverageEnabled;
     }
 
     @NonNull
@@ -178,6 +190,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
 
         if (!mName.equals(buildType.mName)) return false;
         if (mDebuggable != buildType.mDebuggable) return false;
+        if (mTestCoverageEnabled != buildType.mTestCoverageEnabled) return false;
         if (mJniDebugBuild != buildType.mJniDebugBuild) return false;
         if (mRenderscriptDebugBuild != buildType.mRenderscriptDebugBuild) return false;
         if (mRenderscriptOptimLevel != buildType.mRenderscriptOptimLevel) return false;
@@ -204,6 +217,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         int result = super.hashCode();
         result = 31 * result + (mName.hashCode());
         result = 31 * result + (mDebuggable ? 1 : 0);
+        result = 31 * result + (mTestCoverageEnabled ? 1 : 0);
         result = 31 * result + (mJniDebugBuild ? 1 : 0);
         result = 31 * result + (mRenderscriptDebugBuild ? 1 : 0);
         result = 31 * result + mRenderscriptOptimLevel;
@@ -221,6 +235,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return Objects.toStringHelper(this)
                 .add("name", mName)
                 .add("debuggable", mDebuggable)
+                .add("testCoverageEnabled", mTestCoverageEnabled)
                 .add("jniDebugBuild", mJniDebugBuild)
                 .add("renderscriptDebugBuild", mRenderscriptDebugBuild)
                 .add("renderscriptOptimLevel", mRenderscriptOptimLevel)

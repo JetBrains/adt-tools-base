@@ -44,6 +44,7 @@ public class SimpleTestRunner implements TestRunner {
                       int maxThreads,
                       int timeout,
             @NonNull  File resultsDir,
+            @NonNull  File coverageDir,
             @NonNull  ILogger logger) throws TestException, InterruptedException {
 
         WaitableExecutor<Boolean> executor = new WaitableExecutor<Boolean>(maxThreads);
@@ -52,7 +53,7 @@ public class SimpleTestRunner implements TestRunner {
             if (filterOutDevice(device, testData, logger, projectName, variantName)) {
                 executor.execute(new SimpleTestCallable(device, projectName, variantName,
                         testApk, testedApk, testData,
-                        resultsDir, timeout, logger));
+                        resultsDir, coverageDir, timeout, logger));
             }
         }
 
@@ -92,7 +93,7 @@ public class SimpleTestRunner implements TestRunner {
         }
 
         Set<String> appAbis = testData.getSupportedAbis();
-        if (appAbis != null) {
+        if (appAbis != null && !appAbis.isEmpty()) {
             List<String> deviceAbis = device.getAbis();
             if (deviceAbis == null || deviceAbis.isEmpty()) {
                 logger.info("Skipping device '%s' for '%s:%s': Unknown ABI",

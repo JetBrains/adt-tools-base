@@ -25,9 +25,9 @@ public class FakeDevice extends DeviceConnector {
     private boolean installCalled = false;
     private boolean uninstallCalled = false;
     private boolean execShellCalled = false;
+    private boolean pullFileCalled = false;
 
     private final List<File> installedApks = Lists.newArrayList();
-
 
     FakeDevice(String name) {
         this.name = name;
@@ -92,6 +92,12 @@ public class FakeDevice extends DeviceConnector {
         execShellCalled = true;
     }
 
+    @Override
+    public void pullFile(String remote, String local) throws IOException {
+        System.out.println(String.format("PULL_FILE(%S) CALLED", name));
+        pullFileCalled = true;
+    }
+
     public String isValid() {
         if (!connectCalled) {
             return "connect not called on " + name;
@@ -111,6 +117,10 @@ public class FakeDevice extends DeviceConnector {
 
         if (!execShellCalled) {
             return "executeShellCommand not called on " + name;
+        }
+
+        if (!pullFileCalled) {
+            return "pullFile not called on " + name;
         }
 
         return null;

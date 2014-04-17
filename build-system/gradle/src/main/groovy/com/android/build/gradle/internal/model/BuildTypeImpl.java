@@ -37,6 +37,7 @@ class BuildTypeImpl implements BuildType, Serializable {
 
     private String name;
     private boolean debuggable;
+    private boolean testCoverageEnabled;
     private boolean jniDebugBuild;
     private boolean renderscriptDebugBuild;
     private int renderscriptOptimLevel;
@@ -50,6 +51,7 @@ class BuildTypeImpl implements BuildType, Serializable {
         BuildTypeImpl clonedBuildType = new BuildTypeImpl();
         clonedBuildType.name = buildType.getName();
         clonedBuildType.debuggable = buildType.isDebuggable();
+        clonedBuildType.testCoverageEnabled = buildType.isTestCoverageEnabled();
         clonedBuildType.jniDebugBuild = buildType.isJniDebugBuild();
         clonedBuildType.renderscriptDebugBuild = buildType.isRenderscriptDebugBuild();
         clonedBuildType.renderscriptOptimLevel = buildType.getRenderscriptOptimLevel();
@@ -73,6 +75,11 @@ class BuildTypeImpl implements BuildType, Serializable {
     @Override
     public boolean isDebuggable() {
         return debuggable;
+    }
+
+    @Override
+    public boolean isTestCoverageEnabled() {
+        return testCoverageEnabled;
     }
 
     @Override
