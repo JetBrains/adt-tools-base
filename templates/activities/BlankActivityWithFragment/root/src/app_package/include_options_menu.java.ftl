@@ -1,18 +1,9 @@
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        <#if features == 'drawer'>if (!mNavigationDrawerFragment.isDrawerOpen()) {
-            // Only show items in the action bar relevant to this screen
-            // if the drawer is not showing. Otherwise, let the drawer
-            // decide what to show in the action bar.
-            getMenuInflater().inflate(R.menu.${menuName}, menu);
-            restoreActionBar();
-            return true;
-        }
-        return super.onCreateOptionsMenu(menu);<#else>
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.${menuName}, menu);
-        return true;</#if>
+        return true;
     }
 
     @Override

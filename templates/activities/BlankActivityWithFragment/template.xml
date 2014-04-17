@@ -2,10 +2,10 @@
 <template
     format="3"
     revision="4"
-    name="Blank Activity"
+    name="Blank Activity with Fragment"
     minApi="7"
     minBuildApi="14"
-    description="Creates a new blank activity with an action bar.">
+    description="Creates a new blank activity, with an action bar and a contained Fragment.">
 
     <category value="Activity" />
 
@@ -26,6 +26,15 @@
         suggest="${activityToLayout(activityClass)}"
         default="activity_main"
         help="The name of the layout to create for the activity" />
+
+    <parameter
+        id="fragmentLayoutName"
+        name="Fragment Layout Name"
+        type="string"
+        constraints="layout|unique|nonempty"
+        suggest="fragment_${classToResource(activityClass)}"
+        default="fragment_main"
+        help="The name of the layout to create for the activity's content fragment"/>
 
     <parameter
         id="activityTitle"
@@ -61,7 +70,7 @@
     <!-- 128x128 thumbnails relative to template.xml -->
     <thumbs>
         <!-- default thumbnail is required -->
-        <thumb>template_blank_activity.png</thumb>
+        <thumb>template_blank_activity_fragment.png</thumb>
     </thumbs>
 
     <globals file="globals.xml.ftl" />

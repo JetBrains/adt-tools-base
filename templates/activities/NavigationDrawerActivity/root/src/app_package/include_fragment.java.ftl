@@ -2,7 +2,6 @@
      * A placeholder fragment containing a simple view.
      */
     public static class PlaceholderFragment extends Fragment {
-<#if hasSections?has_content>
         /**
          * The fragment argument representing the section number for this
          * fragment.
@@ -20,7 +19,6 @@
             fragment.setArguments(args);
             return fragment;
         }
-        </#if>
 
         public PlaceholderFragment() {
         }
@@ -35,7 +33,6 @@
             </#if>
             return rootView;
         }
-<#if features == 'drawer'>
 
         @Override
         public void onAttach(Activity activity) {
@@ -43,5 +40,4 @@
             ((${activityClass}) activity).onSectionAttached(
                     getArguments().getInt(ARG_SECTION_NUMBER));
         }
-</#if>
     }
