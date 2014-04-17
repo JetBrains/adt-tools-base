@@ -1138,6 +1138,29 @@ public class XmlPrettyPrinterTest extends TestCase {
                 xml);
     }
 
+    public void testXliff() throws Exception {
+        String xml = ""
+                + "<resources xmlns:xliff=\"urn:oasis:names:tc:xliff:document:1.2\">\n"
+                + "    <string name=\"xliff\">Text:\n"
+                + "        <xliff:g id=\"firstName\">%1$s</xliff:g></string>\n"
+                + "    <string name=\"xliff2\">Name:<xliff:g id=\"firstName\"> %1$s</xliff:g></string>\n"
+                + "</resources>";
+
+        Document doc = parse(xml);
+        assertNotNull(doc);
+
+        xml = XmlPrettyPrinter.prettyPrint(doc, false);
+        assertEquals(""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources xmlns:xliff=\"urn:oasis:names:tc:xliff:document:1.2\">\n"
+                + "\n"
+                + "    <string name=\"xliff\">Text: <xliff:g id=\"firstName\">%1$s</xliff:g></string>\n"
+                + "    <string name=\"xliff2\">Name:<xliff:g id=\"firstName\"> %1$s</xliff:g></string>\n"
+                + "\n"
+                + "</resources>",
+            xml);
+    }
+
     public void test52887() throws Exception {
         // https://code.google.com/p/android/issues/detail?id=52887
         String xml = ""
