@@ -3,10 +3,10 @@ package ${packageName};
 import android.app.Activity;
 import android.os.Bundle;
 <#if switchGrid == true>
-import android.support.v4.app.Fragment;
+import android${SupportPackage}.app.Fragment;
 import android.view.LayoutInflater;
 <#else>
-import android.support.v4.app.ListFragment;
+import android${SupportPackage}.app.ListFragment;
 </#if>
 import android.view.View;
 <#if switchGrid == true>
