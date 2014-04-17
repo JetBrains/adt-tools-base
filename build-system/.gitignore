@@ -21,6 +21,7 @@ tests/multiproject/*/build
 tests/localAarTest/*/build
 tests/localJars/*/build
 tests/ndkJniLib/*/build
+tests/ndkJniLib2/*/build
 tests/packagingOptions/jars/*/build
 tests/proguardLib/*/build
 tests/renderscriptInLib/*/build
