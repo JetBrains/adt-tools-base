@@ -49,7 +49,7 @@ public class ResourceMergerTest extends BaseTestCase {
     public void testMergeByCount() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
-        assertEquals(29, merger.size());
+        assertEquals(30, merger.size());
     }
 
     public void testMergedResourcesByName() throws Exception {
@@ -70,6 +70,7 @@ public class ResourceMergerTest extends BaseTestCase {
                 "color/color",
                 "string/basic_string",
                 "string/xliff_string",
+                "string/xliff_with_carriage_return",
                 "string/styled_string",
                 "style/style",
                 "array/string_array",
@@ -186,6 +187,44 @@ public class ResourceMergerTest extends BaseTestCase {
         assertEquals("Rewritten String through merger",
                 "%1$s %2$s",
                 string.getValueText());
+    }
+
+    public void testXliffStringWithCarriageReturn() throws Exception {
+        ResourceMerger merger = getResourceMerger();
+
+        // check the result of the load
+        List<ResourceItem> values = merger.getDataMap().get("string/xliff_with_carriage_return");
+
+        assertEquals(1, values.size());
+        ResourceItem string = values.get(0);
+
+        // Even though the content has xliff nodes
+        // The valueText is going to skip the <g> node so we skip them from the comparison.
+        // What matters here is that the whitespaces are kept.
+        String value = string.getValueText();
+        assertEquals("Loaded String in merger",
+                "This is should be followed by whitespace:\n        %1$s",
+                value);
+
+        File folder = getWrittenResources();
+
+        RecordingLogger logger =  new RecordingLogger();
+        ResourceSet writtenSet = new ResourceSet("unused");
+        writtenSet.addSource(folder);
+        writtenSet.loadFromFiles(logger);
+
+        values = writtenSet.getDataMap().get("string/xliff_with_carriage_return");
+
+        assertEquals(1, values.size());
+        string = values.get(0);
+
+        // Even though the content has xliff nodes
+        // The valueText is going to skip the <g> node so we skip them from the comparison.
+        // What matters here is that the whitespaces are kept.
+        value = string.getValueText();
+        assertEquals("Rewritten String through merger",
+                "This is should be followed by whitespace: %1$s",
+                value);
     }
 
     public void testNotMergedAttr() throws Exception {
