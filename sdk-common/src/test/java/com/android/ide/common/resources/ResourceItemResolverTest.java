@@ -94,7 +94,7 @@ public class ResourceItemResolverTest extends TestCase {
 
                         "values/strings.xml", ""
                         + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                        + "<resources>\n"
+                        + "<resources xmlns:xliff=\"urn:oasis:names:tc:xliff:document:1.2\">\n"
                         + "    <item type=\"id\" name=\"action_bar_refresh\" />\n"
                         + "    <item type=\"dimen\" name=\"dialog_min_width_major\">45%</item>\n"
                         + "    <string name=\"home_title\">Home Sample</string>\n"
@@ -104,6 +104,7 @@ public class ResourceItemResolverTest extends TestCase {
                         + "    <string name=\"menu_settings\">Settings</string>\n"
                         + "    <string name=\"dummy\" translatable=\"false\">Ignore Me</string>\n"
                         + "    <string name=\"wallpaper_instructions\">Tap picture to set portrait wallpaper</string>\n"
+                        + "    <string name=\"xliff_string\">First: <xliff:g id=\"firstName\">%1$s</xliff:g> Last: <xliff:g id=\"lastName\">%2$s</xliff:g></string>"
                         + "</resources>\n",
 
                         "values-es/strings.xml", ""
@@ -226,6 +227,11 @@ public class ResourceItemResolverTest extends TestCase {
         assertEquals("@android:color/bright_foreground_dark => @android:color/background_light",
                 ResourceItemResolver.getDisplayString(ResourceType.COLOR, "bright_foreground_dark",
                         true, chain));
+        assertEquals("First: ${firstName} Last: ${lastName}",
+                resolver.findResValue("@string/xliff_string", false).getValue());
+        assertEquals("First: <xliff:g id=\"firstName\">%1$s</xliff:g> Last: <xliff:g id=\"lastName\">%2$s</xliff:g>",
+                resolver.findResValue("@string/xliff_string", false).getRawXmlValue());
+
         chain.clear();
         assertEquals("#ffffffff", resolver.resolveResValue(v).getValue());
         assertEquals("@android:color/bright_foreground_dark => @android:color/background_light "
