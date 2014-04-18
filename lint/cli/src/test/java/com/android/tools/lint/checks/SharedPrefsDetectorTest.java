@@ -69,8 +69,11 @@ public class SharedPrefsDetectorTest extends AbstractCheckTest {
 
     public void test4() throws Exception {
         // Regression test 3 for http://code.google.com/p/android/issues/detail?id=34322
-        assertEquals(
-            "No warnings.",
+        assertEquals(""
+            + "src/test/pkg/SharedPrefsTest4.java:13: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n"
+            + "        Editor editor = preferences.edit();\n"
+            + "                        ~~~~~~~~~~~~~~~~~~\n"
+            + "0 errors, 1 warnings\n",
 
             lintProject("src/test/pkg/SharedPrefsTest4.java.txt=>" +
                     "src/test/pkg/SharedPrefsTest4.java"));
@@ -104,5 +107,17 @@ public class SharedPrefsDetectorTest extends AbstractCheckTest {
 
             lintProject("src/test/pkg/SharedPrefsTest5.java.txt=>" +
                     "src/test/pkg/SharedPrefsTest5.java"));
+    }
+
+    public void test6() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=68692
+        assertEquals(""
+            + "src/test/pkg/SharedPrefsTest7.java:13: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n"
+            + "        settings.edit().putString(MY_PREF_KEY, myPrefValue);\n"
+            + "        ~~~~~~~~~~~~~~~\n"
+            + "0 errors, 1 warnings\n",
+
+            lintProject("src/test/pkg/SharedPrefsTest7.java.txt=>" +
+                    "src/test/pkg/SharedPrefsTest7.java"));
     }
 }
