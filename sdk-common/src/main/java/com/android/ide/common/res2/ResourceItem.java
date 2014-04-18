@@ -42,11 +42,13 @@ import com.android.ide.common.rendering.api.DensityBasedResourceValue;
 import com.android.ide.common.rendering.api.PluralsResourceValue;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
+import com.android.ide.common.rendering.api.TextResourceValue;
 import com.android.ide.common.resources.configuration.Configurable;
 import com.android.ide.common.resources.configuration.DensityQualifier;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.Density;
 import com.android.resources.ResourceType;
+import com.android.utils.XmlUtils;
 import com.google.common.base.Splitter;
 
 import org.w3c.dom.Attr;
@@ -323,6 +325,9 @@ public class ResourceItem extends DataItem<ResourceFile>
             case ATTR:
                 value = parseAttrValue(new AttrResourceValue(type, name, isFrameworks));
                 break;
+            case STRING:
+                value = parseTextValue(new TextResourceValue(type, name, isFrameworks));
+                break;
             default:
                 value = parseValue(new ResourceValue(type, name, isFrameworks));
                 break;
@@ -376,8 +381,8 @@ public class ResourceItem extends DataItem<ResourceFile>
 
                     ResourceValue resValue = new ResourceValue(null, name,
                             styleValue.isFramework());
-                    resValue.setValue(
-                            ValueXmlHelper.unescapeResourceString(getTextNode(child), false, true));
+                    String text = getTextNode(child.getChildNodes());
+                    resValue.setValue(ValueXmlHelper.unescapeResourceString(text, false, true));
                     styleValue.addValue(resValue, isFrameworkAttr);
                 }
             }
@@ -425,7 +430,7 @@ public class ResourceItem extends DataItem<ResourceFile>
             Node child = children.item(i);
 
             if (child.getNodeType() == Node.ELEMENT_NODE) {
-                String text = getTextNode(child);
+                String text = getTextNode(child.getChildNodes());
                 text = ValueXmlHelper.unescapeResourceString(text, false, true);
                 arrayValue.addElement(text);
             }
@@ -443,7 +448,7 @@ public class ResourceItem extends DataItem<ResourceFile>
                 NamedNodeMap attributes = child.getAttributes();
                 String quantity = getAttributeValue(attributes, ATTR_QUANTITY);
                 if (quantity != null) {
-                    String text = getTextNode(child);
+                    String text = getTextNode(child.getChildNodes());
                     text = ValueXmlHelper.unescapeResourceString(text, false, true);
                     value.addPlural(quantity, text);
                 }
@@ -484,15 +489,16 @@ public class ResourceItem extends DataItem<ResourceFile>
 
     @NonNull
     private ResourceValue parseValue(@NonNull ResourceValue value) {
-        value.setValue(ValueXmlHelper.unescapeResourceString(getTextNode(mValue), false, true));
+        String text = getTextNode(mValue.getChildNodes());
+        value.setValue(ValueXmlHelper.unescapeResourceString(text, false, true));
+
         return value;
     }
 
     @NonNull
-    private static String getTextNode(@NonNull Node node) {
+    private static String getTextNode(@NonNull NodeList children) {
         StringBuilder sb = new StringBuilder();
 
-        NodeList children = node.getChildNodes();
         for (int i = 0, n = children.getLength(); i < n; i++) {
             Node child = children.item(i);
 
@@ -519,7 +525,89 @@ public class ResourceItem extends DataItem<ResourceFile>
                         }
                     }
 
-                    sb.append(getTextNode(child));
+                    NodeList childNodes = child.getChildNodes();
+                    if (childNodes.getLength() > 0) {
+                        sb.append(getTextNode(childNodes));
+                    }
+                    break;
+                }
+                case Node.TEXT_NODE:
+                    sb.append(child.getNodeValue());
+                    break;
+                case Node.CDATA_SECTION_NODE:
+                    sb.append(child.getNodeValue());
+                    break;
+            }
+        }
+
+        return sb.toString();
+    }
+
+    @NonNull
+    private TextResourceValue parseTextValue(@NonNull TextResourceValue value) {
+        NodeList children = mValue.getChildNodes();
+        String text = getTextNode(children);
+        value.setValue(ValueXmlHelper.unescapeResourceString(text, false, true));
+
+        int length = children.getLength();
+        if (length > 1) {
+            boolean haveElementChildren = false;
+            for (int i = 0; i < length; i++) {
+                if (children.item(i).getNodeType() == Node.ELEMENT_NODE) {
+                    haveElementChildren = true;
+                    break;
+                }
+            }
+
+            if (haveElementChildren) {
+                String markupText = getMarkupText(children);
+                value.setRawXmlValue(markupText);
+            }
+        }
+
+        return value;
+    }
+
+    @NonNull
+    private static String getMarkupText(@NonNull NodeList children) {
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0, n = children.getLength(); i < n; i++) {
+            Node child = children.item(i);
+
+            short nodeType = child.getNodeType();
+
+            switch (nodeType) {
+                case Node.ELEMENT_NODE: {
+                    Element element = (Element) child;
+                    String tagName = element.getTagName();
+                    sb.append('<');
+                    sb.append(tagName);
+
+                    NamedNodeMap attributes = element.getAttributes();
+                    int attributeCount = attributes.getLength();
+                    if (attributeCount > 0) {
+                        for (int j = 0; j < attributeCount; j++) {
+                            Node attribute = attributes.item(j);
+                            sb.append(' ');
+                            sb.append(attribute.getNodeName());
+                            sb.append('=').append('"');
+                            XmlUtils.appendXmlAttributeValue(sb, attribute.getNodeValue());
+                            sb.append('"');
+                        }
+                    }
+                    sb.append('>');
+
+                    NodeList childNodes = child.getChildNodes();
+                    if (childNodes.getLength() > 0) {
+                        sb.append(getMarkupText(childNodes));
+                    }
+
+                    sb.append('<');
+                    sb.append('/');
+                    sb.append(tagName);
+                    sb.append('>');
+
                     break;
                 }
                 case Node.TEXT_NODE:
