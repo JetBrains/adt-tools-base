@@ -118,6 +118,7 @@ public class DependencyDataStore {
             for (DependencyData data : getData()) {
                 fos.write(TAG_START);
                 writePath(fos, data.getMainFile());
+
                 for (String path : data.getSecondaryFiles()) {
                     fos.write(TAG_2NDARY_FILE);
                     writePath(fos, path);

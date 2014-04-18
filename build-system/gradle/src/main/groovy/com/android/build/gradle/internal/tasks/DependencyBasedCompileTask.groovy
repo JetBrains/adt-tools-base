@@ -186,7 +186,7 @@ public abstract class DependencyBasedCompileTask extends IncrementalTask {
                 case FileStatus.CHANGED:
                     List<DependencyData> impactedData = inputMap.get(entry.getKey().absolutePath)
                     if (impactedData != null) {
-                        final count = impactedData.size();
+                        final int count = impactedData.size();
                         for (int i = 0; i < count; i++) {
                             final DependencyData data = impactedData.get(i);
 
