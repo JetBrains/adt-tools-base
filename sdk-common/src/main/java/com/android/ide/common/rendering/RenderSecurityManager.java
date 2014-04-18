@@ -408,6 +408,10 @@ public class RenderSecurityManager extends SecurityManager {
             return true;
         }
 
+        if (name.equals("user.timezone")) {
+            return true;
+        }
+
         return false;
     }
 
