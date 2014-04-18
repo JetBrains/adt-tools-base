@@ -89,7 +89,7 @@ public class DependencyData {
     }
 
     private static enum ParseMode {
-        OUTPUT, MAIN, SECONDARY
+        OUTPUT, MAIN, SECONDARY, DONE
     }
 
     @VisibleForTesting
@@ -123,8 +123,16 @@ public class DependencyData {
 
             // detect : at the end indicating a parse mode change *after* we process this line.
             if (line.endsWith(":")) {
-                nextMode = ParseMode.MAIN;
+                if (parseMode == ParseMode.SECONDARY) {
+                    nextMode = ParseMode.DONE;
+                } else {
+                    nextMode = ParseMode.MAIN;
+                }
                 line = line.substring(0, line.length() - 1).trim();
+            }
+
+            if (nextMode == ParseMode.DONE) {
+                break;
             }
 
             if (!line.isEmpty()) {

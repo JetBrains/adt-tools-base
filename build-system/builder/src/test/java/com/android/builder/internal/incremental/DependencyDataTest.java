@@ -67,6 +67,24 @@ public class DependencyDataTest extends TestCase {
         assertEquals("/path/to/main input.bar", data.getMainFile());
     }
 
+    public void testSecondaryFiles() throws Exception {
+        DependencyData data = getData("secondary_files.d");
+
+        assertEquals("/path/to/project/src/com/example/IService.aidl", data.getMainFile());
+
+        List<String> secondaryFiles = data.getSecondaryFiles();
+        assertEquals(4, secondaryFiles.size());
+        assertEquals("/path/to/project/src/com/example/ISecondaryFile1.aidl", secondaryFiles.get(0));
+        assertEquals("/path/to/project/src/com/example/ISecondaryFile2.aidl", secondaryFiles.get(1));
+        assertEquals("/path/to/project/src/com/example/ISecondaryFile3.aidl", secondaryFiles.get(2));
+        assertEquals("/path/to/project/src/com/example/ISecondaryFile4.aidl", secondaryFiles.get(3));
+
+        List<String> outputs = data.getOutputFiles();
+        assertEquals(1, outputs.size());
+
+        assertEquals("/path/to/project/build/source/aidl/debug/com/example/IService.java", outputs.get(0));
+    }
+
     private DependencyData getData(String name) throws IOException {
         File depFile = new File(TestUtils.getRoot("dependencyData"), name);
         DependencyData data = DependencyData.parseDependencyFile(depFile);
