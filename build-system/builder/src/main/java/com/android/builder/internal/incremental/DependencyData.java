@@ -48,7 +48,7 @@ public class DependencyData {
         return mMainFile;
     }
 
-    void setMainFile(String path) {
+    void setMainFile(@NonNull String path) {
         mMainFile = path;
     }
 
@@ -57,7 +57,7 @@ public class DependencyData {
         return mSecondaryFiles;
     }
 
-    void addSecondaryFile(String path) {
+    void addSecondaryFile(@NonNull String path) {
         mSecondaryFiles.add(path);
     }
 
@@ -66,7 +66,7 @@ public class DependencyData {
         return mOutputFiles;
     }
 
-    void addOutputFile(String path) {
+    void addOutputFile(@NonNull String path) {
         mOutputFiles.add(path);
     }
 

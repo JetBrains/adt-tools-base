@@ -157,6 +157,7 @@ public abstract class DependencyBasedCompileTask extends IncrementalTask {
         try {
             inputMap = store.loadFrom(incrementalData)
         } catch (Exception e) {
+            incrementalData.delete()
             project.logger.info(
                     "Failed to read dependency store: full task run!")
             doFullTaskAction()
@@ -220,6 +221,7 @@ public abstract class DependencyBasedCompileTask extends IncrementalTask {
         if (results != null) {
             for (WaitableExecutor.TaskResult<Void> result : results) {
                 if (result.exception != null) {
+                    incrementalData.delete()
                     throw result.exception
                 }
             }
@@ -231,7 +233,7 @@ public abstract class DependencyBasedCompileTask extends IncrementalTask {
         store.saveTo(incrementalData)
     }
 
-    private static void cleanUpOutputFrom(DependencyData dependencyData) {
+    private static void cleanUpOutputFrom(@NonNull DependencyData dependencyData) {
         List<String> outputs = dependencyData.getOutputFiles()
 
         for (String output : outputs) {
