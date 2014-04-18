@@ -171,13 +171,14 @@ public class LibraryVariantFactory implements VariantFactory {
                 "$project.buildDir/$DIR_BUNDLES/${dirName}/jni"))
 
         // package the aidl files into the bundle folder
-        Sync packageAidl = basePlugin.project.tasks.create(
-                "package${fullName.capitalize()}Aidl",
-                Sync)
-        // packageAidl from 3 sources. the order is important to make sure the override works well.
-        packageAidl.from(variantConfig.aidlSourceList).include("**/*.aidl")
-        packageAidl.into(basePlugin.project.file(
-                "$basePlugin.project.buildDir/$DIR_BUNDLES/${dirName}/$SdkConstants.FD_AIDL"))
+        // TODO: reenable when we can generate a single AIDL file with all the parcelable.
+//        Sync packageAidl = basePlugin.project.tasks.create(
+//                "package${fullName.capitalize()}Aidl",
+//                Sync)
+//        // packageAidl from 3 sources. the order is important to make sure the override works well.
+//        packageAidl.from(variantConfig.aidlSourceList).include("**/*.aidl")
+//        packageAidl.into(basePlugin.project.file(
+//                "$basePlugin.project.buildDir/$DIR_BUNDLES/${dirName}/$SdkConstants.FD_AIDL"))
 
         // package the renderscript header files files into the bundle folder
         Sync packageRenderscript = project.tasks.create(
@@ -221,7 +222,7 @@ public class LibraryVariantFactory implements VariantFactory {
             // hack since bundle can't depend on variantData.proguardTask
             mergeProGuardFileTask.dependsOn variantData.proguardTask
 
-            bundle.dependsOn packageRes, packageAidl, packageRenderscript, mergeProGuardFileTask,
+            bundle.dependsOn packageRes, /*packageAidl,*/ packageRenderscript, mergeProGuardFileTask,
                     lintCopy, packageJniLibs
             if (extract != null) {
                 bundle.dependsOn(extract)
@@ -258,7 +259,7 @@ public class LibraryVariantFactory implements VariantFactory {
                 jar.exclude(packageName + "/BuildConfig.class")
             }
 
-            bundle.dependsOn packageRes, jar, packageAidl, packageRenderscript, packageLocalJar,
+            bundle.dependsOn packageRes, jar, /*packageAidl,*/ packageRenderscript, packageLocalJar,
                     mergeProGuardFileTask, lintCopy, packageJniLibs
 
             if (extract != null) {
