@@ -80,10 +80,12 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
         }
 
         Configuration compile = project.configurations.create("_${name}Compile")
+        compile.visible = false
         compile.description = "## Internal use, do not manually configure ##"
         compile.setExtendsFrom(compileConfigs)
 
         Configuration apk = project.configurations.create(isLibrary? "_${name}Publish" : "_${name}Apk")
+        apk.visible = false
         apk.description = "## Internal use, do not manually configure ##"
         apk.setExtendsFrom(apkConfigs)
 
