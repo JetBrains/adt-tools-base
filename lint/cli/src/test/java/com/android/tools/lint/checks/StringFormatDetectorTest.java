@@ -324,4 +324,25 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                         "res/values/shared_prefs_keys.xml",
                         "src/test/pkg/SharedPrefsTest6.java.txt=>src/test/pkg/SharedPrefsTest6.java"));
     }
+
+    public void testXliff() throws Exception {
+        assertEquals(
+                "No warnings.",
+
+                lintProject(
+                        "res/values/formatstrings9.xml",
+                        "src/test/pkg/StringFormat9.java.txt=>src/test/pkg/StringFormat9.java"
+                ));
+    }
+
+    public void testXliffIncremental() throws Exception {
+        assertEquals(
+                "No warnings.",
+
+                lintProjectIncrementally(
+                        "src/test/pkg/StringFormat9.java",
+                        "res/values/formatstrings9.xml",
+                        "src/test/pkg/StringFormat9.java.txt=>src/test/pkg/StringFormat9.java"
+                ));
+    }
 }

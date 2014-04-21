@@ -1005,7 +1005,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                     for (final ResourceItem item : items) {
                         ResourceValue v = item.getResourceValue(false);
                         if (v != null) {
-                            String value = v.getValue();
+                            String value = v.getRawXmlValue();
                             if (value != null) {
                                 // Make sure it's really a formatting string,
                                 // not for example "Battery remaining: 90%"
