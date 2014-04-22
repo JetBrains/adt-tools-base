@@ -1,0 +1,110 @@
+package test.pkg;
+
+import android.content.Context;
+import android.view.MotionEvent;
+import android.view.View;
+
+public class ClickableViewAccessibilityTest {
+
+    // Fails because should also implement performClick.
+    private static class ViewOverridesOnTouchEventButNotPerformClick extends View {
+
+        public ViewOverridesOnTouchEventButNotPerformClick(Context context) {
+            super(context);
+        }
+
+        public boolean onTouchEvent(MotionEvent event) {
+            return false;
+        }
+    }
+
+    // Fails because should call performClick.
+    private static class ViewDoesNotCallPerformClick extends View {
+
+        public ViewDoesNotCallPerformClick(Context context) {
+            super(context);
+        }
+
+        public boolean onTouchEvent(MotionEvent event) {
+            return false;
+        }
+
+        public boolean performClick() {
+            return super.performClick();
+        }
+    }
+
+    // Fails because performClick should call super.performClick.
+    private static class PerformClickDoesNotCallSuper extends View {
+
+        public PerformClickDoesNotCallSuper(Context context) {
+            super(context);
+        }
+
+        public boolean performClick() {
+            return false;
+        }
+    }
+
+    // Valid view.
+    private static class ValidView extends View {
+
+        public ValidView(Context context) {
+            super(context);
+        }
+
+        public boolean onTouchEvent(MotionEvent event) {
+            performClick();
+            return false;
+        }
+
+        public boolean performClick() {
+            return super.performClick();
+        }
+    }
+
+    // Okay because it's not actually a view subclass.
+    private static class NotAView {
+
+        public boolean onTouchEvent(MotionEvent event) {
+            return false;
+        }
+    }
+
+    // Should fail because it's a view subclass. This tests that we can detect Views that are
+    // not just direct sub-children.
+    private static class ViewSubclass extends ValidView {
+
+        public ViewSubclass(Context context) {
+            super(context);
+        }
+
+        public boolean performClick() {
+            return false;
+        }
+    }
+
+    // Okay because it's declaring onTouchEvent with a different signature.
+    private static class ViewWithDifferentOnTouchEvent extends View {
+
+        public ViewWithDifferentOnTouchEvent(Context context) {
+            super(context);
+        }
+
+        public boolean onTouchEvent() {
+            return false;
+        }
+    }
+
+    // Okay because it's declaring performClick with a different signature.
+    private static class ViewWithDifferentPerformClick extends View {
+
+        public ViewWithDifferentPerformClick(Context context) {
+            super(context);
+        }
+
+        public boolean performClick(Context context) {
+            return false;
+        }
+    }
+}
