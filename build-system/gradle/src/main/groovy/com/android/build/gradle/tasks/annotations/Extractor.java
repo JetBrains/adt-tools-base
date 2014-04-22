@@ -494,11 +494,6 @@ public class Extractor {
     private void appendConstants(StringBuilder sb, ArrayInitializer mv) {
         boolean first = true;
         for (Expression v : mv.expressions) {
-            if (first) {
-                first = false;
-            } else {
-                sb.append(", ");
-            }
             if (v instanceof NameReference) {
                 NameReference reference = (NameReference) v;
                 if (reference.binding != null) {
@@ -514,10 +509,14 @@ public class Extractor {
                                             + new String(fb.declaringClass.readableName()) + "."
                                             + new String(fb.name) + "");
                                 }
-                                // Remove ", " appended above
-                                sb.setLength(Math.max(0, sb.length() - 2));
+                                continue;
                             }
 
+                            if (first) {
+                                first = false;
+                            } else {
+                                sb.append(", ");
+                            }
                             sb.append(fb.declaringClass.readableName());
                             sb.append('.');
                             sb.append(fb.name);
@@ -531,19 +530,39 @@ public class Extractor {
                     warning("No binding for reference " + reference);
                 }
             } else if (v instanceof StringLiteral) {
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(", ");
+                }
                 StringLiteral s = (StringLiteral) v;
                 sb.append('"');
                 sb.append(s.source());
                 sb.append('"');
             } else if (v instanceof NumberLiteral) {
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(", ");
+                }
                 NumberLiteral number = (NumberLiteral) v;
                 sb.append(number.source());
             } else {
                 // BinaryExpression etc can happen if you put "3 + 4" in as an integer!
                 if (v.constant != null) {
                     if (v.constant.typeID() == TypeIds.T_int) {
+                        if (first) {
+                            first = false;
+                        } else {
+                            sb.append(", ");
+                        }
                         sb.append(v.constant.intValue());
                     } else if (v.constant.typeID() == TypeIds.T_JavaLangString) {
+                        if (first) {
+                            first = false;
+                        } else {
+                            sb.append(", ");
+                        }
                         sb.append('"');
                         sb.append(v.constant.stringValue());
                         sb.append('"');
@@ -1183,7 +1202,7 @@ public class Extractor {
             String cls = fqn.substring(0, index);
             String field = fqn.substring(index + 1);
             if (apiFilter.hasField(cls, field)) {
-                if (sb.length() > 0) {
+                if (sb.length() > 1) { // 0: '{'
                     sb.append(", ");
                 }
                 sb.append(fqn);
