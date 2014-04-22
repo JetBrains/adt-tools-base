@@ -1159,6 +1159,7 @@ public final class SdkConstants {
             "android/content/ContentProvider";                                       //$NON-NLS-1$
     public static final String ANDROID_CONTENT_BROADCAST_RECEIVER =
             "android/content/BroadcastReceiver";                                     //$NON-NLS-1$
+    public static final String ANDROID_VIEW_VIEW = "android/view/View";        //$NON-NLS-1$
 
     // Method Names
     public static final String FORMAT_METHOD = "format";                             //$NON-NLS-1$
