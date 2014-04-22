@@ -39,12 +39,12 @@ import org.objectweb.asm.tree.MethodNode;
 import java.util.List;
 import java.util.ListIterator;
 
-// TODO Extend this check to catch views that use OnTouchListener.
 /**
  * Checks that views that override View#onTouchEvent also implement View#performClick
  * and call performClick when click detection occurs.
  */
 public class ClickableViewAccessibilityDetector extends Detector implements Detector.ClassScanner {
+    // TODO Extend this check to catch views that use OnTouchListener.
 
     public static final Issue ISSUE = Issue.create(
             "ClickableViewAccessibility", //$NON-NLS-1$
@@ -77,6 +77,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
 
     // ---- Implements ClassScanner ----
 
+    @SuppressWarnings("unchecked") // ASM API
     @Override
     public void checkClass(@NonNull ClassContext context, @NonNull ClassNode classNode) {
         // Ignore abstract classes.
@@ -94,8 +95,8 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
 
         // Check if we override onTouchEvent.
         if (onTouchEvent != null) {
-
             // Ensure that we also override performClick.
+            //noinspection VariableNotUsedInsideIf
             if (performClick == null) {
                 String message = String.format(
                         "Custom view %1$s overrides onTouchEvent but not performClick",
@@ -135,7 +136,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
     }
 
     @Nullable
-    private MethodNode findMethod(
+    private static MethodNode findMethod(
             @NonNull List<MethodNode> methods,
             @NonNull String name,
             @NonNull String desc) {
@@ -148,8 +149,9 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
         return null;
     }
 
+    @SuppressWarnings("unchecked") // ASM API
     @Nullable
-    private AbstractInsnNode findMethodCallInstruction(
+    private static AbstractInsnNode findMethodCallInstruction(
             @NonNull InsnList instructions,
             @NonNull String owner,
             @NonNull String name,
