@@ -103,19 +103,19 @@ public class ClickableViewAccessibilityDetectorTest extends AbstractCheckTest {
         // ViewSubclass is actually a subclass of ValidView. This tests that we can detect
         // tests further down in the inheritance hierarchy than direct children of View.
         assertEquals(
-                "src/test/pkg/ClickableViewAccessibilityTest.java:82: Warning: test/pkg/ClickableViewAccessibilityTest$ViewSubclass#performClick should call super#performClick [ClickableViewAccessibility]\n"
-                    + "        public boolean performClick() {\n"
-                    + "                       ~~~~~~~~~~~~\n"
-                    + "0 errors, 1 warnings\n",
-                lintProject(
-                    "bytecode/.classpath=>.classpath",
-                    "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
-                    "bytecode/ClickableViewAccessibilityTest.java.txt=>src/test/pkg/ClickableViewAccessibilityTest.java",
-                    "bytecode/ClickableViewAccessibilityTest.class.data=>bin/classes/test/pkg/ClickableViewAccessibilityTest.class",
-                    "bytecode/ClickableViewAccessibilityTest$ValidView.class.data=>"
-                        + "bin/classes/test/pkg/ClickableViewAccessibilityTest$ValidView.class",
-                    "bytecode/ClickableViewAccessibilityTest$ViewSubclass.class.data=>"
-                        + "bin/classes/test/pkg/ClickableViewAccessibilityTest$ViewSubclass.class"
+            "src/test/pkg/ClickableViewAccessibilityTest.java:82: Warning: test/pkg/ClickableViewAccessibilityTest$ViewSubclass#performClick should call super#performClick [ClickableViewAccessibility]\n"
+                + "        public boolean performClick() {\n"
+                + "                       ~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+            lintProject(
+                "bytecode/.classpath=>.classpath",
+                "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
+                "bytecode/ClickableViewAccessibilityTest.java.txt=>src/test/pkg/ClickableViewAccessibilityTest.java",
+                "bytecode/ClickableViewAccessibilityTest.class.data=>bin/classes/test/pkg/ClickableViewAccessibilityTest.class",
+                "bytecode/ClickableViewAccessibilityTest$ValidView.class.data=>"
+                    + "bin/classes/test/pkg/ClickableViewAccessibilityTest$ValidView.class",
+                "bytecode/ClickableViewAccessibilityTest$ViewSubclass.class.data=>"
+                    + "bin/classes/test/pkg/ClickableViewAccessibilityTest$ViewSubclass.class"
                 ));
     }
 
