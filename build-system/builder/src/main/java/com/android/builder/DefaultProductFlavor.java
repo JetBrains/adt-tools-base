@@ -125,6 +125,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return mVersionName;
     }
 
+    /** Sets the minSdkVersion to the given value. */
     @NonNull
     public ProductFlavor setMinSdkVersion(int minSdkVersion) {
         mMinSdkVersion = minSdkVersion;
@@ -136,6 +137,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return mMinSdkVersion;
     }
 
+    /** Sets the targetSdkVersion to the given value. */
     @NonNull
     public ProductFlavor setTargetSdkVersion(int targetSdkVersion) {
         mTargetSdkVersion = targetSdkVersion;
@@ -152,6 +154,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return mRenderscriptTargetApi;
     }
 
+    /** Sets the renderscript target API to the given value. */
     public void setRenderscriptTargetApi(int renderscriptTargetApi) {
         mRenderscriptTargetApi = renderscriptTargetApi;
     }
@@ -162,6 +165,10 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return mRenderscriptSupportMode != null && mRenderscriptSupportMode.booleanValue();
     }
 
+    /**
+     * Sets whether the renderscript code should be compiled in support mode to make it compatible
+     * with older versions of Android.
+     */
     public void setRenderscriptSupportMode(boolean renderscriptSupportMode) {
         mRenderscriptSupportMode = renderscriptSupportMode;
     }
@@ -172,10 +179,12 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return mRenderscriptNdkMode != null && mRenderscriptNdkMode.booleanValue();
     }
 
+    /** Sets whether the renderscript code should be compiled to generate C/C++ bindings. */
     public void setRenderscriptNdkMode(boolean renderscriptNdkMode) {
         mRenderscriptNdkMode = renderscriptNdkMode;
     }
 
+    /** Sets the test package name. */
     @NonNull
     public ProductFlavor setTestPackageName(String testPackageName) {
         mTestPackageName = testPackageName;
@@ -188,6 +197,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return mTestPackageName;
     }
 
+    /** Sets the test instrumentation runner to the given value. */
     @NonNull
     public ProductFlavor setTestInstrumentationRunner(String testInstrumentationRunner) {
         mTestInstrumentationRunner = testInstrumentationRunner;
@@ -229,6 +239,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return mSigningConfig;
     }
 
+    /** Sets the signing configuration. e.g.: {@code signingConfig signingConfigs.myConfig} */
     @NonNull
     public ProductFlavor setSigningConfig(SigningConfig signingConfig) {
         mSigningConfig = signingConfig;
