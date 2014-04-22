@@ -1183,7 +1183,7 @@ public class Extractor {
             String cls = fqn.substring(0, index);
             String field = fqn.substring(index + 1);
             if (apiFilter.hasField(cls, field)) {
-                if (sb.length() == 0) {
+                if (sb.length() > 0) {
                     sb.append(", ");
                 }
                 sb.append(fqn);
