@@ -111,9 +111,8 @@ public interface IDevice extends IShellEnabledDevice {
         }
     }
 
-    /**
-     * Returns the serial number of the device.
-     */
+    /** Returns the serial number of the device. */
+    @NonNull
     public String getSerialNumber();
 
     /**

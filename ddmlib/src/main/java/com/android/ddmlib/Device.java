@@ -49,7 +49,7 @@ final class Device implements IDevice {
     static final String RE_EMULATOR_SN = "emulator-(\\d+)"; //$NON-NLS-1$
 
     /** Serial number of the device */
-    private String mSerialNumber = null;
+    private final String mSerialNumber;
 
     /** Name of the AVD */
     private String mAvdName = null;
@@ -232,6 +232,7 @@ final class Device implements IDevice {
      * (non-Javadoc)
      * @see com.android.ddmlib.IDevice#getSerialNumber()
      */
+    @NonNull
     @Override
     public String getSerialNumber() {
         return mSerialNumber;
