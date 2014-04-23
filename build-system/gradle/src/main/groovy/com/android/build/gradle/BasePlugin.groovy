@@ -1415,7 +1415,7 @@ public abstract class BasePlugin {
             File outFile = createProguardTasks(variantData, testedVariantData)
 
             // then dexing task
-            dexTask.dependsOn variantData.proguardTask
+            dexTask.dependsOn variantData.obfuscationTask
             dexTask.conventionMapping.inputFiles = { project.files(outFile).files }
             dexTask.conventionMapping.libraries = { Collections.emptyList() }
 
@@ -1636,10 +1636,10 @@ public abstract class BasePlugin {
         proguardTask.dependsOn variantData.javaCompileTask, variantData.variantDependency.packageConfiguration.buildDependencies
 
         if (testedVariantData != null) {
-            proguardTask.dependsOn testedVariantData.proguardTask
+            proguardTask.dependsOn testedVariantData.obfuscationTask
         }
 
-        variantData.proguardTask = proguardTask
+        variantData.obfuscationTask = proguardTask
 
         // --- Output File ---
 

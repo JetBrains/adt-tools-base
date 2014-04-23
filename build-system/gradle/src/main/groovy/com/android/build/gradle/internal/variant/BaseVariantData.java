@@ -46,7 +46,6 @@ import java.util.Collections;
 import java.util.List;
 
 import groovy.lang.Closure;
-import proguard.gradle.ProGuardTask;
 
 /**
  * Base data about a variant.
@@ -72,7 +71,7 @@ public abstract class BaseVariantData {
     public GenerateResValues generateResValuesTask;
 
     public JavaCompile javaCompileTask;
-    public ProGuardTask proguardTask;
+    public Task obfuscationTask;
     public Copy processJavaResourcesTask;
     public NdkCompile ndkCompileTask;
 

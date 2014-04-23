@@ -38,7 +38,6 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
-import proguard.gradle.ProGuardTask;
 
 /**
  * A Build variant and all its public data. This is the base class for items common to apps,
@@ -198,10 +197,10 @@ public interface BaseVariant {
     NdkCompile getNdkCompile();
 
     /**
-     * Returns the Proguard task. This can be null if proguard is not enabled.
+     * Returns the obfuscation task. This can be null if obfuscation is not enabled.
      */
     @Nullable
-    ProGuardTask getProguard();
+    Task getObfuscation();
 
     /**
      * Returns the Java resource processing task.
