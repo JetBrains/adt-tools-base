@@ -38,7 +38,13 @@ public class IncludeDetectorTest extends AbstractCheckTest {
             + "res/layout/include_params.xml:58: Error: Layout parameter layout_weight ignored unless layout_height is also specified on <include> tag [IncludeLayoutParam]\n"
             + "        android:layout_weight=\"1.5\"\n"
             + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-            + "4 errors, 0 warnings\n",
+            + "res/layout/include_params.xml:65: Error: Layout parameter layout_width ignored unless layout_height is also specified on <include> tag [IncludeLayoutParam]\n"
+            + "            android:layout_width=\"fill_parent\"\n"
+            + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "res/layout/include_params.xml:72: Error: Layout parameter layout_height ignored unless layout_width is also specified on <include> tag [IncludeLayoutParam]\n"
+            + "            android:layout_height=\"fill_parent\"\n"
+            + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "6 errors, 0 warnings\n",
 
             lintProject(
                 "res/layout/include_params.xml"));
