@@ -15,10 +15,10 @@
     <instantiate from="src/app_package/MapActivity.java.ftl"
                    to="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
 
-    <merge from="res/values/google_maps_api.xml.ftl"
+    <merge from="debugRes/values/google_maps_api.xml.ftl"
              to="${escapeXmlAttribute(debugResOut)}/values/google_maps_api.xml" />
 
-    <merge from="res/values/google_maps_api.xml.ftl"
+    <merge from="releaseRes/values/google_maps_api.xml.ftl"
              to="${escapeXmlAttribute(releaseResOut)}/values/google_maps_api.xml" />
 
     <open file="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
