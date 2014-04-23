@@ -43,10 +43,10 @@ public class ClickableViewAccessibilityDetectorTest extends AbstractCheckTest {
 
     public void testWarningWhenOnTouchEventDoesNotCallPerformClick() throws Exception {
         assertEquals(
-            "src/test/pkg/ClickableViewAccessibilityTest.java:28: Warning: test/pkg/ClickableViewAccessibilityTest$ViewDoesNotCallPerformClick#onTouchEvent should call test/pkg/ClickableViewAccessibilityTest$ViewDoesNotCallPerformClick#performClick [ClickableViewAccessibility]\n"
-                    + "        public boolean onTouchEvent(MotionEvent event) {\n"
-                    + "                       ~~~~~~~~~~~~\n"
-                    + "0 errors, 1 warnings\n",
+            "src/test/pkg/ClickableViewAccessibilityTest.java:28: Warning: test/pkg/ClickableViewAccessibilityTest$ViewDoesNotCallPerformClick#onTouchEvent should call test/pkg/ClickableViewAccessibilityTest$ViewDoesNotCallPerformClick#performClick when a click is detected [ClickableViewAccessibility]\n"
+                + "        public boolean onTouchEvent(MotionEvent event) {\n"
+                + "                       ~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
             lintProject(
                 "bytecode/.classpath=>.classpath",
                 "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
@@ -103,7 +103,7 @@ public class ClickableViewAccessibilityDetectorTest extends AbstractCheckTest {
         // ViewSubclass is actually a subclass of ValidView. This tests that we can detect
         // tests further down in the inheritance hierarchy than direct children of View.
         assertEquals(
-            "src/test/pkg/ClickableViewAccessibilityTest.java:82: Warning: test/pkg/ClickableViewAccessibilityTest$ViewSubclass#performClick should call super#performClick [ClickableViewAccessibility]\n"
+            "src/test/pkg/ClickableViewAccessibilityTest.java:84: Warning: test/pkg/ClickableViewAccessibilityTest$ViewSubclass#performClick should call super#performClick [ClickableViewAccessibility]\n"
                 + "        public boolean performClick() {\n"
                 + "                       ~~~~~~~~~~~~\n"
                 + "0 errors, 1 warnings\n",
@@ -122,7 +122,7 @@ public class ClickableViewAccessibilityDetectorTest extends AbstractCheckTest {
     public void testNoWarningOnOnTouchEventWithDifferentSignature() throws Exception {
         assertEquals(
             "No warnings.",
-        lintProject(
+            lintProject(
                 "bytecode/.classpath=>.classpath",
                 "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
                 "bytecode/ClickableViewAccessibilityTest.java.txt=>src/test/pkg/ClickableViewAccessibilityTest.java",
@@ -142,6 +142,131 @@ public class ClickableViewAccessibilityDetectorTest extends AbstractCheckTest {
                 "bytecode/ClickableViewAccessibilityTest.class.data=>bin/classes/test/pkg/ClickableViewAccessibilityTest.class",
                 "bytecode/ClickableViewAccessibilityTest$ViewWithDifferentPerformClick.class.data=>"
                     + "bin/classes/test/pkg/ClickableViewAccessibilityTest$ViewWithDifferentPerformClick.class"
+            ));
+    }
+
+    public void testWarningWhenSetOnTouchListenerCalledOnViewWithNoPerformClick() throws Exception {
+        assertEquals(
+            "src/test/pkg/ClickableViewAccessibilityTest.java:124: Warning: Custom view test/pkg/ClickableViewAccessibilityTest$NoPerformClick has setOnTouchListener called on it but does not override performClick [ClickableViewAccessibility]\n"
+                + "            view.setOnTouchListener(new ValidOnTouchListener());\n"
+                + "                 ~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+            lintProject(
+                "bytecode/.classpath=>.classpath",
+                "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
+                "bytecode/ClickableViewAccessibilityTest.java.txt=>src/test/pkg/ClickableViewAccessibilityTest.java",
+                "bytecode/ClickableViewAccessibilityTest.class.data=>bin/classes/test/pkg/ClickableViewAccessibilityTest.class",
+                "bytecode/ClickableViewAccessibilityTest$NoPerformClick.class.data=>"
+                    + "bin/classes/test/pkg/ClickableViewAccessibilityTest$NoPerformClick.class",
+                "bytecode/ClickableViewAccessibilityTest$NoPerformClickOnTouchListenerSetter.class.data=>"
+                    + "bin/classes/test/pkg/ClickableViewAccessibilityTest$NoPerformClickOnTouchListenerSetter.class",
+                "bytecode/ClickableViewAccessibilityTest$ValidOnTouchListener.class.data=>"
+                        + "bin/classes/test/pkg/ClickableViewAccessibilityTest$ValidOnTouchListener.class"
+            ));
+    }
+
+    public void testNoWarningWhenSetOnTouchListenerNotCalledOnViewWithNoPerformClick() throws Exception {
+        assertEquals(
+            "No warnings.",
+            lintProject(
+                "bytecode/.classpath=>.classpath",
+                "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
+                "bytecode/ClickableViewAccessibilityTest.java.txt=>src/test/pkg/ClickableViewAccessibilityTest.java",
+                "bytecode/ClickableViewAccessibilityTest.class.data=>bin/classes/test/pkg/ClickableViewAccessibilityTest.class",
+                "bytecode/ClickableViewAccessibilityTest$NoPerformClick.class.data=>"
+                        + "bin/classes/test/pkg/ClickableViewAccessibilityTest$NoPerformClick.class"
+            ));
+    }
+
+    public void testNoWarningWhenSetOnTouchListenerCalledOnViewWithPerformClick() throws Exception {
+        assertEquals(
+            "No warnings.",
+            lintProject(
+                "bytecode/.classpath=>.classpath",
+                "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
+                "bytecode/ClickableViewAccessibilityTest.java.txt=>src/test/pkg/ClickableViewAccessibilityTest.java",
+                "bytecode/ClickableViewAccessibilityTest$HasPerformClick.class.data=>"
+                        + "bin/classes/test/pkg/ClickableViewAccessibilityTest$HasPerformClick.class",
+                "bytecode/ClickableViewAccessibilityTest$HasPerformClickOnTouchListenerSetter.class.data=>"
+                        + "bin/classes/test/pkg/ClickableViewAccessibilityTest$HasPerformClickOnTouchListenerSetter.class"
+            ));
+    }
+
+    public void testNoWarningWhenOnTouchListenerCalledOnNonViewSubclass() throws Exception {
+        assertEquals(
+            "No warnings.",
+            lintProject(
+                "bytecode/.classpath=>.classpath",
+                "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
+                "bytecode/ClickableViewAccessibilityTest.java.txt=>src/test/pkg/ClickableViewAccessibilityTest.java",
+                "bytecode/ClickableViewAccessibilityTest.class.data=>bin/classes/test/pkg/ClickableViewAccessibilityTest.class",
+                "bytecode/ClickableViewAccessibilityTest$NotAView.class.data=>"
+                        + "bin/classes/test/pkg/ClickableViewAccessibilityTest$NotAView.class",
+                "bytecode/ClickableViewAccessibilityTest$NotAViewOnTouchListenerSetter.class.data=>"
+                        + "bin/classes/test/pkg/ClickableViewAccessibilityTest$NotAViewOnTouchListenerSetter.class"
+            ));
+    }
+
+    public void testNoWarningWhenOnTouchCallsPerformClick() throws Exception {
+        assertEquals(
+            "No warnings.",
+            lintProject(
+                "bytecode/.classpath=>.classpath",
+                "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
+                "bytecode/ClickableViewAccessibilityTest.java.txt=>src/test/pkg/ClickableViewAccessibilityTest.java",
+                "bytecode/ClickableViewAccessibilityTest.class.data=>bin/classes/test/pkg/ClickableViewAccessibilityTest.class",
+                "bytecode/ClickableViewAccessibilityTest$ValidOnTouchListener.class.data=>"
+                        + "bin/classes/test/pkg/ClickableViewAccessibilityTest$ValidOnTouchListener.class"
+            ));
+    }
+
+    public void testWarningWhenOnTouchDoesNotCallPerformClick() throws Exception {
+        assertEquals(
+            "src/test/pkg/ClickableViewAccessibilityTest.java:162: Warning: test/pkg/ClickableViewAccessibilityTest$InvalidOnTouchListener#onTouch should call View#performClick when a click is detected [ClickableViewAccessibility]\n"
+                + "        public boolean onTouch(View v, MotionEvent event) {\n"
+                + "                       ~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+            lintProject(
+                "bytecode/.classpath=>.classpath",
+                "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
+                "bytecode/ClickableViewAccessibilityTest.java.txt=>src/test/pkg/ClickableViewAccessibilityTest.java",
+                "bytecode/ClickableViewAccessibilityTest.class.data=>bin/classes/test/pkg/ClickableViewAccessibilityTest.class",
+                "bytecode/ClickableViewAccessibilityTest$InvalidOnTouchListener.class.data=>"
+                        + "bin/classes/test/pkg/ClickableViewAccessibilityTest$InvalidOnTouchListener.class"
+            ));
+    }
+
+    public void testNoWarningWhenAnonymousOnTouchListenerCallsPerformClick() throws Exception {
+        assertEquals(
+           "No warnings.",
+           lintProject(
+                "bytecode/.classpath=>.classpath",
+                "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
+                "bytecode/ClickableViewAccessibilityTest.java.txt=>src/test/pkg/ClickableViewAccessibilityTest.java",
+                "bytecode/ClickableViewAccessibilityTest.class.data=>bin/classes/test/pkg/ClickableViewAccessibilityTest.class",
+                "bytecode/ClickableViewAccessibilityTest$AnonymousValidOnTouchListener.class.data=>"
+                        + "bin/classes/test/pkg/ClickableViewAccessibilityTest$AnonymousValidOnTouchListener.class",
+               "bytecode/ClickableViewAccessibilityTest$AnonymousValidOnTouchListener$1.class.data=>"
+                       + "bin/classes/test/pkg/ClickableViewAccessibilityTest$AnonymousValidOnTouchListener$1.class"
+            ));
+    }
+
+
+    public void testWarningWhenAnonymousOnTouchListenerDoesNotCallPerformClick() throws Exception {
+      assertEquals(
+           "src/test/pkg/ClickableViewAccessibilityTest.java:182: Warning: test/pkg/ClickableViewAccessibilityTest$AnonymousInvalidOnTouchListener$1#onTouch should call View#performClick when a click is detected [ClickableViewAccessibility]\n"
+               + "                public boolean onTouch(View v, MotionEvent event) {\n"
+               + "                               ~~~~~~~\n"
+               + "0 errors, 1 warnings\n",
+           lintProject(
+                "bytecode/.classpath=>.classpath",
+                "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
+                "bytecode/ClickableViewAccessibilityTest.java.txt=>src/test/pkg/ClickableViewAccessibilityTest.java",
+                "bytecode/ClickableViewAccessibilityTest.class.data=>bin/classes/test/pkg/ClickableViewAccessibilityTest.class",
+                "bytecode/ClickableViewAccessibilityTest$AnonymousInvalidOnTouchListener.class.data=>"
+                        + "bin/classes/test/pkg/ClickableViewAccessibilityTest$AnonymousInvalidOnTouchListener.class",
+                "bytecode/ClickableViewAccessibilityTest$AnonymousInvalidOnTouchListener$1.class.data=>"
+                        + "bin/classes/test/pkg/ClickableViewAccessibilityTest$AnonymousInvalidOnTouchListener$1.class"
             ));
     }
 }
