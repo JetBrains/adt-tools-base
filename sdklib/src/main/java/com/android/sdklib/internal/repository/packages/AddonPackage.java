@@ -507,6 +507,11 @@ public class AddonPackage extends MajorRevisionPackage
      */
     @Override
     public String getListDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s%2$s", ld, isObsolete() ? " (Obsolete)" : "");
+        }
+
         return String.format("%1$s%2$s",
                 getDisplayName(),
                 isObsolete() ? " (Obsolete)" : "");
@@ -517,6 +522,14 @@ public class AddonPackage extends MajorRevisionPackage
      */
     @Override
     public String getShortDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s, revision %2$s%3$s",
+                    ld,
+                    getRevision().toShortString(),
+                    isObsolete() ? " (Obsolete)" : "");
+        }
+
         return String.format("%1$s, Android API %2$s, revision %3$s%4$s",
                 getDisplayName(),
                 mVersion.getApiString(),

@@ -46,7 +46,7 @@ public class SdkSysImgConstants extends RepoConstants {
      * The latest version of the sdk-sys-img XML Schema.
      * Valid version numbers are between 1 and this number, included.
      */
-    public static final int NS_LATEST_VERSION = 2;
+    public static final int NS_LATEST_VERSION = 3;
 
     /** The XML namespace of the latest sdk-sys-img XML. */
     public static final String NS_URI = getSchemaUri(NS_LATEST_VERSION);

@@ -79,12 +79,13 @@ public class RepoConstants {
     public static final String NODE_NAME_DISPLAY      = "name-display";         //$NON-NLS-1$
     /** The unique name id string, for add-on packages or for libraries. */
     public static final String NODE_NAME_ID      = "name-id";                   //$NON-NLS-1$
-
+    /** The optional string used to display a package in a list view. */
+    public static final String NODE_LIST_DISPLAY = "list-display";              //$NON-NLS-1$
 
     /** A layoutlib package. */
-    public static final String NODE_LAYOUT_LIB      = "layoutlib";              //$NON-NLS-1$
+    public static final String NODE_LAYOUT_LIB   = "layoutlib";                 //$NON-NLS-1$
     /** The API integer for a layoutlib element. */
-    public static final String NODE_API             = "api";                    //$NON-NLS-1$
+    public static final String NODE_API          = "api";                       //$NON-NLS-1$
 
     /** The libs container, optional for an add-on. */
     public static final String NODE_LIBS      = "libs";                         //$NON-NLS-1$

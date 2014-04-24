@@ -15,9 +15,9 @@
  * limitations under the License.
 -->
 <xsd:schema
-    targetNamespace="http://schemas.android.com/sdk/android/addon/6"
+    targetNamespace="http://schemas.android.com/sdk/android/addon/7"
     xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-    xmlns:sdk="http://schemas.android.com/sdk/android/addon/6"
+    xmlns:sdk="http://schemas.android.com/sdk/android/addon/7"
     elementFormDefault="qualified"
     attributeFormDefault="unqualified"
     version="1">
@@ -63,6 +63,9 @@
          - v6 is used by the SDK Manager in Tools r22.3:
             - <extra> revision is now a "full revision" element with <major>, <minor>, <micro>.
               It does not support the <revision><preview> sub-element though.
+
+         - v7 is used by the SDK Manager in Tools r22.6.3:
+            - It introduces a <list-display> string for all package types.
     -->
 
     <xsd:element name="sdk-addon" type="sdk:repositoryType" />
@@ -104,6 +107,9 @@
             <!-- The revision, an int > 0, incremented each time a new
                  package is generated. -->
             <xsd:element name="revision"     type="xsd:positiveInteger" />
+
+            <!-- The optional display list item. When missing, it is auto-computed. -->
+            <xsd:element name="list-display"   type="xsd:normalizedString" minOccurs="0" />
 
             <!-- An add-on can declare 0 or more libraries.
                  This element is mandatory but it can be empty.
@@ -198,6 +204,9 @@
         <xsd:all>
             <!-- The displayed name of the extra. -->
             <xsd:element name="name-display"    type="xsd:normalizedString" />
+
+            <!-- The optional display list item. When missing, it is auto-computed. -->
+            <xsd:element name="list-display"   type="xsd:normalizedString" minOccurs="0" />
 
             <!-- The internal vendor id of the extra. Must be unique amongst vendors. -->
             <xsd:element name="vendor-id"       type="sdk:idType" />

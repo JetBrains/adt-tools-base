@@ -64,6 +64,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
 
     private final String mObsolete;
     private final License mLicense;
+    private final String mListDisplay;
     private final String mDescription;
     private final String mDescUrl;
     private final String mReleaseNote;
@@ -193,6 +194,8 @@ public abstract class Package implements IDescription, IListDescription, Compara
      */
     Package(SdkSource source, Node packageNode, String nsUri, Map<String,String> licenses) {
         mSource = source;
+        mListDisplay =
+                PackageParserUtils.getXmlString(packageNode, SdkRepoConstants.NODE_LIST_DISPLAY);
         mDescription =
             PackageParserUtils.getXmlString(packageNode, SdkRepoConstants.NODE_DESCRIPTION);
         mDescUrl     =
@@ -238,6 +241,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
 
         mLicense     = new License(getProperty(props, PkgProps.PKG_LICENSE, license),
                                    getProperty(props, PkgProps.PKG_LICENSE_REF, null));
+        mListDisplay = getProperty(props, PkgProps.PKG_LIST_DISPLAY, "");       //$NON-NLS-1$
         mDescription = getProperty(props, PkgProps.PKG_DESC,         description);
         mDescUrl     = getProperty(props, PkgProps.PKG_DESC_URL,     descUrl);
         mReleaseNote = getProperty(props, PkgProps.PKG_RELEASE_NOTE, "");       //$NON-NLS-1$
@@ -352,6 +356,9 @@ public abstract class Package implements IDescription, IListDescription, Compara
                 props.setProperty(PkgProps.PKG_LICENSE_REF, licenseRef);
             }
         }
+        if (mListDisplay != null && mListDisplay.length() > 0) {
+            props.setProperty(PkgProps.PKG_LIST_DISPLAY, mListDisplay);
+        }
         if (mDescription != null && mDescription.length() > 0) {
             props.setProperty(PkgProps.PKG_DESC, mDescription);
         }
@@ -436,6 +443,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
     /**
      * Returns the source that created (and owns) this package. Can be null.
      */
+    @Nullable
     public SdkSource getParentSource() {
         return mSource;
     }
@@ -452,28 +460,50 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * Returns the revision, an int > 0, for all packages (platform, add-on, tool, doc).
      * Can be 0 if this is a local package of unknown revision.
      */
+    @NonNull
     public abstract FullRevision getRevision();
 
     /**
      * Returns the optional description for all packages (platform, add-on, tool, doc) or
      * for a lib. It is null if the element has not been specified in the repository XML.
      */
+    @Nullable
     public License getLicense() {
         return mLicense;
     }
 
     /**
      * Returns the optional description for all packages (platform, add-on, tool, doc) or
-     * for a lib. Can be empty but not null.
+     * for a lib. This is the raw description available from the XML meta data and is typically
+     * only used internally.
+     * <p/>
+     * For actual display in the UI, use the methods from {@link IDescription} instead.
+     * <p/>
+     * Can be empty but not null.
      */
-    public String getDescription() {
+    @NonNull
+    protected String getDescription() {
         return mDescription;
+    }
+
+    /**
+     * Returns the optional list-display for all packages as defined in the XML meta data
+     * and is typically only used internally.
+     * <p/>
+     * For actual display in the UI, use {@link IListDescription} instead.
+     * <p/>
+     * Can be empty but not null.
+     */
+    @NonNull
+    protected String getListDisplay() {
+        return mListDisplay;
     }
 
     /**
      * Returns the optional description URL for all packages (platform, add-on, tool, doc).
      * Can be empty but not null.
      */
+    @NonNull
     public String getDescUrl() {
         return mDescUrl;
     }
@@ -482,6 +512,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * Returns the optional release note for all packages (platform, add-on, tool, doc) or
      * for a lib. Can be empty but not null.
      */
+    @NonNull
     public String getReleaseNote() {
         return mReleaseNote;
     }
@@ -490,6 +521,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * Returns the optional release note URL for all packages (platform, add-on, tool, doc).
      * Can be empty but not null.
      */
+    @NonNull
     public String getReleaseNoteUrl() {
         return mReleaseUrl;
     }
@@ -498,6 +530,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * Returns the archives defined in this package.
      * Can be an empty array but not null.
      */
+    @NonNull
     public Archive[] getArchives() {
         return mArchives;
     }
@@ -554,6 +587,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * If you need a strong unique identifier, you should use {@link #comparisonKey()}
      * and the {@link Comparable} interface.
      */
+    @NonNull
     public abstract String installId();
 
     /**
@@ -563,6 +597,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * This is mostly helpful for debugging.
      * For UI display, use the {@link IDescription} interface.
      */
+    @NonNull
     @Override
     public String toString() {
         String s = getShortDescription();
@@ -574,13 +609,21 @@ public abstract class Package implements IDescription, IListDescription, Compara
 
     /**
      * Returns a description of this package that is suitable for a list display.
-     * Should not be empty. Must never be null.
+     * Should not be empty. Can never be null.
      * <p/>
-     * Note that this is the "base" name for the package
-     * with no specific revision nor API mentioned.
+     * Derived classes should use {@link #getListDisplay()} if it's not empty.
+     * <p/>
+     * When it is empty, the default behavior is to recompute a string that depends
+     * on the package type.
+     * <p/>
+     * In both cases, the string should indicate whether the package is marked as obsolete.
+     * <p/>
+     * Note that this is the "base" name for the package with no specific revision nor API
+     * mentioned as this is likely used in a table that will already provide these details.
      * In contrast, {@link #getShortDescription()} should be used if you want more details
-     * such as the package revision number or the API, if applicable.
+     * such as the package revision number or the API, if applicable, all in the same string.
      */
+    @NonNull
     @Override
     public abstract String getListDescription();
 
@@ -588,6 +631,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * Returns a short description for an {@link IDescription}.
      * Can be empty but not null.
      */
+    @NonNull
     @Override
     public abstract String getShortDescription();
 
@@ -595,6 +639,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * Returns a long description for an {@link IDescription}.
      * Can be empty but not null.
      */
+    @NonNull
     @Override
     public String getLongDescription() {
         StringBuilder sb = new StringBuilder();
@@ -656,6 +701,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * @param sdkManager An existing SDK manager to list current platforms and addons.
      * @return A new {@link File} corresponding to the directory to use to install this package.
      */
+    @NonNull
     public abstract File getInstallFolder(String osSdkRoot, SdkManager sdkManager);
 
     /**
@@ -755,6 +801,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      *
      * @see #sameItemAs(Package)
      */
+    @NonNull
     public abstract UpdateInfo canBeUpdatedBy(Package replacementPackage);
 
     /**
@@ -814,6 +861,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * For example an extra vendor name & path can be inserted before the revision
      * number, since it has more sorting weight.
      */
+    @NonNull
     protected String comparisonKey() {
 
         StringBuilder sb = new StringBuilder();

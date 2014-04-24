@@ -234,6 +234,11 @@ public class SamplePackage extends MinToolsPackage
      */
     @Override
     public String getListDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s%2$s", ld, isObsolete() ? " (Obsolete)" : "");
+        }
+
         String s = String.format("Samples for SDK API %1$s%2$s%3$s",
                 mVersion.getApiString(),
                 mVersion.isPreview() ? " Preview" : "",
@@ -246,6 +251,14 @@ public class SamplePackage extends MinToolsPackage
      */
     @Override
     public String getShortDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s, revision %2$s%3$s",
+                    ld,
+                    getRevision().toShortString(),
+                    isObsolete() ? " (Obsolete)" : "");
+        }
+
         String s = String.format("Samples for SDK API %1$s%2$s, revision %3$s%4$s",
                 mVersion.getApiString(),
                 mVersion.isPreview() ? " Preview" : "",

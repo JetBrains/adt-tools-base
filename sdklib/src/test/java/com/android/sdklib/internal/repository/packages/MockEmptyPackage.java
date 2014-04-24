@@ -156,7 +156,8 @@ public class MockEmptyPackage extends MajorRevisionPackage {
 
     @Override
     public String getListDescription() {
-        return this.getClass().getSimpleName();
+        String ld = super.getListDisplay();
+        return ld.isEmpty() ? this.getClass().getSimpleName() : ld;
     }
 
     @Override

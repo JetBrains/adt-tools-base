@@ -31,56 +31,19 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
-import junit.framework.TestCase;
-
 /**
  * Tests local validation of an SDK Repository sample XMLs using an XML Schema validator.
  *
  * References:
  * http://www.ibm.com/developerworks/xml/library/x-javaxmlvalidapi.html
  */
-public class ValidateRepositoryXmlTest extends TestCase {
+public class ValidateRepositoryXmlTest extends ValidateTestCase {
 
     private static String OPEN_TAG_REPO =
         "<r:sdk-repository xmlns:r=\"http://schemas.android.com/sdk/android/repository/" +
         Integer.toString(SdkRepoConstants.NS_LATEST_VERSION) +
         "\">";
     private static String CLOSE_TAG_REPO = "</r:sdk-repository>";
-
-    // --- Helpers ------------
-
-    /**
-     * Helper method that returns a validator for our Repository XSD
-     *
-     * @param version The version number, in range {@code 1..NS_LATEST_VERSION}
-     * @param handler A {@link CaptureErrorHandler}. If null the default will be used,
-     *   which will most likely print errors to stderr.
-     */
-    private Validator getRepoValidator(int version, @Nullable CaptureErrorHandler handler)
-            throws SAXException {
-        Validator validator = null;
-        InputStream xsdStream = SdkRepoConstants.getXsdStream(version);
-        if (xsdStream != null) {
-            SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-            Schema schema = factory.newSchema(new StreamSource(xsdStream));
-            validator = schema.newValidator();
-
-            if (handler != null) {
-                validator.setErrorHandler(handler);
-            }
-        }
-
-        return validator;
-    }
-
-    /** An helper that validates a string against an expected regexp. */
-    private void assertRegex(String expectedRegexp, String actualString) {
-        assertNotNull(actualString);
-        assertTrue(
-                String.format("Regexp Assertion Failed:\nExpected: %s\nActual: %s\n",
-                        expectedRegexp, actualString),
-                actualString.matches(expectedRegexp));
-    }
 
     // --- Tests ------------
 
@@ -100,10 +63,15 @@ public class ValidateRepositoryXmlTest extends TestCase {
                 getRepoValidator(SdkRepoConstants.NS_LATEST_VERSION + 1, handler));
     }
 
+    /** Validate the XSD version 1 */
+    public void testValidateRepositoryXsd1() throws Exception {
+        validateXsd(SdkRepoConstants.getXsdStream(1));
+    }
+
     /** Validate a valid sample using namespace version 1 using an InputStream */
     public void testValidateLocalRepositoryFile1() throws Exception {
         InputStream xmlStream = this.getClass().getResourceAsStream(
-                    "/com/android/sdklib/testdata/repository_sample_1.xml");
+                    "/com/android/sdklib/testdata/repository_sample_01.xml");
         Source source = new StreamSource(xmlStream);
 
         CaptureErrorHandler handler = new CaptureErrorHandler();
@@ -112,10 +80,15 @@ public class ValidateRepositoryXmlTest extends TestCase {
         handler.verify();
     }
 
+    /** Validate the XSD version 2 */
+    public void testValidateRepositoryXsd2() throws Exception {
+        validateXsd(SdkRepoConstants.getXsdStream(2));
+    }
+
     /** Validate a valid sample using namespace version 2 using an InputStream */
     public void testValidateLocalRepositoryFile2() throws Exception {
         InputStream xmlStream = this.getClass().getResourceAsStream(
-                    "/com/android/sdklib/testdata/repository_sample_2.xml");
+                    "/com/android/sdklib/testdata/repository_sample_02.xml");
         Source source = new StreamSource(xmlStream);
 
         CaptureErrorHandler handler = new CaptureErrorHandler();
@@ -124,10 +97,15 @@ public class ValidateRepositoryXmlTest extends TestCase {
         handler.verify();
     }
 
+    /** Validate the XSD version 3 */
+    public void testValidateRepositoryXsd3() throws Exception {
+        validateXsd(SdkRepoConstants.getXsdStream(3));
+    }
+
     /** Validate a valid sample using namespace version 3 using an InputStream */
     public void testValidateLocalRepositoryFile3() throws Exception {
         InputStream xmlStream = this.getClass().getResourceAsStream(
-                    "/com/android/sdklib/testdata/repository_sample_3.xml");
+                    "/com/android/sdklib/testdata/repository_sample_03.xml");
         Source source = new StreamSource(xmlStream);
 
         CaptureErrorHandler handler = new CaptureErrorHandler();
@@ -136,69 +114,130 @@ public class ValidateRepositoryXmlTest extends TestCase {
         handler.verify();
     }
 
+    /** Validate the XSD version 4 */
+    public void testValidateRepositoryXsd4() throws Exception {
+        validateXsd(SdkRepoConstants.getXsdStream(4));
+    }
+
     /** Validate a valid sample using namespace version 4 using an InputStream */
     public void testValidateLocalRepositoryFile4() throws Exception {
         InputStream xmlStream = this.getClass().getResourceAsStream(
-                    "/com/android/sdklib/testdata/repository_sample_4.xml");
+                    "/com/android/sdklib/testdata/repository_sample_04.xml");
         Source source = new StreamSource(xmlStream);
 
         CaptureErrorHandler handler = new CaptureErrorHandler();
         Validator validator = getRepoValidator(4, handler);
         validator.validate(source);
         handler.verify();
+    }
 
+    /** Validate the XSD version 5 */
+    public void testValidateRepositoryXsd5() throws Exception {
+        validateXsd(SdkRepoConstants.getXsdStream(5));
     }
 
     /** Validate a valid sample using namespace version 5 using an InputStream */
     public void testValidateLocalRepositoryFile5() throws Exception {
         InputStream xmlStream = this.getClass().getResourceAsStream(
-                    "/com/android/sdklib/testdata/repository_sample_5.xml");
+                    "/com/android/sdklib/testdata/repository_sample_05.xml");
         Source source = new StreamSource(xmlStream);
 
         CaptureErrorHandler handler = new CaptureErrorHandler();
         Validator validator = getRepoValidator(5, handler);
         validator.validate(source);
         handler.verify();
-
     }
 
-    /** Validate a valid sample using namespace version 5 using an InputStream */
+    /** Validate the XSD version 6 */
+    public void testValidateRepositoryXsd6() throws Exception {
+        validateXsd(SdkRepoConstants.getXsdStream(6));
+    }
+
+    /** Validate a valid sample using namespace version 6 using an InputStream */
     public void testValidateLocalRepositoryFile6() throws Exception {
         InputStream xmlStream = this.getClass().getResourceAsStream(
-                    "/com/android/sdklib/testdata/repository_sample_6.xml");
+                    "/com/android/sdklib/testdata/repository_sample_06.xml");
         Source source = new StreamSource(xmlStream);
 
         CaptureErrorHandler handler = new CaptureErrorHandler();
         Validator validator = getRepoValidator(6, handler);
         validator.validate(source);
         handler.verify();
-
     }
 
-    /** Validate a valid sample using namespace version 5 using an InputStream */
+    /** Validate the XSD version 7 */
+    public void testValidateRepositoryXsd7() throws Exception {
+        validateXsd(SdkRepoConstants.getXsdStream(7));
+    }
+
+    /** Validate a valid sample using namespace version 7 using an InputStream */
     public void testValidateLocalRepositoryFile7() throws Exception {
         InputStream xmlStream = this.getClass().getResourceAsStream(
-                    "/com/android/sdklib/testdata/repository_sample_7.xml");
+                    "/com/android/sdklib/testdata/repository_sample_07.xml");
         Source source = new StreamSource(xmlStream);
 
         CaptureErrorHandler handler = new CaptureErrorHandler();
         Validator validator = getRepoValidator(7, handler);
         validator.validate(source);
         handler.verify();
-
     }
 
-    /** Validate a valid sample using namespace version 5 using an InputStream */
+    /** Validate the XSD version 8 */
+    public void testValidateRepositoryXsd8() throws Exception {
+        validateXsd(SdkRepoConstants.getXsdStream(8));
+    }
+
+    /** Validate a valid sample using namespace version 8 using an InputStream */
     public void testValidateLocalRepositoryFile8() throws Exception {
         InputStream xmlStream = this.getClass().getResourceAsStream(
-                    "/com/android/sdklib/testdata/repository_sample_8.xml");
+                    "/com/android/sdklib/testdata/repository_sample_08.xml");
         Source source = new StreamSource(xmlStream);
 
         CaptureErrorHandler handler = new CaptureErrorHandler();
         Validator validator = getRepoValidator(8, handler);
         validator.validate(source);
         handler.verify();
+    }
 
+    /** Validate the XSD version 9 */
+    public void testValidateRepositoryXsd9() throws Exception {
+        validateXsd(SdkRepoConstants.getXsdStream(9));
+    }
+
+    /** Validate a valid sample using namespace version 9 using an InputStream */
+    public void testValidateLocalRepositoryFile9() throws Exception {
+        InputStream xmlStream = this.getClass().getResourceAsStream(
+                    "/com/android/sdklib/testdata/repository_sample_09.xml");
+        Source source = new StreamSource(xmlStream);
+
+        CaptureErrorHandler handler = new CaptureErrorHandler();
+        Validator validator = getRepoValidator(9, handler);
+        validator.validate(source);
+        handler.verify();
+    }
+
+    /** Validate the XSD version 10 */
+    public void testValidateRepositoryXsd10() throws Exception {
+        validateXsd(SdkRepoConstants.getXsdStream(10));
+    }
+
+    /** Validate a valid sample using namespace version 10 using an InputStream */
+    public void testValidateLocalRepositoryFile10() throws Exception {
+        InputStream xmlStream = this.getClass().getResourceAsStream(
+                    "/com/android/sdklib/testdata/repository_sample_10.xml");
+        Source source = new StreamSource(xmlStream);
+
+        CaptureErrorHandler handler = new CaptureErrorHandler();
+        Validator validator = getRepoValidator(10, handler);
+        validator.validate(source);
+        handler.verify();
+    }
+
+    /** Make sure we don't have a next-version sample that is not validated yet */
+    public void testValidateLocalRepositoryFile11() throws Exception {
+        InputStream xmlStream = this.getClass().getResourceAsStream(
+                    "/com/android/sdklib/testdata/repository_sample_11.xml");
+        assertNull(xmlStream);
     }
 
     // IMPORTANT: each time you add a test here, you should add a corresponding
@@ -360,5 +399,31 @@ public class ValidateRepositoryXmlTest extends TestCase {
         }
         // If we get here, the validator has not failed as we expected it to.
         fail();
+    }
+
+    // --- Helpers ------------
+
+    /**
+     * Helper method that returns a validator for our Repository XSD
+     *
+     * @param version The version number, in range {@code 1..NS_LATEST_VERSION}
+     * @param handler A {@link CaptureErrorHandler}. If null the default will be used,
+     *   which will most likely print errors to stderr.
+     */
+    private Validator getRepoValidator(int version, @Nullable CaptureErrorHandler handler)
+            throws SAXException {
+        Validator validator = null;
+        InputStream xsdStream = SdkRepoConstants.getXsdStream(version);
+        if (xsdStream != null) {
+            SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+            Schema schema = factory.newSchema(new StreamSource(xsdStream));
+            validator = schema.newValidator();
+
+            if (handler != null) {
+                validator.setErrorHandler(handler);
+            }
+        }
+
+        return validator;
     }
 }
