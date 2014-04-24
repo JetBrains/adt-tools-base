@@ -12,7 +12,7 @@
     <include
         android:id="@+id/myInclude"
         layout="@layout/myincluded"
-        android:layout_width="fill_parent"
+        android:gravity="left"
         android:visibility="visible" />
 
     <!-- Ok: No layout params -->
@@ -57,5 +57,19 @@
         android:layout_width="fill_parent"
         android:layout_weight="1.5"
         android:visibility="visible" />
+
+    <!-- Wrong: Specified only width -->
+    <include
+            android:id="@+id/myInclude"
+            layout="@layout/myincluded"
+            android:layout_width="fill_parent"
+            android:visibility="visible" />
+
+    <!-- Wrong: Specified only height -->
+    <include
+            android:id="@+id/myInclude"
+            layout="@layout/myincluded"
+            android:layout_height="fill_parent"
+            android:visibility="visible" />
 
 </LinearLayout>
