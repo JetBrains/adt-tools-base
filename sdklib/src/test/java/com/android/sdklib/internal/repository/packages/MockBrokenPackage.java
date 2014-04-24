@@ -55,6 +55,8 @@ public class MockBrokenPackage extends BrokenPackage {
                 minApiLevel,
                 exactApiLevel,
                 "/sdk/broken/package" /*osPath*/,
-                PkgDesc.newTool(new FullRevision(1, 2, 3, 4), FullRevision.NOT_SPECIFIED));
+                PkgDesc.Builder.newTool(
+                        new FullRevision(1, 2, 3, 4),
+                        FullRevision.NOT_SPECIFIED).create());
     }
 }

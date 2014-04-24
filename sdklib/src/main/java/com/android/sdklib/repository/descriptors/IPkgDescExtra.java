@@ -26,7 +26,7 @@ import com.android.sdklib.repository.NoPreviewRevision;
  * adds methods specific to extras.
  * <p/>
  * To create a new {@link IPkgDescExtra},
- * use {@link PkgDesc#newExtra(String, String, String[], NoPreviewRevision)}.
+ * use {@link PkgDesc.Builder#newExtra(String, String, String[], NoPreviewRevision)}.
  * <p/>
  * The extra's revision is a {@link NoPreviewRevision}; the attribute is however
  * accessed via {@link IPkgDesc#getFullRevision()} instead of introducing a new

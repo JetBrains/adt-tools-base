@@ -100,7 +100,12 @@ public class SystemImagePackage extends MajorRevisionPackage
         assert tagDisp != null;
         mTag = new IdDisplay(tagId, tagDisp);
 
-        mPkgDesc = PkgDesc.newSysImg(mVersion, mTag, mAbi, (MajorRevision) getRevision());
+        mPkgDesc = PkgDesc.Builder
+                .newSysImg(mVersion,
+                           mTag,
+                           mAbi,
+                           (MajorRevision) getRevision())
+                .create();
     }
 
     @VisibleForTesting(visibility=Visibility.PRIVATE)
@@ -138,7 +143,12 @@ public class SystemImagePackage extends MajorRevisionPackage
 
         mTag = LocalSysImgPkgInfo.extractTagFromProps(props);
 
-        mPkgDesc = PkgDesc.newSysImg(mVersion, mTag, mAbi, (MajorRevision) getRevision());
+        mPkgDesc = PkgDesc.Builder
+                .newSysImg(mVersion,
+                           mTag,
+                           mAbi,
+                           (MajorRevision) getRevision())
+                .create();
     }
 
     /**
@@ -238,11 +248,12 @@ public class SystemImagePackage extends MajorRevisionPackage
 
         String longDesc = sb.toString();
 
-        IPkgDesc desc = PkgDesc.newSysImg(
-                version != null ? version : new AndroidVersion(0, null),
-                tag,
-                abiType,
-                new MajorRevision(MajorRevision.MISSING_MAJOR_REV));
+        IPkgDesc desc = PkgDesc.Builder
+                .newSysImg(version != null ? version : new AndroidVersion(0, null),
+                           tag,
+                           abiType,
+                           new MajorRevision(MajorRevision.MISSING_MAJOR_REV))
+                .create();
 
         return new BrokenPackage(props, shortDesc, longDesc,
                 IMinApiLevelDependency.MIN_API_LEVEL_NOT_SPECIFIED,

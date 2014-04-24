@@ -29,7 +29,7 @@ import com.android.sdklib.repository.MajorRevision;
  * Packages have different attributes depending on their type.
  * <p/>
  * To create a new {@link IPkgDesc}, use one of the package-specific constructors
- * provided by {@code PkgDesc.newXxx()}.
+ * provided by {@code PkgDesc.Builder.newXxx()}.
  * <p/>
  * To query packages capabilities, rely on {@link #getType()} and the {@code IPkgDesc.hasXxx()}
  * methods provided by {@link IPkgDesc}.

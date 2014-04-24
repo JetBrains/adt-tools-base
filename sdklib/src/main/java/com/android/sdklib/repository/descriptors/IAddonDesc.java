@@ -23,7 +23,7 @@ import com.android.sdklib.AndroidTargetHash;
  * {@link IAddonDesc} returns extra information on add-on descriptors.
  * <p/>
  * This is used with
- * {@link PkgDesc#newAddon(com.android.sdklib.AndroidVersion, com.android.sdklib.repository.MajorRevision, IAddonDesc)}
+ * {@link PkgDesc.Builder#newAddon(com.android.sdklib.AndroidVersion, com.android.sdklib.repository.MajorRevision, IAddonDesc)}
  * when the vendor id or add-on target hash cannot be determined when building the descriptor
  * (typically because the info should be loaded from the add-ons source property file and is
  *  not known in the context of the package creation.)

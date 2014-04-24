@@ -18,62 +18,45 @@ package com.android.sdklib.repository.descriptors;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.sdklib.repository.MajorRevision;
 
 /**
  * Implementation detail of {@link IPkgDescExtra} for extra packages.
  */
 public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
 
-    private final NoPreviewRevision mRevision;
-    private final String mVendorId;
-    private final String mPath;
     private final String[] mOldPaths;
 
-    PkgDescExtra(@NonNull  final String vendorId,
-                 @NonNull  final String path,
-                 @Nullable final String[] oldPaths,
-                 @NonNull  final NoPreviewRevision revision) {
-        mVendorId = vendorId;
-        mPath = path;
+    PkgDescExtra(@NonNull PkgType type,
+                 @Nullable FullRevision fullRevision,
+                 @Nullable MajorRevision majorRevision,
+                 @Nullable AndroidVersion androidVersion,
+                 @Nullable String path,
+                 @Nullable IdDisplay tag,
+                 @Nullable String vendorId,
+                 @Nullable FullRevision minToolsRev,
+                 @Nullable FullRevision minPlatformToolsRev,
+                 @Nullable final String[] oldPaths) {
+        super(type,
+              fullRevision,
+              majorRevision,
+              androidVersion,
+              path,
+              tag,
+              vendorId,
+              minToolsRev,
+              minPlatformToolsRev,
+              null,     //customIsUpdateFor
+              null);    //customPath
         mOldPaths = oldPaths != null ? oldPaths : new String[0];
-        mRevision = revision;
-    }
-
-    @NonNull
-    @Override
-    public PkgType getType() {
-        return PkgType.PKG_EXTRAS;
-    }
-
-    @NonNull
-    @Override
-    public FullRevision getFullRevision() {
-        return mRevision;
-    }
-
-    @NonNull
-    @Override
-    public String getPath() {
-        return mPath;
     }
 
     @NonNull
     @Override
     public String[] getOldPaths() {
         return mOldPaths;
-    }
-
-    @NonNull
-    @Override
-    public String getVendorId() {
-        return mVendorId;
-    }
-
-    @Override
-    public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
-        return isGenericUpdateFor(existingDesc);
     }
 
     // ---- Helpers ----

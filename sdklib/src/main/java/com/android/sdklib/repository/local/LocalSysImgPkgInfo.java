@@ -48,7 +48,7 @@ public class LocalSysImgPkgInfo extends LocalPkgInfo {
                               @NonNull MajorRevision revision) {
         super(localSdk, localDir, sourceProps);
         IdDisplay tag = extractTagFromProps(sourceProps);
-        mDesc = PkgDesc.newSysImg(version, tag, abi, revision);
+        mDesc = PkgDesc.Builder.newSysImg(version, tag, abi, revision).create();
     }
 
     @NonNull

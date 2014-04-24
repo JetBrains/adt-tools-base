@@ -40,7 +40,11 @@ public class LocalExtraPkgInfo extends LocalPkgInfo {
                              @NonNull String[] oldPaths,
                              @NonNull NoPreviewRevision revision) {
         super(localSdk, localDir, sourceProps);
-        mDesc = PkgDesc.newExtra(vendorId, path, oldPaths, revision);
+        mDesc = (IPkgDescExtra) PkgDesc.Builder.newExtra(
+                vendorId,
+                path,
+                oldPaths,
+                revision).create();
     }
 
     @NonNull

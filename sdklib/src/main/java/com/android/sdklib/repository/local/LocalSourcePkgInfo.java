@@ -43,7 +43,7 @@ public class LocalSourcePkgInfo extends LocalPkgInfo {
                               @NonNull AndroidVersion version,
                               @NonNull MajorRevision revision) {
         super(localSdk, localDir, sourceProps);
-        mDesc = PkgDesc.newSource(version, revision);
+        mDesc = PkgDesc.Builder.newSource(version, revision).create();
     }
 
     @NonNull

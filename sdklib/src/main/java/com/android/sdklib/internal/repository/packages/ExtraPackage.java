@@ -157,7 +157,12 @@ public class ExtraPackage extends NoPreviewRevisionPackage
 
         mOldPaths = PackageParserUtils.getXmlString(packageNode, RepoConstants.NODE_OLD_PATHS);
 
-        mPkgDesc = PkgDesc.newExtra(mVendorId, mPath, getOldPaths(), getRevision());
+        mPkgDesc = (IPkgDescExtra) PkgDesc.Builder
+                .newExtra(mVendorId,
+                          mPath,
+                          getOldPaths(),
+                          getRevision())
+                .create();
     }
 
     private String[] parseProjectFiles(Node projectFilesNode) {
@@ -287,7 +292,12 @@ public class ExtraPackage extends NoPreviewRevisionPackage
 
         mProjectFiles = filePaths.toArray(new String[filePaths.size()]);
 
-        mPkgDesc = PkgDesc.newExtra(mVendorId, mPath, getOldPaths(), getRevision());
+        mPkgDesc = (IPkgDescExtra) PkgDesc.Builder
+                .newExtra(mVendorId,
+                          mPath,
+                          getOldPaths(),
+                          getRevision())
+                .create();
     }
 
     @Override

@@ -86,8 +86,6 @@ public class RemoteSdk {
     @NonNull
     public Multimap<PkgType, RemotePkgInfo> fetch(@NonNull SdkSources sources,
                                                   @NonNull ILogger logger) {
-
-        // TODO loadRemoteAddonsList
         Multimap<PkgType, RemotePkgInfo> remotes = HashMultimap.create();
 
         boolean forceHttp = mSettingsController.getSettings().getForceHttp();
