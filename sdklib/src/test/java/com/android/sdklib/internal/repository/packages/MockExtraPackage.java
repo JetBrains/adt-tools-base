@@ -16,8 +16,6 @@
 
 package com.android.sdklib.internal.repository.packages;
 
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.PkgProps;
 
@@ -49,8 +47,6 @@ public class MockExtraPackage extends ExtraPackage {
             String license,
             String description,
             String descUrl,
-            Os archiveOs,
-            Arch archiveArch,
             String archiveOsPath) {
         super(
             source,
@@ -61,8 +57,6 @@ public class MockExtraPackage extends ExtraPackage {
             license,
             description,
             descUrl,
-            archiveOs,
-            archiveArch,
             archiveOsPath);
     }
 
@@ -81,8 +75,6 @@ public class MockExtraPackage extends ExtraPackage {
             null, // license,
             "desc", // description,
             "url", // descUrl,
-            Os.getCurrentOs(), // archiveOs,
-            Arch.getCurrentArch(), // archiveArch,
             source == null ? "foo" : null // archiveOsPath, null for remote non-instaled pkgs
             );
     }

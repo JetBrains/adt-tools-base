@@ -50,7 +50,7 @@
         </sdk:min-tools-rev>
         <!-- The archives node is mandatory and it cannot be empty. -->
         <sdk:archives>
-            <sdk:archive os="any">
+            <sdk:archive>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>http://www.example.com/files/plat1.zip</sdk:url>
@@ -71,7 +71,7 @@
         <sdk:description>Some optional description</sdk:description>
         <sdk:desc-url>http://www.example.com/docs.html</sdk:desc-url>
         <sdk:archives>
-            <sdk:archive os="any">
+            <sdk:archive>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>http://www.example.com/docs/docs1.zip</sdk:url>
@@ -84,7 +84,7 @@
         <sdk:api-level>1</sdk:api-level>
         <sdk:revision>1</sdk:revision>
         <sdk:archives>
-            <sdk:archive os="any">
+            <sdk:archive>
                 <sdk:size>65535</sdk:size>
                 <sdk:checksum type="sha1">1234ae37115ebf13412bbef91339ee0d94541234</sdk:checksum>
                 <sdk:url>http://www.example.com/plat1/sources1.zip</sdk:url>
@@ -99,30 +99,68 @@
         <sdk:uses-license ref="license1" />
         <!-- sdk:description and sdk:desc-url are optional -->
         <sdk:archives>
-            <sdk:archive os="windows">
-                <!--  arch attribute is optional -->
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
+                <sdk:host-bits>32</sdk:host-bits>
+                <sdk:jvm-bits>32</sdk:jvm-bits>
                 <sdk:size>65536</sdk:size>
-                <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
-                <sdk:url>distrib/platform-2-12-win.zip</sdk:url>
+                <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d94545251</sdk:checksum>
+                <sdk:url>distrib/platform-2-12-win32.zip</sdk:url>
             </sdk:archive>
-            <sdk:archive os="macosx" arch="any">
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
+                <sdk:host-bits>64</sdk:host-bits>
+                <sdk:jvm-bits>32</sdk:jvm-bits>
                 <sdk:size>65536</sdk:size>
-                <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
+                <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d94545252</sdk:checksum>
+                <sdk:url>distrib/platform-2-12-win32+64.zip</sdk:url>
+            </sdk:archive>
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
+                <sdk:host-bits>64</sdk:host-bits>
+                <sdk:jvm-bits>64</sdk:jvm-bits>
+                <sdk:size>65536</sdk:size>
+                <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d94545253</sdk:checksum>
+                <sdk:url>distrib/platform-2-12-win64.zip</sdk:url>
+            </sdk:archive>
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
+                <sdk:host-bits>64</sdk:host-bits>
+                <sdk:jvm-bits>64</sdk:jvm-bits>
+                <sdk:min-jvm-version>1.6</sdk:min-jvm-version>
+                <sdk:size>65536</sdk:size>
+                <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d94545254</sdk:checksum>
+                <sdk:url>distrib/platform-2-12-win64-jvm6.zip</sdk:url>
+            </sdk:archive>
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
+                <sdk:host-bits>64</sdk:host-bits>
+                <sdk:jvm-bits>64</sdk:jvm-bits>
+                <sdk:min-jvm-version>1.7</sdk:min-jvm-version>
+                <sdk:size>65536</sdk:size>
+                <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d94545255</sdk:checksum>
+                <sdk:url>distrib/platform-2-12-win64-jvm7.zip</sdk:url>
+            </sdk:archive>
+            <sdk:archive>
+                <sdk:host-os>macosx</sdk:host-os>
+                <sdk:min-jvm-version>1.6</sdk:min-jvm-version>
+                <sdk:size>65536</sdk:size>
+                <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d94545256</sdk:checksum>
                 <sdk:url>distrib/platform-2-12-mac.zip</sdk:url>
             </sdk:archive>
-            <sdk:archive os="macosx" arch="ppc">
+            <sdk:archive>
+                <sdk:host-os>linux</sdk:host-os>
+                <sdk:host-bits>32</sdk:host-bits>
                 <sdk:size>65536</sdk:size>
-                <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
-                <sdk:url>distrib/platform-2-12-mac.zip</sdk:url>
-            </sdk:archive>
-            <sdk:archive os="linux" arch="x86">
-                <sdk:size>65536</sdk:size>
-                <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
+                <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d94545257</sdk:checksum>
                 <sdk:url>distrib/platform-2-12-linux.tar.bz2</sdk:url>
             </sdk:archive>
-            <sdk:archive os="linux" arch="x86_64">
+            <sdk:archive>
+                <sdk:host-os>linux</sdk:host-os>
+                <sdk:host-bits>64</sdk:host-bits>
+                <sdk:min-jvm-version>1.7</sdk:min-jvm-version>
                 <sdk:size>65536</sdk:size>
-                <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
+                <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d94545258</sdk:checksum>
                 <sdk:url>distrib/platform-2-12-linux.tar.bz2</sdk:url>
             </sdk:archive>
         </sdk:archives>
@@ -137,7 +175,7 @@
         <sdk:api-level>2</sdk:api-level>
         <sdk:revision>2</sdk:revision>
         <sdk:archives>
-            <sdk:archive os="any">
+            <sdk:archive>
                 <sdk:size>65534</sdk:size>
                 <sdk:checksum type="sha1">1234ae37115ebf13412bbef91339ee0d94541234</sdk:checksum>
                 <sdk:url>http://www.example.com/plat1/sources2.zip</sdk:url>
@@ -155,7 +193,7 @@
         <sdk:desc-url>http://www.example.com/platform1.html</sdk:desc-url>
         <!-- The archives node is mandatory and it cannot be empty. -->
         <sdk:archives>
-            <sdk:archive os="any">
+            <sdk:archive>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>http://www.example.com/files/plat1.zip</sdk:url>
@@ -181,7 +219,7 @@
             <sdk:major>4</sdk:major>
         </sdk:min-platform-tools-rev>
         <sdk:archives>
-            <sdk:archive os="any">
+            <sdk:archive>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>http://www.example.com/files/tools1.zip</sdk:url>
@@ -199,17 +237,20 @@
         </sdk:revision>
         <sdk:uses-license ref="license1" />
         <sdk:archives>
-            <sdk:archive os="windows">
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">b122ae37115ebf13412bbef91339ee0d9454525b</sdk:checksum>
                 <sdk:url>distrib/build-tools/2.zip</sdk:url>
             </sdk:archive>
-            <sdk:archive os="linux">
+            <sdk:archive>
+                <sdk:host-os>linux</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">b222ae37115ebf13412bbef91339ee0d9454525b</sdk:checksum>
                 <sdk:url>distrib/build-tools2-linux.tar.bz2</sdk:url>
             </sdk:archive>
-            <sdk:archive os="macosx">
+            <sdk:archive>
+                <sdk:host-os>macosx</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">b322ae37115ebf13412bbef91339ee0d9454525b</sdk:checksum>
                 <sdk:url>distrib/build-tools2-mac.tar.bz2</sdk:url>
@@ -225,17 +266,20 @@
         </sdk:revision>
         <sdk:uses-license ref="license1" />
         <sdk:archives>
-            <sdk:archive os="windows">
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">b122ae37115ebf13412bbef91339ee0d9454525b</sdk:checksum>
                 <sdk:url>distrib/build-tools/2.zip</sdk:url>
             </sdk:archive>
-            <sdk:archive os="linux">
+            <sdk:archive>
+                <sdk:host-os>linux</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">b222ae37115ebf13412bbef91339ee0d9454525b</sdk:checksum>
                 <sdk:url>distrib/build-tools2-linux.tar.bz2</sdk:url>
             </sdk:archive>
-            <sdk:archive os="macosx">
+            <sdk:archive>
+                <sdk:host-os>macosx</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">b322ae37115ebf13412bbef91339ee0d9454525b</sdk:checksum>
                 <sdk:url>distrib/build-tools2-mac.tar.bz2</sdk:url>
@@ -248,17 +292,20 @@
         <sdk:revision>42</sdk:revision>
         <sdk:uses-license ref="license2" />
         <sdk:archives>
-            <sdk:archive os="windows">
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/docs/2.zip</sdk:url>
             </sdk:archive>
-            <sdk:archive os="linux">
+            <sdk:archive>
+                <sdk:host-os>linux</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/docs2-linux.tar.bz2</sdk:url>
             </sdk:archive>
-            <sdk:archive os="macosx">
+            <sdk:archive>
+                <sdk:host-os>macosx</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/docs2-mac.tar.bz2</sdk:url>
@@ -278,17 +325,20 @@
             <sdk:preview>5</sdk:preview>
         </sdk:min-platform-tools-rev>
         <sdk:archives>
-            <sdk:archive os="windows">
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/tools/2.zip</sdk:url>
             </sdk:archive>
-            <sdk:archive os="linux">
+            <sdk:archive>
+                <sdk:host-os>linux</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/tools2-linux.tar.bz2</sdk:url>
             </sdk:archive>
-            <sdk:archive os="macosx">
+            <sdk:archive>
+                <sdk:host-os>macosx</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/tools2-mac.tar.bz2</sdk:url>
@@ -305,17 +355,20 @@
         </sdk:revision>
         <sdk:uses-license ref="license1" />
         <sdk:archives>
-            <sdk:archive os="windows">
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">3822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/platform-tools/2.zip</sdk:url>
             </sdk:archive>
-            <sdk:archive os="linux">
+            <sdk:archive>
+                <sdk:host-os>linux</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">3822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/platform-tools2-linux.tar.bz2</sdk:url>
             </sdk:archive>
-            <sdk:archive os="macosx">
+            <sdk:archive>
+                <sdk:host-os>macosx</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">3822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/platform-tools2-mac.tar.bz2</sdk:url>
@@ -331,17 +384,20 @@
         </sdk:revision>
         <sdk:uses-license ref="license1" />
         <sdk:archives>
-            <sdk:archive os="windows">
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">b122ae37115ebf13412bbef91339ee0d9454525b</sdk:checksum>
                 <sdk:url>distrib/build-tools/3.zip</sdk:url>
             </sdk:archive>
-            <sdk:archive os="linux">
+            <sdk:archive>
+                <sdk:host-os>linux</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">b222ae37115ebf13412bbef91339ee0d9454525b</sdk:checksum>
                 <sdk:url>distrib/build-tools3-linux.tar.bz2</sdk:url>
             </sdk:archive>
-            <sdk:archive os="macosx">
+            <sdk:archive>
+                <sdk:host-os>macosx</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">b322ae37115ebf13412bbef91339ee0d9454525b</sdk:checksum>
                 <sdk:url>distrib/build-tools3-mac.tar.bz2</sdk:url>
@@ -354,7 +410,7 @@
         <sdk:api-level>14</sdk:api-level>
         <sdk:revision>24</sdk:revision>
         <sdk:archives>
-            <sdk:archive os="any" arch="any">
+            <sdk:archive>
                 <sdk:size>65537</sdk:size>
                 <sdk:checksum type="sha1">3822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/sample_duff.zip</sdk:url>
@@ -372,7 +428,7 @@
         <sdk:api-level>14</sdk:api-level>
         <sdk:revision>25</sdk:revision>
         <sdk:archives>
-            <sdk:archive os="any" arch="any">
+            <sdk:archive>
                 <sdk:size>65537</sdk:size>
                 <sdk:checksum type="sha1">3822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/sample_duff.zip</sdk:url>
@@ -393,7 +449,7 @@
         <sdk:api-level>42</sdk:api-level>
         <sdk:revision>12</sdk:revision>
         <sdk:archives>
-            <sdk:archive os="any">
+            <sdk:archive>
                 <sdk:size>1234</sdk:size>
                 <sdk:checksum type="sha1">12345637115ebf13412bbef91339ee0d94541234</sdk:checksum>
                 <sdk:url>http://www.example.com/plat42/source12.zip</sdk:url>
@@ -409,17 +465,20 @@
         </sdk:revision>
         <sdk:uses-license ref="license1" />
         <sdk:archives>
-            <sdk:archive os="windows">
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">b122ae37115ebf13412bbef91339ee0d9454525b</sdk:checksum>
                 <sdk:url>distrib/build-tools/12.zip</sdk:url>
             </sdk:archive>
-            <sdk:archive os="linux">
+            <sdk:archive>
+                <sdk:host-os>linux</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">b222ae37115ebf13412bbef91339ee0d9454525b</sdk:checksum>
                 <sdk:url>distrib/build-tools12-linux.tar.bz2</sdk:url>
             </sdk:archive>
-            <sdk:archive os="macosx">
+            <sdk:archive>
+                <sdk:host-os>macosx</sdk:host-os>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">b322ae37115ebf13412bbef91339ee0d9454525b</sdk:checksum>
                 <sdk:url>distrib/build-tools12-mac.tar.bz2</sdk:url>

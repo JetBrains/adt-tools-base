@@ -20,8 +20,6 @@ import com.android.sdklib.internal.repository.DownloadCache;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.MockEmptySdkManager;
 import com.android.sdklib.internal.repository.MockMonitor;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.packages.ExtraPackage;
 import com.android.sdklib.internal.repository.packages.MockEmptyPackage;
 import com.android.sdklib.internal.repository.packages.MockExtraPackage;
@@ -143,8 +141,6 @@ public class ArchiveInstallerTest extends TestCase {
         assertEquals(
              "[</sdk/mock/testPkg/source.properties: '### Android Tool: Source of this archive.\n" +
               "#...date...\n" +
-              "Archive.Arch=ANY\n" +
-              "Archive.Os=ANY\n" +
               "Pkg.Revision=0\n" +
               "Pkg.SourceUrl=http\\://repo.example.com/url\n" +
               "'>]",
@@ -195,8 +191,6 @@ public class ArchiveInstallerTest extends TestCase {
                 "[</sdk/extras/vendor1/oldPath/source.properties: " +
                      "'### Android Tool: Source of this archive.\n" +
                 "#...date...\n" +
-                "Archive.Arch=ANY\n" +
-                "Archive.Os=ANY\n" +
                 "Extra.NameDisplay=Vendor1 OldPath\n" +
                 "Extra.Path=oldPath\n" +
                 "Extra.VendorDisplay=vendor1\n" +
@@ -234,8 +228,6 @@ public class ArchiveInstallerTest extends TestCase {
                 null,       // license
                 null,       // description
                 null,       // descUrl
-                Os.ANY,     // archiveOs
-                Arch.ANY,   // archiveArch
                 "/sdk/extras/vendor1/oldPath" // archiveOsPath
                 );
 
@@ -271,8 +263,6 @@ public class ArchiveInstallerTest extends TestCase {
                 "[</sdk/extras/vendor1/newPath/source.properties: " +
                      "'### Android Tool: Source of this archive.\n" +
                 "#...date...\n" +
-                "Archive.Arch=ANY\n" +
-                "Archive.Os=ANY\n" +
                 "Extra.NameDisplay=Vendor1 NewPath\n" +
                 "Extra.OldPaths=oldPath\n" +
                 "Extra.Path=newPath\n" +
@@ -302,15 +292,12 @@ public class ArchiveInstallerTest extends TestCase {
             @Override
             protected Archive[] initializeArchives(
                     Properties props,
-                    Os archiveOs,
-                    Arch archiveArch,
                     String archiveOsPath) {
                 // Create one remote archive for this package
                 return new Archive[] {
                         new Archive(
                             this,
-                            Os.ANY,
-                            Arch.ANY,
+                            null,       // arch
                             "http://some.source/some_url",
                             1234,       // size
                             "abcdef")   // sha1
@@ -333,15 +320,12 @@ public class ArchiveInstallerTest extends TestCase {
             @Override
             protected Archive[] initializeArchives(
                     Properties props,
-                    Os archiveOs,
-                    Arch archiveArch,
                     String archiveOsPath) {
                 // Create one remote archive for this package
                 return new Archive[] {
                         new Archive(
                             this,
-                            Os.ANY,
-                            Arch.ANY,
+                            null,       // arch
                             "http://some.source/some_url",
                             1234,       // size
                             "abcdef")   // sha1
@@ -369,15 +353,12 @@ public class ArchiveInstallerTest extends TestCase {
             @Override
             protected Archive[] initializeArchives(
                     Properties props2,
-                    Os archiveOs,
-                    Arch archiveArch,
                     String archiveOsPath) {
                 // Create one remote archive for this package
                 return new Archive[] {
                         new Archive(
                             this,
-                            Os.ANY,
-                            Arch.ANY,
+                            null,       // arch
                             "http://some.source/some_url",
                             1234,       // size
                             "abcdef")   // sha1

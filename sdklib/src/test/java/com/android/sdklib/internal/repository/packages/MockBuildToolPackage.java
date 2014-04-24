@@ -16,8 +16,6 @@
 
 package com.android.sdklib.internal.repository.packages;
 
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
 
@@ -52,8 +50,6 @@ public class MockBuildToolPackage extends BuildToolPackage {
             null, // license,
             "desc", // description,
             "url", // descUrl,
-            Os.getCurrentOs(), // archiveOs,
-            Arch.getCurrentArch(), // archiveArch,
             "foo" // archiveOsPath
             );
     }
@@ -72,8 +68,6 @@ public class MockBuildToolPackage extends BuildToolPackage {
                 null, // license,
                 "desc", // description,
                 "url", // descUrl,
-                Os.getCurrentOs(), // archiveOs,
-                Arch.getCurrentArch(), // archiveArch,
                 source == null ? "foo" : null // archiveOsPath, null for remote non-instaled pkgs
                 );
     }

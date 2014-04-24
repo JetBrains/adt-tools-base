@@ -26,8 +26,6 @@ import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.io.IFileOp;
 import com.android.sdklib.repository.MajorRevision;
@@ -107,8 +105,6 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
                 null,                       //license
                 null,                       //description
                 null,                       //descUrl
-                Os.getCurrentOs(),          //archiveOs
-                Arch.getCurrentArch(),      //archiveArch
                 localOsPath                 //archiveOsPath
                 );
         mVersion = platformVersion;

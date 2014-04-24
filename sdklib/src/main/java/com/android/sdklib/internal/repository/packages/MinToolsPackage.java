@@ -16,8 +16,6 @@
 
 package com.android.sdklib.internal.repository.packages;
 
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
 
@@ -65,11 +63,8 @@ public abstract class MinToolsPackage extends MajorRevisionPackage implements IM
             String license,
             String description,
             String descUrl,
-            Os archiveOs,
-            Arch archiveArch,
             String archiveOsPath) {
-        super(source, props, revision, license, description, descUrl,
-                archiveOs, archiveArch, archiveOsPath);
+        super(source, props, revision, license, description, descUrl, archiveOsPath);
 
         mMinToolsMixin = new MinToolsMixin(
                 source,
@@ -78,8 +73,6 @@ public abstract class MinToolsPackage extends MajorRevisionPackage implements IM
                 license,
                 description,
                 descUrl,
-                archiveOs,
-                archiveArch,
                 archiveOsPath);
     }
 

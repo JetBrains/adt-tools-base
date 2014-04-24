@@ -22,8 +22,6 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.FullRevision.PreviewComparison;
@@ -153,8 +151,6 @@ public class BuildToolPackage extends FullRevisionPackage {
                     null,                       //license
                     null,                       //description
                     null,                       //descUrl
-                    Os.getCurrentOs(),          //archiveOs
-                    Arch.getCurrentArch(),      //archiveArch
                     buildToolDir.getAbsolutePath());
 
         }
@@ -191,8 +187,6 @@ public class BuildToolPackage extends FullRevisionPackage {
                 String license,
                 String description,
                 String descUrl,
-                Os archiveOs,
-                Arch archiveArch,
                 String archiveOsPath) {
         super(source,
                 props,
@@ -200,8 +194,6 @@ public class BuildToolPackage extends FullRevisionPackage {
                 license,
                 description,
                 descUrl,
-                archiveOs,
-                archiveArch,
                 archiveOsPath);
 
         mPkgDesc = PkgDesc.newBuildTool(getRevision());

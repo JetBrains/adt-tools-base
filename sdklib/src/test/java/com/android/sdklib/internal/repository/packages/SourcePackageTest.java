@@ -19,21 +19,12 @@ package com.android.sdklib.internal.repository.packages;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.AndroidVersion.AndroidVersionException;
 import com.android.sdklib.internal.repository.archives.Archive;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
-import com.android.sdklib.internal.repository.packages.SourcePackage;
 import com.android.sdklib.repository.PkgProps;
 
 import java.util.Properties;
 
 public class SourcePackageTest extends PackageTest {
 
-    /**
-     * SourcePackageTest implicitly generates a local archive wrapper
-     * that matches the current platform OS and architecture. Since this
-     * is not convenient for testing, this class overrides it to always
-     * create archives for any OS and any architecture.
-     */
     private static class SourcePackageFakeArchive extends SourcePackage {
         protected SourcePackageFakeArchive(
                 AndroidVersion platformVersion,
@@ -48,12 +39,8 @@ public class SourcePackageTest extends PackageTest {
         @Override
         protected Archive[] initializeArchives(
                 Properties props,
-                Os archiveOs,
-                Arch archiveArch,
                 String archiveOsPath) {
-            assert archiveOs == Os.getCurrentOs();
-            assert archiveArch == Arch.getCurrentArch();
-            return super.initializeArchives(props, Os.ANY, Arch.ANY, LOCAL_ARCHIVE_PATH);
+            return super.initializeArchives(props, LOCAL_ARCHIVE_PATH);
         }
     }
 

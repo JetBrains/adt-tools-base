@@ -22,8 +22,6 @@ import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 
 import java.io.File;
@@ -72,8 +70,6 @@ public class BrokenPackage extends MajorRevisionPackage
                 null,                                   //license
                 longDescription,                        //description
                 null,                                   //descUrl
-                Os.ANY,                                 //archiveOs
-                Arch.ANY,                               //archiveArch
                 archiveOsPath                           //archiveOsPath
                 );
         mShortDescription = shortDescription;

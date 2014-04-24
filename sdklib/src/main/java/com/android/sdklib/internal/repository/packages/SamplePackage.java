@@ -25,8 +25,6 @@ import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.io.IFileOp;
 import com.android.sdklib.repository.MajorRevision;
@@ -124,8 +122,6 @@ public class SamplePackage extends MinToolsPackage
                 null,                                   //license
                 null,                                   //description
                 null,                                   //descUrl
-                Os.ANY,                                 //archiveOs
-                Arch.ANY,                               //archiveArch
                 target.getPath(IAndroidTarget.SAMPLES)  //archiveOsPath
                 );
 
@@ -164,8 +160,6 @@ public class SamplePackage extends MinToolsPackage
               null,                                   //license
               null,                                   //description
               null,                                   //descUrl
-              Os.ANY,                                 //archiveOs
-              Arch.ANY,                               //archiveArch
               archiveOsPath                           //archiveOsPath
               );
 

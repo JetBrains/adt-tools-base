@@ -25,8 +25,6 @@ import com.android.sdklib.internal.repository.AdbWrapper;
 import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision.PreviewComparison;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
@@ -83,12 +81,10 @@ public class PlatformToolPackage extends FullRevisionPackage {
             String license,
             String description,
             String descUrl,
-            Os archiveOs,
-            Arch archiveArch,
             String archiveOsPath) {
 
         PlatformToolPackage ptp = new PlatformToolPackage(source, props, revision, license,
-                description, descUrl, archiveOs, archiveArch, archiveOsPath);
+                description, descUrl, archiveOsPath);
 
         File platformToolsFolder = new File(archiveOsPath);
         String error = null;
@@ -157,8 +153,6 @@ public class PlatformToolPackage extends FullRevisionPackage {
                 String license,
                 String description,
                 String descUrl,
-                Os archiveOs,
-                Arch archiveArch,
                 String archiveOsPath) {
         super(source,
                 props,
@@ -166,8 +160,6 @@ public class PlatformToolPackage extends FullRevisionPackage {
                 license,
                 description,
                 descUrl,
-                archiveOs,
-                archiveArch,
                 archiveOsPath);
 
         mPkgDesc = PkgDesc.newPlatformTool(getRevision());
