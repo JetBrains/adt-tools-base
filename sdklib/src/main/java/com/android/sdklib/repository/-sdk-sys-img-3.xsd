@@ -36,8 +36,10 @@
          - v2 is used by the SDK Manager in Tools r22.6.
            It introduces a sub-tag for the <system-image> repository type.
 
-         - v3 is used by the SDK Manager in Tools r22.6.3:
+         - v3 is used by the SDK Manager in Tools r22.6.4:
             - It introduces a <list-display> string for all package types.
+            - it changes <archive os=... arch=...> to sub-elements: <host-os>, <host-bits>,
+              <jvm-bits> and <min-jvm-version>.
     -->
 
     <xsd:element name="sdk-sys-img" type="sdk:repositoryType" />
@@ -201,33 +203,49 @@
                              or ftp://. Otherwise it is relative to the parent directory that
                              contains this repository.xml -->
                         <xsd:element name="url"      type="xsd:token" />
-                    </xsd:all>
 
-                    <!-- Attributes that identify the OS and architecture -->
-                    <xsd:attribute name="os" use="required">
-                        <xsd:simpleType>
-                            <xsd:restriction base="xsd:token">
-                                <xsd:enumeration value="any" />
-                                <xsd:enumeration value="linux" />
-                                <xsd:enumeration value="macosx" />
-                                <xsd:enumeration value="windows" />
-                            </xsd:restriction>
-                        </xsd:simpleType>
-                    </xsd:attribute>
-                    <xsd:attribute name="arch" use="optional">
-                        <xsd:simpleType>
-                            <xsd:restriction base="xsd:token">
-                                <xsd:enumeration value="any" />
-                                <xsd:enumeration value="ppc" />
-                                <xsd:enumeration value="x86" />
-                                <xsd:enumeration value="x86_64" />
-                            </xsd:restriction>
-                        </xsd:simpleType>
-                    </xsd:attribute>
+                        <xsd:element name="host-os"         type="sdk:osType"         minOccurs="0" />
+                        <xsd:element name="host-bits"       type="sdk:bitSizeType"    minOccurs="0" />
+                        <xsd:element name="jvm-bits"        type="sdk:bitSizeType"    minOccurs="0" />
+                        <xsd:element name="min-jvm-version" type="sdk:jvmVersionType" minOccurs="0" />
+                    </xsd:all>
                 </xsd:complexType>
             </xsd:element>
         </xsd:sequence>
     </xsd:complexType>
+
+
+    <!-- The definition of archive filters -->
+
+    <xsd:simpleType name="bitSizeType">
+        <xsd:annotation>
+            <xsd:documentation>A CPU bit size filter.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:token">
+            <xsd:enumeration value="32" />
+            <xsd:enumeration value="64" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="osType">
+        <xsd:annotation>
+            <xsd:documentation>A host OS filter.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:token">
+            <xsd:enumeration value="linux" />
+            <xsd:enumeration value="macosx" />
+            <xsd:enumeration value="windows" />
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="jvmVersionType">
+        <xsd:annotation>
+            <xsd:documentation>A JVM version number, e.g. "1" or "1.6" or "1.14.15".</xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="([1-9](\.[1-9]{1,2}){0,2})"/>
+        </xsd:restriction>
+    </xsd:simpleType>
 
 
     <!-- The definition of a file checksum -->

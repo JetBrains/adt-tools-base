@@ -17,11 +17,8 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.SdkManager;
+import com.android.sdklib.internal.repository.archives.ArchFilter;
 import com.android.sdklib.internal.repository.archives.Archive;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
-import com.android.sdklib.internal.repository.packages.BrokenPackage;
-import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.sources.SdkRepoSource;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
@@ -50,8 +47,6 @@ public class PackageTest extends TestCase {
                 String license,
                 String description,
                 String descUrl,
-                Os archiveOs,
-                Arch archiveArch,
                 String archiveOsPath) {
             super(source,
                     props,
@@ -59,8 +54,6 @@ public class PackageTest extends TestCase {
                     license,
                     description,
                     descUrl,
-                    archiveOs,
-                    archiveArch,
                     archiveOsPath);
         }
 
@@ -105,8 +98,6 @@ public class PackageTest extends TestCase {
                 null, //license
                 null, //description
                 null, //descUrl
-                Os.ANY, //archiveOs
-                Arch.ANY, //archiveArch
                 LOCAL_ARCHIVE_PATH //archiveOsPath
                 );
 
@@ -123,8 +114,6 @@ public class PackageTest extends TestCase {
                 null, //license
                 null, //description
                 null, //descUrl
-                Os.ANY, //archiveOs
-                Arch.ANY, //archiveArch
                 LOCAL_ARCHIVE_PATH //archiveOsPath
                 );
 
@@ -177,8 +166,7 @@ public class PackageTest extends TestCase {
         assertEquals(1, p.getArchives().length);
         Archive a = p.getArchives()[0];
         assertNotNull(a);
-        assertEquals(Os.ANY, a.getOs());
-        assertEquals(Arch.ANY, a.getArch());
+        assertEquals(new ArchFilter(null), a.getArchFilter());
         assertEquals(LOCAL_ARCHIVE_PATH, a.getLocalOsPath());
     }
 

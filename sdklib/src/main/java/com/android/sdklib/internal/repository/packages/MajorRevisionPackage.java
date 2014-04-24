@@ -16,8 +16,6 @@
 
 package com.android.sdklib.internal.repository.packages;
 
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
@@ -73,11 +71,8 @@ public abstract class MajorRevisionPackage extends Package {
             String license,
             String description,
             String descUrl,
-            Os archiveOs,
-            Arch archiveArch,
             String archiveOsPath) {
-        super(source, props, revision, license, description, descUrl,
-                archiveOs, archiveArch, archiveOsPath);
+        super(source, props, revision, license, description, descUrl, archiveOsPath);
 
         String revStr = getProperty(props, PkgProps.PKG_REVISION, null);
 

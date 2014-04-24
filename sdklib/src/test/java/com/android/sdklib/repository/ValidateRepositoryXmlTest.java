@@ -356,7 +356,7 @@ public class ValidateRepositoryXmlTest extends ValidateTestCase {
             "<r:license id=\"lic1\"> some license </r:license> " +
             "<r:tool> <r:uses-license ref=\"lic2\" /> <r:revision> <r:major>1</r:major> </r:revision> " +
             "<r:min-platform-tools-rev> <r:major>1</r:major> </r:min-platform-tools-rev> " +
-            "<r:archives> <r:archive os=\"any\"> <r:size>1</r:size> <r:checksum>2822ae37115ebf13412bbef91339ee0d9454525e</r:checksum> " +
+            "<r:archives> <r:archive> <r:size>1</r:size> <r:checksum>2822ae37115ebf13412bbef91339ee0d9454525e</r:checksum> " +
             "<r:url>url</r:url> </r:archive> </r:archives> </r:tool>" +
             CLOSE_TAG_REPO;
 
@@ -381,7 +381,7 @@ public class ValidateRepositoryXmlTest extends ValidateTestCase {
         String document = "<?xml version=\"1.0\"?>" +
             OPEN_TAG_REPO +
             "<r:extra> <r:revision>1</r:revision> <r:path>path</r:path> " +
-            "<r:archives> <r:archive os=\"any\"> <r:size>1</r:size> <r:checksum>2822ae37115ebf13412bbef91339ee0d9454525e</r:checksum> " +
+            "<r:archives> <r:archive> <r:size>1</r:size> <r:checksum>2822ae37115ebf13412bbef91339ee0d9454525e</r:checksum> " +
             "<r:url>url</r:url> </r:archive> </r:archives> </r:extra>" +
             CLOSE_TAG_REPO;
 

@@ -110,12 +110,47 @@ public class RepoConstants {
     /** A download archive URL, either absolute or relative to the repository xml. */
     public static final String NODE_URL      = "url";                           //$NON-NLS-1$
 
+    /**
+     * Optional element to indicate an archive is only suitable for the specified OS. <br/>
+     * Values: windows | macosx | linux.
+     * @since repo-10, addon-7 and sys-img-3.
+     * @replaces {@link #LEGACY_ATTR_OS}
+     */
+    public static final String NODE_HOST_OS      = "host-os";                   //$NON-NLS-1$
+    /**
+     * Optional element to indicate an archive is only suitable for the specified host bit size.<br/>
+     * Values: 32 | 64.
+     * @since repo-10, addon-7 and sys-img-3.
+     */
+    public static final String NODE_HOST_BITS      = "host-bits";               //$NON-NLS-1$
+    /**
+     * Optional element to indicate an archive is only suitable for the specified JVM bit size.<br/>
+     * Values: 32 | 64.
+     * @since repo-10, addon-7 and sys-img-3.
+     * @replaces {@link #LEGACY_ATTR_ARCH}
+     */
+    public static final String NODE_JVM_BITS      = "jvm-bits";                 //$NON-NLS-1$
+    /**
+     * Optional element to indicate an archive is only suitable for a JVM equal or greater than
+     * the specified value. <br/>
+     * Value format: [1-9](\.[0-9]{1,2}){0,2}, e.g. "1.6", "1.7.0", "1.10" or "2"
+     * @since repo-10, addon-7 and sys-img-3.
+     */
+    public static final String NODE_MIN_JVM_VERSION = "min-jvm-version";        //$NON-NLS-1$
+
+
     /** An archive checksum type, mandatory. */
     public static final String ATTR_TYPE = "type";                              //$NON-NLS-1$
-    /** An archive OS attribute, mandatory. */
-    public static final String ATTR_OS   = "os";                                //$NON-NLS-1$
-    /** An optional archive Architecture attribute. */
-    public static final String ATTR_ARCH = "arch";                              //$NON-NLS-1$
+    /**
+     * An archive OS attribute, mandatory. <br/>
+     * Use {@link #NODE_HOST_OS} instead in repo-10, addon-7 and sys-img-3.
+     */
+    public static final String LEGACY_ATTR_OS   = "os";                                //$NON-NLS-1$
+    /**
+     * An optional archive Architecture attribute. <br/>
+     * Use {@link #NODE_JVM_BITS} instead in repo-10, addon-7 and sys-img-3.
+     */
+    public static final String LEGACY_ATTR_ARCH = "arch";                              //$NON-NLS-1$
 
     /** A license definition ID. */
     public static final String ATTR_ID = "id";                                  //$NON-NLS-1$

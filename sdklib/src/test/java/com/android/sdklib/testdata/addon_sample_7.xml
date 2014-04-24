@@ -46,7 +46,7 @@
         <sdk:description>Some optional description</sdk:description>
         <sdk:desc-url>http://www.example.com/myfirstaddon</sdk:desc-url>
         <sdk:archives>
-            <sdk:archive os="any">
+            <sdk:archive>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>http://www.example.com/add-ons/first.zip</sdk:url>
@@ -81,12 +81,16 @@
         <sdk:api-level>2</sdk:api-level>
         <sdk:revision>42</sdk:revision>
         <sdk:archives>
-            <sdk:archive os="windows">
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
+                <sdk:host-bits>64</sdk:host-bits>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/second-42-win.zip</sdk:url>
             </sdk:archive>
-            <sdk:archive os="linux">
+            <sdk:archive>
+                <sdk:host-os>linux</sdk:host-os>
+                <sdk:host-bits>64</sdk:host-bits>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/second-42-linux.tar.bz2</sdk:url>
@@ -118,7 +122,7 @@
         <sdk:api-level>4</sdk:api-level>
         <sdk:revision>3</sdk:revision>
         <sdk:archives>
-            <sdk:archive os="any" arch="any">
+            <sdk:archive>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/imnotanarchiveimadoctorjim.zip</sdk:url>
@@ -148,7 +152,9 @@
             <sdk:micro>41</sdk:micro>
         </sdk:revision>
         <sdk:archives>
-            <sdk:archive os="any" arch="any">
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
+                <sdk:host-bits>32</sdk:host-bits>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/extraduff.zip</sdk:url>
@@ -180,7 +186,11 @@
             <sdk:micro>1</sdk:micro>
         </sdk:revision>
         <sdk:archives>
-            <sdk:archive os="any" arch="any">
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
+                <sdk:host-bits>64</sdk:host-bits>
+                <sdk:jvm-bits>32</sdk:jvm-bits>
+                <sdk:min-jvm-version>1.7</sdk:min-jvm-version>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/extra_mega_duff.zip</sdk:url>
@@ -214,7 +224,7 @@
             <sdk:major>2</sdk:major>
         </sdk:revision>
         <sdk:archives>
-            <sdk:archive os="any" arch="any">
+            <sdk:archive>
                 <sdk:size>65536</sdk:size>
                 <sdk:checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</sdk:checksum>
                 <sdk:url>distrib/extra_mega_duff.zip</sdk:url>

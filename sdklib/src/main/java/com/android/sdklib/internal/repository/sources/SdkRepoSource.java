@@ -17,8 +17,7 @@
 package com.android.sdklib.internal.repository.sources;
 
 import com.android.annotations.Nullable;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
+import com.android.sdklib.internal.repository.archives.ArchFilter;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.packages.PackageParserUtils;
 import com.android.sdklib.repository.RepoConstants;
@@ -351,16 +350,8 @@ public class SdkRepoSource extends SdkSource {
                                                 prefix,
                                                 RepoConstants.NODE_ARCHIVE)) != null) {
                         try {
-                            Os os = (Os) PackageParserUtils.getEnumAttribute(archive,
-                                            RepoConstants.ATTR_OS,
-                                            Os.values(),
-                                            null /*default*/);
-                            Arch arch = (Arch) PackageParserUtils.getEnumAttribute(archive,
-                                            RepoConstants.ATTR_ARCH,
-                                            Arch.values(),
-                                            Arch.ANY);
-                            if (os == null || !os.isCompatible() ||
-                                    arch == null || !arch.isCompatible()) {
+                            ArchFilter af = PackageParserUtils.parseArchFilter(archive);
+                            if (af == null || !af.isCompatibleWith(ArchFilter.getCurrent())) {
                                 continue;
                             }
 
@@ -402,16 +393,23 @@ public class SdkRepoSource extends SdkSource {
                             isElementValid = true;
 
                         } catch (Exception ignore1) {
-                            // pass
+                            // For debugging it is useful to re-throw the exception.
+                            // For end-users, not so much. It would be nice to make it
+                            // happen automatically during unit tests.
+                            if (System.getenv("TESTING") != null ||
+                                System.getProperty("THROW_DEEP_EXCEPTION_DURING_TESTING") != null) {
+                                    throw new RuntimeException(ignore1);
+                            }
                         }
                     } // while <archive>
                 } catch (Exception ignore2) {
                     // For debugging it is useful to re-throw the exception.
                     // For end-users, not so much. It would be nice to make it
                     // happen automatically during unit tests.
-                    if (System.getenv("TESTING") != null) {
-                        throw new RuntimeException(ignore2);
-                    }
+                    if (System.getenv("TESTING") != null ||
+                        System.getProperty("THROW_DEEP_EXCEPTION_DURING_TESTING") != null) {
+                            throw new RuntimeException(ignore2);
+                        }
                 }
             }
 

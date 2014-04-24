@@ -18,9 +18,6 @@ package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.archives.Archive;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
-import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
@@ -49,8 +46,6 @@ public class MockEmptyPackage extends MajorRevisionPackage {
             null /*license*/,
             null /*description*/,
             null /*descUrl*/,
-            Os.ANY /*archiveOs*/,
-            Arch.ANY /*archiveArch*/,
             "/sdk/tmp/empty_pkg" /*archiveOsPath*/
             );
         mTestHandle = testHandle;
@@ -70,8 +65,6 @@ public class MockEmptyPackage extends MajorRevisionPackage {
             null /*license*/,
             null /*description*/,
             null /*descUrl*/,
-            Os.ANY /*archiveOs*/,
-            Arch.ANY /*archiveArch*/,
             "/sdk/tmp/empty_pkg" /*archiveOsPath*/
             );
         mTestHandle = testHandle;
@@ -91,8 +84,6 @@ public class MockEmptyPackage extends MajorRevisionPackage {
             null /*license*/,
             null /*description*/,
             null /*descUrl*/,
-            Os.ANY /*archiveOs*/,
-            Arch.ANY /*archiveArch*/,
             "/sdk/tmp/empty_pkg" /*archiveOsPath*/
             );
         mTestHandle = testHandle;
@@ -113,8 +104,6 @@ public class MockEmptyPackage extends MajorRevisionPackage {
             null /*license*/,
             null /*description*/,
             null /*descUrl*/,
-            Os.ANY /*archiveOs*/,
-            Arch.ANY /*archiveArch*/,
             "/sdk/tmp/empty_pkg" /*archiveOsPath*/
             );
         mTestHandle = testHandle;
@@ -123,11 +112,9 @@ public class MockEmptyPackage extends MajorRevisionPackage {
     @Override
     protected Archive[] initializeArchives(
             Properties props,
-            Os archiveOs,
-            Arch archiveArch,
             String archiveOsPath) {
         return new Archive[] {
-            new Archive(this, props, archiveOs, archiveArch, archiveOsPath) {
+            new Archive(this, props, archiveOsPath) {
                 @Override
                 public String toString() {
                     return mTestHandle;

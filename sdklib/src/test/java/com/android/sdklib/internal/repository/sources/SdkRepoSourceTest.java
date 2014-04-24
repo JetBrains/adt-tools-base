@@ -114,6 +114,8 @@ public class SdkRepoSourceTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
 
+        System.setProperty("THROW_DEEP_EXCEPTION_DURING_TESTING", "1");
+
         mSource = new MockSdkRepoSource();
     }
 

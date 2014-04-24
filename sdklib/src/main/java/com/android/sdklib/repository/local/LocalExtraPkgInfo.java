@@ -18,8 +18,6 @@ package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.packages.ExtraPackage;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.repository.NoPreviewRevision;
@@ -71,8 +69,6 @@ public class LocalExtraPkgInfo extends LocalPkgInfo {
                         null,                       //license
                         null,                       //description
                         null,                       //descUrl
-                        Os.getCurrentOs(),          //archiveOs
-                        Arch.getCurrentArch(),      //archiveArch
                         getLocalDir().getPath()     //archiveOsPath
                         );
                 setPackage(pkg);
