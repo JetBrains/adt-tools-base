@@ -27,7 +27,7 @@ public class PluralsDetectorTest extends AbstractCheckTest {
 
     public void test1() throws Exception {
         assertEquals(""
-                + "res/values-pl/plurals2.xml:3: Error: For locale \"pl\" the following quantities should also be defined: many [MissingQuantity]\n"
+                + "res/values-pl/plurals2.xml:3: Error: For locale \"pl\" (Polish) the following quantities should also be defined: many [MissingQuantity]\n"
                 + "    <plurals name=\"numberOfSongsAvailable\">\n"
                 + "    ^\n"
                 + "1 errors, 0 warnings\n",
@@ -40,13 +40,13 @@ public class PluralsDetectorTest extends AbstractCheckTest {
 
     public void test2() throws Exception {
         assertEquals(""
-                + "res/values-cs/plurals3.xml:3: Error: For locale \"cs\" the following quantities should also be defined: few, many [MissingQuantity]\n" +
+                + "res/values-cs/plurals3.xml:3: Error: For locale \"cs\" (Czech) the following quantities should also be defined: few, many [MissingQuantity]\n" +
                 "  <plurals name=\"draft\">\n" +
                 "  ^\n" +
-                "res/values-zh-rCN/plurals3.xml:3: Warning: For language \"zh\" the following quantities are not relevant: one [UnusedQuantity]\n" +
+                "res/values-zh-rCN/plurals3.xml:3: Warning: For language \"zh\" (Chinese) the following quantities are not relevant: one [UnusedQuantity]\n" +
                 "  <plurals name=\"draft\">\n" +
                 "  ^\n" +
-                "res/values-zh-rCN/plurals3.xml:7: Warning: For language \"zh\" the following quantities are not relevant: one [UnusedQuantity]\n" +
+                "res/values-zh-rCN/plurals3.xml:7: Warning: For language \"zh\" (Chinese) the following quantities are not relevant: one [UnusedQuantity]\n" +
                 "  <plurals name=\"title_day_dialog_content\">\n" +
                 "  ^\n" +
                 "1 errors, 2 warnings\n",
@@ -70,10 +70,10 @@ public class PluralsDetectorTest extends AbstractCheckTest {
     public void testPolish() throws Exception {
         // Test for https://code.google.com/p/android/issues/detail?id=67803
         assertEquals(""
-                        + "res/values-pl/plurals5.xml:3: Error: For locale \"pl\" the following quantities should also be defined: many [MissingQuantity]\n"
+                        + "res/values-pl/plurals5.xml:3: Error: For locale \"pl\" (Polish) the following quantities should also be defined: many [MissingQuantity]\n"
                         + "    <plurals name=\"my_plural\">\n"
                         + "    ^\n"
-                        + "res/values-pl/plurals5.xml:3: Warning: For language \"pl\" the following quantities are not relevant: zero [UnusedQuantity]\n"
+                        + "res/values-pl/plurals5.xml:3: Warning: For language \"pl\" (Polish) the following quantities are not relevant: zero [UnusedQuantity]\n"
                         + "    <plurals name=\"my_plural\">\n"
                         + "    ^\n"
                         + "1 errors, 1 warnings\n",
