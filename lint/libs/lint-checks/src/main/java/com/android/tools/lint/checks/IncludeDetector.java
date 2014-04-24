@@ -88,13 +88,16 @@ public class IncludeDetector extends LayoutDetector {
             }
         }
 
-        if (hasOtherLayoutParam && (!hasWidth || !hasHeight)) {
+        boolean flagWidth = !hasOtherLayoutParam && hasWidth && !hasHeight;
+        boolean flagHeight = !hasOtherLayoutParam && !hasWidth && hasHeight;
+
+        if (hasOtherLayoutParam && (!hasWidth || !hasHeight) || flagWidth || flagHeight) {
             for (int i = 0; i < length; i++) {
                 Attr attribute = (Attr) attributes.item(i);
                 String name = attribute.getLocalName();
                 if (name != null && name.startsWith(ATTR_LAYOUT_RESOURCE_PREFIX)
-                        && !ATTR_LAYOUT_WIDTH.equals(name)
-                        && !ATTR_LAYOUT_HEIGHT.equals(name)
+                        && (!ATTR_LAYOUT_WIDTH.equals(name) || flagWidth)
+                        && (!ATTR_LAYOUT_HEIGHT.equals(name) || flagHeight)
                         && ANDROID_URI.equals(attribute.getNamespaceURI())) {
                     String condition = !hasWidth && !hasHeight ?
                             "both layout_width and layout_height are also specified"
