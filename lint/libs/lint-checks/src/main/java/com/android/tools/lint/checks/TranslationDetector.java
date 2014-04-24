@@ -28,6 +28,7 @@ import static com.android.SdkConstants.TOOLS_URI;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
+import com.android.ide.common.resources.LocaleManager;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -55,6 +56,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -411,9 +413,9 @@ public class TranslationDetector extends ResourceXmlDetector {
                             String message = mDescriptions.get(s);
                             if (message == null) {
                                 message = String.format("\"%1$s\" is not translated in %2$s",
-                                        s, language);
+                                        s, getLanguageDescription(language));
                             } else {
-                                message = message + ", " + language;
+                                message = message + ", " + getLanguageDescription(language);
                             }
                             mDescriptions.put(s, message);
                         }
@@ -444,6 +446,31 @@ public class TranslationDetector extends ResourceXmlDetector {
             }
         }
     }
+
+    public static String getLanguageDescription(@NonNull String locale) {
+        int index = locale.indexOf('-');
+        String regionCode = null;
+        String languageCode = locale;
+        if (index != -1) {
+            regionCode = locale.substring(index + 2).toUpperCase(Locale.US); // +2: Skip "r"
+            languageCode = locale.substring(0, index).toLowerCase(Locale.US);
+        }
+
+        String languageName = LocaleManager.getLanguageName(languageCode);
+        if (languageName != null) {
+            if (regionCode != null) {
+                String regionName = LocaleManager.getRegionName(regionCode);
+                if (regionName != null) {
+                    languageName = languageName + ": " + regionName;
+                }
+            }
+
+            return String.format("\"%1$s\" (%2$s)", locale, languageName);
+        } else {
+            return '"' + locale + '"';
+        }
+    }
+
 
     /** Look up the language for the given folder name */
     private static String getLanguage(String name) {
