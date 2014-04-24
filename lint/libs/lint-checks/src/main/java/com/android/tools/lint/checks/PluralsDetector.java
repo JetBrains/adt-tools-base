@@ -178,7 +178,7 @@ public class PluralsDetector extends ResourceXmlDetector {
         if (!missing.isEmpty()) {
             String message = String.format(
                     "For locale %1$s the following quantities should also be defined: %2$s",
-                    getLanguageDescription(language), formatSet(missing));
+                    TranslationDetector.getLanguageDescription(language), formatSet(missing));
             context.report(MISSING, element, context.getLocation(element), message, null);
         }
 
@@ -188,17 +188,8 @@ public class PluralsDetector extends ResourceXmlDetector {
         if (!extra.isEmpty()) {
             String message = String.format(
                     "For language %1$s the following quantities are not relevant: %2$s",
-                    getLanguageDescription(language), formatSet(extra));
+                    TranslationDetector.getLanguageDescription(language), formatSet(extra));
             context.report(EXTRA, element, context.getLocation(element), message, null);
-        }
-    }
-
-    private static String getLanguageDescription(@NonNull String language) {
-        String languageName = LocaleManager.getLanguageName(language);
-        if (languageName != null) {
-            return String.format("\"%1$s\" (%2$s)", language, languageName);
-        } else {
-            return '"' + language + '"';
         }
     }
 
