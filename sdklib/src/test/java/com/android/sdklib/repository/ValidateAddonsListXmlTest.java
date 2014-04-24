@@ -29,12 +29,72 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
-import junit.framework.TestCase;
-
 /**
  * Tests local validation of an SDK Addon-List sample XMLs using an XML Schema validator.
  */
-public class ValidateAddonsListXmlTest extends TestCase {
+public class ValidateAddonsListXmlTest extends ValidateTestCase {
+
+    // --- Tests ------------
+
+    /** Validates that NS_LATEST_VERSION points to the max available XSD schema. */
+    public void testAddonLatestVersionNumber() throws Exception {
+        CaptureErrorHandler handler = new CaptureErrorHandler();
+
+        // There should be a schema matching NS_LATEST_VERSION
+        assertNotNull(getValidator(SdkAddonsListConstants.NS_LATEST_VERSION, handler));
+
+        // There should NOT be a schema with NS_LATEST_VERSION+1
+        assertNull(
+                String.format(
+                        "There's an ADDON XSD at version %d but SdkAddonsListConstants.NS_LATEST_VERSION is still set to %d.",
+                        SdkAddonsListConstants.NS_LATEST_VERSION + 1,
+                        SdkAddonsListConstants.NS_LATEST_VERSION),
+                getValidator(SdkAddonsListConstants.NS_LATEST_VERSION + 1, handler));
+    }
+
+    /** Validate the XSD version 1 */
+    public void testValidateAddonsListXsd1() throws Exception {
+        validateXsd(SdkAddonsListConstants.getXsdStream(1));
+    }
+
+    /** Validate a valid sample using namespace version 1 using an InputStream */
+    public void testValidateLocalAddonsListFile1() throws Exception {
+        InputStream xmlStream = this.getClass().getResourceAsStream(
+                    "/com/android/sdklib/testdata/addons_list_sample_1.xml");
+        Source source = new StreamSource(xmlStream);
+
+        CaptureErrorHandler handler = new CaptureErrorHandler();
+        Validator validator = getValidator(1, handler);
+        validator.validate(source);
+        handler.verify();
+    }
+
+    /** Validate the XSD version 2 */
+    public void testValidateAddonsListXsd2() throws Exception {
+        validateXsd(SdkAddonsListConstants.getXsdStream(2));
+    }
+
+    /** Validate a valid sample using namespace version 2 using an InputStream */
+    public void testValidateLocalAddonsListFile2() throws Exception {
+        InputStream xmlStream = this.getClass().getResourceAsStream(
+                    "/com/android/sdklib/testdata/addons_list_sample_2.xml");
+        Source source = new StreamSource(xmlStream);
+
+        CaptureErrorHandler handler = new CaptureErrorHandler();
+        Validator validator = getValidator(2, handler);
+        validator.validate(source);
+        handler.verify();
+    }
+
+    /** Make sure we don't have a next-version sample that is not validated yet */
+    public void testValidateLocalAddonsListFile3() throws Exception {
+        InputStream xmlStream = this.getClass().getResourceAsStream(
+                    "/com/android/sdklib/testdata/addons_list_sample_3.xml");
+        assertNull(xmlStream);
+    }
+
+    // IMPORTANT: each time you add a test here, you should add a corresponding
+    // test in AddonsListFetcherTest to validate the XML content is parsed correctly.
 
     // --- Helpers ------------
 
@@ -60,49 +120,4 @@ public class ValidateAddonsListXmlTest extends TestCase {
 
         return validator;
     }
-
-    // --- Tests ------------
-
-    /** Validates that NS_LATEST_VERSION points to the max available XSD schema. */
-    public void testAddonLatestVersionNumber() throws Exception {
-        CaptureErrorHandler handler = new CaptureErrorHandler();
-
-        // There should be a schema matching NS_LATEST_VERSION
-        assertNotNull(getValidator(SdkAddonsListConstants.NS_LATEST_VERSION, handler));
-
-        // There should NOT be a schema with NS_LATEST_VERSION+1
-        assertNull(
-                String.format(
-                        "There's an ADDON XSD at version %d but SdkAddonsListConstants.NS_LATEST_VERSION is still set to %d.",
-                        SdkAddonsListConstants.NS_LATEST_VERSION + 1,
-                        SdkAddonsListConstants.NS_LATEST_VERSION),
-                getValidator(SdkAddonsListConstants.NS_LATEST_VERSION + 1, handler));
-    }
-
-    /** Validate a valid sample using namespace version 1 using an InputStream */
-    public void testValidateLocalAddonFile1() throws Exception {
-        InputStream xmlStream = this.getClass().getResourceAsStream(
-                    "/com/android/sdklib/testdata/addons_list_sample_1.xml");
-        Source source = new StreamSource(xmlStream);
-
-        CaptureErrorHandler handler = new CaptureErrorHandler();
-        Validator validator = getValidator(1, handler);
-        validator.validate(source);
-        handler.verify();
-    }
-
-    /** Validate a valid sample using namespace version 2 using an InputStream */
-    public void testValidateLocalAddonFile2() throws Exception {
-        InputStream xmlStream = this.getClass().getResourceAsStream(
-                    "/com/android/sdklib/testdata/addons_list_sample_2.xml");
-        Source source = new StreamSource(xmlStream);
-
-        CaptureErrorHandler handler = new CaptureErrorHandler();
-        Validator validator = getValidator(2, handler);
-        validator.validate(source);
-        handler.verify();
-    }
-
-    // IMPORTANT: each time you add a test here, you should add a corresponding
-    // test in AddonsListFetcherTest to validate the XML content is parsed correctly.
 }

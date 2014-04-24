@@ -15,9 +15,9 @@
  * limitations under the License.
 -->
 <xsd:schema
-    targetNamespace="http://schemas.android.com/sdk/android/repository/9"
+    targetNamespace="http://schemas.android.com/sdk/android/repository/10"
     xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-    xmlns:sdk="http://schemas.android.com/sdk/android/repository/9"
+    xmlns:sdk="http://schemas.android.com/sdk/android/repository/10"
     elementFormDefault="qualified"
     attributeFormDefault="unqualified"
     version="1">
@@ -84,6 +84,10 @@
 
          - v9 is used by the SDK Manager in Tools r22.6:
             - It introduces a sub-tag for the <system-image> repository type.
+
+         - v10 is used by the SDK Manager in Tools r22.6.3:
+            - It introduces a <list-display> string for all package types.
+            - It removes the <system-image> type (system images are handled by sdk-sys-img-3.xsd)
     -->
 
     <xsd:element name="sdk-repository" type="sdk:repositoryType" />
@@ -96,7 +100,6 @@
         </xsd:annotation>
         <xsd:choice minOccurs="0" maxOccurs="unbounded">
             <xsd:element name="platform"        type="sdk:platformType"     />
-            <xsd:element name="system-image"    type="sdk:systemImageType"  />
             <xsd:element name="source"          type="sdk:sourceType"       />
             <xsd:element name="tool"            type="sdk:toolType"         />
             <xsd:element name="platform-tool"   type="sdk:platformToolType" />
@@ -124,6 +127,9 @@
             <!-- The revision, an int > 0, incremented each time a new
                  package is generated. -->
             <xsd:element name="revision"  type="xsd:positiveInteger" />
+
+            <!-- The optional display list item. When missing, it is auto-computed. -->
+            <xsd:element name="list-display"   type="xsd:normalizedString" minOccurs="0" />
 
             <!-- Information on the layoutlib packaged in this platform. -->
             <xsd:element name="layoutlib" type="sdk:layoutlibType" />
@@ -179,72 +185,6 @@
     </xsd:complexType>
 
 
-    <!-- The definition of a system image used by a platform. -->
-
-    <xsd:complexType name="systemImageType" >
-        <xsd:annotation>
-            <xsd:documentation>
-                System Image for a platform.
-            </xsd:documentation>
-        </xsd:annotation>
-        <xsd:all>
-            <!-- Implementation detail:
-                 any change here must be synchronized within a new sdk-sys-img-N.xsd
-            -->
-
-            <!-- api-level + codename identifies the platform to which this system image belongs. -->
-
-            <!-- The Android API Level for the platform. An int > 0. -->
-            <xsd:element name="api-level" type="xsd:positiveInteger"  />
-            <!-- The optional codename for this platform, if it's a preview. -->
-            <xsd:element name="codename"  type="xsd:string" minOccurs="0" />
-
-            <!-- The revision, an int > 0, incremented each time a new
-                 package is generated. -->
-            <xsd:element name="revision"  type="xsd:positiveInteger" />
-
-            <!-- The tag of the system emulated by this image. -->
-            <xsd:element name="tag-id"      type="sdk:idType" />
-            <!-- The displayed tag of the system emulated by this image. Optional. -->
-            <xsd:element name="tag-display" type="xsd:normalizedString" minOccurs="0" />
-
-            <!-- The ABI of the system emulated by this image. -->
-            <xsd:element name="abi"       type="sdk:abiType" />
-
-            <!-- The optional license of this package. If present, users will have
-                 to agree to it before downloading. -->
-            <xsd:element name="uses-license"  type="sdk:usesLicenseType" minOccurs="0" />
-            <!-- The optional description of this package. -->
-            <xsd:element name="description"   type="xsd:string"      minOccurs="0" />
-            <!-- The optional description URL of this package -->
-            <xsd:element name="desc-url"      type="xsd:token"       minOccurs="0" />
-            <!-- The optional release note for this package. -->
-            <xsd:element name="release-note"  type="xsd:string"      minOccurs="0" />
-            <!-- The optional release note URL of this package -->
-            <xsd:element name="release-url"   type="xsd:token"       minOccurs="0" />
-
-            <!-- A list of file archives for this package. -->
-            <xsd:element name="archives"  type="sdk:archivesType" />
-
-            <!-- An optional element indicating the package is obsolete.
-                 The string content is however currently not defined and ignored. -->
-            <xsd:element name="obsolete"  type="xsd:string" minOccurs="0" />
-        </xsd:all>
-    </xsd:complexType>
-
-
-    <xsd:simpleType name="idType">
-        <xsd:annotation>
-            <xsd:documentation>
-                A tag string for a system image can only be a simple alphanumeric string.
-            </xsd:documentation>
-        </xsd:annotation>
-        <xsd:restriction base="xsd:token">
-            <xsd:pattern value="[a-zA-Z0-9_-]+"/>
-        </xsd:restriction>
-    </xsd:simpleType>
-
-
     <!-- The definition of the ABI supported by a platform's system image. -->
 
     <xsd:simpleType name="abiType">
@@ -280,6 +220,9 @@
                  package is generated. -->
             <xsd:element name="revision"  type="xsd:positiveInteger" />
 
+            <!-- The optional display list item. When missing, it is auto-computed. -->
+            <xsd:element name="list-display"   type="xsd:normalizedString" minOccurs="0" />
+
             <!-- The optional license of this package. If present, users will have
                  to agree to it before downloading. -->
             <xsd:element name="uses-license"  type="sdk:usesLicenseType" minOccurs="0" />
@@ -312,6 +255,9 @@
             <!-- The full revision (major.minor.micro.preview), incremented each
                  time a new package is generated. -->
             <xsd:element name="revision"      type="sdk:revisionType" />
+
+            <!-- The optional display list item. When missing, it is auto-computed. -->
+            <xsd:element name="list-display"   type="xsd:normalizedString" minOccurs="0" />
 
             <!-- The optional license of this package. If present, users will have
                  to agree to it before downloading. -->
@@ -349,6 +295,9 @@
                  time a new package is generated. -->
             <xsd:element name="revision"      type="sdk:revisionType" />
 
+            <!-- The optional display list item. When missing, it is auto-computed. -->
+            <xsd:element name="list-display"   type="xsd:normalizedString" minOccurs="0" />
+
             <!-- The optional license of this package. If present, users will have
                  to agree to it before downloading. -->
             <xsd:element name="uses-license" type="sdk:usesLicenseType" minOccurs="0" />
@@ -382,6 +331,9 @@
 
             <!-- optional elements -->
 
+            <!-- The optional display list item. When missing, it is auto-computed. -->
+            <xsd:element name="list-display"   type="xsd:normalizedString" minOccurs="0" />
+
             <!-- The optional license of this package. If present, users will have
                  to agree to it before downloading. -->
             <xsd:element name="uses-license"  type="sdk:usesLicenseType" minOccurs="0" />
@@ -414,6 +366,9 @@
             <xsd:element name="api-level" type="xsd:positiveInteger"  />
             <!-- The optional codename for this doc, if it's a preview. -->
             <xsd:element name="codename"  type="xsd:string" minOccurs="0" />
+
+            <!-- The optional display list item. When missing, it is auto-computed. -->
+            <xsd:element name="list-display"   type="xsd:normalizedString" minOccurs="0" />
 
             <!-- The revision, an int > 0, incremented each time a new
                  package is generated. -->
@@ -451,6 +406,9 @@
             <xsd:element name="api-level" type="xsd:positiveInteger"  />
             <!-- The optional codename for this doc, if it's a preview. -->
             <xsd:element name="codename"  type="xsd:string" minOccurs="0" />
+
+            <!-- The optional display list item. When missing, it is auto-computed. -->
+            <xsd:element name="list-display"   type="xsd:normalizedString" minOccurs="0" />
 
             <!-- The revision, an int > 0, incremented each time a new
                  package is generated. -->

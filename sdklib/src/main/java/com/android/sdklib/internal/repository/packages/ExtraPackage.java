@@ -519,6 +519,11 @@ public class ExtraPackage extends NoPreviewRevisionPackage
      */
     @Override
     public String getListDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s%2$s", ld, isObsolete() ? " (Obsolete)" : "");
+        }
+
         String s = String.format("%1$s%2$s",
                 getDisplayName(),
                 isObsolete() ? " (Obsolete)" : "");  //$NON-NLS-2$
@@ -531,6 +536,14 @@ public class ExtraPackage extends NoPreviewRevisionPackage
      */
     @Override
     public String getShortDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s, revision %2$s%3$s",
+                    ld,
+                    getRevision().toShortString(),
+                    isObsolete() ? " (Obsolete)" : "");
+        }
+
         String s = String.format("%1$s, revision %2$s%3$s",
                 getDisplayName(),
                 getRevision().toShortString(),

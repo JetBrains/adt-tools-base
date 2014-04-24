@@ -16,6 +16,7 @@
 
 package com.android.sdklib.internal.repository.updater;
 
+import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.packages.IAndroidVersionProvider;
 import com.android.sdklib.internal.repository.packages.Package;
@@ -94,8 +95,12 @@ public class PkgItem implements Comparable<PkgItem> {
         return mMainPkg.getRevision();
     }
 
+    /**
+     * @deprecated Use {@link #getMainPackage()} with the {@link IDescription} interface instead.
+     */
+    @Deprecated
     public String getDescription() {
-        return mMainPkg.getDescription();
+        return mMainPkg.getLongDescription();
     }
 
     public Package getMainPackage() {

@@ -31,52 +31,16 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
-import junit.framework.TestCase;
-
 /**
  * Tests local validation of an SDK Addon sample XMLs using an XML Schema validator.
  */
-public class ValidateAddonXmlTest extends TestCase {
+public class ValidateAddonXmlTest extends ValidateTestCase {
 
     private static String OPEN_TAG_ADDON =
         "<r:sdk-addon xmlns:r=\"http://schemas.android.com/sdk/android/addon/" +
         Integer.toString(SdkAddonConstants.NS_LATEST_VERSION) +
         "\">";
     private static String CLOSE_TAG_ADDON = "</r:sdk-addon>";
-
-    // --- Helpers ------------
-
-    /**
-     * Helper method that returns a validator for our Addon XSD
-     *
-     * @param version The version number, in range {@code 1..NS_LATEST_VERSION}
-     * @param handler A {@link CaptureErrorHandler}. If null the default will be used,
-     *   which will most likely print errors to stderr.
-     */
-    private Validator getAddonValidator(int version, @Nullable CaptureErrorHandler handler)
-            throws SAXException {
-        Validator validator = null;
-        InputStream xsdStream = SdkAddonConstants.getXsdStream(version);
-        if (xsdStream != null) {
-            SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-            Schema schema = factory.newSchema(new StreamSource(xsdStream));
-            validator = schema.newValidator();
-            if (handler != null) {
-                validator.setErrorHandler(handler);
-            }
-        }
-
-        return validator;
-    }
-
-    /** An helper that validates a string against an expected regexp. */
-    private void assertRegex(String expectedRegexp, String actualString) {
-        assertNotNull(actualString);
-        assertTrue(
-                String.format("Regexp Assertion Failed:\nExpected: %s\nActual: %s\n",
-                        expectedRegexp, actualString),
-                actualString.matches(expectedRegexp));
-    }
 
     // --- Tests ------------
 
@@ -96,6 +60,11 @@ public class ValidateAddonXmlTest extends TestCase {
                 getAddonValidator(SdkAddonConstants.NS_LATEST_VERSION + 1, handler));
     }
 
+    /** Validate the XSD version 1 */
+    public void testValidateAddonXsd1() throws Exception {
+        validateXsd(SdkAddonConstants.getXsdStream(1));
+    }
+
     /** Validate a valid sample using namespace version 1 using an InputStream */
     public void testValidateLocalAddonFile1() throws Exception {
         InputStream xmlStream = this.getClass().getResourceAsStream(
@@ -106,6 +75,11 @@ public class ValidateAddonXmlTest extends TestCase {
         Validator validator = getAddonValidator(1, handler);
         validator.validate(source);
         handler.verify();
+    }
+
+    /** Validate the XSD version 2 */
+    public void testValidateAddonXsd2() throws Exception {
+        validateXsd(SdkAddonConstants.getXsdStream(2));
     }
 
     /** Validate a valid sample using namespace version 2 using an InputStream */
@@ -120,6 +94,11 @@ public class ValidateAddonXmlTest extends TestCase {
         handler.verify();
     }
 
+    /** Validate the XSD version 3 */
+    public void testValidateAddonXsd3() throws Exception {
+        validateXsd(SdkAddonConstants.getXsdStream(3));
+    }
+
     /** Validate a valid sample using namespace version 3 using an InputStream */
     public void testValidateLocalAddonFile3() throws Exception {
         InputStream xmlStream = this.getClass().getResourceAsStream(
@@ -130,6 +109,11 @@ public class ValidateAddonXmlTest extends TestCase {
         Validator validator = getAddonValidator(3, handler);
         validator.validate(source);
         handler.verify();
+    }
+
+    /** Validate the XSD version 4 */
+    public void testValidateAddonXsd4() throws Exception {
+        validateXsd(SdkAddonConstants.getXsdStream(4));
     }
 
     /** Validate a valid sample using namespace version 4 using an InputStream */
@@ -144,6 +128,11 @@ public class ValidateAddonXmlTest extends TestCase {
         handler.verify();
     }
 
+    /** Validate the XSD version 5 */
+    public void testValidateAddonXsd5() throws Exception {
+        validateXsd(SdkAddonConstants.getXsdStream(5));
+    }
+
     /** Validate a valid sample using namespace version 5 using an InputStream */
     public void testValidateLocalAddonFile5() throws Exception {
         InputStream xmlStream = this.getClass().getResourceAsStream(
@@ -156,6 +145,11 @@ public class ValidateAddonXmlTest extends TestCase {
         handler.verify();
     }
 
+    /** Validate the XSD version 6 */
+    public void testValidateAddonXsd6() throws Exception {
+        validateXsd(SdkAddonConstants.getXsdStream(6));
+    }
+
     /** Validate a valid sample using namespace version 6 using an InputStream */
     public void testValidateLocalAddonFile6() throws Exception {
         InputStream xmlStream = this.getClass().getResourceAsStream(
@@ -166,6 +160,30 @@ public class ValidateAddonXmlTest extends TestCase {
         Validator validator = getAddonValidator(6, handler);
         validator.validate(source);
         handler.verify();
+    }
+
+    /** Validate the XSD version 7 */
+    public void testValidateAddonXsd7() throws Exception {
+        validateXsd(SdkAddonConstants.getXsdStream(7));
+    }
+
+    /** Validate a valid sample using namespace version 7 using an InputStream */
+    public void testValidateLocalAddonFile7() throws Exception {
+        InputStream xmlStream = this.getClass().getResourceAsStream(
+                    "/com/android/sdklib/testdata/addon_sample_7.xml");
+        Source source = new StreamSource(xmlStream);
+
+        CaptureErrorHandler handler = new CaptureErrorHandler();
+        Validator validator = getAddonValidator(7, handler);
+        validator.validate(source);
+        handler.verify();
+    }
+
+    /** Make sure we don't have a next-version sample that is not validated yet */
+    public void testValidateLocalAddonFile8() throws Exception {
+        InputStream xmlStream = this.getClass().getResourceAsStream(
+                    "/com/android/sdklib/testdata/addon_sample_8.xml");
+        assertNull(xmlStream);
     }
 
     // IMPORTANT: each time you add a test here, you should add a corresponding
@@ -232,5 +250,30 @@ public class ValidateAddonXmlTest extends TestCase {
         }
         // If we get here, the validator has not failed as we expected it to.
         fail();
+    }
+
+    // --- Helpers ------------
+
+    /**
+     * Helper method that returns a validator for our Addon XSD
+     *
+     * @param version The version number, in range {@code 1..NS_LATEST_VERSION}
+     * @param handler A {@link CaptureErrorHandler}. If null the default will be used,
+     *   which will most likely print errors to stderr.
+     */
+    private Validator getAddonValidator(int version, @Nullable CaptureErrorHandler handler)
+            throws SAXException {
+        Validator validator = null;
+        InputStream xsdStream = SdkAddonConstants.getXsdStream(version);
+        if (xsdStream != null) {
+            SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+            Schema schema = factory.newSchema(new StreamSource(xsdStream));
+            validator = schema.newValidator();
+            if (handler != null) {
+                validator.setErrorHandler(handler);
+            }
+        }
+
+        return validator;
     }
 }

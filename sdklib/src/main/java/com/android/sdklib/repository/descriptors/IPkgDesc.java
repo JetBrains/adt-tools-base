@@ -113,7 +113,7 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities {
      * @param existingDesc A non-null existing descriptor.
      * @return True if this package is an update for the given one.
      */
-    public abstract boolean isUpdateFor(@NonNull IPkgDesc existingDesc);
+    public boolean isUpdateFor(@NonNull IPkgDesc existingDesc);
 
 }
 

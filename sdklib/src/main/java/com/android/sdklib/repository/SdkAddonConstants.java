@@ -30,7 +30,7 @@ public class SdkAddonConstants extends RepoConstants {
      * The latest version of the sdk-addon XML Schema.
      * Valid version numbers are between 1 and this number, included.
      */
-    public static final int NS_LATEST_VERSION = 6;
+    public static final int NS_LATEST_VERSION = 7;
 
     /**
      * The default name looked for by {@link SdkSource} when trying to load an

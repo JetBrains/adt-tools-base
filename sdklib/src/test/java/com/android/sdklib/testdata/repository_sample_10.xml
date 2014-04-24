@@ -15,7 +15,7 @@
  * limitations under the License.
 -->
 <sdk:sdk-repository
-    xmlns:sdk="http://schemas.android.com/sdk/android/repository/9">
+    xmlns:sdk="http://schemas.android.com/sdk/android/repository/10">
 
     <!-- Define a couple of licenses. These will be referenced by uses-license later. -->
 
@@ -32,6 +32,7 @@
          There can be 0 or more of each, in any order. -->
 
     <sdk:platform>
+        <sdk:list-display>The first Android platform ever</sdk:list-display>
         <sdk:version>1.0</sdk:version>
         <sdk:api-level>1</sdk:api-level>
         <sdk:revision>3</sdk:revision>
@@ -63,6 +64,7 @@
     </sdk:platform>
 
     <sdk:doc>
+        <sdk:list-display>Doc for first platform</sdk:list-display>
         <sdk:api-level>1</sdk:api-level>
         <sdk:revision>1</sdk:revision>
         <!-- the license element is not mandatory. -->
@@ -78,6 +80,7 @@
     </sdk:doc>
 
     <sdk:source>
+        <sdk:list-display>Sources for first platform</sdk:list-display>
         <sdk:api-level>1</sdk:api-level>
         <sdk:revision>1</sdk:revision>
         <sdk:archives>
@@ -130,49 +133,6 @@
         <sdk:included-abi>x86</sdk:included-abi>
     </sdk:platform>
 
-    <sdk:system-image>
-        <sdk:api-level>2</sdk:api-level>
-        <sdk:revision>1</sdk:revision>
-        <sdk:abi>x86</sdk:abi>
-        <sdk:tag-id>default</sdk:tag-id>
-        <sdk:archives>
-            <sdk:archive os="any">
-                <sdk:size>65535</sdk:size>
-                <sdk:checksum type="sha1">1234ae37115ebf13412bbef91339ee0d94541234</sdk:checksum>
-                <sdk:url>http://www.example.com/plat1/x86/image1.zip</sdk:url>
-            </sdk:archive>
-        </sdk:archives>
-    </sdk:system-image>
-
-    <sdk:system-image>
-        <sdk:api-level>2</sdk:api-level>
-        <sdk:revision>2</sdk:revision>
-        <sdk:abi>armeabi-v7a</sdk:abi>
-        <sdk:tag-id>default</sdk:tag-id>
-        <sdk:archives>
-            <sdk:archive os="any">
-                <sdk:size>65534</sdk:size>
-                <sdk:checksum type="sha1">1234ae37115ebf13412bbef91339ee0d94541234</sdk:checksum>
-                <sdk:url>http://www.example.com/plat1/armv7/image2.zip</sdk:url>
-            </sdk:archive>
-        </sdk:archives>
-    </sdk:system-image>
-
-    <sdk:system-image>
-        <sdk:api-level>2</sdk:api-level>
-        <sdk:revision>2</sdk:revision>
-        <sdk:abi>armeabi-v7a</sdk:abi>
-        <sdk:tag-id>coolThing</sdk:tag-id>
-        <sdk:tag-display>Custom Thing</sdk:tag-display>
-        <sdk:archives>
-            <sdk:archive os="any">
-                <sdk:size>65533</sdk:size>
-                <sdk:checksum type="sha1">1235ae37115ebf13412bbef91339ee0d94541234</sdk:checksum>
-                <sdk:url>http://www.example.com/plat1/armv7/image3.zip</sdk:url>
-            </sdk:archive>
-        </sdk:archives>
-    </sdk:system-image>
-
     <sdk:source>
         <sdk:api-level>2</sdk:api-level>
         <sdk:revision>2</sdk:revision>
@@ -207,6 +167,7 @@
     </sdk:platform>
 
     <sdk:tool>
+        <sdk:list-display>Tools in version 1.2.3.4</sdk:list-display>
         <sdk:revision>
             <sdk:major>1</sdk:major>
             <sdk:minor>2</sdk:minor>
@@ -229,6 +190,7 @@
     </sdk:tool>
 
     <sdk:build-tool>
+        <sdk:list-display>Build tools v3 (preview 5)</sdk:list-display>
         <sdk:revision>
             <sdk:major>3</sdk:major>
             <sdk:minor>0</sdk:minor>
@@ -388,6 +350,7 @@
     </sdk:build-tool>
 
     <sdk:sample>
+        <sdk:list-display>Samples from Android 14</sdk:list-display>
         <sdk:api-level>14</sdk:api-level>
         <sdk:revision>24</sdk:revision>
         <sdk:archives>
@@ -425,48 +388,6 @@
         </sdk:min-tools-rev>
         <sdk:obsolete>This is obsolete</sdk:obsolete>
     </sdk:sample>
-
-    <sdk:system-image>
-        <sdk:api-level>42</sdk:api-level>
-        <sdk:revision>12</sdk:revision>
-        <sdk:abi>armeabi</sdk:abi>
-        <sdk:tag-id>variant-1</sdk:tag-id>
-        <sdk:archives>
-            <sdk:archive os="any">
-                <sdk:size>1234</sdk:size>
-                <sdk:checksum type="sha1">12345637115ebf13412bbef91339ee0d94541234</sdk:checksum>
-                <sdk:url>http://www.example.com/plat42/86/image12.zip</sdk:url>
-            </sdk:archive>
-        </sdk:archives>
-    </sdk:system-image>
-
-    <sdk:system-image>
-        <sdk:api-level>42</sdk:api-level>
-        <sdk:revision>12</sdk:revision>
-        <sdk:abi>mips</sdk:abi>
-        <sdk:tag-id>variant-1</sdk:tag-id>
-        <sdk:archives>
-            <sdk:archive os="any">
-                <sdk:size>12345</sdk:size>
-                <sdk:checksum type="sha1">12345637115ebf13412bbef91339ee0d94541234</sdk:checksum>
-                <sdk:url>http://www.example.com/plat42/mips/image12.zip</sdk:url>
-            </sdk:archive>
-        </sdk:archives>
-    </sdk:system-image>
-
-    <sdk:system-image>
-        <sdk:api-level>42</sdk:api-level>
-        <sdk:revision>12</sdk:revision>
-        <sdk:abi>mips</sdk:abi>
-        <sdk:tag-id>variant-2</sdk:tag-id>
-        <sdk:archives>
-            <sdk:archive os="any">
-                <sdk:size>12345</sdk:size>
-                <sdk:checksum type="sha1">12345637115ebf13412bbef91339ee0d94541234</sdk:checksum>
-                <sdk:url>http://www.example.com/plat42/mips/image12.zip</sdk:url>
-            </sdk:archive>
-        </sdk:archives>
-    </sdk:system-image>
 
     <sdk:source>
         <sdk:api-level>42</sdk:api-level>

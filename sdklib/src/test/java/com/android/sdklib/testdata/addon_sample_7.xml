@@ -15,7 +15,7 @@
  * limitations under the License.
 -->
 <sdk:sdk-addon
-    xmlns:sdk="http://schemas.android.com/sdk/android/addon/6">
+    xmlns:sdk="http://schemas.android.com/sdk/android/addon/7">
 
     <!-- Define a couple of licenses. These will be referenced by uses-license later. -->
 
@@ -32,6 +32,8 @@
          There can be 0 or more of each, in any order. -->
 
     <sdk:add-on>
+        <sdk:list-display>My First Add-on for API 5, rev 0</sdk:list-display>
+
         <sdk:name-id>My_First_add-on</sdk:name-id>
         <sdk:name-display>My First add-on</sdk:name-display>
 
@@ -74,6 +76,8 @@
         <sdk:vendor-id>John_Deer</sdk:vendor-id>
         <sdk:vendor-display>John Deer</sdk:vendor-display>
 
+        <sdk:list-display>My Second Add-on for API 2.r42</sdk:list-display>
+
         <sdk:api-level>2</sdk:api-level>
         <sdk:revision>42</sdk:revision>
         <sdk:archives>
@@ -108,6 +112,8 @@
         <sdk:vendor-id>Joe_Bar</sdk:vendor-id>
         <sdk:vendor-display>Joe Bar</sdk:vendor-display>
 
+        <!-- No list-display element. It is optional. -->
+
         <sdk:uses-license ref="license2" />
         <sdk:api-level>4</sdk:api-level>
         <sdk:revision>3</sdk:revision>
@@ -131,6 +137,8 @@
 
         <sdk:vendor-id>cyclop</sdk:vendor-id>
         <sdk:vendor-display>The big bus</sdk:vendor-display>
+
+        <!-- No list-display element. It is optional. -->
 
         <sdk:path>usb_driver</sdk:path>
         <sdk:uses-license ref="license2" />
@@ -163,6 +171,8 @@
         <sdk:vendor-id>android_vendor</sdk:vendor-id>
         <sdk:vendor-display>Android Vendor</sdk:vendor-display>
 
+        <sdk:list-display>Another extra with min-API 42</sdk:list-display>
+
         <sdk:path>extra_api_dep</sdk:path>
         <sdk:uses-license ref="license2" />
         <sdk:revision>
@@ -192,6 +202,8 @@
 
     <sdk:extra>
         <sdk:name-display>. -..- - .-. .-</sdk:name-display>
+
+        <sdk:list-display>Extra '____' for API _$1_, by _%2_</sdk:list-display>
 
         <sdk:vendor-id>____</sdk:vendor-id>
         <sdk:vendor-display>____</sdk:vendor-display>

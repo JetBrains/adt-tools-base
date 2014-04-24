@@ -186,7 +186,9 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
      */
     @Override
     public String getListDescription() {
-        return String.format("Android SDK Tools%1$s",
+        String ld = getListDisplay();
+        return String.format("%1$s%2$s",
+                ld.isEmpty() ? "Android SDK Tools" : ld,
                 isObsolete() ? " (Obsolete)" : "");
     }
 
@@ -195,6 +197,14 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
      */
     @Override
     public String getShortDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s, revision %2$s%3$s",
+                    ld,
+                    getRevision().toShortString(),
+                    isObsolete() ? " (Obsolete)" : "");
+        }
+
         return String.format("Android SDK Tools, revision %1$s%2$s",
                 getRevision().toShortString(),
                 isObsolete() ? " (Obsolete)" : "");
