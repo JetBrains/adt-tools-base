@@ -1,10 +1,20 @@
 apply plugin: 'android-library'
 
+repositories {
+    mavenCentral()
+}
+
 android {
     compileSdkVersion 19
     buildToolsVersion "19.0.2"
 
     defaultConfig {
         testPackageName = "com.android.tests.testprojecttest.testlib"
+    }
+
+    buildTypes {
+        debug {
+            testCoverageEnabled true
+        }
     }
 }

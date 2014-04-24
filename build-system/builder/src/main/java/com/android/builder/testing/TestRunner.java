@@ -44,6 +44,7 @@ public interface TestRunner {
      * @param maxThreads the max number of threads to run in parallel. 0 means unlimited.
      * @param timeout
      * @param resultsDir
+     * @param coverageDir
      * @param logger
      * @return true if the test succeed
      *
@@ -60,5 +61,6 @@ public interface TestRunner {
                       int maxThreads,
                       int timeout,
             @NonNull  File resultsDir,
+            @NonNull  File coverageDir,
             @NonNull  ILogger logger) throws TestException, InterruptedException;
 }

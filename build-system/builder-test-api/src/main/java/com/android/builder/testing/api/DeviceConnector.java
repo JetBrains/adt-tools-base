@@ -23,6 +23,7 @@ import com.android.utils.ILogger;
 import com.google.common.annotations.Beta;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -60,6 +61,16 @@ public abstract class DeviceConnector implements IShellEnabledDevice {
      * @throws DeviceException
      */
     public abstract void uninstallPackage(@NonNull String packageName, int timeout, ILogger logger) throws DeviceException;
+
+    /**
+     * Pulls a single file.
+     *
+     * @param remote the full path to the remote file
+     * @param local The local destination.
+     *
+     * @throws IOException in case of an IO exception.
+     */
+    public abstract void pullFile(String remote, String local) throws IOException;
 
     /**
      * Returns the API level of the device, or 0 if it could not be queried.
