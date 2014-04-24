@@ -47,6 +47,13 @@ public interface BuildType extends BaseConfig {
     boolean isDebuggable();
 
     /**
+     * Returns whether the build type is configured to be build with support for code coverage.
+     *
+     * @return true if code coverage is enabled.
+     */
+    boolean isTestCoverageEnabled();
+
+    /**
      * Returns whether the build type is configured to generate an apk with debuggable native code.
      *
      * @return true if the apk is debuggable

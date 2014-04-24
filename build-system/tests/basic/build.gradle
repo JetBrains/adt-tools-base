@@ -58,6 +58,8 @@ android {
             packageNameSuffix ".debug"
             signingConfig signingConfigs.myConfig
 
+            testCoverageEnabled true
+
             buildConfigField "String", "FOO", "\"bar1\""
             buildConfigField "String", "FOO", "\"bar\""
 

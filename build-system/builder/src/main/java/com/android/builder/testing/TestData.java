@@ -50,6 +50,11 @@ public interface TestData {
     @NonNull
     Boolean getFunctionalTest();
 
+    /**
+     * Returns whether the tested app is enabled for code coverage
+     */
+    boolean isTestCoverageEnabled();
+
     int getMinSdkVersion();
 
     /**

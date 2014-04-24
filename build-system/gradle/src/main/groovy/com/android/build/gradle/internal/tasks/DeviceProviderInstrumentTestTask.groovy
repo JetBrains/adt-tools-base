@@ -34,6 +34,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
 
     File reportsDir
     File resultsDir
+    File coverageDir
 
     String flavorName
 
@@ -48,9 +49,10 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
         assert variant instanceof TestVariantData
 
         File resultsOutDir = getResultsDir()
-
-        // empty the folder.
         emptyFolder(resultsOutDir)
+
+        File coverageOutDir = getCoverageDir()
+        emptyFolder(coverageOutDir)
 
         File testApk = getTestApp()
         File testedApk = getTestedApp()
@@ -67,7 +69,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
                     deviceProvider.devices,
                     deviceProvider.getMaxThreads(),
                     deviceProvider.getTimeout(),
-                    resultsOutDir, plugin.logger);
+                    resultsOutDir, coverageOutDir, plugin.logger);
         } finally {
             deviceProvider.terminate();
         }

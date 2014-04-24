@@ -220,4 +220,43 @@ public abstract class BaseVariantData {
 
         return javaSources;
     }
+
+    /**
+     * Returns the Java folders needed for code coverage report.
+     *
+     * This includes all the source folders except for the ones containing R and buildConfig.
+     */
+    @NonNull
+    public List<File> getJavaSourceFoldersForCoverage() {
+        // Build the list of source folders.
+        List<File> sourceFolders = Lists.newArrayList();
+
+        // First the actual source folders.
+        List<SourceProvider> providers = variantConfiguration.getSortedSourceProviders();
+        for (SourceProvider provider : providers) {
+            for (File sourceFolder : provider.getJavaDirectories()) {
+                if (sourceFolder.isDirectory()) {
+                    sourceFolders.add(sourceFolder);
+                }
+            }
+        }
+
+        File sourceFolder;
+        // then all the generated src folders, except the ones for the R/Manifest and
+        // BuildConfig classes.
+        sourceFolder = aidlCompileTask.getSourceOutputDir();
+        if (sourceFolder.isDirectory()) {
+            sourceFolders.add(sourceFolder);
+        }
+
+        if (!variantConfiguration.getMergedFlavor().getRenderscriptNdkMode()) {
+            sourceFolder = renderscriptCompileTask.getSourceOutputDir();
+            if (sourceFolder.isDirectory()) {
+                sourceFolders.add(sourceFolder);
+            }
+        }
+
+        return sourceFolders;
+    }
+
 }
