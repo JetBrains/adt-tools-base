@@ -27,6 +27,7 @@ import static com.android.tools.lint.checks.PluralsDetector.Quantity.zero;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.resources.LocaleManager;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
@@ -176,8 +177,8 @@ public class PluralsDetector extends ResourceXmlDetector {
         missing.removeAll(defined);
         if (!missing.isEmpty()) {
             String message = String.format(
-                    "For locale \"%1$s\" the following quantities should also be defined: %2$s",
-                    language, formatSet(missing));
+                    "For locale %1$s the following quantities should also be defined: %2$s",
+                    getLanguageDescription(language), formatSet(missing));
             context.report(MISSING, element, context.getLocation(element), message, null);
         }
 
@@ -186,9 +187,18 @@ public class PluralsDetector extends ResourceXmlDetector {
         extra.removeAll(relevant);
         if (!extra.isEmpty()) {
             String message = String.format(
-                    "For language \"%1$s\" the following quantities are not relevant: %2$s",
-                    language, formatSet(extra));
+                    "For language %1$s the following quantities are not relevant: %2$s",
+                    getLanguageDescription(language), formatSet(extra));
             context.report(EXTRA, element, context.getLocation(element), message, null);
+        }
+    }
+
+    private static String getLanguageDescription(@NonNull String language) {
+        String languageName = LocaleManager.getLanguageName(language);
+        if (languageName != null) {
+            return String.format("\"%1$s\" (%2$s)", language, languageName);
+        } else {
+            return '"' + language + '"';
         }
     }
 
