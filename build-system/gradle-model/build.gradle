@@ -2,6 +2,13 @@ apply plugin: 'java'
 apply plugin: 'clone-artifacts'
 apply plugin: 'idea'
 
+if (System.env.USE_GRADLE_REPO != null) {
+    repositories {
+        maven { url 'http://repo.gradle.org/gradle/libs-snapshots-local' }
+        maven { url 'http://repo.gradle.org/gradle/libs-releases-local' }
+    }
+}
+
 def toolingApiVersion = gradle.gradleVersion
 
 // Custom config that cloneArtifact will not look into, since this
