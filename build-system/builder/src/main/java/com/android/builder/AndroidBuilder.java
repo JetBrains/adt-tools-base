@@ -36,6 +36,7 @@ import com.android.builder.internal.compiler.LeafFolderGatherer;
 import com.android.builder.internal.compiler.PreDexCache;
 import com.android.builder.internal.compiler.RenderScriptProcessor;
 import com.android.builder.internal.compiler.SourceSearcher;
+import com.android.builder.internal.incremental.DependencyData;
 import com.android.builder.internal.packaging.JavaResourceProcessor;
 import com.android.builder.internal.packaging.Packager;
 import com.android.builder.model.AaptOptions;
@@ -103,7 +104,7 @@ import java.util.Set;
  * {@link #processManifest(java.io.File, java.util.List, java.util.List, String, int, String, String, int, String)}
  * {@link #processTestManifest(String, String, int, String, String, Boolean, Boolean, java.util.List, String)}
  * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions, java.util.Collection, boolean)}
- * {@link #compileAllAidlFiles(java.util.List, java.io.File, java.util.List, com.android.builder.compiling.DependencyFileProcessor)}
+ * {@link #compileAllAidlFiles(java.util.List, java.io.File, java.io.File, java.util.List, com.android.builder.compiling.DependencyFileProcessor)}
  * {@link #convertByteCode(Iterable, Iterable, java.io.File, DexOptions, java.util.List, boolean)}
  * {@link #packageApk(String, java.io.File, java.util.Collection, String, java.util.Collection, java.util.Set, boolean, com.android.builder.model.SigningConfig, com.android.builder.model.PackagingOptions, String)}
  *
@@ -116,8 +117,8 @@ public class AndroidBuilder {
 
     private static final DependencyFileProcessor sNoOpDependencyFileProcessor = new DependencyFileProcessor() {
         @Override
-        public boolean processFile(@NonNull File dependencyFile) {
-            return true;
+        public DependencyData processFile(@NonNull File dependencyFile) {
+            return null;
         }
     };
 
@@ -1152,6 +1153,7 @@ public class AndroidBuilder {
      */
     public void compileAllAidlFiles(@NonNull List<File> sourceFolders,
                                     @NonNull File sourceOutputDir,
+                                    @Nullable File parcelableOutputDir,
                                     @NonNull List<File> importFolders,
                                     @Nullable DependencyFileProcessor dependencyFileProcessor)
             throws IOException, InterruptedException, LoggedErrorException {
@@ -1179,6 +1181,7 @@ public class AndroidBuilder {
                 target.getPath(IAndroidTarget.ANDROID_AIDL),
                 fullImportList,
                 sourceOutputDir,
+                parcelableOutputDir,
                 dependencyFileProcessor != null ?
                         dependencyFileProcessor : sNoOpDependencyFileProcessor,
                 mCmdLineRunner);
@@ -1200,8 +1203,10 @@ public class AndroidBuilder {
      * @throws InterruptedException
      * @throws LoggedErrorException
      */
-    public void compileAidlFile(@NonNull File aidlFile,
+    public void compileAidlFile(@NonNull File sourceFolder,
+                                @NonNull File aidlFile,
                                 @NonNull File sourceOutputDir,
+                                @Nullable File parcelableOutputDir,
                                 @NonNull List<File> importFolders,
                                 @Nullable DependencyFileProcessor dependencyFileProcessor)
             throws IOException, InterruptedException, LoggedErrorException {
@@ -1224,11 +1229,12 @@ public class AndroidBuilder {
                 target.getPath(IAndroidTarget.ANDROID_AIDL),
                 importFolders,
                 sourceOutputDir,
+                parcelableOutputDir,
                 dependencyFileProcessor != null ?
                         dependencyFileProcessor : sNoOpDependencyFileProcessor,
                 mCmdLineRunner);
 
-        processor.processFile(aidlFile);
+        processor.processFile(sourceFolder, aidlFile);
     }
 
     /**

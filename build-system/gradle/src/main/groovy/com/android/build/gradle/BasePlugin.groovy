@@ -919,7 +919,7 @@ public abstract class BasePlugin {
         }
     }
 
-    public void createAidlTask(BaseVariantData variantData) {
+    public void createAidlTask(@NonNull BaseVariantData variantData, @Nullable File parcelableDir) {
         VariantConfiguration variantConfiguration = variantData.variantConfiguration
 
         def compileTask = project.tasks.create(
@@ -940,6 +940,7 @@ public abstract class BasePlugin {
         compileTask.conventionMapping.sourceOutputDir = {
             project.file("$project.buildDir/source/aidl/${variantData.variantConfiguration.dirName}")
         }
+        compileTask.aidlParcelableDir = parcelableDir
     }
 
     public void createCompileTask(BaseVariantData variantData,
@@ -1083,7 +1084,7 @@ public abstract class BasePlugin {
         // process java resources
         createProcessJavaResTask(variantData)
 
-        createAidlTask(variantData)
+        createAidlTask(variantData, null /*parcelableDir*/)
 
         // Add a task to compile the test application
         createCompileTask(variantData, testedVariantData)

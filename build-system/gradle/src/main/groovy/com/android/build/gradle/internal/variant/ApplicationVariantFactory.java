@@ -105,7 +105,7 @@ public class ApplicationVariantFactory implements VariantFactory {
         // Add a task to process the java resources
         basePlugin.createProcessJavaResTask(variantData);
 
-        basePlugin.createAidlTask(variantData);
+        basePlugin.createAidlTask(variantData, null /*parcelableDir*/);
 
         // Add a compile task
         basePlugin.createCompileTask(variantData, null/*testedVariant*/);

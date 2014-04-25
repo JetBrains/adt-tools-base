@@ -17,10 +17,14 @@
 package com.android.builder.internal.compiler;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.compiling.DependencyFileProcessor;
+import com.android.builder.internal.incremental.DependencyData;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
+import com.android.sdklib.io.FileOp;
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,6 +44,8 @@ public class AidlProcessor implements SourceSearcher.SourceFileProcessor {
     private final List<File> mImportFolders;
     @NonNull
     private final File mSourceOutputDir;
+    @Nullable
+    private final File mParcelableOutputDir;
     @NonNull
     private final DependencyFileProcessor mDependencyFileProcessor;
     @NonNull
@@ -49,18 +55,21 @@ public class AidlProcessor implements SourceSearcher.SourceFileProcessor {
                          @NonNull String frameworkLocation,
                          @NonNull List<File> importFolders,
                          @NonNull File sourceOutputDir,
+                         @Nullable File parcelableOutputDir,
                          @NonNull DependencyFileProcessor dependencyFileProcessor,
                          @NonNull CommandLineRunner runner) {
         mAidlExecutable = aidlExecutable;
         mFrameworkLocation = frameworkLocation;
         mImportFolders = importFolders;
         mSourceOutputDir = sourceOutputDir;
+        mParcelableOutputDir = parcelableOutputDir;
         mDependencyFileProcessor = dependencyFileProcessor;
         mRunner = runner;
     }
 
     @Override
-    public void processFile(File sourceFile) throws IOException, InterruptedException, LoggedErrorException {
+    public void processFile(@NonNull File sourceFolder, @NonNull File sourceFile)
+            throws IOException, InterruptedException, LoggedErrorException {
         ArrayList<String> command = Lists.newArrayList();
 
         command.add(mAidlExecutable);
@@ -82,8 +91,19 @@ public class AidlProcessor implements SourceSearcher.SourceFileProcessor {
         mRunner.runCmdLine(command, null);
 
         // send the dependency file to the processor.
-        if (mDependencyFileProcessor.processFile(depFile)) {
-            depFile.delete();
+        DependencyData data = mDependencyFileProcessor.processFile(depFile);
+
+        if (mParcelableOutputDir != null && data != null && data.getOutputFiles().isEmpty()) {
+            // looks like a parcelable. Store it in the 2ndary output of the DependencyData object.
+
+            String relative = FileOp.makeRelative(sourceFolder, sourceFile);
+
+            File destFile = new File(mParcelableOutputDir, relative);
+            destFile.getParentFile().mkdirs();
+            Files.copy(sourceFile, destFile);
+            data.addSecondaryOutputFile(destFile.getPath());
         }
+
+        depFile.delete();
     }
 }
