@@ -26,7 +26,7 @@ public enum BitSize {
 
     private final int mSize;
 
-    private BitSize(@NonNull int size) {
+    private BitSize(int size) {
         mSize = size;
     }
 
