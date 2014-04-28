@@ -98,6 +98,7 @@ public class PlatformPackage extends MinToolsPackage
                 .newPlatform(mVersion,
                              (MajorRevision) getRevision(),
                              getMinToolsRevision())
+                .setDescriptions(this)
                 .create();
     }
 
@@ -140,6 +141,7 @@ public class PlatformPackage extends MinToolsPackage
                 .newPlatform(mVersion,
                              (MajorRevision) getRevision(),
                              getMinToolsRevision())
+                .setDescriptions(this)
                 .create();
     }
 
