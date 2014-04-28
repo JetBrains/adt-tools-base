@@ -44,14 +44,17 @@ import java.util.ListIterator;
  * and call performClick when click detection occurs.
  */
 public class ClickableViewAccessibilityDetector extends Detector implements Detector.ClassScanner {
-    // TODO Extend this check to catch views that use OnTouchListener.
 
     public static final Issue ISSUE = Issue.create(
             "ClickableViewAccessibility", //$NON-NLS-1$
             "Accessibility in Custom Views",
             "Checks that custom views handle accessibility on click events",
-            "If a `View` that overrides `onTouchEvent` does not also implement `performClick` and "
-                    + "call it, the `View` may not handle accessibility actions properly.",
+            "If a `View` that overrides `onTouchEvent` or uses an `OnTouchListener` does not also "
+                    + "implement `performClick` and call it when clicks are detected, the `View` "
+                    + "may not handle accessibility actions properly. Logic handling the click "
+                    + "actions should ideally be placed in `View#performClick` as some "
+                    + "accessibility services invoke `performClick` when a click action "
+                    + "should occur.",
             Category.A11Y,
             6,
             Severity.WARNING,
@@ -63,6 +66,11 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
     private static final String ON_TOUCH_EVENT_SIG = "(Landroid/view/MotionEvent;)Z"; //$NON-NLS-1$
     private static final String PERFORM_CLICK = "performClick"; //$NON-NLS-1$
     private static final String PERFORM_CLICK_SIG = "()Z"; //$NON-NLS-1$
+    private static final String SET_ON_TOUCH_LISTENER = "setOnTouchListener"; //$NON-NLS-1$
+    private static final String SET_ON_TOUCH_LISTENER_SIG = "(Landroid/view/View$OnTouchListener;)V"; //$NON-NLS-1$
+    private static final String ON_TOUCH = "onTouch"; //$NON-NLS-1$
+    private static final String ON_TOUCH_SIG = "(Landroid/view/View;Landroid/view/MotionEvent;)Z"; //$NON-NLS-1$
+    private static final String ON_TOUCH_LISTENER = "android/view/View$OnTouchListener";  //$NON-NLS-1$
 
 
     /** Constructs a new {@link ClickableViewAccessibilityDetector} */
@@ -76,20 +84,95 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
     }
 
     // ---- Implements ClassScanner ----
-
-    @SuppressWarnings("unchecked") // ASM API
     @Override
     public void checkClass(@NonNull ClassContext context, @NonNull ClassNode classNode) {
+        scanForAndCheckSetOnTouchListenerCalls(context, classNode);
+
         // Ignore abstract classes.
         if ((classNode.access & Opcodes.ACC_ABSTRACT) != 0) {
             return;
         }
 
-        // Ignore classes that aren't Views.
-        if (!context.getDriver().isSubclassOf(classNode, ANDROID_VIEW_VIEW)) {
+        if (context.getDriver().isSubclassOf(classNode, ANDROID_VIEW_VIEW)) {
+            checkView(context, classNode);
+        }
+
+        if (implementsOnTouchListener(classNode)) {
+            checkOnTouchListener(context, classNode);
+        }
+    }
+
+    @SuppressWarnings("unchecked") // ASM API
+    public static void scanForAndCheckSetOnTouchListenerCalls(
+            ClassContext context,
+            ClassNode classNode) {
+        List<MethodNode> methods = classNode.methods;
+        for (MethodNode methodNode : methods) {
+            ListIterator<AbstractInsnNode> iterator = methodNode.instructions.iterator();
+            while (iterator.hasNext()) {
+                AbstractInsnNode abstractInsnNode = iterator.next();
+                if (abstractInsnNode.getType() == AbstractInsnNode.METHOD_INSN) {
+                    MethodInsnNode methodInsnNode = (MethodInsnNode) abstractInsnNode;
+                    if (methodInsnNode.name.equals(SET_ON_TOUCH_LISTENER)
+                            && methodInsnNode.desc.equals(SET_ON_TOUCH_LISTENER_SIG)) {
+                        checkSetOnTouchListenerCall(context, methodInsnNode);
+                    }
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked") // ASM API
+    public static void checkSetOnTouchListenerCall(
+            @NonNull ClassContext context,
+            @NonNull MethodInsnNode call) {
+        String owner = call.owner;
+
+        // Ignore the call if it was called on a non-view.
+        ClassNode ownerClass = context.getDriver().findClass(context, owner, 0);
+        if(ownerClass == null
+                || !context.getDriver().isSubclassOf(ownerClass, ANDROID_VIEW_VIEW)) {
             return;
         }
 
+        MethodNode performClick = findMethod(ownerClass.methods, PERFORM_CLICK, PERFORM_CLICK_SIG);
+        //noinspection VariableNotUsedInsideIf
+        if (performClick == null) {
+            String message = String.format(
+                    "Custom view %1$s has setOnTouchListener called on it but does not "
+                            + "override performClick", ownerClass.name);
+            context.report(ISSUE, context.getLocation(call), message, null);
+        }
+    }
+
+    @SuppressWarnings("unchecked") // ASM API
+    private static void checkOnTouchListener(ClassContext context, ClassNode classNode) {
+        MethodNode onTouchNode =
+            findMethod(
+                    classNode.methods,
+                    ON_TOUCH,
+                    ON_TOUCH_SIG);
+        if (onTouchNode != null) {
+            AbstractInsnNode performClickInsnNode = findMethodCallInstruction(
+                    onTouchNode.instructions,
+                    ANDROID_VIEW_VIEW,
+                    PERFORM_CLICK,
+                    PERFORM_CLICK_SIG);
+            if (performClickInsnNode == null) {
+                String message = String.format(
+                        "%1$s#onTouch should call View#performClick when a click is detected",
+                        classNode.name);
+                context.report(
+                        ISSUE,
+                        context.getLocation(onTouchNode, classNode),
+                        message,
+                        null);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked") // ASM API
+    private static void checkView(ClassContext context, ClassNode classNode) {
         MethodNode onTouchEvent = findMethod(classNode.methods, ON_TOUCH_EVENT, ON_TOUCH_EVENT_SIG);
         MethodNode performClick = findMethod(classNode.methods, PERFORM_CLICK, PERFORM_CLICK_SIG);
 
@@ -111,7 +194,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
                         PERFORM_CLICK_SIG);
                 if (performClickInOnTouchEventInsnNode == null) {
                     String message = String.format(
-                            "%1$s#onTouchEvent should call %1$s#performClick",
+                            "%1$s#onTouchEvent should call %1$s#performClick when a click is detected",
                             classNode.name);
                     context.report(ISSUE, context.getLocation(onTouchEvent, classNode), message,
                             null);
@@ -171,5 +254,9 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
         }
 
         return null;
+    }
+
+    private static boolean implementsOnTouchListener(ClassNode classNode) {
+        return (classNode.interfaces != null) && (classNode.interfaces.contains(ON_TOUCH_LISTENER));
     }
 }
