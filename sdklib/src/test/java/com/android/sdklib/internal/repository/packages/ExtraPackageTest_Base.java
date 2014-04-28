@@ -16,8 +16,6 @@
 
 package com.android.sdklib.internal.repository.packages;
 
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.repository.PkgProps;
 
 import java.util.Properties;
@@ -37,8 +35,6 @@ public class ExtraPackageTest_Base extends PackageTest {
                 null, //license
                 null, //description
                 null, //descUrl
-                Os.ANY, //archiveOs
-                Arch.ANY, //archiveArch
                 LOCAL_ARCHIVE_PATH
                 );
 
@@ -58,8 +54,6 @@ public class ExtraPackageTest_Base extends PackageTest {
                 null, //license
                 null, //description
                 null, //descUrl
-                Os.ANY, //archiveOs
-                Arch.ANY, //archiveArch
                 LOCAL_ARCHIVE_PATH
                 );
 

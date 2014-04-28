@@ -2,8 +2,8 @@ package ${packageName};
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.NavUtils;
+import <#if appCompat>android.support.v7.app.ActionBarActivity<#else>android.app.Activity</#if>;
+<#if minApiLevel lt 16>import android.support.v4.app.NavUtils;</#if>
 import android.view.MenuItem;
 <#if applicationPackage??>import ${applicationPackage}.R;</#if>
 
@@ -16,7 +16,7 @@ import android.view.MenuItem;
  * This activity is mostly just a 'shell' activity containing nothing
  * more than a {@link ${DetailName}Fragment}.
  */
-public class ${DetailName}Activity extends FragmentActivity {
+public class ${DetailName}Activity extends ${appCompat?string('ActionBar','')}Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,7 +24,7 @@ public class ${DetailName}Activity extends FragmentActivity {
         setContentView(R.layout.activity_${detail_name});
 
         // Show the Up button in the action bar.
-        getActionBar().setDisplayHomeAsUpEnabled(true);
+        get${Support}ActionBar().setDisplayHomeAsUpEnabled(true);
 
         // savedInstanceState is non-null when there is fragment state
         // saved from previous configurations of this activity
@@ -43,7 +43,7 @@ public class ${DetailName}Activity extends FragmentActivity {
                     getIntent().getStringExtra(${DetailName}Fragment.ARG_ITEM_ID));
             ${DetailName}Fragment fragment = new ${DetailName}Fragment();
             fragment.setArguments(arguments);
-            getSupportFragmentManager().beginTransaction()
+            get${Support}FragmentManager().beginTransaction()
                     .add(R.id.${detail_name}_container, fragment)
                     .commit();
         }
@@ -53,6 +53,7 @@ public class ${DetailName}Activity extends FragmentActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == android.R.id.home) {
+<#if minApiLevel lt 16>
             // This ID represents the Home or Up button. In the case of this
             // activity, the Up button is shown. Use NavUtils to allow users
             // to navigate up one level in the application structure. For
@@ -61,6 +62,15 @@ public class ${DetailName}Activity extends FragmentActivity {
             // http://developer.android.com/design/patterns/navigation.html#up-vs-back
             //
             NavUtils.navigateUpTo(this, new Intent(this, ${CollectionName}Activity.class));
+<#else>
+            // This ID represents the Home or Up button. In the case of this
+            // activity, the Up button is shown. For
+            // more details, see the Navigation pattern on Android Design:
+            //
+            // http://developer.android.com/design/patterns/navigation.html#up-vs-back
+            //
+            navigateUpTo(new Intent(this, ${CollectionName}Activity.class));
+</#if>
             return true;
         }
         return super.onOptionsItemSelected(item);

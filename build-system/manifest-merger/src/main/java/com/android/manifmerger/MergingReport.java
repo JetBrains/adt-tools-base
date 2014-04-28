@@ -16,9 +16,14 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.XmlLoader.SourceLocation;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.concurrency.Immutable;
 import com.android.utils.ILogger;
+import com.android.utils.SdkUtils;
+import com.android.utils.XmlUtils;
+import com.google.common.base.CaseFormat;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 
@@ -35,18 +40,18 @@ public class MergingReport {
     // list of logging events, ordered by their recording time.
     private final ImmutableList<Record> mRecords;
     private final ImmutableList<String> mIntermediaryStages;
-    private final ActionRecorder mActionRecorder;
+    private final Actions mActions;
 
     private MergingReport(Optional<XmlDocument> mergedDocument,
             @NonNull Result result,
             @NonNull ImmutableList<Record> records,
             @NonNull ImmutableList<String> intermediaryStages,
-            @NonNull ActionRecorder actionRecorder) {
+            @NonNull Actions actions) {
         mMergedDocument = mergedDocument;
         mResult = result;
         mRecords = records;
         mIntermediaryStages = intermediaryStages;
-        mActionRecorder = actionRecorder;
+        mActions = actions;
     }
 
     /**
@@ -56,19 +61,19 @@ public class MergingReport {
         for (Record record : mRecords) {
             switch(record.mSeverity) {
                 case WARNING:
-                    logger.warning(record.mLog);
+                    logger.warning(record.toString());
                     break;
                 case ERROR:
-                    logger.error(null /* throwable */, record.mLog);
+                    logger.error(null /* throwable */, record.toString());
                     break;
                 case INFO:
-                    logger.info(record.mLog);
+                    logger.info(record.toString());
                     break;
                 default:
                     logger.error(null /* throwable */, "Unhandled record type " + record.mSeverity);
             }
         }
-        mActionRecorder.log(logger);
+        mActions.log(logger);
     }
 
     /**
@@ -95,7 +100,19 @@ public class MergingReport {
 
         WARNING,
 
-        ERROR
+        ERROR;
+
+        public boolean isSuccess() {
+            return this == SUCCESS || this == WARNING;
+        }
+
+        public boolean isWarning() {
+            return this == WARNING;
+        }
+
+        public boolean isError() {
+            return this == ERROR;
+        }
     }
 
     @NonNull
@@ -109,8 +126,26 @@ public class MergingReport {
     }
 
     @NonNull
-    public ActionRecorder getActionRecorder() {
-        return mActionRecorder;
+    public Actions getActions() {
+        return mActions;
+    }
+
+    @NonNull
+    public String getReportString() {
+        switch (mResult) {
+            case SUCCESS:
+                return "Manifest merger executed successfully";
+            case WARNING:
+                return mRecords.size() > 1
+                        ? "Manifest merger exited with warnings, see logs"
+                        : "Manifest merger warning : " + mRecords.get(0).mLog;
+            case ERROR:
+                return mRecords.size() > 1
+                        ? "Manifest merger failed with multiple errors, see logs"
+                        : "Manifest merger failed : " + mRecords.get(0).mLog;
+            default:
+                return "Manifest merger returned an invalid result " + mResult;
+        }
     }
 
     /**
@@ -121,23 +156,42 @@ public class MergingReport {
      */
     public static class Record {
 
-        private Record(Severity severity, String mLog) {
-            this.mSeverity = severity;
-            this.mLog = mLog;
-        }
-
-        enum Severity {WARNING, ERROR, INFO }
+        public enum Severity {WARNING, ERROR, INFO }
 
         private final Severity mSeverity;
         private final String mLog;
+        private final SourceLocation mSourceLocation;
+        private final int mLineNumber;
+        private final int mColumnNumber;
+
+        private Record(
+                @NonNull SourceLocation sourceLocation,
+                int lineNumber,
+                int columnNumber,
+                @NonNull Severity severity,
+                @NonNull String mLog) {
+            this.mSourceLocation = sourceLocation;
+            this.mLineNumber = lineNumber;
+            this.mColumnNumber = columnNumber;
+            this.mSeverity = severity;
+            this.mLog = mLog;
+        }
 
         public Severity getSeverity() {
             return mSeverity;
         }
 
+        public String getMessage() {
+            return mLog;
+        }
+
         @Override
         public String toString() {
-            return mSeverity.toString() + ":" + mLog;
+            return mSourceLocation.print(false)
+                    + ":" + mLineNumber + ":" + mColumnNumber + " "
+                    + CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, mSeverity.toString())
+                    + ":\n\t"
+                    + mLog;
         }
     }
 
@@ -156,7 +210,7 @@ public class MergingReport {
         private ImmutableList.Builder<String> mIntermediaryStages = new ImmutableList.Builder<String>();
         private boolean mHasWarnings = false;
         private boolean mHasErrors = false;
-        private ActionRecorder.Builder mActionRecorder = new ActionRecorder.Builder();
+        private ActionRecorder mActionRecorder = new ActionRecorder();
         private final ILogger mLogger;
 
         Builder(ILogger logger) {
@@ -169,20 +223,22 @@ public class MergingReport {
             return this;
         }
 
-        Builder addInfo(String info) {
-            mRecordBuilder.add(new Record(Record.Severity.INFO, info));
-            return this;
-        }
+        Builder addMessage(@NonNull SourceLocation errorLocation,
+                int line,
+                int column,
+                @NonNull Record.Severity severity,
+                @NonNull String message) {
 
-        Builder addWarning(String warning) {
-            mHasWarnings = true;
-            mRecordBuilder.add(new Record(Record.Severity.WARNING, warning));
-            return this;
-        }
-
-        Builder addError(String error) {
-            mHasErrors = true;
-            mRecordBuilder.add(new Record(Record.Severity.ERROR, error));
+            switch (severity) {
+                case ERROR:
+                    mHasErrors = true;
+                    break;
+                case WARNING:
+                    mHasWarnings = true;
+                    break;
+            }
+            mRecordBuilder.add(new Record(
+                    errorLocation, line, column, severity, message));
             return this;
         }
 
@@ -198,7 +254,7 @@ public class MergingReport {
             return mHasErrors;
         }
 
-        ActionRecorder.Builder getActionRecorder() {
+        ActionRecorder getActionRecorder() {
             return mActionRecorder;
         }
 

@@ -16,8 +16,9 @@
 
 package com.android.manifmerger;
 
-import static org.mockito.Mockito.when;
+import static com.android.manifmerger.MergingReport.Record.Severity.ERROR;
 
+import com.android.SdkConstants;
 import com.android.utils.ILogger;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -26,9 +27,11 @@ import junit.framework.TestCase;
 
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.logging.Logger;
 
@@ -65,6 +68,55 @@ public class XmlDocumentTest extends TestCase {
                         getClass(), "testMergeableElementsIdentification()"), input);
         ImmutableList<XmlElement> mergeableElements = xmlDocument.getRootNode().getMergeableElements();
         assertEquals(2, mergeableElements.size());
+    }
+
+    public void testNamespaceEnabledElements()
+            throws ParserConfigurationException, SAXException, IOException {
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <android:application android:label=\"@string/lib_name\" />\n"
+                + "\n"
+                + "    <android:activity android:name=\"activityOne\" />\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(
+                        getClass(), "testMergeableElementsIdentification()"), input);
+        ImmutableList<XmlElement> mergeableElements = xmlDocument.getRootNode().getMergeableElements();
+        assertEquals(2, mergeableElements.size());
+        assertEquals(ManifestModel.NodeTypes.APPLICATION, mergeableElements.get(0).getType());
+        assertEquals(ManifestModel.NodeTypes.ACTIVITY, mergeableElements.get(1).getType());
+    }
+
+    public void testMultipleNamespaceEnabledElements()
+            throws ParserConfigurationException, SAXException, IOException {
+        String input = ""
+                + "<android:manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <android:application android:label=\"@string/lib_name\" \n"
+                + "         tools:node=\"replace\" />\n"
+                + "    <acme:custom-tag android:label=\"@string/lib_name\" />\n"
+                + "    <acme:application acme:label=\"@string/lib_name\" />\n"
+                + "\n"
+                + "</android:manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(
+                        getClass(), "testMergeableElementsIdentification()"), input);
+        ImmutableList<XmlElement> mergeableElements = xmlDocument.getRootNode().getMergeableElements();
+        assertEquals(3, mergeableElements.size());
+        assertEquals(ManifestModel.NodeTypes.APPLICATION, mergeableElements.get(0).getType());
+        assertEquals(ManifestModel.NodeTypes.CUSTOM, mergeableElements.get(1).getType());
+        assertEquals(ManifestModel.NodeTypes.CUSTOM, mergeableElements.get(2).getType());
+
     }
 
     public void testGetXmlNodeByTypeAndKey()
@@ -116,16 +168,13 @@ public class XmlDocumentTest extends TestCase {
                 mainDocument.merge(libraryDocument, mergingReportBuilder);
 
         assertTrue(mergedDocument.isPresent());
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        mergedDocument.get().write(byteArrayOutputStream);
-        Logger.getAnonymousLogger().info(byteArrayOutputStream.toString());
+        Logger.getAnonymousLogger().info(mergedDocument.get().prettyPrint());
         assertTrue(mergedDocument.get().getRootNode().getNodeByTypeAndKey(
                 ManifestModel.NodeTypes.APPLICATION, null).isPresent());
         Optional<XmlElement> activityOne = mergedDocument.get()
                 .getRootNode().getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,
                         "com.example.lib3.activityOne");
         assertTrue(activityOne.isPresent());
-
     }
 
     public void testDiff1()
@@ -215,20 +264,495 @@ public class XmlDocumentTest extends TestCase {
     }
 
     public void testWriting() throws ParserConfigurationException, SAXException, IOException {
-        String input = ""
-                + "<manifest"
-                + " xmlns:x=\"http://schemas.android.com/apk/res/android\""
-                + " xmlns:y=\"http://schemas.android.com/apk/res/android/tools\""
-                + " package=\"com.example.lib3\">\n"
+        String input = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<manifest xmlns:x=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:y=\"http://schemas.android.com/apk/res/android/tools\"\n"
+                + "    package=\"com.example.lib3\" >\n"
                 + "\n"
-                + "    <application x:label=\"@string/lib_name\" y:node=\"replace\"/>\n"
+                + "    <application\n"
+                + "        x:label=\"@string/lib_name\"\n"
+                + "        y:node=\"replace\" />\n"
                 + "\n"
-                + "</manifest>\n";
+                + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "testWriting()"), input);
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        xmlDocument.write(byteArrayOutputStream);
-        assertEquals(input, byteArrayOutputStream.toString());
+        assertEquals(input, xmlDocument.prettyPrint());
     }
+
+    public void testCustomElements()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <fantasy android:name=\"fantasyOne\" \n"
+                + "         no-ns-attribute=\"no-ns\" >\n"
+                + "    </fantasy>\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <fantasy android:name=\"fantasyTwo\" \n"
+                + "         no-ns-attribute=\"no-ns\" >\n"
+                + "    </fantasy>\n"
+                + "    <acme:another acme:name=\"anotherOne\" \n"
+                + "         acme:ns-attribute=\"ns-value\" >\n"
+                + "        <some-child acme:child-attr=\"foo\" /> \n"
+                + "    </acme:another>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        Logger.getAnonymousLogger().info(mergedDocument.get().prettyPrint());
+        XmlElement rootNode = mergedDocument.get().getRootNode();
+        assertTrue(rootNode.getNodeByTypeAndKey(
+                ManifestModel.NodeTypes.APPLICATION, null).isPresent());
+        Optional<XmlElement> activityOne = rootNode
+                .getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,
+                        "com.example.lib3.activityOne");
+        assertTrue(activityOne.isPresent());
+
+        boolean foundFantasyOne = false;
+        boolean foundFantasyTwo = false;
+        boolean foundAnother = false;
+        NodeList childNodes = rootNode.getXml().getChildNodes();
+        for (int i =0; i < childNodes.getLength(); i++) {
+            Node item = childNodes.item(i);
+            if (item.getNodeName().equals("fantasy")) {
+                String name = ((Element) item).getAttributeNS(SdkConstants.ANDROID_URI, "name");
+                if (name.equals("fantasyOne"))
+                    foundFantasyOne = true;
+                if (name.equals("fantasyTwo"))
+                    foundFantasyTwo = true;
+            }
+            if (item.getNodeName().equals("acme:another")) {
+                foundAnother = true;
+            }
+        }
+        assertTrue(foundAnother);
+        assertTrue(foundFantasyOne);
+        assertTrue(foundFantasyTwo);
+    }
+
+    public void testIllegalLibraryVersionMerge()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"4\"/>\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"19\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertFalse(mergedDocument.isPresent());
+        MergingReport mergingReport = mergingReportBuilder.build();
+        assertEquals(2, mergingReport.getLoggingRecords().size());
+        assertTrue(mergingReport.getLoggingRecords().get(0).getSeverity() == ERROR);
+        assertTrue(mergingReport.getLoggingRecords().get(1).getSeverity() == ERROR);
+        assertTrue(mergingReport.getLoggingRecords().get(1).toString().contains(
+                "uses-sdk:minSdkVersion 4"));
+    }
+
+    public void testNoMergingNecessary()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"19\"/>\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"19\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        XmlDocument xmlDocument = mergedDocument.get();
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_EXTERNAL_STORAGE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_EXTERNAL_STORAGE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_PHONE_STATE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_CALL_LOG").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_CALL_LOG").isPresent());
+    }
+
+    public void testNoUsesSdkPresence()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        XmlDocument xmlDocument = mergedDocument.get();
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_EXTERNAL_STORAGE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_EXTERNAL_STORAGE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_PHONE_STATE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_CALL_LOG").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_CALL_LOG").isPresent());
+    }
+
+    public void testNoUsesSdkPresenceInMain()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"3\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertFalse(mergedDocument.isPresent());
+    }
+
+    public void testNoUsesSdkPresenceInLibrary()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"3\"/>\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        XmlDocument xmlDocument = mergedDocument.get();
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_EXTERNAL_STORAGE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_EXTERNAL_STORAGE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_PHONE_STATE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_CALL_LOG").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_CALL_LOG").isPresent());
+    }
+
+    public void testLibraryVersion3Merge()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"19\"/>\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"3\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        XmlDocument xmlDocument = mergedDocument.get();
+        assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_EXTERNAL_STORAGE").isPresent());
+        assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_EXTERNAL_STORAGE").isPresent());
+        assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_PHONE_STATE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_CALL_LOG").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_CALL_LOG").isPresent());
+
+        // check records.
+        Actions actions = mergingReportBuilder.getActionRecorder().build();
+        XmlElement xmlElement = xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_EXTERNAL_STORAGE").get();
+        ImmutableList<Actions.NodeRecord> nodeRecords = actions
+                .getNodeRecords(XmlNode.NodeKey.fromXml(xmlElement.getXml()));
+        assertEquals(1, nodeRecords.size());
+        assertEquals(nodeRecords.iterator().next().mReason, "targetSdkVersion < 4");
+    }
+
+    public void testLibraryVersion10Merge()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"19\"/>\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"10\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        XmlDocument xmlDocument = mergedDocument.get();
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_EXTERNAL_STORAGE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_EXTERNAL_STORAGE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_PHONE_STATE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_CALL_LOG").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_CALL_LOG").isPresent());
+    }
+
+    public void testLibraryVersion3MergeWithContacts()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"19\"/>\n"
+                + "    <uses-permission android:name=\"android.permission.READ_CONTACTS\"/>\n"
+                + "    <uses-permission android:name=\"android.permission.WRITE_CONTACTS\"/>\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"3\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        XmlDocument xmlDocument = mergedDocument.get();
+        assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_EXTERNAL_STORAGE").isPresent());
+        assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_EXTERNAL_STORAGE").isPresent());
+        assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_PHONE_STATE").isPresent());
+        assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_CALL_LOG").isPresent());
+        assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_CALL_LOG").isPresent());
+
+        // check records.
+        Actions actions = mergingReportBuilder.getActionRecorder().build();
+        XmlElement xmlElement = xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_EXTERNAL_STORAGE").get();
+        ImmutableList<Actions.NodeRecord> nodeRecords = actions
+                .getNodeRecords(XmlNode.NodeKey.fromXml(xmlElement.getXml()));
+        assertEquals(1, nodeRecords.size());
+        assertEquals(nodeRecords.iterator().next().mReason, "targetSdkVersion < 4");
+
+        xmlElement = xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_CALL_LOG").get();
+        nodeRecords = actions.getNodeRecords(XmlNode.NodeKey.fromXml(xmlElement.getXml()));
+        assertEquals(1, nodeRecords.size());
+        assertEquals(nodeRecords.iterator().next().mReason,
+                "targetSdkVersion < 16 and requested READ_CONTACTS");
+    }
+
+    public void testLibraryVersion10MergeWithContacts()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"19\"/>\n"
+                + "    <uses-permission android:name=\"android.permission.READ_CONTACTS\"/>\n"
+                + "    <uses-permission android:name=\"android.permission.WRITE_CONTACTS\"/>\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"10\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        XmlDocument xmlDocument = mergedDocument.get();
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_EXTERNAL_STORAGE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_EXTERNAL_STORAGE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_PHONE_STATE").isPresent());
+        assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_CALL_LOG").isPresent());
+        assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_CALL_LOG").isPresent());
+    }
+
 }

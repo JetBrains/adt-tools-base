@@ -21,6 +21,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
+import com.android.annotations.concurrency.GuardedBy;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.AndroidVersion.AndroidVersionException;
@@ -36,6 +37,7 @@ import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDescExtra;
 import com.android.sdklib.repository.descriptors.PkgType;
+import com.android.sdklib.repository.remote.RemoteSdk;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -144,18 +146,24 @@ import java.util.Properties;
  * Apps/libraries that use it are encouraged to keep an existing instance around
  * (using a singleton or similar mechanism).
  * <p/>
+ * Threading: All accessor methods are synchronized on the same internal lock so
+ * it's safe to call them from any thread, even concurrently. <br/>
+ * A method like {@code getPkgsInfos} returns a copy of its data array, which objects are
+ * not altered after creation, so its value is not influenced by the internal state after
+ * it returns.
+ * <p/>
  *
- * Background:
+ * Implementation Background:
  * <ul>
  * <li> The sdk manager has a set of "Package" classes that cover both local
  *      and remote SDK operations.
- * <li> Goal is to split it in 2 cleanly separated part: local sdk parses sdk on disk, and then
- *      there will be a set of "remote package" classes that wrap the downloaded manifest.
+ * <li> Goal was to split it in 2 cleanly separated parts: {@link LocalSdk} parses sdk on disk,
+ *      and {@link RemoteSdk} wraps the downloaded manifest.
  * <li> The local SDK should be a singleton accessible somewhere, so there will be one in ADT
  *      (via the Sdk instance), one in Studio, and one in the command line tool. <br/>
  *      Right now there's a bit of mess with some classes creating a temp LocalSdkParser,
  *      some others using an SdkManager instance, and that needs to be sorted out.
- * <li> As a transition, the SdkManager instance wraps a LocalSdk and use this. Eventually the
+ * <li> As a transition, the SdkManager instance wraps a LocalSdk and uses this. Eventually the
  *      SdkManager.java class will go away (its name is totally misleading, for starters.)
  * <li> The current LocalSdkParser stays as-is for compatibility purposes and the goal is also
  *      to totally remove it when the SdkManager class goes away.
@@ -169,15 +177,19 @@ public class LocalSdk {
     /** File operation object. (Used for overriding in mock testing.) */
     private final IFileOp mFileOp;
     /** List of package information loaded so far. Lazily populated. */
+    @GuardedBy(value="mLocalPackages")
     private final Multimap<PkgType, LocalPkgInfo> mLocalPackages = TreeMultimap.create();
     /** Directories already parsed into {@link #mLocalPackages}. */
+    @GuardedBy(value="mLocalPackages")
     private final Multimap<PkgType, LocalDirInfo> mVisitedDirs = HashMultimap.create();
     /** A legacy build-tool for older platform-tools < 17. */
     private BuildToolInfo mLegacyBuildTools;
     /** Cache of targets from local sdk. See {@link #getTargets()}. */
-    private IAndroidTarget[] mCachedTargets;
+    @GuardedBy(value="mLocalPackages")
+    private final List<IAndroidTarget> mCachedTargets = new ArrayList<IAndroidTarget>();
+    private boolean mReloadTargets = true;
 
-  /**
+    /**
      * Creates an initial LocalSdk instance with an unknown location.
      */
     public LocalSdk() {
@@ -254,14 +266,16 @@ public class LocalSdk {
     public void clearLocalPkg(@NonNull EnumSet<PkgType> filters) {
         mLegacyBuildTools = null;
 
-        for (PkgType filter : filters) {
-            mVisitedDirs.removeAll(filter);
-            mLocalPackages.removeAll(filter);
+        synchronized (mLocalPackages) {
+            for (PkgType filter : filters) {
+                mVisitedDirs.removeAll(filter);
+                mLocalPackages.removeAll(filter);
+            }
         }
 
         // Clear the targets if the platforms or addons are being cleared
         if (filters.contains(PkgType.PKG_PLATFORMS) ||  filters.contains(PkgType.PKG_ADDONS)) {
-          mCachedTargets = null;
+          mReloadTargets = true;
         }
     }
 
@@ -274,7 +288,11 @@ public class LocalSdk {
      */
     public boolean hasChanged(@NonNull EnumSet<PkgType> filters) {
         for (PkgType filter : filters) {
-            for(LocalDirInfo dirInfo : mVisitedDirs.get(filter)) {
+            Collection<LocalDirInfo> dirInfos;
+            synchronized (mLocalPackages) {
+                dirInfos = mVisitedDirs.get(filter);
+            }
+            for(LocalDirInfo dirInfo : dirInfos) {
                 if (dirInfo.hasChanged()) {
                     return true;
                 }
@@ -427,42 +445,44 @@ public class LocalSdk {
             return null;
         }
 
-        Collection<LocalPkgInfo> existing = mLocalPackages.get(filter);
-        assert existing.size() <= 1;
-        if (existing.size() > 0) {
-            return existing.iterator().next();
-        }
-
-        File uniqueDir = new File(mSdkRoot, filter.getFolderName());
         LocalPkgInfo info = null;
-
-        if (!mVisitedDirs.containsEntry(filter, uniqueDir)) {
-            switch(filter) {
-            case PKG_TOOLS:
-                info = scanTools(uniqueDir);
-                break;
-            case PKG_PLATFORM_TOOLS:
-                info = scanPlatformTools(uniqueDir);
-                break;
-            case PKG_DOCS:
-                info = scanDoc(uniqueDir);
-                break;
-            case PKG_BUILD_TOOLS:
-            case PKG_EXTRAS:
-            case PKG_PLATFORMS:
-            case PKG_ADDONS:
-            case PKG_SAMPLES:
-            case PKG_SOURCES:
-            case PKG_SYS_IMAGES:
-                break;
+        synchronized (mLocalPackages) {
+            Collection<LocalPkgInfo> existing = mLocalPackages.get(filter);
+            assert existing.size() <= 1;
+            if (existing.size() > 0) {
+                return existing.iterator().next();
             }
-        }
 
-        // Whether we have found a valid pkg or not, this directory has been visited.
-        mVisitedDirs.put(filter, new LocalDirInfo(mFileOp, uniqueDir));
+            File uniqueDir = new File(mSdkRoot, filter.getFolderName());
 
-        if (info != null) {
-            mLocalPackages.put(filter, info);
+            if (!mVisitedDirs.containsEntry(filter, uniqueDir)) {
+                switch(filter) {
+                case PKG_TOOLS:
+                    info = scanTools(uniqueDir);
+                    break;
+                case PKG_PLATFORM_TOOLS:
+                    info = scanPlatformTools(uniqueDir);
+                    break;
+                case PKG_DOCS:
+                    info = scanDoc(uniqueDir);
+                    break;
+                case PKG_BUILD_TOOLS:
+                case PKG_EXTRAS:
+                case PKG_PLATFORMS:
+                case PKG_ADDONS:
+                case PKG_SAMPLES:
+                case PKG_SOURCES:
+                case PKG_SYS_IMAGES:
+                    break;
+                }
+            }
+
+            // Whether we have found a valid pkg or not, this directory has been visited.
+            mVisitedDirs.put(filter, new LocalDirInfo(mFileOp, uniqueDir));
+
+            if (info != null) {
+                mLocalPackages.put(filter, info);
+            }
         }
 
         return info;
@@ -517,53 +537,55 @@ public class LocalSdk {
                     list.add(info);
                 }
             } else {
-                Collection<LocalPkgInfo> existing = mLocalPackages.get(filter);
-                assert existing != null; // Multimap returns an empty set if not found
+                synchronized (mLocalPackages) {
+                    Collection<LocalPkgInfo> existing = mLocalPackages.get(filter);
+                    assert existing != null; // Multimap returns an empty set if not found
 
-                if (!existing.isEmpty()) {
-                    list.addAll(existing);
-                    continue;
-                }
-
-                File subDir = new File(mSdkRoot, filter.getFolderName());
-
-                if (!mVisitedDirs.containsEntry(filter, subDir)) {
-                    switch(filter) {
-                    case PKG_BUILD_TOOLS:
-                        scanBuildTools(subDir, existing);
-                        break;
-
-                    case PKG_PLATFORMS:
-                        scanPlatforms(subDir, existing);
-                        break;
-
-                    case PKG_SYS_IMAGES:
-                        scanSysImages(subDir, existing);
-                        break;
-
-                    case PKG_ADDONS:
-                        scanAddons(subDir, existing);
-                        break;
-
-                    case PKG_SAMPLES:
-                        scanSamples(subDir, existing);
-                        break;
-
-                    case PKG_SOURCES:
-                        scanSources(subDir, existing);
-                        break;
-
-                    case PKG_EXTRAS:
-                        scanExtras(subDir, existing);
-                        break;
-
-                    case PKG_TOOLS:
-                    case PKG_PLATFORM_TOOLS:
-                    case PKG_DOCS:
-                        break;
+                    if (!existing.isEmpty()) {
+                        list.addAll(existing);
+                        continue;
                     }
-                    mVisitedDirs.put(filter, new LocalDirInfo(mFileOp, subDir));
-                    list.addAll(existing);
+
+                    File subDir = new File(mSdkRoot, filter.getFolderName());
+
+                    if (!mVisitedDirs.containsEntry(filter, subDir)) {
+                        switch(filter) {
+                        case PKG_BUILD_TOOLS:
+                            scanBuildTools(subDir, existing);
+                            break;
+
+                        case PKG_PLATFORMS:
+                            scanPlatforms(subDir, existing);
+                            break;
+
+                        case PKG_SYS_IMAGES:
+                            scanSysImages(subDir, existing);
+                            break;
+
+                        case PKG_ADDONS:
+                            scanAddons(subDir, existing);
+                            break;
+
+                        case PKG_SAMPLES:
+                            scanSamples(subDir, existing);
+                            break;
+
+                        case PKG_SOURCES:
+                            scanSources(subDir, existing);
+                            break;
+
+                        case PKG_EXTRAS:
+                            scanExtras(subDir, existing);
+                            break;
+
+                        case PKG_TOOLS:
+                        case PKG_PLATFORM_TOOLS:
+                        case PKG_DOCS:
+                            break;
+                        }
+                        mVisitedDirs.put(filter, new LocalDirInfo(mFileOp, subDir));
+                        list.addAll(existing);
+                    }
                 }
             }
         }
@@ -667,23 +689,25 @@ public class LocalSdk {
      */
     @NonNull
     public IAndroidTarget[] getTargets() {
-        if (mCachedTargets == null) {
-            LocalPkgInfo[] pkgsInfos = getPkgsInfos(EnumSet.of(PkgType.PKG_PLATFORMS, PkgType.PKG_ADDONS));
-            int n = pkgsInfos.length;
-            List<IAndroidTarget> targets = new ArrayList<IAndroidTarget>(n);
-            for (int i = 0; i < n; i++) {
-                LocalPkgInfo info = pkgsInfos[i];
-                assert info instanceof LocalPlatformPkgInfo;
-                if (info instanceof LocalPlatformPkgInfo) {
-                    IAndroidTarget target = ((LocalPlatformPkgInfo) info).getAndroidTarget();
-                    if (target != null) {
-                      targets.add(target);
+        synchronized (mLocalPackages) {
+            if (mReloadTargets) {
+                LocalPkgInfo[] pkgsInfos = getPkgsInfos(EnumSet.of(PkgType.PKG_PLATFORMS,
+                                                                   PkgType.PKG_ADDONS));
+                int n = pkgsInfos.length;
+                mCachedTargets.clear();
+                for (int i = 0; i < n; i++) {
+                    LocalPkgInfo info = pkgsInfos[i];
+                    assert info instanceof LocalPlatformPkgInfo;
+                    if (info instanceof LocalPlatformPkgInfo) {
+                        IAndroidTarget target = ((LocalPlatformPkgInfo) info).getAndroidTarget();
+                        if (target != null) {
+                            mCachedTargets.add(target);
+                        }
                     }
                 }
             }
-            mCachedTargets = targets.toArray(new IAndroidTarget[targets.size()]);
+            return mCachedTargets.toArray(new IAndroidTarget[mCachedTargets.size()]);
         }
-        return mCachedTargets;
     }
 
     /**
@@ -797,14 +821,36 @@ public class LocalSdk {
         }
     }
 
+    /**
+     * Helper used by scanXyz methods below to check whether a directory should be visited.
+     * It can be skipped if it's not a directory or if it's already marked as visited in
+     * mVisitedDirs for the given package type -- in which case the directory is added to
+     * the visited map.
+     *
+     * @param pkgType The package type being scanned.
+     * @param directory The file or directory to check.
+     * @return False if directory can/should be skipped.
+     *         True if directory should be visited, in which case it's registered in mVisitedDirs.
+     */
+    private boolean shouldVisitDir(@NonNull PkgType pkgType, @NonNull File directory) {
+        if (!mFileOp.isDirectory(directory)) {
+            return false;
+        }
+        synchronized (mLocalPackages) {
+            if (mVisitedDirs.containsEntry(pkgType, directory)) {
+                return false;
+            }
+            mVisitedDirs.put(pkgType, new LocalDirInfo(mFileOp, directory));
+        }
+        return true;
+    }
+
     private void scanBuildTools(File collectionDir, Collection<LocalPkgInfo> outCollection) {
         // The build-tool root folder contains a list of per-revision folders.
         for (File buildToolDir : mFileOp.listFiles(collectionDir)) {
-            if (!mFileOp.isDirectory(buildToolDir) ||
-                    mVisitedDirs.containsEntry(PkgType.PKG_BUILD_TOOLS, buildToolDir)) {
+            if (!shouldVisitDir(PkgType.PKG_BUILD_TOOLS, buildToolDir)) {
                 continue;
             }
-            mVisitedDirs.put(PkgType.PKG_BUILD_TOOLS, new LocalDirInfo(mFileOp, buildToolDir));
 
             Properties props = parseProperties(new File(buildToolDir, SdkConstants.FN_SOURCE_PROP));
             FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
@@ -821,11 +867,9 @@ public class LocalSdk {
 
     private void scanPlatforms(File collectionDir, Collection<LocalPkgInfo> outCollection) {
         for (File platformDir : mFileOp.listFiles(collectionDir)) {
-            if (!mFileOp.isDirectory(platformDir) ||
-                    mVisitedDirs.containsEntry(PkgType.PKG_PLATFORMS, platformDir)) {
+            if (!shouldVisitDir(PkgType.PKG_PLATFORMS, platformDir)) {
                 continue;
             }
-            mVisitedDirs.put(PkgType.PKG_PLATFORMS, new LocalDirInfo(mFileOp, platformDir));
 
             Properties props = parseProperties(new File(platformDir, SdkConstants.FN_SOURCE_PROP));
             MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
@@ -854,11 +898,9 @@ public class LocalSdk {
 
     private void scanAddons(File collectionDir, Collection<LocalPkgInfo> outCollection) {
         for (File addonDir : mFileOp.listFiles(collectionDir)) {
-            if (!mFileOp.isDirectory(addonDir) ||
-                    mVisitedDirs.containsEntry(PkgType.PKG_ADDONS, addonDir)) {
+            if (!shouldVisitDir(PkgType.PKG_ADDONS, addonDir)) {
                 continue;
             }
-            mVisitedDirs.put(PkgType.PKG_ADDONS, new LocalDirInfo(mFileOp, addonDir));
 
             Properties props = parseProperties(new File(addonDir, SdkConstants.FN_SOURCE_PROP));
             MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
@@ -885,19 +927,15 @@ public class LocalSdk {
         // Create a list of sys-img/target/tag/abi or sys-img/target/abi folders
         // that contain a source.properties file.
         for (File platformDir : mFileOp.listFiles(collectionDir)) {
-            if (!mFileOp.isDirectory(platformDir) ||
-                    mVisitedDirs.containsEntry(PkgType.PKG_SYS_IMAGES, platformDir)) {
+            if (!shouldVisitDir(PkgType.PKG_SYS_IMAGES, platformDir)) {
                 continue;
             }
-            mVisitedDirs.put(PkgType.PKG_SYS_IMAGES, new LocalDirInfo(mFileOp, platformDir));
 
             for (File dir1 : mFileOp.listFiles(platformDir)) {
                 // dir1 might be either a tag or an abi folder.
-                if (!mFileOp.isDirectory(dir1) ||
-                        mVisitedDirs.containsEntry(PkgType.PKG_SYS_IMAGES, dir1)) {
+                if (!shouldVisitDir(PkgType.PKG_SYS_IMAGES, dir1)) {
                     continue;
                 }
-                mVisitedDirs.put(PkgType.PKG_SYS_IMAGES, new LocalDirInfo(mFileOp, dir1));
 
                 File prop1 = new File(dir1, SdkConstants.FN_SOURCE_PROP);
                 if (mFileOp.isFile(prop1)) {
@@ -907,11 +945,9 @@ public class LocalSdk {
                     File[] dir1Files = mFileOp.listFiles(dir1);
                     for (File dir2 : dir1Files) {
                         // dir2 should be an abi folder in a tag folder.
-                        if (!mFileOp.isDirectory(dir2) ||
-                                mVisitedDirs.containsEntry(PkgType.PKG_SYS_IMAGES, dir2)) {
+                        if (!shouldVisitDir(PkgType.PKG_SYS_IMAGES, dir2)) {
                             continue;
                         }
-                        mVisitedDirs.put(PkgType.PKG_SYS_IMAGES, new LocalDirInfo(mFileOp, dir2));
 
                         File prop2 = new File(dir2, SdkConstants.FN_SOURCE_PROP);
                         if (mFileOp.isFile(prop2)) {
@@ -945,11 +981,9 @@ public class LocalSdk {
 
     private void scanSamples(File collectionDir, Collection<LocalPkgInfo> outCollection) {
         for (File platformDir : mFileOp.listFiles(collectionDir)) {
-            if (!mFileOp.isDirectory(platformDir) ||
-                    mVisitedDirs.containsEntry(PkgType.PKG_SAMPLES, platformDir)) {
+            if (!shouldVisitDir(PkgType.PKG_SAMPLES, platformDir)) {
                 continue;
             }
-            mVisitedDirs.put(PkgType.PKG_SAMPLES, new LocalDirInfo(mFileOp, platformDir));
 
             Properties props = parseProperties(new File(platformDir, SdkConstants.FN_SOURCE_PROP));
             MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
@@ -978,11 +1012,9 @@ public class LocalSdk {
     private void scanSources(File collectionDir, Collection<LocalPkgInfo> outCollection) {
         // The build-tool root folder contains a list of per-revision folders.
         for (File platformDir : mFileOp.listFiles(collectionDir)) {
-            if (!mFileOp.isDirectory(platformDir) ||
-                    mVisitedDirs.containsEntry(PkgType.PKG_SOURCES, platformDir)) {
+            if (!shouldVisitDir(PkgType.PKG_SOURCES, platformDir)) {
                 continue;
             }
-            mVisitedDirs.put(PkgType.PKG_SOURCES, new LocalDirInfo(mFileOp, platformDir));
 
             Properties props = parseProperties(new File(platformDir, SdkConstants.FN_SOURCE_PROP));
             MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
@@ -1004,18 +1036,14 @@ public class LocalSdk {
 
     private void scanExtras(File collectionDir, Collection<LocalPkgInfo> outCollection) {
         for (File vendorDir : mFileOp.listFiles(collectionDir)) {
-            if (!mFileOp.isDirectory(vendorDir) ||
-                    mVisitedDirs.containsEntry(PkgType.PKG_EXTRAS, vendorDir)) {
+            if (!shouldVisitDir(PkgType.PKG_EXTRAS, vendorDir)) {
                 continue;
             }
-            mVisitedDirs.put(PkgType.PKG_EXTRAS, new LocalDirInfo(mFileOp, vendorDir));
 
             for (File extraDir : mFileOp.listFiles(vendorDir)) {
-                if (!mFileOp.isDirectory(extraDir) ||
-                        mVisitedDirs.containsEntry(PkgType.PKG_EXTRAS, extraDir)) {
+                if (!shouldVisitDir(PkgType.PKG_EXTRAS, extraDir)) {
                     continue;
                 }
-                mVisitedDirs.put(PkgType.PKG_EXTRAS, new LocalDirInfo(mFileOp, extraDir));
 
                 Properties props = parseProperties(new File(extraDir, SdkConstants.FN_SOURCE_PROP));
                 NoPreviewRevision rev =

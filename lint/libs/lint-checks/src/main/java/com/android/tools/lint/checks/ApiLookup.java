@@ -22,6 +22,10 @@ import static com.android.SdkConstants.DOT_XML;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.descriptors.PkgType;
+import com.android.sdklib.repository.local.LocalPkgInfo;
+import com.android.sdklib.repository.local.LocalSdk;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.google.common.base.Charsets;
@@ -132,14 +136,42 @@ public class ApiLookup {
     }
 
     @VisibleForTesting
-    static String getCacheFileName(String xmlFileName) {
+    @Nullable
+    static String getPlatformVersion(@NonNull LintClient client) {
+        LocalSdk sdk = client.getSdk();
+        if (sdk != null) {
+            LocalPkgInfo pkgInfo = sdk.getPkgInfo(PkgType.PKG_PLATFORM_TOOLS);
+            if (pkgInfo != null) {
+                FullRevision version = pkgInfo.getDesc().getFullRevision();
+                if (version != null) {
+                    return version.toShortString();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    @VisibleForTesting
+    @NonNull
+    static String getCacheFileName(@NonNull String xmlFileName, @Nullable String platformVersion) {
         if (LintUtils.endsWith(xmlFileName, DOT_XML)) {
             xmlFileName = xmlFileName.substring(0, xmlFileName.length() - DOT_XML.length());
         }
 
+        StringBuilder sb = new StringBuilder(100);
+        sb.append(xmlFileName);
+
         // Incorporate version number in the filename to avoid upgrade filename
         // conflicts on Windows (such as issue #26663)
-        return xmlFileName + '-' + BINARY_FORMAT_VERSION + ".bin"; //$NON-NLS-1$
+        sb.append('-').append(BINARY_FORMAT_VERSION);
+
+        if (platformVersion != null) {
+            sb.append('-').append(platformVersion);
+        }
+
+        sb.append(".bin"); //$NON-NLS-1$
+        return sb.toString();
     }
 
     /**
@@ -163,7 +195,8 @@ public class ApiLookup {
             cacheDir = xmlFile.getParentFile();
         }
 
-        File binaryData = new File(cacheDir, getCacheFileName(xmlFile.getName()));
+        String platformVersion = getPlatformVersion(client);
+        File binaryData = new File(cacheDir, getCacheFileName(xmlFile.getName(), platformVersion));
 
         if (DEBUG_FORCE_REGENERATE_BINARY) {
             System.err.println("\nTemporarily regenerating binary data unconditionally \nfrom "

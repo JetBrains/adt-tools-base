@@ -29,6 +29,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
 
     private final String mName;
     private boolean mDebuggable = false;
+    private boolean mTestCoverageEnabled = false;
     private boolean mJniDebugBuild = false;
     private boolean mRenderscriptDebugBuild = false;
     private int mRenderscriptOptimLevel = 3;
@@ -47,6 +48,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         _initWith(that);
 
         setDebuggable(that.isDebuggable());
+        setTestCoverageEnabled(that.isTestCoverageEnabled());
         setJniDebugBuild(that.isJniDebugBuild());
         setRenderscriptDebugBuild(that.isRenderscriptDebugBuild());
         setRenderscriptOptimLevel(that.getRenderscriptOptimLevel());
@@ -65,6 +67,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return mName;
     }
 
+    /** Whether this build type should generate a debuggable apk. */
     @NonNull
     public BuildType setDebuggable(boolean debuggable) {
         mDebuggable = debuggable;
@@ -76,6 +79,19 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return mDebuggable;
     }
 
+
+    public void setTestCoverageEnabled(boolean testCoverageEnabled) {
+        mTestCoverageEnabled = testCoverageEnabled;
+    }
+
+    @Override
+    public boolean isTestCoverageEnabled() {
+        return mTestCoverageEnabled;
+    }
+
+    /**
+     * Whether this build type is configured to generate an APK with debuggable native code.
+     */
     @NonNull
     public BuildType setJniDebugBuild(boolean jniDebugBuild) {
         mJniDebugBuild = jniDebugBuild;
@@ -92,6 +108,9 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return mRenderscriptDebugBuild;
     }
 
+    /**
+     * Whether the build type is configured to generate an apk with debuggable RenderScript code.
+     */
     public void setRenderscriptDebugBuild(boolean renderscriptDebugBuild) {
         mRenderscriptDebugBuild = renderscriptDebugBuild;
     }
@@ -101,10 +120,12 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return mRenderscriptOptimLevel;
     }
 
+    /** Optimization level to use by the renderscript compiler. */
     public void setRenderscriptOptimLevel(int renderscriptOptimLevel) {
         mRenderscriptOptimLevel = renderscriptOptimLevel;
     }
 
+    /** Package name suffix applied to this build type. */
     @NonNull
     public BuildType setPackageNameSuffix(@Nullable String packageNameSuffix) {
         mPackageNameSuffix = packageNameSuffix;
@@ -117,6 +138,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return mPackageNameSuffix;
     }
 
+    /** Version name suffix. */
     @NonNull
     public BuildType setVersionNameSuffix(@Nullable String versionNameSuffix) {
         mVersionNameSuffix = versionNameSuffix;
@@ -129,6 +151,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return mVersionNameSuffix;
     }
 
+    /** Whether ProGuard is enabled for this build type. */
     @NonNull
     public BuildType setRunProguard(boolean runProguard) {
         mRunProguard = runProguard;
@@ -140,6 +163,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return mRunProguard;
     }
 
+    /** Whether zipalign is enabled for this build type. */
     @NonNull
     public BuildType setZipAlign(boolean zipAlign) {
         mZipAlign = zipAlign;
@@ -151,6 +175,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return mZipAlign;
     }
 
+    /** Sets the signing configuration. e.g.: {@code signingConfig signingConfigs.myConfig} */
     @NonNull
     public BuildType setSigningConfig(@Nullable SigningConfig signingConfig) {
         mSigningConfig = signingConfig;
@@ -178,6 +203,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
 
         if (!mName.equals(buildType.mName)) return false;
         if (mDebuggable != buildType.mDebuggable) return false;
+        if (mTestCoverageEnabled != buildType.mTestCoverageEnabled) return false;
         if (mJniDebugBuild != buildType.mJniDebugBuild) return false;
         if (mRenderscriptDebugBuild != buildType.mRenderscriptDebugBuild) return false;
         if (mRenderscriptOptimLevel != buildType.mRenderscriptOptimLevel) return false;
@@ -204,6 +230,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         int result = super.hashCode();
         result = 31 * result + (mName.hashCode());
         result = 31 * result + (mDebuggable ? 1 : 0);
+        result = 31 * result + (mTestCoverageEnabled ? 1 : 0);
         result = 31 * result + (mJniDebugBuild ? 1 : 0);
         result = 31 * result + (mRenderscriptDebugBuild ? 1 : 0);
         result = 31 * result + mRenderscriptOptimLevel;
@@ -221,6 +248,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return Objects.toStringHelper(this)
                 .add("name", mName)
                 .add("debuggable", mDebuggable)
+                .add("testCoverageEnabled", mTestCoverageEnabled)
                 .add("jniDebugBuild", mJniDebugBuild)
                 .add("renderscriptDebugBuild", mRenderscriptDebugBuild)
                 .add("renderscriptOptimLevel", mRenderscriptOptimLevel)

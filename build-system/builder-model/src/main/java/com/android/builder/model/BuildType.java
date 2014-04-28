@@ -35,6 +35,7 @@ public interface BuildType extends BaseConfig {
      *
      * @return the name of the build type.
      */
+    @Override
     @NonNull
     String getName();
 
@@ -44,6 +45,13 @@ public interface BuildType extends BaseConfig {
      * @return true if the apk is debuggable
      */
     boolean isDebuggable();
+
+    /**
+     * Returns whether the build type is configured to be build with support for code coverage.
+     *
+     * @return true if code coverage is enabled.
+     */
+    boolean isTestCoverageEnabled();
 
     /**
      * Returns whether the build type is configured to generate an apk with debuggable native code.

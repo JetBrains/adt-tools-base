@@ -21,8 +21,6 @@ import com.android.annotations.NonNull;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.SdkRepoConstants;
@@ -90,11 +88,9 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
             String license,
             String description,
             String descUrl,
-            Os archiveOs,
-            Arch archiveArch,
             String archiveOsPath) {
         return new DocPackage(source, props, apiLevel, codename, revision, license, description,
-                descUrl, archiveOs, archiveArch, archiveOsPath);
+                descUrl, archiveOsPath);
     }
 
     private DocPackage(SdkSource source,
@@ -105,8 +101,6 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
             String license,
             String description,
             String descUrl,
-            Os archiveOs,
-            Arch archiveArch,
             String archiveOsPath) {
         super(source,
                 props,
@@ -114,8 +108,6 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
                 license,
                 description,
                 descUrl,
-                archiveOs,
-                archiveArch,
                 archiveOsPath);
         mVersion = new AndroidVersion(props, apiLevel, codename);
 
@@ -166,6 +158,10 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
      */
     @Override
     public String getListDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s%2$s", ld, isObsolete() ? " (Obsolete)" : "");
+        }
         if (mVersion.isPreview()) {
             return String.format("Documentation for Android '%1$s' Preview SDK%2$s",
                     mVersion.getCodename(),
@@ -182,6 +178,14 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
      */
     @Override
     public String getShortDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s, revision %2$s%3$s",
+                    ld,
+                    getRevision().toShortString(),
+                    isObsolete() ? " (Obsolete)" : "");
+        }
+
         if (mVersion.isPreview()) {
             return String.format("Documentation for Android '%1$s' Preview SDK, revision %2$s%3$s",
                     mVersion.getCodename(),

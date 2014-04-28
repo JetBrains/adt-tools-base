@@ -613,14 +613,14 @@ public class DeviceManager {
      *
      * @param bool The boolean value to turn into the appropriate
      *            {@link HardwareProperties} value.
-     * @return {@code HardwareProperties#BOOLEAN_VALUES[0]} if true,
-     *         {@code HardwareProperties#BOOLEAN_VALUES[1]} otherwise.
+     * @return {@code HardwareProperties#BOOLEAN_YES} if true,
+     *         {@code HardwareProperties#BOOLEAN_NO} otherwise.
      */
     private static String getBooleanVal(boolean bool) {
         if (bool) {
-            return HardwareProperties.BOOLEAN_VALUES[0];
+            return HardwareProperties.BOOLEAN_YES;
         }
-        return HardwareProperties.BOOLEAN_VALUES[1];
+        return HardwareProperties.BOOLEAN_NO;
     }
 
     @NonNull

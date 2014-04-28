@@ -98,19 +98,19 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
 
     @MediumTest
     public void testAndroidStrings() {
-        assertEquals(mAppTextView1.getText(), "SUCCESS-APP");
-        assertEquals(mLib1TextView1.getText(), "SUCCESS-LIB1");
-        assertEquals(mLib2TextView1.getText(), "SUCCESS-LIB2");
-        assertEquals(mLib2bTextView1.getText(), "SUCCESS-LIB2b");
-        assertEquals(mLibappTextView1.getText(), "SUCCESS-LIBAPP");
+        assertEquals("SUCCESS-APP", mAppTextView1.getText().toString());
+        assertEquals("SUCCESS-LIB1", mLib1TextView1.getText().toString());
+        assertEquals("SUCCESS-LIB2", mLib2TextView1.getText().toString());
+        assertEquals("SUCCESS-LIB2b", mLib2bTextView1.getText().toString());
+        assertEquals("SUCCESS-LIBAPP", mLibappTextView1.getText().toString());
     }
 
     @MediumTest
     public void testJavaStrings() {
-        assertEquals(mAppTextView2.getText(), "SUCCESS-APP");
-        assertEquals(mLib1TextView2.getText(), "SUCCESS-LIB1");
-        assertEquals(mLib2TextView2.getText(), "SUCCESS-LIB2");
-        assertEquals(mLib2bTextView2.getText(), "SUCCESS-LIB2b");
-        assertEquals(mLibappTextView2.getText(), "SUCCESS-LIBAPP");
+        assertEquals("SUCCESS-APP", mAppTextView2.getText().toString());
+        assertEquals("SUCCESS-LIB1", mLib1TextView2.getText().toString());
+        assertEquals("SUCCESS-LIB2", mLib2TextView2.getText().toString());
+        assertEquals("SUCCESS-LIB2b", mLib2bTextView2.getText().toString());
+        assertEquals("SUCCESS-LIBAPP", mLibappTextView2.getText().toString());
     }
 }

@@ -52,6 +52,7 @@ public class AutomatedBuildTest extends BuildTest {
             "libProguardLibDep",
             "libTestDep",
             "libsTest",
+            "localAarTest",
             "localJars",
             "migrated",
             "multiproject",

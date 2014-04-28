@@ -3,12 +3,22 @@ apply plugin: 'android'
 project.ext.fakeProvider = new com.android.tests.basic.buildscript.FakeProvider()
 project.ext.fakeServer = new com.android.tests.basic.buildscript.FakeServer()
 
+repositories {
+    mavenCentral()
+}
+
 android {
     compileSdkVersion 19
     buildToolsVersion "19.0.2"
 
     deviceProvider project.ext.fakeProvider
     testServer project.ext.fakeServer
+
+    buildTypes {
+        debug {
+            testCoverageEnabled true
+        }
+    }
 }
 
 project.afterEvaluate {

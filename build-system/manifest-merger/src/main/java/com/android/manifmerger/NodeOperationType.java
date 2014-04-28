@@ -36,37 +36,57 @@ public enum NodeOperationType implements ConvertibleName {
     /**
      * Merges further definitions of the same element with this one.
      */
-    MERGE,
+    MERGE(false),
+
+    /**
+     * Remove all children from the target element before merging it into the resulting merged
+     * manifest. This basically merges attributes only (attributes annotation still applies).
+     */
+    MERGE_ONLY_ATTRIBUTES(false),
 
     /**
      * Replace further definitions of the same element with this one. There can be 0..n similar
      * elements replaced with the annotated xml element.
      */
-    REPLACE,
+    REPLACE(false),
 
     /**
      * Remove the next definition of the same element from the resulting merged manifest. There can
      * be only one similar element removed. If further definition are encountered, a merging
      * failure will be initiated.
      */
-    REMOVE,
+    REMOVE(true),
 
     /**
      * Remove all definitions of the same element from the resulting merged manifest.
      */
-    REMOVE_ALL,
+    REMOVE_ALL(true),
 
     /**
      * Remove all children from the target element before merging it into the resulting merged
      * manifest. This basically merges all attributes only (attributes annotation still applies).
      */
-    REMOVE_CHILDREN,
+    REMOVE_CHILDREN(false),
 
     /**
      * No further definition of this element should be encountered. A merging tool failure will be
      * generated if there is one.
      */
-    STRICT;
+    STRICT(false);
+
+    // specifies whether the node operation can support an associated {@link Selector}
+    private final boolean mIsSelectable;
+
+    private NodeOperationType(boolean isSelectable) {
+        mIsSelectable = isSelectable;
+    }
+
+    /**
+     * Returns true if this operation supports a {@link com.android.manifmerger.Selector}
+     */
+    public boolean isSelectable() {
+        return mIsSelectable;
+    }
 
     @Override
     public String toXmlName() {
@@ -78,6 +98,12 @@ public enum NodeOperationType implements ConvertibleName {
         return SdkUtils.constantNameToCamelCase(name());
     }
 
+    /**
+     * Returns true if the element will override (remove or replace) lower priority elements.
+     */
+    public boolean isOverriding() {
+        return this == REMOVE || this == REMOVE_ALL || this == REPLACE;
+    }
 
     /**
      * Local xml name of node operation types.

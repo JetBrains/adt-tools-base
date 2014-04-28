@@ -16,10 +16,12 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.build.gradle.internal.dependency.DependencyChecker
+import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.utils.Pair
 import org.gradle.api.tasks.TaskAction
 
 public class PrepareDependenciesTask extends BaseTask {
+    BaseVariantData variant
     final List<DependencyChecker> checkers = []
     final Set<Pair<Integer, String>> androidDependencies = []
 

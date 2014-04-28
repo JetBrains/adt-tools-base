@@ -17,6 +17,7 @@
 package com.android.builder.dependency;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 import java.util.List;
 
@@ -24,6 +25,12 @@ import java.util.List;
  * Represents the manifest of a dependency as well as the dependencies
  */
 public interface ManifestDependency extends ManifestProvider {
+
+    /**
+     * Returns a user friendly name.
+     */
+    @Nullable
+    String getName();
 
     /**
      * Returns the direct dependency of this dependency.

@@ -293,12 +293,7 @@ final class DeviceMonitor {
         }
     }
 
-    /**
-     * Processes an incoming device message from the socket
-     * @param socket
-     * @param length
-     * @throws IOException
-     */
+    /** Processes an incoming device message from the socket */
     private void processIncomingDeviceData(int length) throws IOException {
         ArrayList<Device> list = new ArrayList<Device>();
 
@@ -460,6 +455,7 @@ final class DeviceMonitor {
                 EmulatorConsole console = EmulatorConsole.getConsole(device);
                 if (console != null) {
                     device.setAvdName(console.getAvdName());
+                    console.close();
                 }
             }
         } catch (TimeoutException e) {

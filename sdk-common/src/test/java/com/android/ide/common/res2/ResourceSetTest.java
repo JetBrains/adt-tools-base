@@ -27,7 +27,7 @@ public class ResourceSetTest extends BaseTestCase {
 
     public void testBaseResourceSetByCount() throws Exception {
         ResourceSet resourceSet = getBaseResourceSet();
-        assertEquals(27, resourceSet.size());
+        assertEquals(28, resourceSet.size());
     }
 
     public void testBaseResourceSetByName() throws Exception {

@@ -65,9 +65,9 @@ public class ApiDetectorTest extends AbstractCheckTest {
 
     public void testAttrWithoutSlash() throws Exception {
         assertEquals(""
-                + "res/layout/attribute.xml:4: Error: ?android:autoMirrored requires API level 19 (current min is 1) [NewApi]\n"
-                + "    android:enabled=\"?android:autoMirrored\"\n"
-                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/attribute.xml:4: Error: ?android:indicatorStart requires API level 18 (current min is 1) [NewApi]\n"
+                + "    android:enabled=\"?android:indicatorStart\"\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
 
                 lintProject(

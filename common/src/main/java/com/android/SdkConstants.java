@@ -53,6 +53,9 @@ public final class SdkConstants {
     /** Property in local.properties file that specifies the path of the Android SDK.  */
     public static final String SDK_DIR_PROPERTY = "sdk.dir";
 
+    /** Property in gradle-wrapper.properties file that specifies the URL to the correct Gradle distribution. */
+    public static final String GRADLE_DISTRIBUTION_URL_PROPERTY = "distributionUrl";  //$NON-NLS-1$
+
     /**
      * The encoding we strive to use for all files we write.
      * <p>
@@ -135,6 +138,9 @@ public final class SdkConstants {
 
     /** project ant property file */
     public static final String FN_ANT_PROPERTIES = "ant.properties";                  //$NON-NLS-1$
+
+    /** project local property file */
+    public static final String FN_GRADLE_WRAPPER_PROPERTIES = "gradle-wrapper.properties"; //$NON-NLS-1$
 
     /** Skin layout file */
     public static final String FN_SKIN_LAYOUT = "layout";                             //$NON-NLS-1$
@@ -994,6 +1000,8 @@ public final class SdkConstants {
     public static final String EXT_GRADLE = "gradle"; //$NON-NLS-1$
     /** Extension of jar files, i.e. "jar" */
     public static final String EXT_JAR = "jar"; //$NON-NLS-1$
+    /** Extension of ZIP files, i.e. "zip" */
+    public static final String EXT_ZIP = "zip"; //$NON-NLS-1$
     /** Extension of aidl files, i.e. "aidl" */
     public static final String EXT_AIDL = "aidl"; //$NON-NLS-1$
     /** Extension of Renderscript files, i.e. "rs" */
@@ -1151,6 +1159,7 @@ public final class SdkConstants {
             "android/content/ContentProvider";                                       //$NON-NLS-1$
     public static final String ANDROID_CONTENT_BROADCAST_RECEIVER =
             "android/content/BroadcastReceiver";                                     //$NON-NLS-1$
+    public static final String ANDROID_VIEW_VIEW = "android/view/View";              //$NON-NLS-1$
 
     // Method Names
     public static final String FORMAT_METHOD = "format";                             //$NON-NLS-1$
@@ -1318,4 +1327,12 @@ public final class SdkConstants {
     public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.9.+";
     public static final String SUPPORT_LIB_ARTIFACT = "com.android.support:support-v4";
     public static final String APPCOMPAT_LIB_ARTIFACT = "com.android.support:appcompat-v7";
+
+    // Annotations
+    public static final String SUPPORT_ANNOTATIONS_PREFIX = "android.support.annotation.";
+    public static final String INT_DEF_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "IntDef";
+    public static final String STRING_DEF_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "StringDef";
+    public static final String TYPE_DEF_VALUE_ATTRIBUTE = "value";
+    public static final String TYPE_DEF_FLAG_ATTRIBUTE = "flag";
+    public static final String FN_ANNOTATIONS_ZIP = "annotations.zip";
 }

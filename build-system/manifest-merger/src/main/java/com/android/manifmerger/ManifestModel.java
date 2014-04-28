@@ -34,6 +34,9 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
 import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,7 +68,7 @@ class ManifestModel {
          * @return the key as a string to uniquely identify xmlElement from similarly typed elements
          * in the xml document or null if there is no key.
          */
-        @Nullable String getKey(XmlElement xmlElement);
+        @Nullable String getKey(Element xmlElement);
 
         /**
          * Returns the attribute(s) used to store the xml element key.
@@ -83,7 +86,7 @@ class ManifestModel {
 
         @Override
         @Nullable
-        public String getKey(XmlElement xmlElement) {
+        public String getKey(Element xmlElement) {
             return null;
         }
 
@@ -117,10 +120,10 @@ class ManifestModel {
 
         @Override
         @Nullable
-        public String getKey(XmlElement xmlElement) {
+        public String getKey(Element xmlElement) {
             String key = mNamespaceUri == null
-                ? xmlElement.getXml().getAttribute(mAttributeName)
-                : xmlElement.getXml().getAttributeNS(mNamespaceUri, mAttributeName);
+                ? xmlElement.getAttribute(mAttributeName)
+                : xmlElement.getAttributeNS(mNamespaceUri, mAttributeName);
             if (Strings.isNullOrEmpty(key)) return null;
             return key;
         }
@@ -154,7 +157,7 @@ class ManifestModel {
 
         @Nullable
         @Override
-        public String getKey(XmlElement xmlElement) {
+        public String getKey(Element xmlElement) {
             String key = nameAttrResolver.getKey(xmlElement);
             return Strings.isNullOrEmpty(key)
                     ? glEsVersionResolver.getKey(xmlElement)
@@ -179,11 +182,16 @@ class ManifestModel {
     private static final NodeKeyResolver INTENT_FILTER_KEY_RESOLVER = new NodeKeyResolver() {
         @Nullable
         @Override
-        public String getKey(XmlElement xmlElement) {
+        public String getKey(Element element) {
+            OrphanXmlElement xmlElement = new OrphanXmlElement(element);
             assert(xmlElement.getType() == NodeTypes.INTENT_FILTER);
             // concatenate all actions and categories attribute names.
             List<String> allSubElementKeys = new ArrayList<String>();
-            for (XmlElement subElement : xmlElement.getMergeableElements()) {
+            NodeList childNodes = element.getChildNodes();
+            for (int i = 0; i < childNodes.getLength(); i++) {
+                Node child = childNodes.item(i);
+                if (child.getNodeType() != Node.ELEMENT_NODE) continue;
+                OrphanXmlElement subElement = new OrphanXmlElement((Element) child);
                 if (subElement.getType() == NodeTypes.ACTION
                         || subElement.getType() == NodeTypes.CATEGORY) {
                     Attr nameAttribute = subElement.getXml()
@@ -530,7 +538,12 @@ class ManifestModel {
                 AttributeModel.newModel("targetSdkVersion")
                         .setOnReadValidator(new AttributeModel.IntegerValueValidator())
                         .setMergingPolicy(AttributeModel.NUMERICAL_SUPERIORITY_POLICY)
-        );
+        ),
+
+        /**
+         * Custom tag for any application specific element
+         */
+        CUSTOM(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER);
 
 
         private final MergeType mMergeType;
@@ -600,9 +613,14 @@ class ManifestModel {
         static NodeTypes fromXmlSimpleName(String xmlSimpleName) {
             String constantName = SdkUtils.xmlNameToConstantName(xmlSimpleName);
 
-            // TODO: is legal to have non standard xml elements in manifest files ? if yes
-            // consider adding a CUSTOM NodeTypes and not generate exception here.
-            return NodeTypes.valueOf(constantName);
+            try {
+                return NodeTypes.valueOf(constantName);
+            } catch (IllegalArgumentException e) {
+                // if this element name is not a known tag, we categorize it as 'custom' which will
+                // be simply merged. It will prevent us from catching simple spelling mistakes but
+                // extensibility is a must have feature.
+                return NodeTypes.CUSTOM;
+            }
         }
 
         MergeType getMergeType() {

@@ -27,12 +27,10 @@ import com.google.common.base.Strings;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,6 +47,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "00_noop",
             "03_inject_attributes.xml",
             "05_inject_package.xml",
+            "05_inject_package_placeholder.xml",
             "06_inject_attributes_with_specific_prefix.xml",
             "10_activity_merge",
             "11_activity_dup",
@@ -65,6 +64,8 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "25_permission_merge",
             "26_permission_dup",
             "28_uses_perm_merge",
+            "29_uses_perm_selector",
+            "29b_uses_perm_invalidSelector",
             "30_uses_sdk_ok",
             "32_uses_sdk_minsdk_ok",
             "33_uses_sdk_minsdk_conflict",
@@ -135,7 +136,6 @@ public class ManifestMerger2Test extends ManifestMergerTest {
     @Override
     void processTestFiles(TestFiles testFiles) throws Exception {
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         StdLogger stdLogger = new StdLogger(StdLogger.Level.VERBOSE);
         ManifestMerger2.Invoker invoker = ManifestMerger2.newInvoker(testFiles.getMain(),
                 stdLogger)
@@ -158,38 +158,31 @@ public class ManifestMerger2Test extends ManifestMergerTest {
         MergingReport mergeReport = invoker.merge();
 
 
-        mergeReport.log(stdLogger);
-        if (mergeReport.getMergedDocument().isPresent()) {
-            XmlDocument actualResult = mergeReport.getMergedDocument().get();
-            actualResult.write(byteArrayOutputStream);
-            stdLogger.info(byteArrayOutputStream.toString());
-        }
-
         // this is obviously quite hacky, refine once merge output is better defined.
         boolean notExpectingError = !isExpectingError(testFiles.getExpectedErrors());
-
+        mergeReport.log(stdLogger);
         if (mergeReport.getMergedDocument().isPresent()) {
 
-            XmlDocument expectedResult = TestUtils.xmlDocumentFromString(
-                    new TestUtils.TestSourceLocation(getClass(), testFiles.getMain().getName()),
-                    testFiles.getExpectedResult());
-
             XmlDocument actualResult = mergeReport.getMergedDocument().get();
+            String prettyResult = actualResult.prettyPrint();
+            stdLogger.info(prettyResult);
 
-            // saves the result to the external file for easier human parsing.
-            OutputStream fos = null;
-            try {
-                fos = new BufferedOutputStream(new FileOutputStream(testFiles.getActualResult()));
-                actualResult.write(fos);
-            } finally {
-                if (fos != null)
-                    fos.close();
+            if (testFiles.getActualResult() != null) {
+                FileWriter writer = new FileWriter(testFiles.getActualResult());
+                try {
+                    writer.append(prettyResult);
+                } finally {
+                    writer.close();
+                }
             }
 
             if (!notExpectingError) {
                 fail("Did not get expected error : " + testFiles.getExpectedErrors());
             }
 
+            XmlDocument expectedResult = TestUtils.xmlDocumentFromString(
+                    new TestUtils.TestSourceLocation(getClass(), testFiles.getMain().getName()),
+                    testFiles.getExpectedResult());
             Optional<String> comparingMessage =
                     expectedResult.compareTo(actualResult);
 
@@ -226,18 +219,26 @@ public class ManifestMerger2Test extends ManifestMergerTest {
 
         StringReader stringReader = new StringReader(expectedOutput);
         BufferedReader reader = new BufferedReader(stringReader);
-        String line;
+        String line = reader.readLine();
         List<Record> records = new ArrayList<Record>(mergeReport.getLoggingRecords());
-        while ((line = reader.readLine()) != null) {
+        while (line != null) {
             if (line.startsWith("WARNING") || line.startsWith("ERROR")) {
+                String message = line;
+                do {
+                    line = reader.readLine();
+                    if (line != null && line.startsWith("    ")) {
+                        message = message + "\n" + line;
+                    }
+                } while (line != null && line.startsWith("    "));
+
                 // next might generate an exception which will make the test fail when we
                 // get unexpected error message.
-                if (!findLineInRecords(line, records)) {
+                if (!findLineInRecords(message, records)) {
 
-                    StringBuilder message = new StringBuilder();
-                    dumpRecords(records, message);
-                    message.append("Cannot find expected error : \n").append(line);
-                    fail(message.toString());
+                    StringBuilder errorMessage = new StringBuilder();
+                    dumpRecords(records, errorMessage);
+                    errorMessage.append("Cannot find expected error : \n").append(message);
+                    fail(errorMessage.toString());
                 }
             }
         }
@@ -251,8 +252,15 @@ public class ManifestMerger2Test extends ManifestMergerTest {
     }
 
     private boolean findLineInRecords(String errorLine, List<Record> records) {
+        String severity = errorLine.substring(0, errorLine.indexOf(':'));
+        String message = errorLine.substring(errorLine.indexOf(':') + 1);
         for (Record record : records) {
-            if (record.toString().equals(errorLine)) {
+            int indexOfSuggestions = record.getMessage().indexOf("\n\tSuggestion:");
+            String messageRecord = indexOfSuggestions != -1
+                    ? record.getMessage().substring(0, indexOfSuggestions)
+                    : record.getMessage();
+            if (messageRecord.replaceAll("\t", "    ").equals(message)
+                    && record.getSeverity() == Record.Severity.valueOf(severity)) {
                 records.remove(record);
                 return true;
             }

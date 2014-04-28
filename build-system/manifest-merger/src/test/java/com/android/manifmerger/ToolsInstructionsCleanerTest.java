@@ -18,6 +18,7 @@ package com.android.manifmerger;
 
 import com.android.sdklib.mock.MockLog;
 import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 
 import junit.framework.TestCase;
 
@@ -163,6 +164,38 @@ public class ToolsInstructionsCleanerTest extends TestCase {
         assertTrue(activity.isPresent());
         assertEquals(1, activity.get().getAttributes().getLength());
         assertNotNull(activity.get().getAttribute("android:name"));
+    }
+
+    public void testSelectorRemoval()
+            throws ParserConfigurationException, SAXException, IOException {
+        MockLog mockLog = new MockLog();
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\">\n"
+                + "        <activity android:name=\"activityOne\" "
+                + "             tools:node=\"remove\" tools:selector=\"foo\"/>\n"
+                + "    </application>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(
+                        getClass(), "testSelectorRemoval"), main);
+
+        Element rootElement = mainDocument.getRootNode().getXml();
+        ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);
+
+        Optional<Element> application = getChildElementByName(rootElement, "application");
+        assertTrue(application.isPresent());
+
+        Optional<Element> activity = getChildElementByName(application.get(), "activity");
+        // ensure the activity did not get deleted since it has a selector
+        assertTrue(activity.isPresent());
+        assertTrue(Strings.isNullOrEmpty(activity.get().getAttribute("tools:selector")));
     }
 
     private static Optional<Element> getChildElementByName(Element parent, String name) {

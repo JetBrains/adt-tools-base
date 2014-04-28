@@ -155,8 +155,8 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
                  "Android SDK Build-tools, revision 3.0.1, " +
                  "Android SDK Build-tools, revision 3, " +
                  "SDK Platform Android 0.0, API 0, revision 1, " +
-                 "ARM EABI v7a System Image, Android API 0, revision 0, " +
-                 "ARM EABI System Image, Android API 0, revision 0, " +
+                 "Sys-Img v0 for (Default, armeabi-v7a), Android API 0, revision 0, " +
+                 "Sys-Img v0 for (Default, armeabi), Android API 0, revision 0, " +
                  "Sources for Android SDK, API 0, revision 0]",
                 Arrays.toString(mParser.parseSdk(mSdkMan.getLocation(), mSdkMan, mMonitor)));
 
@@ -177,8 +177,8 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
                  "Android SDK Build-tools, revision 3.0.1, " +
                  "Android SDK Build-tools, revision 3, " +
                  "SDK Platform Android 0.0, API 0, revision 1, " +
-                 "ARM EABI v7a System Image, Android API 0, revision 0, " +
-                 "ARM EABI System Image, Android API 0, revision 0, " +
+                 "Sys-Img v0 for (Default, armeabi-v7a), Android API 0, revision 0, " +
+                 "Sys-Img v0 for (Default, armeabi), Android API 0, revision 0, " +
                  "Sources for Android SDK, API 0, revision 0, " +
                  "Broken Intel x86 Atom System Image, API 0]",
                 Arrays.toString(mParser.parseSdk(mSdkMan.getLocation(), mSdkMan, mMonitor)));
@@ -190,8 +190,8 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
                  "Android SDK Build-tools, revision 3.0.1, " +
                  "Android SDK Build-tools, revision 3, " +
                  "SDK Platform Android 0.0, API 0, revision 1, " +
-                 "ARM EABI v7a System Image, Android API 0, revision 0, " +
-                 "ARM EABI System Image, Android API 0, revision 0, " +
+                 "Sys-Img v0 for (Default, armeabi-v7a), Android API 0, revision 0, " +
+                 "Sys-Img v0 for (Default, armeabi), Android API 0, revision 0, " +
                  "Sources for Android SDK, API 0, revision 0, " +
                  "Broken Intel x86 Atom System Image, API 0]",
                  Arrays.toString(mParser.parseSdk(mSdkMan.getLocation(),
@@ -201,8 +201,8 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
 
         assertEquals(
                 "[SDK Platform Android 0.0, API 0, revision 1, " +
-                 "ARM EABI v7a System Image, Android API 0, revision 0, " +
-                 "ARM EABI System Image, Android API 0, revision 0, " +
+                 "Sys-Img v0 for (Default, armeabi-v7a), Android API 0, revision 0, " +
+                 "Sys-Img v0 for (Default, armeabi), Android API 0, revision 0, " +
                  "Sources for Android SDK, API 0, revision 0, " +
                  "Broken Intel x86 Atom System Image, API 0]",
                  Arrays.toString(mParser.parseSdk(mSdkMan.getLocation(),

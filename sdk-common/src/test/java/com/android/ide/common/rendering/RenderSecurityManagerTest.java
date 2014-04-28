@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.security.Permission;
 import java.util.Collections;
+import java.util.TimeZone;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -737,4 +738,33 @@ public class RenderSecurityManagerTest extends TestCase {
             manager.dispose(myCredential);
         }
     }
+
+
+    public void testSetTimeZone() throws Exception {
+        RenderSecurityManager manager = new RenderSecurityManager(null, null);
+        try {
+            manager.setActive(true, myCredential);
+
+            /* ICU needs this (needed for Calendar widget rendering)
+                at java.util.TimeZone.hasPermission(TimeZone.java:597)
+                at java.util.TimeZone.setDefault(TimeZone.java:619)
+                at com.ibm.icu.util.TimeZone.setDefault(TimeZone.java:973)
+                at libcore.icu.DateIntervalFormat_Delegate.createDateIntervalFormat(DateIntervalFormat_Delegate.java:61)
+                at libcore.icu.DateIntervalFormat.createDateIntervalFormat(DateIntervalFormat.java)
+                at libcore.icu.DateIntervalFormat.getFormatter(DateIntervalFormat.java:112)
+                at libcore.icu.DateIntervalFormat.formatDateRange(DateIntervalFormat.java:102)
+                at libcore.icu.DateIntervalFormat.formatDateRange(DateIntervalFormat.java:71)
+                at android.text.format.DateUtils.formatDateRange(DateUtils.java:826)
+             */
+            TimeZone deflt = TimeZone.getDefault();
+            String[] availableIDs = TimeZone.getAvailableIDs();
+            TimeZone timeZone = TimeZone.getTimeZone(availableIDs[0]);
+            TimeZone.setDefault(timeZone);
+            TimeZone.setDefault(deflt);
+        } finally {
+            manager.dispose(myCredential);
+        }
+    }
+
+
 }

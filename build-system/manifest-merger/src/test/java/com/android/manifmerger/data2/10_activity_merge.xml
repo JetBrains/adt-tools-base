@@ -25,7 +25,7 @@
     android:versionCode="100"
     android:versionName="1.0.0">
 
-    <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="11"/>
+    <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="19"/>
 
     <supports-screens
         android:largeScreens="true"
@@ -105,6 +105,8 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.lib1">
 
+    <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="19"/>
+
     <application android:label="@string/lib_name" >
 
         <!-- Broadcast Receiver for a widget. -->
@@ -145,6 +147,8 @@
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.lib2">
+
+    <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="19"/>
 
     <application android:label="@string/lib_name" >
 
@@ -224,6 +228,8 @@
 
     </application>
 
+    <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="19"/>
+
 </manifest>
 
 
@@ -235,7 +241,7 @@
     android:versionCode="100"
     android:versionName="1.0.0">
 
-    <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="11"/>
+    <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="19"/>
 
     <supports-screens
         android:largeScreens="true"

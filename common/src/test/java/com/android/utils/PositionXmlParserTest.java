@@ -352,7 +352,7 @@ public class PositionXmlParserTest extends TestCase {
         assertNotNull(linearLayout);
 
         // first child is a comment.
-        org.w3c.dom.Node commentNode = linearLayout.getFirstChild();
+        org.w3c.dom.Node commentNode = linearLayout.getFirstChild().getNextSibling();
         assertEquals(Node.COMMENT_NODE, commentNode.getNodeType());
         Position position = parser.getPosition(commentNode);
         assertNotNull(position);
@@ -401,7 +401,7 @@ public class PositionXmlParserTest extends TestCase {
         assertNotNull(linearLayout);
 
         // first child is a comment.
-        Node commentNode = linearLayout.getFirstChild();
+        Node commentNode = linearLayout.getFirstChild().getNextSibling();
         assertEquals(Node.COMMENT_NODE, commentNode.getNodeType());
         Position position = parser.getPosition(commentNode);
         assertNotNull(position);

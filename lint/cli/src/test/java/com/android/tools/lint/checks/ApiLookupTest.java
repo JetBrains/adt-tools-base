@@ -106,8 +106,11 @@ public class ApiLookupTest extends AbstractCheckTest {
     }
 
     private File mCacheDir;
+    @SuppressWarnings("StringBufferField")
     private StringBuilder mLogBuffer = new StringBuilder();
 
+    @SuppressWarnings({"ConstantConditions", "IOResourceOpenedButNotSafelyClosed",
+            "ResultOfMethodCallIgnored"})
     public void testCorruptedCacheHandling() throws Exception {
         ApiLookup lookup;
 
@@ -132,7 +135,8 @@ public class ApiLookupTest extends AbstractCheckTest {
 
         // Now truncate cache file
         File cacheFile = new File(mCacheDir,
-                ApiLookup.getCacheFileName("api-versions.xml")); //$NON-NLS-1$
+                ApiLookup.getCacheFileName("api-versions.xml",
+                        ApiLookup.getPlatformVersion(new LookupTestClient()))); //$NON-NLS-1$
         mLogBuffer.setLength(0);
         assertTrue(cacheFile.exists());
         RandomAccessFile raf = new RandomAccessFile(cacheFile, "rw");
@@ -181,6 +185,7 @@ public class ApiLookupTest extends AbstractCheckTest {
     }
 
     private final class LookupTestClient extends TestLintClient {
+        @SuppressWarnings("ResultOfMethodCallIgnored")
         @Override
         public File getCacheDir(boolean create) {
             assertNotNull(mCacheDir);

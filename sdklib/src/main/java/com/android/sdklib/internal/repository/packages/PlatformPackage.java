@@ -26,8 +26,6 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.PkgProps;
@@ -129,8 +127,6 @@ public class PlatformPackage extends MinToolsPackage
                 null,                       //license
                 target.getDescription(),    //description
                 null,                       //descUrl
-                Os.getCurrentOs(),          //archiveOs
-                Arch.getCurrentArch(),      //archiveArch
                 target.getLocation()        //archiveOsPath
                 );
 
@@ -228,8 +224,12 @@ public class PlatformPackage extends MinToolsPackage
      */
     @Override
     public String getListDescription() {
-        String s;
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s%2$s", ld, isObsolete() ? " (Obsolete)" : "");
+        }
 
+        String s;
         if (mVersion.isPreview()) {
             s = String.format("SDK Platform Android %1$s Preview%2$s",
                     getVersionName(),
@@ -248,8 +248,15 @@ public class PlatformPackage extends MinToolsPackage
      */
     @Override
     public String getShortDescription() {
-        String s;
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s, revision %2$s%3$s",
+                    ld,
+                    getRevision().toShortString(),
+                    isObsolete() ? " (Obsolete)" : "");
+        }
 
+        String s;
         if (mVersion.isPreview()) {
             s = String.format("SDK Platform Android %1$s Preview, revision %2$s%3$s",
                     getVersionName(),

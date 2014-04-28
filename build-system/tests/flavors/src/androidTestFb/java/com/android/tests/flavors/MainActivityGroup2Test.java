@@ -82,17 +82,17 @@ public class MainActivityGroup2Test extends ActivityInstrumentationTestCase2<Mai
     public void testResOverlay() {
         // because this group has lower priority, we check that the resource from
         // this flavor is not used.
-        assertFalse("fb".equals(mResOverLay.getText()));
-        assertEquals("fb", mResOverLay2.getText());
+        assertFalse("fb".equals(mResOverLay.getText().toString()));
+        assertEquals("fb", mResOverLay2.getText().toString());
     }
 
     @MediumTest
     public void testBuildConfig() {
-        assertEquals("fb", mBuildConfig2.getText());
+        assertEquals("fb", mBuildConfig2.getText().toString());
     }
 
     @MediumTest
     public void testCodeOverlay() {
-        assertEquals("fb", mCodeOverlay2.getText());
+        assertEquals("fb", mCodeOverlay2.getText().toString());
     }
 }

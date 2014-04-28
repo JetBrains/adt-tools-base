@@ -16,8 +16,6 @@
     android:versionCode="100"
     android:versionName="1.0.0">
 
-    <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="11"/>
-
     <application
             android:name="TheApp"
             android:backupAgent=".MyBackupAgent" >
@@ -71,8 +69,6 @@
     package="com.example.app1"
     android:versionCode="100"
     android:versionName="1.0.0">
-
-    <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="11"/>
 
     <application
             android:name="com.example.app1.TheApp"

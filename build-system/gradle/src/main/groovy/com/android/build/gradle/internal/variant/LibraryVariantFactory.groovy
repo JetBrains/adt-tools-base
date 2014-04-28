@@ -22,7 +22,10 @@ import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.api.LibraryVariantImpl
+import com.android.build.gradle.internal.coverage.JacocoInstrumentTask
+import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.tasks.MergeFileTask
+import com.android.build.gradle.tasks.ExtractAnnotations
 import com.android.build.gradle.tasks.MergeResources
 import com.android.builder.BuilderConstants
 import com.android.builder.DefaultBuildType
@@ -44,6 +47,7 @@ import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.tooling.BuildException
 
+import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP
 import static com.android.SdkConstants.LIBS_FOLDER
 import static com.android.build.gradle.BasePlugin.DIR_BUNDLES
 /**
@@ -169,13 +173,14 @@ public class LibraryVariantFactory implements VariantFactory {
                 "$project.buildDir/$DIR_BUNDLES/${dirName}/jni"))
 
         // package the aidl files into the bundle folder
-        Sync packageAidl = basePlugin.project.tasks.create(
-                "package${fullName.capitalize()}Aidl",
-                Sync)
-        // packageAidl from 3 sources. the order is important to make sure the override works well.
-        packageAidl.from(variantConfig.aidlSourceList).include("**/*.aidl")
-        packageAidl.into(basePlugin.project.file(
-                "$basePlugin.project.buildDir/$DIR_BUNDLES/${dirName}/$SdkConstants.FD_AIDL"))
+        // TODO: reenable when we can generate a single AIDL file with all the parcelable.
+//        Sync packageAidl = basePlugin.project.tasks.create(
+//                "package${fullName.capitalize()}Aidl",
+//                Sync)
+//        // packageAidl from 3 sources. the order is important to make sure the override works well.
+//        packageAidl.from(variantConfig.aidlSourceList).include("**/*.aidl")
+//        packageAidl.into(basePlugin.project.file(
+//                "$basePlugin.project.buildDir/$DIR_BUNDLES/${dirName}/$SdkConstants.FD_AIDL"))
 
         // package the renderscript header files files into the bundle folder
         Sync packageRenderscript = project.tasks.create(
@@ -209,6 +214,9 @@ public class LibraryVariantFactory implements VariantFactory {
                 "bundle${fullName.capitalize()}",
                 Zip)
 
+        def extract = variantData.variantDependency.annotationsPresent ? createExtractAnnotations(
+                fullName, project, variantData) : null
+
         if (buildType.runProguard) {
             // run proguard on output of compile task
             basePlugin.createProguardTasks(variantData, null)
@@ -216,19 +224,49 @@ public class LibraryVariantFactory implements VariantFactory {
             // hack since bundle can't depend on variantData.proguardTask
             mergeProGuardFileTask.dependsOn variantData.proguardTask
 
-            bundle.dependsOn packageRes, packageAidl, packageRenderscript, mergeProGuardFileTask, lintCopy, packageJniLibs
+            bundle.dependsOn packageRes, /*packageAidl,*/ packageRenderscript, mergeProGuardFileTask,
+                    lintCopy, packageJniLibs
+            if (extract != null) {
+                bundle.dependsOn(extract)
+            }
         } else {
+            final boolean instrumented = variantConfig.buildType.isTestCoverageEnabled()
+
+            // if needed, instrument the code
+            JacocoInstrumentTask jacocoTask = null
+            Copy agentTask = null
+            if (instrumented) {
+                jacocoTask = project.tasks.create(
+                        "instrument${variantConfig.fullName.capitalize()}", JacocoInstrumentTask)
+                jacocoTask.dependsOn variantData.javaCompileTask
+                jacocoTask.conventionMapping.jacocoClasspath = { project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME] }
+                jacocoTask.conventionMapping.inputDir = { variantData.javaCompileTask.destinationDir }
+                jacocoTask.conventionMapping.outputDir = { project.file("${project.buildDir}/coverage-instrumented-classes/${variantConfig.dirName}") }
+
+                agentTask = basePlugin.getJacocoAgentTask()
+            }
+
+            // package the local jar in libs/
             Sync packageLocalJar = project.tasks.create(
                     "package${fullName.capitalize()}LocalJar",
                     Sync)
             packageLocalJar.from(BasePlugin.getLocalJarFileList(variantData.variantDependency))
+            if (instrumented) {
+                packageLocalJar.dependsOn agentTask
+                packageLocalJar.from(new File(agentTask.destinationDir, BasePlugin.FILE_JACOCO_AGENT))
+            }
             packageLocalJar.into(project.file(
                     "$project.buildDir/$DIR_BUNDLES/${dirName}/$LIBS_FOLDER"))
 
             // jar the classes.
             Jar jar = project.tasks.create("package${fullName.capitalize()}Jar", Jar);
             jar.dependsOn variantData.javaCompileTask, variantData.processJavaResourcesTask
-            jar.from(variantData.javaCompileTask.outputs);
+            if (instrumented) {
+                jar.dependsOn jacocoTask
+                jar.from({ jacocoTask.getOutputDir() });
+            } else {
+                jar.from(variantData.javaCompileTask.outputs);
+            }
             jar.from(variantData.processJavaResourcesTask.destinationDir)
 
             jar.destinationDir = project.file(
@@ -249,8 +287,14 @@ public class LibraryVariantFactory implements VariantFactory {
                 jar.exclude(packageName + "/BuildConfig.class")
             }
 
-            bundle.dependsOn packageRes, jar, packageAidl, packageRenderscript, packageLocalJar,
+            bundle.dependsOn packageRes, jar, /*packageAidl,*/ packageRenderscript, packageLocalJar,
                     mergeProGuardFileTask, lintCopy, packageJniLibs
+
+            if (extract != null) {
+                // In case extract annotations strips out private typedef annotation classes
+                jar.dependsOn extract
+                bundle.dependsOn extract
+            }
         }
 
         bundle.setDescription("Assembles a bundle containing the library in ${fullName.capitalize()}.");
@@ -261,11 +305,19 @@ public class LibraryVariantFactory implements VariantFactory {
         libVariantData.packageLibTask = bundle
         variantData.outputFile = bundle.archivePath
 
+        if (assembleTask == null) {
+            assembleTask = basePlugin.createAssembleTask(variantData)
+        }
+        assembleTask.dependsOn bundle
+        variantData.assembleTask = assembleTask
+
         if (extension.defaultPublishConfig.equals(fullName)) {
             setupDefaultConfig(project, variantData.variantDependency.packageConfiguration)
 
             // add the artifact that will be published
             project.artifacts.add("default", bundle)
+
+            basePlugin.assembleDefault.dependsOn variantData.assembleTask
         }
 
         // also publish the artifact with its full config name
@@ -274,11 +326,6 @@ public class LibraryVariantFactory implements VariantFactory {
             bundle.classifier = variantData.variantDependency.publishConfiguration.name
         }
 
-        if (assembleTask == null) {
-            assembleTask = basePlugin.createAssembleTask(variantData)
-        }
-        assembleTask.dependsOn bundle
-        variantData.assembleTask = assembleTask
 
         // configure the variant to be testable.
         variantConfig.output = new LibraryBundle(
@@ -359,5 +406,36 @@ public class LibraryVariantFactory implements VariantFactory {
         }
 
         return configs
+    }
+
+    public Task createExtractAnnotations(
+            String fullName, Project project, BaseVariantData variantData) {
+        VariantConfiguration config = variantData.variantConfiguration
+        String dirName = config.dirName
+
+        ExtractAnnotations task = project.tasks.create(
+                "extract${fullName.capitalize()}Annotations",
+                ExtractAnnotations)
+        task.description =
+                "Extracts Android annotations for the ${fullName} variant into the archive file"
+        task.group = org.gradle.api.plugins.BasePlugin.BUILD_GROUP
+        task.plugin = basePlugin
+        task.variant = variantData
+        task.destinationDir = project.file("$project.buildDir/$DIR_BUNDLES/${dirName}")
+        task.output = new File(task.destinationDir, FN_ANNOTATIONS_ZIP)
+        task.classDir = project.file("$project.buildDir/classes/${variantData.variantConfiguration.dirName}")
+        task.source = variantData.getJavaSources()
+        task.encoding = extension.compileOptions.encoding
+        task.sourceCompatibility = extension.compileOptions.sourceCompatibility
+        task.classpath = project.files(basePlugin.getAndroidBuilder().getCompileClasspath(config))
+        task.dependsOn variantData.javaCompileTask
+
+        // Setup the boot classpath just before the task actually runs since this will
+        // force the sdk to be parsed. (Same as in compileTask)
+        task.doFirst {
+            task.bootClasspath = basePlugin.getAndroidBuilder().getBootClasspath()
+        }
+
+        return task
     }
 }

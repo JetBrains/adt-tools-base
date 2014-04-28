@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 package com.android.build.gradle
+
 import com.android.build.gradle.internal.variant.LibraryVariantFactory
 import com.android.build.gradle.internal.variant.VariantFactory
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
@@ -26,6 +28,12 @@ import javax.inject.Inject
  * Gradle plugin class for 'library' projects.
  */
 public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
+
+    /**
+     * Default assemble task for the default-published artifact. this is needed for
+     * the prepare task on the consuming project.
+     */
+    Task assembleDefault
 
     @Inject
     public LibraryPlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
@@ -45,6 +53,8 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         super.apply(project)
+
+        assembleDefault = project.tasks.create("assembleDefault")
     }
 
     @Override

@@ -25,8 +25,6 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.IAndroidTarget.IOptionalLibrary;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.PkgProps;
@@ -236,8 +234,6 @@ public class AddonPackage extends MajorRevisionPackage
                 null,                       //license
                 target.getDescription(),    //description
                 null,                       //descUrl
-                Os.getCurrentOs(),          //archiveOs
-                Arch.getCurrentArch(),      //archiveArch
                 target.getLocation()        //archiveOsPath
                 );
 
@@ -507,6 +503,11 @@ public class AddonPackage extends MajorRevisionPackage
      */
     @Override
     public String getListDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s%2$s", ld, isObsolete() ? " (Obsolete)" : "");
+        }
+
         return String.format("%1$s%2$s",
                 getDisplayName(),
                 isObsolete() ? " (Obsolete)" : "");
@@ -517,6 +518,14 @@ public class AddonPackage extends MajorRevisionPackage
      */
     @Override
     public String getShortDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s, revision %2$s%3$s",
+                    ld,
+                    getRevision().toShortString(),
+                    isObsolete() ? " (Obsolete)" : "");
+        }
+
         return String.format("%1$s, Android API %2$s, revision %3$s%4$s",
                 getDisplayName(),
                 mVersion.getApiString(),

@@ -32,6 +32,7 @@ import com.android.ide.common.res2.ResourceRepository;
 import com.android.ide.common.res2.ResourceSet;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
+import com.android.sdklib.IAndroidTarget;
 import com.android.testutils.SdkTestCase;
 import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.LintCliFlags;
@@ -647,6 +648,23 @@ public abstract class AbstractCheckTest extends SdkTestCase {
                 Node child = children.item(i);
                 addIds(ids, child);
             }
+        }
+
+        @Nullable
+        @Override
+        public IAndroidTarget getCompileTarget(@NonNull Project project) {
+            IAndroidTarget compileTarget = super.getCompileTarget(project);
+            if (compileTarget == null) {
+                IAndroidTarget[] targets = getTargets();
+                for (int i = targets.length - 1; i >= 0; i--) {
+                    IAndroidTarget target = targets[i];
+                    if (target.isPlatform()) {
+                        return target;
+                    }
+                }
+            }
+
+            return compileTarget;
         }
     }
 

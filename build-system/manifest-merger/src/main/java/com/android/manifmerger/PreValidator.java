@@ -16,8 +16,13 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.MergingReport.Record.Severity.*;
+import static com.android.manifmerger.XmlNode.NodeKey;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.utils.SdkUtils;
+import com.android.utils.XmlUtils;
 import com.android.xml.AndroidManifest;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
@@ -86,8 +91,10 @@ public class PreValidator {
 
         validateAndroidAttributes(mergingReport, xmlElement);
 
+        checkSelectorPresence(mergingReport, xmlElement);
+
         // create a temporary hash map of children indexed by key to ensure key uniqueness.
-        Map<String, XmlElement> childrenKeys = new HashMap<String, XmlElement>();
+        Map<NodeKey, XmlElement> childrenKeys = new HashMap<NodeKey, XmlElement>();
         for (XmlElement childElement : xmlElement.getMergeableElements()) {
 
             // if this element is tagged with 'tools:node=removeAll', ensure it has no other
@@ -106,9 +113,9 @@ public class PreValidator {
                                 childElement.printPosition(),
                                 childrenKeys.get(childElement.getId()).printPosition());
                         if (twin.compareTo(childElement).isPresent()) {
-                            mergingReport.addError(message);
+                            childElement.addMessage(mergingReport, ERROR, message);
                         } else {
-                            mergingReport.addWarning(message);
+                            childElement.addMessage(mergingReport, WARNING, message);
                         }
                     }
                     childrenKeys.put(childElement.getId(), childElement);
@@ -144,7 +151,22 @@ public class PreValidator {
                     element.printPosition(),
                     Joiner.on(',').join(extraAttributeNames)
             );
-            mergingReport.addError(message);
+            element.addMessage(mergingReport, ERROR, message);
+        }
+    }
+
+    private static void checkSelectorPresence(MergingReport.Builder mergingReport,
+            XmlElement element) {
+
+        Attr selectorAttribute =
+                element.getXml().getAttributeNodeNS(SdkConstants.TOOLS_URI, Selector.SELECTOR_LOCAL_NAME);
+        if (selectorAttribute!=null && !element.getOperationType().isSelectable()) {
+            String message = String.format(
+                    "Unsupported tools:selector=\"%1$s\" found on node %2$s at %3$s",
+                    selectorAttribute.getValue(),
+                    element.getId(),
+                    element.printPosition());
+            element.addMessage(mergingReport, ERROR, message);
         }
     }
 
@@ -152,7 +174,7 @@ public class PreValidator {
             MergingReport.Builder mergingReport, XmlElement manifest) {
         Attr attributeNode = manifest.getXml().getAttributeNode(AndroidManifest.ATTRIBUTE_PACKAGE);
         if (attributeNode == null) {
-            mergingReport.addWarning(String.format(
+            manifest.addMessage(mergingReport, WARNING, String.format(
                     "Missing 'package' declaration in manifest at %1$s",
                     manifest.printPosition()));
         }
@@ -185,7 +207,7 @@ public class PreValidator {
                             keyAttributesNames.get(0),
                             xmlElement.getId(),
                             xmlElement.printPosition());
-            mergingReport.addError(message);
+            xmlElement.addMessage(mergingReport, ERROR, message);
             return false;
         }
         return true;
@@ -227,22 +249,23 @@ public class PreValidator {
                 case REMOVE:
                     // check we are not provided a new value.
                     if (attribute.isPresent()) {
-                        mergingReport.addError(String.format(
+                        xmlElement.addMessage(mergingReport, ERROR, String.format(
                                 "tools:remove specified at line:%d for attribute %s, but "
                                         + "attribute also declared at line:%d, "
                                         + "do you want to use tools:replace instead ?",
-                                xmlElement.getPosition().getLine(),
+                                xmlElement.getLine(),
                                 attributeOperationTypeEntry.getKey(),
-                                attribute.get().getPosition().getLine()));
+                                attribute.get().getPosition().getLine()
+                        ));
                     }
                     break;
                 case REPLACE:
                     // check we are provided a new value
                     if (!attribute.isPresent()) {
-                        mergingReport.addError(String.format(
+                        xmlElement.addMessage(mergingReport, ERROR, String.format(
                                 "tools:replace specified at line:%d for attribute %s, but "
                                         + "no new value specified",
-                                xmlElement.getPosition().getLine(),
+                                xmlElement.getLine(),
                                 attributeOperationTypeEntry.getKey()
                         ));
                     }

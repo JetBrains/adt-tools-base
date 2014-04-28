@@ -17,7 +17,6 @@
 package com.android.manifmerger;
 
 import com.android.utils.ILogger;
-import com.google.common.collect.ImmutableMap;
 
 import junit.framework.TestCase;
 
@@ -53,7 +52,7 @@ public class ActionRecorderTest extends TestCase {
 
     @Mock ILogger mLoggerMock;
 
-    ActionRecorder.Builder mActionRecorderBuilder = new ActionRecorder.Builder();
+    ActionRecorder mActionRecorderBuilder = new ActionRecorder();
 
     @Override
     protected void setUp() throws Exception {
@@ -62,11 +61,11 @@ public class ActionRecorderTest extends TestCase {
     }
 
     public void testDoNothing() {
-        ActionRecorder actionRecorder = mActionRecorderBuilder.build();
-        actionRecorder.log(mLoggerMock);
-        Mockito.verify(mLoggerMock).info(ActionRecorder.HEADER);
+        Actions actions = mActionRecorderBuilder.build();
+        actions.log(mLoggerMock);
+        Mockito.verify(mLoggerMock).info(Actions.HEADER);
         Mockito.verifyNoMoreInteractions(mLoggerMock);
-        assertTrue(actionRecorder.getAllRecords().isEmpty());
+        assertTrue(actions.getNodeKeys().isEmpty());
     }
 
     public void testSingleElement_withoutAttributes()
@@ -79,21 +78,19 @@ public class ActionRecorderTest extends TestCase {
         XmlElement xmlElement = xmlDocument.getRootNode().getNodeByTypeAndKey(
                 ManifestModel.NodeTypes.ACTIVITY, "com.example.lib3.activityOne").get();
         // added during the initial file loading
-        mActionRecorderBuilder.recordNodeAction(xmlElement, ActionRecorder.ActionType.ADDED);
+        mActionRecorderBuilder.recordNodeAction(xmlElement, Actions.ActionType.ADDED);
 
-        ActionRecorder actionRecorder = mActionRecorderBuilder.build();
-        ImmutableMap<String,ActionRecorder.DecisionTreeRecord> allRecords =
-                actionRecorder.getAllRecords();
-        assertEquals(1, allRecords.size());
-        assertEquals(1, allRecords.get(xmlElement.getId()).getNodeRecords().size());
-        assertEquals(0, allRecords.get(xmlElement.getId()).getAttributesRecords().size());
-        actionRecorder.log(mLoggerMock);
+        Actions actions = mActionRecorderBuilder.build();
+        assertEquals(1, actions.getNodeKeys().size());
+        assertEquals(1, actions.getNodeRecords(xmlElement.getId()).size());
+        assertEquals(0, actions.getRecordedAttributeNames(xmlElement.getId()).size());
+        actions.log(mLoggerMock);
 
         // check that output is consistent with spec.
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(ActionRecorder.HEADER)
+        stringBuilder.append(Actions.HEADER)
             .append(xmlElement.getId()).append("\n");
-        appendNode(stringBuilder, ActionRecorder.ActionType.ADDED, REFEFENCE_DOCUMENT, 6);
+        appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 6, 5);
 
         Mockito.verify(mLoggerMock).info(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
@@ -124,30 +121,28 @@ public class ActionRecorderTest extends TestCase {
         XmlElement xmlElement = xmlDocument.getRootNode().getNodeByTypeAndKey(
                 ManifestModel.NodeTypes.ACTIVITY, "com.example.lib3.activityOne").get();
         // added during initial document loading
-        mActionRecorderBuilder.recordNodeAction(xmlElement, ActionRecorder.ActionType.ADDED);
+        mActionRecorderBuilder.recordNodeAction(xmlElement, Actions.ActionType.ADDED);
         // rejected during second document merging.
-        mActionRecorderBuilder.recordNodeAction(xmlElement, ActionRecorder.ActionType.REJECTED,
+        mActionRecorderBuilder.recordNodeAction(xmlElement, Actions.ActionType.REJECTED,
                 otherDocument.getRootNode().getNodeByTypeAndKey(
                         ManifestModel.NodeTypes.ACTIVITY, "com.example.lib3.activityOne").get());
 
-        ActionRecorder actionRecorder = mActionRecorderBuilder.build();
-        ImmutableMap<String,ActionRecorder.DecisionTreeRecord> allRecords =
-                actionRecorder.getAllRecords();
-        assertEquals(1, allRecords.size());
-        assertEquals(2, allRecords.get(xmlElement.getId()).getNodeRecords().size());
-        assertEquals(ActionRecorder.ActionType.ADDED,
-                allRecords.get(xmlElement.getId()).getNodeRecords().get(0).mActionType);
-        assertEquals(ActionRecorder.ActionType.REJECTED,
-                allRecords.get(xmlElement.getId()).getNodeRecords().get(1).mActionType);
-        assertEquals(0, allRecords.get(xmlElement.getId()).getAttributesRecords().size());
-        actionRecorder.log(mLoggerMock);
+        Actions actions = mActionRecorderBuilder.build();
+        assertEquals(1, actions.getNodeKeys().size());
+        assertEquals(2, actions.getNodeRecords(xmlElement.getId()).size());
+        assertEquals(Actions.ActionType.ADDED,
+                actions.getNodeRecords(xmlElement.getId()).get(0).mActionType);
+        assertEquals(Actions.ActionType.REJECTED,
+                actions.getNodeRecords(xmlElement.getId()).get(1).mActionType);
+        assertEquals(0, actions.getRecordedAttributeNames(xmlElement.getId()).size());
+        actions.log(mLoggerMock);
 
         // check that output is consistent with spec.
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(ActionRecorder.HEADER)
+        stringBuilder.append(Actions.HEADER)
                 .append(xmlElement.getId()).append("\n");
-        appendNode(stringBuilder, ActionRecorder.ActionType.ADDED, REFEFENCE_DOCUMENT, 6);
-        appendNode(stringBuilder, ActionRecorder.ActionType.REJECTED, "other_document", 6);
+        appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 6, 5);
+        appendNode(stringBuilder, Actions.ActionType.REJECTED, "other_document", 6, 5);
 
         Mockito.verify(mLoggerMock).info(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
@@ -163,29 +158,28 @@ public class ActionRecorderTest extends TestCase {
         XmlElement xmlElement = xmlDocument.getRootNode().getNodeByTypeAndKey(
                 ManifestModel.NodeTypes.ACTIVITY, "com.example.lib3.activityOne").get();
         // added during the initial file loading
-        mActionRecorderBuilder.recordNodeAction(xmlElement, ActionRecorder.ActionType.ADDED);
+        mActionRecorderBuilder.recordNodeAction(xmlElement, Actions.ActionType.ADDED);
         mActionRecorderBuilder.recordAttributeAction(
                 xmlElement.getAttribute(XmlNode.fromXmlName("android:name")).get(),
-                ActionRecorder.ActionType.ADDED, AttributeOperationType.STRICT);
+                Actions.ActionType.ADDED, AttributeOperationType.STRICT);
 
-        ActionRecorder actionRecorder = mActionRecorderBuilder.build();
-        ImmutableMap<String,ActionRecorder.DecisionTreeRecord> allRecords =
-                actionRecorder.getAllRecords();
-        assertEquals(1, allRecords.size());
-        assertEquals(1, allRecords.get(xmlElement.getId()).getNodeRecords().size());
-        assertEquals(1, allRecords.get(xmlElement.getId()).getAttributesRecords().size());
-        actionRecorder.log(mLoggerMock);
+        Actions actions = mActionRecorderBuilder.build();
+        assertEquals(1, actions.getNodeKeys().size());
+        assertEquals(1, actions.getNodeRecords(xmlElement.getId()).size());
+        assertEquals(1, actions.getRecordedAttributeNames(xmlElement.getId()).size());
+        actions.log(mLoggerMock);
 
         // check that output is consistent with spec.
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(ActionRecorder.HEADER)
+        stringBuilder.append(Actions.HEADER)
                 .append(xmlElement.getId()).append("\n");
-        appendNode(stringBuilder, ActionRecorder.ActionType.ADDED, REFEFENCE_DOCUMENT, 6);
+        appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 6, 5);
         appendAttribute(stringBuilder,
                 XmlNode.unwrapName(xmlElement.getXml().getAttributeNode("android:name")),
-                ActionRecorder.ActionType.ADDED,
+                Actions.ActionType.ADDED,
                 REFEFENCE_DOCUMENT,
-                6);
+                6,
+                15);
 
         Mockito.verify(mLoggerMock).info(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
@@ -200,34 +194,28 @@ public class ActionRecorderTest extends TestCase {
 
         XmlElement xmlElement = xmlDocument.getRootNode();
         // added during the initial file loading
-        mActionRecorderBuilder.recordNodeAction(xmlElement, ActionRecorder.ActionType.ADDED);
+        mActionRecorderBuilder.recordNodeAction(xmlElement, Actions.ActionType.ADDED);
         mActionRecorderBuilder.recordAttributeAction(
                 xmlElement.getAttribute(XmlNode.fromXmlName("package")).get(),
-                ActionRecorder.ActionType.ADDED, AttributeOperationType.STRICT);
+                Actions.ActionType.ADDED, AttributeOperationType.STRICT);
 
-        ActionRecorder actionRecorder = mActionRecorderBuilder.build();
-        ImmutableMap<String,ActionRecorder.DecisionTreeRecord> allRecords =
-                actionRecorder.getAllRecords();
-        assertEquals(1, allRecords.size());
-        assertEquals(1, allRecords.get(xmlElement.getId()).getNodeRecords().size());
-        assertEquals(ActionRecorder.ActionTarget.NODE,
-                allRecords.get(xmlElement.getId()).getNodeRecords().get(0).getActionTarget());
-        assertEquals(1, allRecords.get(xmlElement.getId()).getAttributesRecords().size());
-        assertEquals(ActionRecorder.ActionTarget.ATTRIBUTE,
-                allRecords.get(xmlElement.getId()).getAttributesRecords()
-                        .get(XmlNode.fromXmlName("package")).get(0).getActionTarget());
-        actionRecorder.log(mLoggerMock);
+        Actions actions = mActionRecorderBuilder.build();
+        assertEquals(1, actions.getNodeKeys().size());
+        assertEquals(1, actions.getNodeRecords(xmlElement.getId()).size());
+        assertEquals(1, actions.getRecordedAttributeNames(xmlElement.getId()).size());
+        actions.log(mLoggerMock);
 
         // check that output is consistent with spec.
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(ActionRecorder.HEADER)
+        stringBuilder.append(Actions.HEADER)
                 .append(xmlElement.getId()).append("\n");
-        appendNode(stringBuilder, ActionRecorder.ActionType.ADDED, REFEFENCE_DOCUMENT, 1);
+        appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 1, 1);
         appendAttribute(stringBuilder,
                 XmlNode.unwrapName(xmlElement.getXml().getAttributeNode("package")),
-                ActionRecorder.ActionType.ADDED,
+                Actions.ActionType.ADDED,
                 REFEFENCE_DOCUMENT,
-                4);
+                4,
+                5);
 
         Mockito.verify(mLoggerMock).info(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
@@ -259,66 +247,66 @@ public class ActionRecorderTest extends TestCase {
         XmlElement activityElement = xmlDocument.getRootNode().getNodeByTypeAndKey(
                 ManifestModel.NodeTypes.ACTIVITY, "com.example.lib3.activityOne").get();
         // added during initial document loading
-        mActionRecorderBuilder.recordNodeAction(activityElement, ActionRecorder.ActionType.ADDED);
+        mActionRecorderBuilder.recordNodeAction(activityElement, Actions.ActionType.ADDED);
         // rejected during second document merging.
-        mActionRecorderBuilder.recordNodeAction(activityElement, ActionRecorder.ActionType.REJECTED,
+        mActionRecorderBuilder.recordNodeAction(activityElement, Actions.ActionType.REJECTED,
                 otherDocument.getRootNode().getNodeByTypeAndKey(
                         ManifestModel.NodeTypes.ACTIVITY, "com.example.lib3.activityOne").get());
         XmlElement applicationElement = otherDocument.getRootNode().getNodeByTypeAndKey(
                 ManifestModel.NodeTypes.APPLICATION, null).get();
-        mActionRecorderBuilder.recordNodeAction(applicationElement, ActionRecorder.ActionType.ADDED);
+        mActionRecorderBuilder.recordNodeAction(applicationElement, Actions.ActionType.ADDED);
 
-        ActionRecorder actionRecorder = mActionRecorderBuilder.build();
-        ImmutableMap<String,ActionRecorder.DecisionTreeRecord> allRecords =
-                actionRecorder.getAllRecords();
-        assertEquals(2, allRecords.size());
-        assertEquals(2, allRecords.get(activityElement.getId()).getNodeRecords().size());
-        assertEquals(ActionRecorder.ActionType.ADDED,
-                allRecords.get(activityElement.getId()).getNodeRecords().get(0).mActionType);
-        assertEquals(ActionRecorder.ActionType.REJECTED,
-                allRecords.get(activityElement.getId()).getNodeRecords().get(1).mActionType);
-        assertEquals(0, allRecords.get(activityElement.getId()).getAttributesRecords().size());
-        assertEquals(1, allRecords.get(applicationElement.getId()).getNodeRecords().size());
-        assertEquals(0, allRecords.get(applicationElement.getId()).getAttributesRecords().size());
-        actionRecorder.log(mLoggerMock);
+        Actions actions = mActionRecorderBuilder.build();
+        assertEquals(2, actions.getNodeKeys().size());
+        assertEquals(2, actions.getNodeRecords(activityElement.getId()).size());
+        assertEquals(Actions.ActionType.ADDED,
+                actions.getNodeRecords(activityElement.getId()).get(0).mActionType);
+        assertEquals(Actions.ActionType.REJECTED,
+                actions.getNodeRecords(activityElement.getId()).get(1).mActionType);
+        assertEquals(0, actions.getRecordedAttributeNames(activityElement.getId()).size());
+        assertEquals(1, actions.getNodeRecords(applicationElement.getId()).size());
+        assertEquals(0, actions.getRecordedAttributeNames(applicationElement.getId()).size());
+        actions.log(mLoggerMock);
 
         // check that output is consistent with spec.
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(ActionRecorder.HEADER)
+        stringBuilder.append(Actions.HEADER)
                 .append(activityElement.getId()).append("\n");
-        appendNode(stringBuilder, ActionRecorder.ActionType.ADDED, REFEFENCE_DOCUMENT, 6);
-        appendNode(stringBuilder, ActionRecorder.ActionType.REJECTED, "other_document", 6);
+        appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 6, 5);
+        appendNode(stringBuilder, Actions.ActionType.REJECTED, "other_document", 6, 5);
         stringBuilder.append(applicationElement.getId()).append("\n");
-        appendNode(stringBuilder, ActionRecorder.ActionType.ADDED, "other_document", 7);
+        appendNode(stringBuilder, Actions.ActionType.ADDED, "other_document", 7, 5);
 
         Mockito.verify(mLoggerMock).info(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }
 
-
     private void appendNode(StringBuilder out,
-            ActionRecorder.ActionType actionType,
+            Actions.ActionType actionType,
             String docString,
-            int lineNumber) {
+            int lineNumber,
+            int columnNumber) {
 
         out.append(actionType.toString())
                 .append(" from ")
                 .append(getClass().getSimpleName()).append('#').append(docString)
-                .append(":").append(lineNumber).append("\n");
+                .append(":").append(lineNumber).append(":").append(columnNumber).append("\n");
     }
 
     private void appendAttribute(StringBuilder out,
             XmlNode.NodeName attributeName,
-            ActionRecorder.ActionType actionType,
+            Actions.ActionType actionType,
             String docString,
-            int lineNumber) {
+            int lineNumber,
+            int columnNumber) {
 
         out.append("\t")
                 .append(attributeName.toString())
-                .append("\t\t")
+                .append("\n\t\t")
                 .append(actionType.toString())
                 .append(" from ")
                 .append(getClass().getSimpleName()).append('#').append(docString)
-                .append(":").append(lineNumber).append("\n");
+                .append(":").append(lineNumber)
+                .append(":").append(columnNumber).append("\n");
     }
 }

@@ -894,7 +894,7 @@ public abstract class SdkSource implements IDescription, Comparable<SdkSource> {
                     Package p = null;
 
                     try {
-                        // We can load addon and extra packages from all sources, either
+                        // We can load add-on and extra packages from all sources, either
                         // internal or user sources.
                         if (SdkAddonConstants.NODE_ADD_ON.equals(name)) {
                             p = new AddonPackage(this, child, nsUri, licenses);

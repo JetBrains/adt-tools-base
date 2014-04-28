@@ -17,7 +17,10 @@
 package com.android.manifmerger;
 
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -34,6 +37,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Source;
 
 /**
  * Tests for the {@link com.android.manifmerger.PlaceholderHandler}
@@ -41,7 +45,7 @@ import javax.xml.parsers.ParserConfigurationException;
 public class PlaceholderHandlerTest extends TestCase {
 
     @Mock
-    ActionRecorder.Builder mActionRecorder;
+    ActionRecorder mActionRecorder;
 
     @Mock
     MergingReport.Builder mBuilder;
@@ -70,10 +74,10 @@ public class PlaceholderHandlerTest extends TestCase {
                 + "<manifest\n"
                 + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                 + "    <activity android:name=\"activityOne\"\n"
-                + "         android:attr1=\"@{landscapePH}\"\n"
-                + "         android:attr2=\"prefix.@{landscapePH}\"\n"
-                + "         android:attr3=\"@{landscapePH}.suffix\"\n"
-                + "         android:attr4=\"prefix@{landscapePH}suffix\">\n"
+                + "         android:attr1=\"${landscapePH}\"\n"
+                + "         android:attr2=\"prefix.${landscapePH}\"\n"
+                + "         android:attr3=\"${landscapePH}.suffix\"\n"
+                + "         android:attr4=\"prefix${landscapePH}suffix\">\n"
                 + "    </activity>\n"
                 + "</manifest>";
 
@@ -111,7 +115,7 @@ public class PlaceholderHandlerTest extends TestCase {
             if (!xmlAttribute.getName().toString().contains("name")) {
                 verify(mActionRecorder).recordAttributeAction(
                         xmlAttribute,
-                        ActionRecorder.ActionType.INJECTED,
+                        Actions.ActionType.INJECTED,
                         null);
             }
         }
@@ -123,7 +127,7 @@ public class PlaceholderHandlerTest extends TestCase {
                 + "<manifest\n"
                 + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                 + "    <activity android:name=\"activityOne\"\n"
-                + "         android:attr1=\"@{landscapePH}\"/>\n"
+                + "         android:attr1=\"${landscapePH}\"/>\n"
                 + "</manifest>";
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
@@ -132,6 +136,8 @@ public class PlaceholderHandlerTest extends TestCase {
         PlaceholderHandler handler = new PlaceholderHandler();
         handler.visit(refDocument, nullResolver, mBuilder);
         // verify the error was recorded.
-        verify(mBuilder).addError(anyString());
+        verify(mBuilder).addMessage(
+                any(XmlLoader.SourceLocation.class), anyInt(), anyInt(),
+                eq(MergingReport.Record.Severity.ERROR), anyString());
     }
 }
