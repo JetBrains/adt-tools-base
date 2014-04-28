@@ -40,7 +40,6 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
-import proguard.gradle.ProGuardTask;
 
 abstract class BaseVariantImpl implements BaseVariant {
 
@@ -178,8 +177,8 @@ abstract class BaseVariantImpl implements BaseVariant {
 
     @Nullable
     @Override
-    public ProGuardTask getProguard() {
-        return getVariantData().proguardTask;
+    public Task getObfuscation() {
+        return getVariantData().obfuscationTask;
     }
 
     @Override
