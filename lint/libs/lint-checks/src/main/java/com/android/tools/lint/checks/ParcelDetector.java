@@ -15,27 +15,37 @@
  */
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import static com.android.tools.lint.client.api.JavaParser.ResolvedField;
+
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
 
+import java.util.Collections;
 import java.util.List;
+
+import lombok.ast.AstVisitor;
+import lombok.ast.ClassDeclaration;
+import lombok.ast.ForwardingAstVisitor;
+import lombok.ast.Node;
+import lombok.ast.TypeReference;
 
 /**
  * Looks for Parcelable classes that are missing a CREATOR field
  */
-public class ParcelDetector extends Detector implements Detector.ClassScanner {
+public class ParcelDetector extends Detector implements Detector.JavaScanner {
 
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
@@ -53,7 +63,7 @@ public class ParcelDetector extends Detector implements Detector.ClassScanner {
             Severity.WARNING,
             new Implementation(
                     ParcelDetector.class,
-                    Scope.CLASS_FILE_SCOPE))
+                    Scope.JAVA_FILE_SCOPE))
             .addMoreInfo("http://developer.android.com/reference/android/os/Parcelable.html");
 
     /** Constructs a new {@link com.android.tools.lint.checks.ParcelDetector} check */
@@ -66,42 +76,65 @@ public class ParcelDetector extends Detector implements Detector.ClassScanner {
         return Speed.FAST;
     }
 
-    // ---- Implements ClassScanner ----
+    // ---- Implements JavaScanner ----
 
+    @Nullable
     @Override
-    public void checkClass(@NonNull ClassContext context, @NonNull ClassNode classNode) {
-      // Only applies to concrete classes
-        if ((classNode.access & (Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT)) != 0) {
-            return;
-        }
-        List interfaces = classNode.interfaces;
-        if (interfaces != null) {
-            for (Object o : interfaces) {
-                if ("android/os/Parcelable".equals(o)) {
-                    if (!hasCreatorField(context, classNode)) {
-                        Location location = context.getLocation(classNode);
-                        context.report(ISSUE, location, "This class implements Parcelable but does not provide a CREATOR field", null);
-                    }
-                    break;
-                }
-            }
-        }
+    public List<Class<? extends Node>> getApplicableNodeTypes() {
+        return Collections.<Class<? extends Node>>singletonList(ClassDeclaration.class);
     }
 
-    private static boolean hasCreatorField(@NonNull ClassContext context,
-            @NonNull ClassNode classNode) {
-        @SuppressWarnings("unchecked")
-        List<FieldNode> fields = classNode.fields;
-        if (fields != null) {
-            for (FieldNode field : fields) {
-                if (field.name.equals("CREATOR")) {
-                    // TODO: Make sure it has the right type
-                    String desc = field.desc;
-                    return true;
-                }
-            }
+    @Nullable
+    @Override
+    public AstVisitor createJavaVisitor(@NonNull final JavaContext context) {
+        return new ParcelVisitor(context);
+    }
+
+    private static class ParcelVisitor extends ForwardingAstVisitor {
+        private final JavaContext mContext;
+
+        public ParcelVisitor(JavaContext context) {
+            mContext = context;
         }
 
-        return false;
+        @Override
+        public boolean visitClassDeclaration(ClassDeclaration node) {
+            // Only applies to concrete classes
+            int flags = node.astModifiers().getExplicitModifierFlags();
+            if ((flags & (Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT)) != 0) {
+                return true;
+            }
+
+            if (node.astImplementing() != null)
+                for (TypeReference reference : node.astImplementing()) {
+                    String name = reference.astParts().last().astIdentifier().astValue();
+                    if (name.equals("Parcelable")) {
+                        JavaParser.ResolvedNode resolved = mContext.resolve(node);
+                        if (resolved instanceof ResolvedClass) {
+                            ResolvedClass cls = (ResolvedClass) resolved;
+                            ResolvedField field = cls.getField("CREATOR");
+                            if (field == null) {
+                                // Make doubly sure that we're really implementing
+                                // android.os.Parcelable
+                                JavaParser.ResolvedNode r = mContext.resolve(reference);
+                                if (r instanceof ResolvedClass) {
+                                    ResolvedClass parcelable = (ResolvedClass) r;
+                                    if (!parcelable.isSubclassOf("android.os.Parcelable", false)) {
+                                        return true;
+                                    }
+                                }
+                                Location location = mContext.getLocation(node.astName());
+                                mContext.report(ISSUE, node, location,
+                                        "This class implements Parcelable but does not "
+                                                + "provide a CREATOR field",
+                                        null);
+                            }
+                        }
+                        break;
+                    }
+                }
+
+            return true;
+        }
     }
 }
