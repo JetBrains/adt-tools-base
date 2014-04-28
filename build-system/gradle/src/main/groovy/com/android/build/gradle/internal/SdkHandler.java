@@ -125,6 +125,45 @@ public class SdkHandler {
         return ndkFolder;
     }
 
+    private void findSdkLocation(@NonNull Properties properties, @NonNull File rootDir) {
+        String sdkDirProp = properties.getProperty("sdk.dir");
+        if (sdkDirProp != null) {
+            sdkFolder = new File(sdkDirProp);
+            return;
+        }
+
+        sdkDirProp = properties.getProperty("android.dir");
+        if (sdkDirProp != null) {
+            sdkFolder = new File(rootDir, sdkDirProp);
+            isRegularSdk = false;
+            return;
+        }
+
+        String envVar = System.getenv("ANDROID_HOME");
+        if (envVar != null) {
+            sdkFolder = new File(envVar);
+            return;
+        }
+
+        String property = System.getProperty("android.home");
+        if (property != null) {
+            sdkFolder = new File(property);
+        }
+    }
+
+    private void findNdkLocation(@NonNull Properties properties) {
+        String ndkDirProp = properties.getProperty("ndk.dir");
+        if (ndkDirProp != null) {
+            ndkFolder = new File(ndkDirProp);
+            return;
+        }
+
+        String envVar = System.getenv("ANDROID_NDK_HOME");
+        if (envVar != null) {
+            ndkFolder = new File(envVar);
+        }
+    }
+
     private void findLocation(@NonNull Project project) {
         if (TEST_SDK_DIR != null) {
             sdkFolder = TEST_SDK_DIR;
@@ -133,10 +172,9 @@ public class SdkHandler {
 
         File rootDir = project.getRootDir();
         File localProperties = new File(rootDir, FN_LOCAL_PROPERTIES);
+        Properties properties = new Properties();
 
         if (localProperties.isFile()) {
-
-            Properties properties = new Properties();
             InputStreamReader reader = null;
             try {
                 //noinspection IOResourceOpenedButNotSafelyClosed
@@ -151,40 +189,10 @@ public class SdkHandler {
             } finally {
                 Closeables.closeQuietly(reader);
             }
-
-            String sdkDirProp = properties.getProperty("sdk.dir");
-
-            if (sdkDirProp != null) {
-                sdkFolder = new File(sdkDirProp);
-            } else {
-                sdkDirProp = properties.getProperty("android.dir");
-                if (sdkDirProp != null) {
-                    sdkFolder = new File(rootDir, sdkDirProp);
-                    isRegularSdk = false;
-                }
-            }
-
-            String ndkDirProp = properties.getProperty("ndk.dir");
-            if (ndkDirProp != null) {
-                ndkFolder = new File(ndkDirProp);
-            }
-
-        } else {
-            String envVar = System.getenv("ANDROID_HOME");
-            if (envVar != null) {
-                sdkFolder = new File(envVar);
-            } else {
-                String property = System.getProperty("android.home");
-                if (property != null) {
-                    sdkFolder = new File(property);
-                }
-            }
-
-            envVar = System.getenv("ANDROID_NDK_HOME");
-            if (envVar != null) {
-                ndkFolder = new File(envVar);
-            }
         }
+
+        findSdkLocation(properties, rootDir);
+        findNdkLocation(properties);
     }
 
     @Nullable
