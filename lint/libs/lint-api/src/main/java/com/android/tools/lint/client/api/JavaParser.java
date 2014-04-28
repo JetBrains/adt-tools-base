@@ -220,14 +220,30 @@ public abstract class JavaParser {
         public abstract boolean matches(@NonNull String name);
 
         @Nullable
-        public abstract TypeDescriptor getSuperClass();
+        public abstract ResolvedClass getSuperClass();
 
         @Nullable
-        public abstract TypeDescriptor getContainingClass();
+        public abstract ResolvedClass getContainingClass();
 
         public TypeDescriptor getType() {
             return new DefaultTypeDescriptor(getName());
         }
+
+        /**
+         * Determines whether this class extends the given name. If strict is true,
+         * it will not consider C extends C true.
+         *
+         * @param name the fully qualified class name
+         * @param strict if true, do not consider a class to be extending itself
+         * @return true if this class extends the given class
+         */
+        public abstract boolean isSubclassOf(@NonNull String name, boolean strict);
+
+        @NonNull
+        public abstract Iterable<ResolvedMethod> getMethods(@NonNull String name);
+
+        @Nullable
+        public abstract ResolvedField getField(@NonNull String name);
     }
 
     /** A method or constructor declaration */
@@ -240,7 +256,7 @@ public abstract class JavaParser {
         public abstract boolean matches(@NonNull String name);
 
         @NonNull
-        public abstract TypeDescriptor getContainingClass();
+        public abstract ResolvedClass getContainingClass();
 
         public abstract int getArgumentCount();
 

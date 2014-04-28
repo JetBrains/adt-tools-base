@@ -149,6 +149,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             Severity.ERROR,
             IMPLEMENTATION);
 
+    private int mMinSdkVersion;
     private int mCompileSdkVersion;
     private int mTargetSdkVersion;
 
@@ -192,6 +193,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 || property.equals("versionName")
                 || property.equals("versionCode")
                 || property.equals("compileSdkVersion")
+                || property.equals("minSdkVersion")
                 || property.equals("packageNameSuffix");
     }
 
@@ -238,6 +240,11 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             if (version > 0) {
                 mCompileSdkVersion = version;
                 checkTargetCompatibility(context, cookie);
+            }
+        } else if (property.equals("minSdkVersion") && parent.equals("android")) {
+            int version = getIntLiteralValue(value, -1);
+            if (version > 0) {
+                mMinSdkVersion = version;
             }
         } else if (property.equals("buildToolsVersion") && parent.equals("android")) {
             String versionString = getStringLiteralValue(value);
@@ -385,6 +392,10 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 ("support-v4".equals(dependency.getArtifactId()) ||
                         "appcompat-v7".equals(dependency.getArtifactId()))) {
             checkSupportLibraries(context, dependency, cookie);
+            if (mMinSdkVersion >= 14 && "appcompat-v7".equals(dependency.getArtifactId())) {
+                report(context, cookie, DEPENDENCY,
+                        "Using the appcompat library when minSdkVersion >= 14 is not necessary");
+            }
             return;
         } else if ("com.google.android.gms".equals(dependency.getGroupId()) &&
                 "play-services".equals(dependency.getArtifactId())) {
