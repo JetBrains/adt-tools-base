@@ -76,7 +76,7 @@ public abstract class PlusBaseActivity extends <#if minApiLevel lt 14>ActionBar<
         // Scopes indicate the information about the user your application will be able to access.
         mPlusClient =
                 new PlusClient.Builder(this, this, this).setScopes(Scopes.PLUS_LOGIN,
-                        Scopes.PLUS_PROFILE).build();
+                        Scopes.PLUS_ME).build();
     }
 
     /**
