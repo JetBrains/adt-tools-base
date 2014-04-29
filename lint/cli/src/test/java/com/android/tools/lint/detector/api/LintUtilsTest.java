@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.detector.api;
 
+import static com.android.tools.lint.detector.api.LintUtils.computeResourceName;
 import static com.android.tools.lint.detector.api.LintUtils.getLocaleAndRegion;
 import static com.android.tools.lint.detector.api.LintUtils.isImported;
 import static com.android.tools.lint.detector.api.LintUtils.splitPath;
@@ -38,7 +39,6 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.Locale;
 
 import lombok.ast.Node;
@@ -337,6 +337,14 @@ public class LintUtilsTest extends TestCase {
                 "class Foo {\n" +
                 "}\n"),
                 "android.app.Activity"));
+    }
+
+    public void testComputeResourceName() {
+        assertEquals("", computeResourceName("", ""));
+        assertEquals("foo", computeResourceName("", "foo"));
+        assertEquals("foo", computeResourceName("foo", ""));
+        assertEquals("prefix_name", computeResourceName("prefix_", "name"));
+        assertEquals("prefixName", computeResourceName("prefix", "name"));
     }
 
     public static Node getCompilationUnit(String javaSource) {
