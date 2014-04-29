@@ -105,7 +105,8 @@ import com.android.builder.model.SigningConfig
 import com.android.builder.model.SourceProvider
 import com.android.builder.model.SourceProviderContainer
 import com.android.builder.png.PngProcessor
-import com.android.builder.sdk.SdkLoader
+import com.android.builder.sdk.SdkInfo
+import com.android.builder.sdk.TargetInfo
 import com.android.builder.testing.ConnectedDeviceProvider
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
@@ -189,7 +190,7 @@ public abstract class BasePlugin {
 
     protected Project project
     private LoggerWrapper loggerWrapper
-    private SdkHandler sdkHandler
+    protected SdkHandler sdkHandler
     private AndroidBuilder androidBuilder
     private String creator
 
@@ -243,7 +244,8 @@ public abstract class BasePlugin {
         this.project = project
 
         checkGradleVersion()
-        sdkHandler = new SdkHandler(project, this, logger)
+        sdkHandler = new SdkHandler(project, logger)
+        androidBuilder = new AndroidBuilder(creator, logger, verbose)
 
         project.apply plugin: JavaBasePlugin
 
@@ -395,8 +397,6 @@ public abstract class BasePlugin {
         }
         hasCreatedTasks = true
 
-        androidBuilder = new AndroidBuilder(creator, logger, verbose)
-
         // setup SDK repositories.
         for (File file : sdkHandler.sdkLoader.repositories) {
             project.repositories.maven {
@@ -435,10 +435,6 @@ public abstract class BasePlugin {
         return unresolvedDependencies
     }
 
-    File getSdkDirectory() {
-        return sdkHandler.getSdkFolder()
-    }
-
     ILogger getLogger() {
         if (loggerWrapper == null) {
             loggerWrapper = new LoggerWrapper(project.logger)
@@ -459,12 +455,33 @@ public abstract class BasePlugin {
         return androidBuilder
     }
 
-    public SdkHandler getSdkHandler() {
-        return sdkHandler
+    public File getSdkFolder() {
+        return sdkHandler.getSdkFolder()
     }
 
-    public SdkLoader getSdkLoader() {
-        return sdkHandler.getSdkLoader()
+    public File getNdkFolder() {
+        return sdkHandler.getNdkFolder()
+    }
+
+    public SdkInfo getSdkInfo() {
+        return sdkHandler.getSdkInfo()
+    }
+
+    public List<String> getBootClasspath() {
+        ensureTargetSetup()
+
+        return androidBuilder.getBootClasspath()
+    }
+
+    public void ensureTargetSetup() {
+        // check if the target has been set.
+        TargetInfo targetInfo = androidBuilder.getTargetInfo()
+        if (targetInfo == null) {
+            sdkHandler.initTarget(
+                    extension.getCompileSdkVersion(),
+                    extension.buildToolsRevision,
+                    androidBuilder)
+        }
     }
 
     public void createProcessManifestTask(BaseVariantData variantData,
@@ -1262,7 +1279,7 @@ public abstract class BasePlugin {
                             DeviceProviderInstrumentTestTask,
                         testVariantData,
                         baseVariantData,
-                        new ConnectedDeviceProvider(getSdkLoader(), getLogger()),
+                        new ConnectedDeviceProvider(getSdkInfo().adb),
                         CONNECTED
                 )
 
