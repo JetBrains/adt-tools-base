@@ -17,6 +17,7 @@
 package com.android.builder.model;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 import java.io.File;
 import java.util.Collection;
@@ -169,4 +170,16 @@ public interface AndroidProject {
      */
     @NonNull
     File getBuildFolder();
+
+    /**
+     * Returns the resource prefix to use, if any. This is an optional prefix which can
+     * be set and which is used by the defaults to automatically choose new resources
+     * with a certain prefix, warn if resources are not using the given prefix, etc.
+     * This helps work with resources in the app namespace where there could otherwise
+     * be unintentional duplicated resource names between unrelated libraries.
+     *
+     * @return the optional resource prefix, or null if not set
+     */
+    @Nullable
+    String getResourcePrefix();
 }
