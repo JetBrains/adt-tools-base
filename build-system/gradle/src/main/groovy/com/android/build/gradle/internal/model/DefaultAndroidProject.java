@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.builder.model.AaptOptions;
 import com.android.builder.model.AndroidProject;
@@ -61,6 +62,8 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     private final LintOptions lintOptions;
     @NonNull
     private final File buildFolder;
+    @Nullable
+    private final String resourcePrefix;
     private final boolean isLibrary;
 
     private final Collection<BuildTypeContainer> buildTypes = Lists.newArrayList();
@@ -80,6 +83,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
                           @NonNull CompileOptions compileOptions,
                           @NonNull LintOptions lintOptions,
                           @NonNull File buildFolder,
+                          @Nullable String resourcePrefix,
                           boolean isLibrary) {
         this.modelVersion = modelVersion;
         this.name = name;
@@ -92,6 +96,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
         javaCompileOptions = new DefaultJavaCompileOptions(compileOptions);
         this.lintOptions = lintOptions;
         this.buildFolder = buildFolder;
+        this.resourcePrefix = resourcePrefix;
         this.isLibrary = isLibrary;
     }
 
@@ -220,4 +225,11 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     public File getBuildFolder() {
         return buildFolder;
     }
+
+    @Override
+    @Nullable
+    public String getResourcePrefix() {
+        return resourcePrefix;
+    }
+
 }
