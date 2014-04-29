@@ -39,6 +39,7 @@ public class DependencyData {
     private List<String> mSecondaryFiles = Lists.newArrayList();
     @NonNull
     private List<String> mOutputFiles = Lists.newArrayList();
+    @NonNull List<String> mSecondaryOutputFiles = Lists.newArrayList();
 
     DependencyData() {
     }
@@ -68,6 +69,15 @@ public class DependencyData {
 
     void addOutputFile(@NonNull String path) {
         mOutputFiles.add(path);
+    }
+
+    public void addSecondaryOutputFile(@NonNull String path) {
+        mSecondaryOutputFiles.add(path);
+    }
+
+    @NonNull
+    public List<String> getSecondaryOutputFiles() {
+        return mSecondaryOutputFiles;
     }
 
     /**
