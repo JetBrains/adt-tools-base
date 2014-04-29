@@ -1409,6 +1409,10 @@ public class AndroidBuilder {
             command.add("--no-strict");
         }
 
+        if (dexOptions.getThreadCount() > 1) {
+            command.add("--num-threads=" + dexOptions.getThreadCount());
+        }
+
         if (additionalParameters != null) {
             for (String arg : additionalParameters) {
                 command.add(arg);

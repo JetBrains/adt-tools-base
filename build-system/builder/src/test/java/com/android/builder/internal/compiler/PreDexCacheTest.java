@@ -142,6 +142,11 @@ public class PreDexCacheTest extends TestCase {
         public String getJavaMaxHeapSize() {
             return null;
         }
+
+        @Override
+        public int getThreadCount() {
+            return 1;
+        }
     }
 
     private BuildToolInfo mBuildToolInfo;
