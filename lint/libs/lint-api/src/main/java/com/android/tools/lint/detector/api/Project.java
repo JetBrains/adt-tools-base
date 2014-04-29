@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ANDROID_LIBRARY;
 import static com.android.SdkConstants.ANDROID_LIBRARY_REFERENCE_FORMAT;
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.APPCOMPAT_LIB_ARTIFACT;
 import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
@@ -113,6 +114,7 @@ public class Project {
     protected boolean mReportIssues = true;
     protected Boolean mGradleProject;
     protected Boolean mSupportLib;
+    protected Boolean mAppCompat;
 
     /**
      * Creates a new {@link Project} for the given directory.
@@ -1119,7 +1121,8 @@ public class Project {
             if (mSupportLib == null) {
                 for (File file : getJavaLibraries()) {
                     String name = file.getName();
-                    if (name.equals("android-support-v4.jar") || name.startsWith("support-v4-")) {
+                    if (name.equals("android-support-v4.jar")      //$NON-NLS-1$
+                            || name.startsWith("support-v4-")) {   //$NON-NLS-1$
                         mSupportLib = true;
                         break;
                     }
@@ -1139,7 +1142,32 @@ public class Project {
             }
 
             return mSupportLib;
+        } else if (APPCOMPAT_LIB_ARTIFACT.equals(artifact)) {
+            if (mAppCompat == null) {
+                for (File file : getJavaLibraries()) {
+                    String name = file.getName();
+                    if (name.startsWith("appcompat-v7-")) { //$NON-NLS-1$
+                        mAppCompat = true;
+                        break;
+                    }
+                }
+                if (mAppCompat == null) {
+                    for (Project dependency : getDirectLibraries()) {
+                        Boolean b = dependency.dependsOn(artifact);
+                        if (b != null && b) {
+                            mAppCompat = true;
+                            break;
+                        }
+                    }
+                }
+                if (mAppCompat == null) {
+                    mAppCompat = false;
+                }
+            }
+
+            return mAppCompat;
         }
+
         return null;
     }
 }

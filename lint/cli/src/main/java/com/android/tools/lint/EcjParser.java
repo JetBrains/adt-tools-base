@@ -31,6 +31,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import org.eclipse.jdt.core.compiler.CategorizedProblem;
+import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.internal.compiler.CompilationResult;
 import org.eclipse.jdt.internal.compiler.Compiler;
 import org.eclipse.jdt.internal.compiler.DefaultErrorHandlingPolicies;
@@ -81,6 +83,7 @@ import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory;
 import org.eclipse.jdt.internal.compiler.problem.ProblemReporter;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
@@ -96,6 +99,7 @@ import lombok.ast.ecj.EcjTreeConverter;
  * Java parser which uses ECJ for parsing and type attribution
  */
 public class EcjParser extends JavaParser {
+    private static final boolean DEBUG_DUMP_PARSE_ERRORS = true;
 
     private final LintClient mClient;
     private final Project mProject;
@@ -193,6 +197,25 @@ public class EcjParser extends JavaParser {
         List<String> classPath = computeClassPath(contexts);
         mCompiled = Maps.newHashMapWithExpectedSize(mSourceUnits.size());
         parse(createCompilerOptions(), sources, classPath, mCompiled);
+
+        if (DEBUG_DUMP_PARSE_ERRORS) {
+            for (CompilationUnitDeclaration unit : mCompiled.values()) {
+                // so maybe I don't need my map!!
+                CategorizedProblem[] problems = unit.compilationResult()
+                        .getAllProblems();
+                if (problems != null) {
+                    for (IProblem problem : problems) {
+                        if (problem == null || !problem.isError()) {
+                            continue;
+                        }
+                        System.out.println(
+                                new String(problem.getOriginatingFileName()) + ":"
+                                + (problem.isError() ? "Error" : "Warning") + ": "
+                                + problem.getSourceLineNumber() + ": " + problem.getMessage());
+                    }
+                }
+            }
+        }
     }
 
     /** Parse the given source units and class path and store it into the given output map */
@@ -612,7 +635,6 @@ public class EcjParser extends JavaParser {
             unit.compilationResult.totalUnitsKnown = totalUnits;
             lookupEnvironment.unitBeingCompleted = null;
         }
-
     }
 
     private static class EcjTypeDescriptor extends TypeDescriptor {
@@ -640,17 +662,7 @@ public class EcjParser extends JavaParser {
 
         @Override
         public boolean matchesName(@NonNull String name) {
-            int length = name.length();
-            if (mChars.length != length) {
-                return false;
-            }
-            for (int i = 0; i < length; i++) {
-                if (mChars[i] != name.charAt(i)) {
-                    return false;
-                }
-            }
-
-            return true;
+            return sameChars(name, mChars);
         }
 
         @Override
@@ -681,24 +693,14 @@ public class EcjParser extends JavaParser {
 
         @Override
         public boolean matches(@NonNull String name) {
-            int length = name.length();
             char[] c = isConstructor() ? mBinding.declaringClass.readableName() : mBinding.selector;
-            if (c.length != length) {
-                return false;
-            }
-            for (int i = 0; i < length; i++) {
-                if (c[i] != name.charAt(i)) {
-                    return false;
-                }
-            }
-
-            return true;
+            return sameChars(name, c);
         }
 
         @NonNull
         @Override
-        public TypeDescriptor getContainingClass() {
-            return new EcjTypeDescriptor(mBinding.declaringClass.readableName());
+        public ResolvedClass getContainingClass() {
+            return new EcjResolvedClass(mBinding.declaringClass);
         }
 
         @Override
@@ -747,28 +749,17 @@ public class EcjParser extends JavaParser {
 
         @Override
         public boolean matches(@NonNull String name) {
-            int length = name.length();
-            char[] chars = mBinding.readableName();
-            if (chars.length != length) {
-                return false;
-            }
-            for (int i = 0; i < length; i++) {
-                if (chars[i] != name.charAt(i)) {
-                    return false;
-                }
-            }
-
-            return true;
+            return sameChars(name, mBinding.readableName());
         }
 
         @Nullable
         @Override
-        public TypeDescriptor getSuperClass() {
+        public ResolvedClass getSuperClass() {
             if (mBinding instanceof ReferenceBinding) {
                 ReferenceBinding refBinding = (ReferenceBinding) mBinding;
                 ReferenceBinding superClass = refBinding.superclass();
                 if (superClass != null) {
-                    return getTypeDescriptor(superClass);
+                    return new EcjResolvedClass(superClass);
                 }
             }
 
@@ -777,11 +768,65 @@ public class EcjParser extends JavaParser {
 
         @Nullable
         @Override
-        public TypeDescriptor getContainingClass() {
+        public ResolvedClass getContainingClass() {
             if (mBinding instanceof NestedTypeBinding) {
                 NestedTypeBinding ntb = (NestedTypeBinding) mBinding;
                 if (ntb.enclosingType != null) {
-                    return getTypeDescriptor(ntb.enclosingType);
+                    return new EcjResolvedClass(ntb.enclosingType);
+                }
+            }
+
+            return null;
+        }
+
+        @Override
+        public boolean isSubclassOf(@NonNull String name, boolean strict) {
+            if (mBinding instanceof ReferenceBinding) {
+                ReferenceBinding cls = (ReferenceBinding) mBinding;
+                if (strict) {
+                    cls = cls.superclass();
+                }
+                for (; cls != null; cls = cls.superclass()) {
+                    if (sameChars(name, cls.readableName())) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        @Override
+        @NonNull
+        public Iterable<ResolvedMethod> getMethods(@NonNull String name) {
+            if (mBinding instanceof ReferenceBinding) {
+                ReferenceBinding cls = (ReferenceBinding) mBinding;
+                MethodBinding[] methods = cls.getMethods(name.toCharArray());
+                if (methods != null) {
+                    int count = methods.length;
+                    List<ResolvedMethod> result = Lists.newArrayListWithExpectedSize(count);
+                    for (MethodBinding method : methods) {
+                        result.add(new EcjResolvedMethod(method));
+                    }
+                    return result;
+                }
+            }
+
+            return Collections.emptyList();
+        }
+
+        @Override
+        @Nullable
+        public ResolvedField getField(@NonNull String name) {
+            if (mBinding instanceof ReferenceBinding) {
+                ReferenceBinding cls = (ReferenceBinding) mBinding;
+                FieldBinding[] fields = cls.fields();
+                if (fields != null) {
+                    for (FieldBinding field : fields) {
+                        if (sameChars(name, field.name)) {
+                            return new EcjResolvedField(field);
+                        }
+                    }
                 }
             }
 
@@ -809,18 +854,7 @@ public class EcjParser extends JavaParser {
 
         @Override
         public boolean matches(@NonNull String name) {
-            int length = name.length();
-            char[] chars = mBinding.readableName();
-            if (chars.length != length) {
-                return false;
-            }
-            for (int i = 0; i < length; i++) {
-                if (chars[i] != name.charAt(i)) {
-                    return false;
-                }
-            }
-
-            return true;
+            return sameChars(name, mBinding.readableName());
         }
 
         @NonNull
@@ -860,18 +894,7 @@ public class EcjParser extends JavaParser {
 
         @Override
         public boolean matches(@NonNull String name) {
-            int length = name.length();
-            char[] chars = mBinding.readableName();
-            if (chars.length != length) {
-                return false;
-            }
-            for (int i = 0; i < length; i++) {
-                if (chars[i] != name.charAt(i)) {
-                    return false;
-                }
-            }
-
-            return true;
+            return sameChars(name, mBinding.readableName());
         }
 
         @NonNull
@@ -886,5 +909,20 @@ public class EcjParser extends JavaParser {
         public String getSignature() {
             return mBinding.toString();
         }
+    }
+
+    private static boolean sameChars(String str, char[] chars) {
+        int length = str.length();
+        if (chars.length != length) {
+            return false;
+        }
+
+        for (int i = 0; i < length; i++) {
+            if (chars[i] != str.charAt(i)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
