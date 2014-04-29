@@ -17,15 +17,17 @@
 package com.android.sdklib.internal.repository.updater;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
+import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
+import com.android.sdklib.io.FileOp;
+import com.android.sdklib.io.IFileOp;
 import com.android.utils.ILogger;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -42,16 +44,19 @@ public class SettingsController {
 
     private static final String SETTINGS_FILENAME = "androidtool.cfg"; //$NON-NLS-1$
 
+    private final IFileOp mFileOp;
     private final ILogger mSdkLog;
     private final Settings mSettings;
 
     public interface OnChangedListener {
-        public void onSettingsChanged(SettingsController controller, Settings oldSettings);
+        public void onSettingsChanged(@NonNull SettingsController controller,
+                                      @NonNull Settings oldSettings);
     }
     private final List<OnChangedListener> mChangedListeners = new ArrayList<OnChangedListener>(1);
 
     /** The currently associated {@link ISettingsPage}. Can be null. */
     private ISettingsPage mSettingsPage;
+
 
     /**
      * Constructs a new default {@link SettingsController}.
@@ -59,8 +64,17 @@ public class SettingsController {
      * @param sdkLog A non-null logger to use.
      */
     public SettingsController(@NonNull ILogger sdkLog) {
-        mSdkLog = sdkLog;
-        mSettings = new Settings();
+        this(new FileOp(), sdkLog);
+    }
+
+    /**
+     * Constructs a new default {@link SettingsController}.
+     *
+     * @param fileOp A non-null {@link FileOp} to perform file operations (to load/save settings.)
+     * @param sdkLog A non-null logger to use.
+     */
+    public SettingsController(@NonNull IFileOp fileOp, @NonNull ILogger sdkLog) {
+        this(fileOp, sdkLog, new Settings());
     }
 
     /**
@@ -68,25 +82,31 @@ public class SettingsController {
      * This is mostly used in unit-tests to override settings that are being used.
      * Normal usage should NOT need to call this constructor.
      *
+     * @param fileOp   A non-null {@link FileOp} to perform file operations (to load/save settings)
      * @param sdkLog   A non-null logger to use.
      * @param settings A non-null {@link Settings} to use as-is. It is not duplicated.
      */
-    protected SettingsController(@NonNull ILogger sdkLog, @NonNull Settings settings) {
+    @VisibleForTesting(visibility=Visibility.PRIVATE)
+    protected SettingsController(@NonNull IFileOp fileOp,
+                                 @NonNull ILogger sdkLog,
+                                 @NonNull Settings settings) {
+        mFileOp = fileOp;
         mSdkLog = sdkLog;
         mSettings = settings;
     }
 
+    @NonNull
     public Settings getSettings() {
         return mSettings;
     }
 
-    public void registerOnChangedListener(OnChangedListener listener) {
+    public void registerOnChangedListener(@Nullable OnChangedListener listener) {
         if (listener != null && !mChangedListeners.contains(listener)) {
             mChangedListeners.add(listener);
         }
     }
 
-    public void unregisterOnChangedListener(OnChangedListener listener) {
+    public void unregisterOnChangedListener(@Nullable OnChangedListener listener) {
         if (listener != null) {
             mChangedListeners.remove(listener);
         }
@@ -104,7 +124,7 @@ public class SettingsController {
         }
 
         /** Duplicates a set of settings. */
-        public Settings(Settings settings) {
+        public Settings(@NonNull Settings settings) {
             this();
             for (Entry<Object, Object> entry : settings.mProperties.entrySet()) {
                 mProperties.put(entry.getKey(), entry.getValue());
@@ -116,7 +136,7 @@ public class SettingsController {
          * {@link Properties} instance. The properties instance is not duplicated,
          * it's merely used as-is and changes will be reflected directly.
          */
-        protected Settings(Properties properties) {
+        protected Settings(@NonNull Properties properties) {
             mProperties = properties;
         }
 
@@ -213,7 +233,7 @@ public class SettingsController {
     /**
      * Internal helper to set a boolean setting.
      */
-    void setSetting(String key, boolean value) {
+    void setSetting(@NonNull String key, boolean value) {
         mSettings.mProperties.setProperty(key, Boolean.toString(value));
     }
 
@@ -229,7 +249,7 @@ public class SettingsController {
      *
      * @param settingsPage An {@link ISettingsPage} to associate with the controller.
      */
-    public void setSettingsPage(ISettingsPage settingsPage) {
+    public void setSettingsPage(@Nullable ISettingsPage settingsPage) {
         mSettingsPage = settingsPage;
 
         if (settingsPage != null) {
@@ -248,35 +268,27 @@ public class SettingsController {
      * Load settings from the settings file.
      */
     public void loadSettings() {
-        FileInputStream fis = null;
+
         String path = null;
         try {
             String folder = AndroidLocation.getFolder();
             File f = new File(folder, SETTINGS_FILENAME);
             path = f.getPath();
-            if (f.exists()) {
-                fis = new FileInputStream(f);
 
-                mSettings.mProperties.load(fis);
+            Properties props = mFileOp.loadProperties(f);
+            mSettings.mProperties.clear();
+            mSettings.mProperties.putAll(props);
 
-                // Properly reformat some settings to enforce their default value when missing.
-                setShowUpdateOnly(mSettings.getShowUpdateOnly());
-                setSetting(ISettingsPage.KEY_ASK_ADB_RESTART, mSettings.getAskBeforeAdbRestart());
-                setSetting(ISettingsPage.KEY_USE_DOWNLOAD_CACHE, mSettings.getUseDownloadCache());
-            }
+            // Properly reformat some settings to enforce their default value when missing.
+            setShowUpdateOnly(mSettings.getShowUpdateOnly());
+            setSetting(ISettingsPage.KEY_ASK_ADB_RESTART, mSettings.getAskBeforeAdbRestart());
+            setSetting(ISettingsPage.KEY_USE_DOWNLOAD_CACHE, mSettings.getUseDownloadCache());
 
         } catch (Exception e) {
             if (mSdkLog != null) {
                 mSdkLog.error(e,
                         "Failed to load settings from .android folder. Path is '%1$s'.",
                         path);
-            }
-        } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException e) {
-                }
             }
         }
     }
@@ -286,16 +298,12 @@ public class SettingsController {
      */
     public void saveSettings() {
 
-        FileOutputStream fos = null;
         String path = null;
         try {
             String folder = AndroidLocation.getFolder();
             File f = new File(folder, SETTINGS_FILENAME);
             path = f.getPath();
-
-            fos = new FileOutputStream(f);
-
-            mSettings.mProperties.store(fos, "## Settings for Android Tool");  //$NON-NLS-1$
+            mFileOp.saveProperties(f, mSettings.mProperties, "## Settings for Android Tool");  //$NON-NLS-1$
 
         } catch (Exception e) {
             if (mSdkLog != null) {
@@ -315,13 +323,6 @@ public class SettingsController {
                 }
 
                 mSdkLog.error(e, "Failed to save settings file '%1$s': %2$s", path, reason);
-            }
-        } finally {
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {
-                }
             }
         }
     }

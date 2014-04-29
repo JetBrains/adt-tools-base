@@ -17,8 +17,7 @@
 package com.android.sdklib.internal.repository.sources;
 
 import com.android.annotations.Nullable;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
+import com.android.sdklib.internal.repository.archives.ArchFilter;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.packages.PackageParserUtils;
 import com.android.sdklib.repository.RepoConstants;
@@ -79,17 +78,18 @@ public class SdkRepoSource extends SdkSource {
     @Override
     protected String[] getDefaultXmlFileUrls() {
         if (sDefaults == null) {
-            sDefaults = new String[SdkRepoConstants.NS_LATEST_VERSION
-                                   - SdkRepoConstants.NS_SERVER_MIN_VERSION
-                                   + 2];
+            String[] values = new String[SdkRepoConstants.NS_LATEST_VERSION
+                                         - SdkRepoConstants.NS_SERVER_MIN_VERSION
+                                         + 2];
             int k = 0;
             for (int i  = SdkRepoConstants.NS_LATEST_VERSION;
                      i >= SdkRepoConstants.NS_SERVER_MIN_VERSION;
                      i--) {
-                sDefaults[k++] = String.format(SdkRepoConstants.URL_FILENAME_PATTERN, i);
+                values[k++] = String.format(SdkRepoConstants.URL_FILENAME_PATTERN, i);
             }
-            sDefaults[k++] = SdkRepoConstants.URL_DEFAULT_FILENAME;
-            assert k == sDefaults.length;
+            values[k++] = SdkRepoConstants.URL_DEFAULT_FILENAME;
+            assert k == values.length;
+            sDefaults = values;
         }
 
         return sDefaults;
@@ -350,16 +350,8 @@ public class SdkRepoSource extends SdkSource {
                                                 prefix,
                                                 RepoConstants.NODE_ARCHIVE)) != null) {
                         try {
-                            Os os = (Os) PackageParserUtils.getEnumAttribute(archive,
-                                            RepoConstants.ATTR_OS,
-                                            Os.values(),
-                                            null /*default*/);
-                            Arch arch = (Arch) PackageParserUtils.getEnumAttribute(archive,
-                                            RepoConstants.ATTR_ARCH,
-                                            Arch.values(),
-                                            Arch.ANY);
-                            if (os == null || !os.isCompatible() ||
-                                    arch == null || !arch.isCompatible()) {
+                            ArchFilter af = PackageParserUtils.parseArchFilter(archive);
+                            if (af == null || !af.isCompatibleWith(ArchFilter.getCurrent())) {
                                 continue;
                             }
 
@@ -401,16 +393,23 @@ public class SdkRepoSource extends SdkSource {
                             isElementValid = true;
 
                         } catch (Exception ignore1) {
-                            // pass
+                            // For debugging it is useful to re-throw the exception.
+                            // For end-users, not so much. It would be nice to make it
+                            // happen automatically during unit tests.
+                            if (System.getenv("TESTING") != null ||
+                                System.getProperty("THROW_DEEP_EXCEPTION_DURING_TESTING") != null) {
+                                    throw new RuntimeException(ignore1);
+                            }
                         }
                     } // while <archive>
                 } catch (Exception ignore2) {
                     // For debugging it is useful to re-throw the exception.
                     // For end-users, not so much. It would be nice to make it
                     // happen automatically during unit tests.
-                    if (System.getenv("TESTING") != null) {
-                        throw new RuntimeException(ignore2);
-                    }
+                    if (System.getenv("TESTING") != null ||
+                        System.getProperty("THROW_DEEP_EXCEPTION_DURING_TESTING") != null) {
+                            throw new RuntimeException(ignore2);
+                        }
                 }
             }
 

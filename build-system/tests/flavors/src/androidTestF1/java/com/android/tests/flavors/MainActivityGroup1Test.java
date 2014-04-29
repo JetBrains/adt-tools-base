@@ -80,17 +80,17 @@ public class MainActivityGroup1Test extends ActivityInstrumentationTestCase2<Mai
 
     @MediumTest
     public void testResOverlay() {
-        assertEquals("f1", mResOverLay.getText());
-        assertEquals("f1", mResOverLay1.getText());
+        assertEquals("f1", mResOverLay.getText().toString());
+        assertEquals("f1", mResOverLay1.getText().toString());
     }
 
     @MediumTest
     public void testBuildConfig() {
-        assertEquals("f1", mBuildConfig1.getText());
+        assertEquals("f1", mBuildConfig1.getText().toString());
     }
 
     @MediumTest
     public void testCodeOverlay() {
-        assertEquals("f1", mCodeOverlay1.getText());
+        assertEquals("f1", mCodeOverlay1.getText().toString());
     }
 }

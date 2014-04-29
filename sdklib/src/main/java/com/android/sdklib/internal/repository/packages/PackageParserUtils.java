@@ -18,6 +18,11 @@ package com.android.sdklib.internal.repository.packages;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.sdklib.internal.repository.archives.ArchFilter;
+import com.android.sdklib.internal.repository.archives.BitSize;
+import com.android.sdklib.internal.repository.archives.HostOs;
+import com.android.sdklib.internal.repository.archives.LegacyArch;
+import com.android.sdklib.internal.repository.archives.LegacyOs;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.sdklib.repository.MajorRevision;
@@ -29,9 +34,58 @@ import org.w3c.dom.Node;
 import java.util.Properties;
 
 /**
- * Misc utilities to help extracting elements and attributes out of an XML document.
+ * Misc utilities to help extracting elements and attributes out of a repository XML document.
  */
 public class PackageParserUtils {
+
+    /**
+     * Parse the {@link ArchFilter} of an &lt;archive&gt; element..
+     * <p/>
+     * Starting with repo schema 10, add-on schema 7 and sys-img schema 3, this is done using
+     * specific optional elements contained within the &lt;archive&gt; element.
+     * <p/>
+     * If none of the new element are defined, for backward compatibility we try to find
+     * the previous style XML attributes "os" and "arch" in the &lt;archive&gt; element.
+     *
+     * @param archiveNode
+     * @return A new {@link ArchFilter}
+     */
+    @NonNull
+    public static ArchFilter parseArchFilter(@NonNull Node archiveNode) {
+        String hos = PackageParserUtils.getOptionalXmlString(archiveNode, SdkRepoConstants.NODE_HOST_OS);
+        String hb  = PackageParserUtils.getOptionalXmlString(archiveNode, SdkRepoConstants.NODE_HOST_BITS);
+        String jb  = PackageParserUtils.getOptionalXmlString(archiveNode, SdkRepoConstants.NODE_JVM_BITS);
+        String mjv = PackageParserUtils.getOptionalXmlString(archiveNode, SdkRepoConstants.NODE_MIN_JVM_VERSION);
+
+        if (hos != null || hb != null || jb != null || mjv != null) {
+            NoPreviewRevision rev = null;
+            try {
+                rev = NoPreviewRevision.parseRevision(mjv);
+            } catch (NumberFormatException ignore) {}
+
+            return new ArchFilter(
+                    HostOs.fromXmlName(hos),
+                    BitSize.fromXmlName(hb),
+                    BitSize.fromXmlName(jb),
+                    rev);
+        }
+
+        Properties props = new Properties();
+
+        LegacyOs o = (LegacyOs) PackageParserUtils.getEnumAttribute(
+                archiveNode, SdkRepoConstants.LEGACY_ATTR_OS, LegacyOs.values(), null);
+        if (o != null) {
+            props.setProperty(ArchFilter.LEGACY_PROP_OS, o.toString());
+        }
+
+        LegacyArch a = (LegacyArch) PackageParserUtils.getEnumAttribute(
+                archiveNode, SdkRepoConstants.LEGACY_ATTR_ARCH, LegacyArch.values(), null);
+        if (a != null) {
+            props.setProperty(ArchFilter.LEGACY_PROP_ARCH, a.toString());
+        }
+
+        return new ArchFilter(props);
+    }
 
     /**
      * Parses a full revision element such as <revision> or <min-tools-rev>.
@@ -124,10 +178,13 @@ public class PackageParserUtils {
         if (node != null) {
             String nsUri = node.getNamespaceURI();
             for(Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
-                if (child.getNodeType() == Node.ELEMENT_NODE &&
-                        nsUri.equals(child.getNamespaceURI())) {
-                    if (xmlLocalName == null || xmlLocalName.equals(child.getLocalName())) {
-                        return child;
+                if (child.getNodeType() == Node.ELEMENT_NODE) {
+                    String nsUriChild = child.getNamespaceURI();
+                    if ((nsUri == null && nsUriChild == null) ||
+                            (nsUri != null && nsUri.equals(nsUriChild))) {
+                        if (xmlLocalName == null || xmlLocalName.equals(child.getLocalName())) {
+                            return child;
+                        }
                     }
                 }
             }

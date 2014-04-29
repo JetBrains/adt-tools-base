@@ -17,6 +17,7 @@
 package com.android.ddmlib;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.ddmlib.log.LogReceiver;
 
 import java.io.IOException;
@@ -110,9 +111,8 @@ public interface IDevice extends IShellEnabledDevice {
         }
     }
 
-    /**
-     * Returns the serial number of the device.
-     */
+    /** Returns the serial number of the device. */
+    @NonNull
     public String getSerialNumber();
 
     /**
@@ -123,6 +123,7 @@ public interface IDevice extends IShellEnabledDevice {
      *
      * @return the name of the AVD or <code>null</code> if there isn't any.
      */
+    @Nullable
     public String getAvdName();
 
     /**

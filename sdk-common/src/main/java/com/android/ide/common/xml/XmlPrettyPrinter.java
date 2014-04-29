@@ -442,12 +442,34 @@ public class XmlPrettyPrinter {
                 }
             }
             if (lastPrefixNewline != -1 || firstSuffixNewline != -1) {
+                boolean stripSuffix;
                 if (firstSuffixNewline == -1) {
                     firstSuffixNewline = text.length();
+                    stripSuffix = false;
+                } else {
+                    stripSuffix = true;
                 }
+
                 int stripFrom = lastPrefixNewline + 1;
                 if (firstSuffixNewline >= stripFrom) {
                     text = text.substring(stripFrom, firstSuffixNewline);
+
+                    // In markup strings we may need to preserve spacing on the left and/or
+                    // right if we're next to a markup string on the given side
+                    if (lastPrefixNewline != -1) {
+                        Node left = node.getPreviousSibling();
+                        if (left != null && left.getNodeType() == Node.ELEMENT_NODE
+                                && isMarkupElement((Element) left)) {
+                            text = ' ' + text;
+                        }
+                    }
+                    if (stripSuffix) {
+                        Node right = node.getNextSibling();
+                        if (right != null && right.getNodeType() == Node.ELEMENT_NODE
+                                && isMarkupElement((Element) right)) {
+                            text += ' ';
+                        }
+                    }
                 }
             }
 
@@ -460,6 +482,18 @@ public class XmlPrettyPrinter {
 
             if (mStyle != XmlFormatStyle.RESOURCE) {
                 mOut.append(mLineSeparator);
+            }
+        } else {
+            // Ensure that if we're in the middle of a markup string, we preserve spacing.
+            // In other words, "<b>first</b> <b>second</b>" - we don't want that middle
+            // space to disappear, but we do want repeated spaces to collapse into one.
+            Node left = node.getPreviousSibling();
+            Node right = node.getNextSibling();
+            if (left != null && right != null
+                    && left.getNodeType() == Node.ELEMENT_NODE
+                    && right.getNodeType() == Node.ELEMENT_NODE
+                    && isMarkupElement((Element)left)) {
+                mOut.append(' ');
             }
         }
     }

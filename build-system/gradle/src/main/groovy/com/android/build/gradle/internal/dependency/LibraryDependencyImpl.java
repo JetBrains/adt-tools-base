@@ -17,6 +17,7 @@ package com.android.build.gradle.internal.dependency;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.concurrency.Immutable;
 import com.android.builder.dependency.LibraryBundle;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.dependency.ManifestDependency;
@@ -25,6 +26,7 @@ import com.android.builder.model.AndroidLibrary;
 import java.io.File;
 import java.util.List;
 
+@Immutable
 public class LibraryDependencyImpl extends LibraryBundle {
 
     @NonNull

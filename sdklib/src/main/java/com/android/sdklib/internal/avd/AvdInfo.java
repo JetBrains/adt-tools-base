@@ -267,7 +267,7 @@ public final class AvdInfo implements Comparable<AvdInfo> {
      * @throws AndroidLocationException if there's a problem getting android root directory.
      */
     @NonNull
-    public static File getDefaultAvdFolder(AvdManager manager, String avdName)
+    public static File getDefaultAvdFolder(@NonNull AvdManager manager, @NonNull String avdName)
             throws AndroidLocationException {
         return new File(manager.getBaseAvdFolder(),
                         avdName + AvdManager.AVD_FOLDER_EXTENSION);
@@ -283,7 +283,7 @@ public final class AvdInfo implements Comparable<AvdInfo> {
      * @throws AndroidLocationException if there's a problem getting android root directory.
      */
     @NonNull
-    public static File getDefaultIniFile(AvdManager manager, String avdName)
+    public static File getDefaultIniFile(@NonNull AvdManager manager, @NonNull String avdName)
             throws AndroidLocationException {
         String avdRoot = manager.getBaseAvdFolder();
         return new File(avdRoot, avdName + AvdManager.INI_EXTENSION);
@@ -301,7 +301,7 @@ public final class AvdInfo implements Comparable<AvdInfo> {
      * Helper method that returns the Config {@link File} for a given AVD name.
      */
     @NonNull
-    public static File getConfigFile(String path) {
+    public static File getConfigFile(@NonNull String path) {
         return new File(path, AvdManager.CONFIG_INI);
     }
 
@@ -345,7 +345,7 @@ public final class AvdInfo implements Comparable<AvdInfo> {
             case ERROR_IMAGE_DIR:
                 return String.format(
                         "Missing system image for %1$s%2$s %3$s. Run 'android update avd -n %4$s'",
-                        SystemImage.DEFAULT_TAG.equals(mTag.getId()) ? "" : (mTag.getDisplay() + " "),
+                        SystemImage.DEFAULT_TAG.equals(mTag) ? "" : (mTag.getDisplay() + " "),
                         mAbiType,
                         mTarget.getFullName(),
                         mName);

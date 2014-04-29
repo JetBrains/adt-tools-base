@@ -22,12 +22,10 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.FullRevision.PreviewComparison;
+import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 
@@ -153,8 +151,6 @@ public class BuildToolPackage extends FullRevisionPackage {
                     null,                       //license
                     null,                       //description
                     null,                       //descUrl
-                    Os.getCurrentOs(),          //archiveOs
-                    Arch.getCurrentArch(),      //archiveArch
                     buildToolDir.getAbsolutePath());
 
         }
@@ -191,8 +187,6 @@ public class BuildToolPackage extends FullRevisionPackage {
                 String license,
                 String description,
                 String descUrl,
-                Os archiveOs,
-                Arch archiveArch,
                 String archiveOsPath) {
         super(source,
                 props,
@@ -200,8 +194,6 @@ public class BuildToolPackage extends FullRevisionPackage {
                 license,
                 description,
                 descUrl,
-                archiveOs,
-                archiveArch,
                 archiveOsPath);
 
         mPkgDesc = PkgDesc.newBuildTool(getRevision());
@@ -232,6 +224,11 @@ public class BuildToolPackage extends FullRevisionPackage {
      */
     @Override
     public String getListDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s%2$s", ld, isObsolete() ? " (Obsolete)" : "");
+        }
+
         return String.format("Android SDK Build-tools%1$s",
                 isObsolete() ? " (Obsolete)" : "");
     }
@@ -241,6 +238,14 @@ public class BuildToolPackage extends FullRevisionPackage {
      */
     @Override
     public String getShortDescription() {
+        String ld = getListDisplay();
+        if (!ld.isEmpty()) {
+            return String.format("%1$s, revision %2$s%3$s",
+                    ld,
+                    getRevision().toShortString(),
+                    isObsolete() ? " (Obsolete)" : "");
+        }
+
         return String.format("Android SDK Build-tools, revision %1$s%2$s",
                 getRevision().toShortString(),
                 isObsolete() ? " (Obsolete)" : "");

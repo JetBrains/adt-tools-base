@@ -85,6 +85,10 @@ public class GradleCoordinateTest extends BaseTestCase {
         actual = new GradleCoordinate("a.b.c", "package", revisionList,
                 GradleCoordinate.ArtifactType.AAR).toString();
         assertEquals(expected, actual);
+
+        expected = "com.google.maps.android:android-maps-utils:0.3";
+        actual = GradleCoordinate.parseCoordinateString(expected).toString();
+        assertEquals(expected, actual);
     }
 
     public void testIsSameArtifact() throws Exception {

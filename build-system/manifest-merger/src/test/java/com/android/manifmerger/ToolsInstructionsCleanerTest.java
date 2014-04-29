@@ -16,14 +16,13 @@
 
 package com.android.manifmerger;
 
-import com.android.SdkConstants;
 import com.android.sdklib.mock.MockLog;
 import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 
 import junit.framework.TestCase;
 
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -194,8 +193,9 @@ public class ToolsInstructionsCleanerTest extends TestCase {
         assertTrue(application.isPresent());
 
         Optional<Element> activity = getChildElementByName(application.get(), "activity");
-        // ensure the activity got deleted.
-        assertFalse(activity.isPresent());
+        // ensure the activity did not get deleted since it has a selector
+        assertTrue(activity.isPresent());
+        assertTrue(Strings.isNullOrEmpty(activity.get().getAttribute("tools:selector")));
     }
 
     private static Optional<Element> getChildElementByName(Element parent, String name) {

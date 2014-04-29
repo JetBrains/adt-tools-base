@@ -16,6 +16,7 @@
 package com.android.build.gradle.internal.tasks
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.test.report.TestReport
+import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.builder.testing.SimpleTestRunner
 import com.android.builder.testing.TestRunner
@@ -33,10 +34,12 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
 
     File reportsDir
     File resultsDir
+    File coverageDir
 
     String flavorName
 
     DeviceProvider deviceProvider
+    BaseVariantData variant
 
     boolean ignoreFailures
     boolean testFailed
@@ -46,9 +49,10 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
         assert variant instanceof TestVariantData
 
         File resultsOutDir = getResultsDir()
-
-        // empty the folder.
         emptyFolder(resultsOutDir)
+
+        File coverageOutDir = getCoverageDir()
+        emptyFolder(coverageOutDir)
 
         File testApk = getTestApp()
         File testedApk = getTestedApp()
@@ -65,7 +69,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
                     deviceProvider.devices,
                     deviceProvider.getMaxThreads(),
                     deviceProvider.getTimeout(),
-                    resultsOutDir, plugin.logger);
+                    resultsOutDir, coverageOutDir, plugin.logger);
         } finally {
             deviceProvider.terminate();
         }

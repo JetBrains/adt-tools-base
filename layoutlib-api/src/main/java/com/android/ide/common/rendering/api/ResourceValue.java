@@ -61,6 +61,18 @@ public class ResourceValue extends ResourceReference implements IResourceValue {
     }
 
     /**
+     * Similar to {@link #getValue()}, but returns the raw XML value. This is <b>usually</b>
+     * the same as getValue, but with a few exceptions. For example, for markup strings,
+     * you can have * {@code <string name="markup">This is <b>bold</b></string>}.
+     * Here, {@link #getValue()} will return "{@code This is bold}" -- e.g. just
+     * the plain text flattened. However, this method will return "{@code This is <b>bold</b>}",
+     * which preserves the XML markup elements.
+     */
+    public String getRawXmlValue() {
+        return getValue();
+    }
+
+    /**
      * Sets the value of the resource.
      * @param value the new value
      */
@@ -82,9 +94,6 @@ public class ResourceValue extends ResourceReference implements IResourceValue {
                 + " (framework:" + isFramework() + ")]"; //$NON-NLS-1$ //$NON-NLS-2$
     }
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#hashCode()
-     */
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -94,9 +103,6 @@ public class ResourceValue extends ResourceReference implements IResourceValue {
         return result;
     }
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -107,11 +113,13 @@ public class ResourceValue extends ResourceReference implements IResourceValue {
             return false;
         ResourceValue other = (ResourceValue) obj;
         if (mType == null) {
+            //noinspection VariableNotUsedInsideIf
             if (other.mType != null)
                 return false;
         } else if (!mType.equals(other.mType))
             return false;
         if (mValue == null) {
+            //noinspection VariableNotUsedInsideIf
             if (other.mValue != null)
                 return false;
         } else if (!mValue.equals(other.mValue))

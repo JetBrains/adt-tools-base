@@ -48,7 +48,7 @@ public class DependencyData {
         return mMainFile;
     }
 
-    void setMainFile(String path) {
+    void setMainFile(@NonNull String path) {
         mMainFile = path;
     }
 
@@ -57,7 +57,7 @@ public class DependencyData {
         return mSecondaryFiles;
     }
 
-    void addSecondaryFile(String path) {
+    void addSecondaryFile(@NonNull String path) {
         mSecondaryFiles.add(path);
     }
 
@@ -66,7 +66,7 @@ public class DependencyData {
         return mOutputFiles;
     }
 
-    void addOutputFile(String path) {
+    void addOutputFile(@NonNull String path) {
         mOutputFiles.add(path);
     }
 
@@ -89,7 +89,7 @@ public class DependencyData {
     }
 
     private static enum ParseMode {
-        OUTPUT, MAIN, SECONDARY
+        OUTPUT, MAIN, SECONDARY, DONE
     }
 
     @VisibleForTesting
@@ -123,8 +123,16 @@ public class DependencyData {
 
             // detect : at the end indicating a parse mode change *after* we process this line.
             if (line.endsWith(":")) {
-                nextMode = ParseMode.MAIN;
+                if (parseMode == ParseMode.SECONDARY) {
+                    nextMode = ParseMode.DONE;
+                } else {
+                    nextMode = ParseMode.MAIN;
+                }
                 line = line.substring(0, line.length() - 1).trim();
+            }
+
+            if (nextMode == ParseMode.DONE) {
+                break;
             }
 
             if (!line.isEmpty()) {

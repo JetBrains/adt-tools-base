@@ -455,8 +455,8 @@
         </d:state>
     </d:device>
     <d:device>
-        <d:name>3.4in WQVGA</d:name>
-        <d:id>3.4" WQVGA</d:id>
+        <d:name>3.4" WQVGA</d:name>
+        <d:id>3.4in WQVGA</d:id>
         <d:manufacturer>
             Generic
         </d:manufacturer>

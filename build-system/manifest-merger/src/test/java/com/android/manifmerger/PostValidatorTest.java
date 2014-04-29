@@ -16,9 +16,7 @@
 
 package com.android.manifmerger;
 
-import com.android.sdklib.mock.MockLog;
 import com.android.utils.ILogger;
-import com.google.common.base.Optional;
 
 import junit.framework.TestCase;
 
@@ -168,7 +166,7 @@ public class PostValidatorTest extends TestCase {
         for (MergingReport.Record record : mergingReportBuilder.build().getLoggingRecords()) {
             Logger.getAnonymousLogger().severe(record.toString());
             if (record.getSeverity() == MergingReport.Record.Severity.ERROR
-                    && record.toString().contains("PostValidatorTest#testInvalidReferenceValidator:6 ")) {
+                    && record.toString().contains("PostValidatorTest#testInvalidReferenceValidator:6:55 ")) {
                 return;
             }
         }

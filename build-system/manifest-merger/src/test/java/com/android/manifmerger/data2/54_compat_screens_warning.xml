@@ -112,7 +112,7 @@
 
 @errors
 
-ERROR:Element screen#normal at (17,9) file:ManifestMerger2Test2_lib2.xml:17 duplicated with element declared at (16,9) file:ManifestMerger2Test2_lib2.xml:16
-ERROR:Element screen#normal at (18,9) file:ManifestMerger2Test2_lib2.xml:18 duplicated with element declared at (17,9) file:ManifestMerger2Test2_lib2.xml:17
-ERROR:Element screen#normal at (19,9) file:ManifestMerger2Test2_lib2.xml:19 duplicated with element declared at (18,9) file:ManifestMerger2Test2_lib2.xml:18
+ERROR:Element screen#normal at ManifestMerger2Test2_lib2.xml:17:9 duplicated with element declared at ManifestMerger2Test2_lib2.xml:16:9
+ERROR:Element screen#normal at ManifestMerger2Test2_lib2.xml:18:9 duplicated with element declared at ManifestMerger2Test2_lib2.xml:17:9
+ERROR:Element screen#normal at ManifestMerger2Test2_lib2.xml:19:9 duplicated with element declared at ManifestMerger2Test2_lib2.xml:18:9
 ERROR:Validation failed, exiting

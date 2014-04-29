@@ -51,6 +51,12 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
     @NonNull
     private final List<JarDependency> localJars = []
 
+    /**
+     *  Whether we have a direct dependency on com.android.support:support-annotations; this
+     * is used to drive whether we extract annotations when building libraries for example
+     */
+    boolean annotationsPresent
+
     DependencyChecker checker
 
     static VariantDependencies compute(@NonNull Project project,
@@ -74,10 +80,12 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
         }
 
         Configuration compile = project.configurations.create("_${name}Compile")
+        compile.visible = false
         compile.description = "## Internal use, do not manually configure ##"
         compile.setExtendsFrom(compileConfigs)
 
         Configuration apk = project.configurations.create(isLibrary? "_${name}Publish" : "_${name}Apk")
+        apk.visible = false
         apk.description = "## Internal use, do not manually configure ##"
         apk.setExtendsFrom(apkConfigs)
 

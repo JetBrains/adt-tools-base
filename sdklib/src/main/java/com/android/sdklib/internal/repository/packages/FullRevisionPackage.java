@@ -16,13 +16,11 @@
 
 package com.android.sdklib.internal.repository.packages;
 
-import com.android.sdklib.internal.repository.archives.Archive.Arch;
-import com.android.sdklib.internal.repository.archives.Archive.Os;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.FullRevision.PreviewComparison;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
-import com.android.sdklib.repository.FullRevision.PreviewComparison;
 
 import org.w3c.dom.Node;
 
@@ -74,11 +72,8 @@ public abstract class FullRevisionPackage extends Package
             String license,
             String description,
             String descUrl,
-            Os archiveOs,
-            Arch archiveArch,
             String archiveOsPath) {
-        super(source, props, revision, license, description, descUrl,
-                archiveOs, archiveArch, archiveOsPath);
+        super(source, props, revision, license, description, descUrl, archiveOsPath);
 
         FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
         if (rev == null) {

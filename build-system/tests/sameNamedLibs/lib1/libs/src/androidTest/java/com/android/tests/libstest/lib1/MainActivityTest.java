@@ -80,13 +80,13 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
 
     @MediumTest
     public void testAndroidStrings() {
-        assertEquals("SUCCESS-LIB1", mLib1TextView1.getText());
-        assertEquals("SUCCESS-LIB2", mLib2TextView1.getText());
+        assertEquals("SUCCESS-LIB1", mLib1TextView1.getText().toString());
+        assertEquals("SUCCESS-LIB2", mLib2TextView1.getText().toString());
     }
 
     @MediumTest
     public void testJavaStrings() {
-        assertEquals("SUCCESS-LIB1", mLib1TextView2.getText());
-        assertEquals("SUCCESS-LIB2", mLib2TextView2.getText());
+        assertEquals("SUCCESS-LIB1", mLib1TextView2.getText().toString());
+        assertEquals("SUCCESS-LIB2", mLib2TextView2.getText().toString());
     }
 }

@@ -114,6 +114,7 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
             @NonNull MethodInvocation node) {
         assert node.astName().astValue().equals("edit");
 
+        boolean verifiedType = false;
         ResolvedNode resolve = context.resolve(node);
         if (resolve instanceof ResolvedMethod) {
             ResolvedMethod method = (ResolvedMethod) resolve;
@@ -122,6 +123,7 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
                     !returnType.matchesName(ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR)) {
                 return;
             }
+            verifiedType = true;
         }
 
         Expression operand = node.astOperand();
@@ -139,26 +141,30 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
         boolean allowCommitBeforeTarget;
         if (definition == null) {
             if (operand instanceof VariableReference) {
-                NormalTypeBody body = findSurroundingTypeBody(parent);
-                if (body == null) {
-                    return;
-                }
-                String variableName = ((VariableReference) operand).astIdentifier().astValue();
-                String type = getFieldType(body, variableName);
-                if (type == null || !type.equals("SharedPreferences")) { //$NON-NLS-1$
-                    return;
+                if (!verifiedType) {
+                    NormalTypeBody body = findSurroundingTypeBody(parent);
+                    if (body == null) {
+                        return;
+                    }
+                    String variableName = ((VariableReference) operand).astIdentifier().astValue();
+                    String type = getFieldType(body, variableName);
+                    if (type == null || !type.equals("SharedPreferences")) { //$NON-NLS-1$
+                        return;
+                    }
                 }
                 allowCommitBeforeTarget = true;
             } else {
                 return;
             }
         } else {
-            String type = definition.astTypeReference().toString();
-            if (!type.endsWith("SharedPreferences.Editor")) {                   //$NON-NLS-1$
-                if (!type.equals("Editor") ||                                   //$NON-NLS-1$
-                        !LintUtils.isImported(context.getCompilationUnit(),
-                                ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR)) {
-                    return;
+            if (!verifiedType) {
+                String type = definition.astTypeReference().toString();
+                if (!type.endsWith("SharedPreferences.Editor")) {  //$NON-NLS-1$
+                    if (!type.equals("Editor") ||                  //$NON-NLS-1$
+                            !LintUtils.isImported(context.getCompilationUnit(),
+                                    ANDROID_CONTENT_SHARED_PREFERENCES_EDITOR)) {
+                        return;
+                    }
                 }
             }
             allowCommitBeforeTarget = false;

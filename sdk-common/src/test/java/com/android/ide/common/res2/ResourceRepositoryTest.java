@@ -45,7 +45,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals(1, items.get(ResourceType.RAW).size());
         assertEquals(4, items.get(ResourceType.LAYOUT).size());
         assertEquals(1, items.get(ResourceType.COLOR).size());
-        assertEquals(3, items.get(ResourceType.STRING).size());
+        assertEquals(4, items.get(ResourceType.STRING).size());
         assertEquals(1, items.get(ResourceType.STYLE).size());
         assertEquals(1, items.get(ResourceType.ARRAY).size());
         assertEquals(7, items.get(ResourceType.ATTR).size());

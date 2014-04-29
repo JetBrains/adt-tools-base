@@ -13,8 +13,6 @@
     android:versionCode="100"
     android:versionName="1.0.0">
 
-    <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="11"/>
-
     <supports-screens
         android:largeScreens="true"
         android:smallScreens="true"
@@ -140,8 +138,6 @@
     android:versionCode="100"
     android:versionName="1.0.0">
 
-    <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="11"/>
-
     <supports-screens
         android:largeScreens="true"
         android:smallScreens="true"
@@ -194,4 +190,4 @@
 
 @errors
 
-WARNING:Missing 'package' declaration in manifest at (4,1) file:ManifestMerger2Test4_lib4_not_package.xml:4
+WARNING:Missing 'package' declaration in manifest at ManifestMerger2Test4_lib4_not_package.xml:4:1

@@ -16,9 +16,14 @@
 
 package com.android.manifmerger;
 
+import com.android.annotations.Nullable;
+import com.android.utils.Pair;
 import com.android.utils.PositionXmlParser;
+import com.google.common.base.Strings;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.BufferedInputStream;
@@ -48,19 +53,27 @@ public final class XmlLoader {
          * @return the human and machine readable source location.
          */
         String print(boolean shortFormat);
+
+        /**
+         * Persist a location to an xml node.
+         *
+         * @param document the document in which the node will exist.
+         * @return the persisted location as a xml node.
+         */
+        Node toXml(Document document);
     }
 
     private XmlLoader() {}
 
     /**
-     * Loads a xml file without doing xml validation and return a {@link XmlDocument}
-     * @param xmlFile the source xml file to load.
-     * @return the initialized {@link XmlDocument}
-     * @throws IOException if the input file cannot be read.
-     * @throws SAXException if the xml is incorrect
-     * @throws ParserConfigurationException if the xml engine cannot be configured.
+     * Loads an xml file without doing xml validation and return a {@link XmlDocument}
+     *
+     * @param displayName the xml file display name.
+     * @param xmlFile the xml file.
+     * @return the initialized {@link com.android.manifmerger.XmlDocument}
      */
-    public static XmlDocument load(File xmlFile)
+    public static XmlDocument load(
+            KeyResolver<String> selectors, String displayName, File xmlFile)
             throws IOException, SAXException, ParserConfigurationException {
         InputStream inputStream = new BufferedInputStream(new FileInputStream(xmlFile));
 
@@ -68,10 +81,12 @@ public final class XmlLoader {
         Document domDocument = positionXmlParser.parse(inputStream);
         return domDocument != null
                 ? new XmlDocument(positionXmlParser,
-                        new FileSourceLocation(xmlFile),
-                        domDocument.getDocumentElement())
+                new FileSourceLocation(displayName, xmlFile),
+                selectors,
+                domDocument.getDocumentElement())
                 : null;
     }
+
 
     /**
      * Loads a xml document from its {@link String} representation without doing xml validation and
@@ -83,13 +98,17 @@ public final class XmlLoader {
      * @throws SAXException if the xml is incorrect
      * @throws ParserConfigurationException if the xml engine cannot be configured.
      */
-    public static XmlDocument load(SourceLocation sourceLocation, String xml)
+    public static XmlDocument load(
+            KeyResolver<String> selectors, SourceLocation sourceLocation, String xml)
             throws IOException, SAXException, ParserConfigurationException {
         PositionXmlParser positionXmlParser = new PositionXmlParser();
         Document domDocument = positionXmlParser.parse(xml);
         return domDocument != null
                 ? new XmlDocument(
-                        positionXmlParser, sourceLocation, domDocument.getDocumentElement())
+                        positionXmlParser,
+                        sourceLocation,
+                        selectors,
+                        domDocument.getDocumentElement())
                 : null;
     }
 
@@ -99,14 +118,53 @@ public final class XmlLoader {
     private static class FileSourceLocation implements SourceLocation {
 
         private final File mFile;
+        private final String mName;
 
-        private FileSourceLocation(File file) {
+        private FileSourceLocation(@Nullable String name, File file) {
             this.mFile = file;
+            mName = Strings.isNullOrEmpty(name)
+                    ? file.getName()
+                    : name;
         }
 
         @Override
         public String print(boolean shortFormat) {
-            return "file:" + (shortFormat ? mFile.getName() : mFile.getPath());
+            return shortFormat ? mName : mFile.getAbsolutePath();
+        }
+
+        @Override
+        public Node toXml(Document document) {
+            Element location = document.createElement("source");
+            location.setAttribute("name", mName);
+            location.setAttribute("scheme", "file://");
+            location.setAttribute("value", mFile.getAbsolutePath());
+            return location;
         }
     }
+
+    public static SourceLocation locationFromXml(Element location) {
+        String scheme = location.getAttribute("scheme");
+        if (Strings.isNullOrEmpty(scheme)) {
+            return UNKNOWN;
+        }
+        if (scheme.equals("file://")) {
+            return new FileSourceLocation(
+                    location.getAttribute("name"),
+                    new File(location.getAttribute("value")));
+        }
+        throw new RuntimeException(scheme + " scheme unsupported");
+    }
+
+    public static final SourceLocation UNKNOWN = new SourceLocation() {
+        @Override
+        public String print(boolean shortFormat) {
+            return "Unknown location";
+        }
+
+        @Override
+        public Node toXml(Document document) {
+            // empty node.
+            return document.createElement("source");
+        }
+    };
 }

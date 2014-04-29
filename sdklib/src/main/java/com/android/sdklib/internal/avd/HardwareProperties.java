@@ -17,6 +17,7 @@
 package com.android.sdklib.internal.avd;
 
 import com.android.utils.ILogger;
+import com.google.common.base.Charsets;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -85,7 +86,6 @@ public class HardwareProperties {
 
     public static final String BOOLEAN_YES = "yes";
     public static final String BOOLEAN_NO = "no";
-    public static final String[] BOOLEAN_VALUES = new String[] { BOOLEAN_YES, BOOLEAN_NO };
     public static final Pattern DISKSIZE_PATTERN = Pattern.compile("\\d+[MK]B"); //$NON-NLS-1$
 
     /** Represents the type of a hardware property value. */
@@ -197,7 +197,7 @@ public class HardwareProperties {
         BufferedReader reader = null;
         try {
             FileInputStream fis = new FileInputStream(file);
-            reader = new BufferedReader(new InputStreamReader(fis));
+            reader = new BufferedReader(new InputStreamReader(fis, Charsets.UTF_8));
 
             Map<String, HardwareProperty> map = new TreeMap<String, HardwareProperty>();
 
@@ -289,7 +289,28 @@ public class HardwareProperties {
     }
 
     /**
-     * Returns the index of <var>value</var> in {@link #BOOLEAN_VALUES}.
+     * Returns the boolean value matching the given index.
+     * This is the reverse of {@link #getBooleanValueIndex(String)}.
+     *
+     * @param index 0 or 1.
+     * @return {@link #BOOLEAN_YES} for 0 or {@link #BOOLEAN_NO} for 1.
+     * @throws IndexOutOfBoundsException if index is neither 0 nor 1.
+     */
+    public static String getBooleanValue(int index) {
+        if (index == 0) {
+            return BOOLEAN_YES;
+        } else if (index == 1) {
+            return BOOLEAN_NO;
+        }
+        throw new IndexOutOfBoundsException("HardwareProperty boolean index must 0 (true) or 1 (false) but was " + index);
+    }
+
+    /**
+     * Returns the index of a boolean <var>value</var>.
+     * This if the reverse of {@link #getBooleanValue(int)}.
+     *
+     * @param value Either {@link #BOOLEAN_YES} or {@link #BOOLEAN_NO}.
+     * @return 0 for {@link #BOOLEAN_YES}, 1 for {@link #BOOLEAN_NO} or -1 for anything else.
      */
     public static int getBooleanValueIndex(String value) {
         if (BOOLEAN_YES.equals(value)) {

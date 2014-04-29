@@ -16,8 +16,10 @@
 
 package com.android.builder;
 
+import static com.android.manifmerger.ManifestMerger2.Invoker;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -31,6 +33,7 @@ import com.android.builder.internal.SymbolWriter;
 import com.android.builder.internal.TestManifestGenerator;
 import com.android.builder.internal.compiler.AidlProcessor;
 import com.android.builder.internal.compiler.LeafFolderGatherer;
+import com.android.builder.internal.compiler.PreDexCache;
 import com.android.builder.internal.compiler.RenderScriptProcessor;
 import com.android.builder.internal.compiler.SourceSearcher;
 import com.android.builder.internal.packaging.JavaResourceProcessor;
@@ -44,6 +47,8 @@ import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.SealedPackageException;
 import com.android.builder.packaging.SigningException;
+import com.android.builder.sdk.SdkInfo;
+import com.android.builder.sdk.TargetInfo;
 import com.android.builder.signing.CertificateInfo;
 import com.android.builder.signing.KeystoreHelper;
 import com.android.builder.signing.KeytoolException;
@@ -53,14 +58,20 @@ import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.PngCruncher;
 import com.android.manifmerger.ICallback;
 import com.android.manifmerger.ManifestMerger;
+import com.android.manifmerger.ManifestMerger2;
 import com.android.manifmerger.MergerLog;
+import com.android.manifmerger.MergingReport;
+import com.android.manifmerger.XmlDocument;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
+import com.android.utils.Pair;
 import com.android.utils.SdkUtils;
 import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -71,6 +82,7 @@ import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -85,22 +97,22 @@ import java.util.Set;
  * build steps.
  *
  * To use:
- * create a builder with {@link #AndroidBuilder(SdkParser, String, ILogger, boolean)}
+ * create a builder with {@link #AndroidBuilder(String, ILogger, boolean)}
  *
  * then build steps can be done with
- * {@link #processManifest(java.io.File, java.util.List, java.util.List, String, int, String, int, int, String)}
- * {@link #processTestManifest(String, int, int, String, String, Boolean, Boolean, java.util.List, String)}
+ * {@link #processManifest(java.io.File, java.util.List, java.util.List, String, int, String, String, int, String)}
+ * {@link #processTestManifest(String, String, int, String, String, Boolean, Boolean, java.util.List, String)}
  * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions, java.util.Collection, boolean)}
  * {@link #compileAllAidlFiles(java.util.List, java.io.File, java.util.List, com.android.builder.compiling.DependencyFileProcessor)}
  * {@link #convertByteCode(Iterable, Iterable, java.io.File, DexOptions, java.util.List, boolean)}
  * {@link #packageApk(String, java.io.File, java.util.Collection, String, java.util.Collection, java.util.Set, boolean, com.android.builder.model.SigningConfig, com.android.builder.model.PackagingOptions, String)}
  *
  * Java compilation is not handled but the builder provides the bootclasspath with
- * {@link #getBootClasspath(SdkParser)}.
+ * {@link #getBootClasspath()}.
  */
 public class AndroidBuilder {
 
-    private static final FullRevision MIN_BUILD_TOOLS_REV = new FullRevision(16, 0, 0);
+    private static final FullRevision MIN_BUILD_TOOLS_REV = new FullRevision(19, 0, 0);
 
     private static final DependencyFileProcessor sNoOpDependencyFileProcessor = new DependencyFileProcessor() {
         @Override
@@ -109,79 +121,117 @@ public class AndroidBuilder {
         }
     };
 
-    private final SdkParser mSdkParser;
     private final ILogger mLogger;
     private final CommandLineRunner mCmdLineRunner;
     private final boolean mVerboseExec;
-    private boolean mLibrary;
 
-    @NonNull
-    private final IAndroidTarget mTarget;
-    @NonNull
-    private final BuildToolInfo mBuildTools;
     private String mCreatedBy;
 
+    private SdkInfo mSdkInfo;
+    private TargetInfo mTargetInfo;
+
     /**
-     * Creates an AndroidBuilder
-     * <p/>
-     * This receives an {@link SdkParser} to provide the build with information about the SDK, as
-     * well as an {@link ILogger} to display output.
+     * Creates an AndroidBuilder.
      * <p/>
      * <var>verboseExec</var> is needed on top of the ILogger due to remote exec tools not being
      * able to output info and verbose messages separately.
      *
-     * @param sdkParser the SdkParser
+     * @param createdBy the createdBy String for the apk manifest.
      * @param logger the Logger
      * @param verboseExec whether external tools are launched in verbose mode
      */
     public AndroidBuilder(
-            @NonNull SdkParser sdkParser,
             @Nullable String createdBy,
             @NonNull ILogger logger,
             boolean verboseExec) {
         mCreatedBy = createdBy;
-        mSdkParser = checkNotNull(sdkParser);
         mLogger = checkNotNull(logger);
         mVerboseExec = verboseExec;
         mCmdLineRunner = new CommandLineRunner(mLogger);
-
-        BuildToolInfo buildToolInfo = mSdkParser.getBuildTools();
-        FullRevision buildToolsRevision = buildToolInfo.getRevision();
-
-        if (buildToolsRevision.compareTo(MIN_BUILD_TOOLS_REV) < 0) {
-            throw new IllegalArgumentException(String.format(
-                    "The SDK Build Tools revision (%1$s) is too low. Minimum required is %2$s",
-                    buildToolsRevision, MIN_BUILD_TOOLS_REV));
-        }
-
-        mTarget = mSdkParser.getTarget();
-        mBuildTools = mSdkParser.getBuildTools();
     }
 
     @VisibleForTesting
     AndroidBuilder(
-            @NonNull SdkParser sdkParser,
             @NonNull CommandLineRunner cmdLineRunner,
             @NonNull ILogger logger,
             boolean verboseExec) {
-        mSdkParser = checkNotNull(sdkParser);
         mCmdLineRunner = checkNotNull(cmdLineRunner);
         mLogger = checkNotNull(logger);
         mVerboseExec = verboseExec;
+    }
 
-        mTarget = mSdkParser.getTarget();
-        mBuildTools = mSdkParser.getBuildTools();
+    /**
+     * Sets the SdkInfo and the targetInfo on the builder. This is required to actually
+     * build (some of the steps).
+     *
+     * @param sdkInfo the SdkInfo
+     * @param targetInfo the TargetInfo
+     *
+     * @see com.android.builder.sdk.SdkLoader
+     */
+    public void setTargetInfo(@NonNull SdkInfo sdkInfo, @NonNull TargetInfo targetInfo) {
+        mSdkInfo = sdkInfo;
+        mTargetInfo = targetInfo;
+
+        if (mTargetInfo.getBuildTools().getRevision().compareTo(MIN_BUILD_TOOLS_REV) < 0) {
+            throw new IllegalArgumentException(String.format(
+                    "The SDK Build Tools revision (%1$s) is too low. Minimum required is %2$s",
+                    mTargetInfo.getBuildTools().getRevision(), MIN_BUILD_TOOLS_REV));
+        }
+    }
+
+    /**
+     * Returns the SdkInfo, if set.
+     */
+    @Nullable
+    public SdkInfo getSdkInfo() {
+        return mSdkInfo;
+    }
+
+    /**
+     * Returns the TargetInfo, if set.
+     */
+    @Nullable
+    public TargetInfo getTargetInfo() {
+        return mTargetInfo;
+    }
+
+    /**
+     * Returns the compilation target, if set.
+     */
+    @Nullable
+    public IAndroidTarget getTarget() {
+        checkState(mTargetInfo != null,
+                "Cannot call getTarget() before setTargetInfo() is called.");
+        return mTargetInfo.getTarget();
+    }
+
+    /**
+     * Returns whether the compilation target is a preview.
+     */
+    public boolean isPreviewTarget() {
+        checkState(mTargetInfo != null,
+                "Cannot call isTargetAPreview() before setTargetInfo() is called.");
+        return mTargetInfo.getTarget().getVersion().isPreview();
+    }
+
+    public String getTargetCodename() {
+        checkState(mTargetInfo != null,
+                "Cannot call getTargetCodename() before setTargetInfo() is called.");
+        return mTargetInfo.getTarget().getVersion().getCodename();
     }
 
     /**
      * Helper method to get the boot classpath to be used during compilation.
      */
     @NonNull
-    public static List<String> getBootClasspath(@NonNull SdkParser sdkParser) {
+    public List<String> getBootClasspath() {
+        checkState(mTargetInfo != null,
+                "Cannot call getBootClasspath() before setTargetInfo() is called.");
 
         List<String> classpath = Lists.newArrayList();
 
-        IAndroidTarget target = sdkParser.getTarget();
+        IAndroidTarget target = mTargetInfo.getTarget();
 
         classpath.addAll(target.getBootClasspath());
 
@@ -195,36 +245,36 @@ public class AndroidBuilder {
 
         // add annotations.jar if needed.
         if (target.getVersion().getApiLevel() <= 15) {
-            classpath.add(sdkParser.getAnnotationsJar());
+            classpath.add(mSdkInfo.getAnnotationsJar().getPath());
         }
 
         return classpath;
     }
 
-    /** Sets whether this builder is currently used to build a library. Defaults to false. */
-    public AndroidBuilder setBuildingLibrary(boolean library) {
-        mLibrary = library;
-        return this;
-    }
-
-    /** Sets whether this builder is currently used to build a library */
-    public boolean isBuildingLibrary() {
-        return mLibrary;
-    }
-
     /**
      * Returns the jar file for the renderscript mode.
-     * @return the jar file.
+     *
+     * This may return null if the SDK has not been loaded yet.
+     *
+     * @return the jar file, or null.
+     *
+     * @see #setTargetInfo(com.android.builder.sdk.SdkInfo, com.android.builder.sdk.TargetInfo)
      */
-    @NonNull
+    @Nullable
     public File getRenderScriptSupportJar() {
-        return RenderScriptProcessor.getSupportJar(
-                mBuildTools.getLocation().getAbsolutePath());
+        if (mTargetInfo != null) {
+            return RenderScriptProcessor.getSupportJar(
+                    mTargetInfo.getBuildTools().getLocation().getAbsolutePath());
+        }
+
+        return null;
     }
 
     /**
      * Returns the compile classpath for this config. If the config tests a library, this
-     * will include the classpath of the tested config
+     * will include the classpath of the tested config.
+     *
+     * If the SDK was loaded, this may include the renderscript support jar.
      *
      * @return a non null, but possibly empty set.
      */
@@ -239,7 +289,9 @@ public class AndroidBuilder {
 
             Set<File> fullJars = Sets.newHashSetWithExpectedSize(compileClasspath.size() + 1);
             fullJars.addAll(compileClasspath);
-            fullJars.add(renderScriptSupportJar);
+            if (renderScriptSupportJar != null) {
+                fullJars.add(renderScriptSupportJar);
+            }
             compileClasspath = fullJars;
         }
 
@@ -249,6 +301,8 @@ public class AndroidBuilder {
     /**
      * Returns the list of packaged jars for this config. If the config tests a library, this
      * will include the jars of the tested config
+     *
+     * If the SDK was loaded, this may include the renderscript support jar.
      *
      * @return a non null, but possibly empty list.
      */
@@ -263,17 +317,32 @@ public class AndroidBuilder {
 
             Set<File> fullJars = Sets.newHashSetWithExpectedSize(packagedJars.size() + 1);
             fullJars.addAll(packagedJars);
-            fullJars.add(renderScriptSupportJar);
+            if (renderScriptSupportJar != null) {
+                fullJars.add(renderScriptSupportJar);
+            }
             packagedJars = fullJars;
         }
 
         return packagedJars;
     }
 
-    @NonNull
+    /**
+     * Returns the native lib folder for the renderscript mode.
+     *
+     * This may return null if the SDK has not been loaded yet.
+     *
+     * @return the folder, or null.
+     *
+     * @see #setTargetInfo(com.android.builder.sdk.SdkInfo, com.android.builder.sdk.TargetInfo)
+     */
+    @Nullable
     public File getSupportNativeLibFolder() {
-        return RenderScriptProcessor.getSupportNativeLibFolder(
-                mBuildTools.getLocation().getAbsolutePath());
+        if (mTargetInfo != null) {
+            return RenderScriptProcessor.getSupportNativeLibFolder(
+                    mTargetInfo.getBuildTools().getLocation().getAbsolutePath());
+        }
+
+        return null;
     }
 
     /**
@@ -282,8 +351,10 @@ public class AndroidBuilder {
      */
     @NonNull
     public PngCruncher getAaptCruncher() {
+        checkState(mTargetInfo != null,
+                "Cannot call getAaptCruncher() before setTargetInfo() is called.");
         return new AaptCruncher(
-                mBuildTools.getPath(BuildToolInfo.PathId.AAPT),
+                mTargetInfo.getBuildTools().getPath(BuildToolInfo.PathId.AAPT),
                 mCmdLineRunner);
     }
 
@@ -295,6 +366,133 @@ public class AndroidBuilder {
     @NonNull
     public static ClassField createClassField(@NonNull String type, @NonNull String name, @NonNull String value) {
         return new ClassFieldImpl(type, name, value);
+    }
+
+    /**
+     * Invoke the Manifest Merger version 2.
+     */
+    public void processManifest2(
+            @NonNull File mainManifest,
+            @NonNull List<File> manifestOverlays,
+            @NonNull List<? extends ManifestDependency> libraries,
+            String packageOverride,
+            int versionCode,
+            String versionName,
+            @Nullable String minSdkVersion,
+            int targetSdkVersion,
+            @NonNull String outManifestLocation) {
+
+        try {
+            Invoker manifestMergerInvoker = ManifestMerger2.newInvoker(mainManifest, mLogger)
+                    .addFlavorAndBuildTypeManifests(
+                            manifestOverlays.toArray(new File[manifestOverlays.size()]))
+                    .addLibraryManifests(collectLibraries(libraries));
+            if (!Strings.isNullOrEmpty(packageOverride)) {
+                manifestMergerInvoker.setOverride(ManifestMerger2.SystemProperty.PACKAGE,
+                        packageOverride);
+            }
+            if (versionCode > 0) {
+                manifestMergerInvoker.setOverride(ManifestMerger2.SystemProperty.VERSION_CODE,
+                        String.valueOf(versionCode));
+            }
+            if (!Strings.isNullOrEmpty(versionName)) {
+                manifestMergerInvoker.setOverride(ManifestMerger2.SystemProperty.VERSION_NAME,
+                        versionName);
+            }
+            if (!Strings.isNullOrEmpty(minSdkVersion)) {
+                manifestMergerInvoker.setOverride(ManifestMerger2.SystemProperty.MIN_SDK_VERSION,
+                        minSdkVersion);
+            }
+            if (targetSdkVersion > 0) {
+                manifestMergerInvoker.setOverride(ManifestMerger2.SystemProperty.TARGET_SDK_VERSION,
+                        String.valueOf(targetSdkVersion));
+            }
+            MergingReport mergingReport = manifestMergerInvoker.merge();
+            mLogger.info("Merging result:" + mergingReport.getResult());
+            switch (mergingReport.getResult()) {
+                case WARNING:
+                    mergingReport.log(mLogger);
+                    // fall through since these are just warnings.
+                case SUCCESS:
+                    XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+                    try {
+                        String annotatedDocument = mergingReport.getActions().blame(xmlDocument);
+                        mLogger.verbose(annotatedDocument);
+                    } catch (Exception e) {
+                        mLogger.error(e, "cannot print resulting xml");
+                    }
+                    save(xmlDocument, new File(outManifestLocation));
+                    mLogger.info("Merged manifest saved to " + outManifestLocation);
+                    break;
+                case ERROR:
+                    mergingReport.log(mLogger);
+                    throw new RuntimeException(mergingReport.getReportString());
+                default:
+                    throw new RuntimeException("Unhandled result type : "
+                            + mergingReport.getResult());
+            }
+        } catch (ManifestMerger2.MergeFailureException e) {
+            // TODO: unacceptable.
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Saves the {@link com.android.manifmerger.XmlDocument} to a file.
+     * @param xmlDocument xml document to save.
+     * @param out file to save to.
+     */
+    private void save(XmlDocument xmlDocument, File out) {
+        FileWriter os;
+        try {
+            os = new FileWriter(out);
+        } catch(IOException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            os.write(xmlDocument.prettyPrint());
+        } catch(IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                os.close();
+            } catch (IOException e) {
+                mLogger.error(e, "Cannot close output stream");
+            }
+        }
+    }
+
+    /**
+     * Collect the list of libraries' manifest files.
+     * @param libraries declared dependencies
+     * @return a list of files and names for the libraries' manifest files.
+     */
+    private static ImmutableList<Pair<String, File>> collectLibraries(
+            List<? extends ManifestDependency> libraries) {
+
+        ImmutableList.Builder<Pair<String, File>> manifestFiles = ImmutableList.builder();
+        if (libraries != null) {
+            collectLibraries(libraries, manifestFiles);
+        }
+        return manifestFiles.build();
+    }
+
+    /**
+     * recursively calculate the list of libraries to merge the manifests files from.
+     * @param libraries the dependencies
+     * @param manifestFiles list of files and names identifiers for the libraries' manifest files.
+     */
+    private static void collectLibraries(List<? extends ManifestDependency> libraries,
+            ImmutableList.Builder<Pair<String, File>> manifestFiles) {
+
+        for (ManifestDependency library : libraries) {
+            manifestFiles.add(Pair.of(library.getName(), library.getManifest()));
+            List<? extends ManifestDependency> manifestDependencies = library
+                    .getManifestDependencies();
+            if (!manifestDependencies.isEmpty()) {
+                collectLibraries(manifestDependencies, manifestFiles);
+            }
+        }
     }
 
     /**
@@ -333,12 +531,16 @@ public class AndroidBuilder {
         checkNotNull(manifestOverlays, "manifestOverlays cannot be null.");
         checkNotNull(libraries, "libraries cannot be null.");
         checkNotNull(outManifestLocation, "outManifestLocation cannot be null.");
+        checkState(mTargetInfo != null,
+                "Cannot call processManifest() before setTargetInfo() is called.");
+
+        final IAndroidTarget target = mTargetInfo.getTarget();
 
         ICallback callback = new ICallback() {
             @Override
             public int queryCodenameApiLevel(@NonNull String codename) {
-                if (codename.equals(mTarget.getVersion().getCodename())) {
-                    return mTarget.getVersion().getApiLevel();
+                if (codename.equals(target.getVersion().getCodename())) {
+                    return target.getVersion().getApiLevel();
                 }
                 return ICallback.UNKNOWN_CODENAME;
             }
@@ -357,7 +559,6 @@ public class AndroidBuilder {
                 } else {
                     ManifestMerger merger = new ManifestMerger(MergerLog.wrapSdkLog(mLogger),
                             callback);
-                    merger.setInsertSourceMarkers(isInsertSourceMarkers());
                     doMerge(merger, new File(outManifestLocation), mainManifest,
                             attributeInjection, packageOverride);
                 }
@@ -377,7 +578,6 @@ public class AndroidBuilder {
 
                     ManifestMerger merger = new ManifestMerger(MergerLog.wrapSdkLog(mLogger),
                             callback);
-                    merger.setInsertSourceMarkers(isInsertSourceMarkers());
                     doMerge(merger, mainManifestOut, mainManifest, manifestOverlays,
                             attributeInjection, packageOverride);
 
@@ -439,12 +639,16 @@ public class AndroidBuilder {
         checkNotNull(functionalTest, "functionalTest cannot be null.");
         checkNotNull(libraries, "libraries cannot be null.");
         checkNotNull(outManifestLocation, "outManifestLocation cannot be null.");
+        checkState(mTargetInfo != null,
+                "Cannot call processTestManifest() before setTargetInfo() is called.");
+
+        final IAndroidTarget target = mTargetInfo.getTarget();
 
         ICallback callback = new ICallback() {
             @Override
             public int queryCodenameApiLevel(@NonNull String codename) {
-                if (codename.equals(mTarget.getVersion().getCodename())) {
-                    return mTarget.getVersion().getApiLevel();
+                if (codename.equals(target.getVersion().getCodename())) {
+                    return target.getVersion().getApiLevel();
                 }
                 return ICallback.UNKNOWN_CODENAME;
             }
@@ -472,6 +676,105 @@ public class AndroidBuilder {
                         null, null,
                         callback);
             } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            generateTestManifest(
+                    testPackageName,
+                    minSdkVersion,
+                    targetSdkVersion,
+                    testedPackageName,
+                    instrumentationRunner,
+                    handleProfiling,
+                    functionalTest,
+                    outManifestLocation);
+        }
+    }
+
+    /**
+     * Creates the manifest for a test variant
+     *
+     * @param testPackageName the package name of the test application
+     * @param minSdkVersion the minSdkVersion of the test application
+     * @param targetSdkVersion the targetSdkVersion of the test application
+     * @param testedPackageName the package name of the tested application
+     * @param instrumentationRunner the name of the instrumentation runner
+     * @param handleProfiling whether or not the Instrumentation object will turn profiling on and off
+     * @param functionalTest whether or not the Instrumentation class should run as a functional test
+     * @param libraries the library dependency graph
+     * @param outManifestLocation the output location for the merged manifest
+     *
+     * @see com.android.builder.VariantConfiguration#getPackageName()
+     * @see com.android.builder.VariantConfiguration#getTestedConfig()
+     * @see com.android.builder.VariantConfiguration#getMinSdkVersion()
+     * @see com.android.builder.VariantConfiguration#getTestedPackageName()
+     * @see com.android.builder.VariantConfiguration#getInstrumentationRunner()
+     * @see com.android.builder.VariantConfiguration#getHandleProfiling()
+     * @see com.android.builder.VariantConfiguration#getFunctionalTest()
+     * @see com.android.builder.VariantConfiguration#getDirectLibraries()
+     */
+    public void processTestManifest2(
+            @NonNull  String testPackageName,
+            @Nullable String minSdkVersion,
+            int targetSdkVersion,
+            @NonNull  String testedPackageName,
+            @NonNull  String instrumentationRunner,
+            @NonNull  Boolean handleProfiling,
+            @NonNull  Boolean functionalTest,
+            @NonNull  List<? extends ManifestDependency> libraries,
+            @NonNull  String outManifestLocation) {
+        checkNotNull(testPackageName, "testPackageName cannot be null.");
+        checkNotNull(testedPackageName, "testedPackageName cannot be null.");
+        checkNotNull(instrumentationRunner, "instrumentationRunner cannot be null.");
+        checkNotNull(handleProfiling, "handleProfiling cannot be null.");
+        checkNotNull(functionalTest, "functionalTest cannot be null.");
+        checkNotNull(libraries, "libraries cannot be null.");
+        checkNotNull(outManifestLocation, "outManifestLocation cannot be null.");
+
+        if (!libraries.isEmpty()) {
+            try {
+                // create the test manifest, merge the libraries in it
+                File generatedTestManifest = File.createTempFile("manifestMerge", ".xml");
+
+                generateTestManifest(
+                        testPackageName,
+                        minSdkVersion,
+                        targetSdkVersion,
+                        testedPackageName,
+                        instrumentationRunner,
+                        handleProfiling,
+                        functionalTest,
+                        generatedTestManifest.getAbsolutePath());
+
+                MergingReport mergingReport = ManifestMerger2.newInvoker(
+                        generatedTestManifest, mLogger)
+                        .addLibraryManifests(collectLibraries(libraries))
+                        .merge();
+
+                mLogger.info("Merging result:" + mergingReport.getResult());
+                switch (mergingReport.getResult()) {
+                    case WARNING:
+                        mergingReport.log(mLogger);
+                        // fall through since these are just warnings.
+                    case SUCCESS:
+                        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+                        try {
+                            String annotatedDocument = mergingReport.getActions().blame(xmlDocument);
+                            mLogger.verbose(annotatedDocument);
+                        } catch (Exception e) {
+                            mLogger.error(e, "cannot print resulting xml");
+                        }
+                        save(xmlDocument, new File(outManifestLocation));
+                        mLogger.info("Merged manifest saved to " + outManifestLocation);
+                        break;
+                    case ERROR:
+                        mergingReport.log(mLogger);
+                        throw new RuntimeException(mergingReport.getReportString());
+                    default:
+                        throw new RuntimeException("Unhandled result type : "
+                                + mergingReport.getResult());
+                }
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         } else {
@@ -580,25 +883,7 @@ public class AndroidBuilder {
         }
 
         ManifestMerger merger = new ManifestMerger(MergerLog.wrapSdkLog(mLogger), callback);
-        merger.setInsertSourceMarkers(isInsertSourceMarkers());
         doMerge(merger, outManifest, mainManifest, manifests, attributeInjection, packageOverride);
-    }
-
-    /**
-     * Returns whether we should insert source markers in generated files (such as
-     * XML resources and merged manifest files)
-     *
-     * @return true to generate source comments
-     */
-    public boolean isInsertSourceMarkers() {
-        // In release library builds (generating AAR's) we don't want source comments.
-        // In other scenarios (e.g. during development) we do.
-
-        // TODO: Find out whether we're building in a release build type
-        boolean isRelease = false;
-
-        //noinspection ConstantConditions
-        return !(mLibrary && isRelease);
     }
 
     private void doMerge(ManifestMerger merger, File output, File input,
@@ -663,11 +948,16 @@ public class AndroidBuilder {
         // if both output types are empty, then there's nothing to do and this is an error
         checkArgument(sourceOutputDir != null || resPackageOutput != null,
                 "No output provided for aapt task");
+        checkState(mTargetInfo != null,
+                "Cannot call processResources() before setTargetInfo() is called.");
+
+        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
+        IAndroidTarget target = mTargetInfo.getTarget();
 
         // launch aapt: create the command line
         ArrayList<String> command = Lists.newArrayList();
 
-        String aapt = mBuildTools.getPath(BuildToolInfo.PathId.AAPT);
+        String aapt = buildToolInfo.getPath(BuildToolInfo.PathId.AAPT);
         if (aapt == null || !new File(aapt).isFile()) {
             throw new IllegalStateException("aapt is missing");
         }
@@ -685,7 +975,7 @@ public class AndroidBuilder {
 
         // inputs
         command.add("-I");
-        command.add(mTarget.getPath(IAndroidTarget.ANDROID_JAR));
+        command.add(target.getPath(IAndroidTarget.ANDROID_JAR));
 
         command.add("-M");
         command.add(manifestFile.getAbsolutePath());
@@ -791,10 +1081,11 @@ public class AndroidBuilder {
 
                 if (appPackageName.equals(packageName)) {
                     if (enforceUniquePackageName) {
-                        String msg =
-                                "Error: A library uses the same package as this project\n" +
+                        String msg = String.format(
+                                "Error: A library uses the same package as this project: %s\n" +
                                         "You can temporarily disable this error with android.enforceUniquePackageName=false\n" +
-                                        "However, this is temporary and will be enforced in 1.0";
+                                        "However, this is temporary and will be enforced in 1.0",
+                                packageName);
                         throw new RuntimeException(msg);
                     }
 
@@ -867,8 +1158,13 @@ public class AndroidBuilder {
         checkNotNull(sourceFolders, "sourceFolders cannot be null.");
         checkNotNull(sourceOutputDir, "sourceOutputDir cannot be null.");
         checkNotNull(importFolders, "importFolders cannot be null.");
+        checkState(mTargetInfo != null,
+                "Cannot call compileAllAidlFiles() before setTargetInfo() is called.");
 
-        String aidl = mBuildTools.getPath(BuildToolInfo.PathId.AIDL);
+        IAndroidTarget target = mTargetInfo.getTarget();
+        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
+
+        String aidl = buildToolInfo.getPath(BuildToolInfo.PathId.AIDL);
         if (aidl == null || !new File(aidl).isFile()) {
             throw new IllegalStateException("aidl is missing");
         }
@@ -880,7 +1176,7 @@ public class AndroidBuilder {
 
         AidlProcessor processor = new AidlProcessor(
                 aidl,
-                mTarget.getPath(IAndroidTarget.ANDROID_AIDL),
+                target.getPath(IAndroidTarget.ANDROID_AIDL),
                 fullImportList,
                 sourceOutputDir,
                 dependencyFileProcessor != null ?
@@ -912,15 +1208,20 @@ public class AndroidBuilder {
         checkNotNull(aidlFile, "aidlFile cannot be null.");
         checkNotNull(sourceOutputDir, "sourceOutputDir cannot be null.");
         checkNotNull(importFolders, "importFolders cannot be null.");
+        checkState(mTargetInfo != null,
+                "Cannot call compileAidlFile() before setTargetInfo() is called.");
 
-        String aidl = mBuildTools.getPath(BuildToolInfo.PathId.AIDL);
+        IAndroidTarget target = mTargetInfo.getTarget();
+        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
+
+        String aidl = buildToolInfo.getPath(BuildToolInfo.PathId.AIDL);
         if (aidl == null || !new File(aidl).isFile()) {
             throw new IllegalStateException("aidl is missing");
         }
 
         AidlProcessor processor = new AidlProcessor(
                 aidl,
-                mTarget.getPath(IAndroidTarget.ANDROID_AIDL),
+                target.getPath(IAndroidTarget.ANDROID_AIDL),
                 importFolders,
                 sourceOutputDir,
                 dependencyFileProcessor != null ?
@@ -970,14 +1271,18 @@ public class AndroidBuilder {
         checkNotNull(importFolders, "importFolders cannot be null.");
         checkNotNull(sourceOutputDir, "sourceOutputDir cannot be null.");
         checkNotNull(resOutputDir, "resOutputDir cannot be null.");
+        checkState(mTargetInfo != null,
+                "Cannot call compileAllRenderscriptFiles() before setTargetInfo() is called.");
 
-        String renderscript = mBuildTools.getPath(BuildToolInfo.PathId.LLVM_RS_CC);
+        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
+
+        String renderscript = buildToolInfo.getPath(BuildToolInfo.PathId.LLVM_RS_CC);
         if (renderscript == null || !new File(renderscript).isFile()) {
             throw new IllegalStateException("llvm-rs-cc is missing");
         }
 
         FullRevision minBuildToolsRev = new FullRevision(19,0,3);
-        if (supportMode && mBuildTools.getRevision().compareTo(minBuildToolsRev) == -1) {
+        if (supportMode && buildToolInfo.getRevision().compareTo(minBuildToolsRev) < 0) {
             throw new IllegalStateException(
                     "RenderScript Support Mode requires buildToolsVersion >= " + minBuildToolsRev.toString());
         }
@@ -989,7 +1294,7 @@ public class AndroidBuilder {
                 resOutputDir,
                 objOutputDir,
                 libOutputDir,
-                mBuildTools,
+                buildToolInfo,
                 targetApi,
                 debugBuild,
                 optimLevel,
@@ -1064,11 +1369,15 @@ public class AndroidBuilder {
         checkNotNull(outDexFolder, "outDexFolder cannot be null.");
         checkNotNull(dexOptions, "dexOptions cannot be null.");
         checkArgument(outDexFolder.isDirectory(), "outDexFolder must be a folder");
+        checkState(mTargetInfo != null,
+                "Cannot call convertByteCode() before setTargetInfo() is called.");
+
+        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
 
         // launch dx: create the command line
         ArrayList<String> command = Lists.newArrayList();
 
-        String dx = mBuildTools.getPath(BuildToolInfo.PathId.DX);
+        String dx = buildToolInfo.getPath(BuildToolInfo.PathId.DX);
         if (dx == null || !new File(dx).isFile()) {
             throw new IllegalStateException("dx is missing");
         }
@@ -1147,6 +1456,23 @@ public class AndroidBuilder {
             @NonNull File outFile,
             @NonNull DexOptions dexOptions)
             throws IOException, InterruptedException, LoggedErrorException {
+        checkState(mTargetInfo != null,
+                "Cannot call preDexLibrary() before setTargetInfo() is called.");
+
+        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
+
+        PreDexCache.getCache().preDexLibrary(inputFile, outFile, dexOptions, buildToolInfo,
+                mVerboseExec, mCmdLineRunner);
+    }
+
+    public static void preDexLibrary(
+            @NonNull File inputFile,
+            @NonNull File outFile,
+            @NonNull DexOptions dexOptions,
+            @NonNull BuildToolInfo buildToolInfo,
+                     boolean verbose,
+            @NonNull CommandLineRunner commandLineRunner)
+            throws IOException, InterruptedException, LoggedErrorException {
         checkNotNull(inputFile, "inputFile cannot be null.");
         checkNotNull(outFile, "outFile cannot be null.");
         checkNotNull(dexOptions, "dexOptions cannot be null.");
@@ -1154,7 +1480,7 @@ public class AndroidBuilder {
         // launch dx: create the command line
         ArrayList<String> command = Lists.newArrayList();
 
-        String dx = mBuildTools.getPath(BuildToolInfo.PathId.DX);
+        String dx = buildToolInfo.getPath(BuildToolInfo.PathId.DX);
         if (dx == null || !new File(dx).isFile()) {
             throw new IllegalStateException("dx is missing");
         }
@@ -1167,7 +1493,7 @@ public class AndroidBuilder {
 
         command.add("--dex");
 
-        if (mVerboseExec) {
+        if (verbose) {
             command.add("--verbose");
         }
 
@@ -1180,7 +1506,7 @@ public class AndroidBuilder {
 
         command.add(inputFile.getAbsolutePath());
 
-        mCmdLineRunner.runCmdLine(command, null);
+        commandLineRunner.runCmdLine(command, null);
     }
 
     /**

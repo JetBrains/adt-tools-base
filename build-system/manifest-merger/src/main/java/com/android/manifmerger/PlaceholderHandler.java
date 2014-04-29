@@ -22,14 +22,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Replaces all placeholders of the form @{name} with a tool invocation provided value
+ * Replaces all placeholders of the form ${name} with a tool invocation provided value
  */
 public class PlaceholderHandler {
 
-    // regular expression to recognize placeholders like @{name}, potentially surrounded by a
+    // regular expression to recognize placeholders like ${name}, potentially surrounded by a
     // prefix and suffix string. this will split in 3 groups, the prefix, the placeholder name, and
     // the suffix.
-    private final Pattern mPattern = Pattern.compile("([^@]*)@\\{([^\\}]*)\\}(.*)");
+    private final Pattern mPattern = Pattern.compile("([^\\$]*)\\$\\{([^\\}]*)\\}(.*)");
 
     /**
      * Interface to provide a value for a placeholder key.
@@ -72,22 +72,23 @@ public class PlaceholderHandler {
             if (matcher.matches()) {
                 String placeholderValue = valueProvider.getValue(matcher.group(2));
                 if (placeholderValue == null) {
-                    mergingReportBuilder.addError(
+                    xmlAttribute.addMessage(mergingReportBuilder, MergingReport.Record.Severity.ERROR,
                             String.format(
                                     "Attribute %1$s at %2$s requires a placeholder substitution"
                                             + " but no value for <%3$s> is provided.",
                                     xmlAttribute.getId(),
                                     xmlAttribute.printPosition(),
-                                    matcher.group(2)));
+                                    matcher.group(2)
+                            ));
                 } else {
-                    String attrValue = matcher.group(1) + placeholderValue + matcher.group(3);
-                    xmlAttribute.getXml().setValue(attrValue);
-
                     // record the attribute set
                     mergingReportBuilder.getActionRecorder().recordAttributeAction(
                             xmlAttribute,
-                            ActionRecorder.ActionType.INJECTED,
+                            Actions.ActionType.INJECTED,
                             null /* attributeOperationType */);
+
+                    String attrValue = matcher.group(1) + placeholderValue + matcher.group(3);
+                    xmlAttribute.getXml().setValue(attrValue);
                 }
             }
         }

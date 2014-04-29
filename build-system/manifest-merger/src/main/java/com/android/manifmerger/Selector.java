@@ -44,4 +44,16 @@ public class Selector {
     boolean appliesTo(XmlElement element) {
        return mPackageName.equals(element.getDocument().getPackageName());
     }
+
+    /**
+     * Returns true if the passed resolver can resolve this selector, false otherwise.
+     */
+    boolean isResolvable(KeyResolver<String> resolver) {
+        return resolver.resolve(mPackageName) != null;
+    }
+
+    @Override
+    public String toString() {
+        return mPackageName;
+    }
 }

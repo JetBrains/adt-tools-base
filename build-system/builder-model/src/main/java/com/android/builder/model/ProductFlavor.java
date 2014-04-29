@@ -117,7 +117,7 @@ public interface ProductFlavor extends BaseConfig {
     String getTestPackageName();
 
     /**
-     * Returns the test package name. This is only the value set on this product flavor.
+     * Returns the test instrumentation runner. This is only the value set on this product flavor.
      * TODO: make test instrumentation runner available through the model.
      *
      * @return the test package name.

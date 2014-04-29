@@ -194,7 +194,7 @@ public final class EmulatorConsole {
         public int latency = -1;
     }
 
-    private int mPort;
+    private int mPort = -1;
 
     private SocketChannel mSocketChannel;
 
@@ -203,6 +203,9 @@ public final class EmulatorConsole {
     /**
      * Returns an {@link EmulatorConsole} object for the given {@link Device}. This can
      * be an already existing console, or a new one if it hadn't been created yet.
+     * Note: emulator consoles don't automatically close when an emulator exists. It is the
+     * responsibility of higher level code to explicitly call {@link #close()} when the emulator
+     * corresponding to a open console is killed.
      * @param d The device that the console links to.
      * @return an <code>EmulatorConsole</code> object or <code>null</code> if the connection failed.
      */
@@ -279,7 +282,6 @@ public final class EmulatorConsole {
     }
 
     private EmulatorConsole(int port) {
-        super();
         mPort = port;
     }
 
@@ -327,12 +329,27 @@ public final class EmulatorConsole {
      */
     public synchronized void kill() {
         if (sendCommand(COMMAND_KILL)) {
-            removeConsole(mPort);
-            try {
+            close();
+        }
+    }
+
+    /**
+     * Closes this instance of the emulator console.
+     */
+    public synchronized void close() {
+        if (mPort == -1) {
+            return;
+        }
+
+        removeConsole(mPort);
+        try {
+            if (mSocketChannel != null) {
                 mSocketChannel.close();
-            } catch (IOException e) {
-                Log.w(LOG_TAG, "Failed to close EmulatorConsole channel");
             }
+            mSocketChannel = null;
+            mPort = -1;
+        } catch (IOException e) {
+            Log.w(LOG_TAG, "Failed to close EmulatorConsole channel");
         }
     }
 

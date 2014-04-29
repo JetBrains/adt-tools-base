@@ -32,7 +32,7 @@ public class ValueResourceParser2Test extends BaseTestCase {
     public void testParsedResourcesByCount() throws Exception {
         List<ResourceItem> resources = getParsedResources();
 
-        assertEquals(22, resources.size());
+        assertEquals(23, resources.size());
     }
 
     public void testParsedResourcesByName() throws Exception {
