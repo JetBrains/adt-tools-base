@@ -16,6 +16,7 @@
 
 package com.android.builder.internal.compiler;
 
+import com.android.annotations.NonNull;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.google.common.collect.Sets;
 
@@ -28,13 +29,16 @@ import java.util.Set;
  */
 public class LeafFolderGatherer implements SourceSearcher.SourceFileProcessor {
 
+    @NonNull
     private final Set<File> mFolders = Sets.newHashSet();
 
     @Override
-    public void processFile(File sourceFile) throws IOException, InterruptedException, LoggedErrorException {
+    public void processFile(@NonNull File sourceFolder, @NonNull File sourceFile)
+            throws IOException, InterruptedException, LoggedErrorException {
         mFolders.add(sourceFile.getParentFile());
     }
 
+    @NonNull
     public Set<File> getFolders() {
         return mFolders;
     }

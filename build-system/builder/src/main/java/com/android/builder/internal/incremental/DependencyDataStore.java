@@ -40,8 +40,8 @@ import java.util.Map;
  * The format is binary and follows the following format:
  *
  * (Header Tag)(version number: int)
- * (Start Tag)(Main File)[(2ndary Tag)(2ndary File)...][(Output tag)(output file)...]
- * (Start Tag)(Main File)[(2ndary Tag)(2ndary File)...][(Output tag)(output file)...]
+ * (Start Tag)(Main File)[(2ndary Tag)(2ndary File)...][(Output tag)(output file)...][(2ndary Output tag)(output file)...]
+ * (Start Tag)(Main File)[(2ndary Tag)(2ndary File)...][(Output tag)(output file)...][(2ndary Output tag)(output file)...]
  * ...
  *
  * All files are written as (size in int)(byte array, using UTF8 encoding).
@@ -52,6 +52,7 @@ public class DependencyDataStore {
     private static final byte TAG_START = 0x70;
     private static final byte TAG_2NDARY_FILE = 0x71;
     private static final byte TAG_OUTPUT = 0x73;
+    private static final byte TAG_2NDARY_OUTPUT = 0x74;
     private static final byte TAG_END = 0x77;
 
     private static final int CURRENT_VERSION = 1;
@@ -127,6 +128,12 @@ public class DependencyDataStore {
                     fos.write(TAG_OUTPUT);
                     writePath(fos, path);
                 }
+
+                for (String path : data.getSecondaryOutputFiles()) {
+                    fos.write(TAG_2NDARY_OUTPUT);
+                    writePath(fos, path);
+                }
+
             }
         } finally {
             Closeables.closeQuietly(fos);
@@ -188,6 +195,9 @@ public class DependencyDataStore {
                         break;
                     case TAG_OUTPUT:
                         currentData.addOutputFile(path);
+                        break;
+                    case TAG_2NDARY_OUTPUT:
+                        currentData.addSecondaryOutputFile(path);
                         break;
                 }
 
