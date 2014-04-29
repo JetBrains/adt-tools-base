@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.tasks
 import com.android.build.gradle.BasePlugin
-import com.android.build.gradle.internal.SdkHandler
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 /**
@@ -28,11 +27,6 @@ class PrepareSdkTask extends DefaultTask {
 
     @TaskAction
     void prepareSdk() {
-
-        SdkHandler sdkHandler = plugin.getSdkHandler()
-
-        sdkHandler.initTarget(
-                plugin.extension.getCompileSdkVersion(),
-                plugin.extension.buildToolsRevision)
+        plugin.ensureTargetSetup()
     }
 }

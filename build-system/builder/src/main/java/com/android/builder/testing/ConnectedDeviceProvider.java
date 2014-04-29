@@ -17,15 +17,14 @@
 package com.android.builder.testing;
 
 import com.android.annotations.NonNull;
-import com.android.builder.sdk.SdkLoader;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
-import com.android.utils.ILogger;
 import com.google.common.collect.Lists;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -36,17 +35,13 @@ public class ConnectedDeviceProvider extends DeviceProvider {
 
 
     @NonNull
-    private final SdkLoader sdkLoader;
-
-    @NonNull
-    private final ILogger logger;
+    private final File adbLocation;
 
     @NonNull
     private final List<ConnectedDevice> localDevices = Lists.newArrayList();
 
-    public ConnectedDeviceProvider(@NonNull SdkLoader sdkLoader, @NonNull ILogger logger) {
-        this.sdkLoader = sdkLoader;
-        this.logger = logger;
+    public ConnectedDeviceProvider(@NonNull File adbLocation) {
+        this.adbLocation = adbLocation;
     }
 
     @Override
@@ -67,7 +62,7 @@ public class ConnectedDeviceProvider extends DeviceProvider {
             AndroidDebugBridge.initIfNeeded(false /*clientSupport*/);
 
             AndroidDebugBridge bridge = AndroidDebugBridge.createBridge(
-                    sdkLoader.getSdkInfo(logger).getAdb().getAbsolutePath(), false /*forceNewBridge*/);
+                    adbLocation.getAbsolutePath(), false /*forceNewBridge*/);
 
             long timeOut = 30000; // 30 sec
             int sleepTime = 1000;
