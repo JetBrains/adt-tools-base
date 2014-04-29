@@ -16,37 +16,39 @@
 
 package com.android.tools.lint.checks;
 
-import static com.android.SdkConstants.CONSTRUCTOR_NAME;
+import static com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import static com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
-
-import java.io.File;
+import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.List;
+
+import lombok.ast.AstVisitor;
+import lombok.ast.ClassDeclaration;
+import lombok.ast.ConstructorDeclaration;
+import lombok.ast.ForwardingAstVisitor;
+import lombok.ast.Node;
+import lombok.ast.NormalTypeBody;
+import lombok.ast.TypeMember;
 
 /**
  * Looks for custom views that do not define the view constructors needed by UI builders
  */
-public class ViewConstructorDetector extends Detector implements Detector.ClassScanner {
-    private static final String SIG1 =
-            "(Landroid/content/Context;)V"; //$NON-NLS-1$
-    private static final String SIG2 =
-            "(Landroid/content/Context;Landroid/util/AttributeSet;)V"; //$NON-NLS-1$
-    private static final String SIG3 =
-            "(Landroid/content/Context;Landroid/util/AttributeSet;I)V"; //$NON-NLS-1$
-
+public class ViewConstructorDetector extends Detector implements Detector.JavaScanner {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "ViewConstructor", //$NON-NLS-1$
@@ -69,7 +71,7 @@ public class ViewConstructorDetector extends Detector implements Detector.ClassS
             Severity.WARNING,
             new Implementation(
                     ViewConstructorDetector.class,
-                    Scope.CLASS_FILE_SCOPE));
+                    Scope.JAVA_FILE_SCOPE));
 
     /** Constructs a new {@link ViewConstructorDetector} check */
     public ViewConstructorDetector() {
@@ -81,71 +83,100 @@ public class ViewConstructorDetector extends Detector implements Detector.ClassS
         return Speed.FAST;
     }
 
-    // ---- Implements ClassScanner ----
+    // ---- Implements JavaScanner ----
 
+    @Nullable
     @Override
-    public void checkClass(@NonNull ClassContext context, @NonNull ClassNode classNode) {
-        if (classNode.name.indexOf('$') != -1
-            && (classNode.access & Opcodes.ACC_STATIC) == 0) {
-            // Ignore inner classes that aren't static: we can't create these
-            // anyway since we'd need the outer instance
-            return;
-        }
-
-        // Ignore abstract classes
-        if ((classNode.access & Opcodes.ACC_ABSTRACT) != 0) {
-            return;
-        }
-
-        if (isViewClass(context, classNode)) {
-            checkConstructors(context, classNode);
-        }
+    public List<Class<? extends Node>> getApplicableNodeTypes() {
+        return Collections.<Class<? extends Node>>singletonList(ClassDeclaration.class);
     }
 
-    private static boolean isViewClass(ClassContext context, ClassNode node) {
-        String superName = node.superName;
-        while (superName != null) {
-            if (superName.equals("android/view/View")                //$NON-NLS-1$
-                    || superName.equals("android/view/ViewGroup")    //$NON-NLS-1$
-                    || superName.startsWith("android/widget/")       //$NON-NLS-1$
-                    && !((superName.endsWith("Adapter")              //$NON-NLS-1$
-                            || superName.endsWith("Controller")      //$NON-NLS-1$
-                            || superName.endsWith("Service")         //$NON-NLS-1$
-                            || superName.endsWith("Provider")        //$NON-NLS-1$
-                            || superName.endsWith("Filter")))) {     //$NON-NLS-1$
+    @Nullable
+    @Override
+    public AstVisitor createJavaVisitor(@NonNull final JavaContext context) {
+        return new ViewConstructorVisitor(context);
+    }
+
+    private static boolean isXmlConstructor(ResolvedMethod method) {
+        // Accept
+        //   android.content.Context
+        //   android.content.Context,android.util.AttributeSet
+        //   android.content.Context,android.util.AttributeSet,int
+        int argumentCount = method.getArgumentCount();
+        if (argumentCount == 0 || argumentCount > 3) {
+            return false;
+        }
+        if (!method.getArgumentType(0).matchesName("android.content.Context")) {
+            return false;
+        }
+        if (argumentCount == 1) {
+            return true;
+        }
+        if (!method.getArgumentType(1).matchesName("android.util.AttributeSet")) {
+            return false;
+        }
+        //noinspection SimplifiableIfStatement
+        if (argumentCount == 2) {
+            return true;
+        }
+        return method.getArgumentType(2).matchesName("int");
+    }
+
+    private static class ViewConstructorVisitor extends ForwardingAstVisitor {
+
+        private final JavaContext mContext;
+
+        public ViewConstructorVisitor(JavaContext context) {
+            mContext = context;
+        }
+
+        @Override
+        public boolean visitClassDeclaration(ClassDeclaration node) {
+            // Only applies to concrete classes
+            int flags = node.astModifiers().getEffectiveModifierFlags();
+            // Ignore abstract classes
+            if ((flags & Modifier.ABSTRACT) != 0) {
                 return true;
             }
 
-            superName = context.getDriver().getSuperClass(superName);
-        }
+            if (node.getParent() instanceof NormalTypeBody
+                    && ((flags & Modifier.STATIC) == 0)) {
+                // Ignore inner classes that aren't static: we can't create these
+                // anyway since we'd need the outer instance
+                return true;
+            }
 
-        return false;
-    }
+            ResolvedNode resolved = mContext.resolve(node);
+            if (!(resolved instanceof ResolvedClass)) {
+                return true;
+            }
 
-    private static void checkConstructors(ClassContext context, ClassNode classNode) {
-        // Look through constructors
-        @SuppressWarnings("rawtypes")
-        List methods = classNode.methods;
-        for (Object methodObject : methods) {
-            MethodNode method = (MethodNode) methodObject;
-            if (method.name.equals(CONSTRUCTOR_NAME)) {
-                String desc = method.desc;
-                if (desc.equals(SIG1) || desc.equals(SIG2) || desc.equals(SIG3)) {
-                    return;
+            ResolvedClass cls = (ResolvedClass) resolved;
+            if (!cls.isSubclassOf(SdkConstants.CLASS_VIEW, false)) {
+                return true;
+            }
+
+            boolean found = false;
+            for (ResolvedMethod constructor : cls.getConstructors()) {
+                if (isXmlConstructor(constructor)) {
+                    found = true;
+                    break;
                 }
             }
+
+            if (!found) {
+                String message = String.format(
+                        "Custom view %1$s is missing constructor used by tools: "
+                                + "(Context) or (Context,AttributeSet) "
+                                + "or (Context,AttributeSet,int)",
+                        node.astName().astValue()
+                );
+                Location location = mContext.getLocation(node.astName());
+                mContext.report(ISSUE, node, location,
+                        message, null /*data*/);
+            }
+
+            return true;
         }
-
-        // If we get this far, none of the expected constructors were found.
-
-        // Use location of one of the constructors?
-        String message = String.format(
-                "Custom view %1$s is missing constructor used by tools: " +
-                "(Context) or (Context,AttributeSet) or (Context,AttributeSet,int)",
-                classNode.name);
-        File sourceFile = context.getSourceFile();
-        Location location = Location.create(sourceFile != null
-                ? sourceFile : context.file);
-        context.report(ISSUE, location, message, null /*data*/);
     }
 }

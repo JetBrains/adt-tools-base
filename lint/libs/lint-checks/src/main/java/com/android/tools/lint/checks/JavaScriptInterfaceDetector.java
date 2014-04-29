@@ -47,7 +47,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Looks for add
+ * Looks for addJavascriptInterface calls on interfaces have been properly annotated
+ * with {@code @JavaScriptInterface}
  */
 public class JavaScriptInterfaceDetector extends Detector implements Detector.ClassScanner {
     /** The main issue discovered by this detector */

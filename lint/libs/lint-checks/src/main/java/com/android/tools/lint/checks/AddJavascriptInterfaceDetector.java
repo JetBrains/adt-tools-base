@@ -17,13 +17,20 @@
 package com.android.tools.lint.checks;
 
 
+import static com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_OBJECT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
@@ -35,10 +42,13 @@ import org.objectweb.asm.tree.MethodNode;
 import java.util.Collections;
 import java.util.List;
 
+import lombok.ast.AstVisitor;
+import lombok.ast.MethodInvocation;
+
 /**
  * Ensures that addJavascriptInterface is not called for API levels below 17.
  */
-public class AddJavascriptInterfaceDetector extends Detector implements Detector.ClassScanner {
+public class AddJavascriptInterfaceDetector extends Detector implements Detector.JavaScanner {
     public static final Issue ISSUE = Issue.create(
             "AddJavascriptInterface", //$NON-NLS-1$
             "addJavascriptInterface Called",
@@ -52,11 +62,12 @@ public class AddJavascriptInterfaceDetector extends Detector implements Detector
             Severity.WARNING,
             new Implementation(
                     AddJavascriptInterfaceDetector.class,
-                    Scope.CLASS_FILE_SCOPE));
+                    Scope.JAVA_FILE_SCOPE)).
+            addMoreInfo(
+                    "https://labs.mwrinfosecurity.com/blog/2013/09/24/webview-addjavascriptinterface-remote-code-execution/");
 
-    private static final String WEB_VIEW = "android/webkit/WebView"; //$NON-NLS-1$
+    private static final String WEB_VIEW = "android.webkit.WebView"; //$NON-NLS-1$
     private static final String ADD_JAVASCRIPT_INTERFACE = "addJavascriptInterface"; //$NON-NLS-1$
-    private static final String ADD_JAVASCRIPT_INTERFACE_SIG = "(Ljava/lang/Object;Ljava/lang/String;)V"; //$NON-NLS-1$
 
     @NonNull
     @Override
@@ -64,34 +75,38 @@ public class AddJavascriptInterfaceDetector extends Detector implements Detector
         return Speed.FAST;
     }
 
-    // ---- Implements ClassScanner ----
+    // ---- Implements JavaScanner ----
+
     @Nullable
     @Override
-    public List<String> getApplicableCallNames() {
+    public List<String> getApplicableMethodNames() {
         return Collections.singletonList(ADD_JAVASCRIPT_INTERFACE);
     }
 
     @Override
-    public void checkCall(@NonNull ClassContext context, @NonNull ClassNode classNode,
-            @NonNull MethodNode method, @NonNull MethodInsnNode call) {
+    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
+            @NonNull MethodInvocation node) {
         // Ignore the issue if we never build for any API less than 17.
         if (context.getMainProject().getMinSdk() >= 17) {
             return;
         }
 
         // Ignore if the method doesn't fit our description.
-        if (!call.desc.equals(ADD_JAVASCRIPT_INTERFACE_SIG)) {
+        ResolvedNode resolved = context.resolve(node);
+        if (!(resolved instanceof ResolvedMethod)) {
+            return;
+        }
+        ResolvedMethod method = (ResolvedMethod) resolved;
+        if (!method.getContainingClass().isSubclassOf(WEB_VIEW, false)) {
+            return;
+        }
+        if (method.getArgumentCount() != 2
+                || !method.getArgumentType(0).matchesName(TYPE_OBJECT)
+                || !method.getArgumentType(1).matchesName(TYPE_STRING)) {
             return;
         }
 
-        String ownerClassName = call.owner;
-        ClassNode ownerClass = context.getDriver().findClass(context, ownerClassName, 0);
-
-        if (ownerClassName.equals(WEB_VIEW)
-                || ((ownerClass != null)
-                && context.getDriver().isSubclassOf(ownerClass, WEB_VIEW))) {
-            String message = "WebView.addJavascriptInterface should not be called";
-            context.report(ISSUE, context.getLocation(call), message, null);
-        }
+        String message = "WebView.addJavascriptInterface should not be called";
+        context.report(ISSUE, node, context.getLocation(node.astName()), message, null);
     }
 }

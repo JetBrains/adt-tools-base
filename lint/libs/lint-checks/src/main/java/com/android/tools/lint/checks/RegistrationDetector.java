@@ -54,6 +54,8 @@ import java.util.Map.Entry;
 /**
  * Checks for missing manifest registrations for activities, services etc
  * and also makes sure that they are registered with the correct tag
+ * <p>
+ * TODO: Rewrite as Java visitor!
  */
 public class RegistrationDetector extends LayoutDetector implements ClassScanner {
     /** Unregistered activities and services */

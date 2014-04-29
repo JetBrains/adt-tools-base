@@ -41,6 +41,7 @@ import lombok.ast.TypeReferencePart;
  */
 @Beta
 public abstract class JavaParser {
+    public static final String TYPE_OBJECT = "java.lang.Object";        //$NON-NLS-1$
     public static final String TYPE_STRING = "java.lang.String";        //$NON-NLS-1$
     public static final String TYPE_INT = "int";                        //$NON-NLS-1$
     public static final String TYPE_LONG = "long";                      //$NON-NLS-1$
@@ -203,6 +204,8 @@ public abstract class JavaParser {
         /** Returns the signature of the resolved node */
         public abstract String getSignature();
 
+        public abstract int getModifiers();
+
         @Override
         public String toString() {
             return getSignature();
@@ -238,6 +241,9 @@ public abstract class JavaParser {
          * @return true if this class extends the given class
          */
         public abstract boolean isSubclassOf(@NonNull String name, boolean strict);
+
+        @NonNull
+        public abstract Iterable<ResolvedMethod> getConstructors();
 
         @NonNull
         public abstract Iterable<ResolvedMethod> getMethods(@NonNull String name);
@@ -284,7 +290,7 @@ public abstract class JavaParser {
         public abstract TypeDescriptor getType();
 
         @NonNull
-        public abstract TypeDescriptor getContainingClass();
+        public abstract ResolvedClass getContainingClass();
     }
 
     /** A local variable or parameter declaration */
