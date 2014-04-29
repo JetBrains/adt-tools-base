@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 package com.android.build.gradle
-
 import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
@@ -87,7 +86,7 @@ public abstract class BaseExtension {
     private final List<DeviceProvider> deviceProviderList = Lists.newArrayList();
     private final List<TestServer> testServerList = Lists.newArrayList();
 
-    protected final BasePlugin plugin
+    private final BasePlugin plugin
 
     /**
      * The source sets container.
@@ -162,23 +161,20 @@ public abstract class BaseExtension {
         }
     }
 
-    void compileSdkVersion(int apiLevel) {
-        plugin.checkTasksAlreadyCreated()
-        this.target = "android-" + apiLevel
-    }
-
-    void setCompileSdkVersion(int apiLevel) {
-        plugin.checkTasksAlreadyCreated()
-        compileSdkVersion(apiLevel)
-    }
-
     void compileSdkVersion(String target) {
         plugin.checkTasksAlreadyCreated()
         this.target = target
     }
 
+    void compileSdkVersion(int apiLevel) {
+        compileSdkVersion("android-" + apiLevel)
+    }
+
+    void setCompileSdkVersion(int apiLevel) {
+        compileSdkVersion(apiLevel)
+    }
+
     void setCompileSdkVersion(String target) {
-        plugin.checkTasksAlreadyCreated()
         compileSdkVersion(target)
     }
 
@@ -192,7 +188,6 @@ public abstract class BaseExtension {
     }
 
     void setBuildToolsVersion(String version) {
-        plugin.checkTasksAlreadyCreated()
         buildToolsVersion(version)
     }
 
@@ -360,8 +355,16 @@ public abstract class BaseExtension {
         return buildToolsRevision
     }
 
+    public File getSdkDirectory() {
+        return plugin.getSdkFolder()
+    }
+
+    public List<String> getBootClasspath() {
+        return plugin.getBootClasspath()
+    }
+
     public File getAdbExe() {
-        return plugin.sdkParser.adb
+        return plugin.getSdkInfo().adb
     }
 
     public ILogger getLogger() {
@@ -369,7 +372,7 @@ public abstract class BaseExtension {
     }
 
     public File getDefaultProguardFile(String name) {
-        return new File(plugin.sdkDirectory,
+        return new File(sdkDirectory,
                 SdkConstants.FD_TOOLS + File.separatorChar
                         + SdkConstants.FD_PROGUARD + File.separatorChar
                         + name);

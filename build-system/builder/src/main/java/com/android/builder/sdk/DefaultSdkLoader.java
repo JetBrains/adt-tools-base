@@ -84,7 +84,7 @@ public class DefaultSdkLoader implements SdkLoader {
 
         IAndroidTarget target = mSdkManager.getTargetFromHashString(targetHash);
         if (target == null) {
-            throw new IllegalStateException("failed to find target " + targetHash);
+            throw new IllegalStateException("failed to find target " + targetHash + " : " + mSdkLocation);
         }
 
         BuildToolInfo buildToolInfo = mSdkManager.getBuildTool(buildToolRevision);

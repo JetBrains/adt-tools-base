@@ -83,7 +83,7 @@ public class LintGradleClient extends LintCliClient {
 
     @Override
     public File getSdkHome() {
-        File sdkHome = mPlugin.getSdkDirectory();
+        File sdkHome = mPlugin.getSdkFolder();
         if (sdkHome != null) {
             return sdkHome;
         }
