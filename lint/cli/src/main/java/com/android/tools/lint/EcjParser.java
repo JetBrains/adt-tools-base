@@ -77,6 +77,7 @@ import org.eclipse.jdt.internal.compiler.lookup.ProblemFieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ProblemMethodBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
+import org.eclipse.jdt.internal.compiler.lookup.TypeConstants;
 import org.eclipse.jdt.internal.compiler.parser.Parser;
 import org.eclipse.jdt.internal.compiler.problem.AbortCompilation;
 import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory;
@@ -729,6 +730,11 @@ public class EcjParser extends JavaParser {
         }
 
         @Override
+        public int getModifiers() {
+            return mBinding.getAccessFlags();
+        }
+
+        @Override
         public String getSignature() {
             return mBinding.toString();
         }
@@ -798,6 +804,27 @@ public class EcjParser extends JavaParser {
 
         @Override
         @NonNull
+        public Iterable<ResolvedMethod> getConstructors() {
+            if (mBinding instanceof ReferenceBinding) {
+                ReferenceBinding cls = (ReferenceBinding) mBinding;
+                MethodBinding[] methods = cls.getMethods(TypeConstants.INIT);
+                if (methods != null) {
+                    int count = methods.length;
+                    List<ResolvedMethod> result = Lists.newArrayListWithExpectedSize(count);
+                    for (MethodBinding method : methods) {
+                        if (method.isConstructor()) {
+                            result.add(new EcjResolvedMethod(method));
+                        }
+                    }
+                    return result;
+                }
+            }
+
+            return Collections.emptyList();
+        }
+
+        @Override
+        @NonNull
         public Iterable<ResolvedMethod> getMethods(@NonNull String name) {
             if (mBinding instanceof ReferenceBinding) {
                 ReferenceBinding cls = (ReferenceBinding) mBinding;
@@ -806,7 +833,9 @@ public class EcjParser extends JavaParser {
                     int count = methods.length;
                     List<ResolvedMethod> result = Lists.newArrayListWithExpectedSize(count);
                     for (MethodBinding method : methods) {
-                        result.add(new EcjResolvedMethod(method));
+                        if (!method.isConstructor()) {
+                            result.add(new EcjResolvedMethod(method));
+                        }
                     }
                     return result;
                 }
@@ -831,6 +860,17 @@ public class EcjParser extends JavaParser {
             }
 
             return null;
+        }
+
+        @Override
+        public int getModifiers() {
+            if (mBinding instanceof ReferenceBinding) {
+                ReferenceBinding cls = (ReferenceBinding) mBinding;
+                // These constants from ClassFileConstants luckily agree with the Modifier
+                // constants in the low bits we care about (public, abstract, static, etc)
+                return cls.getAccessFlags();
+            }
+            return 0;
         }
 
         @Override
@@ -867,10 +907,13 @@ public class EcjParser extends JavaParser {
 
         @NonNull
         @Override
-        public TypeDescriptor getContainingClass() {
-            TypeDescriptor typeDescriptor = getTypeDescriptor(mBinding.declaringClass);
-            assert typeDescriptor != null; // because declaringClass is known not to be null
-            return typeDescriptor;
+        public ResolvedClass getContainingClass() {
+            return new EcjResolvedClass(mBinding.declaringClass);
+        }
+
+        @Override
+        public int getModifiers() {
+            return mBinding.getAccessFlags();
         }
 
         @Override
@@ -903,6 +946,11 @@ public class EcjParser extends JavaParser {
             TypeDescriptor typeDescriptor = getTypeDescriptor(mBinding.type);
             assert typeDescriptor != null; // because mBinding.type is known not to be null
             return typeDescriptor;
+        }
+
+        @Override
+        public int getModifiers() {
+            return mBinding.modifiers;
         }
 
         @Override
