@@ -28,6 +28,7 @@ import static com.android.SdkConstants.UTF_8;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.res2.AbstractResourceRepository;
@@ -958,5 +959,44 @@ public class LintUtils {
         }
 
         return false;
+    }
+
+    /**
+     * Whether we should attempt to look up the prefix from the model. Set to false
+     * if we encounter a model which is too old.
+     * <p>
+     * This is public such that code which for example syncs to a new gradle model
+     * can reset it.
+     */
+    public static boolean sTryPrefixLookup = true;
+
+    /** Looks up the resource prefix for the given Gradle project, if possible */
+    @Nullable
+    public static String computeResourcePrefix(@Nullable AndroidProject project) {
+        try {
+            if (sTryPrefixLookup && project != null) {
+                return project.getResourcePrefix();
+            }
+        } catch (Exception e) {
+            // This happens if we're talking to an older model than 0.10
+            // Ignore; fall through to normal handling and never try again.
+            //noinspection AssignmentToStaticFieldFromInstanceMethod
+            sTryPrefixLookup = false;
+        }
+
+        return null;
+    }
+
+    /** Computes a suggested name given a resource prefix and resource name */
+    public static String computeResourceName(@NonNull String prefix, @NonNull String name) {
+        if (prefix.isEmpty()) {
+            return name;
+        } else if (name.isEmpty()) {
+            return prefix;
+        } else if (prefix.endsWith("_")) {
+            return prefix + name;
+        } else {
+            return prefix + Character.toUpperCase(name.charAt(0)) + name.substring(1);
+        }
     }
 }
