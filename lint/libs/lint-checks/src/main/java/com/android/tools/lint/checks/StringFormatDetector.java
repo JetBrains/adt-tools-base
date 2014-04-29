@@ -1178,8 +1178,8 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
         JavaParser.ResolvedNode resolved = context.resolve(call);
         if (resolved instanceof JavaParser.ResolvedMethod) {
             JavaParser.ResolvedMethod resolvedMethod = (JavaParser.ResolvedMethod) resolved;
-            TypeDescriptor containingClass = resolvedMethod.getContainingClass();
-            return ANDROID_CONTENT_SHARED_PREFERENCES.equals(containingClass.getName());
+            JavaParser.ResolvedClass containingClass = resolvedMethod.getContainingClass();
+            return containingClass.isSubclassOf(ANDROID_CONTENT_SHARED_PREFERENCES, false);
         }
 
         return false; // not certain
