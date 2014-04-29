@@ -83,7 +83,7 @@ class NdkCompile extends NdkTask {
             return
         }
 
-        File ndkDirectory = getPlugin().getSdkHandler().ndkFolder
+        File ndkDirectory = getPlugin().ndkFolder
         if (ndkDirectory == null || !ndkDirectory.isDirectory()) {
             throw new GradleException(
                     "NDK not configured.\n" +

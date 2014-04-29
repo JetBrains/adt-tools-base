@@ -74,15 +74,11 @@ public class ModelBuilder implements ToolingModelBuilder {
             return null
         }
 
-        // need to parse the SDK now.
-        String targetHash = basePlugin.extension.getCompileSdkVersion()
-        basePlugin.getSdkHandler().initTarget(
-                targetHash,
-                basePlugin.extension.buildToolsRevision)
-
         signingConfigs = basePlugin.extension.signingConfigs
 
-        List<String> bootClasspath = basePlugin.androidBuilder.bootClasspath
+        // get the boot classpath. This will ensure the target is configured.
+        List<String> bootClasspath = basePlugin.bootClasspath
+
         List<File> frameworkSource = Collections.emptyList();
 
         // list of extra artifacts
@@ -100,7 +96,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         DefaultAndroidProject androidProject = new DefaultAndroidProject(
                 getModelVersion(),
                 project.name,
-                targetHash,
+                basePlugin.getAndroidBuilder().getTarget().hashString(),
                 bootClasspath,
                 frameworkSource,
                 cloneSigningConfigs(signingConfigs),

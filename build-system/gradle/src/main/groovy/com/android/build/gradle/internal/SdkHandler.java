@@ -21,11 +21,11 @@ import static com.android.build.gradle.BasePlugin.TEST_SDK_DIR;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.BasePlugin;
+import com.android.builder.AndroidBuilder;
 import com.android.builder.sdk.DefaultSdkLoader;
-import com.android.builder.sdk.SdkLoader;
 import com.android.builder.sdk.PlatformLoader;
 import com.android.builder.sdk.SdkInfo;
+import com.android.builder.sdk.SdkLoader;
 import com.android.builder.sdk.TargetInfo;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
@@ -48,8 +48,6 @@ import java.util.Properties;
 public class SdkHandler {
 
     @NonNull
-    private final BasePlugin plugin;
-    @NonNull
     private final ILogger logger;
 
     private SdkLoader sdkLoader;
@@ -58,14 +56,20 @@ public class SdkHandler {
     private boolean isRegularSdk = true;
 
     public SdkHandler(@NonNull Project project,
-            @NonNull BasePlugin plugin,
-            @NonNull ILogger logger) {
-        this.plugin = plugin;
+                      @NonNull ILogger logger) {
         this.logger = logger;
         findLocation(project);
     }
 
-    public void initTarget(String targetHash, FullRevision buildToolRevision) {
+    public SdkInfo getSdkInfo() {
+        SdkLoader sdkLoader = getSdkLoader();
+        return sdkLoader.getSdkInfo(logger);
+    }
+
+    public void initTarget(
+            String targetHash,
+            FullRevision buildToolRevision,
+            @NonNull AndroidBuilder androidBuilder) {
         if (targetHash == null) {
             throw new IllegalArgumentException("android.compileSdkVersion is missing!");
         }
@@ -79,7 +83,7 @@ public class SdkHandler {
         SdkInfo sdkInfo = sdkLoader.getSdkInfo(logger);
         TargetInfo targetInfo = sdkLoader.getTargetInfo(targetHash, buildToolRevision, logger);
 
-        plugin.getAndroidBuilder().setTargetInfo(sdkInfo, targetInfo);
+        androidBuilder.setTargetInfo(sdkInfo, targetInfo);
     }
 
     public synchronized SdkLoader getSdkLoader() {
