@@ -109,6 +109,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 basePlugin.extension.compileOptions,
                 lintOptions,
                 project.getBuildDir(),
+                basePlugin.extension.resourcePrefix,
                 libPlugin != null)
                     .setDefaultConfig(ProductFlavorContainerImpl.createPFC(
                         basePlugin.defaultConfigData,

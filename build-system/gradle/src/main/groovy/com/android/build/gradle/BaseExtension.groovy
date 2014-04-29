@@ -72,6 +72,8 @@ public abstract class BaseExtension {
     final NamedDomainObjectContainer<DefaultBuildType> buildTypes
     final NamedDomainObjectContainer<SigningConfig> signingConfigs
 
+    String resourcePrefix
+
     List<String> flavorDimensionList
     String testBuildType = "debug"
     // for now, use the old manifest merger.
@@ -289,6 +291,10 @@ public abstract class BaseExtension {
 
     public Closure<Void> getVariantFilter() {
         return variantFilter;
+    }
+
+    void resourcePrefix(String prefix) {
+        resourcePrefix = prefix
     }
 
     @NonNull
