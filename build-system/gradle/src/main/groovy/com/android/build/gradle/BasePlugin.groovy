@@ -21,6 +21,7 @@ import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.BadPluginException
 import com.android.build.gradle.internal.ConfigurationDependencies
+import com.android.build.gradle.internal.LibraryCache
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.SdkHandler
@@ -331,6 +332,7 @@ public abstract class BasePlugin {
             PreDexCache.getCache().clear(
                     project.rootProject.file("${project.rootProject.buildDir}/dex-cache/cache.xml"),
                     logger)
+            LibraryCache.getCache().unload()
         }
 
         project.gradle.taskGraph.whenReady { taskGraph ->
