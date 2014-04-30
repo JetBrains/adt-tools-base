@@ -75,8 +75,6 @@ public abstract class BaseExtension {
 
     List<String> flavorDimensionList
     String testBuildType = "debug"
-    // for now, use the old manifest merger.
-    boolean useOldManifestMerger = true;
 
     private Closure<Void> variantFilter
 
@@ -176,10 +174,6 @@ public abstract class BaseExtension {
 
     void setCompileSdkVersion(String target) {
         compileSdkVersion(target)
-    }
-
-    void useOldManifestMerger(boolean flag) {
-        this.useOldManifestMerger = flag;
     }
 
     void buildToolsVersion(String version) {
@@ -381,6 +375,13 @@ public abstract class BaseExtension {
     // ---------------
     // TEMP for compatibility
     // STOPSHIP Remove in 1.0
+
+    // for now, use the old manifest merger.
+    boolean useOldManifestMerger = true;
+
+    void useOldManifestMerger(boolean flag) {
+        this.useOldManifestMerger = flag;
+    }
 
     private boolean enforceUniquePackageName = true
 
