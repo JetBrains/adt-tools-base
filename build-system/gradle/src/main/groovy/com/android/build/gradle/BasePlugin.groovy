@@ -21,7 +21,6 @@ import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.BadPluginException
 import com.android.build.gradle.internal.ConfigurationDependencies
-import com.android.build.gradle.internal.LibraryCache
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.SdkHandler
@@ -43,7 +42,6 @@ import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
 import com.android.build.gradle.internal.dsl.SigningConfigDsl
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.model.ArtifactMetaDataImpl
-import com.android.build.gradle.internal.model.DependenciesImpl
 import com.android.build.gradle.internal.model.JavaArtifactImpl
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.tasks.AndroidReportTask
@@ -142,6 +140,7 @@ import org.gradle.internal.reflect.Instantiator
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.tooling.BuildException
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
+import org.gradle.util.GUtil
 import proguard.gradle.ProGuardTask
 
 import java.util.jar.Attributes
@@ -2109,24 +2108,66 @@ public abstract class BasePlugin {
             if (!list.isEmpty()) {
                 // get the first item only
                 LibraryDependencyImpl androidDependency = (LibraryDependencyImpl) list.get(0)
+                Task task = handleLibrary(project, androidDependency)
 
-                PrepareLibraryTask task = LibraryCache.getCache().handleLibrary(project, androidDependency)
-                prepareTaskMap.put(androidDependency, task)
+                // Use the reverse map to find all the configurations that included this android
+                // library so that we can make sure they are built.
+                // TODO fix, this is not optimum as we bring in more dependencies than we should.
+                List<VariantDependencies> configDepList = reverseMap.get(androidDependency)
+                if (configDepList != null && !configDepList.isEmpty()) {
+                    for (VariantDependencies configDependencies: configDepList) {
+                        task.dependsOn configDependencies.compileConfiguration.buildDependencies
+                    }
+                }
 
                 // check if this library is created by a parent (this is based on the
                 // output file.
                 // TODO Fix this as it's fragile
-                Project parentProject = DependenciesImpl.getProject(androidDependency.getBundle(), projects)
+                /*
+                This is a somewhat better way but it doesn't work in some project with
+                weird setups...
+                Project parentProject = DependenciesImpl.getProject(library.getBundle(), projects)
                 if (parentProject != null) {
-                    String configName = androidDependency.getProjectVariant();
+                    String configName = library.getProjectVariant();
                     if (configName == null) {
                         configName = "default"
                     }
 
-                    task.dependsOn parentProject.getPath() + ":assemble${configName.capitalize()}"
+                    prepareLibraryTask.dependsOn parentProject.getPath() + ":assemble${configName.capitalize()}"
                 }
+    */
             }
         }
+    }
+
+    /**
+     * Handles the library and returns a task to "prepare" the library (ie unarchive it). The task
+     * will be reused for all projects using the same library.
+     *
+     * @param project the project
+     * @param library the library.
+     * @return the prepare task.
+     */
+    protected PrepareLibraryTask handleLibrary(
+            @NonNull Project project,
+            @NonNull LibraryDependencyImpl library) {
+        String bundleName = GUtil
+                .toCamelCase(library.getName().replaceAll("\\:", " "));
+
+        PrepareLibraryTask prepareLibraryTask = prepareTaskMap.get(library);
+
+        if (prepareLibraryTask == null) {
+            prepareLibraryTask = project.tasks.create(
+                    "prepare" + bundleName + "Library", PrepareLibraryTask.class);
+
+            prepareLibraryTask.setDescription("Prepare " + library.getName());
+            prepareLibraryTask.bundle = library.getBundle();
+            prepareLibraryTask.explodedDir = library.getBundleFolder();
+
+            prepareTaskMap.put(library, prepareLibraryTask);
+        }
+
+        return prepareLibraryTask;
     }
 
     private void resolveDependencyForConfig(
