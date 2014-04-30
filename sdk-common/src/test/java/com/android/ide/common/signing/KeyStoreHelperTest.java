@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.builder.signing;
+package com.android.ide.common.signing;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -36,19 +36,16 @@ public class KeyStoreHelperTest extends TestCase {
 
         FakeLogger fakeLogger = new FakeLogger();
 
-        // create a default signing Config.
-        DefaultSigningConfig signingConfig = new DefaultSigningConfig("");
-        signingConfig.initDebug();
-        signingConfig.setStoreFile(keystoreFile);
-
         // "now" is just slightly before the key was created
         long now = System.currentTimeMillis();
 
         // create the keystore
-        KeystoreHelper.createDebugStore(signingConfig, fakeLogger);
+        KeystoreHelper.createDebugStore(null, keystoreFile, "android", "android", "AndroidDebugKey",
+                                        fakeLogger);
 
         // read the key back
-        CertificateInfo certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig);
+        CertificateInfo certificateInfo = KeystoreHelper.getCertificateInfo(
+            null, keystoreFile, "android", "android", "AndroidDebugKey");
 
         assertNotNull(certificateInfo);
 

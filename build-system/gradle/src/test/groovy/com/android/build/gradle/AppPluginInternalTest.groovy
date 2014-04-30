@@ -23,7 +23,7 @@ import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.BuilderConstants
 import com.android.builder.DefaultBuildType
 import com.android.builder.model.SigningConfig
-import com.android.builder.signing.KeystoreHelper
+import com.android.ide.common.signing.KeystoreHelper
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 
