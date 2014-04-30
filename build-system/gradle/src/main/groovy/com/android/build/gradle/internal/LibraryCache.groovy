@@ -15,11 +15,14 @@
  */
 
 package com.android.build.gradle.internal
+
 import com.android.annotations.NonNull
+import com.android.annotations.concurrency.GuardedBy
 import com.google.common.collect.Maps
 import org.gradle.api.Project
 
 import java.util.concurrent.CountDownLatch
+
 /**
  * Cache to library prepareTask.
  *
@@ -39,6 +42,11 @@ public class LibraryCache {
         return sCache
     }
 
+    public synchronized unload() {
+        bundleLatches.clear();
+    }
+
+    @GuardedBy("this")
     private final Map<File, CountDownLatch> bundleLatches = Maps.newHashMap()
 
     public void unzipLibrary(@NonNull Project project,
