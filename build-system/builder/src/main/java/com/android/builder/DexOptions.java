@@ -22,4 +22,6 @@ public interface DexOptions {
     boolean getPreDexLibraries();
     boolean getJumboMode();
     String getJavaMaxHeapSize();
+
+    int getThreadCount();
 }
