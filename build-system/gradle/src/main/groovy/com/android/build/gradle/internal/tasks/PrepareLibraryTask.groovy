@@ -15,6 +15,7 @@
  */
 package com.android.build.gradle.internal.tasks
 
+import com.android.build.gradle.internal.LibraryCache
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputDirectory
@@ -22,16 +23,13 @@ import org.gradle.api.tasks.TaskAction
 
 public class PrepareLibraryTask extends DefaultTask {
     @InputFile
-    public File bundle
+    File bundle
 
     @OutputDirectory
-    public File explodedDir
+    File explodedDir
 
     @TaskAction
     def prepare() {
-        project.copy {
-            from project.zipTree(bundle)
-            into explodedDir
-        }
+        LibraryCache.getCache().unzipLibrary(project, getBundle(), getExplodedDir())
     }
 }
