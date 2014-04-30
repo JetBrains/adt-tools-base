@@ -31,6 +31,8 @@ public class DexOptionsImpl implements DexOptions {
     @Input
     private boolean isJumboModeFlag = false
 
+    private int threadCount = 4
+
     @Input
     @Optional
     private String javaMaxHeapSize
@@ -75,4 +77,14 @@ public class DexOptionsImpl implements DexOptions {
     public String getJavaMaxHeapSize() {
         return javaMaxHeapSize
     }
+
+    public void setThreadCount(int threadCount) {
+        this.threadCount = threadCount
+    }
+
+    @Override
+    int getThreadCount() {
+        return threadCount
+    }
+
 }
