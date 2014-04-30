@@ -186,7 +186,7 @@ class ExtractAnnotations extends AbstractCompile {
         options.originalSourceLevel = options.sourceLevel;
         options.inlineJsrBytecode = true; // >= 1.5
 
-        EcjParser.parse(options, sourceUnits, jars, outputMap);
+        EcjParser.parse(options, sourceUnits, jars, outputMap, null);
 
         Collection<CompilationUnitDeclaration> parsedUnits = outputMap.values()
         parsedUnits
