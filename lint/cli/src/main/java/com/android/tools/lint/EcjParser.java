@@ -197,7 +197,11 @@ public class EcjParser extends JavaParser {
         }
         List<String> classPath = computeClassPath(contexts);
         mCompiled = Maps.newHashMapWithExpectedSize(mSourceUnits.size());
-        parse(createCompilerOptions(), sources, classPath, mCompiled);
+        try {
+            parse(createCompilerOptions(), sources, classPath, mCompiled, mClient);
+        } catch (Throwable t) {
+            mClient.log(t, "ECJ compiler crashed");
+        }
 
         if (DEBUG_DUMP_PARSE_ERRORS) {
             for (CompilationUnitDeclaration unit : mCompiled.values()) {
@@ -224,7 +228,8 @@ public class EcjParser extends JavaParser {
             CompilerOptions options,
             @NonNull List<ICompilationUnit> sourceUnits,
             @NonNull List<String> classPath,
-            @NonNull Map<ICompilationUnit, CompilationUnitDeclaration> outputMap) {
+            @NonNull Map<ICompilationUnit, CompilationUnitDeclaration> outputMap,
+            @Nullable LintClient client) {
         INameEnvironment environment = new FileSystem(
                 classPath.toArray(new String[classPath.size()]), new String[0],
                 options.defaultEncoding);
@@ -238,9 +243,24 @@ public class EcjParser extends JavaParser {
                 // instead subclass AST to get our hands on them.
             }
         };
-        Compiler compiler = new NonGeneratingCompiler(environment, policy, options, requestor,
-                problemFactory, outputMap);
-        compiler.compile(sourceUnits.toArray(new ICompilationUnit[sourceUnits.size()]));
+
+        NonGeneratingCompiler compiler = new NonGeneratingCompiler(environment, policy, options,
+                requestor, problemFactory, outputMap);
+        try {
+            compiler.compile(sourceUnits.toArray(new ICompilationUnit[sourceUnits.size()]));
+        } catch (Throwable t) {
+            if (client != null) {
+                CompilationUnitDeclaration currentUnit = compiler.getCurrentUnit();
+                if (currentUnit == null || currentUnit.getFileName() == null) {
+                    client.log(t, "ECJ compiler crashed");
+                } else {
+                    client.log(t, "ECJ compiler crashed processing %1$s",
+                            new String(currentUnit.getFileName()));
+                }
+            } else {
+                t.printStackTrace();
+            }
+        }
     }
 
     @NonNull
@@ -597,6 +617,7 @@ public class EcjParser extends JavaParser {
     // Custom version of the compiler which skips code generation and records source units
     private static class NonGeneratingCompiler extends Compiler {
         private Map<ICompilationUnit, CompilationUnitDeclaration> mUnits;
+        private CompilationUnitDeclaration mCurrentUnit;
 
         public NonGeneratingCompiler(INameEnvironment environment, IErrorHandlingPolicy policy,
                 CompilerOptions options, ICompilerRequestor requestor,
@@ -604,6 +625,14 @@ public class EcjParser extends JavaParser {
                 Map<ICompilationUnit, CompilationUnitDeclaration> units) {
             super(environment, policy, options, requestor, problemFactory, null, null);
             mUnits = units;
+        }
+
+        @Nullable
+        CompilationUnitDeclaration getCurrentUnit() {
+            // Can't use lookupEnvironment.unitBeingCompleted directly; it gets nulled out
+            // as part of the exception catch handling in the compiler before this method
+            // is called from lint -- therefore we stash a copy in our own mCurrentUnit field
+            return mCurrentUnit;
         }
 
         @Override
@@ -615,7 +644,8 @@ public class EcjParser extends JavaParser {
 
         @Override
         public void process(CompilationUnitDeclaration unit, int unitNumber) {
-            lookupEnvironment.unitBeingCompleted = unit;
+            mCurrentUnit = lookupEnvironment.unitBeingCompleted = unit;
+
             parser.getMethodBodies(unit);
             if (unit.scope != null) {
                 unit.scope.faultInTypes();
