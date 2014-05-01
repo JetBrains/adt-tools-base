@@ -16,6 +16,9 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.ManifestMerger2.SystemProperty;
+import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
@@ -48,6 +51,15 @@ public class TestUtils {
         }
     };
 
+    private static final KeyBasedValueResolver<SystemProperty> NO_PROPERTY_RESOLVER =
+            new KeyBasedValueResolver<SystemProperty>() {
+                @Nullable
+                @Override
+                public String getValue(@NonNull SystemProperty key) {
+                    return null;
+                }
+            };
+
     static class TestSourceLocation implements XmlLoader.SourceLocation {
 
         private final String mLocation;
@@ -73,7 +85,7 @@ public class TestUtils {
             XmlLoader.SourceLocation location,
             String input)  throws IOException, SAXException, ParserConfigurationException {
 
-        return XmlLoader.load(NULL_RESOLVER, location, input);
+        return XmlLoader.load(NULL_RESOLVER, NO_PROPERTY_RESOLVER, location, input);
     }
 
     static XmlDocument xmlDocumentFromString(
@@ -81,7 +93,7 @@ public class TestUtils {
             @NonNull XmlLoader.SourceLocation location,
             String input)  throws IOException, SAXException, ParserConfigurationException {
 
-        return XmlLoader.load(selectors, location, input);
+        return XmlLoader.load(selectors, NO_PROPERTY_RESOLVER, location, input);
     }
 
 }
