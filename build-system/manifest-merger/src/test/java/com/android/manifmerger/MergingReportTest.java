@@ -17,6 +17,7 @@
 package com.android.manifmerger;
 
 import static com.android.manifmerger.MergingReport.Record.Severity;
+import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
@@ -41,6 +42,7 @@ public class MergingReportTest extends TestCase {
     @Mock Element mElement;
     @Mock XmlLoader.SourceLocation mSourceLocation;
     @Mock KeyResolver<String> mKeyResolver;
+    @Mock KeyBasedValueResolver<ManifestMerger2.SystemProperty> mPropertyResolver;
 
     @Override
     protected void setUp() throws Exception {
@@ -142,8 +144,11 @@ public class MergingReportTest extends TestCase {
 
     public void testGetMergedDocument() {
         XmlDocument xmlDocument =
-                new XmlDocument(
-                        new PositionXmlParser(), mSourceLocation, mKeyResolver, mElement);
+                new XmlDocument(new PositionXmlParser(),
+                        mSourceLocation,
+                        mKeyResolver,
+                        mPropertyResolver,
+                        mElement);
 
         MergingReport mergingReport = new MergingReport.Builder(mLoggerMock)
                 .setMergedDocument(xmlDocument)

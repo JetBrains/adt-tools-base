@@ -443,7 +443,11 @@ public class Actions {
         XmlLoader.SourceLocation inMemory = XmlLoader.UNKNOWN;
 
         XmlDocument loadedWithLineNumbers = XmlLoader.load(
-                xmlDocument.getSelectors(), inMemory, xmlDocument.prettyPrint());
+                xmlDocument.getSelectors(),
+                xmlDocument.getSystemPropertyResolver(),
+                inMemory,
+                xmlDocument.prettyPrint());
+
         ImmutableMultimap.Builder<Integer, Record> mappingBuilder = ImmutableMultimap.builder();
         for (XmlElement xmlElement : loadedWithLineNumbers.getRootNode().getMergeableElements()) {
             parse(xmlElement, mappingBuilder);
