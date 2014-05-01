@@ -318,13 +318,16 @@ public class GradleCoordinate {
                         return 1;
                     }
 
-                    for (int i = 0; i < a.myRevisions.size(); ++i) {
+                    int sizeA = a.myRevisions.size();
+                    int sizeB = b.myRevisions.size();
+                    int common = Math.min(sizeA, sizeB);
+                    for (int i = 0; i < common; ++i) {
                         int delta = a.myRevisions.get(i) - b.myRevisions.get(i);
                         if (delta != 0) {
                             return delta;
                         }
                     }
-                    return 0;
+                    return sizeA < sizeB ? -1 : sizeB < sizeA ? 1 : 0;
                 }
             };
 
@@ -350,7 +353,10 @@ public class GradleCoordinate {
                         return -1;
                     }
 
-                    for (int i = 0; i < a.myRevisions.size(); ++i) {
+                    int sizeA = a.myRevisions.size();
+                    int sizeB = b.myRevisions.size();
+                    int common = Math.min(sizeA, sizeB);
+                    for (int i = 0; i < common; ++i) {
                         int revision1 = a.myRevisions.get(i);
                         if (revision1 == PLUS_REV) {
                             revision1 = Integer.MAX_VALUE;
@@ -364,7 +370,7 @@ public class GradleCoordinate {
                             return delta;
                         }
                     }
-                    return 0;
+                    return sizeA < sizeB ? -1 : sizeB < sizeA ? 1 : 0;
                 }
             };
 }
