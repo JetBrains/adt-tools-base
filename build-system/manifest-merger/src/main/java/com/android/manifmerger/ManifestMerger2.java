@@ -175,7 +175,9 @@ public class ManifestMerger2 {
         XmlDocument lowerPriorityDocument;
         try {
             lowerPriorityDocument = XmlLoader.load(selectors,
-                    lowerPriorityXmlFile.getFirst(), lowerPriorityXmlFile.getSecond());
+                    mSystemPropertyResolver,
+                    lowerPriorityXmlFile.getFirst(),
+                    lowerPriorityXmlFile.getSecond());
         } catch (Exception e) {
             throw new MergeFailureException(e);
         }
@@ -224,6 +226,7 @@ public class ManifestMerger2 {
             XmlDocument libraryDocument;
             try {
                 libraryDocument = XmlLoader.load(selectors,
+                        mSystemPropertyResolver,
                         libraryFile.getFirst(), libraryFile.getSecond());
             } catch (Exception e) {
                 throw new MergeFailureException(e);
