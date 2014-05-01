@@ -16,8 +16,10 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.ManifestMerger2.SystemProperty;
 import static com.android.manifmerger.ManifestModel.NodeTypes.USES_PERMISSION;
 import static com.android.manifmerger.ManifestModel.NodeTypes.USES_SDK;
+import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -55,15 +57,18 @@ public class XmlDocument {
     private final PositionXmlParser mPositionXmlParser;
     private final XmlLoader.SourceLocation mSourceLocation;
     private final KeyResolver<String> mSelectors;
+    private final KeyBasedValueResolver<SystemProperty> mSystemPropertyResolver;
 
     public XmlDocument(@NonNull PositionXmlParser positionXmlParser,
             @NonNull XmlLoader.SourceLocation sourceLocation,
             @NonNull KeyResolver<String> selectors,
+            @NonNull KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
             @NonNull Element element) {
         this.mPositionXmlParser = Preconditions.checkNotNull(positionXmlParser);
         this.mSourceLocation = Preconditions.checkNotNull(sourceLocation);
         this.mRootElement = Preconditions.checkNotNull(element);
         this.mSelectors = Preconditions.checkNotNull(selectors);
+        this.mSystemPropertyResolver = Preconditions.checkNotNull(systemPropertyResolver);
     }
 
     /**
@@ -107,7 +112,11 @@ public class XmlDocument {
      * @return a new {@link com.android.manifmerger.XmlDocument} with up to date information.
      */
     public XmlDocument reparse() {
-        return new XmlDocument(mPositionXmlParser, mSourceLocation, mSelectors, mRootElement);
+        return new XmlDocument(mPositionXmlParser,
+                mSourceLocation,
+                mSelectors,
+                mSystemPropertyResolver,
+                mRootElement);
     }
 
     /**
@@ -116,6 +125,14 @@ public class XmlDocument {
      */
     public KeyResolver<String> getSelectors() {
         return mSelectors;
+    }
+
+    /**
+     * Returns the {@link com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver} capable
+     * of resolving all injected {@link com.android.manifmerger.ManifestMerger2.SystemProperty}
+     */
+    public KeyBasedValueResolver<SystemProperty> getSystemPropertyResolver() {
+        return mSystemPropertyResolver;
     }
 
     /**
@@ -199,31 +216,40 @@ public class XmlDocument {
     public int getMinSdkVersion() {
         Optional<XmlElement> usesSdk = getByTypeAndKey(
                 ManifestModel.NodeTypes.USES_SDK, null);
-        if (!usesSdk.isPresent()) {
-            return DEFAULT_SDK_VERSION;
+        if (usesSdk.isPresent()) {
+            Optional<XmlAttribute> minSdkVersion = usesSdk.get()
+                    .getAttribute(XmlNode.fromXmlName("android:minSdkVersion"));
+            if (minSdkVersion.isPresent()) {
+                return Integer.parseInt(minSdkVersion.get().getValue());
+            }
         }
-
-        Optional<XmlAttribute> minSdkVersion = usesSdk.get()
-                .getAttribute(XmlNode.fromXmlName("android:minSdkVersion"));
-        return minSdkVersion.isPresent()
-                ? Integer.parseInt(minSdkVersion.get().getValue())
-                : DEFAULT_SDK_VERSION;
+        // check for system properties.
+        String injectedMinSdk = mSystemPropertyResolver.getValue(SystemProperty.MIN_SDK_VERSION);
+        if (injectedMinSdk != null) {
+            return Integer.parseInt(injectedMinSdk);
+        }
+        return DEFAULT_SDK_VERSION;
     }
 
     public int getTargetSdkVersion() {
 
         Optional<XmlElement> usesSdk = getByTypeAndKey(
                 ManifestModel.NodeTypes.USES_SDK, null);
-        if (!usesSdk.isPresent()) {
-            return DEFAULT_SDK_VERSION;
+        if (usesSdk.isPresent()) {
+            Optional<XmlAttribute> targetSdkVersion = usesSdk.get()
+                    .getAttribute(XmlNode.fromXmlName("android:targetSdkVersion"));
+            if (targetSdkVersion.isPresent()) {
+                return Integer.parseInt(targetSdkVersion.get().getValue());
+            }
         }
-
-        Optional<XmlAttribute> targetSdkVersion = usesSdk.get()
-                .getAttribute(XmlNode.fromXmlName("android:targetSdkVersion"));
-        if (targetSdkVersion.isPresent()) {
-            return Integer.parseInt(targetSdkVersion.get().getValue());
+        // check for system properties.
+        String injectedTargetVersion = mSystemPropertyResolver
+                .getValue(SystemProperty.TARGET_SDK_VERSION);
+        if (injectedTargetVersion != null) {
+            return Integer.parseInt(injectedTargetVersion);
         }
         return getMinSdkVersion();
+
     }
 
     /**
