@@ -187,6 +187,7 @@ public class XmlElement extends OrphanXmlElement {
     }
 
 
+    @NonNull
     @Override
     public PositionXmlParser.Position getPosition() {
         return mDocument.getNodePosition(this);

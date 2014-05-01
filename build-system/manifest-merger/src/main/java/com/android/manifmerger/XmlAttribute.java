@@ -95,6 +95,7 @@ public class XmlAttribute extends XmlNode {
         return new NodeKey(mOwnerElement.getId() + "@" + mXml.getLocalName());
     }
 
+    @NonNull
     @Override
     public PositionXmlParser.Position getPosition() {
         return mOwnerElement.getDocument().getNodePosition(this);
