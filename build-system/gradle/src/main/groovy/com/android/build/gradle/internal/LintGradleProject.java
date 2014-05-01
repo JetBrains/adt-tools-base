@@ -32,6 +32,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import static com.android.SdkConstants.APPCOMPAT_LIB_ARTIFACT;
+import static com.android.SdkConstants.SUPPORT_LIB_ARTIFACT;
 import static java.io.File.separatorChar;
 
 /**
@@ -112,6 +114,38 @@ public class LintGradleProject extends Project {
     @Override
     public boolean isGradleProject() {
         return true;
+    }
+
+    protected static boolean dependsOn(@NonNull Dependencies dependencies,
+            @NonNull String artifact) {
+        for (AndroidLibrary library : dependencies.getLibraries()) {
+            if (dependsOn(library, artifact)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected static boolean dependsOn(@NonNull AndroidLibrary library, @NonNull String artifact) {
+        if (SUPPORT_LIB_ARTIFACT.equals(artifact)) {
+            if (library.getJarFile().getName().startsWith("support-v4-")) {
+                return true;
+            }
+
+        } else if (APPCOMPAT_LIB_ARTIFACT.equals(artifact)) {
+            File bundle = library.getBundle();
+            if (bundle.getName().startsWith("appcompat-v7-")) {
+                return true;
+            }
+        }
+
+        for (AndroidLibrary dependency : library.getLibraryDependencies()) {
+            if (dependsOn(dependency, artifact)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     void addDirectLibrary(@NonNull Project project) {
@@ -367,6 +401,26 @@ public class LintGradleProject extends Project {
 
             return super.getBuildSdk();
         }
+
+        @Nullable
+        @Override
+        public Boolean dependsOn(@NonNull String artifact) {
+            if (SUPPORT_LIB_ARTIFACT.equals(artifact)) {
+                if (mSupportLib == null) {
+                    Dependencies dependencies = mVariant.getMainArtifact().getDependencies();
+                    mSupportLib = dependsOn(dependencies, artifact);
+                }
+                return mSupportLib;
+            } else if (APPCOMPAT_LIB_ARTIFACT.equals(artifact)) {
+                if (mAppCompat == null) {
+                    Dependencies dependencies = mVariant.getMainArtifact().getDependencies();
+                    mAppCompat = dependsOn(dependencies, artifact);
+                }
+                return mAppCompat;
+            } else {
+                return super.dependsOn(artifact);
+            }
+        }
     }
 
     private static class LibraryProject extends LintGradleProject {
@@ -474,6 +528,24 @@ public class LintGradleProject extends Project {
             }
 
             return mJavaLibraries;
+        }
+
+        @Nullable
+        @Override
+        public Boolean dependsOn(@NonNull String artifact) {
+            if (SUPPORT_LIB_ARTIFACT.equals(artifact)) {
+                if (mSupportLib == null) {
+                    mSupportLib = dependsOn(mLibrary, artifact);
+                }
+                return mSupportLib;
+            } else if (APPCOMPAT_LIB_ARTIFACT.equals(artifact)) {
+                if (mAppCompat == null) {
+                    mAppCompat = dependsOn(mLibrary, artifact);
+                }
+                return mAppCompat;
+            } else {
+                return super.dependsOn(artifact);
+            }
         }
     }
 }
