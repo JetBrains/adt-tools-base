@@ -152,10 +152,11 @@ public class XmlDocument {
      * columns by one (for PositionXmlParser, document starts at line 0, however for the common
      * understanding, document should start at line 1).
      */
+    @NonNull
     PositionXmlParser.Position getNodePosition(XmlNode node) {
         final PositionXmlParser.Position position =  mPositionXmlParser.getPosition(node.getXml());
         if (position == null) {
-            return null;
+            return PositionImpl.UNKNOWN;
         }
         return new PositionXmlParser.Position() {
             @Nullable
