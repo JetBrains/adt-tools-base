@@ -710,6 +710,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
 
     /** Given a format string returns the format type of the given argument */
     @VisibleForTesting
+    @Nullable
     static String getFormatArgumentType(String s, int argument) {
         Matcher matcher = FORMAT.matcher(s);
         int index = 0;
@@ -1089,6 +1090,9 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                         if (type != null) {
                             boolean valid = true;
                             String formatType = getFormatArgumentType(s, i);
+                            if (formatType == null) {
+                                continue;
+                            }
                             char last = formatType.charAt(formatType.length() - 1);
                             if (formatType.length() >= 2 &&
                                     Character.toLowerCase(
