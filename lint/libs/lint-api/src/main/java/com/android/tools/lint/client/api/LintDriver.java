@@ -46,11 +46,13 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.ResourceContext;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.annotations.Beta;
+import com.google.common.base.Objects;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -389,7 +391,8 @@ public class LintDriver {
         } catch (CircularDependencyException e) {
             mCurrentProject = e.getProject();
             if (mCurrentProject != null) {
-                File file = e.getLocation().getFile();
+                Location location = e.getLocation();
+                File file = location != null ? location.getFile() : mCurrentProject.getDir();
                 Context context = new Context(this, mCurrentProject, null, file);
                 context.report(IssueRegistry.LINT_ERROR, e.getLocation(), e.getMessage(), null);
                 mCurrentProject = null;
@@ -515,6 +518,8 @@ public class LintDriver {
         // Ensure that the current visitor is recomputed
         mCurrentFolderType = null;
         mCurrentVisitor = null;
+        mCurrentXmlDetectors = null;
+        mCurrentBinaryDetectors = null;
 
         // Create map from detector class to issue such that we can
         // compute applicable issues for each detector in the list of detectors
@@ -658,6 +663,20 @@ public class LintDriver {
             if (otherDetectors != null) {
                 for (Detector detector : otherDetectors) {
                     assert detector instanceof Detector.OtherFileScanner : detector;
+                }
+            }
+
+            List<Detector> dirDetectors = mScopeDetectors.get(Scope.RESOURCE_FOLDER);
+            if (dirDetectors != null) {
+                for (Detector detector : dirDetectors) {
+                    assert detector instanceof Detector.ResourceFolderScanner : detector;
+                }
+            }
+
+            List<Detector> binaryDetectors = mScopeDetectors.get(Scope.BINARY_RESOURCE_FILE);
+            if (binaryDetectors != null) {
+                for (Detector detector : binaryDetectors) {
+                    assert detector instanceof Detector.BinaryResourceScanner : detector;
                 }
             }
         }
@@ -929,7 +948,8 @@ public class LintDriver {
                                     && mScope.contains(Scope.MANIFEST)) {
                                 List<Detector> detectors = mScopeDetectors.get(Scope.MANIFEST);
                                 if (detectors != null) {
-                                    XmlVisitor v = new XmlVisitor(parser, detectors);
+                                    ResourceVisitor v = new ResourceVisitor(parser, detectors,
+                                            null);
                                     fireEvent(EventType.SCANNING_FILE, context);
                                     v.visitFile(context, manifestFile);
                                 }
@@ -945,28 +965,40 @@ public class LintDriver {
 
             // Process both Scope.RESOURCE_FILE and Scope.ALL_RESOURCE_FILES detectors together
             // in a single pass through the resource directories.
-            if (mScope.contains(Scope.ALL_RESOURCE_FILES) ||
-                    mScope.contains(Scope.RESOURCE_FILE)) {
+            if (mScope.contains(Scope.ALL_RESOURCE_FILES)
+                    || mScope.contains(Scope.RESOURCE_FILE)
+                    || mScope.contains(Scope.RESOURCE_FOLDER)
+                    || mScope.contains(Scope.BINARY_RESOURCE_FILE)) {
+                List<Detector> dirChecks = mScopeDetectors.get(Scope.RESOURCE_FOLDER);
+                List<Detector> binaryChecks = mScopeDetectors.get(Scope.BINARY_RESOURCE_FILE);
                 List<Detector> checks = union(mScopeDetectors.get(Scope.RESOURCE_FILE),
                         mScopeDetectors.get(Scope.ALL_RESOURCE_FILES));
-                if (checks != null && !checks.isEmpty()) {
-                    List<ResourceXmlDetector> xmlDetectors =
-                            new ArrayList<ResourceXmlDetector>(checks.size());
+                boolean haveXmlChecks = checks != null && !checks.isEmpty();
+                List<ResourceXmlDetector> xmlDetectors;
+                if (haveXmlChecks) {
+                    xmlDetectors = new ArrayList<ResourceXmlDetector>(checks.size());
                     for (Detector detector : checks) {
                         if (detector instanceof ResourceXmlDetector) {
                             xmlDetectors.add((ResourceXmlDetector) detector);
                         }
                     }
-                    if (!xmlDetectors.isEmpty()) {
-                        List<File> files = project.getSubset();
-                        if (files != null) {
-                            checkIndividualResources(project, main, xmlDetectors, files);
-                        } else {
-                            List<File> resourceFolders = project.getResourceFolders();
-                            if (!resourceFolders.isEmpty() && !xmlDetectors.isEmpty()) {
-                                for (File res : resourceFolders) {
-                                    checkResFolder(project, main, res, xmlDetectors);
-                                }
+                    haveXmlChecks = !xmlDetectors.isEmpty();
+                } else {
+                    xmlDetectors = Collections.emptyList();
+                }
+                if (haveXmlChecks
+                        || dirChecks != null && !dirChecks.isEmpty()
+                        || binaryChecks != null && !binaryChecks.isEmpty()) {
+                    List<File> files = project.getSubset();
+                    if (files != null) {
+                        checkIndividualResources(project, main, xmlDetectors, dirChecks,
+                                binaryChecks, files);
+                    } else {
+                        List<File> resourceFolders = project.getResourceFolders();
+                        if (!resourceFolders.isEmpty()) {
+                            for (File res : resourceFolders) {
+                                checkResFolder(project, main, res, xmlDetectors, dirChecks,
+                                        binaryChecks);
                             }
                         }
                     }
@@ -1154,7 +1186,7 @@ public class LintDriver {
         if (mCurrentProject != null) {
             Boolean isSub = mClient.isSubclassOf(mCurrentProject, classNode.name, superClassName);
             if (isSub != null) {
-                return isSub.booleanValue();
+                return isSub;
             }
         }
 
@@ -1181,12 +1213,8 @@ public class LintDriver {
             // e.g. the DuplicateIdDetector registers both a cross-resource issue and a
             // single-file issue, so it shows up on both scope lists:
             Set<Detector> set = new HashSet<Detector>(list1.size() + list2.size());
-            if (list1 != null) {
-                set.addAll(list1);
-            }
-            if (list2 != null) {
-                set.addAll(list2);
-            }
+            set.addAll(list1);
+            set.addAll(list2);
 
             return new ArrayList<Detector>(set);
         }
@@ -1261,13 +1289,11 @@ public class LintDriver {
                 if (file.isFile() && path.endsWith(DOT_CLASS)) {
                     try {
                         byte[] bytes = mClient.readBytes(file);
-                        if (bytes != null) {
-                            for (File dir : classFolders) {
-                                if (path.startsWith(dir.getPath())) {
-                                    entries.add(new ClassEntry(file, null /* jarFile*/, dir,
-                                            bytes));
-                                    break;
-                                }
+                        for (File dir : classFolders) {
+                            if (path.startsWith(dir.getPath())) {
+                                entries.add(new ClassEntry(file, null /* jarFile*/, dir,
+                                        bytes));
+                                break;
                             }
                         }
                     } catch (IOException e) {
@@ -1524,6 +1550,7 @@ public class LintDriver {
             @NonNull List<File> classPath) {
         for (File classPathEntry : classPath) {
             if (classPathEntry.getName().endsWith(DOT_JAR)) {
+                //noinspection UnnecessaryLocalVariable
                 File jarFile = classPathEntry;
                 if (!jarFile.exists()) {
                     continue;
@@ -1559,9 +1586,8 @@ public class LintDriver {
                 } finally {
                     Closeables.closeQuietly(zis);
                 }
-
-                continue;
             } else if (classPathEntry.isDirectory()) {
+                //noinspection UnnecessaryLocalVariable
                 File binDir = classPathEntry;
                 List<File> classFiles = new ArrayList<File>();
                 addClassFiles(binDir, classFiles);
@@ -1569,9 +1595,7 @@ public class LintDriver {
                 for (File file : classFiles) {
                     try {
                         byte[] bytes = mClient.readBytes(file);
-                        if (bytes != null) {
-                            entries.add(new ClassEntry(file, null /* jarFile*/, binDir, bytes));
-                        }
+                        entries.add(new ClassEntry(file, null /* jarFile*/, binDir, bytes));
                     } catch (IOException e) {
                         mClient.log(e, null);
                         continue;
@@ -1694,37 +1718,56 @@ public class LintDriver {
 
     private ResourceFolderType mCurrentFolderType;
     private List<ResourceXmlDetector> mCurrentXmlDetectors;
-    private XmlVisitor mCurrentVisitor;
+    private List<Detector> mCurrentBinaryDetectors;
+    private ResourceVisitor mCurrentVisitor;
 
     @Nullable
-    private XmlVisitor getVisitor(
+    private ResourceVisitor getVisitor(
             @NonNull ResourceFolderType type,
-            @NonNull List<ResourceXmlDetector> checks) {
+            @NonNull List<ResourceXmlDetector> checks,
+            @Nullable List<Detector> binaryChecks) {
         if (type != mCurrentFolderType) {
             mCurrentFolderType = type;
 
             // Determine which XML resource detectors apply to the given folder type
-            List<ResourceXmlDetector> applicableChecks =
+            List<ResourceXmlDetector> applicableXmlChecks =
                     new ArrayList<ResourceXmlDetector>(checks.size());
             for (ResourceXmlDetector check : checks) {
                 if (check.appliesTo(type)) {
-                    applicableChecks.add(check);
+                    applicableXmlChecks.add(check);
+                }
+            }
+            List<Detector> applicableBinaryChecks = null;
+            if (binaryChecks != null) {
+                applicableBinaryChecks = new ArrayList<Detector>(binaryChecks.size());
+                for (Detector check : binaryChecks) {
+                    if (check.appliesTo(type)) {
+                        applicableBinaryChecks.add(check);
+                    }
                 }
             }
 
             // If the list of detectors hasn't changed, then just use the current visitor!
-            if (mCurrentXmlDetectors != null && mCurrentXmlDetectors.equals(applicableChecks)) {
+            if (mCurrentXmlDetectors != null && mCurrentXmlDetectors.equals(applicableXmlChecks)
+                    && Objects.equal(mCurrentBinaryDetectors, applicableBinaryChecks)) {
                 return mCurrentVisitor;
             }
 
-            if (applicableChecks.isEmpty()) {
+            mCurrentXmlDetectors = applicableXmlChecks;
+            mCurrentBinaryDetectors = applicableBinaryChecks;
+
+            if (applicableXmlChecks.isEmpty()
+                    && (applicableBinaryChecks == null || applicableBinaryChecks.isEmpty())) {
                 mCurrentVisitor = null;
                 return null;
             }
 
             XmlParser parser = mClient.getXmlParser();
             if (parser != null) {
-                mCurrentVisitor = new XmlVisitor(parser, applicableChecks);
+                mCurrentVisitor = new ResourceVisitor(parser, applicableXmlChecks,
+                        applicableBinaryChecks);
+            } else {
+                mCurrentVisitor = null;
             }
         }
 
@@ -1735,7 +1778,9 @@ public class LintDriver {
             @NonNull Project project,
             @Nullable Project main,
             @NonNull File res,
-            @NonNull List<ResourceXmlDetector> checks) {
+            @NonNull List<ResourceXmlDetector> xmlChecks,
+            @Nullable List<Detector> dirChecks,
+            @Nullable List<Detector> binaryChecks) {
         assert res.isDirectory() : res;
         File[] resourceDirs = res.listFiles();
         if (resourceDirs == null) {
@@ -1743,13 +1788,15 @@ public class LintDriver {
         }
 
         // Sort alphabetically such that we can process related folder types at the
-        // same time
+        // same time, and to have a defined behavior such that detectors can rely on
+        // predictable ordering, e.g. layouts are seen before menus are seen before
+        // values, etc (l < m < v).
 
         Arrays.sort(resourceDirs);
         for (File dir : resourceDirs) {
             ResourceFolderType type = ResourceFolderType.getFolderType(dir.getName());
             if (type != null) {
-                checkResourceFolder(project, main, dir, type, checks);
+                checkResourceFolder(project, main, dir, type, xmlChecks, dirChecks, binaryChecks);
             }
 
             if (mCanceled) {
@@ -1763,25 +1810,51 @@ public class LintDriver {
             @Nullable Project main,
             @NonNull File dir,
             @NonNull ResourceFolderType type,
-            @NonNull List<ResourceXmlDetector> checks) {
+            @NonNull List<ResourceXmlDetector> xmlChecks,
+            @Nullable List<Detector> dirChecks,
+            @Nullable List<Detector> binaryChecks) {
+
         // Process the resource folder
-        File[] xmlFiles = dir.listFiles();
-        if (xmlFiles != null && xmlFiles.length > 0) {
-            XmlVisitor visitor = getVisitor(type, checks);
-            if (visitor != null) { // if not, there are no applicable rules in this folder
-                // Process files in alphabetical order, to ensure stable output
-                // (for example for the duplicate resource detector)
-                Arrays.sort(xmlFiles);
-                for (File file : xmlFiles) {
-                    if (LintUtils.isXmlFile(file)) {
-                        XmlContext context = new XmlContext(this, project, main, file, type,
-                                visitor.getParser());
-                        fireEvent(EventType.SCANNING_FILE, context);
-                        visitor.visitFile(context, file);
-                        if (mCanceled) {
-                            return;
-                        }
-                    }
+
+        if (dirChecks != null && !dirChecks.isEmpty()) {
+            ResourceContext context = new ResourceContext(this, project, main, dir, type);
+            String folderName = dir.getName();
+            fireEvent(EventType.SCANNING_FILE, context);
+            for (Detector check : dirChecks) {
+                if (check.appliesTo(type)) {
+                    check.beforeCheckFile(context);
+                    check.checkFolder(context, folderName);
+                    check.afterCheckFile(context);
+                }
+            }
+            if (binaryChecks == null && xmlChecks.isEmpty()) {
+                return;
+            }
+        }
+
+        File[] files = dir.listFiles();
+        if (files == null || files.length <= 0) {
+            return;
+        }
+
+        ResourceVisitor visitor = getVisitor(type, xmlChecks, binaryChecks);
+        if (visitor != null) { // if not, there are no applicable rules in this folder
+            // Process files in alphabetical order, to ensure stable output
+            // (for example for the duplicate resource detector)
+            Arrays.sort(files);
+            for (File file : files) {
+                if (LintUtils.isXmlFile(file)) {
+                    XmlContext context = new XmlContext(this, project, main, file, type,
+                            visitor.getParser());
+                    fireEvent(EventType.SCANNING_FILE, context);
+                    visitor.visitFile(context, file);
+                } else if (binaryChecks != null && LintUtils.isBitmapFile(file)) {
+                    ResourceContext context = new ResourceContext(this, project, main, file, type);
+                    fireEvent(EventType.SCANNING_FILE, context);
+                    visitor.visitBinaryResource(context);
+                }
+                if (mCanceled) {
+                    return;
                 }
             }
         }
@@ -1792,6 +1865,8 @@ public class LintDriver {
             @NonNull Project project,
             @Nullable Project main,
             @NonNull List<ResourceXmlDetector> xmlDetectors,
+            @Nullable List<Detector> dirChecks,
+            @Nullable List<Detector> binaryChecks,
             @NonNull List<File> files) {
         for (File file : files) {
             if (file.isDirectory()) {
@@ -1799,26 +1874,42 @@ public class LintDriver {
                 ResourceFolderType type = ResourceFolderType.getFolderType(file.getName());
                 if (type != null && new File(file.getParentFile(), RES_FOLDER).exists()) {
                     // Yes.
-                    checkResourceFolder(project, main, file, type, xmlDetectors);
+                    checkResourceFolder(project, main, file, type, xmlDetectors, dirChecks,
+                            binaryChecks);
                 } else if (file.getName().equals(RES_FOLDER)) { // Is it the res folder?
                     // Yes
-                    checkResFolder(project, main, file, xmlDetectors);
+                    checkResFolder(project, main, file, xmlDetectors, dirChecks, binaryChecks);
                 } else {
                     mClient.log(null, "Unexpected folder %1$s; should be project, " +
                             "\"res\" folder or resource folder", file.getPath());
-                    continue;
                 }
             } else if (file.isFile() && LintUtils.isXmlFile(file)) {
                 // Yes, find out its resource type
                 String folderName = file.getParentFile().getName();
                 ResourceFolderType type = ResourceFolderType.getFolderType(folderName);
                 if (type != null) {
-                    XmlVisitor visitor = getVisitor(type, xmlDetectors);
+                    ResourceVisitor visitor = getVisitor(type, xmlDetectors, binaryChecks);
                     if (visitor != null) {
                         XmlContext context = new XmlContext(this, project, main, file, type,
                                 visitor.getParser());
                         fireEvent(EventType.SCANNING_FILE, context);
                         visitor.visitFile(context, file);
+                    }
+                }
+            } else if (binaryChecks != null && file.isFile() && LintUtils.isBitmapFile(file)) {
+                // Yes, find out its resource type
+                String folderName = file.getParentFile().getName();
+                ResourceFolderType type = ResourceFolderType.getFolderType(folderName);
+                if (type != null) {
+                    ResourceVisitor visitor = getVisitor(type, xmlDetectors, binaryChecks);
+                    if (visitor != null) {
+                        ResourceContext context = new ResourceContext(this, project, main, file,
+                                type);
+                        fireEvent(EventType.SCANNING_FILE, context);
+                        visitor.visitBinaryResource(context);
+                        if (mCanceled) {
+                            return;
+                        }
                     }
                 }
             }
@@ -2275,6 +2366,7 @@ public class LintDriver {
      * @return true if there is a suppress annotation covering the specific
      *         issue on this field
      */
+    @SuppressWarnings("MethodMayBeStatic") // API; reserve need to require driver state later
     public boolean isSuppressed(@Nullable Issue issue, @NonNull FieldNode field) {
         if (field.invisibleAnnotations != null) {
             @SuppressWarnings("unchecked")
