@@ -201,4 +201,13 @@ public class GradleCoordinateTest extends BaseTestCase {
         assertEquals(4, c.getMinorVersion());
         assertEquals(2, c.getMicroVersion());
     }
+
+    public void testSameSharedDifferentLengths() {
+        GradleCoordinate a = new GradleCoordinate("a.b.c", "package", 5, 4);
+        GradleCoordinate b = new GradleCoordinate("a.b.c", "package", 5, 4, 2);
+        assertTrue(COMPARE_PLUS_HIGHER.compare(a, b) < 0);
+        assertTrue(COMPARE_PLUS_HIGHER.compare(b, a) > 0);
+        assertTrue(COMPARE_PLUS_LOWER.compare(a, b) < 0);
+        assertTrue(COMPARE_PLUS_LOWER.compare(b, a) > 0);
+    }
 }
