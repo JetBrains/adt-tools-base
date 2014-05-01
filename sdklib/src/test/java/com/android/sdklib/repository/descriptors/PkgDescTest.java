@@ -16,9 +16,7 @@
 
 package com.android.sdklib.repository.descriptors;
 
-import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.AndroidVersion.AndroidVersionException;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.NoPreviewRevision;
@@ -55,6 +53,7 @@ public class PkgDescTest extends TestCase {
         assertEquals(new FullRevision(5, 6, 7, 8), p.getMinPlatformToolsRev());
 
         assertEquals("<PkgDesc Type=tools FullRev=1.2.3 rc4 MinPlatToolsRev=5.6.7 rc8>", p.toString());
+        assertEquals("Android SDK Tools 1.2.3 rc4", p.getListDescription());
     }
 
     public final void testPkgDescTool_Update() {
@@ -134,6 +133,7 @@ public class PkgDescTest extends TestCase {
         assertNull (p.getMinPlatformToolsRev());
 
         assertEquals("<PkgDesc Type=platform_tools FullRev=1.2.3 rc4>", p.toString());
+        assertEquals("Android SDK Platform-Tools 1.2.3 rc4", p.getListDescription());
     }
 
     public final void testPkgDescPlatformTool_Update() {
@@ -204,6 +204,7 @@ public class PkgDescTest extends TestCase {
         assertNull(p.getMinPlatformToolsRev());
 
         assertEquals("<PkgDesc Type=docs Android=API 19 MajorRev=1>", p.toString());
+        assertEquals("Documentation for Android SDK 19", p.getListDescription());
     }
 
     public final void testPkgDescDoc_Update() throws Exception {
@@ -254,6 +255,7 @@ public class PkgDescTest extends TestCase {
         assertNull (p.getMinPlatformToolsRev());
 
         assertEquals("<PkgDesc Type=build_tools FullRev=1.2.3 rc4>", p.toString());
+        assertEquals("Android SDK Build-Tools 1.2.3 rc4", p.getListDescription());
     }
 
     public final void testPkgDescBuildTool_Update() {
@@ -331,6 +333,7 @@ public class PkgDescTest extends TestCase {
         assertNull (p.getMinPlatformToolsRev());
 
         assertEquals("<PkgDesc Type=extras Vendor=vendor [The Vendor] Path=extra_path FullRev=1.2.3>", p.toString());
+        assertEquals("My Extra, rev 1.2.3", p.getListDescription());
 
         IPkgDescExtra e = (IPkgDescExtra) p;
         assertEquals("vendor [The Vendor]", e.getVendor().toString());
@@ -411,6 +414,7 @@ public class PkgDescTest extends TestCase {
         assertNull (p.getMinPlatformToolsRev());
 
         assertEquals("<PkgDesc Type=sources Android=API 19 MajorRev=1>", p.toString());
+        assertEquals("Sources for Android 19", p.getListDescription());
     }
 
     public final void testPkgDescSource_Update() throws Exception {
@@ -467,6 +471,7 @@ public class PkgDescTest extends TestCase {
         assertEquals(
                 "<PkgDesc Type=samples Android=API 19 MajorRev=1 MinToolsRev=5.6.7 rc8>",
                 p.toString());
+        assertEquals("Samples for Android 19", p.getListDescription());
     }
 
     public final void testPkgDescSample_Update() throws Exception {
@@ -533,6 +538,7 @@ public class PkgDescTest extends TestCase {
         assertEquals(
                 "<PkgDesc Type=platforms Android=API 19 Path=android-19 MajorRev=1 MinToolsRev=5.6.7 rc8>",
                 p.toString());
+        assertEquals("Android SDK Platform 19", p.getListDescription());
     }
 
     public final void testPkgDescPlatform_Update() throws Exception {
@@ -572,8 +578,10 @@ public class PkgDescTest extends TestCase {
     //----
 
     public final void testPkgDescAddon() throws Exception {
+        IdDisplay vendor = new IdDisplay("vendor", "The Vendor");
+        IdDisplay name   = new IdDisplay("addon_name", "The Add-on");
         IPkgDesc p1 = PkgDesc.Builder
-                .newAddon(new AndroidVersion("19"), new MajorRevision(1), "vendor", "addon_name")
+                .newAddon(new AndroidVersion("19"), new MajorRevision(1), vendor, name)
                 .create();
 
         assertEquals(PkgType.PKG_ADDONS, p1.getType());
@@ -588,7 +596,7 @@ public class PkgDescTest extends TestCase {
         assertEquals(new AndroidVersion("19"), p1.getAndroidVersion());
 
         assertTrue  (p1.hasPath());
-        assertEquals("vendor:addon_name:19", p1.getPath());
+        assertEquals("The Vendor:The Add-on:19", p1.getPath());
 
         assertFalse(p1.hasMinToolsRev());
         assertNull (p1.getMinToolsRev());
@@ -596,40 +604,20 @@ public class PkgDescTest extends TestCase {
         assertFalse(p1.hasMinPlatformToolsRev());
         assertNull (p1.getMinPlatformToolsRev());
 
-        assertEquals("<PkgDesc Type=addons Android=API 19 Vendor=vendor [The Vendor] Path=vendor:addon_name:19 MajorRev=1>",
-                     p1.toString());
-
-        // If the add-on hash string can't determined in the constructor, a callback is
-        // provided to give the information needed later.
-        IPkgDesc p3 = PkgDesc.Builder.newAddon(new AndroidVersion("3"), new MajorRevision(5),
-                new IAddonDesc() {
-                    @Override
-                    public String getTargetHash() {
-                        try {
-                            return AndroidTargetHash.getAddonHashString(
-                                    getVendorId(),
-                                    "name3",
-                                    new AndroidVersion("3"));
-                        } catch (AndroidVersionException e) {
-                            fail(); // should not happen, it would mean "3" wasn't parsed as a number
-                            return null;
-                        }
-                    }
-
-                    @Override
-                    public String getVendorId() {
-                        return "vendor3";
-                    }
-        }).create();
-        assertEquals("vendor3:name3:3", p3.getPath());
+        assertEquals(
+                "<PkgDesc Type=addons Android=API 19 Vendor=vendor [The Vendor] Path=The Vendor:The Add-on:19 MajorRev=1>",
+                p1.toString());
+        assertEquals("The Add-on, Android 19", p1.getListDescription());
     }
 
     public final void testPkgDescAddon_Update() throws Exception {
         final AndroidVersion api19 = new AndroidVersion("19");
         final MajorRevision rev1 = new MajorRevision(1);
-        final IPkgDesc p19_1  = PkgDesc.Builder.newAddon(api19, rev1, "vendor", "addon_name")
+        IdDisplay vendor = new IdDisplay("vendor", "The Vendor");
+        IdDisplay name   = new IdDisplay("addon_name", "The Add-on");
+        final IPkgDesc p19_1  = PkgDesc.Builder.newAddon(api19, rev1, vendor, name)
                                                .create();
-        final IPkgDesc p19_1b = PkgDesc.Builder.newAddon(api19, rev1, "vendor", "addon_name")
+        final IPkgDesc p19_1b = PkgDesc.Builder.newAddon(api19, rev1, vendor, name)
                                                .create();
 
         // can't update itself
@@ -640,30 +628,32 @@ public class PkgDescTest extends TestCase {
 
         // updates a lesser revision of the same API
         final MajorRevision rev2 = new MajorRevision(2);
-        final IPkgDesc p19_2  = PkgDesc.Builder.newAddon(api19, rev2, "vendor", "addon_name")
+        final IPkgDesc p19_2  = PkgDesc.Builder.newAddon(api19, rev2, vendor, name)
                                                .create();
         assertTrue (p19_2.isUpdateFor(p19_1));
         assertTrue (p19_2.compareTo(p19_1) > 0);
 
         // does not update a different API
         final AndroidVersion api18 = new AndroidVersion("18");
-        final IPkgDesc p18_1  = PkgDesc.Builder.newAddon(api18, rev2, "vendor", "addon_name")
+        final IPkgDesc p18_1  = PkgDesc.Builder.newAddon(api18, rev2, vendor, name)
                                                .create();
         assertFalse(p19_2.isUpdateFor(p18_1));
         assertFalse(p18_1.isUpdateFor(p19_2));
         assertTrue (p19_2.compareTo(p18_1) > 0);
 
         // does not update a different vendor
-        final IPkgDesc a19_2  = PkgDesc.Builder.newAddon(api19, rev2, "auctrix", "addon_name")
+        IdDisplay vendor2 = new IdDisplay("another_vendor", "Another Vendor");
+        final IPkgDesc a19_2  = PkgDesc.Builder.newAddon(api19, rev2, vendor2, name)
                                                .create();
         assertFalse(a19_2.isUpdateFor(p19_1));
         assertTrue (a19_2.compareTo(p19_1) < 0);
 
         // does not update a different add-on name
-        final IPkgDesc n19_2  = PkgDesc.Builder.newAddon(api19, rev2, "vendor", "no_va")
+        IdDisplay name2   = new IdDisplay("another_name", "Another Add-on");
+        final IPkgDesc n19_2  = PkgDesc.Builder.newAddon(api19, rev2, vendor, name2)
                                                .create();
         assertFalse(n19_2.isUpdateFor(p19_1));
-        assertTrue (n19_2.compareTo(p19_1) > 0);
+        assertTrue (n19_2.compareTo(p19_1) < 0);
     }
 
     //----
@@ -699,6 +689,7 @@ public class PkgDescTest extends TestCase {
         assertEquals(
                 "<PkgDesc Type=sys_images Android=API 19 Tag=tag [My Tag] Path=eabi MajorRev=1>",
                 p.toString());
+        assertEquals("eabi System Image, Android 19", p.getListDescription());
     }
 
     public final void testPkgDescSysImg_Update() throws Exception {

@@ -912,8 +912,38 @@ public class LocalSdk {
             try {
                 AndroidVersion vers = new AndroidVersion(props);
 
-                LocalAddonPkgInfo pkgInfo =
-                    new LocalAddonPkgInfo(this, addonDir, props, vers, rev);
+                // Starting with addon-4.xsd, we have vendor-id and name-id available
+                // in the add-on source properties so we'll use that directly.
+
+                String nameId     = props.getProperty(PkgProps.ADDON_NAME_ID);
+                String nameDisp   = props.getProperty(PkgProps.ADDON_NAME_DISPLAY);
+                String vendorId   = props.getProperty(PkgProps.ADDON_VENDOR_ID);
+                String vendorDisp = props.getProperty(PkgProps.ADDON_VENDOR_DISPLAY);
+
+                if (nameId == null) {
+                    // Support earlier add-ons that only had a name display attribute
+                    nameDisp = props.getProperty(PkgProps.ADDON_NAME, "Unknown");
+                    nameId = LocalAddonPkgInfo.sanitizeDisplayToNameId(nameDisp);
+                }
+
+                if (nameId != null && nameDisp == null) {
+                    nameDisp = LocalExtraPkgInfo.getPrettyName(null, nameId);
+                }
+
+                if (vendorId != null && vendorDisp == null) {
+                    vendorDisp = LocalExtraPkgInfo.getPrettyName(null, nameId);
+                }
+
+                if (vendorId == null) {
+                    // Support earlier add-ons that only had a vendor display attribute
+                    vendorDisp = props.getProperty(PkgProps.ADDON_VENDOR, "Unknown");
+                    vendorId = LocalAddonPkgInfo.sanitizeDisplayToNameId(vendorDisp);
+                }
+
+                LocalAddonPkgInfo pkgInfo = new LocalAddonPkgInfo(
+                        this, addonDir, props, vers, rev,
+                        new IdDisplay(vendorId, vendorDisp),
+                        new IdDisplay(nameId, nameDisp));
                 outCollection.add(pkgInfo);
 
             } catch (AndroidVersionException e) {

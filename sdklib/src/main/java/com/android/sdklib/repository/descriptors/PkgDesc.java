@@ -411,6 +411,8 @@ public class PkgDesc implements IPkgDesc {
         String name = "";
         if (this instanceof IPkgDescExtra) {
             name = ((IPkgDescExtra) this).getNameDisplay();
+        } else if (this instanceof IPkgDescAddon) {
+            name = ((IPkgDescAddon) this).getName().getDisplay();
         }
         result = result.replace("$NAME", name);
 
@@ -631,8 +633,7 @@ public class PkgDesc implements IPkgDesc {
         private IGetPath mCustomPath;
         private String[] mOldPaths;
         private String mNameDisplay;
-        private String mNameId;
-        private IAddonDesc mTargetHashProvider;
+        private IdDisplay mNameIdDisplay;
 
         private License mLicense;
         private String mListDisplay;
@@ -793,39 +794,20 @@ public class PkgDesc implements IPkgDesc {
          *
          * @param version The android version of the add-on package.
          * @param revision The revision of the add-on package.
-         * @param addonVendor The vendor id of the add-on package.
-         * @param addonNameId The name id of the add-on package.
+         * @param addonVendor The vendor id/display of the add-on package.
+         * @param addonName The name id/display of the add-on package.
          * @return A {@link PkgDesc} describing this add-on package.
          */
         @NonNull
         public static Builder newAddon(@NonNull AndroidVersion version,
                                        @NonNull MajorRevision revision,
-                                       @NonNull String addonVendor,
-                                       @NonNull String addonNameId) {
+                                       @NonNull IdDisplay addonVendor,
+                                       @NonNull IdDisplay addonName) {
             Builder p = new Builder(PkgType.PKG_ADDONS);
             p.mAndroidVersion = version;
-            p.mMajorRevision = revision;
-            p.mVendor = new IdDisplay(addonVendor, addonVendor); // TODO VendorId for addons
-            p.mNameId = addonNameId;
-            return p;
-        }
-
-        /**
-         * Create a new platform add-on descriptor where the target hash isn't determined yet.
-         *
-         * @param version The android version of the add-on package.
-         * @param revision The revision of the add-on package.
-         * @param targetHashProvider Implements a method that will return the target hash when needed.
-         * @return A {@link PkgDesc} describing this add-on package.
-         */
-        @NonNull
-        public static Builder newAddon(@NonNull AndroidVersion version,
-                                       @NonNull MajorRevision revision,
-                                       @NonNull IAddonDesc targetHashProvider) {
-            Builder p = new Builder(PkgType.PKG_ADDONS);
-            p.mAndroidVersion = version;
-            p.mMajorRevision = revision;
-            p.mTargetHashProvider = targetHashProvider;
+            p.mMajorRevision  = revision;
+            p.mVendor         = addonVendor;
+            p.mNameIdDisplay  = addonName;
             return p;
         }
 
@@ -933,15 +915,10 @@ public class PkgDesc implements IPkgDesc {
                         mDescriptionShort,
                         mDescriptionUrl,
                         mIsObsolete,
-                        mFullRevision,
                         mMajorRevision,
                         mAndroidVersion,
-                        mTag,
                         mVendor,
-                        mMinToolsRev,
-                        mMinPlatformToolsRev,
-                        mNameId,
-                        mTargetHashProvider);
+                        mNameIdDisplay);
             }
 
             if (mType == PkgType.PKG_EXTRAS) {

@@ -21,7 +21,6 @@ import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.internal.repository.packages.License;
-import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
 
 /**
@@ -29,74 +28,49 @@ import com.android.sdklib.repository.MajorRevision;
  * Do not use this class directly.
  * To create an instance use {@link PkgDesc.Builder#newAddon} instead.
  */
-final class PkgDescAddon extends PkgDesc {
+final class PkgDescAddon extends PkgDesc implements IPkgDescAddon {
 
-    private @Nullable final String mAddonPath;
-    private @Nullable final IAddonDesc mTargetHashProvider;
+    private final IdDisplay mAddonName;
 
     /**
-     * Add-on specific attributes should be either:
-     * - targetHashProvider is used if not null, and addonVendor/addonName are ignored.
-     * - otherwise addonVendor/addonName are used and should not be null.
-     *
-     * targetHashProvider is used to create an add-on pkg description
-     * where the target hash isn't determined yet.
+     * Add-on descriptor.
+     * The following attributes are mandatory:
      */
-    PkgDescAddon(@NonNull PkgType type,
+    PkgDescAddon(@NonNull  PkgType type,
                  @Nullable License license,
                  @Nullable String listDisplay,
                  @Nullable String descriptionShort,
                  @Nullable String descriptionUrl,
                  boolean isObsolete,
-                 @Nullable FullRevision fullRevision,
-                 @Nullable MajorRevision majorRevision,
-                 @Nullable AndroidVersion androidVersion,
-                 @Nullable IdDisplay tag,
-                 @Nullable IdDisplay vendor,
-                 @Nullable FullRevision minToolsRev,
-                 @Nullable FullRevision minPlatformToolsRev,
-                 @Nullable String addonNameId,
-                 @Nullable IAddonDesc targetHashProvider) {
+                 @NonNull  MajorRevision majorRevision,
+                 @NonNull  AndroidVersion androidVersion,
+                 @NonNull  IdDisplay vendor,
+                 @NonNull  IdDisplay addonName) {
         super(type,
               license,
               listDisplay,
               descriptionShort,
               descriptionUrl,
               isObsolete,
-              fullRevision,
+              null,     //fullRevision
               majorRevision,
               androidVersion,
-              null,     //path
-              tag,
+              AndroidTargetHash.getAddonHashString(vendor.getDisplay(),
+                                                   addonName.getDisplay(),
+                                                   androidVersion),
+              null,     //tag
               vendor,
-              minToolsRev,
-              minPlatformToolsRev,
+              null,     //minToolsRev
+              null,     //minPlatformToolsRev
               null,     //customIsUpdateFor
               null);    //customPath
 
-        String addonVendor = vendor == null ? null : vendor.getId();
-        assert targetHashProvider != null || (addonVendor != null && addonNameId != null);
-        mTargetHashProvider = targetHashProvider;
-        mAddonPath = targetHashProvider != null ? null :
-                     AndroidTargetHash.getAddonHashString(addonVendor, addonNameId, androidVersion);
+        mAddonName = addonName;
     }
 
-    @Override
-    public IdDisplay getVendor() {
-        if (mTargetHashProvider != null) {
-            String vid = mTargetHashProvider.getVendorId();
-            return new IdDisplay(vid, vid);     // TODO inject vendor-display
-        }
-        return super.getVendor();
-    }
-
-    /** The "path" of an add-on is its target hash. */
     @NonNull
     @Override
-    public String getPath() {
-        if (mTargetHashProvider != null) {
-            return mTargetHashProvider.getTargetHash();
-        }
-        return mAddonPath;
+    public IdDisplay getName() {
+        return mAddonName;
     }
 }
