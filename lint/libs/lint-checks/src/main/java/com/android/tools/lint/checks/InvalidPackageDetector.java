@@ -122,12 +122,13 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
             return;
         }
 
-        if (classNode.name.startsWith(JAVAX_PKG_PREFIX)) {
-            mJavaxLibraryClasses.add(classNode.name);
-        } else if ((classNode.access & Opcodes.ACC_ANNOTATION) != 0
+        if ((classNode.access & Opcodes.ACC_ANNOTATION) != 0
                 || classNode.superName.startsWith("javax/annotation/")) {
             // Don't flag references from annotations and annotation processors
-           return;
+            return;
+        }
+        if (classNode.name.startsWith(JAVAX_PKG_PREFIX)) {
+            mJavaxLibraryClasses.add(classNode.name);
         }
 
         List methodList = classNode.methods;
@@ -207,8 +208,18 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
     }
 
     private boolean isInvalidPackage(String owner) {
-        if (owner.startsWith(JAVA_PKG_PREFIX)
-                || owner.startsWith(JAVAX_PKG_PREFIX)) {
+        if (owner.startsWith(JAVA_PKG_PREFIX)) {
+            return !mApiDatabase.isValidJavaPackage(owner);
+        }
+
+        if (owner.startsWith(JAVAX_PKG_PREFIX)) {
+            // Annotations-related code is usually fine; these tend to be for build time
+            // jars, such as dagger
+            //noinspection SimplifiableIfStatement
+            if (owner.startsWith("javax/annotation/") || owner.startsWith("javax/lang/model")) {
+                return false;
+            }
+
             return !mApiDatabase.isValidJavaPackage(owner);
         }
 
@@ -251,6 +262,16 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
                 continue;
             }
             seen.add(pkg);
+
+            if (pkg.equals("javax.inject")) {
+                String name = jarFile.getName();
+                //noinspection SpellCheckingInspection
+                if (name.startsWith("dagger-") || name.startsWith("guice-")) {
+                    // White listed
+                    return;
+                }
+            }
+
             String message = String.format(
                     "Invalid package reference in library; not included in Android: %1$s. " +
                     "Referenced from %2$s.", pkg, ClassContext.getFqcn(referencedIn));
