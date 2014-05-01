@@ -83,18 +83,19 @@ public abstract class AndroidTargetHash {
     /**
      * Returns the hash string for a given add-on.
      *
-     * @param addonVendor A non-null
-     * @param addonName
+     * @param addonVendorId A non-null vendor id. When using an {@link IdDisplay} source,
+     *                      this parameter should be the {@link IdDisplay#getDisplay()}.
+     * @param addonNameId A non-null add-on name id.
      * @param version A non-null platform version (the addon's base platform version)
      * @return A non-null hash string uniquely representing this add-on target.
      */
     public static String getAddonHashString(
-            @NonNull String addonVendor,
-            @NonNull String addonName,
+            @NonNull String addonVendorId,
+            @NonNull String addonNameId,
             @NonNull AndroidVersion version) {
         return String.format(ADD_ON_FORMAT,
-                addonVendor,
-                addonName,
+                addonVendorId,
+                addonNameId,
                 version.getApiString());
     }
 

@@ -26,7 +26,7 @@ import com.android.sdklib.repository.NoPreviewRevision;
  * adds methods specific to extras.
  * <p/>
  * To create a new {@link IPkgDescExtra},
- * use {@link PkgDesc.Builder#newExtra(String, String, String[], NoPreviewRevision)}.
+ * use {@link PkgDesc.Builder#newExtra(IdDisplay, String, String, String[], NoPreviewRevision)}.
  * <p/>
  * The extra's revision is a {@link NoPreviewRevision}; the attribute is however
  * accessed via {@link IPkgDesc#getFullRevision()} instead of introducing a new
@@ -41,4 +41,11 @@ public interface IPkgDescExtra extends IPkgDesc {
      * @return A non-null, possibly empty, for old paths previously used for the same extra.
      */
     @NonNull public String[] getOldPaths();
+
+    /**
+     * Returns the display name of the Extra.
+     * @return A non-null name for the Extra, used for display purposes.
+     */
+    @NonNull public String getNameDisplay();
+
 }

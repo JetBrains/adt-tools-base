@@ -108,10 +108,10 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
 
     /**
      * Returns the package's vendor-id string or null.
-     * @return A non-null value if {@link #hasVendorId()} is true; otherwise a null value.
+     * @return A non-null value if {@link #hasVendor()} is true; otherwise a null value.
      */
     @Nullable
-    public String getVendorId();
+    public IdDisplay getVendor();
 
     /**
      * Returns the package's {@code min-tools-rev} or null.
