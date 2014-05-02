@@ -67,7 +67,7 @@ public class MergingReport {
                     logger.error(null /* throwable */, record.toString());
                     break;
                 case INFO:
-                    logger.info(record.toString());
+                    logger.verbose(record.toString());
                     break;
                 default:
                     logger.error(null /* throwable */, "Unhandled record type " + record.mSeverity);

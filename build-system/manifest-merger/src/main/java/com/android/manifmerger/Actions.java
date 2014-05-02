@@ -152,7 +152,7 @@ public class Actions {
 
             }
         }
-        logger.info(stringBuilder.toString());
+        logger.verbose(stringBuilder.toString());
     }
 
     /**
