@@ -160,7 +160,7 @@ public class ManifestMerger2 {
         MergingReport build = mergingReportBuilder.build();
         StdLogger stdLogger = new StdLogger(StdLogger.Level.INFO);
         build.log(stdLogger);
-        stdLogger.error(null, build.getMergedDocument().get().prettyPrint());
+        stdLogger.verbose(build.getMergedDocument().get().prettyPrint());
 
         return build;
     }
