@@ -76,6 +76,9 @@ public abstract class BaseExtension {
     List<String> flavorDimensionList
     String testBuildType = "debug"
 
+    private String defaultPublishConfig = "release"
+    private boolean publishNonDefault = false
+
     private Closure<Void> variantFilter
 
     private final DefaultDomainObjectSet<TestVariant> testVariantList =
@@ -272,6 +275,22 @@ public abstract class BaseExtension {
     @NonNull
     List<TestServer> getTestServers() {
         return testServerList
+    }
+
+    public void defaultPublishConfig(String value) {
+        defaultPublishConfig = value
+    }
+
+    public void publishNonDefault(boolean value) {
+        publishNonDefault = value
+    }
+
+    public String getDefaultPublishConfig() {
+        return defaultPublishConfig
+    }
+
+    public boolean getPublishNonDefault() {
+        return publishNonDefault
     }
 
     void variantFilter(Closure<Void> filter) {

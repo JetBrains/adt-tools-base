@@ -55,11 +55,6 @@ public class ApplicationVariantFactory implements VariantFactory {
     }
 
     @Override
-    public boolean isVariantPublished() {
-        return false;
-    }
-
-    @Override
     public boolean isLibrary() {
         return false;
     }
@@ -113,6 +108,6 @@ public class ApplicationVariantFactory implements VariantFactory {
         // Add NDK tasks
         basePlugin.createNdkTasks(variantData);
 
-        basePlugin.addPackageTasks(appVariantData, assembleTask);
+        basePlugin.addPackageTasks(appVariantData, assembleTask, true /*publishApk*/);
     }
 }

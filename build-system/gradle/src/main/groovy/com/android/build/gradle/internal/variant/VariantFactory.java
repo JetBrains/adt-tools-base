@@ -40,8 +40,6 @@ public interface VariantFactory {
     @NonNull
     VariantConfiguration.Type getVariantConfigurationType();
 
-    boolean isVariantPublished();
-
     boolean isLibrary();
 
     /**
