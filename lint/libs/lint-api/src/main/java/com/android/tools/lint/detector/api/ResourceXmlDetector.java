@@ -47,6 +47,7 @@ public abstract class ResourceXmlDetector extends Detector implements Detector.X
      * @return true if this detector can apply to resources in folders of the
      *         given type
      */
+    @Override
     public boolean appliesTo(@NonNull ResourceFolderType folderType) {
         return true;
     }

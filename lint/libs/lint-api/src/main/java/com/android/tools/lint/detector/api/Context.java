@@ -28,14 +28,9 @@ import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.SdkInfo;
 import com.google.common.annotations.Beta;
-import com.google.common.base.Splitter;
 
 import java.io.File;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Context passed to the detectors during an analysis run. It provides
@@ -78,9 +73,6 @@ public class Context {
 
     /** The contents of the file */
     private String mContents;
-
-    /** Map of properties to share results between detectors */
-    private Map<String, Object> mProperties;
 
     /** Whether this file contains any suppress markers (null means not yet determined) */
     private Boolean mContainsCommentSuppress;
@@ -189,40 +181,6 @@ public class Context {
     }
 
     /**
-     * Returns the value of the given named property, or null.
-     *
-     * @param name the name of the property
-     * @return the corresponding value, or null
-     */
-    @Nullable
-    public Object getProperty(String name) {
-        if (mProperties == null) {
-            return null;
-        }
-
-        return mProperties.get(name);
-    }
-
-    /**
-     * Sets the value of the given named property.
-     *
-     * @param name the name of the property
-     * @param value the corresponding value
-     */
-    public void setProperty(@NonNull String name, @Nullable Object value) {
-        if (value == null) {
-            if (mProperties != null) {
-                mProperties.remove(name);
-            }
-        } else {
-            if (mProperties == null) {
-                mProperties = new HashMap<String, Object>();
-            }
-            mProperties.put(name, value);
-        }
-    }
-
-    /**
      * Gets the SDK info for the current project.
      *
      * @return the SDK info for the current project, never null
@@ -328,49 +286,6 @@ public class Context {
      */
     public void requestRepeat(@NonNull Detector detector, @Nullable EnumSet<Scope> scope) {
         mDriver.requestRepeat(detector, scope);
-    }
-
-    /** Pattern for version qualifiers */
-    private static final Pattern VERSION_PATTERN = Pattern.compile("^v(\\d+)$"); //$NON-NLS-1$
-
-    private static File sCachedFolder = null;
-    private static int sCachedFolderVersion = -1;
-
-    /**
-     * Returns the folder version. For example, for the file values-v14/foo.xml,
-     * it returns 14.
-     *
-     * @return the folder version, or -1 if no specific version was specified
-     */
-    public int getFolderVersion() {
-        return getFolderVersion(file);
-    }
-
-    /**
-     * Returns the folder version of the given file. For example, for the file values-v14/foo.xml,
-     * it returns 14.
-     *
-     * @param file the file to be checked
-     * @return the folder version, or -1 if no specific version was specified
-     */
-    public static int getFolderVersion(File file) {
-        File parent = file.getParentFile();
-        if (parent.equals(sCachedFolder)) {
-            return sCachedFolderVersion;
-        }
-
-        sCachedFolder = parent;
-        sCachedFolderVersion = -1;
-
-        for (String qualifier : Splitter.on('-').split(parent.getName())) {
-            Matcher matcher = VERSION_PATTERN.matcher(qualifier);
-            if (matcher.matches()) {
-                sCachedFolderVersion = Integer.parseInt(matcher.group(1));
-                break;
-            }
-        }
-
-        return sCachedFolderVersion;
     }
 
     /** Returns the comment marker used in Studio to suppress statements for language, if any */

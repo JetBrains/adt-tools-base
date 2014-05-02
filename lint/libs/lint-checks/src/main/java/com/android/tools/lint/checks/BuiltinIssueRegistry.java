@@ -116,6 +116,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(LayoutInflationDetector.ISSUE);
         issues.add(LocaleDetector.DATE_FORMAT);
         issues.add(LocaleDetector.STRING_LOCALE);
+        issues.add(LocaleFolderDetector.ISSUE);
         issues.add(ManifestDetector.ALLOW_BACKUP);
         issues.add(ManifestDetector.APPLICATION_ICON);
         issues.add(ManifestDetector.DEVICE_ADMIN);

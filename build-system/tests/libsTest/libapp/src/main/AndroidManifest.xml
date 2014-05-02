@@ -5,7 +5,7 @@
     android:versionName="1.0" >
 
     <application
-        android:icon="@drawable/ic_launcher"
+        android:icon="@drawable/libapp_ic_launcher"
         android:label="@string/libapp_name" >
         <activity
             android:name="com.android.tests.libstest.app.MainActivityLibApp"
