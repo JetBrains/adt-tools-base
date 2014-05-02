@@ -34,15 +34,10 @@ import com.android.builder.dependency.LibraryBundle
 import com.android.builder.dependency.LibraryDependency
 import com.android.builder.dependency.ManifestDependency
 import com.android.builder.model.AndroidLibrary
-import com.google.common.collect.Sets
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.maven.MavenDeployer
-import org.gradle.api.plugins.MavenPlugin
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Sync
-import org.gradle.api.tasks.Upload
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.tooling.BuildException
@@ -81,11 +76,6 @@ public class LibraryVariantFactory implements VariantFactory {
     @Override
     public VariantConfiguration.Type getVariantConfigurationType() {
         return VariantConfiguration.Type.LIBRARY
-    }
-
-    @Override
-    boolean isVariantPublished() {
-        return true
     }
 
     @Override
@@ -303,7 +293,8 @@ public class LibraryVariantFactory implements VariantFactory {
         variantData.assembleTask = assembleTask
 
         if (extension.defaultPublishConfig.equals(fullName)) {
-            setupDefaultConfig(project, variantData.variantDependency.packageConfiguration)
+            VariantHelper.setupDefaultConfig(project,
+                    variantData.variantDependency.packageConfiguration)
 
             // add the artifact that will be published
             project.artifacts.add("default", bundle)
@@ -354,49 +345,6 @@ public class LibraryVariantFactory implements VariantFactory {
                 return variantConfig.directLibraries
             }
         };
-    }
-
-    private static void setupDefaultConfig(@NonNull Project project, @NonNull Configuration configuration) {
-        // The library artifact is published (inter-project( for the "default" configuration so
-        // we make sure "default" extends from the actual configuration used for building.
-        Configuration defaultConfig = project.configurations["default"]
-        defaultConfig.setExtendsFrom(Collections.singleton(configuration))
-
-        // for the maven publication (for now), we need to manually include all the configuration
-        // object in a special mapping.
-        // It's not possible to put the top level config object as extended from config won't
-        // be included.
-        Set<Configuration> flattenedConfigs = flattenConfigurations(configuration)
-
-        project.plugins.withType(MavenPlugin) {
-            project.tasks.withType(Upload) { task ->
-                task.repositories.withType(MavenDeployer) { repo ->
-                    for (Configuration config : flattenedConfigs) {
-                        repo.pom.scopeMappings.addMapping(300,
-                                project.configurations[config.name],
-                                "compile")
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Build a set of configuration containing all the Configuration object that a given
-     * configuration extends from, directly or transitively.
-     *
-     * @param configuration the configuration
-     * @return a set of config.
-     */
-    private static Set<Configuration> flattenConfigurations(@NonNull Configuration configuration) {
-        Set<Configuration> configs = Sets.newHashSet()
-        configs.add(configuration)
-
-        for (Configuration extend : configuration.getExtendsFrom()) {
-            configs.addAll(flattenConfigurations(extend))
-        }
-
-        return configs
     }
 
     public Task createExtractAnnotations(

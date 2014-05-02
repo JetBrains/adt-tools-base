@@ -45,6 +45,7 @@ import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.model.ArtifactMetaDataImpl
 import com.android.build.gradle.internal.model.JavaArtifactImpl
 import com.android.build.gradle.internal.model.ModelBuilder
+import com.android.build.gradle.internal.publishing.ApkPublishArtifact
 import com.android.build.gradle.internal.tasks.AndroidReportTask
 import com.android.build.gradle.internal.tasks.CheckManifest
 import com.android.build.gradle.internal.tasks.DependencyReportTask
@@ -68,6 +69,7 @@ import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.TestedVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
+import com.android.build.gradle.internal.variant.VariantHelper
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.Dex
 import com.android.build.gradle.tasks.GenerateBuildConfig
@@ -1110,7 +1112,7 @@ public abstract class BasePlugin {
         // Add NDK tasks
         createNdkTasks(variantData)
 
-        addPackageTasks(variantData, null)
+        addPackageTasks(variantData, null, false /*publishApk*/)
 
         if (assembleTest != null) {
             assembleTest.dependsOn variantData.assembleTask
@@ -1457,9 +1459,11 @@ public abstract class BasePlugin {
      * @param variantData the variant data.
      * @param assembleTask an optional assembleTask to be used. If null a new one is created. The
      *                assembleTask is always set in the Variant.
+     * @param publishApk if true the generated APK gets published.
      */
     public void addPackageTasks(@NonNull ApkVariantData variantData,
-                                @Nullable Task assembleTask) {
+                                @Nullable Task assembleTask,
+                                boolean publishApk) {
         VariantConfiguration variantConfig = variantData.variantConfiguration
 
         boolean runProguard = variantConfig.buildType.runProguard &&
@@ -1686,6 +1690,30 @@ public abstract class BasePlugin {
         }
 
         variantData.outputFile = { outputFileTask.outputFile }
+
+        if (publishApk) {
+            String fullName = variantData.variantConfiguration.fullName
+
+            if (extension.defaultPublishConfig.equals(fullName)) {
+                VariantHelper.setupDefaultConfig(project,
+                        variantData.variantDependency.packageConfiguration)
+
+                // add the artifact that will be published
+                project.artifacts.add("default", new ApkPublishArtifact(
+                        project.archivesBaseName,
+                        null,
+                        outputFileTask))
+            }
+
+            // also publish the artifact with its full config name
+            if (extension.publishNonDefault) {
+                project.artifacts.add(variantData.variantDependency.publishConfiguration.name,
+                        new ApkPublishArtifact(
+                                project.archivesBaseName,
+                                variantData.variantDependency.publishConfiguration.name,
+                                outputFileTask))
+            }
+        }
 
         // add an uninstall task
         def uninstallTask = project.tasks.create(
