@@ -63,7 +63,7 @@ public class ActionRecorderTest extends TestCase {
     public void testDoNothing() {
         Actions actions = mActionRecorderBuilder.build();
         actions.log(mLoggerMock);
-        Mockito.verify(mLoggerMock).info(Actions.HEADER);
+        Mockito.verify(mLoggerMock).verbose(Actions.HEADER);
         Mockito.verifyNoMoreInteractions(mLoggerMock);
         assertTrue(actions.getNodeKeys().isEmpty());
     }
@@ -92,7 +92,7 @@ public class ActionRecorderTest extends TestCase {
             .append(xmlElement.getId()).append("\n");
         appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 6, 5);
 
-        Mockito.verify(mLoggerMock).info(stringBuilder.toString());
+        Mockito.verify(mLoggerMock).verbose(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }
 
@@ -144,7 +144,7 @@ public class ActionRecorderTest extends TestCase {
         appendNode(stringBuilder, Actions.ActionType.ADDED, REFEFENCE_DOCUMENT, 6, 5);
         appendNode(stringBuilder, Actions.ActionType.REJECTED, "other_document", 6, 5);
 
-        Mockito.verify(mLoggerMock).info(stringBuilder.toString());
+        Mockito.verify(mLoggerMock).verbose(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }
 
@@ -181,7 +181,7 @@ public class ActionRecorderTest extends TestCase {
                 6,
                 15);
 
-        Mockito.verify(mLoggerMock).info(stringBuilder.toString());
+        Mockito.verify(mLoggerMock).verbose(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }
 
@@ -217,7 +217,7 @@ public class ActionRecorderTest extends TestCase {
                 4,
                 5);
 
-        Mockito.verify(mLoggerMock).info(stringBuilder.toString());
+        Mockito.verify(mLoggerMock).verbose(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }
 
@@ -277,7 +277,7 @@ public class ActionRecorderTest extends TestCase {
         stringBuilder.append(applicationElement.getId()).append("\n");
         appendNode(stringBuilder, Actions.ActionType.ADDED, "other_document", 7, 5);
 
-        Mockito.verify(mLoggerMock).info(stringBuilder.toString());
+        Mockito.verify(mLoggerMock).verbose(stringBuilder.toString());
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }
 
