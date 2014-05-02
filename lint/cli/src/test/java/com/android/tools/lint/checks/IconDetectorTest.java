@@ -37,7 +37,7 @@ public class IconDetectorTest extends AbstractCheckTest {
     private Set<Issue> mEnabled = new HashSet<Issue>();
     private boolean mAbbreviate;
 
-    private static Set<Issue> ALL = new HashSet<Issue>();
+    private static final Set<Issue> ALL = new HashSet<Issue>();
     static {
         ALL.add(IconDetector.DUPLICATES_CONFIGURATIONS);
         ALL.add(IconDetector.DUPLICATES_NAMES);

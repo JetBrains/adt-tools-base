@@ -304,6 +304,52 @@ public abstract class Detector {
                 @NonNull MethodNode method, @NonNull MethodInsnNode call);
     }
 
+    /** Specialized interface for detectors that scan binary resource files */
+    public interface BinaryResourceScanner {
+        /**
+         * Called for each resource folder
+         *
+         * @param context the context for the resource file
+         */
+        void checkBinaryResource(@NonNull ResourceContext context);
+
+        /**
+         * Returns whether this detector applies to the given folder type. This
+         * allows the detectors to be pruned from iteration, so for example when we
+         * are analyzing a string value file we don't need to look up detectors
+         * related to layout.
+         *
+         * @param folderType the folder type to be visited
+         * @return true if this detector can apply to resources in folders of the
+         *         given type
+         */
+        boolean appliesTo(@NonNull ResourceFolderType folderType);
+    }
+
+    /** Specialized interface for detectors that scan resource folders (the folder directory
+     * itself, not the individual files within it */
+    public interface ResourceFolderScanner {
+        /**
+         * Called for each resource folder
+         *
+         * @param context    the context for the resource folder
+         * @param folderName the resource folder name
+         */
+        void checkFolder(@NonNull ResourceContext context, @NonNull String folderName);
+
+        /**
+         * Returns whether this detector applies to the given folder type. This
+         * allows the detectors to be pruned from iteration, so for example when we
+         * are analyzing a string value file we don't need to look up detectors
+         * related to layout.
+         *
+         * @param folderType the folder type to be visited
+         * @return true if this detector can apply to resources in folders of the
+         *         given type
+         */
+        boolean appliesTo(@NonNull ResourceFolderType folderType);
+    }
+
     /** Specialized interface for detectors that scan XML files */
     public interface XmlScanner {
         /**
@@ -620,5 +666,19 @@ public abstract class Detector {
     // ---- Dummy implementations to make implementing an GradleScanner easier: ----
 
     public void visitBuildScript(@NonNull Context context, Map<String, Object> sharedData) {
+    }
+
+    // ---- Dummy implementations to make implementing a resource folder scanner easier: ----
+
+    public void checkFolder(@NonNull ResourceContext context, @NonNull String folderName) {
+    }
+
+    // ---- Dummy implementations to make implementing a binary resource scanner easier: ----
+
+    public void checkBinaryResource(@NonNull ResourceContext context) {
+    }
+
+    public boolean appliesTo(@NonNull ResourceFolderType folderType) {
+        return true;
     }
 }

@@ -17,9 +17,11 @@
 package com.android.tools.lint.client.api;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.XmlScanner;
 import com.android.tools.lint.detector.api.LintUtils;
+import com.android.tools.lint.detector.api.ResourceContext;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.annotations.Beta;
 
@@ -38,7 +40,9 @@ import java.util.Map;
 import java.util.RandomAccess;
 
 /**
- * Specialized visitor for running detectors on an XML document.
+ * Specialized visitor for running detectors on resources: typically XML documents,
+ * but also binary resources.
+ * <p>
  * It operates in two phases:
  * <ol>
  *   <li> First, it computes a set of maps where it generates a map from each
@@ -56,7 +60,7 @@ import java.util.RandomAccess;
  * to adjust your code for the next tools release.</b>
  */
 @Beta
-class XmlVisitor {
+class ResourceVisitor {
     private final Map<String, List<Detector.XmlScanner>> mElementToCheck =
             new HashMap<String, List<Detector.XmlScanner>>();
     private final Map<String, List<Detector.XmlScanner>> mAttributeToCheck =
@@ -68,15 +72,20 @@ class XmlVisitor {
     private final List<Detector.XmlScanner> mAllAttributeDetectors =
             new ArrayList<Detector.XmlScanner>();
     private final List<? extends Detector> mAllDetectors;
+    private final List<? extends Detector> mBinaryDetectors;
     private final XmlParser mParser;
 
     // Really want this:
     //<T extends List<Detector> & Detector.XmlScanner> XmlVisitor(IDomParser parser,
     //    T xmlDetectors) {
     // but it makes client code tricky and ugly.
-    XmlVisitor(@NonNull XmlParser parser, @NonNull List<? extends Detector> xmlDetectors) {
+    ResourceVisitor(
+            @NonNull XmlParser parser,
+            @NonNull List<? extends Detector> xmlDetectors,
+            @Nullable List<Detector> binaryDetectors) {
         mParser = parser;
         mAllDetectors = xmlDetectors;
+        mBinaryDetectors = binaryDetectors;
 
         // TODO: Check appliesTo() for files, and find a quick way to enable/disable
         // rules when running through a full project!
@@ -221,5 +230,16 @@ class XmlVisitor {
     @NonNull
     public XmlParser getParser() {
         return mParser;
+    }
+
+    public void visitBinaryResource(@NonNull ResourceContext context) {
+        if (mBinaryDetectors == null) {
+            return;
+        }
+        for (Detector check : mBinaryDetectors) {
+            check.beforeCheckFile(context);
+            check.checkBinaryResource(context);
+            check.afterCheckFile(context);
+        }
     }
 }

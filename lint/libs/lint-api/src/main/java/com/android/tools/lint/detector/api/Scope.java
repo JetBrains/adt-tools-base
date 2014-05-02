@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.SdkConstants.DOT_GRADLE;
 import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_PROPERTIES;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.FN_PROJECT_PROGUARD_FILE;
@@ -51,6 +52,19 @@ public enum Scope {
      * for incrementally when a file is edited.
      */
     RESOURCE_FILE,
+
+    /**
+     * The analysis only considers a single binary (typically a bitmap) resource file at a time.
+     * <p>
+     * Issues which are only affected by a single resource file can be checked
+     * for incrementally when a file is edited.
+     */
+    BINARY_RESOURCE_FILE,
+
+    /**
+     * The analysis considers the resource folders
+     */
+    RESOURCE_FOLDER,
 
     /**
      * The analysis considers <b>all</b> the resource file. This scope must not
@@ -174,10 +188,6 @@ public enum Scope {
                         scope.add(MANIFEST);
                     } else if (name.endsWith(DOT_XML)) {
                         scope.add(RESOURCE_FILE);
-                    } else if (name.equals(RES_FOLDER)
-                            || file.getParent().equals(RES_FOLDER)) {
-                        scope.add(ALL_RESOURCE_FILES);
-                        scope.add(RESOURCE_FILE);
                     } else if (name.endsWith(DOT_JAVA)) {
                         scope.add(JAVA_FILE);
                     } else if (name.endsWith(DOT_CLASS)) {
@@ -189,6 +199,14 @@ public enum Scope {
                         scope.add(PROGUARD_FILE);
                     } else if (name.endsWith(DOT_PROPERTIES)) {
                         scope.add(PROPERTY_FILE);
+                    } else if (name.endsWith(DOT_PNG)) {
+                        scope.add(BINARY_RESOURCE_FILE);
+                    } else if (name.equals(RES_FOLDER)
+                            || file.getParent().equals(RES_FOLDER)) {
+                        scope.add(ALL_RESOURCE_FILES);
+                        scope.add(RESOURCE_FILE);
+                        scope.add(BINARY_RESOURCE_FILE);
+                        scope.add(RESOURCE_FOLDER);
                     }
                 }
             } else {
@@ -205,6 +223,8 @@ public enum Scope {
     public static final EnumSet<Scope> ALL = EnumSet.allOf(Scope.class);
     /** Scope-set used for detectors which are affected by a single resource file */
     public static final EnumSet<Scope> RESOURCE_FILE_SCOPE = EnumSet.of(RESOURCE_FILE);
+    /** Scope-set used for detectors which are affected by a single resource folder */
+    public static final EnumSet<Scope> RESOURCE_FOLDER_SCOPE = EnumSet.of(RESOURCE_FOLDER);
     /** Scope-set used for detectors which scan all resources */
     public static final EnumSet<Scope> ALL_RESOURCES_SCOPE = EnumSet.of(ALL_RESOURCE_FILES);
     /** Scope-set used for detectors which are affected by a single Java source file */
@@ -232,4 +252,7 @@ public enum Scope {
             EnumSet.of(Scope.ALL_CLASS_FILES, Scope.JAVA_LIBRARIES);
     /** Scope-set used for detectors which are affected by Java libraries */
     public static final EnumSet<Scope> JAVA_LIBRARY_SCOPE = EnumSet.of(JAVA_LIBRARIES);
+    /** Scope-set used for detectors which are affected by a single binary resource file */
+    public static final EnumSet<Scope> BINARY_RESOURCE_FILE_SCOPE =
+            EnumSet.of(BINARY_RESOURCE_FILE);
 }

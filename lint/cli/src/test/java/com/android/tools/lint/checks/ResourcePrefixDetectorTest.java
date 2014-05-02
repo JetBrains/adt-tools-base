@@ -38,10 +38,14 @@ public class ResourcePrefixDetectorTest extends AbstractCheckTest {
 
     public void testResourceFiles() throws Exception {
         assertEquals(""
-            + "res/layout/layout1.xml: Error: Resource named 'layout1' does not start with the project's resource prefix 'unit_test_prefix_'; rename to 'unit_test_prefix_layout1' ? [ResourceName]\n"
-            + "res/menu/menu.xml: Error: Resource named 'menu' does not start with the project's resource prefix 'unit_test_prefix_'; rename to 'unit_test_prefix_menu' ? [ResourceName]\n"
-            // TODO: Handle bitmap resources
-            + "2 errors, 0 warnings\n",
+            + "res/drawable-mdpi/frame.png: Error: Resource named 'frame' does not start with the project's resource prefix 'unit_test_prefix_'; rename to 'unit_test_prefix_frame' ? [ResourceName]\n"
+            + "res/layout/layout1.xml:2: Error: Resource named 'layout1' does not start with the project's resource prefix 'unit_test_prefix_'; rename to 'unit_test_prefix_layout1' ? [ResourceName]\n"
+            + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+            + "^\n"
+            + "res/menu/menu.xml:2: Error: Resource named 'menu' does not start with the project's resource prefix 'unit_test_prefix_'; rename to 'unit_test_prefix_menu' ? [ResourceName]\n"
+            + "<menu xmlns:android=\"http://schemas.android.com/apk/res/android\" >\n"
+            + "^\n"
+            + "3 errors, 0 warnings\n",
             lintProject(
                 "res/layout/layout1.xml",
                 "res/menu/menu.xml",
@@ -52,7 +56,7 @@ public class ResourcePrefixDetectorTest extends AbstractCheckTest {
             ));
     }
 
-    public void test() throws Exception {
+    public void testValues() throws Exception {
         assertEquals(""
             + "res/values/customattr.xml:2: Error: Resource named 'ContentFrame' does not start with the project's resource prefix 'unit_test_prefix_'; rename to 'unit_test_prefix_ContentFrame' ? [ResourceName]\n"
             + "    <declare-styleable name=\"ContentFrame\">\n"
@@ -63,7 +67,9 @@ public class ResourcePrefixDetectorTest extends AbstractCheckTest {
             + "res/values/customattr.xml:4: Error: Resource named 'contentId' does not start with the project's resource prefix 'unit_test_prefix_'; rename to 'unit_test_prefix_contentId' ? [ResourceName]\n"
             + "        <attr name=\"contentId\" format=\"reference\" />\n"
             + "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-            + "res/layout/customattrlayout.xml: Error: Resource named 'customattrlayout' does not start with the project's resource prefix 'unit_test_prefix_'; rename to 'unit_test_prefix_customattrlayout' ? [ResourceName]\n"
+            + "res/layout/customattrlayout.xml:2: Error: Resource named 'customattrlayout' does not start with the project's resource prefix 'unit_test_prefix_'; rename to 'unit_test_prefix_customattrlayout' ? [ResourceName]\n"
+            + "<foo.bar.ContentFrame\n"
+            + "^\n"
             + "4 errors, 0 warnings\n",
 
             lintProject(
@@ -104,6 +110,8 @@ public class ResourcePrefixDetectorTest extends AbstractCheckTest {
 
             checkLint(Arrays.asList(master, library)).replace("/TESTROOT/",""));
     }
+
+    // TODO: Test suppressing root level tag
 
     @Override
     protected TestLintClient createClient() {
