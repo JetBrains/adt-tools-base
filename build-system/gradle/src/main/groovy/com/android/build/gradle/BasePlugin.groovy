@@ -1721,7 +1721,8 @@ public abstract class BasePlugin {
                 UninstallTask)
         uninstallTask.description = "Uninstalls the " + variantData.description
         uninstallTask.group = INSTALL_GROUP
-        uninstallTask.conventionMapping.adbExe = { androidBuilder.sdkInfo?.adb }
+        uninstallTask.variant = variantData
+        uninstallTask.conventionMapping.adbExe = { sdkHandler.sdkInfo?.adb }
 
         variantData.uninstallTask = uninstallTask
         uninstallAll.dependsOn uninstallTask
