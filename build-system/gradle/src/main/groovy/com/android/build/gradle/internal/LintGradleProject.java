@@ -91,7 +91,6 @@ public class LintGradleProject extends Project {
         return Pair.<LintGradleProject,List<File>>of(lintProject, customRules);
     }
 
-
     @Override
     protected void initialize() {
         // Deliberately not calling super; that code is for ADT compatibility
@@ -303,6 +302,13 @@ public class LintGradleProject extends Project {
                         }
                     }
                 }
+
+                for (File file : mVariant.getMainArtifact().getGeneratedResourceFolders()) {
+                    if (file.exists()) {
+                        mResourceFolders.add(file);
+                    }
+                }
+
             }
 
             return mResourceFolders;
@@ -314,11 +320,17 @@ public class LintGradleProject extends Project {
             if (mJavaSourceFolders == null) {
                 mJavaSourceFolders = Lists.newArrayList();
                 for (SourceProvider provider : getSourceProviders()) {
-                    Collection<File> resDirs = provider.getJavaDirectories();
-                    for (File res : resDirs) {
-                        if (res.exists()) { // model returns path whether or not it exists
-                            mJavaSourceFolders.add(res);
+                    Collection<File> srcDirs = provider.getJavaDirectories();
+                    for (File srcDir : srcDirs) {
+                        if (srcDir.exists()) { // model returns path whether or not it exists
+                            mJavaSourceFolders.add(srcDir);
                         }
+                    }
+                }
+
+                for (File file : mVariant.getMainArtifact().getGeneratedSourceFolders()) {
+                    if (file.exists()) {
+                        mJavaSourceFolders.add(file);
                     }
                 }
             }

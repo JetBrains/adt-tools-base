@@ -18,6 +18,7 @@ package com.android.tools.lint;
 
 import static com.android.SdkConstants.UTF_8;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.IAndroidTarget;
@@ -280,11 +281,11 @@ public class EcjParser extends JavaParser {
         Set<String> names = Sets.newHashSet();
         for (File library : mProject.getJavaLibraries()) {
             libraries.add(library);
-            names.add(library.getName());
+            names.add(getLibraryName(library));
         }
         for (Project project : mProject.getAllLibraries()) {
             for (File library : project.getJavaLibraries()) {
-                String name = library.getName();
+                String name = getLibraryName(library);
                 // Avoid pulling in android-support-v4.jar from libraries etc
                 // since we're pointing to the local copies rather than the real
                 // maven/gradle source copies
@@ -310,6 +311,30 @@ public class EcjParser extends JavaParser {
         }
 
         return classPath;
+    }
+
+    @NonNull
+    private static String getLibraryName(@NonNull File library) {
+        String name = library.getName();
+        if (name.equals(SdkConstants.FN_CLASSES_JAR)) {
+            // For AAR artifacts they'll all clash with "classes.jar"; include more unique
+            // context
+            String path = library.getPath();
+            int index = path.indexOf("exploded-aar");
+            if (index != -1) {
+                return path.substring(index);
+            } else {
+                index = path.indexOf("exploded-bundles");
+                if (index != -1) {
+                    return path.substring(index);
+                }
+            }
+            File parent = library.getParentFile();
+            if (parent != null) {
+                return parent.getName() + File.separatorChar + name;
+            }
+        }
+        return name;
     }
 
     @Override
