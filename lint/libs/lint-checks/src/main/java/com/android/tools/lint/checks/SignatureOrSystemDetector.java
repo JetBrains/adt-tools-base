@@ -18,13 +18,6 @@ package com.android.tools.lint.checks;
 
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
-import static com.android.SdkConstants.ANDROID_URI;
-import static com.android.SdkConstants.ATTR_PERMISSION;
-import static com.android.SdkConstants.TAG_GRANT_PERMISSION;
-import static com.android.SdkConstants.TAG_PERMISSION;
-import static com.android.SdkConstants.TAG_PROVIDER;
-import static com.android.SdkConstants.TAG_RECEIVER;
-import static com.android.SdkConstants.TAG_SERVICE;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
@@ -36,10 +29,8 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
-import com.sun.tools.javac.code.Flags;
 
 import org.w3c.dom.Attr;
-import org.w3c.dom.Element;
 
 import java.io.File;
 import java.util.Collection;
