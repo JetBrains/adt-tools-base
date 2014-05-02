@@ -183,6 +183,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ServiceCastDetector.ISSUE);
         issues.add(SetJavaScriptEnabledDetector.ISSUE);
         issues.add(SharedPrefsDetector.ISSUE);
+        issues.add(SignatureOrSystemDetector.ISSUE);
         issues.add(StateListDetector.ISSUE);
         issues.add(StringFormatDetector.ARG_COUNT);
         issues.add(StringFormatDetector.ARG_TYPES);
