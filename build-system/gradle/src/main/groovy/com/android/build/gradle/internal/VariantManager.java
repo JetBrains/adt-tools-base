@@ -292,7 +292,7 @@ public class VariantManager {
                 // create its dependencies. They'll be resolved below.
                 VariantDependencies variantDep = VariantDependencies.compute(
                         project, variantConfig.getFullName(),
-                        variantFactory.isVariantPublished(),
+                        isVariantPublished(),
                         variantFactory.isLibrary(),
                         buildTypeData, defaultConfigData.getMainProvider());
                 variantData.setVariantDependency(variantDep);
@@ -444,7 +444,7 @@ public class VariantManager {
 
                 VariantDependencies variantDep = VariantDependencies.compute(
                         project, variantConfig.getFullName(),
-                        variantFactory.isVariantPublished(),
+                        isVariantPublished(),
                         variantFactory.isLibrary(),
                         variantProviders.toArray(new ConfigurationProvider[variantProviders.size()]));
                 variantData.setVariantDependency(variantDep);
@@ -572,6 +572,10 @@ public class VariantManager {
                         ((TestedVariantData) variantData).getTestVariantData());
             }
         }
+    }
+
+    private boolean isVariantPublished() {
+        return extension.getPublishNonDefault();
     }
 
     private void createVariantApiObjects(

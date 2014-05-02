@@ -32,9 +32,6 @@ public class LibraryExtension extends BaseExtension {
     private final DefaultDomainObjectSet<LibraryVariant> libraryVariantList =
         new DefaultDomainObjectSet<LibraryVariant>(LibraryVariant.class)
 
-    private String defaultPublishConfig = "release"
-    private boolean publishNonDefault = false
-
     LibraryExtension(BasePlugin plugin, ProjectInternal project, Instantiator instantiator,
             NamedDomainObjectContainer<DefaultBuildType> buildTypes,
             NamedDomainObjectContainer<DefaultProductFlavor> productFlavors,
@@ -50,22 +47,6 @@ public class LibraryExtension extends BaseExtension {
     @Override
     void addVariant(BaseVariant variant) {
         libraryVariantList.add((LibraryVariant) variant)
-    }
-
-    public void defaultPublishConfig(String value) {
-        defaultPublishConfig = value
-    }
-
-    public void publishNonDefault(boolean value) {
-        publishNonDefault = value
-    }
-
-    public String getDefaultPublishConfig() {
-        return defaultPublishConfig
-    }
-
-    public boolean getPublishNonDefault() {
-        return publishNonDefault
     }
 
     // ---------------
