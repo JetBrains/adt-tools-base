@@ -20,6 +20,10 @@ import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ANDROID_PREFIX;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.BIN_FOLDER;
+import static com.android.SdkConstants.DOT_GIF;
+import static com.android.SdkConstants.DOT_JPEG;
+import static com.android.SdkConstants.DOT_JPG;
+import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.ID_PREFIX;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
@@ -39,6 +43,7 @@ import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.utils.PositionXmlParser;
+import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -131,9 +136,22 @@ public class LintUtils {
      * @return true if the given file is an xml file
      */
     public static boolean isXmlFile(@NonNull File file) {
-        String string = file.getName();
-        return string.regionMatches(true, string.length() - DOT_XML.length(),
-                DOT_XML, 0, DOT_XML.length());
+        return SdkUtils.endsWithIgnoreCase(file.getPath(), DOT_XML);
+    }
+
+    /**
+     * Returns true if the given file represents a bitmap drawable file
+     *
+     * @param file the file to be checked
+     * @return true if the given file is an xml file
+     */
+    public static boolean isBitmapFile(@NonNull File file) {
+        String path = file.getPath();
+        // endsWith(name, DOT_PNG) is also true for endsWith(name, DOT_9PNG)
+        return endsWith(path, DOT_PNG)
+                || endsWith(path, DOT_JPG)
+                || endsWith(path, DOT_GIF)
+                || endsWith(path, DOT_JPEG);
     }
 
     /**
