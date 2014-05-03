@@ -31,6 +31,8 @@ import com.google.common.annotations.Beta;
 
 import java.io.File;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Context passed to the detectors during an analysis run. It provides
@@ -73,6 +75,9 @@ public class Context {
 
     /** The contents of the file */
     private String mContents;
+
+    /** Map of properties to share results between detectors */
+    private Map<String, Object> mProperties;
 
     /** Whether this file contains any suppress markers (null means not yet determined) */
     private Boolean mContainsCommentSuppress;
@@ -178,6 +183,42 @@ public class Context {
         }
 
         return mContents;
+    }
+
+    /**
+     * Returns the value of the given named property, or null.
+     *
+     * @param name the name of the property
+     * @return the corresponding value, or null
+     */
+    @SuppressWarnings("UnusedDeclaration") // Used in ADT
+    @Nullable
+    public Object getProperty(String name) {
+        if (mProperties == null) {
+            return null;
+        }
+
+        return mProperties.get(name);
+    }
+
+    /**
+     * Sets the value of the given named property.
+     *
+     * @param name the name of the property
+     * @param value the corresponding value
+     */
+    @SuppressWarnings("UnusedDeclaration") // Used in ADT
+    public void setProperty(@NonNull String name, @Nullable Object value) {
+        if (value == null) {
+            if (mProperties != null) {
+                mProperties.remove(name);
+            }
+        } else {
+            if (mProperties == null) {
+                mProperties = new HashMap<String, Object>();
+            }
+            mProperties.put(name, value);
+        }
     }
 
     /**
