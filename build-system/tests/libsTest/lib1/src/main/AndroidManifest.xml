@@ -7,7 +7,7 @@
 
     <application
         android:icon="@drawable/lib1_ic_launcher"
-        android:label="@string/lib1_name" tools:replace="label" >
+        android:label="@string/lib1_name" tools:replace="label, icon" >
         <activity
             android:name="MainActivity"
             android:label="@string/lib1_name" >
