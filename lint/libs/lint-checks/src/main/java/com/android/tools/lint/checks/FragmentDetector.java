@@ -138,10 +138,12 @@ public class FragmentDetector extends Detector implements JavaScanner {
                 }
 
                 boolean hasDefaultConstructor = false;
+                boolean hasConstructor = false;
                 NormalTypeBody body = node.astBody();
                 if (body != null) {
                     for (TypeMember member : body.astMembers()) {
                         if (member instanceof ConstructorDeclaration) {
+                            hasConstructor = true;
                             ConstructorDeclaration constructor = (ConstructorDeclaration) member;
                             if (constructor.astParameters().isEmpty()) {
                                 // The constructor must be public
@@ -170,7 +172,7 @@ public class FragmentDetector extends Detector implements JavaScanner {
                     }
                 }
 
-                if (!hasDefaultConstructor) {
+                if (!hasDefaultConstructor && hasConstructor) {
                     String message = String.format(
                             "This fragment should provide a default constructor (a public " +
                             "constructor with no arguments) (%1$s)",
