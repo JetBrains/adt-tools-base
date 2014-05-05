@@ -248,10 +248,10 @@ class AttributeModel {
     };
 
     /**
-     * Merging policy that will return the higher priority value if it is numerically greater than
-     * the lower priority value, otherwise null.
+     * Merging policy that will return the higher priority value regardless of the lower priority
+     * value
      */
-    static final MergingPolicy NUMERICAL_SUPERIORITY_POLICY = new MergingPolicy() {
+    static final MergingPolicy NO_MERGING_POLICY = new MergingPolicy() {
 
         @Override
         public boolean shouldMergeDefaultValues() {
@@ -261,9 +261,7 @@ class AttributeModel {
         @Nullable
         @Override
         public String merge(@NonNull String higherPriority, @NonNull String lowerPriority) {
-            return decodeDecOrHexString(higherPriority) >= decodeDecOrHexString(lowerPriority)
-                    ? higherPriority
-                    : null;
+            return higherPriority;
         }
     };
 

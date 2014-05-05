@@ -382,10 +382,9 @@ public class XmlDocumentTest extends TestCase {
 
         assertFalse(mergedDocument.isPresent());
         MergingReport mergingReport = mergingReportBuilder.build();
-        assertEquals(2, mergingReport.getLoggingRecords().size());
+        assertEquals(1, mergingReport.getLoggingRecords().size());
         assertTrue(mergingReport.getLoggingRecords().get(0).getSeverity() == ERROR);
-        assertTrue(mergingReport.getLoggingRecords().get(1).getSeverity() == ERROR);
-        assertTrue(mergingReport.getLoggingRecords().get(1).toString().contains(
+        assertTrue(mergingReport.getLoggingRecords().get(0).toString().contains(
                 "uses-sdk:minSdkVersion 4"));
     }
 

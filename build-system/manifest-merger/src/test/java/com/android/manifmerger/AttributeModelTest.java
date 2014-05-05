@@ -193,8 +193,7 @@ public class AttributeModelTest extends TestCase {
     }
 
     public void testNumericalSuperiorityPolicy() {
-        assertEquals(null, AttributeModel.NUMERICAL_SUPERIORITY_POLICY.merge("5", "10"));
-        assertEquals("10", AttributeModel.NUMERICAL_SUPERIORITY_POLICY.merge("10", "5"));
-        assertEquals("5", AttributeModel.NUMERICAL_SUPERIORITY_POLICY.merge("5", "5"));
+        assertEquals("5", AttributeModel.NO_MERGING_POLICY.merge("5", "10"));
+        assertEquals("10", AttributeModel.NO_MERGING_POLICY.merge("10", "5"));
     }
 }
