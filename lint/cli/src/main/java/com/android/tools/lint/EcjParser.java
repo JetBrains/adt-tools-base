@@ -101,7 +101,7 @@ import lombok.ast.ecj.EcjTreeConverter;
  * Java parser which uses ECJ for parsing and type attribution
  */
 public class EcjParser extends JavaParser {
-    private static final boolean DEBUG_DUMP_PARSE_ERRORS = true;
+    private static final boolean DEBUG_DUMP_PARSE_ERRORS = false;
 
     private final LintClient mClient;
     private final Project mProject;
