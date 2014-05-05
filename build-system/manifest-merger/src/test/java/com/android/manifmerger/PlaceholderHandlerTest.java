@@ -115,6 +115,7 @@ public class PlaceholderHandlerTest extends TestCase {
             if (!xmlAttribute.getName().toString().contains("name")) {
                 verify(mActionRecorder).recordAttributeAction(
                         xmlAttribute,
+                        PositionImpl.UNKNOWN,
                         Actions.ActionType.INJECTED,
                         null);
             }

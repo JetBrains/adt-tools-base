@@ -21,6 +21,7 @@ import static com.android.manifmerger.XmlNode.NodeKey;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.GuardedBy;
+import com.android.utils.PositionXmlParser;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
@@ -199,12 +200,31 @@ public class ActionRecorder {
             @NonNull Actions.ActionType actionType,
             @Nullable AttributeOperationType attributeOperationType) {
 
+        recordAttributeAction(
+                attribute, attribute.getPosition(), actionType, attributeOperationType);
+    }
+
+    /**
+     * Records an attribute action taken by the merging tool
+     *
+     * @param attribute              the attribute in question.
+     * @param attributePosition      the attribute's position.
+     * @param actionType             the action's type
+     * @param attributeOperationType the original tool annotation leading to the merging tool
+     *                               decision.
+     */
+    synchronized void recordAttributeAction(
+            @NonNull XmlAttribute attribute,
+            @NonNull PositionXmlParser.Position attributePosition,
+            @NonNull Actions.ActionType actionType,
+            @Nullable AttributeOperationType attributeOperationType) {
+
         XmlElement originElement = attribute.getOwnerElement();
         Actions.AttributeRecord attributeRecord = new Actions.AttributeRecord(
                 actionType,
                 new Actions.ActionLocation(
                         originElement.getDocument().getSourceLocation(),
-                        attribute.getPosition()),
+                        attributePosition),
                 attribute.getId(),
                 null, /* reason */
                 attributeOperationType
