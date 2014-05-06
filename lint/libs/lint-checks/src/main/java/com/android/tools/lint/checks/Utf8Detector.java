@@ -48,7 +48,10 @@ public class Utf8Detector extends ResourceXmlDetector {
             "XML supports encoding in a wide variety of character sets. However, not all " +
             "tools handle the XML encoding attribute correctly, and nearly all Android " +
             "apps use UTF-8, so by using UTF-8 you can protect yourself against subtle " +
-            "bugs when using non-ASCII characters.",
+            "bugs when using non-ASCII characters.\n" +
+            "\n" +
+            "In particular, the Android Gradle build system will merge resource XML files " +
+            "assuming the resource files are using UTF-8 encoding.\n",
             Category.I18N,
             5,
             Severity.FATAL,

@@ -25,7 +25,7 @@ public class Utf8DetectorTest extends AbstractCheckTest {
         return new Utf8Detector();
     }
 
-    public void test() throws Exception {
+    public void testIsoLatin() throws Exception {
         assertEquals(
             "res/layout/encoding.xml:1: Error: iso-latin-1: Not using UTF-8 as the file encoding. This can lead to subtle bugs with non-ascii characters [EnforceUTF8]\n" +
             "<?xml version=\"1.0\" encoding=\"iso-latin-1\"?>\n" +
@@ -34,7 +34,7 @@ public class Utf8DetectorTest extends AbstractCheckTest {
             lintProject("res/layout/encoding.xml"));
     }
 
-    public void testWithR() throws Exception {
+    public void testWithWindowsCarriageReturn() throws Exception {
         assertEquals(
             "res/layout/encoding2.xml:1: Error: iso-latin-1: Not using UTF-8 as the file encoding. This can lead to subtle bugs with non-ascii characters [EnforceUTF8]\n" +
             "<?xml version=\"1.0\" encoding=\"iso-latin-1\"?>\n" +
@@ -55,5 +55,74 @@ public class Utf8DetectorTest extends AbstractCheckTest {
         assertEquals(
             "No warnings.",
             lintProject("res/layout/activity_item_two_pane.xml"));
+    }
+
+    public void testImplicitUtf16() throws Exception {
+        // Implicit encoding: Not currently checked
+        assertEquals("No warnings.",
+                lintProject("encoding/UTF-16-bom-implicit.xml=>res/layout/layout.xml"));
+    }
+
+    public void testUtf16WithByteOrderMark() throws Exception {
+        assertEquals(""
+            + "res/layout/layout.xml:1: Error: UTF-16: Not using UTF-8 as the file encoding. This can lead to subtle bugs with non-ascii characters [EnforceUTF8]\n"
+            + "<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n"
+            + "                              ~~~~~~\n"
+            + "1 errors, 0 warnings\n",
+            lintProject("encoding/UTF-16-bom.xml=>res/layout/layout.xml"));
+    }
+
+    public void testUtf16WithoutByteOrderMark() throws Exception {
+        assertEquals(""
+            + "res/layout/layout.xml:1: Error: UTF-16: Not using UTF-8 as the file encoding. This can lead to subtle bugs with non-ascii characters [EnforceUTF8]\n"
+            + "<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n"
+            + "                              ~~~~~~\n"
+            + "1 errors, 0 warnings\n",
+            lintProject("encoding/UTF-16-nobom.xml=>res/layout/layout.xml"));
+    }
+
+    public void testUtf32WithByteOrderMark() throws Exception {
+        assertEquals(""
+            + "res/layout/layout.xml:1: Error: UTF_32: Not using UTF-8 as the file encoding. This can lead to subtle bugs with non-ascii characters [EnforceUTF8]\n"
+            + "<?xml version=\"1.0\" encoding=\"UTF_32\"?>\n"
+            + "                              ~~~~~~\n"
+            + "1 errors, 0 warnings\n",
+            lintProject("encoding/UTF_32-bom.xml=>res/layout/layout.xml"));
+    }
+
+    public void testUtf32WithoutByteOrderMark() throws Exception {
+        assertEquals(""
+            + "res/layout/layout.xml:1: Error: UTF_32: Not using UTF-8 as the file encoding. This can lead to subtle bugs with non-ascii characters [EnforceUTF8]\n"
+            + "<?xml version=\"1.0\" encoding=\"UTF_32\"?>\n"
+            + "                              ~~~~~~\n"
+            + "1 errors, 0 warnings\n",
+            lintProject("encoding/UTF_32-nobom.xml=>res/layout/layout.xml"));
+    }
+
+    public void testUtf32LeWithoutByteOrderMark() throws Exception {
+        assertEquals(""
+            + "res/layout/layout.xml:1: Error: UTF_32LE: Not using UTF-8 as the file encoding. This can lead to subtle bugs with non-ascii characters [EnforceUTF8]\n"
+            + "<?xml version=\"1.0\" encoding=\"UTF_32LE\"?>\n"
+            + "                              ~~~~~~~~\n"
+            + "1 errors, 0 warnings\n",
+            lintProject("encoding/UTF_32LE-nobom.xml=>res/layout/layout.xml"));
+    }
+
+    public void testMacRoman() throws Exception {
+        assertEquals(""
+                        + "res/layout/layout.xml:1: Error: MacRoman: Not using UTF-8 as the file encoding. This can lead to subtle bugs with non-ascii characters [EnforceUTF8]\n"
+                        + "<?xml version=\"1.0\" encoding=\"MacRoman\"?>\n"
+                        + "                              ~~~~~~~~\n"
+                        + "1 errors, 0 warnings\n",
+                lintProject("encoding/MacRoman.xml=>res/layout/layout.xml"));
+    }
+
+    public void testWindows1252() throws Exception {
+        assertEquals(""
+                        + "res/layout/layout.xml:1: Error: windows-1252: Not using UTF-8 as the file encoding. This can lead to subtle bugs with non-ascii characters [EnforceUTF8]\n"
+                        + "<?xml version=\"1.0\" encoding=\"windows-1252\"?>\n"
+                        + "                              ~~~~~~~~~~~~\n"
+                        + "1 errors, 0 warnings\n",
+                lintProject("encoding/Windows-1252.xml=>res/layout/layout.xml"));
     }
 }
