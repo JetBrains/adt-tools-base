@@ -146,7 +146,7 @@ public class XmlContext extends ResourceContext {
         return SUPPRESS_COMMENT_PREFIX;
     }
 
-    public boolean isSuppressed(@NonNull Node node, @NonNull Issue issue) {
+    public boolean isSuppressedWithComment(@NonNull Node node, @NonNull Issue issue) {
         // Check whether there is a comment marker
         String contents = getContents();
         assert contents != null; // otherwise we wouldn't be here

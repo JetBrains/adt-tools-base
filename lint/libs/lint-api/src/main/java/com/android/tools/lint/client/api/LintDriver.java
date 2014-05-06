@@ -2524,7 +2524,7 @@ public class LintDriver {
                 }
             }
 
-            if (checkComments && context.isSuppressed(scope, issue)) {
+            if (checkComments && context.isSuppressedWithComment(scope, issue)) {
                 return true;
             }
 
@@ -2626,7 +2626,7 @@ public class LintDriver {
                             }
                         }
                     }
-                } else if (checkComments && context.isSuppressed(node, issue)) {
+                } else if (checkComments && context.isSuppressedWithComment(node, issue)) {
                     return true;
                 }
             }

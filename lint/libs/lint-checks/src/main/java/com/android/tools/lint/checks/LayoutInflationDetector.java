@@ -186,7 +186,7 @@ public class LayoutInflationDetector extends LayoutDetector implements Detector.
                 if (context.getScope().contains(Scope.RESOURCE_FILE)) {
                     // We're doing a full analysis run: we can gather this information
                     // incrementally
-                    if (!context.isSuppressed(node, ISSUE)) {
+                    if (!context.getDriver().isSuppressed(context, ISSUE, node)) {
                         if (mPendingErrors == null) {
                             mPendingErrors = Lists.newArrayList();
                         }
