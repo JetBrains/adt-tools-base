@@ -27,21 +27,19 @@ public class Utf8DetectorTest extends AbstractCheckTest {
 
     public void test() throws Exception {
         assertEquals(
-            "res/layout/encoding.xml:1: Warning: iso-latin-1: Not using UTF-8 as the file encoding. This can lead to subtle bugs with non-ascii characters [EnforceUTF8]\n" +
+            "res/layout/encoding.xml:1: Error: iso-latin-1: Not using UTF-8 as the file encoding. This can lead to subtle bugs with non-ascii characters [EnforceUTF8]\n" +
             "<?xml version=\"1.0\" encoding=\"iso-latin-1\"?>\n" +
             "                              ~~~~~~~~~~~\n" +
-            "0 errors, 1 warnings\n" +
-            "",
+            "1 errors, 0 warnings\n",
             lintProject("res/layout/encoding.xml"));
     }
 
     public void testWithR() throws Exception {
         assertEquals(
-            "res/layout/encoding2.xml:1: Warning: iso-latin-1: Not using UTF-8 as the file encoding. This can lead to subtle bugs with non-ascii characters [EnforceUTF8]\n" +
+            "res/layout/encoding2.xml:1: Error: iso-latin-1: Not using UTF-8 as the file encoding. This can lead to subtle bugs with non-ascii characters [EnforceUTF8]\n" +
             "<?xml version=\"1.0\" encoding=\"iso-latin-1\"?>\n" +
             "                              ~~~~~~~~~~~\n" +
-            "0 errors, 1 warnings\n" +
-            "",
+            "1 errors, 0 warnings\n",
             // encoding2.xml = encoding.xml but with \n => \r
             lintProject("res/layout/encoding2.xml"));
     }
@@ -51,5 +49,11 @@ public class Utf8DetectorTest extends AbstractCheckTest {
         assertEquals(
             "No warnings.",
             lintProject("res/layout/layout1.xml"));
+    }
+
+    public void testNoProlog() throws Exception {
+        assertEquals(
+            "No warnings.",
+            lintProject("res/layout/activity_item_two_pane.xml"));
     }
 }
