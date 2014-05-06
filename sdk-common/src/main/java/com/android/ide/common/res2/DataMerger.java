@@ -25,6 +25,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
 import org.w3c.dom.Document;
@@ -34,10 +35,10 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -335,11 +336,11 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             return false;
         }
 
-        BufferedInputStream stream = null;
+        InputStreamReader reader = null;
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            stream = new BufferedInputStream(new FileInputStream(file));
-            InputSource is = new InputSource(stream);
+            reader = new InputStreamReader(new FileInputStream(file), Charsets.UTF_8);
+            InputSource is = new InputSource(reader);
             factory.setNamespaceAware(true);
             factory.setValidating(false);
 
@@ -391,13 +392,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
         } catch (SAXException e) {
             throw new MergingException(e).setFile(file);
         } finally {
-            try {
-                if (stream != null) {
-                    stream.close();
-                }
-            } catch (IOException e) {
-                // ignore
-            }
+            Closeables.closeQuietly(reader);
         }
     }
 

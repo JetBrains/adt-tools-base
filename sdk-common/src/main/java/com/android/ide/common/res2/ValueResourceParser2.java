@@ -28,6 +28,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
 import com.android.utils.XmlUtils;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -41,10 +42,10 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -205,10 +206,10 @@ class ValueResourceParser2 {
     @NonNull
     static Document parseDocument(File file) throws MergingException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        BufferedInputStream stream = null;
+        InputStreamReader reader = null;
         try {
-            stream = new BufferedInputStream(new FileInputStream(file));
-            InputSource is = new InputSource(stream);
+            reader = new InputStreamReader(new FileInputStream(file), Charsets.UTF_8);
+            InputSource is = new InputSource(reader);
             factory.setNamespaceAware(true);
             factory.setValidating(false);
             DocumentBuilder builder = factory.newDocumentBuilder();
@@ -230,7 +231,7 @@ class ValueResourceParser2 {
         } catch (IOException e) {
             throw new MergingException(e).setFile(file);
         } finally {
-            Closeables.closeQuietly(stream);
+            Closeables.closeQuietly(reader);
         }
     }
 
