@@ -134,5 +134,4 @@
 
 
 @errors
-ERROR:Attribute uses-sdk@minSdkVersion value=(4) at ManifestMerger2Test1_lib1.xml:6:15 cannot override implicit default value=(1) at ManifestMerger2Test0_main.xml:8:5
 ERROR:uses-sdk:minSdkVersion 1 cannot be smaller than version 4 declared in library ManifestMerger2Test1_lib1.xml

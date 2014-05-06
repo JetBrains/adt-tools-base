@@ -530,14 +530,14 @@ class ManifestModel {
                 AttributeModel.newModel("minSdkVersion")
                         .setDefaultValue(SdkConstants.VALUE_1)
                         .setOnReadValidator(new AttributeModel.IntegerValueValidator())
-                        .setMergingPolicy(AttributeModel.NUMERICAL_SUPERIORITY_POLICY),
+                        .setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
                 AttributeModel.newModel("maxSdkVersion").setOnReadValidator(
                         new AttributeModel.IntegerValueValidator())
-                        .setMergingPolicy(AttributeModel.NUMERICAL_SUPERIORITY_POLICY),
+                        .setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
                 // TODO : model target's default value is minSdkVersion value.
                 AttributeModel.newModel("targetSdkVersion")
                         .setOnReadValidator(new AttributeModel.IntegerValueValidator())
-                        .setMergingPolicy(AttributeModel.NUMERICAL_SUPERIORITY_POLICY)
+                        .setMergingPolicy(AttributeModel.NO_MERGING_POLICY)
         ),
 
         /**
