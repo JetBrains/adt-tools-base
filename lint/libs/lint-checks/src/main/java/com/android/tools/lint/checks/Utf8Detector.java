@@ -34,6 +34,9 @@ import java.util.regex.Pattern;
 
 /**
  * Checks that the encoding used in resource files is always UTF-8
+ * <p>
+ * TODO: Add a check which looks at files which do not specify the encoding
+ * and check the contents to see if it contains characters where it's ambiguous.
  */
 public class Utf8Detector extends ResourceXmlDetector {
 
@@ -48,7 +51,7 @@ public class Utf8Detector extends ResourceXmlDetector {
             "bugs when using non-ASCII characters.",
             Category.I18N,
             5,
-            Severity.WARNING,
+            Severity.FATAL,
             new Implementation(
                     Utf8Detector.class,
                     Scope.RESOURCE_FILE_SCOPE));
