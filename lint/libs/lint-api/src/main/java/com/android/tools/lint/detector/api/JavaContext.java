@@ -174,7 +174,7 @@ public class JavaContext extends Context {
         return SUPPRESS_COMMENT_PREFIX;
     }
 
-    public boolean isSuppressed(@NonNull Node scope, @NonNull Issue issue) {
+    public boolean isSuppressedWithComment(@NonNull Node scope, @NonNull Issue issue) {
         // Check whether there is a comment marker
         String contents = getContents();
         assert contents != null; // otherwise we wouldn't be here
