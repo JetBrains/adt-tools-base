@@ -88,7 +88,7 @@ public class Dex extends BaseTask {
             }
         }
 
-        doTaskAction(!forceFullRun)
+        doTaskAction(!forceFullRun.get())
     }
 
     private void doTaskAction(boolean incremental) {
