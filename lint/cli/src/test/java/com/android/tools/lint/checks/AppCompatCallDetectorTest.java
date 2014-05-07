@@ -41,12 +41,23 @@ public class AppCompatCallDetectorTest extends AbstractCheckTest {
         + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
         + "0 errors, 6 warnings\n",
         lintProject(
+            "bytecode/classes.jar=>libs/appcompat-v7-18.0.0.jar",
             "appcompat/AppCompatTest.java.txt=>src/test/pkg/AppCompatTest.java",
             "appcompat/IntermediateActivity.java.txt=>src/test/pkg/IntermediateActivity.java",
             // Stubs just to be able to do type resolution without needing the full appcompat jar
             "appcompat/ActionBarActivity.java.txt=>src/android/support/v7/app/ActionBarActivity.java",
             "appcompat/ActionMode.java.txt=>src/android/support/v7/view/ActionMode.java"
         ));
+    }
+
+    public void testNoWarningsWithoutAppCompat() throws Exception {
+        assertEquals("No warnings.",
+            lintProject(
+                    "appcompat/AppCompatTest.java.txt=>src/test/pkg/AppCompatTest.java",
+                    "appcompat/IntermediateActivity.java.txt=>src/test/pkg/IntermediateActivity.java",
+                    "appcompat/ActionBarActivity.java.txt=>src/android/support/v7/app/ActionBarActivity.java",
+                    "appcompat/ActionMode.java.txt=>src/android/support/v7/view/ActionMode.java"
+            ));
     }
 
     @Override
