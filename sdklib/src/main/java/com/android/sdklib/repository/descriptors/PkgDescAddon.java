@@ -31,16 +31,6 @@ import com.android.sdklib.repository.MajorRevision;
  */
 final class PkgDescAddon extends PkgDesc {
 
-    public static final String ADDON_NAME         = "name";                 //$NON-NLS-1$
-    public static final String ADDON_VENDOR       = "vendor";               //$NON-NLS-1$
-    public static final String ADDON_API          = "api";                  //$NON-NLS-1$
-    public static final String ADDON_DESCRIPTION  = "description";          //$NON-NLS-1$
-    public static final String ADDON_LIBRARIES    = "libraries";            //$NON-NLS-1$
-    public static final String ADDON_DEFAULT_SKIN = "skin";                 //$NON-NLS-1$
-    public static final String ADDON_USB_VENDOR   = "usb-vendor";           //$NON-NLS-1$
-    public static final String ADDON_REVISION     = "revision";             //$NON-NLS-1$
-    public static final String ADDON_REVISION_OLD = "version";              //$NON-NLS-1$
-
     private @Nullable final String mAddonPath;
     private @Nullable final IAddonDesc mTargetHashProvider;
 
