@@ -211,6 +211,7 @@ public class AddonPackage extends MajorRevisionPackage
                           (MajorRevision) getRevision(),
                           mVendorId,
                           mNameId)
+                .setDescriptions(this)
                 .create();
     }
 
@@ -312,6 +313,7 @@ public class AddonPackage extends MajorRevisionPackage
                           (MajorRevision) getRevision(),
                           mVendorId,
                           mNameId)
+                .setDescriptions(this)
                 .create();
     }
 
@@ -375,6 +377,7 @@ public class AddonPackage extends MajorRevisionPackage
                           new MajorRevision(intRevision),
                           vendor,
                           name)
+                .setDescriptionShort(shortDesc)
                 .create();
 
         return new BrokenPackage(null/*props*/, shortDesc, longDesc,

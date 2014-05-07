@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.internal.repository.packages.License;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
 
@@ -53,17 +54,27 @@ final class PkgDescAddon extends PkgDesc {
      * where the target hash isn't determined yet.
      */
     PkgDescAddon(@NonNull PkgType type,
-                @Nullable FullRevision fullRevision,
-                @Nullable MajorRevision majorRevision,
-                @Nullable AndroidVersion androidVersion,
-                @Nullable IdDisplay tag,
-                @Nullable String vendorId,
-                @Nullable FullRevision minToolsRev,
-                @Nullable FullRevision minPlatformToolsRev,
-                @Nullable String addonVendor,
-                @Nullable String addonName,
-                @Nullable IAddonDesc targetHashProvider) {
+                 @Nullable License license,
+                 @Nullable String listDisplay,
+                 @Nullable String descriptionShort,
+                 @Nullable String descriptionUrl,
+                 boolean isObsolete,
+                 @Nullable FullRevision fullRevision,
+                 @Nullable MajorRevision majorRevision,
+                 @Nullable AndroidVersion androidVersion,
+                 @Nullable IdDisplay tag,
+                 @Nullable String vendorId,
+                 @Nullable FullRevision minToolsRev,
+                 @Nullable FullRevision minPlatformToolsRev,
+                 @Nullable String addonVendor,
+                 @Nullable String addonName,
+                 @Nullable IAddonDesc targetHashProvider) {
         super(type,
+              license,
+              listDisplay,
+              descriptionShort,
+              descriptionUrl,
+              isObsolete,
               fullRevision,
               majorRevision,
               androidVersion,
