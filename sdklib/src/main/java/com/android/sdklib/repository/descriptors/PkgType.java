@@ -36,10 +36,10 @@ import java.util.EnumSet;
 public enum PkgType implements IPkgCapabilities {
 
     // Boolean attributes below, in that order:
-    //      maj-r, full-r, api, path, tag, vid, min-t-r, min-pt-r
+    //      maj-r, full-r, api, path, tag, vend, min-t-r, min-pt-r
     //
     // Corresponding flags for list description pattern string:
-    //      $MAJ  $FULL  $API  $PATH  $TAG  $VID  $NAME (for extras)
+    //      $MAJ  $FULL  $API  $PATH  $TAG  $VEND  $NAME (for extras & add-ons)
 
     /** Filter the SDK/tools folder.
      *  Has {@link FullRevision}. */
@@ -83,8 +83,8 @@ public enum PkgType implements IPkgCapabilities {
      *  Has {@link AndroidVersion}. Has {@link MajorRevision}.
      *  Path returns the add-on's target hash. */
     PKG_ADDONS(0x0400, SdkConstants.FD_ADDONS,
-            "$VID $PATH, Android $API{?$MAJ>1:, rev $MAJ}",
-            true /*maj-r*/, false, true /*api*/, true /*path*/, false, true /*vid*/, false, false),
+            "{|$NAME|$VEND $PATH|}, Android $API{?$MAJ>1:, rev $MAJ}",
+            true /*maj-r*/, false, true /*api*/, true /*path*/, false, true /*vend*/, false, false),
 
     /** Filter the SDK/samples folder.
      *  Note: this will not detect samples located in the SDK/extras packages.
@@ -104,8 +104,8 @@ public enum PkgType implements IPkgCapabilities {
      *  Path returns the combined vendor id + extra path.
      *  Cast the descriptor to {@link IPkgDescExtra} to get extra's specific attributes. */
     PKG_EXTRAS(0x4000, SdkConstants.FD_EXTRAS,
-            "{|$NAME|$VID $PATH|}{?$FULL>1:, rev $FULL}",
-            false, true /*full-r*/, false, true /*path*/, false, true /*vid*/, false, false);
+            "{|$NAME|$VEND $PATH|}{?$FULL>1:, rev $FULL}",
+            false, true /*full-r*/, false, true /*path*/, false, true /*vend*/, false, false);
 
     /** A collection of all the known PkgTypes. */
     public static final EnumSet<PkgType> PKG_ALL = EnumSet.allOf(PkgType.class);
@@ -121,7 +121,7 @@ public enum PkgType implements IPkgCapabilities {
     private final boolean mHasAndroidVersion;
     private final boolean mHasPath;
     private final boolean mHasTag;
-    private final boolean mHasVendorId;
+    private final boolean mHasVendor;
     private final boolean mHasMinToolsRev;
     private final boolean mHasMinPlatformToolsRev;
     private final String mListDisplayPattern;
@@ -134,7 +134,7 @@ public enum PkgType implements IPkgCapabilities {
             boolean hasAndroidVersion,
             boolean hasPath,
             boolean hasTag,
-            boolean hasVendorId,
+            boolean hasVendor,
             boolean hasMinToolsRev,
             boolean hasMinPlatformToolsRev) {
         mIntValue = intValue;
@@ -145,7 +145,7 @@ public enum PkgType implements IPkgCapabilities {
         mHasAndroidVersion = hasAndroidVersion;
         mHasPath = hasPath;
         mHasTag = hasTag;
-        mHasVendorId = hasVendorId;
+        mHasVendor = hasVendor;
         mHasMinToolsRev = hasMinToolsRev;
         mHasMinPlatformToolsRev = hasMinPlatformToolsRev;
     }
@@ -185,8 +185,8 @@ public enum PkgType implements IPkgCapabilities {
     }
 
     @Override
-    public boolean hasVendorId() {
-        return mHasVendorId;
+    public boolean hasVendor() {
+        return mHasVendor;
     }
 
     @Override

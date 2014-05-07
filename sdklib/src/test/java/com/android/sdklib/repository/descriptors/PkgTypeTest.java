@@ -26,7 +26,7 @@ public class PkgTypeTest extends TestCase {
         assertTrue (p.hasFullRevision());
         assertFalse(p.hasAndroidVersion());
         assertFalse(p.hasPath());
-        assertFalse(p.hasVendorId());
+        assertFalse(p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertTrue (p.hasMinPlatformToolsRev());
     }
@@ -37,7 +37,7 @@ public class PkgTypeTest extends TestCase {
         assertTrue (p.hasFullRevision());
         assertFalse(p.hasAndroidVersion());
         assertFalse(p.hasPath());
-        assertFalse(p.hasVendorId());
+        assertFalse(p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
     }
@@ -48,7 +48,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasFullRevision());
         assertTrue (p.hasAndroidVersion());
         assertFalse(p.hasPath());
-        assertFalse(p.hasVendorId());
+        assertFalse(p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
     }
@@ -59,7 +59,7 @@ public class PkgTypeTest extends TestCase {
         assertTrue (p.hasFullRevision());
         assertFalse(p.hasAndroidVersion());
         assertFalse(p.hasPath());
-        assertFalse(p.hasVendorId());
+        assertFalse(p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
     }
@@ -71,7 +71,7 @@ public class PkgTypeTest extends TestCase {
         assertTrue (p.hasFullRevision());
         assertFalse(p.hasAndroidVersion());
         assertTrue (p.hasPath());
-        assertTrue (p.hasVendorId());
+        assertTrue (p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
     }
@@ -83,7 +83,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasFullRevision());
         assertTrue (p.hasAndroidVersion());
         assertFalse(p.hasPath());
-        assertFalse(p.hasVendorId());
+        assertFalse(p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
     }
@@ -95,7 +95,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasFullRevision());
         assertTrue (p.hasAndroidVersion());
         assertFalse(p.hasPath());
-        assertFalse(p.hasVendorId());
+        assertFalse(p.hasVendor());
         assertTrue (p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
     }
@@ -107,7 +107,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasFullRevision());
         assertTrue (p.hasAndroidVersion());
         assertTrue (p.hasPath());               // platform path is its hash string
-        assertFalse(p.hasVendorId());
+        assertFalse(p.hasVendor());
         assertTrue (p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
     }
@@ -119,7 +119,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasFullRevision());
         assertTrue (p.hasAndroidVersion());
         assertTrue (p.hasPath());               // add-on path is its hash string
-        assertTrue (p.hasVendorId());
+        assertTrue (p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
     }
@@ -131,7 +131,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasFullRevision());
         assertTrue (p.hasAndroidVersion());
         assertTrue (p.hasPath());               // sys-img path is its ABI string
-        assertFalse(p.hasVendorId());
+        assertFalse(p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
     }

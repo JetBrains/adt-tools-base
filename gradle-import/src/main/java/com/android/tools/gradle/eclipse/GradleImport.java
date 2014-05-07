@@ -16,25 +16,6 @@
 
 package com.android.tools.gradle.eclipse;
 
-import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
-import static com.android.SdkConstants.ANDROID_URI;
-import static com.android.SdkConstants.ATTR_NAME;
-import static com.android.SdkConstants.ATTR_PACKAGE;
-import static com.android.SdkConstants.FD_EXTRAS;
-import static com.android.SdkConstants.FD_RES;
-import static com.android.SdkConstants.FD_SOURCES;
-import static com.android.SdkConstants.FN_BUILD_GRADLE;
-import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
-import static com.android.SdkConstants.FN_SETTINGS_GRADLE;
-import static com.android.SdkConstants.GRADLE_PLUGIN_LATEST_VERSION;
-import static com.android.SdkConstants.GRADLE_PLUGIN_NAME;
-import static com.android.sdklib.internal.project.ProjectProperties.PROPERTY_NDK;
-import static com.android.sdklib.internal.project.ProjectProperties.PROPERTY_SDK;
-import static com.android.xml.AndroidManifest.NODE_INSTRUMENTATION;
-import static com.google.common.base.Charsets.UTF_8;
-import static java.io.File.separator;
-import static java.io.File.separatorChar;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
@@ -53,29 +34,24 @@ import com.google.common.collect.*;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import com.google.common.primitives.Bytes;
-
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeMap;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.*;
+import java.util.*;
+
+import static com.android.SdkConstants.*;
+import static com.android.sdklib.internal.project.ProjectProperties.PROPERTY_NDK;
+import static com.android.sdklib.internal.project.ProjectProperties.PROPERTY_SDK;
+import static com.android.xml.AndroidManifest.NODE_INSTRUMENTATION;
+import static com.google.common.base.Charsets.UTF_8;
+import static java.io.File.separator;
+import static java.io.File.separatorChar;
 
 /**
  * Importer which can generate Android Gradle projects.
@@ -1411,7 +1387,8 @@ public class GradleImport {
             LocalPkgInfo[] infos = localSdk.getPkgsInfos(PkgType.PKG_EXTRAS);
             for (LocalPkgInfo info : infos) {
                 IPkgDesc d = info.getDesc();
-                if (d.hasVendorId() && vendor.equals(d.getVendorId()) &&
+                //noinspection ConstantConditions,ConstantConditions
+                if (d.hasVendor() && vendor.equals(d.getVendor().getId()) &&
                         d.hasPath() && "m2repository".equals(d.getPath())) {
                       return true;
                 }

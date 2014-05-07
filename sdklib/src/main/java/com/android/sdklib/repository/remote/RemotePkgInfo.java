@@ -119,8 +119,8 @@ public class RemotePkgInfo implements IListDescription, Comparable<RemotePkgInfo
           sb.append(' ').append(d.getPath());
       }
 
-      if (d.hasVendorId()) {
-          sb.append(", by").append(d.getVendorId());
+      if (d.hasVendor()) {
+          sb.append(", by").append(d.getVendor().getDisplay());
       }
 
       if (d.hasAndroidVersion()) {
