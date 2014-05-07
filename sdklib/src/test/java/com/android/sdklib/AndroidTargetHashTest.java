@@ -32,18 +32,18 @@ public class AndroidTargetHashTest extends TestCase {
     }
 
     public final void testGetAddonHashString() {
-        assertEquals("vendor:my-addon:10",
+        assertEquals("The Vendor Inc.:My Addon:10",
                 AndroidTargetHash.getAddonHashString(
-                        "vendor",
-                        "my-addon",
+                        "The Vendor Inc.",
+                        "My Addon",
                         new AndroidVersion(10, null)));
     }
 
     public final void testGetTargetHashString() {
         MockPlatformTarget t = new MockPlatformTarget(10, 1);
         assertEquals("android-10", AndroidTargetHash.getTargetHashString(t));
-        MockAddonTarget a = new MockAddonTarget("my-addon", t, 2);
-        assertEquals("vendor 10:my-addon:10", AndroidTargetHash.getTargetHashString(a));
+        MockAddonTarget a = new MockAddonTarget("My Addon", t, 2);
+        assertEquals("vendor 10:My Addon:10", AndroidTargetHash.getTargetHashString(a));
     }
 
     public void testGetPlatformVersion() {
