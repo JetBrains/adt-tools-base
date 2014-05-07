@@ -83,6 +83,7 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
         mPkgDesc = PkgDesc.Builder
                 .newSource(mVersion,
                            (MajorRevision) getRevision())
+                .setDescriptions(this)
                 .create();
     }
 
@@ -115,6 +116,7 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
         mPkgDesc = PkgDesc.Builder
                 .newSource(mVersion,
                            (MajorRevision) getRevision())
+                .setDescriptions(this)
                 .create();
     }
 
@@ -182,6 +184,7 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
         IPkgDesc desc = PkgDesc.Builder
                 .newSource(version != null ? version : new AndroidVersion(0, null),
                            new MajorRevision(MajorRevision.MISSING_MAJOR_REV))
+                .setDescriptionShort(shortDesc)
                 .create();
 
         return new BrokenPackage(props, shortDesc, longDesc,

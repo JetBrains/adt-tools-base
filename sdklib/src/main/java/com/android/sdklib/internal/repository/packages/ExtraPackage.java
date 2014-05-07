@@ -162,6 +162,7 @@ public class ExtraPackage extends NoPreviewRevisionPackage
                           mPath,
                           getOldPaths(),
                           getRevision())
+                .setDescriptions(this)
                 .create();
     }
 
@@ -297,6 +298,7 @@ public class ExtraPackage extends NoPreviewRevisionPackage
                           mPath,
                           getOldPaths(),
                           getRevision())
+                .setDescriptions(this)
                 .create();
     }
 

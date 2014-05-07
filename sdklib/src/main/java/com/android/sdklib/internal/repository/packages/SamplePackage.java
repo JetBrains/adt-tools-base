@@ -96,6 +96,7 @@ public class SamplePackage extends MinToolsPackage
                 .newSample(mVersion,
                            (MajorRevision) getRevision(),
                            getMinToolsRevision())
+                .setDescriptions(this)
                 .create();
     }
 
@@ -135,6 +136,7 @@ public class SamplePackage extends MinToolsPackage
                 .newSample(mVersion,
                           (MajorRevision) getRevision(),
                           getMinToolsRevision())
+                .setDescriptions(this)
                 .create();
     }
 
@@ -174,6 +176,7 @@ public class SamplePackage extends MinToolsPackage
                 .newSample(mVersion,
                            (MajorRevision) getRevision(),
                            getMinToolsRevision())
+                .setDescriptions(this)
                 .create();
     }
 

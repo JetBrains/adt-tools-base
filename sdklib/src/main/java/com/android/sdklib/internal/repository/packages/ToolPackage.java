@@ -94,6 +94,7 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
         mPkgDesc = PkgDesc.Builder
                 .newTool(getRevision(),
                          mMinPlatformToolsRevision)
+                .setDescriptions(this)
                 .create();
     }
 
@@ -148,6 +149,7 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
         mPkgDesc = PkgDesc.Builder
                 .newTool(getRevision(),
                          mMinPlatformToolsRevision)
+                .setDescriptions(this)
                 .create();
     }
 

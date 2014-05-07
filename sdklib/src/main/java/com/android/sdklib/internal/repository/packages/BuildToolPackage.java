@@ -66,6 +66,7 @@ public class BuildToolPackage extends FullRevisionPackage {
 
         mPkgDesc = PkgDesc.Builder
                 .newBuildTool(getRevision())
+                .setDescriptions(this)
                 .create();
     }
 
@@ -173,6 +174,7 @@ public class BuildToolPackage extends FullRevisionPackage {
 
         IPkgDesc desc = PkgDesc.Builder
                 .newBuildTool(rev != null ? rev : new FullRevision(FullRevision.MISSING_MAJOR_REV))
+                .setDescriptionShort(shortDesc)
                 .create();
 
         return new BrokenPackage(props, shortDesc, longDesc,
@@ -201,6 +203,7 @@ public class BuildToolPackage extends FullRevisionPackage {
 
         mPkgDesc = PkgDesc.Builder
                 .newBuildTool(getRevision())
+                .setDescriptions(this)
                 .create();
     }
 

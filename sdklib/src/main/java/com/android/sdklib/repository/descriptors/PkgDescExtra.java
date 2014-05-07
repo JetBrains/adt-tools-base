@@ -19,6 +19,7 @@ package com.android.sdklib.repository.descriptors;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.internal.repository.packages.License;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
 
@@ -30,6 +31,11 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
     private final String[] mOldPaths;
 
     PkgDescExtra(@NonNull PkgType type,
+                 @Nullable License license,
+                 @Nullable String listDisplay,
+                 @Nullable String descriptionShort,
+                 @Nullable String descriptionUrl,
+                 boolean isObsolete,
                  @Nullable FullRevision fullRevision,
                  @Nullable MajorRevision majorRevision,
                  @Nullable AndroidVersion androidVersion,
@@ -40,6 +46,11 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
                  @Nullable FullRevision minPlatformToolsRev,
                  @Nullable final String[] oldPaths) {
         super(type,
+              license,
+              listDisplay,
+              descriptionShort,
+              descriptionUrl,
+              isObsolete,
               fullRevision,
               majorRevision,
               androidVersion,

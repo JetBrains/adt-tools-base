@@ -72,6 +72,7 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
 
         mPkgDesc = PkgDesc.Builder
                 .newDoc(mVersion, (MajorRevision) getRevision())
+                .setDescriptions(this)
                 .create();
     }
 
@@ -115,6 +116,7 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
 
         mPkgDesc = PkgDesc.Builder
                 .newDoc(mVersion, (MajorRevision) getRevision())
+                .setDescriptions(this)
                 .create();
     }
 
