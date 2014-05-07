@@ -38,7 +38,7 @@ public class LocalDocPkgInfo extends LocalPkgInfo {
                            @NonNull AndroidVersion version,
                            @NonNull MajorRevision revision) {
         super(localSdk, localDir, sourceProps);
-        mDesc = PkgDesc.newDoc(version, revision);
+        mDesc = PkgDesc.Builder.newDoc(version, revision).create();
     }
 
     @NonNull
