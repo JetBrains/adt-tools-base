@@ -32,6 +32,7 @@ import com.android.sdklib.internal.repository.packages.AddonPackage;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.io.IFileOp;
+import com.android.sdklib.repository.AddonManifestIniProps;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.descriptors.IAddonDesc;
@@ -53,16 +54,6 @@ import java.util.regex.Pattern;
 
 @SuppressWarnings("MethodMayBeStatic")
 public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
-
-    public static final String ADDON_NAME         = "name";                 //$NON-NLS-1$
-    public static final String ADDON_VENDOR       = "vendor";               //$NON-NLS-1$
-    public static final String ADDON_API          = "api";                  //$NON-NLS-1$
-    public static final String ADDON_DESCRIPTION  = "description";          //$NON-NLS-1$
-    public static final String ADDON_LIBRARIES    = "libraries";            //$NON-NLS-1$
-    public static final String ADDON_DEFAULT_SKIN = "skin";                 //$NON-NLS-1$
-    public static final String ADDON_USB_VENDOR   = "usb-vendor";           //$NON-NLS-1$
-    public static final String ADDON_REVISION     = "revision";             //$NON-NLS-1$
-    public static final String ADDON_REVISION_OLD = "version";              //$NON-NLS-1$
 
     private static final Pattern PATTERN_LIB_DATA = Pattern.compile(
             "^([a-zA-Z0-9._-]+\\.jar);(.*)$", Pattern.CASE_INSENSITIVE);    //$NON-NLS-1$
@@ -117,7 +108,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                 Pair<Map<String, String>, String> infos = parseAddonProperties();
                 Map<String, String> map = infos.getFirst();
                 if (map != null) {
-                    vendor = map.get(ADDON_VENDOR);
+                    vendor = map.get(AddonManifestIniProps.ADDON_VENDOR);
                 }
             }
 
@@ -146,8 +137,8 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                 Pair<Map<String, String>, String> infos = parseAddonProperties();
                 Map<String, String> map = infos.getFirst();
                 if (map != null) {
-                    vendor = map.get(ADDON_VENDOR);
-                    name   = map.get(ADDON_NAME);
+                    vendor = map.get(AddonManifestIniProps.ADDON_VENDOR);
+                    name   = map.get(AddonManifestIniProps.ADDON_NAME);
                 }
             }
 
@@ -210,9 +201,9 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
         try {
             assert propertyMap != null;
 
-            String api = propertyMap.get(ADDON_API);
-            String name = propertyMap.get(ADDON_NAME);
-            String vendor = propertyMap.get(ADDON_VENDOR);
+            String api = propertyMap.get(AddonManifestIniProps.ADDON_API);
+            String name = propertyMap.get(AddonManifestIniProps.ADDON_NAME);
+            String vendor = propertyMap.get(AddonManifestIniProps.ADDON_VENDOR);
 
             assert api != null;
             assert name != null;
@@ -229,20 +220,20 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             assert baseTarget != null;
 
             // get the optional description
-            String description = propertyMap.get(ADDON_DESCRIPTION);
+            String description = propertyMap.get(AddonManifestIniProps.ADDON_DESCRIPTION);
 
             // get the add-on revision
             int revisionValue = 1;
-            String revision = propertyMap.get(ADDON_REVISION);
+            String revision = propertyMap.get(AddonManifestIniProps.ADDON_REVISION);
             if (revision == null) {
-                revision = propertyMap.get(ADDON_REVISION_OLD);
+                revision = propertyMap.get(AddonManifestIniProps.ADDON_REVISION_OLD);
             }
             if (revision != null) {
                 revisionValue = Integer.parseInt(revision);
             }
 
             // get the optional libraries
-            String librariesValue = propertyMap.get(ADDON_LIBRARIES);
+            String librariesValue = propertyMap.get(AddonManifestIniProps.ADDON_LIBRARIES);
             Map<String, String[]> libMap = null;
 
             if (librariesValue != null) {
@@ -313,7 +304,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
 
             // get the default skin
             File defaultSkin = null;
-            String defaultSkinName = propertyMap.get(ADDON_DEFAULT_SKIN);
+            String defaultSkinName = propertyMap.get(AddonManifestIniProps.ADDON_DEFAULT_SKIN);
             if (defaultSkinName != null) {
                 defaultSkin = new File(targetSkinFolder, defaultSkinName);
             } else {
@@ -327,7 +318,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             }
 
             // get the USB ID (if available)
-            int usbVendorId = convertId(propertyMap.get(ADDON_USB_VENDOR));
+            int usbVendorId = convertId(propertyMap.get(AddonManifestIniProps.ADDON_USB_VENDOR));
             if (usbVendorId != IAndroidTarget.NO_USB_ID) {
                 target.setUsbVendorId(usbVendorId);
             }
@@ -381,21 +372,21 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
 
             // look for some specific values in the map.
             // we require name, vendor, and api
-            String name = propertyMap.get(ADDON_NAME);
+            String name = propertyMap.get(AddonManifestIniProps.ADDON_NAME);
             if (name == null) {
-                error = addonManifestWarning(ADDON_NAME);
+                error = addonManifestWarning(AddonManifestIniProps.ADDON_NAME);
                 break;
             }
 
-            String vendor = propertyMap.get(ADDON_VENDOR);
+            String vendor = propertyMap.get(AddonManifestIniProps.ADDON_VENDOR);
             if (vendor == null) {
-                error = addonManifestWarning(ADDON_VENDOR);
+                error = addonManifestWarning(AddonManifestIniProps.ADDON_VENDOR);
                 break;
             }
 
-            String api = propertyMap.get(ADDON_API);
+            String api = propertyMap.get(AddonManifestIniProps.ADDON_API);
             if (api == null) {
-                error = addonManifestWarning(ADDON_API);
+                error = addonManifestWarning(AddonManifestIniProps.ADDON_API);
                 break;
             }
 
@@ -413,9 +404,9 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             }
 
             // get the add-on revision
-            String revision = propertyMap.get(ADDON_REVISION);
+            String revision = propertyMap.get(AddonManifestIniProps.ADDON_REVISION);
             if (revision == null) {
-                revision = propertyMap.get(ADDON_REVISION_OLD);
+                revision = propertyMap.get(AddonManifestIniProps.ADDON_REVISION_OLD);
             }
             if (revision != null) {
                 try {
@@ -423,7 +414,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                 } catch (NumberFormatException e) {
                     // looks like revision does not parse to a number.
                     error = String.format("%1$s is not a valid number in %2$s.",
-                            ADDON_REVISION, SdkConstants.FN_BUILD_PROP);
+                            AddonManifestIniProps.ADDON_REVISION, SdkConstants.FN_BUILD_PROP);
                     break;
                 }
             }

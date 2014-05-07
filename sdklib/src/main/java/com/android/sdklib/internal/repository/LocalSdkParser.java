@@ -37,8 +37,8 @@ import com.android.sdklib.internal.repository.packages.SourcePackage;
 import com.android.sdklib.internal.repository.packages.SystemImagePackage;
 import com.android.sdklib.internal.repository.packages.ToolPackage;
 import com.android.sdklib.io.FileOp;
+import com.android.sdklib.repository.AddonManifestIniProps;
 import com.android.sdklib.repository.descriptors.PkgType;
-import com.android.sdklib.repository.local.LocalAddonPkgInfo;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.google.common.collect.Lists;
@@ -450,26 +450,26 @@ public class LocalSdkParser {
 
             // look for some specific values in the map.
             // we require name, vendor, and api
-            String name = propertyMap.get(LocalAddonPkgInfo.ADDON_NAME);
+            String name = propertyMap.get(AddonManifestIniProps.ADDON_NAME);
             if (name == null) {
                 error = String.format("'%1$s' is missing from %2$s.",
-                        LocalAddonPkgInfo.ADDON_NAME,
+                        AddonManifestIniProps.ADDON_NAME,
                         SdkConstants.FN_MANIFEST_INI);
                 break;
             }
 
-            String vendor = propertyMap.get(LocalAddonPkgInfo.ADDON_VENDOR);
+            String vendor = propertyMap.get(AddonManifestIniProps.ADDON_VENDOR);
             if (vendor == null) {
                 error = String.format("'%1$s' is missing from %2$s.",
-                        LocalAddonPkgInfo.ADDON_VENDOR,
+                        AddonManifestIniProps.ADDON_VENDOR,
                         SdkConstants.FN_MANIFEST_INI);
                 break;
             }
 
-            String api = propertyMap.get(LocalAddonPkgInfo.ADDON_API);
+            String api = propertyMap.get(AddonManifestIniProps.ADDON_API);
             if (api == null) {
                 error = String.format("'%1$s' is missing from %2$s.",
-                        LocalAddonPkgInfo.ADDON_API,
+                        AddonManifestIniProps.ADDON_API,
                         SdkConstants.FN_MANIFEST_INI);
                 break;
             }
@@ -491,9 +491,9 @@ public class LocalSdkParser {
             }
 
             // get the add-on revision
-            String revision = propertyMap.get(LocalAddonPkgInfo.ADDON_REVISION);
+            String revision = propertyMap.get(AddonManifestIniProps.ADDON_REVISION);
             if (revision == null) {
-                revision = propertyMap.get(LocalAddonPkgInfo.ADDON_REVISION_OLD);
+                revision = propertyMap.get(AddonManifestIniProps.ADDON_REVISION_OLD);
             }
             if (revision != null) {
                 try {
@@ -502,7 +502,7 @@ public class LocalSdkParser {
                     // looks like revision does not parse to a number.
                     error = String.format(
                             "%1$s is not a valid number in %2$s.",
-                            LocalAddonPkgInfo.ADDON_REVISION,
+                            AddonManifestIniProps.ADDON_REVISION,
                             SdkConstants.FN_BUILD_PROP);
                     break;
                 }
