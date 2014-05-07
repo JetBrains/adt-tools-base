@@ -26,13 +26,13 @@ import com.android.sdklib.IAndroidTarget.IOptionalLibrary;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.sources.SdkSource;
+import com.android.sdklib.repository.AddonManifestIniProps;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
-import com.android.sdklib.repository.local.LocalAddonPkgInfo;
 import com.android.utils.Pair;
 
 import org.w3c.dom.Node;
@@ -337,17 +337,17 @@ public class AddonPackage extends MajorRevisionPackage
             Map<String, String> addonProps,
             String error) {
         String name     = getProperty(sourceProps,
-                                      PkgProps.ADDON_NAME_DISPLAY,
-                                      getProperty(sourceProps,
-                                                  PkgProps.ADDON_NAME,
-                                                  addonProps.get(LocalAddonPkgInfo.ADDON_NAME)));
+                               PkgProps.ADDON_NAME_DISPLAY,
+                               getProperty(sourceProps,
+                                       PkgProps.ADDON_NAME,
+                                       addonProps.get(AddonManifestIniProps.ADDON_NAME)));
         String vendor   = getProperty(sourceProps,
-                                      PkgProps.ADDON_VENDOR_DISPLAY,
-                                      getProperty(sourceProps,
-                                                  PkgProps.ADDON_VENDOR,
-                                                  addonProps.get(LocalAddonPkgInfo.ADDON_VENDOR)));
-        String api      = addonProps.get(LocalAddonPkgInfo.ADDON_API);
-        String revision = addonProps.get(LocalAddonPkgInfo.ADDON_REVISION);
+                               PkgProps.ADDON_VENDOR_DISPLAY,
+                               getProperty(sourceProps,
+                                       PkgProps.ADDON_VENDOR,
+                                       addonProps.get(AddonManifestIniProps.ADDON_VENDOR)));
+        String api      = addonProps.get(AddonManifestIniProps.ADDON_API);
+        String revision = addonProps.get(AddonManifestIniProps.ADDON_REVISION);
 
         String shortDesc = String.format("%1$s by %2$s, Android API %3$s, revision %4$s [*]",
                 name,
