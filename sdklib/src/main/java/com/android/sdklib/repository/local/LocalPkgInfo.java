@@ -160,7 +160,7 @@ public abstract class LocalPkgInfo implements IListDescription, Comparable<Local
      * Computes object equality to this instance based on the underlying
      * {@link IPkgDesc} but also specific local properties such a local directory,
      * update available and actual source properties. This is different from
-     * the behavioe of {@link #compareTo(LocalPkgInfo)} which only uses the
+     * the behavior of {@link #compareTo(LocalPkgInfo)} which only uses the
      * {@link IPkgDesc} for ordering.
      */
     @Override
@@ -239,10 +239,7 @@ public abstract class LocalPkgInfo implements IListDescription, Comparable<Local
     @NonNull
     @Override
     public String getListDescription() {
-        // TODO use list-display if available
-        // TODO recompute string here instead of using Package.getListDescription.
-        Package pkg = getPackage();
-        return pkg == null ? "" : pkg.getListDescription();             //$NON-NLS-1$
+        return getDesc().getListDescription();
     }
 
 }

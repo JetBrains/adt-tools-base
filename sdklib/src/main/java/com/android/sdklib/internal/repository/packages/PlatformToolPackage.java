@@ -66,6 +66,7 @@ public class PlatformToolPackage extends FullRevisionPackage {
 
         mPkgDesc = PkgDesc.Builder
                 .newPlatformTool(getRevision())
+                .setDescriptions(this)
                 .create();
     }
 
@@ -140,6 +141,7 @@ public class PlatformToolPackage extends FullRevisionPackage {
                     IExactApiLevelDependency.API_LEVEL_INVALID,
                     archiveOsPath,
                     PkgDesc.Builder.newPlatformTool(ptp.getRevision())
+                                   .setDescriptionShort(shortDesc)
                                    .create());
             return ba;
         }
@@ -167,6 +169,7 @@ public class PlatformToolPackage extends FullRevisionPackage {
 
         mPkgDesc = PkgDesc.Builder
                 .newPlatformTool(getRevision())
+                .setDescriptions(this)
                 .create();
     }
 

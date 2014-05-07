@@ -105,6 +105,7 @@ public class SystemImagePackage extends MajorRevisionPackage
                            mTag,
                            mAbi,
                            (MajorRevision) getRevision())
+                .setDescriptions(this)
                 .create();
     }
 
@@ -148,6 +149,7 @@ public class SystemImagePackage extends MajorRevisionPackage
                            mTag,
                            mAbi,
                            (MajorRevision) getRevision())
+                .setDescriptions(this)
                 .create();
     }
 
@@ -253,6 +255,7 @@ public class SystemImagePackage extends MajorRevisionPackage
                            tag,
                            abiType,
                            new MajorRevision(MajorRevision.MISSING_MAJOR_REV))
+                .setDescriptionShort(shortDesc)
                 .create();
 
         return new BrokenPackage(props, shortDesc, longDesc,
