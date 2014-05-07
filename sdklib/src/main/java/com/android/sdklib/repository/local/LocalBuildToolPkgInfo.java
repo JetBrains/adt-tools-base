@@ -40,7 +40,7 @@ public class LocalBuildToolPkgInfo extends LocalPkgInfo {
                                  @NonNull FullRevision revision,
                                  @Nullable BuildToolInfo btInfo) {
         super(localSdk, localDir, sourceProps);
-        mDesc = PkgDesc.newBuildTool(revision);
+        mDesc = PkgDesc.Builder.newBuildTool(revision).create();
         mBuildToolInfo = btInfo;
     }
 

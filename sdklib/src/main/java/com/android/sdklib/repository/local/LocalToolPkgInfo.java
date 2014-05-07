@@ -37,7 +37,7 @@ public class LocalToolPkgInfo extends LocalPkgInfo {
                             @NonNull FullRevision revision,
                             @NonNull FullRevision minPlatformToolsRev) {
         super(localSdk, localDir, sourceProps);
-        mDesc = PkgDesc.newTool(revision, minPlatformToolsRev);
+        mDesc = PkgDesc.Builder.newTool(revision, minPlatformToolsRev).create();
     }
 
     @NonNull

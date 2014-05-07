@@ -239,6 +239,8 @@ public abstract class LocalPkgInfo implements IListDescription, Comparable<Local
     @NonNull
     @Override
     public String getListDescription() {
+        // TODO use list-display if available
+        // TODO recompute string here instead of using Package.getListDescription.
         Package pkg = getPackage();
         return pkg == null ? "" : pkg.getListDescription();             //$NON-NLS-1$
     }

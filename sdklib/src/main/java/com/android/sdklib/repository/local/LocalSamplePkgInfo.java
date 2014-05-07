@@ -45,7 +45,7 @@ public class LocalSamplePkgInfo extends LocalPkgInfo {
                               @NonNull MajorRevision revision,
                               @NonNull FullRevision minToolsRev) {
         super(localSdk, localDir, sourceProps);
-        mDesc = PkgDesc.newSample(version, revision, minToolsRev);
+        mDesc = PkgDesc.Builder.newSample(version, revision, minToolsRev).create();
     }
 
     @NonNull

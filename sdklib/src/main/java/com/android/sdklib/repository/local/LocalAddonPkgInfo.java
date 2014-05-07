@@ -81,7 +81,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                              @NonNull AndroidVersion version,
                              @NonNull MajorRevision revision) {
         super(localSdk, localDir, sourceProps, version, revision, FullRevision.NOT_SPECIFIED);
-        mAddonDesc = PkgDesc.newAddon(version, revision, new IAddonDesc() {
+        mAddonDesc = PkgDesc.Builder.newAddon(version, revision, new IAddonDesc() {
             @NonNull
             @Override
             public String getTargetHash() {
@@ -95,7 +95,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                 // Lazily compute the vendor id the first time it is required.
                 return LocalAddonPkgInfo.this.getVendorId();
             }
-        });
+        }).create();
     }
 
     @NonNull
