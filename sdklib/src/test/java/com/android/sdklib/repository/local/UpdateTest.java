@@ -89,9 +89,10 @@ public class UpdateTest extends TestCase {
 
         addLocalExtra("18.0.1", "android", "support");
         addLocalExtra("18.0.2", "android", "compat");
-        addRemoteExtra(new NoPreviewRevision(18, 3, 4), "android", "support");
-        addRemoteExtra(new NoPreviewRevision(18, 5, 6), "android", "compat");
-        addRemoteExtra(new NoPreviewRevision(19, 7, 8), "android", "whatever");
+        IdDisplay vendor = new IdDisplay("android", "The Android");
+        addRemoteExtra(new NoPreviewRevision(18, 3, 4), vendor, "support",  "The Support Lib");
+        addRemoteExtra(new NoPreviewRevision(18, 5, 6), vendor, "compat",   "The Compat Lib");
+        addRemoteExtra(new NoPreviewRevision(19, 7, 8), vendor, "whatever", "The Whatever Lib");
 
         addLocalPlatform("18", "2", "22.1.2");
         addLocalAddOn   ("18", "2", "android", "coolstuff");
@@ -136,8 +137,8 @@ public class UpdateTest extends TestCase {
                 "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 18 Tag=default [Default] Path=eabi MajorRev=2> " +
                         "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=sys_images Android=API 18 Tag=default [Default] Path=eabi MajorRev=3>>>, " +
 
-                "<LocalAddonPkgInfo <PkgDesc Type=addons Android=API 18 Vendor=android Path=android:coolstuff:18 MajorRev=2> " +
-                       "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=addons Android=API 18 Vendor=android Path=android:coolstuff:18 MajorRev=3>>>, " +
+                "<LocalAddonPkgInfo <PkgDesc Type=addons Android=API 18 Vendor=android [The Android] Path=android:coolstuff:18 MajorRev=2> " +
+                       "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=addons Android=API 18 Vendor=android [The Android] Path=android:coolstuff:18 MajorRev=3>>>, " +
 
                 "<LocalSamplePkgInfo <PkgDesc Type=samples Android=API 18 MajorRev=2 MinToolsRev=22.1.2> " +
                         "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=samples Android=API 18 MajorRev=3 MinToolsRev=22.0.0>>>, " +
@@ -145,10 +146,10 @@ public class UpdateTest extends TestCase {
                 "<LocalSourcePkgInfo <PkgDesc Type=sources Android=API 18 MajorRev=2> " +
                         "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=sources Android=API 18 MajorRev=3>>>, " +
 
-                "<LocalExtraPkgInfo <PkgDesc Type=extras Vendor=android Path=compat FullRev=18.0.2> " +
-                       "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=extras Vendor=android Path=compat FullRev=18.5.6>>>, " +
-                "<LocalExtraPkgInfo <PkgDesc Type=extras Vendor=android Path=support FullRev=18.0.1> " +
-                       "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=extras Vendor=android Path=support FullRev=18.3.4>>>" +
+                "<LocalExtraPkgInfo <PkgDesc Type=extras Vendor=android [The Android] Path=compat FullRev=18.0.2> " +
+                       "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=extras Vendor=android [The Android] Path=compat FullRev=18.5.6>>>, " +
+                "<LocalExtraPkgInfo <PkgDesc Type=extras Vendor=android [The Android] Path=support FullRev=18.0.1> " +
+                       "Updated by: <RemotePkgInfo Source:source <PkgDesc Type=extras Vendor=android [The Android] Path=support FullRev=18.3.4>>>" +
                 "]",
                 result.getUpdatedPkgs().toString());
         assertEquals(
@@ -396,8 +397,11 @@ public class UpdateTest extends TestCase {
         mRemotePkgs.put(d.getType(), r);
     }
 
-    private void addRemoteExtra(NoPreviewRevision revision, String vendor, String path) {
-        IPkgDesc d = PkgDesc.Builder.newExtra(vendor, path, null, revision).create();
+    private void addRemoteExtra(NoPreviewRevision revision,
+                                IdDisplay vendor,
+                                String path,
+                                String name) {
+        IPkgDesc d = PkgDesc.Builder.newExtra(vendor, path, name, null, revision).create();
         RemotePkgInfo r = new RemotePkgInfo(d, mSource);
         mRemotePkgs.put(d.getType(), r);
     }

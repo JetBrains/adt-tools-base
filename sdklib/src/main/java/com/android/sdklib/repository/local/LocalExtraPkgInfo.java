@@ -23,6 +23,7 @@ import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.IPkgDescExtra;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 
 import java.io.File;
@@ -32,17 +33,19 @@ public class LocalExtraPkgInfo extends LocalPkgInfo {
 
     private final @NonNull IPkgDescExtra mDesc;
 
-    public LocalExtraPkgInfo(@NonNull LocalSdk localSdk,
-                             @NonNull File localDir,
-                             @NonNull Properties sourceProps,
-                             @NonNull String vendorId,
-                             @NonNull String path,
-                             @NonNull String[] oldPaths,
-                             @NonNull NoPreviewRevision revision) {
+    public LocalExtraPkgInfo(@NonNull  LocalSdk localSdk,
+                             @NonNull  File localDir,
+                             @NonNull  Properties sourceProps,
+                             @NonNull  IdDisplay vendor,
+                             @NonNull  String path,
+                             @Nullable String displayName,
+                             @NonNull  String[] oldPaths,
+                             @NonNull  NoPreviewRevision revision) {
         super(localSdk, localDir, sourceProps);
         mDesc = (IPkgDescExtra) PkgDesc.Builder.newExtra(
-                vendorId,
+                vendor,
                 path,
+                displayName,
                 oldPaths,
                 revision).create();
     }
@@ -67,7 +70,7 @@ public class LocalExtraPkgInfo extends LocalPkgInfo {
                 pkg = ExtraPackage.create(
                         null,                       //source
                         getSourceProperties(),      //properties
-                        mDesc.getVendorId(),        //vendor
+                        mDesc.getVendor().getId(),  //vendor
                         mDesc.getPath(),            //path
                         0,                          //revision
                         null,                       //license
@@ -81,6 +84,64 @@ public class LocalExtraPkgInfo extends LocalPkgInfo {
             }
         }
         return pkg;
+    }
+
+    // --- helpers ---
+
+    /**
+     * Used to produce a suitable name-display based on the extra's path
+     * and vendor display string in addon-3 schemas.
+     *
+     * @param vendor The non-null vendor id of the extra.
+     * @param extraPath The non-null path of the extra.
+     * @return A non-null display name based on the extra's path id.
+     */
+    public static String getPrettyName(@NonNull IdDisplay vendor, @NonNull String extraPath) {
+        String name = extraPath;
+
+        // In the past, we used to save the extras in a folder vendor-path,
+        // and that "vendor" would end up in the path when we reload the extra from
+        // disk. Detect this and compensate.
+        String disp = vendor.getDisplay();
+        if (disp != null && disp.length() > 0) {
+            if (name.startsWith(disp + "-")) {  //$NON-NLS-1$
+                name = name.substring(disp.length() + 1);
+            }
+        }
+
+        // Uniformize all spaces in the name
+        if (name != null) {
+            name = name.replaceAll("[ _\t\f-]+", " ").trim();   //$NON-NLS-1$ //$NON-NLS-2$
+        }
+        if (name == null || name.length() == 0) {
+            name = "Unknown Extra";
+        }
+
+        if (disp != null && disp.length() > 0) {
+            name = disp + " " + name;  //$NON-NLS-1$
+            name = name.replaceAll("[ _\t\f-]+", " ").trim();   //$NON-NLS-1$ //$NON-NLS-2$
+        }
+
+        // Look at all lower case characters in range [1..n-1] and replace them by an upper
+        // case if they are preceded by a space. Also upper cases the first character of the
+        // string.
+        boolean changed = false;
+        char[] chars = name.toCharArray();
+        for (int n = chars.length - 1, i = 0; i < n; i++) {
+            if (Character.isLowerCase(chars[i]) && (i == 0 || chars[i - 1] == ' ')) {
+                chars[i] = Character.toUpperCase(chars[i]);
+                changed = true;
+            }
+        }
+        if (changed) {
+            name = new String(chars);
+        }
+
+        // Special case: reformat a few typical acronyms.
+        name = name.replaceAll(" Usb ", " USB ");   //$NON-NLS-1$
+        name = name.replaceAll(" Api ", " API ");   //$NON-NLS-1$
+
+        return name;
     }
 }
 

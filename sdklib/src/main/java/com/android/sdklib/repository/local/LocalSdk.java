@@ -35,6 +35,7 @@ import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDescExtra;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.sdklib.repository.remote.RemoteSdk;
@@ -402,7 +403,7 @@ public class LocalSdk {
 
         for (LocalPkgInfo pkg : getPkgsInfos(filter)) {
             IPkgDesc d = pkg.getDesc();
-            if (d.hasVendorId() && vendor.equals(d.getVendorId())) {
+            if (d.hasVendor() && vendor.equals(d.getVendor().getId())) {
                 if (d.hasPath() && path.equals(d.getPath())) {
                    return pkg;
                }
@@ -1055,12 +1056,21 @@ public class LocalSdk {
                 String oldPaths =
                     PackageParserUtils.getProperty(props, PkgProps.EXTRA_OLD_PATHS, null);
 
+                String vendorId   = vendorDir.getName();
+                String vendorDisp = props.getProperty(PkgProps.EXTRA_VENDOR_DISPLAY);
+                if (vendorDisp == null || vendorDisp.isEmpty()) {
+                    vendorDisp = vendorId;
+                }
+
+                String displayName = props.getProperty(PkgProps.EXTRA_NAME_DISPLAY, null);
+
                 LocalExtraPkgInfo pkgInfo = new LocalExtraPkgInfo(
                         this,
                         extraDir,
                         props,
-                        vendorDir.getName(),
+                        new IdDisplay(vendorId, vendorDisp),
                         extraDir.getName(),
+                        displayName,
                         PkgDescExtra.convertOldPaths(oldPaths),
                         rev);
                 outCollection.add(pkgInfo);

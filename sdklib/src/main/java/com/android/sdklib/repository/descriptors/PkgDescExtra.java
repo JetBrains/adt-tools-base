@@ -29,6 +29,7 @@ import com.android.sdklib.repository.MajorRevision;
 public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
 
     private final String[] mOldPaths;
+    private final String mNameDisplay;
 
     PkgDescExtra(@NonNull PkgType type,
                  @Nullable License license,
@@ -41,9 +42,10 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
                  @Nullable AndroidVersion androidVersion,
                  @Nullable String path,
                  @Nullable IdDisplay tag,
-                 @Nullable String vendorId,
+                 @Nullable IdDisplay vendorId,
                  @Nullable FullRevision minToolsRev,
                  @Nullable FullRevision minPlatformToolsRev,
+                 @NonNull  String nameDisplay,
                  @Nullable final String[] oldPaths) {
         super(type,
               license,
@@ -61,6 +63,7 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
               minPlatformToolsRev,
               null,     //customIsUpdateFor
               null);    //customPath
+        mNameDisplay = nameDisplay;
         mOldPaths = oldPaths != null ? oldPaths : new String[0];
     }
 
@@ -68,6 +71,12 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
     @Override
     public String[] getOldPaths() {
         return mOldPaths;
+    }
+
+    @NonNull
+    @Override
+    public String getNameDisplay() {
+        return mNameDisplay;
     }
 
     // ---- Helpers ----
@@ -106,8 +115,8 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
         int lenEpOldPaths = epOldPaths.length;
         for (int indexEp = -1; indexEp < lenEpOldPaths; indexEp++) {
             if (sameVendorAndPath(
-                    lhs.getVendorId(), lhs.getPath(),
-                    rhs.getVendorId(), indexEp < 0 ? rhs.getPath() : epOldPaths[indexEp])) {
+                    lhs.getVendor().getId(), lhs.getPath(),
+                    rhs.getVendor().getId(), indexEp < 0 ? rhs.getPath() : epOldPaths[indexEp])) {
                 return true;
             }
         }
@@ -116,8 +125,8 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
         int lenThisOldPaths = thisOldPaths.length;
         for (int indexThis = -1; indexThis < lenThisOldPaths; indexThis++) {
             if (sameVendorAndPath(
-                    lhs.getVendorId(), indexThis < 0 ? lhs.getPath() : thisOldPaths[indexThis],
-                    rhs.getVendorId(), rhs.getPath())) {
+                 lhs.getVendor().getId(), indexThis < 0 ? lhs.getPath() : thisOldPaths[indexThis],
+                 rhs.getVendor().getId(), rhs.getPath())) {
                 return true;
             }
         }
