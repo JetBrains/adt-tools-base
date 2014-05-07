@@ -74,7 +74,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                                 @NonNull MajorRevision revision,
                                 @NonNull FullRevision minToolsRev) {
         super(localSdk, localDir, sourceProps);
-        mDesc = PkgDesc.newPlatform(version, revision, minToolsRev);
+        mDesc = PkgDesc.Builder.newPlatform(version, revision, minToolsRev).create();
     }
 
     @NonNull

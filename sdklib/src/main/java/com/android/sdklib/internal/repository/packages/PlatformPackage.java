@@ -94,10 +94,11 @@ public class PlatformPackage extends MinToolsPackage
 
         mLayoutlibVersion = new LayoutlibVersionMixin(packageNode);
 
-        mPkgDesc = PkgDesc.newPlatform(
-                mVersion,
-                (MajorRevision) getRevision(),
-                getMinToolsRevision());
+        mPkgDesc = PkgDesc.Builder
+                .newPlatform(mVersion,
+                             (MajorRevision) getRevision(),
+                             getMinToolsRevision())
+                .create();
     }
 
     /**
@@ -135,10 +136,11 @@ public class PlatformPackage extends MinToolsPackage
         mLayoutlibVersion = new LayoutlibVersionMixin(props);
         mIncludedAbi = props == null ? null : props.getProperty(PkgProps.PLATFORM_INCLUDED_ABI);
 
-        mPkgDesc = PkgDesc.newPlatform(
-                mVersion,
-                (MajorRevision) getRevision(),
-                getMinToolsRevision());
+        mPkgDesc = PkgDesc.Builder
+                .newPlatform(mVersion,
+                             (MajorRevision) getRevision(),
+                             getMinToolsRevision())
+                .create();
     }
 
     @Override

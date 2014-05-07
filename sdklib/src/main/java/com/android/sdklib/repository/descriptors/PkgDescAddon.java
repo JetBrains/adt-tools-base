@@ -26,7 +26,7 @@ import com.android.sdklib.repository.MajorRevision;
 /**
  * Implementation detail of {@link PkgDesc} for add-ons.
  * Do not use this class directly.
- * To create an instance use {@link PkgDesc#newAddon} instead.
+ * To create an instance use {@link PkgDesc.Builder#newAddon} instead.
  */
 final class PkgDescAddon extends PkgDesc {
 
@@ -40,51 +40,46 @@ final class PkgDescAddon extends PkgDesc {
     public static final String ADDON_REVISION     = "revision";             //$NON-NLS-1$
     public static final String ADDON_REVISION_OLD = "version";              //$NON-NLS-1$
 
-    private @NonNull  final AndroidVersion mVersion;
-    private @NonNull  final MajorRevision mRevision;
     private @Nullable final String mAddonPath;
     private @Nullable final String mAddonVendor;
     private @Nullable final IAddonDesc mTargetHashProvider;
 
     /**
-     * Creates an add-on pkg description where the target hash isn't determined yet.
+     * Add-on specific attributes should be either:
+     * - targetHashProvider is used if not null, and addonVendor/addonName are ignored.
+     * - otherwise addonVendor/addonName are used and should not be null.
+     *
+     * targetHashProvider is used to create an add-on pkg description
+     * where the target hash isn't determined yet.
      */
-    PkgDescAddon(@NonNull AndroidVersion version,
-                 @NonNull MajorRevision revision,
-                 @NonNull IAddonDesc targetHashProvider) {
-        mVersion = version;
-        mRevision = revision;
+    PkgDescAddon(@NonNull PkgType type,
+                @Nullable FullRevision fullRevision,
+                @Nullable MajorRevision majorRevision,
+                @Nullable AndroidVersion androidVersion,
+                @Nullable IdDisplay tag,
+                @Nullable String vendorId,
+                @Nullable FullRevision minToolsRev,
+                @Nullable FullRevision minPlatformToolsRev,
+                @Nullable String addonVendor,
+                @Nullable String addonName,
+                @Nullable IAddonDesc targetHashProvider) {
+        super(type,
+              fullRevision,
+              majorRevision,
+              androidVersion,
+              null,     //path
+              tag,
+              vendorId,
+              minToolsRev,
+              minPlatformToolsRev,
+              null,     //customIsUpdateFor
+              null);    //customPath
+
+        assert targetHashProvider != null || (addonVendor != null && addonName != null);
         mTargetHashProvider = targetHashProvider;
-        mAddonPath = null;
-        mAddonVendor = null;
-    }
-
-    PkgDescAddon(@NonNull AndroidVersion version,
-                        @NonNull MajorRevision revision,
-                        @NonNull String addonVendor,
-                        @NonNull String addonName) {
-        mVersion = version;
-        mRevision = revision;
         mAddonVendor = addonVendor;
-        mTargetHashProvider = null;
-        mAddonPath = AndroidTargetHash.getAddonHashString(addonVendor, addonName, version);
-    }
-
-    @NonNull
-    @Override
-    public PkgType getType() {
-        return PkgType.PKG_ADDONS;
-    }
-
-    @NonNull
-    @Override
-    public AndroidVersion getAndroidVersion() {
-        return mVersion;
-    }
-
-    @Override
-    public MajorRevision getMajorRevision() {
-        return mRevision;
+        mAddonPath = targetHashProvider != null ? null :
+                     AndroidTargetHash.getAddonHashString(addonVendor, addonName, androidVersion);
     }
 
     @Override
@@ -95,7 +90,7 @@ final class PkgDescAddon extends PkgDesc {
         return mAddonVendor;
     }
 
-    /** The "path" of a Add-on is its Target Hash. */
+    /** The "path" of an add-on is its target hash. */
     @NonNull
     @Override
     public String getPath() {
@@ -103,15 +98,5 @@ final class PkgDescAddon extends PkgDesc {
             return mTargetHashProvider.getTargetHash();
         }
         return mAddonPath;
-    }
-
-    @Override
-    public FullRevision getMinToolsRev() {
-        return null;
-    }
-
-    @Override
-    public boolean isUpdateFor(IPkgDesc existingDesc) {
-        return isGenericUpdateFor(existingDesc);
     }
 }

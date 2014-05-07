@@ -18,14 +18,17 @@ package com.android.sdklib.repository.remote;
 
 import com.android.annotations.NonNull;
 import com.android.sdklib.internal.repository.IDescription;
+import com.android.sdklib.internal.repository.IListDescription;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
+
+import java.util.Locale;
 
 
 /**
  * This class provides information on a remote package available for download
  * via a remote SDK repository server.
  */
-public class RemotePkgInfo implements Comparable<RemotePkgInfo> {
+public class RemotePkgInfo implements IListDescription, Comparable<RemotePkgInfo> {
 
     /** Information on the package provided by the remote server. */
     @NonNull
@@ -96,4 +99,43 @@ public class RemotePkgInfo implements Comparable<RemotePkgInfo> {
         return builder.toString();
     }
 
+  @Override
+  public String getListDescription() {
+      // TODO *temporary WIP*
+      // Inject all the meta-data needed to properly reconstruct the display,
+      // e.g. especially the new list-display. Code should be common with LocalPkgInfo.
+      StringBuilder sb = new StringBuilder();
+
+      IPkgDesc d = getDesc();
+
+      sb.append(d.getType().toString().toLowerCase(Locale.US));
+
+      if (d.hasTag()) {
+          assert d.getTag() != null;
+          sb.append(' ').append(d.getTag().getDisplay());
+      }
+
+      if (d.hasPath()) {
+          sb.append(' ').append(d.getPath());
+      }
+
+      if (d.hasVendorId()) {
+          sb.append(", by").append(d.getVendorId());
+      }
+
+      if (d.hasAndroidVersion()) {
+          assert d.getAndroidVersion() != null;
+          sb.append(", API").append(d.getAndroidVersion().getApiString());
+      }
+
+      if (d.hasFullRevision()) {
+          sb.append(", ").append(d.getFullRevision());
+      }
+
+      if (d.hasMajorRevision()) {
+          sb.append(", ").append(d.getMajorRevision());
+      }
+
+      return sb.toString();
+  }
 }

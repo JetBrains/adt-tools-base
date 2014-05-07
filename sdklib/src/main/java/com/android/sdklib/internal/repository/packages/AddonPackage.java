@@ -206,7 +206,12 @@ public class AddonPackage extends MajorRevisionPackage
 
         mLayoutlibVersion = new LayoutlibVersionMixin(packageNode);
 
-        mPkgDesc = PkgDesc.newAddon(mVersion, (MajorRevision) getRevision(), mVendorId, mNameId);
+        mPkgDesc = PkgDesc.Builder
+                .newAddon(mVersion,
+                          (MajorRevision) getRevision(),
+                          mVendorId,
+                          mNameId)
+                .create();
     }
 
     /**
@@ -302,7 +307,12 @@ public class AddonPackage extends MajorRevisionPackage
             }
         }
 
-        mPkgDesc = PkgDesc.newAddon(mVersion, (MajorRevision) getRevision(), mVendorId, mNameId);
+        mPkgDesc = PkgDesc.Builder
+                .newAddon(mVersion,
+                          (MajorRevision) getRevision(),
+                          mVendorId,
+                          mNameId)
+                .create();
     }
 
     @Override
@@ -360,11 +370,12 @@ public class AddonPackage extends MajorRevisionPackage
             intRevision = Integer.parseInt(revision);
         } catch (NumberFormatException ignore) {}
 
-        IPkgDesc desc = PkgDesc.newAddon(
-                new AndroidVersion(apiLevel, null),
-                new MajorRevision(intRevision),
-                vendor,
-                name);
+        IPkgDesc desc = PkgDesc.Builder
+                .newAddon(new AndroidVersion(apiLevel, null),
+                          new MajorRevision(intRevision),
+                          vendor,
+                          name)
+                .create();
 
         return new BrokenPackage(null/*props*/, shortDesc, longDesc,
                 IMinApiLevelDependency.MIN_API_LEVEL_NOT_SPECIFIED,

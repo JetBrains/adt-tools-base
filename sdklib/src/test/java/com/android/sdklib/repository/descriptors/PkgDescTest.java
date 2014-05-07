@@ -30,7 +30,9 @@ import junit.framework.TestCase;
 public class PkgDescTest extends TestCase {
 
     public final void testPkgDescTool() {
-        IPkgDesc p = PkgDesc.newTool(new FullRevision(1, 2, 3, 4), new FullRevision(5, 6, 7, 8));
+        IPkgDesc p = PkgDesc.Builder.newTool(
+                new FullRevision(1, 2, 3, 4),
+                new FullRevision(5, 6, 7, 8)).create();
 
         assertEquals(PkgType.PKG_TOOLS, p.getType());
 
@@ -57,8 +59,10 @@ public class PkgDescTest extends TestCase {
 
     public final void testPkgDescTool_Update() {
         final FullRevision min5670 = new FullRevision(5, 6, 7, 0);
-        final IPkgDesc f123  = PkgDesc.newTool(new FullRevision(1, 2, 3, 0), min5670);
-        final IPkgDesc f123b = PkgDesc.newTool(new FullRevision(1, 2, 3, 0), min5670);
+        final IPkgDesc f123  =
+                PkgDesc.Builder.newTool(new FullRevision(1, 2, 3, 0), min5670).create();
+        final IPkgDesc f123b =
+                PkgDesc.Builder.newTool(new FullRevision(1, 2, 3, 0), min5670).create();
 
         // can't update itself
         assertFalse(f123 .isUpdateFor(f123b));
@@ -68,32 +72,37 @@ public class PkgDescTest extends TestCase {
 
         // min-platform-tools-rev isn't used for updates checks
         final FullRevision min5680 = new FullRevision(5, 6, 8, 0);
-        final IPkgDesc f123c = PkgDesc.newTool(new FullRevision(1, 2, 3, 0), min5680);
+        final IPkgDesc f123c =
+                PkgDesc.Builder.newTool(new FullRevision(1, 2, 3, 0), min5680).create();
         assertFalse(f123c.isUpdateFor(f123));
         // but it's used for comparisons
         assertTrue (f123c.compareTo(f123) > 0);
 
         // full revision is used for updated checks
-        final IPkgDesc f124 = PkgDesc.newTool(new FullRevision(1, 2, 4, 0), min5670);
+        final IPkgDesc f124 =
+                PkgDesc.Builder.newTool(new FullRevision(1, 2, 4, 0), min5670).create();
         assertTrue (f124.isUpdateFor(f123));
         assertFalse(f123.isUpdateFor(f124));
         assertTrue (f124.compareTo(f123) > 0);
 
-        final IPkgDesc f122 = PkgDesc.newTool(new FullRevision(1, 2, 2, 0), min5670);
+        final IPkgDesc f122 =
+                PkgDesc.Builder.newTool(new FullRevision(1, 2, 2, 0), min5670).create();
         assertTrue (f123.isUpdateFor(f122));
         assertFalse(f122.isUpdateFor(f123));
         assertTrue (f122.compareTo(f123) < 0);
 
         // previews are not updated by final packages
         final FullRevision min5671 = new FullRevision(5, 6, 7, 1);
-        final IPkgDesc p1231 = PkgDesc.newTool(new FullRevision(1, 2, 3, 1), min5671);
+        final IPkgDesc p1231 =
+                PkgDesc.Builder.newTool(new FullRevision(1, 2, 3, 1), min5671).create();
         assertFalse(p1231.isUpdateFor(f122));
         assertFalse(f122 .isUpdateFor(p1231));
         // but previews are used for comparisons
         assertTrue (p1231.compareTo(f122 ) > 0);
         assertTrue (f123 .compareTo(p1231) > 0);
 
-        final IPkgDesc p1232 = PkgDesc.newTool(new FullRevision(1, 2, 3, 2), min5671);
+        final IPkgDesc p1232 =
+                PkgDesc.Builder.newTool(new FullRevision(1, 2, 3, 2), min5671).create();
         assertTrue (p1232.isUpdateFor(p1231));
         assertFalse(p1231.isUpdateFor(p1232));
         assertTrue (p1232.compareTo(p1231) > 0);
@@ -102,7 +111,7 @@ public class PkgDescTest extends TestCase {
     //----
 
     public final void testPkgDescPlatformTool() {
-        IPkgDesc p = PkgDesc.newPlatformTool(new FullRevision(1, 2, 3, 4));
+        IPkgDesc p = PkgDesc.Builder.newPlatformTool(new FullRevision(1, 2, 3, 4)).create();
 
         assertEquals(PkgType.PKG_PLATFORM_TOOLS, p.getType());
 
@@ -128,8 +137,10 @@ public class PkgDescTest extends TestCase {
     }
 
     public final void testPkgDescPlatformTool_Update() {
-        final IPkgDesc f123  = PkgDesc.newPlatformTool(new FullRevision(1, 2, 3, 0));
-        final IPkgDesc f123b = PkgDesc.newPlatformTool(new FullRevision(1, 2, 3, 0));
+        final IPkgDesc f123  =
+                PkgDesc.Builder.newPlatformTool(new FullRevision(1, 2, 3, 0)).create();
+        final IPkgDesc f123b =
+                PkgDesc.Builder.newPlatformTool(new FullRevision(1, 2, 3, 0)).create();
 
         // can't update itself
         assertFalse(f123 .isUpdateFor(f123b));
@@ -138,25 +149,29 @@ public class PkgDescTest extends TestCase {
         assertTrue (f123b.compareTo(f123 ) == 0);
 
         // full revision is used for updated checks
-        final IPkgDesc f124 = PkgDesc.newPlatformTool(new FullRevision(1, 2, 4, 0));
+        final IPkgDesc f124 =
+                PkgDesc.Builder.newPlatformTool(new FullRevision(1, 2, 4, 0)).create();
         assertTrue (f124.isUpdateFor(f123));
         assertFalse(f123.isUpdateFor(f124));
         assertTrue (f124.compareTo(f123) > 0);
 
-        final IPkgDesc f122 = PkgDesc.newPlatformTool(new FullRevision(1, 2, 2, 0));
+        final IPkgDesc f122 =
+                PkgDesc.Builder.newPlatformTool(new FullRevision(1, 2, 2, 0)).create();
         assertTrue (f123.isUpdateFor(f122));
         assertFalse(f122.isUpdateFor(f123));
         assertTrue (f122.compareTo(f123) < 0);
 
         // previews are not updated by final packages
-        final IPkgDesc p1231 = PkgDesc.newPlatformTool(new FullRevision(1, 2, 3, 1));
+        final IPkgDesc p1231 =
+                PkgDesc.Builder.newPlatformTool(new FullRevision(1, 2, 3, 1)).create();
         assertFalse(p1231.isUpdateFor(f122));
         assertFalse(f122 .isUpdateFor(p1231));
         // but previews are used for comparisons
         assertTrue (p1231.compareTo(f122 ) > 0);
         assertTrue (f123 .compareTo(p1231) > 0);
 
-        final IPkgDesc p1232 = PkgDesc.newPlatformTool(new FullRevision(1, 2, 3, 2));
+        final IPkgDesc p1232 =
+                PkgDesc.Builder.newPlatformTool(new FullRevision(1, 2, 3, 2)).create();
         assertTrue (p1232.isUpdateFor(p1231));
         assertFalse(p1231.isUpdateFor(p1232));
         assertTrue (p1232.compareTo(p1231) > 0);
@@ -165,7 +180,8 @@ public class PkgDescTest extends TestCase {
     //----
 
     public final void testPkgDescDoc() throws Exception {
-        IPkgDesc p = PkgDesc.newDoc(new AndroidVersion("19"), new MajorRevision(1));
+        IPkgDesc p =
+                PkgDesc.Builder.newDoc(new AndroidVersion("19"), new MajorRevision(1)).create();
 
         assertEquals(PkgType.PKG_DOCS, p.getType());
 
@@ -193,8 +209,8 @@ public class PkgDescTest extends TestCase {
     public final void testPkgDescDoc_Update() throws Exception {
         final AndroidVersion api19 = new AndroidVersion("19");
         final MajorRevision rev1 = new MajorRevision(1);
-        final IPkgDesc p19_1  = PkgDesc.newDoc(api19, rev1);
-        final IPkgDesc p19_1b = PkgDesc.newDoc(api19, rev1);
+        final IPkgDesc p19_1  = PkgDesc.Builder.newDoc(api19, rev1).create();
+        final IPkgDesc p19_1b = PkgDesc.Builder.newDoc(api19, rev1).create();
 
         // can't update itself
         assertFalse(p19_1 .isUpdateFor(p19_1b));
@@ -202,11 +218,11 @@ public class PkgDescTest extends TestCase {
         assertTrue (p19_1 .compareTo(p19_1b) == 0);
         assertTrue (p19_1b.compareTo(p19_1 ) == 0);
 
-        final IPkgDesc p19_2  = PkgDesc.newDoc(api19, new MajorRevision(2));
+        final IPkgDesc p19_2  = PkgDesc.Builder.newDoc(api19, new MajorRevision(2)).create();
         assertTrue (p19_2.isUpdateFor(p19_1));
         assertTrue (p19_2.compareTo(p19_1) > 0);
 
-        final IPkgDesc p18_1  = PkgDesc.newDoc(new AndroidVersion("18"), rev1);
+        final IPkgDesc p18_1  = PkgDesc.Builder.newDoc(new AndroidVersion("18"), rev1).create();
         assertTrue (p19_1.isUpdateFor(p18_1));
         assertFalse(p18_1.isUpdateFor(p19_1));
         assertTrue (p19_1.compareTo(p18_1) > 0);
@@ -215,7 +231,7 @@ public class PkgDescTest extends TestCase {
     //----
 
     public final void testPkgDescBuildTool() {
-        IPkgDesc p = PkgDesc.newBuildTool(new FullRevision(1, 2, 3, 4));
+        IPkgDesc p = PkgDesc.Builder.newBuildTool(new FullRevision(1, 2, 3, 4)).create();
 
         assertEquals(PkgType.PKG_BUILD_TOOLS, p.getType());
 
@@ -241,8 +257,8 @@ public class PkgDescTest extends TestCase {
     }
 
     public final void testPkgDescBuildTool_Update() {
-        final IPkgDesc f123  = PkgDesc.newBuildTool(new FullRevision(1, 2, 3, 0));
-        final IPkgDesc f123b = PkgDesc.newBuildTool(new FullRevision(1, 2, 3, 0));
+        final IPkgDesc f123  = PkgDesc.Builder.newBuildTool(new FullRevision(1, 2, 3, 0)).create();
+        final IPkgDesc f123b = PkgDesc.Builder.newBuildTool(new FullRevision(1, 2, 3, 0)).create();
 
         // can't update itself
         assertFalse(f123 .isUpdateFor(f123b));
@@ -252,19 +268,19 @@ public class PkgDescTest extends TestCase {
 
         // build-tools is different as full revisions are installed side by side
         // so they don't update each other (except for the preview bit, see below.)
-        final IPkgDesc f124 = PkgDesc.newBuildTool(new FullRevision(1, 2, 4, 0));
+        final IPkgDesc f124 = PkgDesc.Builder.newBuildTool(new FullRevision(1, 2, 4, 0)).create();
         assertFalse(f124.isUpdateFor(f123));
         assertFalse(f123.isUpdateFor(f124));
         // comparison is still done on the full revision.
         assertTrue (f124.compareTo(f123) > 0);
 
-        final IPkgDesc f122 = PkgDesc.newBuildTool(new FullRevision(1, 2, 2, 0));
+        final IPkgDesc f122 = PkgDesc.Builder.newBuildTool(new FullRevision(1, 2, 2, 0)).create();
         assertFalse(f123.isUpdateFor(f122));
         assertFalse(f122.isUpdateFor(f123));
         assertTrue (f122.compareTo(f123) < 0);
 
         // previews are not updated by final packages
-        final IPkgDesc p1231 = PkgDesc.newBuildTool(new FullRevision(1, 2, 3, 1));
+        final IPkgDesc p1231 = PkgDesc.Builder.newBuildTool(new FullRevision(1, 2, 3, 1)).create();
         assertFalse(p1231.isUpdateFor(f122));
         assertFalse(f122 .isUpdateFor(p1231));
         // but previews are used for comparisons
@@ -272,21 +288,22 @@ public class PkgDescTest extends TestCase {
         assertTrue (f123 .compareTo(p1231) > 0);
 
         // previews do update other packages that have the same major.minor.micro.
-        final IPkgDesc p1232 = PkgDesc.newBuildTool(new FullRevision(1, 2, 3, 2));
+        final IPkgDesc p1232 = PkgDesc.Builder.newBuildTool(new FullRevision(1, 2, 3, 2)).create()
+                ;
         assertTrue (p1232.isUpdateFor(p1231));
         assertFalse(p1231.isUpdateFor(p1232));
         assertTrue (p1232.compareTo(p1231) > 0);
 
-        final IPkgDesc p1222 = PkgDesc.newBuildTool(new FullRevision(1, 2, 2, 2));
+        final IPkgDesc p1222 = PkgDesc.Builder.newBuildTool(new FullRevision(1, 2, 2, 2)).create();
         assertFalse(p1232.isUpdateFor(p1222));
     }
 
     //----
 
     public final void testPkgDescExtra() {
-        IPkgDesc p = PkgDesc.newExtra("vendor", "extra_path",
+        IPkgDesc p = PkgDesc.Builder.newExtra("vendor", "extra_path",
                 new String[] { "old_path1", "old_path2" },
-                new NoPreviewRevision(1, 2, 3));
+                new NoPreviewRevision(1, 2, 3)).create();
 
         assertEquals(PkgType.PKG_EXTRAS, p.getType());
 
@@ -318,8 +335,10 @@ public class PkgDescTest extends TestCase {
 
     public final void testPkgDescExtra_Update() {
         final NoPreviewRevision rev123 = new NoPreviewRevision(1, 2, 3);
-        final IPkgDesc p123  = PkgDesc.newExtra("vendor", "extra_path", new String[0], rev123);
-        final IPkgDesc p123b = PkgDesc.newExtra("vendor", "extra_path", new String[0], rev123);
+        final IPkgDesc p123  =
+                PkgDesc.Builder.newExtra("vendor", "extra_path", new String[0], rev123).create();
+        final IPkgDesc p123b =
+                PkgDesc.Builder.newExtra("vendor", "extra_path", new String[0], rev123).create();
 
         // can't update itself
         assertFalse(p123 .isUpdateFor(p123b));
@@ -329,22 +348,26 @@ public class PkgDescTest extends TestCase {
 
         // updates a lesser revision of the same vendor/path
         final NoPreviewRevision rev124 = new NoPreviewRevision(1, 2, 4);
-        final IPkgDesc p124  = PkgDesc.newExtra("vendor", "extra_path", new String[0], rev124);
+        final IPkgDesc p124  =
+                PkgDesc.Builder.newExtra("vendor", "extra_path", new String[0], rev124).create();
         assertTrue (p124.isUpdateFor(p123));
         assertTrue (p124.compareTo(p123) > 0);
 
         // does not update a different vendor
-        final IPkgDesc a124  = PkgDesc.newExtra("auctrix", "extra_path", new String[0], rev124);
+        final IPkgDesc a124  =
+                PkgDesc.Builder.newExtra("auctrix", "extra_path", new String[0], rev124).create();
         assertFalse(a124.isUpdateFor(p123));
         assertTrue (a124.compareTo(p123) < 0);
 
         // does not update a different extra path
-        final IPkgDesc n124  = PkgDesc.newExtra("vendor", "no_va", new String[0], rev124);
+        final IPkgDesc n124  =
+                PkgDesc.Builder.newExtra("vendor", "no_va", new String[0], rev124).create();
         assertFalse(n124.isUpdateFor(p123));
         assertTrue (n124.compareTo(p123) > 0);
         // unless the old_paths mechanism is used to provide a way to update the path
-        final IPkgDesc o124  = PkgDesc.newExtra("vendor", "no_va",
-                                                            new String[] { "extra_path" }, rev124);
+        final IPkgDesc o124  =
+                PkgDesc.Builder.newExtra(
+                        "vendor", "no_va", new String[] { "extra_path" }, rev124).create();
         assertTrue (o124.isUpdateFor(p123));
         assertTrue (o124.compareTo(p123) > 0);
     }
@@ -352,7 +375,8 @@ public class PkgDescTest extends TestCase {
     //----
 
     public final void testPkgDescSource() throws Exception {
-        IPkgDesc p = PkgDesc.newSource(new AndroidVersion("19"), new MajorRevision(1));
+        IPkgDesc p =
+                PkgDesc.Builder.newSource(new AndroidVersion("19"), new MajorRevision(1)).create();
 
         assertEquals(PkgType.PKG_SOURCES, p.getType());
 
@@ -380,8 +404,8 @@ public class PkgDescTest extends TestCase {
     public final void testPkgDescSource_Update() throws Exception {
         final AndroidVersion api19 = new AndroidVersion("19");
         final MajorRevision rev1 = new MajorRevision(1);
-        final IPkgDesc p19_1  = PkgDesc.newSource(api19, rev1);
-        final IPkgDesc p19_1b = PkgDesc.newSource(api19, rev1);
+        final IPkgDesc p19_1  = PkgDesc.Builder.newSource(api19, rev1).create();
+        final IPkgDesc p19_1b = PkgDesc.Builder.newSource(api19, rev1).create();
 
         // can't update itself
         assertFalse(p19_1 .isUpdateFor(p19_1b));
@@ -390,12 +414,12 @@ public class PkgDescTest extends TestCase {
         assertTrue (p19_1b.compareTo(p19_1 ) == 0);
 
         // updates a lesser revision of the same API
-        final IPkgDesc p19_2  = PkgDesc.newSource(api19, new MajorRevision(2));
+        final IPkgDesc p19_2  = PkgDesc.Builder.newSource(api19, new MajorRevision(2)).create();
         assertTrue (p19_2.isUpdateFor(p19_1));
         assertTrue (p19_2.compareTo(p19_1) > 0);
 
         // does not update a different API
-        final IPkgDesc p18_1  = PkgDesc.newSource(new AndroidVersion("18"), rev1);
+        final IPkgDesc p18_1  = PkgDesc.Builder.newSource(new AndroidVersion("18"), rev1).create();
         assertFalse(p19_2.isUpdateFor(p18_1));
         assertFalse(p18_1.isUpdateFor(p19_2));
         assertTrue (p19_2.compareTo(p18_1) > 0);
@@ -404,9 +428,9 @@ public class PkgDescTest extends TestCase {
     //----
 
     public final void testPkgDescSample() throws Exception {
-        IPkgDesc p = PkgDesc.newSample(new AndroidVersion("19"),
+        IPkgDesc p = PkgDesc.Builder.newSample(new AndroidVersion("19"),
                                        new MajorRevision(1),
-                                       new FullRevision(5, 6, 7, 8));
+                                       new FullRevision(5, 6, 7, 8)).create();
 
         assertEquals(PkgType.PKG_SAMPLES, p.getType());
 
@@ -428,15 +452,17 @@ public class PkgDescTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull (p.getMinPlatformToolsRev());
 
-        assertEquals("<PkgDesc Type=samples Android=API 19 MajorRev=1 MinToolsRev=5.6.7 rc8>", p.toString());
+        assertEquals(
+                "<PkgDesc Type=samples Android=API 19 MajorRev=1 MinToolsRev=5.6.7 rc8>",
+                p.toString());
     }
 
     public final void testPkgDescSample_Update() throws Exception {
         final FullRevision min5670 = new FullRevision(5, 6, 7, 0);
         final AndroidVersion api19 = new AndroidVersion("19");
         final MajorRevision rev1 = new MajorRevision(1);
-        final IPkgDesc p19_1  = PkgDesc.newSample(api19, rev1, min5670);
-        final IPkgDesc p19_1b = PkgDesc.newSample(api19, rev1, min5670);
+        final IPkgDesc p19_1  = PkgDesc.Builder.newSample(api19, rev1, min5670).create();
+        final IPkgDesc p19_1b = PkgDesc.Builder.newSample(api19, rev1, min5670).create();
 
         // can't update itself
         assertFalse(p19_1 .isUpdateFor(p19_1b));
@@ -446,18 +472,20 @@ public class PkgDescTest extends TestCase {
 
         // min-tools-rev isn't used for updates checks
         final FullRevision min5680 = new FullRevision(5, 6, 8, 0);
-        final IPkgDesc p19_1c = PkgDesc.newSample(api19, rev1, min5680);
+        final IPkgDesc p19_1c = PkgDesc.Builder.newSample(api19, rev1, min5680).create();
         assertFalse(p19_1c.isUpdateFor(p19_1));
         // but it's used for comparisons
         assertTrue (p19_1c.compareTo(p19_1) > 0);
 
         // updates a lesser revision of the same API
-        final IPkgDesc p19_2  = PkgDesc.newSample(api19, new MajorRevision(2), min5670);
+        final IPkgDesc p19_2  =
+                PkgDesc.Builder.newSample(api19, new MajorRevision(2), min5670).create();
         assertTrue (p19_2.isUpdateFor(p19_1));
         assertTrue (p19_2.compareTo(p19_1) > 0);
 
         // does not update a different API
-        final IPkgDesc p18_1  = PkgDesc.newSample(new AndroidVersion("18"), rev1, min5670);
+        final IPkgDesc p18_1  =
+                PkgDesc.Builder.newSample(new AndroidVersion("18"), rev1, min5670).create();
         assertFalse(p19_2.isUpdateFor(p18_1));
         assertFalse(p18_1.isUpdateFor(p19_2));
         assertTrue (p19_2.compareTo(p18_1) > 0);
@@ -466,9 +494,9 @@ public class PkgDescTest extends TestCase {
     //----
 
     public final void testPkgDescPlatform() throws Exception {
-        IPkgDesc p = PkgDesc.newPlatform(new AndroidVersion("19"),
+        IPkgDesc p = PkgDesc.Builder.newPlatform(new AndroidVersion("19"),
                                          new MajorRevision(1),
-                                         new FullRevision(5, 6, 7, 8));
+                                         new FullRevision(5, 6, 7, 8)).create();
 
         assertEquals(PkgType.PKG_PLATFORMS, p.getType());
 
@@ -499,8 +527,8 @@ public class PkgDescTest extends TestCase {
         final FullRevision min5670 = new FullRevision(5, 6, 7, 0);
         final AndroidVersion api19 = new AndroidVersion("19");
         final MajorRevision rev1 = new MajorRevision(1);
-        final IPkgDesc p19_1  = PkgDesc.newPlatform(api19, rev1, min5670);
-        final IPkgDesc p19_1b = PkgDesc.newPlatform(api19, rev1, min5670);
+        final IPkgDesc p19_1  = PkgDesc.Builder.newPlatform(api19, rev1, min5670).create();
+        final IPkgDesc p19_1b = PkgDesc.Builder.newPlatform(api19, rev1, min5670).create();
 
         // can't update itself
         assertFalse(p19_1 .isUpdateFor(p19_1b));
@@ -510,18 +538,20 @@ public class PkgDescTest extends TestCase {
 
         // min-tools-rev isn't used for updates checks
         final FullRevision min5680 = new FullRevision(5, 6, 8, 0);
-        final IPkgDesc p19_1c = PkgDesc.newPlatform(api19, rev1, min5680);
+        final IPkgDesc p19_1c = PkgDesc.Builder.newPlatform(api19, rev1, min5680).create();
         assertFalse(p19_1c.isUpdateFor(p19_1));
         // but it's used for comparisons
         assertTrue (p19_1c.compareTo(p19_1) > 0);
 
         // updates a lesser revision of the same API
-        final IPkgDesc p19_2  = PkgDesc.newPlatform(api19, new MajorRevision(2), min5670);
+        final IPkgDesc p19_2  =
+                PkgDesc.Builder.newPlatform(api19, new MajorRevision(2), min5670).create();
         assertTrue (p19_2.isUpdateFor(p19_1));
         assertTrue (p19_2.compareTo(p19_1) > 0);
 
         // does not update a different API
-        final IPkgDesc p18_1  = PkgDesc.newPlatform(new AndroidVersion("18"), rev1, min5670);
+        final IPkgDesc p18_1  =
+                PkgDesc.Builder.newPlatform(new AndroidVersion("18"), rev1, min5670).create();
         assertFalse(p19_2.isUpdateFor(p18_1));
         assertFalse(p18_1.isUpdateFor(p19_2));
         assertTrue (p19_2.compareTo(p18_1) > 0);
@@ -530,8 +560,8 @@ public class PkgDescTest extends TestCase {
     //----
 
     public final void testPkgDescAddon() throws Exception {
-        IPkgDesc p1 = PkgDesc.newAddon(new AndroidVersion("19"), new MajorRevision(1),
-                                       "vendor", "addon_name");
+        IPkgDesc p1 = PkgDesc.Builder.newAddon(new AndroidVersion("19"), new MajorRevision(1),
+                                       "vendor", "addon_name").create();
 
         assertEquals(PkgType.PKG_ADDONS, p1.getType());
 
@@ -558,7 +588,7 @@ public class PkgDescTest extends TestCase {
 
         // If the add-on hash string can't determined in the constructor, a callback is
         // provided to give the information needed later.
-        IPkgDesc p3 = PkgDesc.newAddon(new AndroidVersion("3"), new MajorRevision(5),
+        IPkgDesc p3 = PkgDesc.Builder.newAddon(new AndroidVersion("3"), new MajorRevision(5),
                 new IAddonDesc() {
                     @Override
                     public String getTargetHash() {
@@ -577,15 +607,17 @@ public class PkgDescTest extends TestCase {
                     public String getVendorId() {
                         return "vendor3";
                     }
-        });
+        }).create();
         assertEquals("vendor3:name3:3", p3.getPath());
     }
 
     public final void testPkgDescAddon_Update() throws Exception {
         final AndroidVersion api19 = new AndroidVersion("19");
         final MajorRevision rev1 = new MajorRevision(1);
-        final IPkgDesc p19_1  = PkgDesc.newAddon(api19, rev1, "vendor", "addon_name");
-        final IPkgDesc p19_1b = PkgDesc.newAddon(api19, rev1, "vendor", "addon_name");
+        final IPkgDesc p19_1  =
+                PkgDesc.Builder.newAddon(api19, rev1, "vendor", "addon_name").create();
+        final IPkgDesc p19_1b =
+                PkgDesc.Builder.newAddon(api19, rev1, "vendor", "addon_name").create();
 
         // can't update itself
         assertFalse(p19_1 .isUpdateFor(p19_1b));
@@ -595,24 +627,28 @@ public class PkgDescTest extends TestCase {
 
         // updates a lesser revision of the same API
         final MajorRevision rev2 = new MajorRevision(2);
-        final IPkgDesc p19_2  = PkgDesc.newAddon(api19, rev2, "vendor", "addon_name");
+        final IPkgDesc p19_2  =
+                PkgDesc.Builder.newAddon(api19, rev2, "vendor", "addon_name").create();
         assertTrue (p19_2.isUpdateFor(p19_1));
         assertTrue (p19_2.compareTo(p19_1) > 0);
 
         // does not update a different API
         final AndroidVersion api18 = new AndroidVersion("18");
-        final IPkgDesc p18_1  = PkgDesc.newAddon(api18, rev2, "vendor", "addon_name");
+        final IPkgDesc p18_1  =
+                PkgDesc.Builder.newAddon(api18, rev2, "vendor", "addon_name").create();
         assertFalse(p19_2.isUpdateFor(p18_1));
         assertFalse(p18_1.isUpdateFor(p19_2));
         assertTrue (p19_2.compareTo(p18_1) > 0);
 
         // does not update a different vendor
-        final IPkgDesc a19_2  = PkgDesc.newAddon(api19, rev2, "auctrix", "addon_name");
+        final IPkgDesc a19_2  =
+                PkgDesc.Builder.newAddon(api19, rev2, "auctrix", "addon_name").create();
         assertFalse(a19_2.isUpdateFor(p19_1));
         assertTrue (a19_2.compareTo(p19_1) < 0);
 
         // does not update a different add-on name
-        final IPkgDesc n19_2  = PkgDesc.newAddon(api19, rev2, "vendor", "no_va");
+        final IPkgDesc n19_2  =
+                PkgDesc.Builder.newAddon(api19, rev2, "vendor", "no_va").create();
         assertFalse(n19_2.isUpdateFor(p19_1));
         assertTrue (n19_2.compareTo(p19_1) > 0);
     }
@@ -621,7 +657,11 @@ public class PkgDescTest extends TestCase {
 
     public final void testPkgDescSysImg() throws Exception {
         IdDisplay tag = new IdDisplay("tag", "My Tag");
-        IPkgDesc p = PkgDesc.newSysImg(new AndroidVersion("19"), tag, "eabi", new MajorRevision(1));
+        IPkgDesc p = PkgDesc.Builder.newSysImg(
+                new AndroidVersion("19"),
+                tag,
+                "eabi",
+                new MajorRevision(1)).create();
 
         assertEquals(PkgType.PKG_SYS_IMAGES, p.getType());
 
@@ -652,8 +692,8 @@ public class PkgDescTest extends TestCase {
         IdDisplay tag1 = new IdDisplay("tag1", "My Tag 1");
         final AndroidVersion api19 = new AndroidVersion("19");
         final MajorRevision rev1 = new MajorRevision(1);
-        final IPkgDesc p19_1  = PkgDesc.newSysImg(api19, tag1, "eabi", rev1);
-        final IPkgDesc p19_1b = PkgDesc.newSysImg(api19, tag1, "eabi", rev1);
+        final IPkgDesc p19_1  = PkgDesc.Builder.newSysImg(api19, tag1, "eabi", rev1).create();
+        final IPkgDesc p19_1b = PkgDesc.Builder.newSysImg(api19, tag1, "eabi", rev1).create();
 
         // can't update itself
         assertFalse(p19_1 .isUpdateFor(p19_1b));
@@ -662,24 +702,28 @@ public class PkgDescTest extends TestCase {
         assertTrue (p19_1b.compareTo(p19_1 ) == 0);
 
         // updates a lesser revision of the same API
-        final IPkgDesc p19_2  = PkgDesc.newSysImg(api19, tag1, "eabi", new MajorRevision(2));
+        final IPkgDesc p19_2  =
+                PkgDesc.Builder.newSysImg(api19, tag1, "eabi", new MajorRevision(2)).create();
         assertTrue (p19_2.isUpdateFor(p19_1));
         assertTrue (p19_2.compareTo(p19_1) > 0);
 
         // does not update a different API
-        final IPkgDesc p18_1  = PkgDesc.newSysImg(new AndroidVersion("18"), tag1, "eabi", rev1);
+        final IPkgDesc p18_1  =
+                PkgDesc.Builder.newSysImg(new AndroidVersion("18"), tag1, "eabi", rev1).create();
         assertFalse(p19_2.isUpdateFor(p18_1));
         assertFalse(p18_1.isUpdateFor(p19_2));
         assertTrue (p19_2.compareTo(p18_1) > 0);
 
         // does not update a different ABI
-        final IPkgDesc p19_2c = PkgDesc.newSysImg(api19, tag1, "ppc", new MajorRevision(2));
+        final IPkgDesc p19_2c =
+                PkgDesc.Builder.newSysImg(api19, tag1, "ppc", new MajorRevision(2)).create();
         assertFalse(p19_2c.isUpdateFor(p19_1));
         assertTrue (p19_2c.compareTo(p19_1) > 0);
 
         // does not update a different tag
         IdDisplay tag2 = new IdDisplay("tag2", "My Tag 2");
-        final IPkgDesc p19_t2 = PkgDesc.newSysImg(api19, tag2, "eabi", new MajorRevision(2));
+        final IPkgDesc p19_t2 =
+                PkgDesc.Builder.newSysImg(api19, tag2, "eabi", new MajorRevision(2)).create();
         assertFalse(p19_t2.isUpdateFor(p19_1));
         assertTrue (p19_t2.compareTo(p19_1) > 0);
     }

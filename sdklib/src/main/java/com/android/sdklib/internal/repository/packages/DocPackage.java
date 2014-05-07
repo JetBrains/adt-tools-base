@@ -70,7 +70,9 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
         }
         mVersion = new AndroidVersion(apiLevel, codeName);
 
-        mPkgDesc = PkgDesc.newDoc(mVersion, (MajorRevision) getRevision());
+        mPkgDesc = PkgDesc.Builder
+                .newDoc(mVersion, (MajorRevision) getRevision())
+                .create();
     }
 
     /**
@@ -111,7 +113,9 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
                 archiveOsPath);
         mVersion = new AndroidVersion(props, apiLevel, codename);
 
-        mPkgDesc = PkgDesc.newDoc(mVersion, (MajorRevision) getRevision());
+        mPkgDesc = PkgDesc.Builder
+                .newDoc(mVersion, (MajorRevision) getRevision())
+                .create();
     }
 
     @Override

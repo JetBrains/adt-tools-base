@@ -74,7 +74,9 @@ public class MinToolsPackageTest extends PackageTest {
 
         @Override
         public IPkgDesc getPkgDesc() {
-            return PkgDesc.newTool(new FullRevision(1, 2, 3, 4), FullRevision.NOT_SPECIFIED);
+            return PkgDesc.Builder.newTool(
+                    new FullRevision(1, 2, 3, 4),
+                    FullRevision.NOT_SPECIFIED).create();
         }
     }
 
