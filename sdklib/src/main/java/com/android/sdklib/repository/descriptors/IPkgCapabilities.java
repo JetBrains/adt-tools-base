@@ -65,7 +65,7 @@ public interface IPkgCapabilities {
      * Indicates whether this package type has a vendor id.
      * @return True if this package type has a vendor id.
      */
-    public boolean hasVendorId();
+    public boolean hasVendor();
 
     /**
      * Indicates whether this package type has a {@code min-tools-rev} attribute.

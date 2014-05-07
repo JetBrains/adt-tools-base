@@ -335,7 +335,7 @@ public class SdkManager {
             if (info instanceof LocalExtraPkgInfo) {
                 LocalExtraPkgInfo ei = (LocalExtraPkgInfo) info;
                 IPkgDesc d = ei.getDesc();
-                String vendor = d.getVendorId();
+                String vendor = d.getVendor().getId();
                 String path   = d.getPath();
                 int majorRev  = d.getFullRevision().getMajor();
 
