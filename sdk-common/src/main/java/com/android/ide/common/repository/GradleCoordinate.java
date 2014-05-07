@@ -17,6 +17,7 @@ package com.android.ide.common.repository;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.Joiner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,17 +63,17 @@ public class GradleCoordinate {
         PAR("par"),
         AAR("aar");
 
-        private final String myId;
+        private final String mId;
 
         ArtifactType(String id) {
-            myId = id;
+            mId = id;
         }
 
         @Nullable
         public static ArtifactType getArtifactType(@Nullable String name) {
             if (name != null) {
                 for (ArtifactType type : ArtifactType.values()) {
-                    if (type.myId.equalsIgnoreCase(name)) {
+                    if (type.mId.equalsIgnoreCase(name)) {
                         return type;
                     }
                 }
@@ -82,32 +83,198 @@ public class GradleCoordinate {
 
         @Override
         public String toString() {
-            return myId;
+            return mId;
         }
     }
 
-    public static final int PLUS_REV = -1;
+    /**
+     * A single component of a revision number: either a number, a string or a list of
+     * components separated by dashes.
+     */
+    public abstract static class RevisionComponent implements Comparable<RevisionComponent> {
+        public abstract int asInteger();
+    }
 
-    private final String myGroupId;
+    public static class NumberComponent extends RevisionComponent {
+        private final int mNumber;
 
-    private final String myArtifactId;
+        public NumberComponent(int number) {
+            mNumber = number;
+        }
 
-    private final ArtifactType myArtifactType;
+        @Override
+        public String toString() {
+            return Integer.toString(mNumber);
+        }
 
-    private final List<Integer> myRevisions = new ArrayList<Integer>(3);
+        @Override
+        public int asInteger() {
+            return mNumber;
+        }
 
-    private final boolean myIsAnyRevision;
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof NumberComponent && ((NumberComponent) o).mNumber == mNumber;
+        }
+
+        @Override
+        public int hashCode() {
+            return mNumber;
+        }
+
+        @Override
+        public int compareTo(RevisionComponent o) {
+            if (o instanceof NumberComponent) {
+                return mNumber - ((NumberComponent) o).mNumber;
+            }
+            if (o instanceof StringComponent) {
+                return 1;
+            }
+            if (o instanceof ListComponent) {
+                return 1; // 1.0.x > 1-1
+            }
+            return 0;
+        }
+    }
+
+    public static class StringComponent extends RevisionComponent {
+        private final String mString;
+
+        public StringComponent(String string) {
+            this.mString = string;
+        }
+
+        @Override
+        public String toString() {
+            return mString;
+        }
+
+        @Override
+        public int asInteger() {
+            return 0;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof StringComponent && ((StringComponent) o).mString.equals(mString);
+        }
+
+        @Override
+        public int hashCode() {
+            return mString.hashCode();
+        }
+
+        @Override
+        public int compareTo(RevisionComponent o) {
+            if (o instanceof NumberComponent) {
+                return -1;
+            }
+            if (o instanceof StringComponent) {
+                return mString.compareTo(((StringComponent) o).mString);
+            }
+            if (o instanceof ListComponent) {
+                return -1;  // 1-sp < 1-1
+            }
+            return 0;
+        }
+    }
+
+    private static class PlusComponent extends RevisionComponent {
+        @Override
+        public String toString() {
+            return "+";
+        }
+
+        @Override
+        public int asInteger() {
+            return PLUS_REV_VALUE;
+        }
+
+        @Override
+        public int compareTo(RevisionComponent o) {
+            throw new UnsupportedOperationException(
+                    "Please use a specific comparator that knows how to handle +");
+        }
+    }
+
+    /**
+     * A list of components separated by dashes.
+     */
+    public static class ListComponent extends RevisionComponent {
+        private final List<RevisionComponent> mItems = new ArrayList<RevisionComponent>();
+        private boolean mClosed = false;
+
+        public static ListComponent of(RevisionComponent... components) {
+            ListComponent result = new ListComponent();
+            for (RevisionComponent component : components) {
+                result.add(component);
+            }
+            return result;
+        }
+
+        public void add(RevisionComponent component) {
+            mItems.add(component);
+        }
+
+        @Override
+        public int asInteger() {
+            return 0;
+        }
+
+        @Override
+        public int compareTo(RevisionComponent o) {
+            if (o instanceof NumberComponent) {
+                return -1;  // 1-1 < 1.0.x
+            }
+            if (o instanceof StringComponent) {
+                return 1;  // 1-1 > 1-sp
+            }
+            if (o instanceof ListComponent) {
+                ListComponent rhs = (ListComponent) o;
+                for (int i = 0; i < mItems.size() && i < rhs.mItems.size(); i++) {
+                    int rc = mItems.get(i).compareTo(rhs.mItems.get(i));
+                    if (rc != 0) return rc;
+                }
+                return mItems.size() - rhs.mItems.size();
+            }
+            return 0;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof ListComponent && ((ListComponent) o).mItems.equals(mItems);
+        }
+
+        @Override
+        public int hashCode() {
+            return mItems.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return Joiner.on("-").join(mItems);
+        }
+    }
+
+    public static final PlusComponent PLUS_REV = new PlusComponent();
+    public static final int PLUS_REV_VALUE = -1;
+
+    private final String mGroupId;
+
+    private final String mArtifactId;
+
+    private final ArtifactType mArtifactType;
+
+    private final List<RevisionComponent> mRevisions = new ArrayList<RevisionComponent>(3);
 
     private static final Pattern MAVEN_PATTERN =
-            Pattern.compile("([\\w\\d\\.-]+):([\\w\\d\\.-]+):([\\d+\\.\\+]+)(@[\\w-]+)?");
-
-    private static final Pattern REVISION_PATTERN = Pattern.compile("(\\d+|\\+)");
+            Pattern.compile("([\\w\\d\\.-]+):([\\w\\d\\.-]+):([^:@]+)(@[\\w-]+)?");
 
     /**
      * Constructor
      */
     public GradleCoordinate(@NonNull String groupId, @NonNull String artifactId,
-            @NonNull Integer... revisions) {
+            @NonNull RevisionComponent... revisions) {
         this(groupId, artifactId, Arrays.asList(revisions), null);
     }
 
@@ -115,15 +282,32 @@ public class GradleCoordinate {
      * Constructor
      */
     public GradleCoordinate(@NonNull String groupId, @NonNull String artifactId,
-            @NonNull List<Integer> revisions, @Nullable ArtifactType type) {
-        myGroupId = groupId;
-        myArtifactId = artifactId;
-        myRevisions.addAll(revisions);
+                            @NonNull int... revisions) {
+        this(groupId, artifactId, createComponents(revisions), null);
+    }
 
-        // If the major revision is "+" then we'll accept any revision
-        myIsAnyRevision = (!myRevisions.isEmpty() && myRevisions.get(0) == PLUS_REV);
+    private static List<RevisionComponent> createComponents(int[] revisions) {
+        List<RevisionComponent> result = new ArrayList<RevisionComponent>(revisions.length);
+        for (int revision : revisions) {
+            if (revision == PLUS_REV_VALUE) {
+                result.add(PLUS_REV);
+            } else {
+                result.add(new NumberComponent(revision));
+            }
+        }
+        return result;
+    }
 
-        myArtifactType = type;
+    /**
+     * Constructor
+     */
+    public GradleCoordinate(@NonNull String groupId, @NonNull String artifactId,
+            @NonNull List<RevisionComponent> revisions, @Nullable ArtifactType type) {
+        mGroupId = groupId;
+        mArtifactId = artifactId;
+        mRevisions.addAll(revisions);
+
+        mArtifactType = type;
     }
 
     /**
@@ -154,66 +338,113 @@ public class GradleCoordinate {
             type = ArtifactType.getArtifactType(typeString.substring(1));
         }
 
-        matcher = REVISION_PATTERN.matcher(revision);
-
-        List<Integer> revisions = new ArrayList<Integer>(matcher.groupCount());
-
-        while (matcher.find()) {
-            String group = matcher.group();
-            revisions.add(group.equals("+") ? PLUS_REV : Integer.parseInt(group));
-            // A plus revision terminates the revision string
-            if (group.equals("+")) {
-                break;
-            }
-        }
+        List<RevisionComponent> revisions = parseRevisionNumber(revision);
 
         return new GradleCoordinate(groupId, artifactId, revisions, type);
     }
 
+    private static List<RevisionComponent> parseRevisionNumber(String revision) {
+        List<RevisionComponent> components = new ArrayList<RevisionComponent>();
+        StringBuilder buffer = new StringBuilder();
+        for (int i = 0; i < revision.length(); i++) {
+            char c = revision.charAt(i);
+            if (c == '.') {
+                flushBuffer(components, buffer, true);
+            } else if (c == '+') {
+                if (buffer.length() > 0) {
+                    flushBuffer(components, buffer, true);
+                }
+                components.add(PLUS_REV);
+                break;
+            } else if (c == '-') {
+                flushBuffer(components, buffer, false);
+                int last = components.size() - 1;
+                if (last == -1) {
+                    components.add(ListComponent.of(new NumberComponent(0)));
+                } else if (!(components.get(last) instanceof ListComponent)) {
+                    components.set(last, ListComponent.of(components.get(last)));
+                }
+            } else {
+                buffer.append(c);
+            }
+        }
+        if (buffer.length() > 0 || components.size() == 0) {
+            flushBuffer(components, buffer, true);
+        }
+        return components;
+    }
+
+    private static void flushBuffer(List<RevisionComponent> components, StringBuilder buffer,
+                                    boolean closeList) {
+        RevisionComponent newComponent;
+        if (buffer.length() == 0) {
+            newComponent = new NumberComponent(0);
+        } else {
+            try {
+                newComponent = new NumberComponent(Integer.parseInt(buffer.toString()));
+            } catch(NumberFormatException e) {
+                newComponent = new StringComponent(buffer.toString());
+            }
+        }
+        buffer.setLength(0);
+        if (components.size() > 0 &&
+               components.get(components.size() - 1) instanceof ListComponent) {
+            ListComponent component = (ListComponent) components.get(components.size() - 1);
+            if (!component.mClosed) {
+                component.add(newComponent);
+                if (closeList) {
+                    component.mClosed = true;
+                }
+                return;
+            }
+        }
+        components.add(newComponent);
+    }
+
     @Override
     public String toString() {
-        String s = String.format(Locale.US, "%s:%s:%s", myGroupId, myArtifactId, getFullRevision());
-        if (myArtifactType != null) {
-            s += "@" + myArtifactType.toString();
+        String s = String.format(Locale.US, "%s:%s:%s", mGroupId, mArtifactId, getFullRevision());
+        if (mArtifactType != null) {
+            s += "@" + mArtifactType.toString();
         }
         return s;
     }
 
     @Nullable
     public String getGroupId() {
-        return myGroupId;
+        return mGroupId;
     }
 
     @Nullable
     public String getArtifactId() {
-        return myArtifactId;
+        return mArtifactId;
     }
 
     @Nullable
     public String getId() {
-        if (myGroupId == null || myArtifactId == null) {
+        if (mGroupId == null || mArtifactId == null) {
             return null;
         }
 
-        return String.format("%s:%s", myGroupId, myArtifactId);
+        return String.format("%s:%s", mGroupId, mArtifactId);
     }
 
     @Nullable
     public ArtifactType getType() {
-        return myArtifactType;
+        return mArtifactType;
     }
 
     public boolean acceptsGreaterRevisions() {
-        return myRevisions.get(myRevisions.size() - 1) == PLUS_REV;
+        return mRevisions.get(mRevisions.size() - 1) == PLUS_REV;
     }
 
     public String getFullRevision() {
         StringBuilder revision = new StringBuilder();
-        for (int i : myRevisions) {
+        for (RevisionComponent component : mRevisions) {
             if (revision.length() > 0) {
                 revision.append('.');
             }
-            revision.append((i == PLUS_REV) ? "+" : i);
+            revision.append(component.toString());
         }
 
         return revision.toString();
@@ -224,7 +455,7 @@ public class GradleCoordinate {
      * if it is not available
      */
     public int getMajorVersion() {
-        return myRevisions.isEmpty() ? Integer.MIN_VALUE : myRevisions.get(0);
+        return mRevisions.isEmpty() ? Integer.MIN_VALUE : mRevisions.get(0).asInteger();
     }
 
     /**
@@ -232,7 +463,7 @@ public class GradleCoordinate {
      * if it is not available
      */
     public int getMinorVersion() {
-        return myRevisions.size() < 2 ? Integer.MIN_VALUE : myRevisions.get(1);
+        return mRevisions.size() < 2 ? Integer.MIN_VALUE : mRevisions.get(1).asInteger();
     }
 
     /**
@@ -240,7 +471,7 @@ public class GradleCoordinate {
      * if it is not available
      */
     public int getMicroVersion() {
-        return myRevisions.size() < 3 ? Integer.MIN_VALUE : myRevisions.get(2);
+        return mRevisions.size() < 3 ? Integer.MIN_VALUE : mRevisions.get(2).asInteger();
     }
 
     /**
@@ -251,7 +482,7 @@ public class GradleCoordinate {
      * coordinate.
      */
     public boolean isSameArtifact(@NonNull GradleCoordinate o) {
-        return o.myGroupId.equals(myGroupId) && o.myArtifactId.equals(myArtifactId);
+        return o.mGroupId.equals(mGroupId) && o.mArtifactId.equals(mArtifactId);
     }
 
     @Override
@@ -265,19 +496,19 @@ public class GradleCoordinate {
 
         GradleCoordinate that = (GradleCoordinate) o;
 
-        if (!myRevisions.equals(that.myRevisions)) {
+        if (!mRevisions.equals(that.mRevisions)) {
             return false;
         }
-        if (!myArtifactId.equals(that.myArtifactId)) {
+        if (!mArtifactId.equals(that.mArtifactId)) {
             return false;
         }
-        if (!myGroupId.equals(that.myGroupId)) {
+        if (!mGroupId.equals(that.mGroupId)) {
             return false;
         }
-        if ((myArtifactType == null) != (that.myArtifactType == null)) {
+        if ((mArtifactType == null) != (that.mArtifactType == null)) {
             return false;
         }
-        if (myArtifactType != null && !myArtifactType.equals(that.myArtifactType)) {
+        if (mArtifactType != null && !mArtifactType.equals(that.mArtifactType)) {
             return false;
         }
 
@@ -286,13 +517,13 @@ public class GradleCoordinate {
 
     @Override
     public int hashCode() {
-        int result = myGroupId.hashCode();
-        result = 31 * result + myArtifactId.hashCode();
-        for (Integer i : myRevisions) {
-            result = 31 * result + i;
+        int result = mGroupId.hashCode();
+        result = 31 * result + mArtifactId.hashCode();
+        for (RevisionComponent component : mRevisions) {
+            result = 31 * result + component.hashCode();
         }
-        if (myArtifactType != null) {
-            result = 31 * result + myArtifactType.hashCode();
+        if (mArtifactType != null) {
+            result = 31 * result + mArtifactType.hashCode();
         }
         return result;
     }
@@ -303,33 +534,7 @@ public class GradleCoordinate {
      * to for example order coordinates by "most specific".
      */
     public static final Comparator<GradleCoordinate> COMPARE_PLUS_LOWER =
-            new Comparator<GradleCoordinate>() {
-                @Override
-                public int compare(@NonNull GradleCoordinate a, @NonNull GradleCoordinate b) {
-                    // Make sure we're comparing apples to apples. If not, compare artifactIds
-                    if (!a.isSameArtifact(b)) {
-                        return a.myArtifactId.compareTo(b.myArtifactId);
-                    }
-
-                    // Specific version should beat "any version"
-                    if (a.myIsAnyRevision) {
-                        return -1;
-                    } else if (b.myIsAnyRevision) {
-                        return 1;
-                    }
-
-                    int sizeA = a.myRevisions.size();
-                    int sizeB = b.myRevisions.size();
-                    int common = Math.min(sizeA, sizeB);
-                    for (int i = 0; i < common; ++i) {
-                        int delta = a.myRevisions.get(i) - b.myRevisions.get(i);
-                        if (delta != 0) {
-                            return delta;
-                        }
-                    }
-                    return sizeA < sizeB ? -1 : sizeB < sizeA ? 1 : 0;
-                }
-            };
+            new GradleCoordinateComparator(-1);
 
     /**
      * Comparator which compares Gradle versions - and treats a + version as higher
@@ -338,39 +543,36 @@ public class GradleCoordinate {
      * 0.7.+ higher and therefore satisfying the version requirement.
      */
     public static final Comparator<GradleCoordinate> COMPARE_PLUS_HIGHER =
-            new Comparator<GradleCoordinate>() {
-                @Override
-                public int compare(@NonNull GradleCoordinate a, @NonNull GradleCoordinate b) {
-                    // Make sure we're comparing apples to apples. If not, compare artifactIds
-                    if (!a.isSameArtifact(b)) {
-                        return a.myArtifactId.compareTo(b.myArtifactId);
-                    }
+            new GradleCoordinateComparator(1);
 
-                    // Plus is always highest
-                    if (a.myIsAnyRevision) {
-                        return 1;
-                    } else if (b.myIsAnyRevision) {
-                        return -1;
-                    }
+    private static class GradleCoordinateComparator implements Comparator<GradleCoordinate> {
+        private final int mPlusResult;
 
-                    int sizeA = a.myRevisions.size();
-                    int sizeB = b.myRevisions.size();
-                    int common = Math.min(sizeA, sizeB);
-                    for (int i = 0; i < common; ++i) {
-                        int revision1 = a.myRevisions.get(i);
-                        if (revision1 == PLUS_REV) {
-                            revision1 = Integer.MAX_VALUE;
-                        }
-                        int revision2 = b.myRevisions.get(i);
-                        if (revision2 == PLUS_REV) {
-                            revision2 = Integer.MAX_VALUE;
-                        }
-                        int delta = revision1 - revision2;
-                        if (delta != 0) {
-                            return delta;
-                        }
-                    }
-                    return sizeA < sizeB ? -1 : sizeB < sizeA ? 1 : 0;
+        private GradleCoordinateComparator(int plusResult) {
+            mPlusResult = plusResult;
+        }
+
+        @Override
+        public int compare(@NonNull GradleCoordinate a, @NonNull GradleCoordinate b) {
+            // Make sure we're comparing apples to apples. If not, compare artifactIds
+            if (!a.isSameArtifact(b)) {
+                return a.mArtifactId.compareTo(b.mArtifactId);
+            }
+
+            int sizeA = a.mRevisions.size();
+            int sizeB = b.mRevisions.size();
+            int common = Math.min(sizeA, sizeB);
+            for (int i = 0; i < common; ++i) {
+                RevisionComponent revision1 = a.mRevisions.get(i);
+                if (revision1 instanceof PlusComponent) return mPlusResult;
+                RevisionComponent revision2 = b.mRevisions.get(i);
+                if (revision2 instanceof PlusComponent) return -mPlusResult;
+                int delta = revision1.compareTo(revision2);
+                if (delta != 0) {
+                    return delta;
                 }
-            };
+            }
+            return sizeA < sizeB ? -1 : sizeB < sizeA ? 1 : 0;
+        }
+    }
 }
