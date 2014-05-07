@@ -92,17 +92,17 @@ public class LocalExtraPkgInfo extends LocalPkgInfo {
      * Used to produce a suitable name-display based on the extra's path
      * and vendor display string in addon-3 schemas.
      *
-     * @param vendor The non-null vendor id of the extra.
+     * @param vendor The vendor id of the extra.
      * @param extraPath The non-null path of the extra.
      * @return A non-null display name based on the extra's path id.
      */
-    public static String getPrettyName(@NonNull IdDisplay vendor, @NonNull String extraPath) {
+    public static String getPrettyName(@Nullable IdDisplay vendor, @NonNull String extraPath) {
         String name = extraPath;
 
         // In the past, we used to save the extras in a folder vendor-path,
         // and that "vendor" would end up in the path when we reload the extra from
         // disk. Detect this and compensate.
-        String disp = vendor.getDisplay();
+        String disp = vendor == null ? null : vendor.getDisplay();
         if (disp != null && disp.length() > 0) {
             if (name.startsWith(disp + "-")) {  //$NON-NLS-1$
                 name = name.substring(disp.length() + 1);

@@ -738,27 +738,27 @@ public class LocalSdkTest extends TestCase {
                 "com.blah.lib2=blah.jar;API for Blah\n");
 
         assertEquals(
-                "[<LocalAddonPkgInfo <PkgDesc Type=addons Android=API 18 Vendor=vendor [Some Vendor] Path=vendor:name:18 MajorRev=2>>]",
+                "[<LocalAddonPkgInfo <PkgDesc Type=addons Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 MajorRev=2>>]",
                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDONS)));
         assertEquals(
                 "[<LocalPlatformPkgInfo <PkgDesc Type=platforms Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>, " +
-                 "<LocalAddonPkgInfo <PkgDesc Type=addons Android=API 18 Vendor=vendor [Some Vendor] Path=vendor:name:18 MajorRev=2>>]",
+                 "<LocalAddonPkgInfo <PkgDesc Type=addons Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 MajorRev=2>>]",
                  Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ALL)));
 
-        LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_ADDONS, "vendor:name:18");
+        LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_ADDONS, "Some Vendor:Some Name:18");
         assertNotNull(pi);
         assertTrue(pi instanceof LocalAddonPkgInfo);
         assertSame(mLS, pi.getLocalSdk());
         assertEquals(null, pi.getLoadError());
         assertEquals(new AndroidVersion(18, null), pi.getDesc().getAndroidVersion());
         assertEquals(new MajorRevision(2), pi.getDesc().getMajorRevision());
-        assertEquals("vendor:name:18", pi.getDesc().getPath());
+        assertEquals("Some Vendor:Some Name:18", pi.getDesc().getPath());
         assertEquals("Some Name, Android 18, rev 2", pi.getListDescription());
 
         Package pkg = pi.getPackage();
         assertNotNull(pkg);
 
-        IAndroidTarget t = mLS.getTargetFromHashString("vendor:name:18");
+        IAndroidTarget t = mLS.getTargetFromHashString("Some Vendor:Some Name:18");
         assertSame(t, ((LocalAddonPkgInfo) pi).getAndroidTarget());
         assertNotNull(t);
 

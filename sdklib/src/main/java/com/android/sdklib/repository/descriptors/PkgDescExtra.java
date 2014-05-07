@@ -42,7 +42,7 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
                  @Nullable AndroidVersion androidVersion,
                  @Nullable String path,
                  @Nullable IdDisplay tag,
-                 @Nullable IdDisplay vendorId,
+                 @Nullable IdDisplay vendor,
                  @Nullable FullRevision minToolsRev,
                  @Nullable FullRevision minPlatformToolsRev,
                  @NonNull  String nameDisplay,
@@ -58,7 +58,7 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
               androidVersion,
               path,
               tag,
-              vendorId,
+              vendor,
               minToolsRev,
               minPlatformToolsRev,
               null,     //customIsUpdateFor
