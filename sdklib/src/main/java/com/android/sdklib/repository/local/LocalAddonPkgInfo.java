@@ -19,7 +19,6 @@ package com.android.sdklib.repository.local;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
@@ -35,8 +34,8 @@ import com.android.sdklib.io.IFileOp;
 import com.android.sdklib.repository.AddonManifestIniProps;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
-import com.android.sdklib.repository.descriptors.IAddonDesc;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.utils.Pair;
@@ -45,6 +44,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -63,30 +63,16 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
            "^0x[a-f0-9]{4}$", Pattern.CASE_INSENSITIVE);                    //$NON-NLS-1$
 
     private final @NonNull IPkgDesc mAddonDesc;
-    private String mTargetHash;
-    private String mVendorId;
 
     public LocalAddonPkgInfo(@NonNull LocalSdk localSdk,
                              @NonNull File localDir,
                              @NonNull Properties sourceProps,
                              @NonNull AndroidVersion version,
-                             @NonNull MajorRevision revision) {
+                             @NonNull MajorRevision revision,
+                             @NonNull IdDisplay vendor,
+                             @NonNull IdDisplay name) {
         super(localSdk, localDir, sourceProps, version, revision, FullRevision.NOT_SPECIFIED);
-        mAddonDesc = PkgDesc.Builder.newAddon(version, revision, new IAddonDesc() {
-            @NonNull
-            @Override
-            public String getTargetHash() {
-                // Lazily compute the target hash the first time it is required.
-                return LocalAddonPkgInfo.this.getTargetHash();
-            }
-
-            @NonNull
-            @Override
-            public String getVendorId() {
-                // Lazily compute the vendor id the first time it is required.
-                return LocalAddonPkgInfo.this.getVendorId();
-            }
-        }).create();
+        mAddonDesc = PkgDesc.Builder.newAddon(version, revision, vendor, name).create();
     }
 
     @NonNull
@@ -95,68 +81,35 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
         return mAddonDesc;
     }
 
+    /** The "path" of an add-on is its Target Hash. */
+    @Override
     @NonNull
-    public String getVendorId() {
-        if (mVendorId == null) {
-            IAndroidTarget target = getAndroidTarget();
-
-            String vendor = null;
-
-            if (target != null) {
-                vendor = target.getVendor();
-            } else {
-                Pair<Map<String, String>, String> infos = parseAddonProperties();
-                Map<String, String> map = infos.getFirst();
-                if (map != null) {
-                    vendor = map.get(AddonManifestIniProps.ADDON_VENDOR);
-                }
-            }
-
-            if (vendor == null) {
-                return "invalid";                                           //$NON-NLS-1$
-            }
-
-            mVendorId = vendor;
-        }
-        return mVendorId;
+    public String getTargetHash() {
+        return getDesc().getPath();
     }
 
-    @NonNull
-    @Override
-    public String getTargetHash() {
-        if (mTargetHash == null) {
-            IAndroidTarget target = getAndroidTarget();
+    //-----
 
-            String vendor = null;
-            String name   = null;
+    /**
+     * Computes a sanitized name-id based on an addon name-display.
+     * This is used to provide compatibility with older add-ons that lacks the new fields.
+     *
+     * @param displayName A name-display field or a old-style name field.
+     * @return A non-null sanitized name-id that fits in the {@code [a-zA-Z0-9_-]+} pattern.
+     */
+    public static String sanitizeDisplayToNameId(@NonNull String displayName) {
+        String name = displayName.toLowerCase(Locale.US);
+        name = name.replaceAll("[^a-z0-9_-]+", "_");      //$NON-NLS-1$ //$NON-NLS-2$
+        name = name.replaceAll("_+", "_");                //$NON-NLS-1$ //$NON-NLS-2$
 
-            if (target != null) {
-                vendor = target.getVendor();
-                name   = target.getName();
-            } else {
-                Pair<Map<String, String>, String> infos = parseAddonProperties();
-                Map<String, String> map = infos.getFirst();
-                if (map != null) {
-                    vendor = map.get(AddonManifestIniProps.ADDON_VENDOR);
-                    name   = map.get(AddonManifestIniProps.ADDON_NAME);
-                }
-            }
-
-            if (vendor == null) {
-                vendor = mVendorId;
-            }
-
-            if (vendor == null || name == null) {
-                return "invalid";                                       //$NON-NLS-1$
-            }
-
-            mVendorId = vendor;
-            mTargetHash = AndroidTargetHash.getAddonHashString(
-                    vendor,
-                    name,
-                    getDesc().getAndroidVersion());
+        // Trim leading and trailing underscores
+        if (name.length() > 1) {
+            name = name.replaceAll("^_+", "");            //$NON-NLS-1$ //$NON-NLS-2$
         }
-        return mTargetHash;
+        if (name.length() > 1) {
+            name = name.replaceAll("_+$", "");            //$NON-NLS-1$ //$NON-NLS-2$
+        }
+        return name;
     }
 
     //-----
