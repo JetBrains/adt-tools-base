@@ -15,10 +15,13 @@
  */
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.APPCOMPAT_LIB_ARTIFACT;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
@@ -54,6 +57,8 @@ public class AppCompatCallDetector extends Detector implements Detector.JavaScan
     private static final String SET_PROGRESS_BAR_INDETERMINATE = "setProgressBarIndeterminate";
     private static final String REQUEST_WINDOW_FEATURE = "requestWindowFeature";
 
+    private boolean mDependsOnAppCompat;
+
     public AppCompatCallDetector() {
     }
 
@@ -61,6 +66,12 @@ public class AppCompatCallDetector extends Detector implements Detector.JavaScan
     @Override
     public Speed getSpeed() {
         return Speed.NORMAL;
+    }
+
+    @Override
+    public void beforeCheckProject(@NonNull Context context) {
+        Boolean dependsOnAppCompat = context.getProject().dependsOn(APPCOMPAT_LIB_ARTIFACT);
+        mDependsOnAppCompat = dependsOnAppCompat != null && dependsOnAppCompat;
     }
 
     @Nullable
@@ -78,7 +89,7 @@ public class AppCompatCallDetector extends Detector implements Detector.JavaScan
     @Override
     public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
             @NonNull MethodInvocation node) {
-        if (isAppBarActivityCall(context, node)) {
+        if (mDependsOnAppCompat && isAppBarActivityCall(context, node)) {
             String name = node.astName().astValue();
             String replace = null;
             if (GET_ACTION_BAR.equals(name)) {
