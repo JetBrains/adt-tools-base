@@ -10,9 +10,7 @@ archivesBaseName = 'builder-test-api'
 project.ext.pomName = 'Android Builder Test API library'
 project.ext.pomDesc = 'API for the Test extension point in the Builder library.'
 
-apply from: '../../buildVersion.gradle'
-apply from: '../../publish.gradle'
-apply from: '../../javadoc.gradle'
+apply from: "$rootDir/buildSrc/base/buildVersion.gradle"
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 
-apply plugin: 'distrib'
-shipping.isShipping = false

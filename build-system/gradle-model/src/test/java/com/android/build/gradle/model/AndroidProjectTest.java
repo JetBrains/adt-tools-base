@@ -954,7 +954,7 @@ public class AndroidProjectTest extends TestCase {
                 if (System.getenv("IDE_MODE") != null) {
                     f = dir.getParentFile().getParentFile().getParentFile();
                 } else {
-                    f = dir.getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile();
+                    f = dir.getParentFile().getParentFile().getParentFile().getParentFile().getParentFile();
                     f = new File(f, "tools" + File.separator + "base" + File.separator + "build-system");
                 }
                 return f;

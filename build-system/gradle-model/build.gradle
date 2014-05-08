@@ -44,6 +44,3 @@ idea {
         scopes.COMPILE.plus += configurations.gradleRepo
     }
 }
-
-apply plugin: 'distrib'
-shipping.isShipping = false

@@ -1,5 +1,5 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
+apply plugin: 'sdk-java-lib'
 
 group = 'com.android.tools.build'
 archivesBaseName = 'ant-tasks'
@@ -25,4 +25,4 @@ sourceSets.main.compileClasspath += configurations.provided
 
 javadoc.classpath += configurations.provided
 
-apply from: '../../baseVersion.gradle'
+apply from: "$rootDir/buildSrc/base/baseVersion.gradle"
