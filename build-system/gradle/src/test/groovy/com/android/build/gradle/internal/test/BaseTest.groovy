@@ -153,7 +153,7 @@ public abstract class BaseTest extends TestCase {
                     .forProjectDirectory(project)
                     .connect()
             try {
-                connection.newBuild().forTasks(tasks).withArguments("-i").run()
+                connection.newBuild().forTasks(tasks).withArguments("-i", "-u").run()
             } finally {
                 connection.close()
             }
