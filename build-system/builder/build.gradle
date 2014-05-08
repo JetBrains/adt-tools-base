@@ -26,11 +26,8 @@ archivesBaseName = 'builder'
 project.ext.pomName = 'Android Builder library'
 project.ext.pomDesc = 'Library to build Android applications.'
 
-apply from: '../../buildVersion.gradle'
-apply from: '../../publish.gradle'
-apply from: '../../javadoc.gradle'
+apply from: "$rootDir/buildSrc/base/buildVersion.gradle"
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 
 jar.manifest.attributes("Builder-Version": version)
-
-apply plugin: 'distrib'
-shipping.isShipping = false

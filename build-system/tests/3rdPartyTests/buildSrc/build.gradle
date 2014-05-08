@@ -2,9 +2,9 @@ apply plugin: 'java'
 apply plugin: 'idea'
 
 repositories {
-    maven { url '../../../../../../out/host/gradle/repo' }
+    maven { url '../../../../../../out/repo' }
 }
 
 dependencies {
-    compile 'com.android.tools.build:builder-test-api:0.10.0-SNAPSHOT'
+    compile 'com.android.tools.build:builder-test-api:0.11.0-SNAPSHOT'
 }
