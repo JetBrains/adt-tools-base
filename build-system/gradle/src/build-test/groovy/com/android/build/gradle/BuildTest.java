@@ -61,7 +61,7 @@ abstract class BuildTest extends BaseTest {
         File project = new File(testDir, name);
 
         File buildGradle = new File(project, "build.gradle");
-        assertTrue("Missing build.gradle for " + name, buildGradle.isFile());
+        assertTrue("Missing file: " + buildGradle, buildGradle.isFile());
 
         // build the project
         runGradleTasks(sdkDir, ndkDir, gradleVersion, project, tasks);
