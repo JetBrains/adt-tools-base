@@ -92,7 +92,8 @@ public class AidlCompile extends IncrementalTask {
     }
 
     protected boolean isIncremental() {
-        return true
+        // TODO fix once dep file parsing is resolved.
+        return false
     }
 
     /**
