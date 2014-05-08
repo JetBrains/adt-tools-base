@@ -1,5 +1,5 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
+apply plugin: 'sdk-java-lib'
 
 evaluationDependsOn(':sdklib')
 
@@ -22,14 +22,10 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
-jar {
-    from 'NOTICE'
-}
-
 project.ext.pomName = 'Android Tools Manifest Merger library'
 project.ext.pomDesc = 'A Library to merge Android manifests.'
 
-apply from: '../../baseVersion.gradle'
-apply from: '../../publish.gradle'
-apply from: '../../javadoc.gradle'
+apply from: "$rootDir/buildSrc/base/baseVersion.gradle"
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 

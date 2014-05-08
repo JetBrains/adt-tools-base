@@ -60,7 +60,7 @@ import java.util.Map;
 
 public class AndroidProjectTest extends TestCase {
 
-    private static final String MODEL_VERSION = "0.10.0-SNAPSHOT";
+    private static final String MODEL_VERSION = "0.11.0-SNAPSHOT";
 
     private static final Map<String, ProjectData> sProjectModelMap = Maps.newHashMap();
 
@@ -954,7 +954,7 @@ public class AndroidProjectTest extends TestCase {
                 if (System.getenv("IDE_MODE") != null) {
                     f = dir.getParentFile().getParentFile().getParentFile();
                 } else {
-                    f = dir.getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile();
+                    f = dir.getParentFile().getParentFile().getParentFile().getParentFile().getParentFile();
                     f = new File(f, "tools" + File.separator + "base" + File.separator + "build-system");
                 }
                 return f;

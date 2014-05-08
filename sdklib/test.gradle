@@ -1,5 +1,4 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
 apply plugin: 'maven'
 
 evaluationDependsOn(':dvlib')
@@ -17,20 +16,4 @@ sourceSets {
     main.resources.srcDirs = [ 'src/test/java' ]
 }
 
-javadoc {
-    enabled = false
-    dependsOn = []
-}
-
-shipping.isShipping = false
-
-apply from: '../baseVersion.gradle'
-
-task publishLocal(type: Upload) {
-    configuration = configurations.archives
-    repositories {
-        mavenDeployer {
-            repository(url: uri("$rootProject.ext.androidHostOut/repo"))
-        }
-    }
-}
+apply from: "$rootDir/buildSrc/base/baseVersion.gradle"
