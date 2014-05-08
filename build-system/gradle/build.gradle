@@ -71,7 +71,7 @@ apply from: "$rootDir/buildSrc/base/publish.gradle"
 
 jar.manifest.attributes("Plugin-Version": version)
 
-task buildTest(type: Test, dependsOn: publishLocal) {
+task buildTest(type: Test) {
     testClassesDir = sourceSets.buildTest.output.classesDir
     classpath = sourceSets.buildTest.runtimeClasspath
     description = "Runs the project build tests. This requires an SDK either from the Android source tree, under out/..., or an env var ANDROID_HOME."
@@ -79,7 +79,10 @@ task buildTest(type: Test, dependsOn: publishLocal) {
     systemProperties['jar.path'] = jar.archivePath
 }
 
-task deviceTest(type: Test, dependsOn: publishLocal) {
+buildTest.dependsOn ':publishLocal'
+check.dependsOn buildTest
+
+task deviceTest(type: Test) {
     testClassesDir = sourceSets.deviceTest.output.classesDir
     classpath = sourceSets.deviceTest.runtimeClasspath
     description = "Runs the device tests. This requires a device."
@@ -87,7 +90,7 @@ task deviceTest(type: Test, dependsOn: publishLocal) {
     systemProperties['jar.path'] = jar.archivePath
 }
 
-check.dependsOn buildTest
+deviceTest.dependsOn ':publishLocal'
 
 
 groovydoc {
