@@ -2183,19 +2183,19 @@ public abstract class BasePlugin {
             @NonNull Project project,
             @NonNull LibraryDependencyImpl library) {
         String bundleName = GUtil
-                .toCamelCase(library.getName().replaceAll("\\:", " "));
+                .toCamelCase(library.getName().replaceAll("\\:", " "))
 
-        PrepareLibraryTask prepareLibraryTask = prepareTaskMap.get(library);
+        PrepareLibraryTask prepareLibraryTask = prepareTaskMap.get(library)
 
         if (prepareLibraryTask == null) {
             prepareLibraryTask = project.tasks.create(
-                    "prepare" + bundleName + "Library", PrepareLibraryTask.class);
+                    "prepare" + bundleName + "Library", PrepareLibraryTask.class)
 
-            prepareLibraryTask.setDescription("Prepare " + library.getName());
-            prepareLibraryTask.bundle = library.getBundle();
-            prepareLibraryTask.explodedDir = library.getBundleFolder();
+            prepareLibraryTask.setDescription("Prepare " + library.getName())
+            prepareLibraryTask.conventionMapping.bundle =  { library.getBundle() }
+            prepareLibraryTask.conventionMapping.explodedDir = { library.getBundleFolder() }
 
-            prepareTaskMap.put(library, prepareLibraryTask);
+            prepareTaskMap.put(library, prepareLibraryTask)
         }
 
         return prepareLibraryTask;
