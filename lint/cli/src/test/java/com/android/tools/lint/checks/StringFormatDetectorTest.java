@@ -345,4 +345,15 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                         "src/test/pkg/StringFormat9.java.txt=>src/test/pkg/StringFormat9.java"
                 ));
     }
+
+    public void testBigDecimal() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=69527
+        assertEquals("No warnings.",
+
+                lintProject(
+                        "res/values/formatstrings10.xml",
+                        "src/test/pkg/StringFormat10.java.txt=>src/test/pkg/StringFormat10.java"
+                ));
+
+    }
 }
