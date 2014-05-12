@@ -40,7 +40,7 @@ public class SdkSysImgConstants extends RepoConstants {
      * The pattern of our sdk-sys-img XML namespace.
      * Matcher's group(1) is the schema version (integer).
      */
-    public static final String NS_PATTERN = NS_BASE + "([1-9][0-9]*)";     //$NON-NLS-1$
+    public static final String NS_PATTERN = NS_BASE + "([0-9]+)";     //$NON-NLS-1$
 
     /**
      * The latest version of the sdk-sys-img XML Schema.
