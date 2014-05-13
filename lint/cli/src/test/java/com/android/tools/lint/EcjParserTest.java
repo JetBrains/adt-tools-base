@@ -487,7 +487,7 @@ public class EcjParserTest extends AbstractCheckTest {
                 "                          PROPERTY: arrayDimensions = 0\n" +
                 "                          varName: [Identifier inner]\n" +
                 "                            PROPERTY: name = inner\n" +
-                "                          [ConstructorInvocation Inner], type: void, resolved method: test.pkg.TypeResolutionTest.Inner test.pkg.TypeResolutionTest.Inner\n" +
+                "                          [ConstructorInvocation Inner], type: test.pkg.TypeResolutionTest.Inner, resolved method: test.pkg.TypeResolutionTest.Inner test.pkg.TypeResolutionTest.Inner\n" +
                 "                            type: [TypeReference Inner], type: test.pkg.TypeResolutionTest.Inner, resolved class: test.pkg.TypeResolutionTest.Inner \n" +
                 "                              PROPERTY: WildcardKind = NONE\n" +
                 "                              PROPERTY: arrayDimensions = 0\n" +

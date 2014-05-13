@@ -1342,6 +1342,12 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                 return Double.TYPE;
             } else if (fqcn.equals(TYPE_CHAR)) {
                 return Character.TYPE;
+            } else if (fqcn.equals("BigDecimal")                //$NON-NLS-1$
+                    || fqcn.equals("java.math.BigDecimal")) {   //$NON-NLS-1$
+                return Float.TYPE;
+            } else if (fqcn.equals("BigInteger")                //$NON-NLS-1$
+                    || fqcn.equals("java.math.BigInteger")) {   //$NON-NLS-1$
+                return Integer.TYPE;
             } else {
                 return null;
             }
