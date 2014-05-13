@@ -232,7 +232,7 @@ public class ButtonDetectorTest extends AbstractCheckTest {
             "res/values/buttonbar-values.xml:9: Warning: The standard Android way to capitalize Ok is \"OK\" (tip: use @android:string/ok instead) [ButtonCase]\n" +
             "    <string name=\"resume2\"> Ok </string>\n" +
             "                            ^\n" +
-            "res/values/buttonbar-values.xml:10: Warning: The standard Android way to capitalize CANCEL is \"Cancel\" (tip: use @android:string/ok instead) [ButtonCase]\n" +
+            "res/values/buttonbar-values.xml:10: Warning: The standard Android way to capitalize CANCEL is \"Cancel\" (tip: use @android:string/cancel instead) [ButtonCase]\n" +
             "    <string name=\"giveup2\">\"CANCEL\"</string>\n" +
             "                           ^\n" +
             "0 errors, 2 warnings\n" +
