@@ -317,7 +317,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
             List<FullRevision> revisions = Lists.newArrayList();
             if (major == 19) {
-                revisions.add(new FullRevision(19, 0, 3));
+                revisions.add(new FullRevision(19, 1, 0));
             } else if (major == 18) {
                 revisions.add(new FullRevision(18, 1, 1));
             }
