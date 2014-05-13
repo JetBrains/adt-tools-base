@@ -317,7 +317,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
             List<FullRevision> revisions = Lists.newArrayList();
             if (major == 19) {
-                revisions.add(new FullRevision(19, 0, 2));
+                revisions.add(new FullRevision(19, 0, 3));
             } else if (major == 18) {
                 revisions.add(new FullRevision(18, 1, 1));
             }
@@ -406,12 +406,12 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         boolean isObsolete = false;
         if ("com.android.tools.build".equals(dependency.getGroupId()) &&
                 "gradle".equals(dependency.getArtifactId())) {
-            if (isOlderThan(dependency, 0, 9, 0)) {
+            if (isOlderThan(dependency, 0, 10, 1)) {
                 isObsolete = true;
             }
         } else if ("com.google.guava".equals(dependency.getGroupId()) &&
                 "guava".equals(dependency.getArtifactId())) {
-            if (isOlderThan(dependency, 16, 0, 1)) {
+            if (isOlderThan(dependency, 17, 0, 0)) {
                 isObsolete = true;
             }
         } else if ("com.google.code.gson".equals(dependency.getGroupId()) &&
