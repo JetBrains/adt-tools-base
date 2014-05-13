@@ -263,9 +263,10 @@ public class DeviceManager {
             if (mDefaultDevices != null) {
                 return false;
             }
+            InputStream stream = null;
             try {
-                mDefaultDevices = DeviceParser.parse(
-                        DeviceManager.class.getResourceAsStream(SdkConstants.FN_DEVICES_XML));
+                stream = DeviceManager.class.getResourceAsStream(SdkConstants.FN_DEVICES_XML);
+                mDefaultDevices = DeviceParser.parse(stream);
                 return true;
             } catch (IllegalStateException e) {
                 // The device builders can throw IllegalStateExceptions if
@@ -275,6 +276,12 @@ public class DeviceManager {
             } catch (Exception e) {
                 mLog.error(e, "Error reading default devices");
                 mDefaultDevices = new ArrayList<Device>();
+            } finally {
+                if (stream != null) {
+                    try {
+                        stream.close();
+                    } catch (IOException ignore) {}
+                }
             }
         }
         return false;
@@ -294,11 +301,18 @@ public class DeviceManager {
             mVendorDevices = new ArrayList<Device>();
 
             // Load builtin devices
+            InputStream stream = null;
             try {
-                InputStream stream = DeviceManager.class.getResourceAsStream("nexus.xml");
+                stream = DeviceManager.class.getResourceAsStream("nexus.xml");
                 mVendorDevices.addAll(DeviceParser.parse(stream));
             } catch (Exception e) {
                 mLog.error(e, null, "Could not load devices");
+            } finally {
+                if (stream != null) {
+                    try {
+                        stream.close();
+                    } catch (IOException ignore) {}
+                }
             }
 
             if (mOsSdkPath != null) {
