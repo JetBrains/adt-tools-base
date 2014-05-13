@@ -538,7 +538,7 @@ public class EcjParser extends JavaParser {
         if (nativeNode instanceof MessageSend) {
             nativeNode = ((MessageSend)nativeNode).binding;
         } else if (nativeNode instanceof AllocationExpression) {
-            nativeNode = ((AllocationExpression) nativeNode).binding;
+            nativeNode = ((AllocationExpression)nativeNode).resolvedType;
         } else if (nativeNode instanceof NameReference) {
             nativeNode = ((NameReference)nativeNode).resolvedType;
         } else if (nativeNode instanceof Expression) {
