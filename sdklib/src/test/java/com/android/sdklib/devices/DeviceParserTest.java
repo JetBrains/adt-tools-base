@@ -87,11 +87,13 @@ public class DeviceParserTest extends TestCase {
             assertEquals(2, hw.getCameras().size());
             Camera c = hw.getCamera(CameraLocation.FRONT);
             assertTrue(c != null);
+            assert c != null;
             assertEquals(c.getLocation(), CameraLocation.FRONT);
             assertFalse(c.hasFlash());
             assertTrue(c.hasAutofocus());
             c = hw.getCamera(CameraLocation.BACK);
             assertTrue(c != null);
+            assert c != null;
             assertEquals(c.getLocation(), CameraLocation.BACK);
             assertTrue(c.hasFlash());
             assertTrue(c.hasAutofocus());
@@ -149,7 +151,7 @@ public class DeviceParserTest extends TestCase {
         }
     }
 
-    public void testValidDevicesFull() throws Exception {
+    public void testValidDevicesFull_v1() throws Exception {
         InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices.xml");
         try {
             List<Device> devices = DeviceParser.parse(stream);
@@ -159,10 +161,14 @@ public class DeviceParserTest extends TestCase {
             Device device0 = devices.get(0);
             assertEquals(null, device0.getTagId());
             assertEquals("{}", device0.getBootProps().toString());
+            assertEquals("OMAP 4460", device0.getDefaultHardware().getCpu());
+            assertEquals("[armeabi, armeabi-v7a]", device0.getDefaultHardware().getSupportedAbis().toString());
 
             Device device1 = devices.get(1);
             assertEquals(null, device1.getTagId());
             assertEquals("{}", device1.getBootProps().toString());
+            assertEquals("OMAP 3430", device1.getDefaultHardware().getCpu());
+            assertEquals("[armeabi, armeabi-v7a]", device1.getDefaultHardware().getSupportedAbis().toString());
 
             Device device2 = devices.get(2);
             assertEquals("tag-1", device2.getTagId());
@@ -170,6 +176,43 @@ public class DeviceParserTest extends TestCase {
                           "ro.RAM.Size=1024 MiB, " +
                           "ro.build.display.id=sdk-eng 4.3 JB_MR2 774058 test-keys}",
                          device2.getBootProps().toString());
+            assertEquals("Snapdragon 800 (MSM8974)", device2.getDefaultHardware().getCpu());
+            assertEquals("[armeabi, armeabi-v7a]", device2.getDefaultHardware().getSupportedAbis().toString());
+        } finally {
+            stream.close();
+        }
+    }
+
+    public void testValidDevicesFull_v2() throws Exception {
+        InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices_v2.xml");
+        try {
+            List<Device> devices = DeviceParser.parse(stream);
+            assertEquals("Parsing devices.xml produces the wrong number of devices",
+                    3, devices.size());
+
+            Device device0 = devices.get(0);
+            assertEquals(null, device0.getTagId());
+            assertEquals("{}", device0.getBootProps().toString());
+            assertEquals("arm64", device0.getDefaultHardware().getCpu());
+            assertEquals("[arm64-v8a]", device0.getDefaultHardware().getSupportedAbis().toString());
+
+            Device device1 = devices.get(1);
+            assertEquals("tag-1", device1.getTagId());
+            assertEquals("{ro-myservice-port=1234, " +
+                          "ro.RAM.Size=1024 MiB, " +
+                          "ro.build.display.id=sdk-eng 4.3 JB_MR2 774058 test-keys}",
+                         device1.getBootProps().toString());
+            assertEquals("Intel Atom 64", device1.getDefaultHardware().getCpu());
+            assertEquals("[x86_64]", device1.getDefaultHardware().getSupportedAbis().toString());
+
+            Device device2 = devices.get(2);
+            assertEquals("tag-2", device2.getTagId());
+            assertEquals("{ro-myservice-port=1234, " +
+                          "ro.RAM.Size=1024 MiB, " +
+                          "ro.build.display.id=sdk-eng 4.3 JB_MR2 774058 test-keys}",
+                         device2.getBootProps().toString());
+            assertEquals("MIPS32+64", device2.getDefaultHardware().getCpu());
+            assertEquals("[mips, mips64]", device2.getDefaultHardware().getSupportedAbis().toString());
         } finally {
             stream.close();
         }

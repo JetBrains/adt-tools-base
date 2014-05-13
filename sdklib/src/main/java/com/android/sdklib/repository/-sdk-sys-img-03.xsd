@@ -40,6 +40,7 @@
             - It introduces a <list-display> string for all package types.
             - it changes <archive os=... arch=...> to sub-elements: <host-os>, <host-bits>,
               <jvm-bits> and <min-jvm-version>.
+            - Support for new ABIs arm64-v8a, x86_64 and mips64.
     -->
 
     <xsd:element name="sdk-sys-img" type="sdk:repositoryType" />
@@ -131,8 +132,11 @@
         <xsd:restriction base="xsd:token">
             <xsd:enumeration value="armeabi"     />
             <xsd:enumeration value="armeabi-v7a" />
+            <xsd:enumeration value="arm64-v8a"   />
             <xsd:enumeration value="x86"         />
+            <xsd:enumeration value="x86_64"      />
             <xsd:enumeration value="mips"        />
+            <xsd:enumeration value="mips64"      />
         </xsd:restriction>
     </xsd:simpleType>
 

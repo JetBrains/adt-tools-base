@@ -29,7 +29,7 @@
     </sdk:license>
 
     <sdk:system-image>
-        <sdk:list-display>System Image for xCPU for API 2</sdk:list-display>
+        <sdk:list-display>System Image for x86 CPU for API 2</sdk:list-display>
         <sdk:api-level>2</sdk:api-level>
         <sdk:revision>1</sdk:revision>
         <sdk:tag-id>default</sdk:tag-id>
@@ -46,6 +46,23 @@
     </sdk:system-image>
 
     <sdk:system-image>
+        <sdk:list-display>System Image for x86-64 CPU for API 2</sdk:list-display>
+        <sdk:api-level>2</sdk:api-level>
+        <sdk:revision>1</sdk:revision>
+        <sdk:tag-id>default</sdk:tag-id>
+        <sdk:abi>x86_64</sdk:abi>
+        <sdk:archives>
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
+                <sdk:host-bits>32</sdk:host-bits>
+                <sdk:size>65535</sdk:size>
+                <sdk:checksum type="sha1">1234ae37115ebf13412bbef91339ee0d94541264</sdk:checksum>
+                <sdk:url>http://www.example.com/plat1/x86_64/image1.zip</sdk:url>
+            </sdk:archive>
+        </sdk:archives>
+    </sdk:system-image>
+
+    <sdk:system-image>
         <!-- No list-display here. -->
         <sdk:api-level>2</sdk:api-level>
         <sdk:revision>2</sdk:revision>
@@ -57,6 +74,22 @@
                 <sdk:size>65534</sdk:size>
                 <sdk:checksum type="sha1">1234ae37115ebf13412bbef91339ee0d94541234</sdk:checksum>
                 <sdk:url>http://www.example.com/plat1/armv7/image2.zip</sdk:url>
+            </sdk:archive>
+        </sdk:archives>
+    </sdk:system-image>
+
+    <sdk:system-image>
+        <!-- No list-display here. -->
+        <sdk:api-level>2</sdk:api-level>
+        <sdk:revision>2</sdk:revision>
+        <sdk:tag-id>default</sdk:tag-id>
+        <sdk:tag-display>Ignored in description for default tag</sdk:tag-display>
+        <sdk:abi>arm64-v8a</sdk:abi>
+        <sdk:archives>
+            <sdk:archive>
+                <sdk:size>65534</sdk:size>
+                <sdk:checksum type="sha1">1234ae37115ebf13412bbef91339ee0d94541264</sdk:checksum>
+                <sdk:url>http://www.example.com/plat1/armv64/image2.zip</sdk:url>
             </sdk:archive>
         </sdk:archives>
     </sdk:system-image>
@@ -97,12 +130,12 @@
         <sdk:api-level>42</sdk:api-level>
         <sdk:revision>12</sdk:revision>
         <sdk:tag-id>default</sdk:tag-id>
-        <sdk:abi>mips</sdk:abi>
+        <sdk:abi>mips64</sdk:abi>
         <sdk:archives>
             <sdk:archive>
                 <sdk:size>12345</sdk:size>
-                <sdk:checksum type="sha1">12345637115ebf13412bbef91339ee0d94541234</sdk:checksum>
-                <sdk:url>http://www.example.com/plat42/mips/image12.zip</sdk:url>
+                <sdk:checksum type="sha1">12345637115ebf13412bbef91339ee0d94541264</sdk:checksum>
+                <sdk:url>http://www.example.com/plat42/mips64/image12.zip</sdk:url>
             </sdk:archive>
         </sdk:archives>
     </sdk:system-image>
