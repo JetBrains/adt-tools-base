@@ -572,7 +572,37 @@ public class GradleCoordinate {
                     return delta;
                 }
             }
-            return sizeA < sizeB ? -1 : sizeB < sizeA ? 1 : 0;
+            if (sizeA == sizeB) {
+                return 0;
+            } else {
+                // Treat X.0 and X.0.0 as equal
+                List<RevisionComponent> revisionList;
+                int returnValueIfNonZero;
+                int from;
+                int to;
+                if (sizeA < sizeB) {
+                    revisionList = b.mRevisions;
+                    from = sizeA;
+                    to = sizeB;
+                    returnValueIfNonZero = -1;
+                } else {
+                    revisionList = a.mRevisions;
+                    from = sizeB;
+                    to = sizeA;
+                    returnValueIfNonZero = 1;
+                }
+                for (int i = from; i < to; ++i) {
+                    RevisionComponent revision = revisionList.get(i);
+                    if (revision instanceof NumberComponent) {
+                        if (revision.asInteger() != 0) {
+                            return returnValueIfNonZero;
+                        }
+                    } else {
+                        return returnValueIfNonZero;
+                    }
+                }
+                return 0;
+            }
         }
     }
 }
