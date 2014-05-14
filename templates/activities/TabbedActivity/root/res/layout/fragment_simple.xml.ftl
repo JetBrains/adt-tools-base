@@ -6,7 +6,7 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingBottom="@dimen/activity_vertical_margin"
-    tools:context="${packageName}.${activityClass}$PlaceholderFragment">
+    tools:context="${relativePackage}.${activityClass}$PlaceholderFragment">
 
     <TextView
         <#if hasViewPager>android:id="@+id/section_label"<#else>android:text="@string/hello_world"</#if>

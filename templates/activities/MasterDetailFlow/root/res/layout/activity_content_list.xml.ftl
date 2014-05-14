@@ -6,5 +6,5 @@
     android:layout_height="match_parent"
     android:layout_marginLeft="16dp"
     android:layout_marginRight="16dp"
-    tools:context="${packageName}.${CollectionName}Activity"
+    tools:context="${relativePackage}.${CollectionName}Activity"
     tools:layout="@android:layout/list_content" />
