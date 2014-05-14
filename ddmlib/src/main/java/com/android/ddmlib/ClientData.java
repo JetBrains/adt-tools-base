@@ -16,6 +16,7 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.Nullable;
 import com.android.ddmlib.HeapSegment.HeapSegmentElement;
 
 import java.nio.BufferUnderflowException;
@@ -181,6 +182,12 @@ public class ClientData {
 
     // client's user id is valid
     private boolean mValidUserId;
+
+    // client's ABI
+    private String mAbi;
+
+    // jvm flag: currently only indicates whether checkJni is enabled
+    private String mJvmFlags;
 
     // how interested are we in a debugger?
     private DebuggerStatus mDebuggerInterest;
@@ -472,6 +479,17 @@ public class ClientData {
         return mValidUserId;
     }
 
+    /** Returns the abi flavor (32-bit or 64-bit) of the application, null if unknown or not set. */
+    @Nullable
+    public String getAbi() {
+        return mAbi;
+    }
+
+    /** Returns the VM flags in use, or null if unknown. */
+    public String getJvmFlags() {
+        return mJvmFlags;
+    }
+
     /**
      * Sets client description.
      *
@@ -497,6 +515,14 @@ public class ClientData {
     void setUserId(int id) {
         mUserId = id;
         mValidUserId = true;
+    }
+
+    void setAbi(String abi) {
+        mAbi = abi;
+    }
+
+    void setJvmFlags(String jvmFlags) {
+        mJvmFlags = jvmFlags;
     }
 
     /**
