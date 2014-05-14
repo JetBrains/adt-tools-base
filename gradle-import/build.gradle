@@ -5,8 +5,8 @@ group = 'com.android.tools'
 archivesBaseName = 'gradle-import'
 
 dependencies {
-    compile project(':sdklib')
-    compile project(':lint-api')
+    compile project(':base:sdklib')
+    compile project(':base:lint-api')
 
     testCompile 'junit:junit:3.8.1'
 }
