@@ -93,8 +93,8 @@ public abstract class BaseTestCase extends TestCase {
      * (The blobs written in the test data contains placeholders for the path root and path
      * separators)
      *
-     * @param folder
-     * @return
+     * @param folder the folder containing the merge blob
+     * @return a new file that contains the merge blob
      * @throws java.io.IOException
      */
     protected static File getMergedBlobFolder(File folder) throws IOException {
@@ -118,7 +118,7 @@ public abstract class BaseTestCase extends TestCase {
      * from the file generated, this checks that the file replacement works and all the files are
      * where they are supposed to be.
      *
-     * @param dataMerger
+     * @param dataMerger the data merger
      */
     protected void checkSourceFolders(
             DataMerger<? extends DataItem, ? extends DataFile, ? extends DataSet> dataMerger) {

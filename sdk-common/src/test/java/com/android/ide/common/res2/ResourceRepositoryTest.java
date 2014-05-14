@@ -50,7 +50,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals(1, items.get(ResourceType.ARRAY).size());
         assertEquals(7, items.get(ResourceType.ATTR).size());
         assertEquals(1, items.get(ResourceType.DECLARE_STYLEABLE).size());
-        assertEquals(1, items.get(ResourceType.DIMEN).size());
+        assertEquals(2, items.get(ResourceType.DIMEN).size());
         assertEquals(1, items.get(ResourceType.ID).size());
         assertEquals(1, items.get(ResourceType.INTEGER).size());
     }
@@ -58,9 +58,10 @@ public class ResourceRepositoryTest extends BaseTestCase {
     public void testMergedResourcesByName() throws Exception {
         ResourceRepository repo = getResourceRepository();
 
+        // use ? between type and qualifier because of declare-styleable
         verifyResourceExists(repo,
                 "drawable/icon",
-                "drawable?ldpi/icon",
+                "drawable?ldpi-v4/icon",
                 "drawable/icon2",
                 "drawable/patch",
                 "drawable/color_drawable",
@@ -85,6 +86,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
                 "attr/flagAttr",
                 "declare-styleable/declare_styleable",
                 "dimen/dimen",
+                "dimen?sw600dp-v13/offset",
                 "id/item_id",
                 "integer/integer"
         );
@@ -229,7 +231,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         verifyResourceExists(repo,
                 "drawable/new_overlay",
                 "drawable/removed",
-                "drawable?ldpi/removed",
+                "drawable?ldpi-v4/removed",
                 "drawable/touched",
                 "drawable/removed_overlay",
                 "drawable/untouched");
@@ -292,7 +294,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
                 "drawable/touched",
                 "drawable/removed_overlay",
                 "drawable/untouched",
-                "drawable?hdpi/new_alternate");
+                "drawable?hdpi-v4/new_alternate");
         checkRemovedItems(resourceMerger);
     }
 
@@ -495,7 +497,14 @@ public class ResourceRepositoryTest extends BaseTestCase {
         checkRemovedItems(resourceMerger);
     }
 
-    private void checkRemovedItems(DataMap<? extends DataItem> dataMap) {
+    public void testUpdateFromOldFile() throws Exception {
+        File root = getIncMergeRoot("oldMerge");
+        File fakeRoot = getMergedBlobFolder(root);
+        ResourceMerger resourceMerger = new ResourceMerger();
+        assertFalse(resourceMerger.loadFromBlob(fakeRoot, false /*incrementalState*/));
+    }
+
+    private static void checkRemovedItems(DataMap<? extends DataItem> dataMap) {
         for (DataItem item : dataMap.getDataMap().values()) {
             if (item.isRemoved()) {
                 fail("Removed item found: " + item);
@@ -574,7 +583,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         return resourceMerger;
     }
 
-    private ResourceRepository getResourceRepository()
+    private static ResourceRepository getResourceRepository()
             throws MergingException, IOException {
         ResourceMerger merger = getBaseResourceMerger();
 
@@ -589,7 +598,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         return new File(root, name);
     }
 
-    private void verifyResourceExists(ResourceRepository repository,
+    private static void verifyResourceExists(ResourceRepository repository,
             String... dataItemKeys) {
         Map<ResourceType, ListMultimap<String, ResourceItem>> items = repository.getItems();
 
@@ -604,6 +613,8 @@ public class ResourceRepositoryTest extends BaseTestCase {
                 throw new IllegalArgumentException("Invalid key " + resKey);
             }
 
+            // use ? as a qualifier delimiter because of
+            // declare-styleable
             pos = type.indexOf('?');
             if (pos != -1) {
                 qualifier = type.substring(pos + 1);

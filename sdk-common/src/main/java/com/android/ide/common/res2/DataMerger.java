@@ -28,6 +28,7 @@ import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -60,6 +61,9 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     static final String FN_MERGER_XML = "merger.xml";
     private static final String NODE_MERGER = "merger";
     private static final String NODE_DATA_SET = "dataSet";
+
+    private static final String ATTR_VERSION = "version";
+    private static final String MERGE_BLOB_VERSION = "2";
 
     /**
      * All the DataSets.
@@ -282,6 +286,9 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             Document document = builder.newDocument();
 
             Node rootNode = document.createElement(NODE_MERGER);
+            // add the version code.
+            NodeUtils.addAttribute(document, rootNode, null, ATTR_VERSION, MERGE_BLOB_VERSION);
+
             document.appendChild(rootNode);
 
             for (S dataSet : mDataSets) {
@@ -350,6 +357,16 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             // get the root node
             Node rootNode = document.getDocumentElement();
             if (rootNode == null || !NODE_MERGER.equals(rootNode.getLocalName())) {
+                return false;
+            }
+
+            // get the version code.
+            String version = null;
+            Attr versionAttr = (Attr) rootNode.getAttributes().getNamedItem(ATTR_VERSION);
+            if (versionAttr != null) {
+                version = versionAttr.getValue();
+            }
+            if (!MERGE_BLOB_VERSION.equals(version)) {
                 return false;
             }
 
