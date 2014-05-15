@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'sdk-java-lib'
 
 dependencies {
-    compile project(':fat32lib')
+    compile project(':external:fat32lib')
 }
 
 group = 'com.android.tools.build'
@@ -13,13 +13,13 @@ sdkJar.manifest.attributes("Main-Class": "com.android.jobb.Main")
 
 sdk {
     linux {
-        path('etc/jobb') { executable true }
+        item('etc/jobb') { executable true }
     }
     mac {
-        path('etc/jobb') { executable true }
+        item('etc/jobb') { executable true }
     }
     windows {
-        path 'etc/jobb.bat'
+        item 'etc/jobb.bat'
     }
 }
 

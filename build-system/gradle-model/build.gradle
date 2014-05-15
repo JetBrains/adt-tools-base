@@ -18,10 +18,10 @@ configurations{
 }
 
 dependencies {
-    compile project(':builder-model')
+    compile project(':base:builder-model')
 
     testCompile 'junit:junit:3.8.1'
-    testCompile project(':builder')
+    testCompile project(':base:builder')
 
     // Need an SLF4J implementation at runtime
     testRuntime 'org.slf4j:slf4j-simple:1.7.2'

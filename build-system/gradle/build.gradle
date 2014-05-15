@@ -22,8 +22,8 @@ ext.proguardVersion = "4.11"
 dependencies {
     compile gradleApi()
     compile localGroovy()
-    compile project(':builder')
-    compile project(':lint')
+    compile project(':base:builder')
+    compile project(':base:lint')
     compile "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
 
     testCompile 'junit:junit:3.8.1'

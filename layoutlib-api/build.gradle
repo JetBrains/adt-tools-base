@@ -5,7 +5,7 @@ group = 'com.android.tools.layoutlib'
 archivesBaseName = 'layoutlib-api'
 
 dependencies {
-    compile project(':common')
+    compile project(':base:common')
     compile 'net.sf.kxml:kxml2:2.3.0'
 
     testCompile 'junit:junit:3.8.1'
