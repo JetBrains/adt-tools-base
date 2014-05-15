@@ -57,6 +57,9 @@ public final class UiModeQualifier extends EnumBasedResourceQualifier {
 
     @Override
     public int since() {
+        if (mValue != null) {
+            return mValue.since();
+        }
         return 8;
     }
 

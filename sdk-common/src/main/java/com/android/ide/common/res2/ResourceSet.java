@@ -20,7 +20,9 @@ import static com.android.ide.common.res2.ResourceFile.ATTR_QUALIFIER;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.ide.common.packaging.PackagingUtils;
+import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceConstants;
 import com.android.resources.ResourceFolderType;
@@ -60,7 +62,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         // get the type.
         FolderData folderData = getFolderData(file.getParentFile());
 
-        if (folderData.folderType == null) {
+        if (folderData == null) {
             return null;
         }
 
@@ -130,7 +132,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                 if (folder.isDirectory() &&
                         PackagingUtils.checkFolderForPackaging(folder.getName())) {
                     FolderData folderData = getFolderData(folder);
-                    if (folderData.folderType != null) {
+                    if (folderData != null) {
                         parseFolder(sourceFolder, folder, folderData, logger);
                     }
                 }
@@ -156,7 +158,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
             throws MergingException {
 
         FolderData folderData = getFolderData(changedFile.getParentFile());
-        if (folderData.folderType == null) {
+        if (folderData == null) {
             return true;
         }
 
@@ -298,7 +300,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
      * @param folder the folder.
      * @return the FolderData object.
      */
-    @NonNull
+    @Nullable
     private static FolderData getFolderData(File folder) {
         FolderData fd = new FolderData();
 
@@ -306,7 +308,22 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         int pos = folderName.indexOf(ResourceConstants.RES_QUALIFIER_SEP);
         if (pos != -1) {
             fd.folderType = ResourceFolderType.getTypeByName(folderName.substring(0, pos));
-            fd.qualifiers = folderName.substring(pos + 1);
+            if (fd.folderType == null) {
+                return null;
+            }
+
+            FolderConfiguration folderConfiguration = FolderConfiguration.getConfigForFolder(folderName);
+            if (folderConfiguration == null) {
+                return null;
+            }
+
+            // normalize it
+            folderConfiguration.normalize();
+
+            // get the qualifier portion from the folder config.
+            // the returned string starts with "-" so we remove that.
+            fd.qualifiers = folderConfiguration.getUniqueKey().substring(1);
+
         } else {
             fd.folderType = ResourceFolderType.getTypeByName(folderName);
         }

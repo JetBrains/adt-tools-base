@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merger>
+<merger version="2">
     <dataSet config="main">
         <source path="$TOP$$SEP$main">
             <file name="main" path="$TOP$$SEP$main$SEP$layout$SEP$main.xml" qualifiers="" type="layout"/>
