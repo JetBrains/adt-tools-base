@@ -5,8 +5,8 @@ group = 'com.android.tools'
 archivesBaseName = 'rule-api'
 
 dependencies {
-    compile project(':common')
-    compile project(':layoutlib-api')
+    compile project(':base:common')
+    compile project(':base:layoutlib-api')
 }
 
 apply from: "$rootDir/buildSrc/base/baseVersion.gradle"

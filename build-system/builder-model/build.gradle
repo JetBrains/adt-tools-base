@@ -3,7 +3,7 @@ apply plugin: 'clone-artifacts'
 apply plugin: 'sdk-java-lib'
 
 dependencies {
-    compile project(':common')
+    compile project(':base:common')
 }
 
 group = 'com.android.tools.build'

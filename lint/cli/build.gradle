@@ -5,12 +5,12 @@ group = 'com.android.tools.lint'
 archivesBaseName = 'lint'
 
 dependencies {
-    compile project(':lint-checks')
+    compile project(':base:lint-checks')
     compile 'org.eclipse.jdt.core.compiler:ecj:4.2.2'
 
     testCompile 'org.easymock:easymock:3.1'
     testCompile 'junit:junit:3.8.1'
-    testCompile project(':testutils')
+    testCompile project(':base:testutils')
 }
 
 sourceSets {
@@ -20,13 +20,13 @@ sourceSets {
 
 sdk {
     linux {
-        path('etc/lint') { executable true }
+        item('etc/lint') { executable true }
     }
     mac {
-        path('etc/lint') { executable true }
+        item('etc/lint') { executable true }
     }
     windows {
-        path 'etc/lint.bat'
+        item 'etc/lint.bat'
     }
 }
 

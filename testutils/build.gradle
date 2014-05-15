@@ -4,7 +4,7 @@ group = 'com.android.tools'
 archivesBaseName = 'testutils'
 
 dependencies {
-    compile project(':common')
+    compile project(':base:common')
     compile 'junit:junit:3.8.1'
 }
 

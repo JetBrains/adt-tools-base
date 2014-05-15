@@ -1,20 +1,20 @@
 apply plugin: 'java'
 apply plugin: 'sdk-java-lib'
 
-evaluationDependsOn(':dvlib')
+evaluationDependsOn(':base:dvlib')
 
 group = 'com.android.tools'
 archivesBaseName = 'sdklib'
 
 dependencies {
-    compile project(':layoutlib-api')
-    compile project(':dvlib')
+    compile project(':base:layoutlib-api')
+    compile project(':base:dvlib')
 
     compile 'org.apache.commons:commons-compress:1.0'
     compile 'org.apache.httpcomponents:httpclient:4.1.1'
     compile 'org.apache.httpcomponents:httpmime:4.1'
 
-    testCompile project(':dvlib').sourceSets.test.output
+    testCompile project(':base:dvlib').sourceSets.test.output
     testCompile 'junit:junit:3.8.1'
 }
 

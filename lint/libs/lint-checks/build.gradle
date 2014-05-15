@@ -5,12 +5,12 @@ group = 'com.android.tools.lint'
 archivesBaseName = 'lint-checks'
 
 dependencies {
-    compile project(':lint-api')
+    compile project(':base:lint-api')
     compile 'org.ow2.asm:asm-analysis:4.0'
 
     testCompile 'org.easymock:easymock:3.1'
     testCompile 'junit:junit:3.8.1'
-    testCompile project(':testutils')
+    testCompile project(':base:testutils')
 }
 
 sourceSets {
