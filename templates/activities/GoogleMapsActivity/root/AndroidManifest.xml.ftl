@@ -12,7 +12,7 @@
         <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version" />
         <meta-data android:name="com.google.android.maps.v2.API_KEY" android:value="@string/google_maps_key"/>
 
-        <activity android:name="${packageName}.${activityClass}"
+        <activity android:name="${relativePackage}.${activityClass}"
             android:label="@string/title_${simpleName}">
             <#if parentActivityClass != "">
             <meta-data android:name="android.support.PARENT_ACTIVITY"
