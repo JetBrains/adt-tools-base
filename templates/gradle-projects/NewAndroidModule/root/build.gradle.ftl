@@ -35,6 +35,7 @@ android {
     buildToolsVersion "${buildToolsVersion}"
 
     defaultConfig {
+        packageName "${packageName}"
         minSdkVersion ${minApi}
         targetSdkVersion ${targetApi}
         versionCode 1
