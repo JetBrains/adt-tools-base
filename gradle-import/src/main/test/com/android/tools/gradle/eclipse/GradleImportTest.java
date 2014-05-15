@@ -813,6 +813,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        packageName \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -855,6 +856,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        packageName \"test.lib2.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 8\n"
                 + "    }\n"
@@ -1036,6 +1038,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        packageName \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -1140,6 +1143,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        packageName \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -1287,6 +1291,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        packageName \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "\n"
@@ -1497,6 +1502,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        packageName \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "\n"
@@ -1695,6 +1701,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        packageName \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -2199,6 +2206,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        packageName \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -2240,6 +2248,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        packageName \"test.android.lib.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 8\n"
                 + "    }\n"
@@ -2898,6 +2907,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        packageName \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -3171,6 +3181,11 @@ public class GradleImportTest extends TestCase {
     }
 
     private static void appendFiles(StringBuilder sb, boolean includeDirs, File file, int depth) {
+        // Skip output
+        if ((depth == 1 || depth == 2) && file.getName().equals("build")) {
+            return;
+        }
+
         // Skip wrapper, since it may or may not be present for unit tests
         if (depth == 1) {
             String name = file.getName();
@@ -3180,8 +3195,6 @@ public class GradleImportTest extends TestCase {
                     || name.equals("gradlew.bat")) {
                 return;
             }
-        } else if (depth == 2 && file.getName().equals("build")) { // Skip output
-            return;
         }
 
         boolean isDirectory = file.isDirectory();
