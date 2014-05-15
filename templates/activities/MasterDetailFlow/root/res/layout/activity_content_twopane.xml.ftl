@@ -8,7 +8,7 @@
     android:divider="?android:attr/dividerHorizontal"
     android:orientation="horizontal"
     android:showDividers="middle"
-    tools:context="${packageName}.${CollectionName}Activity">
+    tools:context="${relativePackage}.${CollectionName}Activity">
 
     <!--
     This layout is a two-pane layout for the ${objectKindPlural}

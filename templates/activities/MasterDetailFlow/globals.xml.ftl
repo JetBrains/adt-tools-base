@@ -10,4 +10,5 @@
     <global id="collection_name" value="${extractLetters(objectKind?lower_case)}_list" />
     <global id="DetailName" value="${extractLetters(objectKind)}Detail" />
     <global id="detail_name" value="${extractLetters(objectKind?lower_case)}_detail" />
+    <global id="relativePackage" value="<#if relativePackage?has_content>${relativePackage}<#else>${packageName}</#if>" />
 </globals>
