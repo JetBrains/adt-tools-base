@@ -5,15 +5,15 @@ group = 'com.android.tools'
 archivesBaseName = 'screenshot2'
 
 dependencies {
-    compile project(':ddmlib')
+    compile project(':base:ddmlib')
 }
 
 sdk {
     linux {
-        path('etc/screenshot2') { executable true }
+        item('etc/screenshot2') { executable true }
     }
     mac {
-        path('etc/screenshot2') { executable true }
+        item('etc/screenshot2') { executable true }
     }
 }
 

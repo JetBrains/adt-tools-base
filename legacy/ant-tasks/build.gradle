@@ -5,7 +5,7 @@ group = 'com.android.tools.build'
 archivesBaseName = 'ant-tasks'
 
 dependencies {
-    compile project(':manifest-merger')
+    compile project(':base:manifest-merger')
 
     testCompile 'junit:junit:3.8.1'
 }

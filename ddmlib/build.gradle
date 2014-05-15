@@ -5,7 +5,7 @@ group = 'com.android.tools.ddms'
 archivesBaseName = 'ddmlib'
 
 dependencies {
-    compile project(':common')
+    compile project(':base:common')
 
     compile 'net.sf.kxml:kxml2:2.3.0'
 

@@ -6,8 +6,8 @@ group = 'com.android.tools.lint'
 archivesBaseName = 'lint-api'
 
 dependencies {
-    compile project(':sdk-common')
-    compile project(':builder-model')
+    compile project(':base:sdk-common')
+    compile project(':base:builder-model')
 
     compile 'com.android.tools.external.lombok:lombok-ast:0.2.2'
     compile 'org.ow2.asm:asm:4.0'

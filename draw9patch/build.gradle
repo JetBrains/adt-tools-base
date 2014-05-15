@@ -15,13 +15,13 @@ sourceSets {
 
 sdk {
     linux {
-        path('etc/draw9patch') { executable true}
+        item('etc/draw9patch') { executable true}
     }
     mac {
-        path('etc/draw9patch') { executable true}
+        item('etc/draw9patch') { executable true}
     }
     windows {
-        path 'etc/draw9patch.bat'
+        item 'etc/draw9patch.bat'
     }
 }
 

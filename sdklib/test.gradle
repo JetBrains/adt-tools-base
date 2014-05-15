@@ -1,14 +1,14 @@
 apply plugin: 'java'
 apply plugin: 'maven'
 
-evaluationDependsOn(':dvlib')
+evaluationDependsOn(':base:dvlib')
 
 group = 'com.android.tools'
 archivesBaseName = 'sdklib-test'
 
 dependencies {
-    compile project(':sdklib')
-    compile project(':dvlib').sourceSets.test.output
+    compile project(':base:sdklib')
+    compile project(':base:dvlib').sourceSets.test.output
     compile 'junit:junit:3.8.1'
 }
 

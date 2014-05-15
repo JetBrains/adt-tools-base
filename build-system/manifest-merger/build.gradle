@@ -1,18 +1,18 @@
 apply plugin: 'java'
 apply plugin: 'sdk-java-lib'
 
-evaluationDependsOn(':sdklib')
+evaluationDependsOn(':base:sdklib')
 
 group = 'com.android.tools.build'
 archivesBaseName = 'manifest-merger'
 
 dependencies {
-    compile project(':common')
-    compile project(':sdklib')
-    compile project(':sdk-common')
+    compile project(':base:common')
+    compile project(':base:sdklib')
+    compile project(':base:sdk-common')
     compile 'kxml2:kxml2:2.3.0'
 
-    testCompile project(':sdklib').sourceSets.test.output
+    testCompile project(':base:sdklib').sourceSets.test.output
     testCompile 'junit:junit:3.8.1'
     testCompile 'org.mockito:mockito-all:1.9.5'
 }

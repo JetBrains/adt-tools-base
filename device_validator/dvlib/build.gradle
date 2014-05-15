@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'sdk-java-lib'
 
 dependencies {
-    compile project(':common')
+    compile project(':base:common')
     testCompile 'junit:junit:3.8.1'
 }
 

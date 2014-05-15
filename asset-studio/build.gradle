@@ -5,7 +5,7 @@ group = 'com.android.tools'
 archivesBaseName = 'asset-studio'
 
 dependencies {
-    compile project(':layoutlib-api')
+    compile project(':base:layoutlib-api')
 
     testCompile 'junit:junit:3.8.1'
 }
