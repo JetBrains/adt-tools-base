@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application>
-        <activity android:name="${packageName}.${CollectionName}Activity"
+        <activity android:name="${relativePackage}.${CollectionName}Activity"
             <#if isNewProject>
             android:label="@string/app_name"
             <#else>
@@ -20,11 +20,11 @@
             </#if>
         </activity>
 
-        <activity android:name="${packageName}.${DetailName}Activity"
+        <activity android:name="${relativePackage}.${DetailName}Activity"
             android:label="@string/title_${detail_name}"
             <#if buildApi gte 16>android:parentActivityName=".${CollectionName}Activity"</#if>>
             <meta-data android:name="android.support.PARENT_ACTIVITY"
-                android:value="${packageName}.${CollectionName}Activity" />
+                android:value="${relativePackage}.${CollectionName}Activity" />
         </activity>
     </application>
 

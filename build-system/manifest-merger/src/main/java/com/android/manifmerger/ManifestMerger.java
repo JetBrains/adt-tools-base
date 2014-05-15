@@ -342,6 +342,10 @@ public class ManifestMerger {
 
         cleanupToolsAttributes(mainDoc);
 
+        if (mExtractPackagePrefix) {
+            extractFqcns(mainDoc);
+        }
+
         if (mInsertSourceMarkers) {
             insertSourceMarkers(mainDoc);
         }
