@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.io;
+package com.android.io;
 
 import com.android.annotations.NonNull;
 
@@ -28,6 +28,26 @@ import java.io.InputStream;
  * this makes it possible to ignore close operations or have them perform a
  * {@link InputStream#reset()} instead (if supported by the underlying stream)
  * or plain ignored.
+ * <p/>
+ * This is useful to pass a stream to an XML parser or validator that automatically
+ * closes its input stream -- which makes it impossible to validate a stream and then
+ * parse it without reacquiring the stream.
+ * <p/>
+ * Example of usage:
+ * <pre>
+ * // Get a stream that supports mark/reset in case the original does not
+ * InputStream buffered = new BufferedInputStream(source);
+ * // Mark the beginning of the stream and indicate how much buffering is acceptable
+ * buffered.mark(500000);
+ * // Wrap the stream so that closing it actually just resets it to the mark
+ * NonClosingInputStream stream = new NonClosingInputStream(buffered);
+ * stream.setCloseBehavior(CloseBehavior.RESET)
+ * // pass it to a schema validator (pseudo code, real code is way more verbose.)
+ * SAXParserFactory...newSAXParser().parse(stream) ...
+ * // the validator parser closes the stream, which resets it to the beginning
+ * // so passing it another parser will actually parse the whole stream
+ * SAXParser...parse(stream) ...
+ * </pre>
  */
 public class NonClosingInputStream extends FilterInputStream {
 

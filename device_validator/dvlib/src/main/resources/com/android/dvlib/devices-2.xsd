@@ -16,9 +16,9 @@
 -->
 
 <xsd:schema
-    targetNamespace="http://schemas.android.com/sdk/devices/1"
+    targetNamespace="http://schemas.android.com/sdk/devices/2"
     xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-    xmlns:c="http://schemas.android.com/sdk/devices/1"
+    xmlns:c="http://schemas.android.com/sdk/devices/2"
     elementFormDefault="qualified"
     attributeFormDefault="unqualified"
     version="1">

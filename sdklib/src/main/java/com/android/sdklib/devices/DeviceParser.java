@@ -29,7 +29,6 @@ import com.android.resources.ScreenRatio;
 import com.android.resources.ScreenSize;
 import com.android.resources.TouchScreen;
 import com.android.resources.UiMode;
-import com.android.utils.Pair;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -37,7 +36,9 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.awt.Point;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -68,6 +69,7 @@ public class DeviceParser {
             mParentFolder = parentFolder;
         }
 
+        @NonNull
         public List<Device> getDevices() {
             return mDevices;
         }
@@ -407,25 +409,46 @@ public class DeviceParser {
         sParserFactory.setNamespaceAware(true);
     }
 
-    public static List<Device> parse(File devicesFile) throws SAXException,
-            ParserConfigurationException, IOException {
-        SAXParser parser = getParser();
-        DeviceHandler dHandler = new DeviceHandler(devicesFile.getAbsoluteFile().getParentFile());
-        parser.parse(devicesFile, dHandler);
-        return dHandler.getDevices();
+    @NonNull
+    public static List<Device> parse(@NonNull File devicesFile)
+            throws SAXException, ParserConfigurationException, IOException {
+        InputStream stream = null;
+        try {
+            stream = new FileInputStream(devicesFile);
+            return parseImpl(stream, devicesFile.getAbsoluteFile().getParentFile());
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException ignore) {}
+            }
+        }
     }
 
-    public static List<Device> parse(InputStream devices) throws SAXException, IOException,
-            ParserConfigurationException {
-        SAXParser parser = getParser();
-        DeviceHandler dHandler = new DeviceHandler(null);
+    @NonNull
+    public static List<Device> parse(@NonNull InputStream devices)
+            throws SAXException, IOException, ParserConfigurationException {
+        return parseImpl(devices, null);
+    }
+
+    @NonNull
+    private static List<Device> parseImpl(@NonNull InputStream devices, @Nullable File parentDir)
+            throws SAXException, IOException, ParserConfigurationException {
+        if (!devices.markSupported()) {
+            devices = new BufferedInputStream(devices);
+        }
+        devices.mark(500000);
+        int version = DeviceSchema.getXmlSchemaVersion(devices);
+        SAXParser parser = getParser(version);
+        DeviceHandler dHandler = new DeviceHandler(parentDir);
+        devices.reset();
         parser.parse(devices, dHandler);
         return dHandler.getDevices();
     }
 
     @NonNull
-    private static SAXParser getParser() throws ParserConfigurationException, SAXException {
-        Schema schema = DeviceSchema.getSchema();
+    private static SAXParser getParser(int version) throws ParserConfigurationException, SAXException {
+        Schema schema = DeviceSchema.getSchema(version);
         if (schema != null) {
             sParserFactory.setSchema(schema);
         }

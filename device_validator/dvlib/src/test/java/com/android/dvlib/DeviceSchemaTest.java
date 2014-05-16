@@ -48,8 +48,14 @@ public class DeviceSchemaTest extends TestCase {
 
     //---- actual tests -----
 
-    public void testValidXml() throws Exception {
+    public void testValidXml_v1() throws Exception {
         InputStream xml = DeviceSchemaTest.class.getResourceAsStream("devices.xml");
+        assertTrue(xml.markSupported());
+        xml.mark(500000);   // set mark to beginning of stream
+
+        // Check schema version
+        assertEquals(1, DeviceSchema.getXmlSchemaVersion(xml));
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         boolean result = DeviceSchema.validate(xml, baos, null);
         String output = baos.toString().trim();
@@ -59,7 +65,27 @@ public class DeviceSchemaTest extends TestCase {
         assertTrue(String.format(
                 "Regex Assertion Failed\nExpected No Output\nActual: %s\n",
                 baos.toString().trim()),
-                baos.toString().trim().matches(""));
+                baos.toString().trim().isEmpty());
+    }
+
+    public void testValidXml_v2() throws Exception {
+        InputStream xml = DeviceSchemaTest.class.getResourceAsStream("devices_v2.xml");
+        assertTrue(xml.markSupported());
+        xml.mark(500000);   // set mark to beginning of stream
+
+        // Check schema version
+        assertEquals(2, DeviceSchema.getXmlSchemaVersion(xml));
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        boolean result = DeviceSchema.validate(xml, baos, null);
+        String output = baos.toString().trim();
+        assertTrue(
+                String.format("Validation Assertion Failed, XML failed to validate when it was expected to pass\n%s\n", output),
+                result);
+        assertTrue(String.format(
+                "Regex Assertion Failed\nExpected No Output\nActual: %s\n",
+                baos.toString().trim()),
+                baos.toString().trim().isEmpty());
     }
 
     public void testNoHardware() throws Exception {
@@ -165,6 +191,8 @@ public class DeviceSchemaTest extends TestCase {
     private void checkFailure(Map<String, String> replacements, String regex) throws Exception {
         // Generate XML stream with replacements
         InputStream xmlStream = getReplacedStream(replacements);
+        assertTrue(xmlStream.markSupported());
+        xmlStream.mark(500000);   // set mark to beginning of stream
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         assertFalse(
@@ -179,9 +207,13 @@ public class DeviceSchemaTest extends TestCase {
 
     private void checkFailure(String resource, String regex) throws Exception {
         InputStream xml = DeviceSchemaTest.class.getResourceAsStream(resource);
+        assertTrue(xml.markSupported());
+        xml.mark(500000);   // set mark to beginning of stream
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
         assertFalse("Validation Assertion Failed, XML validated when it was expected to fail\n",
                 DeviceSchema.validate(xml, baos, null));
+
         String actual = baos.toString().trim();
         actual = actual.replace("\r\n", "\n");  // Fix Windows CRLF
         assertTrue(
@@ -191,6 +223,8 @@ public class DeviceSchemaTest extends TestCase {
 
     private void checkSuccess(Map<String, String> replacements) throws Exception {
         InputStream xmlStream = getReplacedStream(replacements);
+        assertTrue(xmlStream.markSupported());
+        xmlStream.mark(500000);   // set mark to beginning of stream
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         assertTrue(DeviceSchema.validate(xmlStream, baos, null));
