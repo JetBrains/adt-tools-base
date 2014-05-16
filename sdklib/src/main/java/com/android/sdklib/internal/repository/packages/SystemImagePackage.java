@@ -302,10 +302,12 @@ public class SystemImagePackage extends MajorRevisionPackage
     }
 
     private static String getAbiDisplayNameInternal(String abi) {
-        return abi.replace("armeabi", "ARM EABI")         //$NON-NLS-1$  //$NON-NLS-2$
-                  .replace("x86",     "Intel x86 Atom")   //$NON-NLS-1$  //$NON-NLS-2$
-                  .replace("mips",    "MIPS")             //$NON-NLS-1$  //$NON-NLS-2$
-                  .replace("-", " ");                     //$NON-NLS-1$  //$NON-NLS-2$
+        return abi.replace("armeabi", "ARM EABI")          //$NON-NLS-1$  //$NON-NLS-2$
+                  .replace("arm64",   "ARM 64")            //$NON-NLS-1$  //$NON-NLS-2$
+                  .replace("x86",     "Intel x86 Atom")    //$NON-NLS-1$  //$NON-NLS-2$
+                  .replace("x86_64",  "Intel x86_64 Atom") //$NON-NLS-1$  //$NON-NLS-2$
+                  .replace("mips",    "MIPS")              //$NON-NLS-1$  //$NON-NLS-2$
+                  .replace("-", " ");                      //$NON-NLS-1$  //$NON-NLS-2$
     }
 
     /**

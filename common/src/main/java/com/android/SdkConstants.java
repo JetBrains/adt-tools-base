@@ -301,14 +301,21 @@ public final class SdkConstants {
     /** Name of the SDK images folder. */
     public static final String FD_IMAGES = "images";                    //$NON-NLS-1$
     /** Name of the ABI to support. */
-    public static final String ABI_ARMEABI = "armeabi";                 //$NON-NLS-1$
-    public static final String ABI_ARMEABI_V7A = "armeabi-v7a";         //$NON-NLS-1$
-    public static final String ABI_INTEL_ATOM = "x86";                  //$NON-NLS-1$
-    public static final String ABI_MIPS = "mips";                       //$NON-NLS-1$
+    public static final String ABI_ARMEABI      = "armeabi";            //$NON-NLS-1$
+    public static final String ABI_ARMEABI_V7A  = "armeabi-v7a";        //$NON-NLS-1$
+    public static final String ABI_ARM64_V8A    = "arm64-v8a";          //$NON-NLS-1$
+    public static final String ABI_INTEL_ATOM   = "x86";                //$NON-NLS-1$
+    public static final String ABI_INTEL_ATOM64 = "x86_64";             //$NON-NLS-1$
+    public static final String ABI_MIPS         = "mips";               //$NON-NLS-1$
+    public static final String ABI_MIPS64       = "mips64";             //$NON-NLS-1$
     /** Name of the CPU arch to support. */
-    public static final String CPU_ARCH_ARM = "arm";                    //$NON-NLS-1$
-    public static final String CPU_ARCH_INTEL_ATOM = "x86";             //$NON-NLS-1$
-    public static final String CPU_ARCH_MIPS = "mips";                  //$NON-NLS-1$
+    public static final String CPU_ARCH_ARM          = "arm";           //$NON-NLS-1$
+    public static final String CPU_ARCH_ARM64        = "arm64";         //$NON-NLS-1$
+    public static final String CPU_ARCH_INTEL_ATOM   = "x86";           //$NON-NLS-1$
+    public static final String CPU_ARCH_INTEL_ATOM64 = "x86_64";        //$NON-NLS-1$
+    public static final String CPU_ARCH_MIPS         = "mips";          //$NON-NLS-1$
+    /** TODO double-check this is appropriate value for mips64 */
+    public static final String CPU_ARCH_MIPS64       = "mips64";        //$NON-NLS-1$
     /** Name of the CPU model to support. */
     public static final String CPU_MODEL_CORTEX_A8 = "cortex-a8";       //$NON-NLS-1$
 
