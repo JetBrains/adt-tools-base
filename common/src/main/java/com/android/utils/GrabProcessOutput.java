@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.util;
+package com.android.utils;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;

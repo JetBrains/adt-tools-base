@@ -19,6 +19,7 @@ package com.android.builder.signing;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.SigningConfig;
+import com.android.ide.common.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.google.common.base.Objects;
 

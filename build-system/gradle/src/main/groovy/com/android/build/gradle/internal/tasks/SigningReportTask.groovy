@@ -19,9 +19,9 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.gradle.internal.dsl.SigningConfigDsl
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.model.SigningConfig
-import com.android.builder.signing.CertificateInfo
-import com.android.builder.signing.KeystoreHelper
-import com.android.builder.signing.KeytoolException
+import com.android.ide.common.signing.CertificateInfo
+import com.android.ide.common.signing.KeystoreHelper
+import com.android.ide.common.signing.KeytoolException
 import com.google.common.collect.Maps
 import org.gradle.api.tasks.TaskAction
 import org.gradle.logging.StyledTextOutput
@@ -126,7 +126,9 @@ class SigningReportTask extends BaseTask {
             if (signingConfig.isSigningReady()) {
                 try {
                     CertificateInfo certificateInfo = KeystoreHelper.getCertificateInfo(
-                            signingConfig)
+                            signingConfig.getStoreType(), signingConfig.getStoreFile(),
+                            signingConfig.getStorePassword(), signingConfig.getKeyPassword(),
+                            signingConfig.getKeyAlias())
                     if (certificateInfo != null) {
                         signingInfo.md5 = getFingerprint(certificateInfo.certificate, "MD5")
                         signingInfo.sha1 = getFingerprint(certificateInfo.certificate, "SHA1")

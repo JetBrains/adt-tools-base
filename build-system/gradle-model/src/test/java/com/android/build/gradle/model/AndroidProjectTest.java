@@ -37,7 +37,7 @@ import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
 import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.Variant;
-import com.android.builder.signing.KeystoreHelper;
+import com.android.ide.common.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation;
 import com.google.common.collect.Maps;
 
