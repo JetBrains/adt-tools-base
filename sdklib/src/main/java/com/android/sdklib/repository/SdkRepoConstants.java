@@ -75,7 +75,7 @@ public class SdkRepoConstants extends RepoConstants {
      * The pattern of our sdk-repository XML namespace.
      * Matcher's group(1) is the schema version (integer).
      */
-    public static final String NS_PATTERN = NS_BASE + "([1-9][0-9]*)";          //$NON-NLS-1$
+    public static final String NS_PATTERN = NS_BASE + "([0-9]+)";          //$NON-NLS-1$
 
     /** The XML namespace of the latest sdk-repository XML. */
     public static final String NS_URI = getSchemaUri(NS_LATEST_VERSION);

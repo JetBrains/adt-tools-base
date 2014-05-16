@@ -185,7 +185,7 @@ public class RepoConstants {
      * @see SdkAddonConstants#getXsdStream(int)
      */
     protected static InputStream getXsdStream(String rootElement, int version) {
-        String filename = String.format("%1$s-%2$d.xsd", rootElement, version);      //$NON-NLS-1$
+        String filename = String.format("%1$s-%2$02d.xsd", rootElement, version);      //$NON-NLS-1$
 
         InputStream stream = null;
         try {
@@ -198,7 +198,7 @@ public class RepoConstants {
             // Try the alternate schemas that are not published yet.
             // This allows us to internally test with new schemas before the
             // public repository uses it.
-            filename = String.format("-%1$s-%2$d.xsd", rootElement, version);      //$NON-NLS-1$
+            filename = String.format("-%1$s-%2$02d.xsd", rootElement, version);      //$NON-NLS-1$
             try {
                 stream = RepoConstants.class.getResourceAsStream(filename);
             } catch (Exception e) {
