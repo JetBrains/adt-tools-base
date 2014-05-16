@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.builder.signing;
+package com.android.ide.common.signing;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.model.SigningConfig;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
-import com.android.sdklib.util.GrabProcessOutput;
-import com.android.sdklib.util.GrabProcessOutput.IProcessOutput;
-import com.android.sdklib.util.GrabProcessOutput.Wait;
+import com.android.utils.GrabProcessOutput;
+import com.android.utils.GrabProcessOutput.IProcessOutput;
+import com.android.utils.GrabProcessOutput.Wait;
 import com.android.utils.ILogger;
 
 import java.io.File;
@@ -67,10 +66,13 @@ public final class KeystoreHelper {
      * @param logger a logger object to receive the log of the creation.
      * @throws KeytoolException
      */
-    public static boolean createDebugStore(@NonNull SigningConfig signingConfig,
+    public static boolean createDebugStore(@Nullable String storeType, @NonNull File storeFile,
+                                           @NonNull String storePassword, @NonNull String keyPassword,
+                                           @NonNull String keyAlias,
                                            @NonNull ILogger logger) throws KeytoolException {
 
-        return createNewStore(signingConfig, CERTIFICATE_DESC, 30 /* validity*/, logger);
+        return createNewStore(storeType, storeFile, storePassword, keyPassword, keyAlias,
+                              CERTIFICATE_DESC, 30 /* validity*/, logger);
     }
 
     /**
@@ -83,7 +85,11 @@ public final class KeystoreHelper {
      * @throws KeytoolException
      */
     private static boolean createNewStore(
-            @NonNull SigningConfig signingConfig,
+            @Nullable String storeType,
+            @NonNull File storeFile,
+            @NonNull String storePassword,
+            @NonNull String keyPassword,
+            @NonNull String keyAlias,
             @NonNull String description,
             int validityYears,
             @NonNull final ILogger logger)
@@ -110,7 +116,7 @@ public final class KeystoreHelper {
         commandList.add(keytoolCommand);
         commandList.add("-genkey");
         commandList.add("-alias");
-        commandList.add(signingConfig.getKeyAlias());
+        commandList.add(keyAlias);
         commandList.add("-keyalg");
         commandList.add("RSA");
         commandList.add("-dname");
@@ -118,14 +124,14 @@ public final class KeystoreHelper {
         commandList.add("-validity");
         commandList.add(Integer.toString(validityYears * 365));
         commandList.add("-keypass");
-        commandList.add(signingConfig.getKeyPassword());
+        commandList.add(keyPassword);
         commandList.add("-keystore");
-        commandList.add(signingConfig.getStoreFile().getAbsolutePath());
+        commandList.add(storeFile.getAbsolutePath());
         commandList.add("-storepass");
-        commandList.add(signingConfig.getStorePassword());
-        if (signingConfig.getStoreType() != null) {
+        commandList.add(storePassword);
+        if (storeType != null) {
             commandList.add("-storetype");
-            commandList.add(signingConfig.getStoreType());
+            commandList.add(storeType);
         }
 
         String[] commandArray = commandList.toArray(new String[commandList.size()]);
@@ -194,24 +200,24 @@ public final class KeystoreHelper {
      * @throws KeytoolException
      * @throws FileNotFoundException
      */
-    public static CertificateInfo getCertificateInfo(@NonNull SigningConfig signingConfig)
+    public static CertificateInfo getCertificateInfo(@Nullable String storeType, @NonNull File storeFile,
+                                                     @NonNull String storePassword, @NonNull String keyPassword,
+                                                     @NonNull String keyAlias)
             throws KeytoolException, FileNotFoundException {
 
         try {
-            KeyStore keyStore = KeyStore.getInstance(
-                    signingConfig.getStoreType() != null ?
-                            signingConfig.getStoreType() : KeyStore.getDefaultType());
+            KeyStore keyStore = KeyStore.getInstance(storeType != null ?
+                            storeType : KeyStore.getDefaultType());
 
-            FileInputStream fis = new FileInputStream(signingConfig.getStoreFile());
+            FileInputStream fis = new FileInputStream(storeFile);
             //noinspection ConstantConditions
-            keyStore.load(fis, signingConfig.getStorePassword().toCharArray());
+            keyStore.load(fis, storePassword.toCharArray());
             fis.close();
 
             //noinspection ConstantConditions
-            char[] keyPassword = signingConfig.getKeyPassword().toCharArray();
+            char[] keyPasswordArray = keyPassword.toCharArray();
             PrivateKeyEntry entry = (KeyStore.PrivateKeyEntry)keyStore.getEntry(
-                    signingConfig.getKeyAlias(),
-                    new KeyStore.PasswordProtection(keyPassword));
+                    keyAlias, new KeyStore.PasswordProtection(keyPasswordArray));
 
             if (entry != null) {
                 return new CertificateInfo(entry.getPrivateKey(),
@@ -222,8 +228,7 @@ public final class KeystoreHelper {
         } catch (Exception e) {
             throw new KeytoolException(
                     String.format("Failed to read key %1$s from store \"%2$s\": %3$s",
-                            signingConfig.getKeyAlias(), signingConfig.getStoreFile(),
-                            e.getMessage()),
+                            keyAlias, storeFile, e.getMessage()),
                     e);
         }
 

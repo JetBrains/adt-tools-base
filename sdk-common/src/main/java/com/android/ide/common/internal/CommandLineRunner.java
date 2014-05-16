@@ -18,7 +18,7 @@ package com.android.ide.common.internal;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.util.GrabProcessOutput;
+import com.android.utils.GrabProcessOutput;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
