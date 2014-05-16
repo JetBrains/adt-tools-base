@@ -545,6 +545,22 @@ public abstract class Detector {
         return Speed.NORMAL;
     }
 
+    /**
+     * Returns the expected speed of this detector.
+     * The issue parameter is made available for subclasses which analyze multiple issues
+     * and which need to distinguish implementation cost by issue. If the detector does
+     * not analyze multiple issues or does not vary in speed by issue type, just override
+     * {@link #getSpeed()} instead.
+     *
+     * @param issue the issue to look up the analysis speed for
+     * @return the expected speed of this detector
+     */
+    @NonNull
+    public Speed getSpeed(@SuppressWarnings("UnusedParameters") @NonNull Issue issue) {
+        // If not overridden, this detector does not distinguish speed by issue type
+        return getSpeed();
+    }
+
     // ---- Dummy implementations to make implementing XmlScanner easier: ----
 
     @SuppressWarnings("javadoc")

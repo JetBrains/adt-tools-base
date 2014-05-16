@@ -78,6 +78,8 @@ import org.w3c.dom.Element;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -2210,6 +2212,17 @@ public class LintDriver {
         @Override
         public Location.Handle createResourceItemHandle(@NonNull ResourceItem item) {
             return mDelegate.createResourceItemHandle(item);
+        }
+
+        @Nullable
+        @Override
+        public URLConnection openConnection(@NonNull URL url) throws IOException {
+            return mDelegate.openConnection(url);
+        }
+
+        @Override
+        public void closeConnection(@NonNull URLConnection connection) throws IOException {
+            mDelegate.closeConnection(connection);
         }
     }
 
