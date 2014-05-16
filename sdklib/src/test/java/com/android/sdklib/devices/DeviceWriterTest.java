@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-@SuppressWarnings("javadoc")
 public class DeviceWriterTest extends TestCase {
 
     public void testWriteIsValid_Minimal() throws Exception {
@@ -55,7 +54,7 @@ public class DeviceWriterTest extends TestCase {
         InputStream devicesFile =
             DeviceSchemaTest.class.getResourceAsStream("devices.xml");
         List<Device> devices = DeviceParser.parse(devicesFile);
-        assertEquals("Parsed devices contained an un expected number of devices",
+        assertEquals("Parsed devices contained an unexpected number of devices",
                 3, devices.size());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DeviceWriter.writeToXml(baos, devices);
@@ -78,7 +77,7 @@ public class DeviceWriterTest extends TestCase {
             InputStream devicesFile =
                 DeviceSchemaTest.class.getResourceAsStream("devices.xml");
             List<Device> devices = DeviceParser.parse(devicesFile);
-            assertEquals("Parsed devices contained an un expected number of devices",
+            assertEquals("Parsed devices contained an unexpected number of devices",
                     3, devices.size());
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DeviceWriter.writeToXml(baos, devices);

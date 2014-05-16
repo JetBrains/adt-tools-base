@@ -23,6 +23,7 @@ import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SystemImage;
+import com.android.sdklib.devices.Abi;
 import com.android.sdklib.devices.Device;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 
@@ -211,21 +212,9 @@ public final class AvdInfo implements Comparable<AvdInfo> {
             s = tag.getDisplay() + ' ';
         }
 
-        if (rawAbi.equalsIgnoreCase(SdkConstants.ABI_ARMEABI)) {
-            s += "ARM (" + SdkConstants.ABI_ARMEABI + ")";
+        Abi abi = Abi.getEnum(rawAbi);
+        s += (abi == null ? rawAbi : abi.getDisplayName()) + " (" + rawAbi + ')';
 
-        } else if (rawAbi.equalsIgnoreCase(SdkConstants.ABI_ARMEABI_V7A)) {
-            s += "ARM (" + SdkConstants.ABI_ARMEABI_V7A + ")";
-
-        } else if (rawAbi.equalsIgnoreCase(SdkConstants.ABI_INTEL_ATOM)) {
-            s += "Intel Atom (" + SdkConstants.ABI_INTEL_ATOM + ")";
-
-        } else if (rawAbi.equalsIgnoreCase(SdkConstants.ABI_MIPS)) {
-            s += "MIPS (" + SdkConstants.ABI_MIPS + ")";
-
-        } else {
-            s += rawAbi + " (" + rawAbi + ")";
-        }
         return s;
     }
 

@@ -23,6 +23,14 @@
     attributeFormDefault="unqualified"
     version="1">
 
+    <!-- The devices element contains a collection of device definitions.
+
+         History:
+         - v1 is used by the dvlib in Tools r20-22..
+
+         - v2 is used by the dvlib in Tools r23.
+            - It adds support for new ABIs arm64-v8a, x86_64 and mips64.
+    -->
     <xsd:element name="devices" type="c:devicesType" />
 
     <xsd:complexType name="devicesType">
@@ -875,10 +883,14 @@
         <xsd:list>
             <xsd:simpleType>
                 <xsd:restriction base="xsd:token">
-                    <xsd:enumeration value="armeabi" />
+                    <xsd:enumeration value="armeabi"     />
                     <xsd:enumeration value="armeabi-v7a" />
-                    <xsd:enumeration value="x86" />
-                    <xsd:enumeration value="mips" />
+                    <xsd:enumeration value="arm64-v8a"   />
+                    <xsd:enumeration value="x86"         />
+                    <xsd:enumeration value="x86_64"      />
+                    <xsd:enumeration value="mips"        />
+                    <!-- TODO double-check this is appropriate value for mips64 -->
+                    <xsd:enumeration value="mips64"      />
                 </xsd:restriction>
             </xsd:simpleType>
         </xsd:list>
