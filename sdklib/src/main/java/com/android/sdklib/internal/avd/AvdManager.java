@@ -30,6 +30,7 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.SystemImage;
+import com.android.sdklib.devices.Abi;
 import com.android.sdklib.devices.Device;
 import com.android.sdklib.devices.DeviceManager;
 import com.android.sdklib.devices.DeviceManager.DeviceStatus;
@@ -777,15 +778,14 @@ public class AvdManager {
             values.put(AVD_INI_ABI_TYPE,    abiType);
 
             // and the cpu arch.
-            if (SdkConstants.ABI_ARMEABI.equals(abiType)) {
-                values.put(AVD_INI_CPU_ARCH, SdkConstants.CPU_ARCH_ARM);
-            } else if (SdkConstants.ABI_ARMEABI_V7A.equals(abiType)) {
-                values.put(AVD_INI_CPU_ARCH, SdkConstants.CPU_ARCH_ARM);
-                values.put(AVD_INI_CPU_MODEL, SdkConstants.CPU_MODEL_CORTEX_A8);
-            } else if (SdkConstants.ABI_INTEL_ATOM.equals(abiType)) {
-                values.put(AVD_INI_CPU_ARCH, SdkConstants.CPU_ARCH_INTEL_ATOM);
-            } else if (SdkConstants.ABI_MIPS.equals(abiType)) {
-                values.put(AVD_INI_CPU_ARCH, SdkConstants.CPU_ARCH_MIPS);
+            Abi abi = Abi.getEnum(abiType);
+            if (abi != null) {
+                values.put(AVD_INI_CPU_ARCH, abi.getCpuArch());
+
+                String model = abi.getCpuModel();
+                if (model != null) {
+                    values.put(AVD_INI_CPU_MODEL, model);
+                }
             } else {
                 log.error(null,
                         "ABI %1$s is not supported by this version of the SDK Tools", abiType);

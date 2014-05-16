@@ -328,11 +328,13 @@ public class SdkSysImgSourceTest extends TestCase {
 
         // Verbose log order matches the XML order and not the sorted display order.
         assertEquals(
-                "Found System Image for xCPU for API 2, Android API 2, revision 1\n" +
+                "Found System Image for x86 CPU for API 2, Android API 2, revision 1\n" +
+                "Found System Image for x86-64 CPU for API 2, Android API 2, revision 1\n" +
                 "Found ARM EABI v7a System Image, Android API 2, revision 2\n" +
+                "Found ARM 64 v8a System Image, Android API 2, revision 2\n" +
                 "Found Another tag name ARM EABI v7a System Image, Android API 2, revision 2\n" +
                 "Found ARM EABI System Image, Android API 42, revision 12\n" +
-                "Found MIPS System Image, Android API 42, revision 12\n" +
+                "Found MIPS64 System Image, Android API 42, revision 12\n" +
                 "Found MIPS system image for tag MIPS-only, Android API 44, revision 14\n" +
                 "Found Tag name is Sanitized if Display is Missing MIPS System Image, Android API 45, revision 15\n",
                 monitor.getCapturedVerboseLog());
@@ -348,7 +350,7 @@ public class SdkSysImgSourceTest extends TestCase {
 
         Package[] pkgs = mSource.getPackages();
 
-        assertEquals(7, pkgs.length);
+        assertEquals(9, pkgs.length);
         for (Package p : pkgs) {
             // We expected to find packages with each at least one archive.
             assertTrue(p.getArchives().length >= 1);
@@ -371,8 +373,10 @@ public class SdkSysImgSourceTest extends TestCase {
                 "[45 mips: tag-name---is-Sanitized----if-Display-is-Missing [Tag name is Sanitized if Display is Missing], " +
                  "44 mips: mips-only [This is an arbitrary string,], " +
                  "42 armeabi: default [Default], " +
-                 "42 mips: default [Default], " +
+                 "42 mips64: default [Default], " +
+                 "2 arm64-v8a: default [Ignored in description for default tag], " +
                  "2 armeabi-v7a: default [Ignored in description for default tag], " +
+                 "2 x86_64: default [Default], " +
                  "2 x86: default [Default], " +
                  "2 armeabi-v7a: other [Another tag name]]",
                 Arrays.toString(sysImgInfo.toArray()));
@@ -389,8 +393,10 @@ public class SdkSysImgSourceTest extends TestCase {
                 FileOp.append("root", "system-images", "android-45", "tag-name-is-sanitized-if-display-is-missing", "mips"),
                 FileOp.append("root", "system-images", "android-44", "mips-only", "mips"),
                 FileOp.append("root", "system-images", "android-42", "default", "armeabi"),
-                FileOp.append("root", "system-images", "android-42", "default", "mips"),
+                FileOp.append("root", "system-images", "android-42", "default", "mips64"),
+                FileOp.append("root", "system-images", "android-2" , "default", "arm64-v8a"),
                 FileOp.append("root", "system-images", "android-2" , "default", "armeabi-v7a"),
+                FileOp.append("root", "system-images", "android-2" , "default", "x86_64"),
                 FileOp.append("root", "system-images", "android-2" , "default", "x86"),
                 FileOp.append("root", "system-images", "android-2" , "other",   "armeabi-v7a"),
                 }).replace(File.separatorChar, '/'),
@@ -403,11 +409,13 @@ public class SdkSysImgSourceTest extends TestCase {
         }
         assertEquals(
                 "[Tag name is Sanitized if Display is Missing MIPS System Image, " +
-                 "MIPS system image for tag MIPS-only, " +  // list-display override
+                 "MIPS system image for tag MIPS-only, " +    // list-display override
                  "ARM EABI System Image, " +
-                 "MIPS System Image, " +
+                 "MIPS64 System Image, " +
+                 "ARM 64 v8a System Image, " +
                  "ARM EABI v7a System Image, " +
-                 "System Image for xCPU for API 2, " +      // list-display override
+                 "System Image for x86-64 CPU for API 2, " +   // list-display override
+                 "System Image for x86 CPU for API 2, " +      // list-display override
                  "Another tag name ARM EABI v7a System Image]",
                 Arrays.toString(listDescs.toArray()));
     }
