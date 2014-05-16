@@ -34,7 +34,10 @@ public enum Speed {
     NORMAL("Normal"),
 
     /** The detector might take a long time to run */
-    SLOW("Slow");
+    SLOW("Slow"),
+
+    /** The detector might take a huge amount of time to run */
+    REALLY_SLOW("Really Slow");
 
     private final String mDisplayName;
 

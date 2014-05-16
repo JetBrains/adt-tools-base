@@ -20,6 +20,7 @@ import static com.android.SdkConstants.FD_EXTRAS;
 import static com.android.SdkConstants.FD_M2_REPOSITORY;
 import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_HIGHER;
 import static com.android.tools.lint.checks.ManifestDetector.TARGET_NEWER;
+import static com.google.common.base.Charsets.UTF_8;
 import static java.io.File.separator;
 import static java.io.File.separatorChar;
 
@@ -41,7 +42,15 @@ import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.google.common.collect.Lists;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -149,6 +158,21 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             Severity.ERROR,
             IMPLEMENTATION);
 
+    public static final Issue REMOTE_VERSION = Issue.create(
+            "NewerVersionAvailable", //$NON-NLS-1$
+            "Newer Library Versions Available",
+            "Looks for Gradle library dependencies that can be replaced by newer versions",
+            "This detector checks with a central repository to see if there are newer versions " +
+            "available for the dependencies used by this project.\n" +
+            "This is similar to the `GradleDependency` check, which checks for newer versions " +
+            "available in the Android SDK tools and libraries, but this works with any " +
+            "MavenCentral dependency, and connects to the library every time, which makes " +
+            "it more flexible but also *much* slower.",
+            Category.CORRECTNESS,
+            4,
+            Severity.WARNING,
+            IMPLEMENTATION).setEnabledByDefault(false);
+
     private int mMinSdkVersion;
     private int mCompileSdkVersion;
     private int mTargetSdkVersion;
@@ -158,10 +182,10 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         return true;
     }
 
-    @NonNull
     @Override
-    public Speed getSpeed() {
-        return Speed.NORMAL;
+    @NonNull
+    public Speed getSpeed(@SuppressWarnings("UnusedParameters") @NonNull Issue issue) {
+        return issue == REMOTE_VERSION ? Speed.REALLY_SLOW : Speed.NORMAL;
     }
 
     // ---- Implements Detector.GradleScanner ----
@@ -403,34 +427,151 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             return;
         }
 
-        boolean isObsolete = false;
+        FullRevision version = null;
+        Issue issue = DEPENDENCY;
         if ("com.android.tools.build".equals(dependency.getGroupId()) &&
                 "gradle".equals(dependency.getArtifactId())) {
-            if (isOlderThan(dependency, 0, 10, 1)) {
-                isObsolete = true;
-            }
+            version = getNewerRevision(dependency, 0, 10, 1);
         } else if ("com.google.guava".equals(dependency.getGroupId()) &&
                 "guava".equals(dependency.getArtifactId())) {
-            if (isOlderThan(dependency, 17, 0, 0)) {
-                isObsolete = true;
-            }
+            version = getNewerRevision(dependency, 17, 0, 0);
         } else if ("com.google.code.gson".equals(dependency.getGroupId()) &&
                 "gson".equals(dependency.getArtifactId())) {
-            if (isOlderThan(dependency, 2, 2, 4)) {
-                isObsolete = true;
-            }
+            version = getNewerRevision(dependency, 2, 2, 4);
         } else if ("org.apache.httpcomponents".equals(dependency.getGroupId()) &&
                 "httpclient".equals(dependency.getArtifactId())) {
-            if (isOlderThan(dependency, 4, 3, 3)) {
-                isObsolete = true;
+            version = getNewerRevision(dependency, 4, 3, 3);
+        }
+
+        // Network check for really up to date libraries? Only done in batch mode
+        if (context.getScope().size() > 1 && context.isEnabled(REMOTE_VERSION)) {
+            FullRevision latest = getLatestVersion(context, dependency);
+            if (latest != null && isOlderThan(dependency, latest.getMajor(), latest.getMinor(),
+                    latest.getMicro())) {
+                version = latest;
+                issue = REMOTE_VERSION;
             }
         }
 
-        if (isObsolete) {
+        if (version != null) {
             String message = "A newer version of " + dependency.getGroupId() + ":" +
                     dependency.getArtifactId() + " than " + dependency.getFullRevision() +
-                    " is available";
-            report(context, cookie, DEPENDENCY, message);
+                    " is available: " + version.toShortString();
+            report(context, cookie, issue, message);
+        }
+    }
+
+    /** TODO: Cache these results somewhere! */
+    private static FullRevision getLatestVersion(@NonNull Context context,
+            @NonNull GradleCoordinate dependency) {
+        StringBuilder query = new StringBuilder();
+        query.append("http://search.maven.org/solrsearch/select?q=g:%22");
+        String encoding = UTF_8.name();
+        try {
+            query.append(URLEncoder.encode(dependency.getGroupId(), encoding));
+        } catch (UnsupportedEncodingException ee) {
+            return null;
+        }
+        query.append("%22+AND+a:%22");
+        try {
+            query.append(URLEncoder.encode(dependency.getArtifactId(), encoding));
+        } catch (UnsupportedEncodingException ee) {
+            return null;
+        }
+        query.append("%22&core=gav&rows=1&wt=json");
+
+        String response = readUrlData(context, dependency, query.toString());
+        if (response == null) {
+            return null;
+        }
+
+        // Sample response:
+        //    {
+        //        "responseHeader": {
+        //            "status": 0,
+        //            "QTime": 0,
+        //            "params": {
+        //                "fl": "id,g,a,v,p,ec,timestamp,tags",
+        //                "sort": "score desc,timestamp desc,g asc,a asc,v desc",
+        //                "indent": "off",
+        //                "q": "g:\"com.google.guava\" AND a:\"guava\"",
+        //                "core": "gav",
+        //                "wt": "json",
+        //                "rows": "1",
+        //                "version": "2.2"
+        //            }
+        //        },
+        //        "response": {
+        //            "numFound": 37,
+        //            "start": 0,
+        //            "docs": [{
+        //                "id": "com.google.guava:guava:17.0",
+        //                "g": "com.google.guava",
+        //                "a": "guava",
+        //                "v": "17.0",
+        //                "p": "bundle",
+        //                "timestamp": 1398199666000,
+        //                "tags": ["spec", "libraries", "classes", "google", "code"],
+        //                "ec": ["-javadoc.jar", "-sources.jar", ".jar", "-site.jar", ".pom"]
+        //            }]
+        //        }
+        //    }
+
+        // Look for version info:  This is just a cheap skim of the above JSON results
+        int index = response.indexOf("\"response\"");   //$NON-NLS-1$
+        if (index != -1) {
+            index = response.indexOf("\"v\":", index);  //$NON-NLS-1$
+            if (index != -1) {
+                index += 4;
+                int start = response.indexOf('"', index) + 1;
+                int end = response.indexOf('"', start + 1);
+                if (end > start && start >= 0) {
+                    return FullRevision.parseRevision(response.substring(start, end));
+                }
+            }
+        }
+
+      System.out.println(response);
+        return null;
+    }
+
+    @Nullable
+    private static String readUrlData(
+            @NonNull Context context,
+            @NonNull GradleCoordinate dependency,
+            @NonNull String query) {
+        LintClient client = context.getClient();
+        try {
+            URL url = new URL(query);
+
+            URLConnection connection = client.openConnection(url);
+            if (connection == null) {
+                return null;
+            }
+            try {
+                InputStream is = connection.getInputStream();
+                if (is == null) {
+                    return null;
+                }
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is, UTF_8));
+                try {
+                    StringBuilder sb = new StringBuilder(500);
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line);
+                        sb.append('\n');
+                    }
+
+                    return sb.toString();
+                } finally {
+                    reader.close();
+                }
+            } finally {
+                client.closeConnection(connection);
+            }
+        } catch (IOException ioe) {
+            client.log(ioe, "Could not connect to maven central to look up the " + "latest available version for %1$s", dependency);
+            return null;
         }
     }
 
@@ -534,6 +675,19 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         }
 
         return null;
+    }
+
+    private static FullRevision getNewerRevision(@NonNull GradleCoordinate dependency,
+            int major, int minor, int micro) {
+        assert dependency.getGroupId() != null;
+        assert dependency.getArtifactId() != null;
+        if (COMPARE_PLUS_HIGHER.compare(dependency,
+                new GradleCoordinate(dependency.getGroupId(),
+                        dependency.getArtifactId(), major, minor, micro)) < 0) {
+            return new FullRevision(major, minor, micro);
+        } else {
+            return null;
+        }
     }
 
     private static boolean isOlderThan(@NonNull GradleCoordinate dependency, int major, int minor,
