@@ -50,9 +50,9 @@ import com.android.builder.packaging.SealedPackageException;
 import com.android.builder.packaging.SigningException;
 import com.android.builder.sdk.SdkInfo;
 import com.android.builder.sdk.TargetInfo;
-import com.android.builder.signing.CertificateInfo;
-import com.android.builder.signing.KeystoreHelper;
-import com.android.builder.signing.KeytoolException;
+import com.android.ide.common.signing.CertificateInfo;
+import com.android.ide.common.signing.KeystoreHelper;
+import com.android.ide.common.signing.KeytoolException;
 import com.android.ide.common.internal.AaptCruncher;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
@@ -1560,7 +1560,9 @@ public class AndroidBuilder {
 
         CertificateInfo certificateInfo = null;
         if (signingConfig != null && signingConfig.isSigningReady()) {
-            certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig);
+            certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
+                    signingConfig.getStoreFile(), signingConfig.getStorePassword(),
+                    signingConfig.getKeyPassword(), signingConfig.getKeyAlias());
             if (certificateInfo == null) {
                 throw new SigningException("Failed to read key from keystore");
             }

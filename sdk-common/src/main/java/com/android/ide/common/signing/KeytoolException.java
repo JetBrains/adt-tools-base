@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.builder.signing;
+package com.android.ide.common.signing;
 
 public class KeytoolException extends Exception {
     /** default serial uid */
