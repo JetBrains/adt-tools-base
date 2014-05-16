@@ -27,9 +27,9 @@ import com.android.annotations.Nullable;
  * The CPU arch and model values are used to configure an AVD using a given ABI.
  */
 public enum Abi {
-    //          // ABI string                 // Display    // CPU arch                 // Optional CPU model
+    //          // ABI string                 // Display    // CPU arch
     ARMEABI    (SdkConstants.ABI_ARMEABI,     "ARM",        SdkConstants.CPU_ARCH_ARM),
-    ARMEABI_V7A(SdkConstants.ABI_ARMEABI_V7A, "ARM",        SdkConstants.CPU_ARCH_ARM, SdkConstants.CPU_MODEL_CORTEX_A8),
+    ARMEABI_V7A(SdkConstants.ABI_ARMEABI_V7A, "ARM",        SdkConstants.CPU_ARCH_ARM),
     ARM64_V8A  (SdkConstants.ABI_ARM64_V8A,   "ARM",        SdkConstants.CPU_ARCH_ARM64),
     X86        (SdkConstants.ABI_INTEL_ATOM,  "Intel Atom", SdkConstants.CPU_ARCH_INTEL_ATOM),
     X86_64     (SdkConstants.ABI_INTEL_ATOM64,"Intel Atom", SdkConstants.CPU_ARCH_INTEL_ATOM64),
@@ -41,10 +41,31 @@ public enum Abi {
     @Nullable private final String mCpuModel;
     @NonNull  private final String mDisplayName;
 
+    /**
+     * Define an ABI with a given ABI code name, a display name and a CPU architecture.
+     *
+     * @param abi The ABI code name, used in the system-images and device definitions.
+     * @param displayName The ABI "family" name. Typically used in the UI combined with the
+     *          code name, for example "ARM (armeabi-v7a)".
+     * @param cpuArch The CPU architecture, used in the AVD configuration files.
+     */
     Abi(@NonNull String abi, @NonNull String displayName, @NonNull String cpuArch) {
         this(abi, displayName, cpuArch, null);
     }
 
+
+    /**
+     * Define an ABI with a given ABI code name, a display name, a CPU architecture
+     * and an optional CPU model.
+     *
+     * @param abi The ABI code name, used in the system-images and device definitions.
+     * @param displayName The ABI "family" name. Typically used in the UI combined with the
+     *          code name, for example "ARM (armeabi-v7a)".
+     * @param cpuArch The CPU architecture, used in the AVD configuration files.
+     * @param cpuModel An optional CPU model, used in the AVD configuration files.
+     *          The current strategy is to leave this field out. The emulator, which uses the
+     *          AVD configuration files, doesn't seem to use it.
+     */
     Abi(@NonNull String abi, @NonNull String displayName,
             @NonNull String cpuArch, @Nullable String cpuModel) {
         mAbi = abi;
@@ -53,32 +74,53 @@ public enum Abi {
         mCpuModel = cpuModel;
     }
 
+    /**
+     * Returns the ABI definition matching the given ABI code name.
+     *
+     * @param abi The ABI code name, used in the system-images and device definitions.
+     * @return An existing {@link Abi} description or null.
+     */
     @Nullable
-    public static Abi getEnum(@NonNull String value) {
+    public static Abi getEnum(@NonNull String abi) {
         for (Abi a : values()) {
-            if (a.mAbi.equals(value)) {
+            if (a.mAbi.equals(abi)) {
                 return a;
             }
         }
         return null;
     }
 
+    /**
+     * Returns the ABI code name, as used in the system-images and device definitions
+     */
     @NonNull
     @Override
     public String toString() {
         return mAbi;
     }
 
+    /**
+     * Returns the CPU architecture, as used in the AVD configuration files
+     */
     @NonNull
     public String getCpuArch() {
         return mCpuArch;
     }
 
+    /**
+     * Returns the optional CPU model, used in the AVD configuration files.
+     * This is often null.
+     */
     @Nullable
     public String getCpuModel() {
         return mCpuModel;
     }
 
+    /**
+     * Return the ABI "family" name for display.
+     * Clients should typically display that combined with the code name,
+     * for example "ARM (armeabi-v7a)".
+     */
     @NonNull
     public String getDisplayName() {
         return mDisplayName;
