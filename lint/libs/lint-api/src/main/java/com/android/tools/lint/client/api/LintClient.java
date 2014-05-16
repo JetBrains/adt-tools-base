@@ -51,10 +51,15 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -854,6 +859,28 @@ public abstract class LintClient {
         }
 
         return Collections.emptyList();
+    }
+
+    /**
+     * Opens a URL connection.
+     *
+     * Clients such as IDEs can override this to for example consider the user's IDE proxy
+     * settings.
+     *
+     * @param url the URL to read
+     * @return a {@link java.net.URLConnection} or null
+     * @throws IOException if any kind of IO exception occurs
+     */
+    @Nullable
+    public URLConnection openConnection(@NonNull URL url) throws IOException {
+        return url.openConnection();
+    }
+
+    /** Closes a connection previously returned by {@link #openConnection(java.net.URL)} */
+    public void closeConnection(@NonNull URLConnection connection) throws IOException {
+        if (connection instanceof HttpURLConnection) {
+            ((HttpURLConnection)connection).disconnect();
+        }
     }
 
     /**

@@ -82,6 +82,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(GradleDetector.IDE_SUPPORT);
         issues.add(GradleDetector.PATH);
         issues.add(GradleDetector.PLUS);
+        issues.add(GradleDetector.REMOTE_VERSION);
         issues.add(GridLayoutDetector.ISSUE);
         issues.add(HandlerDetector.ISSUE);
         issues.add(HardcodedDebugModeDetector.ISSUE);
