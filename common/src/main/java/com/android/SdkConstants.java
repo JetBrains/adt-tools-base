@@ -355,10 +355,6 @@ public final class SdkConstants {
     public static final String NS_RESOURCES =
         "http://schemas.android.com/apk/res/android";                   //$NON-NLS-1$
 
-    /** Namespace for the device schema, i.e. "http://schemas.android.com/sdk/devices/1" */
-    public static final String NS_DEVICES_XSD =
-        "http://schemas.android.com/sdk/devices/1";                     //$NON-NLS-1$
-
     /**
      * Namespace pattern for the custom resource XML, i.e. "http://schemas.android.com/apk/res/%s"
      * <p/>

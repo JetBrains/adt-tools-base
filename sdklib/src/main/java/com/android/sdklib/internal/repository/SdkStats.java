@@ -18,8 +18,8 @@ package com.android.sdklib.internal.repository;
 
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
-import com.android.sdklib.io.NonClosingInputStream;
-import com.android.sdklib.io.NonClosingInputStream.CloseBehavior;
+import com.android.io.NonClosingInputStream;
+import com.android.io.NonClosingInputStream.CloseBehavior;
 import com.android.sdklib.repository.SdkStatsConstants;
 import com.android.utils.SparseArray;
 
