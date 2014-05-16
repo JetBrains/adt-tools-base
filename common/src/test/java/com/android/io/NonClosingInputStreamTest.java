@@ -18,9 +18,16 @@ package com.android.io;
 
 import com.android.annotations.NonNull;
 import com.android.io.NonClosingInputStream.CloseBehavior;
+import com.google.common.base.Charsets;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Locale;
 
 import junit.framework.TestCase;
 
@@ -29,9 +36,22 @@ import junit.framework.TestCase;
  */
 public class NonClosingInputStreamTest extends TestCase {
 
+    private File mFile;
+
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+        mFile = File.createTempFile("test", "txt");
+        FileWrapper fw = new FileWrapper(mFile);
+        fw.setContents(new ByteArrayInputStream("1234".getBytes(Charsets.UTF_8)));
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        if (!mFile.delete()) {
+            mFile.deleteOnExit();
+        }
     }
 
     /**
@@ -53,7 +73,9 @@ public class NonClosingInputStreamTest extends TestCase {
         } finally {
             // Stream should have been closed already.
             // This is to prevent from keeping a stream open in case the test fails.
-            is.close();
+            if (is != null) {
+                is.close();
+            }
         }
     }
 
@@ -71,14 +93,16 @@ public class NonClosingInputStreamTest extends TestCase {
                 assertEquals('2', parse(ncis));
                 fail("Expected: IOException 'stream closed'; Actual: no error.");
             } catch (IOException e) {
-                assertEquals("Stream closed", e.getMessage());
+                assertEquals("stream closed", e.getMessage().toLowerCase(Locale.US));
             }
         } finally {
             // Stream should have been closed already.
             // This is to prevent from keeping a stream open in case the test fails.
             //
             // Note that to really close, we need to invoke the original stream
-            is.close();
+            if (is != null) {
+                is.close();
+            }
         }
     }
 
@@ -110,7 +134,7 @@ public class NonClosingInputStreamTest extends TestCase {
                 assertEquals('5', parse(ncis));
                 fail("Expected: IOException 'stream closed'; Actual: no error.");
             } catch (IOException e) {
-                assertEquals("Stream closed", e.getMessage());
+                assertEquals("stream closed", e.getMessage().toLowerCase(Locale.US));
             }
 
         } finally {
@@ -118,7 +142,9 @@ public class NonClosingInputStreamTest extends TestCase {
             // This is to prevent from keeping a stream open in case the test fails.
             //
             // Note that to really close, we need to invoke the original stream
-            is.close();
+            if (is != null) {
+                is.close();
+            }
         }
     }
 
@@ -158,7 +184,7 @@ public class NonClosingInputStreamTest extends TestCase {
                 assertEquals('3', parse(ncis));
                 fail("Expected: IOException 'stream closed'; Actual: no error.");
             } catch (IOException e) {
-                assertEquals("Stream closed", e.getMessage());
+                assertEquals("stream closed", e.getMessage().toLowerCase(Locale.US));
             }
 
         } finally {
@@ -166,14 +192,18 @@ public class NonClosingInputStreamTest extends TestCase {
             // This is to prevent from keeping a stream open in case the test fails.
             //
             // Note that to really close, we need to invoke the original stream
-            is.close();
+            if (is != null) {
+                is.close();
+            }
         }
     }
 
     //---
 
-    private InputStream loadResource() {
-        return getClass().getResourceAsStream("resource.txt");
+    private InputStream loadResource() throws FileNotFoundException {
+        InputStream is = new BufferedInputStream(new FileInputStream(mFile));
+        assertNotNull("test.txt not found", is);
+        return is;
     }
 
     private char parse(@NonNull InputStream is) throws IOException {
