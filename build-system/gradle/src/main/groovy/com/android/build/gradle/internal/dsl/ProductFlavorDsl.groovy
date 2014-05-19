@@ -122,7 +122,7 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     }
 
     @NonNull
-    public ProductFlavorDsl setconsumerProguardFiles(Iterable<?> proguardFileIterable) {
+    public ProductFlavorDsl setConsumerProguardFiles(Iterable<?> proguardFileIterable) {
         consumerProguardFiles.clear()
         for (Object proguardFile : proguardFileIterable) {
             consumerProguardFiles.add(fileResolver.resolve(proguardFile))
