@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import com.android.sdklib.mock.MockLog;
 import com.android.xml.AndroidManifest;
+import com.google.common.collect.ImmutableList;
 
 import junit.framework.TestCase;
 
@@ -182,5 +183,35 @@ public class ManifestModelTest extends TestCase {
         XmlElement xmlElement = xmlDocument.getRootNode().getMergeableElements().get(0);
         assertEquals("uses-feature",xmlElement.getXml().getNodeName());
         assertNull(xmlElement.getKey());
+    }
+
+    public void testTwoAttributesKeyResolution()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <compatible-screens>\n"
+                + "         <screen/>\n"
+                + "         <screen android:screenDensity=\"mdpi\"/>\n"
+                + "         <screen android:screenSize=\"normal\"/>\n"
+                + "         <screen android:screenSize=\"normal\" android:screenDensity=\"mdpi\"/>\n"
+                + "    </compatible-screens>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(
+                        getClass(), "testNoUseFeaturesDeclaration"), input);
+
+        XmlElement xmlElement = xmlDocument.getRootNode().getMergeableElements().get(0);
+        ImmutableList<XmlElement> screenDefinitions = xmlElement.getMergeableElements();
+        assertNull(screenDefinitions.get(0).getKey());
+        assertEquals("mdpi", screenDefinitions.get(1).getKey());
+        assertEquals("normal", screenDefinitions.get(2).getKey());
+        assertEquals("normal+mdpi", screenDefinitions.get(3).getKey());
     }
 }

@@ -212,6 +212,41 @@ class ManifestModel {
         }
     };
 
+    /**
+     * Implementation of {@link com.android.manifmerger.ManifestModel.NodeKeyResolver} that
+     * combined two attributes values to create the key value.
+     */
+    private static final class TwoAttributesBasedKeyResolver implements NodeKeyResolver {
+        private final NodeKeyResolver firstAttributeKeyResolver;
+        private final NodeKeyResolver secondAttributeKeyResolver;
+
+        private TwoAttributesBasedKeyResolver(NodeKeyResolver firstAttributeKeyResolver,
+                NodeKeyResolver secondAttributeKeyResolver) {
+            this.firstAttributeKeyResolver = firstAttributeKeyResolver;
+            this.secondAttributeKeyResolver = secondAttributeKeyResolver;
+        }
+
+        @Nullable
+        @Override
+        public String getKey(Element xmlElement) {
+            String firstKey = firstAttributeKeyResolver.getKey(xmlElement);
+            String secondKey = secondAttributeKeyResolver.getKey(xmlElement);
+
+            return Strings.isNullOrEmpty(firstKey)
+                    ? secondKey
+                    : Strings.isNullOrEmpty(secondKey)
+                            ? firstKey
+                            : firstKey + "+" + secondKey;
+        }
+
+        @NonNull
+        @Override
+        public ImmutableList<String> getKeyAttributesNames() {
+            return ImmutableList.of(firstAttributeKeyResolver.getKeyAttributesNames().get(0),
+                    secondAttributeKeyResolver.getKeyAttributesNames().get(0));
+        }
+    }
+
     private static final AttributeModel.BooleanValidator BOOLEAN_VALIDATOR =
             new AttributeModel.BooleanValidator();
 
@@ -442,7 +477,9 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/compatible-screens-element.html>
          *     Receiver Xml documentation</a>}
          */
-        SCREEN(MergeType.MERGE, new AttributeBasedNodeKeyResolver(ANDROID_URI, "screenSize")),
+        SCREEN(MergeType.MERGE, new TwoAttributesBasedKeyResolver(
+                new AttributeBasedNodeKeyResolver(ANDROID_URI, "screenSize"),
+                new AttributeBasedNodeKeyResolver(ANDROID_URI, "screenDensity"))),
 
         /**
          * Service (contained in application)
