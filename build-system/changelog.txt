@@ -1,3 +1,15 @@
+0.10.2:
+
+- More fixes on the Manifest merger, including better handling of minSdkVersion.
+- More lint fixes.
+- Fixed incremental dex support (still needs to be enabled)
+
+0.10.1:
+
+- fixed some issues with the new manifest merger. Please keep sending us feedback.
+- fixed issue with uninstall task.
+- lots of lint fixes and new checks. For instance you can use lint to enforce resource prefix in your library.﻿
+
 0.10.0:
 - New manifest merger
 - test code coverage support with Jacoco
