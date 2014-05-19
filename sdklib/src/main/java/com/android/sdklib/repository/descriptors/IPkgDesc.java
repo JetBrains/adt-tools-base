@@ -61,7 +61,6 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
     @Nullable
     public License getLicense();
 
-    @Nullable
     public boolean isObsolete();
 
     /**

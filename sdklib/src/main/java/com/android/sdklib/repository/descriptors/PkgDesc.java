@@ -128,7 +128,6 @@ public class PkgDesc implements IPkgDesc {
     }
 
     @Override
-    @Nullable
     public boolean isObsolete() {
         return mIsObsolete;
     }
