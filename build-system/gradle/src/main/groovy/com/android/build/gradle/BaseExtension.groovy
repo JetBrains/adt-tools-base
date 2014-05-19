@@ -395,10 +395,13 @@ public abstract class BaseExtension {
     // TEMP for compatibility
     // STOPSHIP Remove in 1.0
 
-    // for now, use the old manifest merger.
-    boolean useOldManifestMerger = true;
+    // by default, use the new manifest merger.
+    boolean useOldManifestMerger = false;
 
     void useOldManifestMerger(boolean flag) {
+        if (flag) {
+            logger.warning("WARNING: support for old manifest merger is deprecated and will be removed in 1.0")
+        }
         this.useOldManifestMerger = flag;
     }
 
