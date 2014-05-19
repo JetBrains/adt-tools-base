@@ -35,6 +35,7 @@ import com.google.common.collect.ImmutableList;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -148,13 +149,24 @@ public class XmlDocument {
     }
 
     /**
-     * Returns a {@link org.w3c.dom.Node} position automatically offsetting the line and number
+     * Returns a {@link XmlNode} position automatically offsetting the line and number
      * columns by one (for PositionXmlParser, document starts at line 0, however for the common
      * understanding, document should start at line 1).
      */
     @NonNull
     PositionXmlParser.Position getNodePosition(XmlNode node) {
-        final PositionXmlParser.Position position =  mPositionXmlParser.getPosition(node.getXml());
+        return getNodePosition(node.getXml());
+    }
+
+    /**
+     * Returns a {@link org.w3c.dom.Node} position automatically offsetting the line and number
+     * columns by one (for PositionXmlParser, document starts at line 0, however for the common
+     * understanding, document should start at line 1).
+     */
+    @NonNull
+    PositionXmlParser.Position getNodePosition(Node xml) {
+
+        final PositionXmlParser.Position position =  mPositionXmlParser.getPosition(xml);
         if (position == null) {
             return PositionImpl.UNKNOWN;
         }
