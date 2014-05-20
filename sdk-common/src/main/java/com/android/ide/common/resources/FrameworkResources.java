@@ -84,7 +84,7 @@ public class FrameworkResources extends ResourceRepository {
      */
     @Override
     public boolean hasResourcesOfType(@NonNull ResourceType type) {
-        return mPublicResourceMap.get(type).size() > 0;
+        return !mPublicResourceMap.get(type).isEmpty();
     }
 
     @Override
@@ -104,7 +104,7 @@ public class FrameworkResources extends ResourceRepository {
      */
     public void loadPublicResources(@Nullable ILogger logger) {
         IAbstractFolder valueFolder = getResFolder().getFolder(SdkConstants.FD_RES_VALUES);
-        if (valueFolder.exists() == false) {
+        if (!valueFolder.exists()) {
             return;
         }
 
@@ -172,7 +172,7 @@ public class FrameworkResources extends ResourceRepository {
                                         int size;
                                         switch (type) {
                                             case STYLE: size = 500; break;
-                                            case ATTR: size = 1000; break;
+                                            case ATTR: size = 1050; break;
                                             case DRAWABLE: size = 200; break;
                                             case ID: size = 50; break;
                                             case LAYOUT:
