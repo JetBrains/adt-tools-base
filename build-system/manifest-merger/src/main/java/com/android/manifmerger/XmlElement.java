@@ -19,6 +19,7 @@ package com.android.manifmerger;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.res2.MergingException;
 import com.android.utils.ILogger;
 import com.android.utils.PositionXmlParser;
 import com.android.utils.PositionXmlParser.Position;
@@ -95,9 +96,22 @@ public class XmlElement extends OrphanXmlElement {
                 } else if (instruction.equals(Selector.SELECTOR_LOCAL_NAME)) {
                     selector = new Selector(attribute.getNodeValue());
                 } else {
-                    AttributeOperationType attributeOperationType =
-                            AttributeOperationType.valueOf(
-                                    SdkUtils.xmlNameToConstantName(instruction));
+                    AttributeOperationType attributeOperationType;
+                    try {
+                        attributeOperationType =
+                                AttributeOperationType.valueOf(
+                                        SdkUtils.xmlNameToConstantName(instruction));
+                    } catch (IllegalArgumentException e) {
+                        String errorMessage =
+                                String.format("[%1$s:%2$s] Invalid instruction '%3$s', "
+                                                + "valid instructions are : %4$s",
+                                        mDocument.getSourceLocation().print(false),
+                                        mDocument.getNodePosition(xml).getLine(),
+                                        instruction,
+                                        Joiner.on(',').join(AttributeOperationType.values())
+                                );
+                        throw new RuntimeException(new MergingException(errorMessage, e));
+                    }
                     for (String attributeName : Splitter.on(',').trimResults()
                             .split(attribute.getNodeValue())) {
                         if (attributeName.indexOf(XmlUtils.NS_SEPARATOR) == -1) {
