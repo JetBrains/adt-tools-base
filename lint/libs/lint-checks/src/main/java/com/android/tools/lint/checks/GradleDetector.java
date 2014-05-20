@@ -465,15 +465,11 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     private static FullRevision getLatestVersion(@NonNull Context context,
             @NonNull GradleCoordinate dependency) {
         StringBuilder query = new StringBuilder();
-        query.append("http://search.maven.org/solrsearch/select?q=g:%22");
         String encoding = UTF_8.name();
         try {
+            query.append("http://search.maven.org/solrsearch/select?q=g:%22");
             query.append(URLEncoder.encode(dependency.getGroupId(), encoding));
-        } catch (UnsupportedEncodingException ee) {
-            return null;
-        }
-        query.append("%22+AND+a:%22");
-        try {
+            query.append("%22+AND+a:%22");
             query.append(URLEncoder.encode(dependency.getArtifactId(), encoding));
         } catch (UnsupportedEncodingException ee) {
             return null;

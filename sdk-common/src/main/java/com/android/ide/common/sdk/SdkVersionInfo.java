@@ -68,6 +68,22 @@ public class SdkVersionInfo {
         }
     }
 
+    public static String getCodeName(int api) {
+        String s = getAndroidName(api);
+        if (s != null) {
+            int start = s.indexOf('(');
+            if (start != -1) {
+                start++;
+                int end = s.indexOf(')', start);
+                if (end != -1) {
+                    return s.substring(start, end);
+                }
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Returns the applicable build code (for
      * {@code android.os.Build.VERSION_CODES}) for the corresponding API level,
