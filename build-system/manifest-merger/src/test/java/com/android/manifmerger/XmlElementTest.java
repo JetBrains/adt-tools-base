@@ -285,7 +285,7 @@ public class XmlElementTest extends TestCase {
                     new TestUtils.TestSourceLocation(getClass(), "testDiff6()"), input);
             xmlDocument.getRootNode();
             fail("Exception not thrown");
-        } catch (IllegalArgumentException expected) {
+        } catch (RuntimeException expected) {
             // expected.
         }
     }
