@@ -20,6 +20,7 @@ import static com.android.ide.common.sdk.SdkVersionInfo.camelCaseToUnderlines;
 import static com.android.ide.common.sdk.SdkVersionInfo.getApiByBuildCode;
 import static com.android.ide.common.sdk.SdkVersionInfo.getApiByPreviewName;
 import static com.android.ide.common.sdk.SdkVersionInfo.getBuildCode;
+import static com.android.ide.common.sdk.SdkVersionInfo.getCodeName;
 import static com.android.ide.common.sdk.SdkVersionInfo.underlinesToCamelCase;
 
 import junit.framework.TestCase;
@@ -51,6 +52,13 @@ public class SdkVersionInfoTest extends TestCase {
 
         assertEquals(-1, getApiByBuildCode("K_SURPRISE_SURPRISE", false));
         assertEquals(HIGHEST_KNOWN_API + 1, getApiByBuildCode("K_SURPRISE_SURPRISE", true));
+    }
+
+    public void testGetCodeName() {
+        assertNull(getCodeName(1));
+        assertNull(getCodeName(2));
+        assertEquals("Cupcake", getCodeName(3));
+        assertEquals("KitKat", getCodeName(19));
     }
 
     public void testCamelCaseToUnderlines() {

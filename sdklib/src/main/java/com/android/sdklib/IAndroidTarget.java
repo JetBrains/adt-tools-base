@@ -169,7 +169,7 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
 
     /**
      * Returns a BuildToolInfo for backward compatibility. If an older SDK is used this will return
-     * paths located in the platform-tools, otherwise it'll return paths located in the lastest
+     * paths located in the platform-tools, otherwise it'll return paths located in the latest
      * build-tools.
      * @return a BuildToolInfo or null if none are available.
      */
