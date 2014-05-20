@@ -22,10 +22,8 @@ import com.android.annotations.Nullable;
 import com.android.ide.common.res2.MergingException;
 import com.android.utils.ILogger;
 import com.android.utils.PositionXmlParser;
-import com.android.utils.PositionXmlParser.Position;
 import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -102,15 +100,21 @@ public class XmlElement extends OrphanXmlElement {
                                 AttributeOperationType.valueOf(
                                         SdkUtils.xmlNameToConstantName(instruction));
                     } catch (IllegalArgumentException e) {
-                        String errorMessage =
-                                String.format("[%1$s:%2$s] Invalid instruction '%3$s', "
-                                                + "valid instructions are : %4$s",
-                                        mDocument.getSourceLocation().print(false),
-                                        mDocument.getNodePosition(xml).getLine(),
-                                        instruction,
-                                        Joiner.on(',').join(AttributeOperationType.values())
-                                );
-                        throw new RuntimeException(new MergingException(errorMessage, e));
+                        try {
+                            // is this another tool's operation type that we do not care about.
+                            OtherOperationType.valueOf(instruction);
+                            break;
+                        } catch (IllegalArgumentException e1) {
+                            String errorMessage =
+                                    String.format("[%1$s:%2$s] Invalid instruction '%3$s', "
+                                                    + "valid instructions are : %4$s",
+                                            mDocument.getSourceLocation().print(false),
+                                            mDocument.getNodePosition(xml).getLine(),
+                                            instruction,
+                                            Joiner.on(',').join(AttributeOperationType.values())
+                                    );
+                            throw new RuntimeException(new MergingException(errorMessage, e));
+                        }
                     }
                     for (String attributeName : Splitter.on(',').trimResults()
                             .split(attribute.getNodeValue())) {

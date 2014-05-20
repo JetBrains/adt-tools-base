@@ -290,6 +290,26 @@ public class XmlElementTest extends TestCase {
         }
     }
 
+    public void testOtherToolsInstruction()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" "
+                + "         tools:ignore=\"android:theme\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "testOtherToolsInstruction"), input);
+        xmlDocument.getRootNode();
+    }
+
+
     public void testDiff1()
             throws Exception {
 
