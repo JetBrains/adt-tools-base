@@ -19,6 +19,7 @@ package com.android.manifmerger;
 import static com.android.manifmerger.MergingReport.Record.Severity.ERROR;
 
 import com.android.SdkConstants;
+import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.utils.ILogger;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -432,7 +433,7 @@ public class XmlDocumentTest extends TestCase {
                 "android.permission.WRITE_CALL_LOG").isPresent());
     }
 
-     public void testNoUsesSdkPresence()
+    public void testNoUsesSdkPresence()
             throws ParserConfigurationException, SAXException, IOException {
         String main = ""
                 + "<manifest\n"
@@ -799,5 +800,270 @@ public class XmlDocumentTest extends TestCase {
                 "android.permission.READ_CALL_LOG").isPresent());
         assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
                 "android.permission.WRITE_CALL_LOG").isPresent());
+    }
+
+    /**
+     * test illegal importation of a preview library (using the minSdk attribute) in a released
+     * application.
+     */
+    public void testLibraryAtPreviewInOldApp_usingMinSdk()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"19\"/>\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"XYZ\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertFalse(mergedDocument.isPresent());
+        MergingReport mergingReport = mergingReportBuilder.build();
+        ImmutableList<MergingReport.Record> loggingRecords = mergingReport.getLoggingRecords();
+        assertEquals(1, loggingRecords.size());
+        loggingRecords.get(0).getMessage().contains("XYZ");
+    }
+    /**
+     * test illegal importation of a preview library (using the targetSdk attribute) in a released
+     * application.
+     */
+    public void testLibraryAtPreviewInOldApp_usingTargetSdk()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"14\" android:targetSdkVersion=\"19\"/>\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"14\" android:targetSdkVersion=\"XYZ\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertFalse(mergedDocument.isPresent());
+        MergingReport mergingReport = mergingReportBuilder.build();
+        ImmutableList<MergingReport.Record> loggingRecords = mergingReport.getLoggingRecords();
+        assertEquals(1, loggingRecords.size());
+        loggingRecords.get(0).getMessage().contains("XYZ");
+    }
+
+    /**
+     * test legal importation of a released library (using the minSdk attribute) into a preview
+     * application.
+     */
+    public void testLibraryAtReleaseAgainstAppInPreview_usingMinSdk()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"XYZ\"/>\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"19\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        // make sure the resulting min version is "XYZ".
+        Optional<XmlElement> usesSdk = mergedDocument.get()
+                .getByTypeAndKey(ManifestModel.NodeTypes.USES_SDK, null);
+        Optional<XmlAttribute> attribute = usesSdk.get()
+                .getAttribute(XmlNode.fromXmlName("android:minSdkVersion"));
+        assertTrue(attribute.isPresent());
+        assertEquals("XYZ", attribute.get().getValue());
+    }
+
+    /**
+     * test legal importation of a released library (using the minSdk attribute) into a preview
+     * application.
+     */
+    public void testLibraryAtReleaseAgainstAppInPreview_usingTargetSdk()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"14\" android:targetSdkVersion=\"XYZ\"/>\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"14\" android:targetSdkVersion=\"14\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        // make sure the resulting target version is "XYZ".
+        Optional<XmlElement> usesSdk = mergedDocument.get()
+                .getByTypeAndKey(ManifestModel.NodeTypes.USES_SDK, null);
+        Optional<XmlAttribute> attribute = usesSdk.get()
+                .getAttribute(XmlNode.fromXmlName("android:targetSdkVersion"));
+        assertTrue(attribute.isPresent());
+        assertEquals("XYZ", attribute.get().getValue());
+    }
+
+    /**
+     * test illegal importation of a more recent released library (using the minSdk attribute) into
+     * an older preview application.
+     */
+    public void testLibraryMoreRecentThanCodeName()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"XYZ\"/>\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\""
+                + (SdkVersionInfo.HIGHEST_KNOWN_API + 2) // fantasy version in the far future.
+                + "\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertFalse(mergedDocument.isPresent());
+    }
+
+    /**
+     * Test that implicit elements are added correctly when importing an old library into a preview
+     * application.
+     */
+    public void testLibraryVersion3MergeInPreviewApp()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "    <uses-sdk android:targetSdkVersion=\"XYZ\"/>\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <uses-sdk android:targetSdkVersion=\"3\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        XmlDocument xmlDocument = mergedDocument.get();
+        assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_EXTERNAL_STORAGE").isPresent());
+        assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_EXTERNAL_STORAGE").isPresent());
+        assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_PHONE_STATE").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.READ_CALL_LOG").isPresent());
+        assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_CALL_LOG").isPresent());
+
+        // check records.
+        Actions actions = mergingReportBuilder.getActionRecorder().build();
+        XmlElement xmlElement = xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
+                "android.permission.WRITE_EXTERNAL_STORAGE").get();
+        ImmutableList<Actions.NodeRecord> nodeRecords = actions
+                .getNodeRecords(XmlNode.NodeKey.fromXml(xmlElement.getXml()));
+        assertEquals(1, nodeRecords.size());
+        assertEquals(nodeRecords.iterator().next().mReason, "targetSdkVersion < 4");
     }
 }
