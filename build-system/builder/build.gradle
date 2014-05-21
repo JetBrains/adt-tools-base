@@ -14,7 +14,7 @@ dependencies {
     compile project(':base:manifest-merger')
     compile project(':base:ddmlib')
 
-    compile 'com.squareup:javawriter:2.2.1'
+    compile 'com.squareup:javawriter:2.5.0'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.48'
 
     testCompile 'junit:junit:3.8.1'
