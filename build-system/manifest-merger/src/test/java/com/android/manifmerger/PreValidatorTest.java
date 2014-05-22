@@ -176,6 +176,38 @@ public class PreValidatorTest extends TestCase {
         assertStringPresenceInLogRecords(mergingReport, "tools:selector=\"foo\"");
     }
 
+    public void testNoKeyElement()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        MockLog mockLog = new MockLog();
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <compatible-screens>\n"
+                + "        <!-- all small size screens -->\n"
+                + "        <screen android:screenSize=\"small\" android:screenDensity=\"ldpi\" />\n"
+                + "        <screen android:screenSize=\"small\" android:screenDensity=\"mdpi\" />\n"
+                + "        <screen android:screenSize=\"small\" android:screenDensity=\"xhdpi\" />\n"
+                + "        <!-- all normal size screens -->\n"
+                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"ldpi\" />\n"
+                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"hdpi\" />\n"
+                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"xhdpi\" />\n"
+                + "    </compatible-screens>"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(
+                        getClass(), "testScreenMerging"), input);
+
+        MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
+        MergingReport.Result validated = PreValidator.validate(mergingReport, xmlDocument);
+        assertEquals(MergingReport.Result.SUCCESS, validated);
+    }
+
     private static void assertStringPresenceInLogRecords(MergingReport.Builder mergingReport, String s) {
         for (MergingReport.Record record : mergingReport.build().getLoggingRecords()) {
             if (record.toString().contains(s)) {
