@@ -5,6 +5,7 @@ evaluationDependsOn(':base:dvlib')
 
 group = 'com.android.tools'
 archivesBaseName = 'sdklib'
+version = rootProject.ext.baseVersion
 
 dependencies {
     compile project(':base:layoutlib-api')
@@ -59,7 +60,6 @@ copyXsd.doLast {
 project.ext.pomName = 'Android Tools sdklib'
 project.ext.pomDesc = 'A library to parse and download the Android SDK.'
 
-apply from: "$rootDir/buildSrc/base/baseVersion.gradle"
 apply from: "$rootDir/buildSrc/base/publish.gradle"
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 

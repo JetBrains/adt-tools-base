@@ -3,6 +3,7 @@ apply plugin: 'sdk-java-lib'
 
 group = 'com.android.tools.build'
 archivesBaseName = 'ant-tasks'
+version = rootProject.ext.baseVersion
 
 dependencies {
     compile project(':base:manifest-merger')
@@ -24,5 +25,3 @@ dependencies{
 sourceSets.main.compileClasspath += configurations.provided
 
 javadoc.classpath += configurations.provided
-
-apply from: "$rootDir/buildSrc/base/baseVersion.gradle"

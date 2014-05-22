@@ -8,6 +8,7 @@ dependencies {
 
 group = 'com.android.tools'
 archivesBaseName = 'dvlib'
+version = rootProject.ext.baseVersion
 
 // configure the manifest of the sdkJar task
 sdkJar.manifest.attributes("Main-Class": "com.android.validator.DeviceValidator")
@@ -15,6 +16,5 @@ sdkJar.manifest.attributes("Main-Class": "com.android.validator.DeviceValidator"
 project.ext.pomName = 'Android Tools dvlib'
 project.ext.pomDesc = 'A Library to manage the Android device database XML files.'
 
-apply from: "$rootDir/buildSrc/base/baseVersion.gradle"
 apply from: "$rootDir/buildSrc/base/publish.gradle"
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"

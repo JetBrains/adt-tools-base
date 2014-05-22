@@ -5,6 +5,7 @@ evaluationDependsOn(':base:sdklib')
 
 group = 'com.android.tools.build'
 archivesBaseName = 'manifest-merger'
+version = rootProject.ext.baseVersion
 
 dependencies {
     compile project(':base:common')
@@ -25,7 +26,6 @@ sourceSets {
 project.ext.pomName = 'Android Tools Manifest Merger library'
 project.ext.pomDesc = 'A Library to merge Android manifests.'
 
-apply from: "$rootDir/buildSrc/base/baseVersion.gradle"
 apply from: "$rootDir/buildSrc/base/publish.gradle"
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 
