@@ -3,6 +3,7 @@ apply plugin: 'sdk-java-lib'
 
 group = 'com.android.tools'
 archivesBaseName = 'gradle-import'
+version = rootProject.ext.baseVersion
 
 dependencies {
     compile project(':base:sdklib')
@@ -15,5 +16,3 @@ sourceSets {
     main.resources.srcDir 'src/main/java'
     test.resources.srcDir 'src/test/java'
 }
-
-apply from: "$rootDir/buildSrc/base/baseVersion.gradle"

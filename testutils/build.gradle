@@ -2,6 +2,7 @@ apply plugin: 'java'
 
 group = 'com.android.tools'
 archivesBaseName = 'testutils'
+version = rootProject.ext.baseVersion
 
 dependencies {
     compile project(':base:common')
@@ -12,5 +13,3 @@ sourceSets {
     main.resources.srcDir 'src/main/java'
     test.resources.srcDir 'src/test/java'
 }
-
-apply from: "$rootDir/buildSrc/base/baseVersion.gradle"
