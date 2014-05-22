@@ -685,7 +685,7 @@ public class XmlElement extends OrphanXmlElement {
      * Returns all leading comments in the source xml before the node to be adopted.
      * @param nodeToBeAdopted node that will be added as a child to this node.
      */
-    private static List<Node> getLeadingComments(Node nodeToBeAdopted) {
+    static List<Node> getLeadingComments(Node nodeToBeAdopted) {
         ImmutableList.Builder<Node> nodesToAdopt = new ImmutableList.Builder<Node>();
         Node previousSibling = nodeToBeAdopted.getPreviousSibling();
         while (previousSibling != null
