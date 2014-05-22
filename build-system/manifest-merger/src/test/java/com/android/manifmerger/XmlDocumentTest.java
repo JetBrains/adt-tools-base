@@ -432,7 +432,7 @@ public class XmlDocumentTest extends TestCase {
                 "android.permission.WRITE_CALL_LOG").isPresent());
     }
 
-    public void testNoUsesSdkPresence()
+     public void testNoUsesSdkPresence()
             throws ParserConfigurationException, SAXException, IOException {
         String main = ""
                 + "<manifest\n"
@@ -473,6 +473,53 @@ public class XmlDocumentTest extends TestCase {
         assertFalse(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
                 "android.permission.WRITE_CALL_LOG").isPresent());
     }
+
+    public void testGlEsVersionFromFlavor()
+            throws ParserConfigurationException, SAXException, IOException {
+        String flavor = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <uses-feature\n"
+                + "        android:name=\"android.hardware.camera\"\n"
+                + "        android:glEsVersion=\"0x00020000\"\n"
+                + "        android:required=\"true\" />"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "\n"
+                + "</manifest>";
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument flavorDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "flavor"), flavor);
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                flavorDocument.merge(mainDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        System.out.println(mergedDocument.get().prettyPrint());
+        XmlDocument xmlDocument = mergedDocument.get();
+        Optional<XmlElement> usesFeature = xmlDocument
+                .getByTypeAndKey(ManifestModel.NodeTypes.USES_FEATURE,
+                        "android.hardware.camera");
+        assertTrue(usesFeature.isPresent());
+        Optional<XmlAttribute> glEsVersion = usesFeature.get()
+                .getAttribute(XmlNode.fromXmlName("android:glEsVersion"));
+        assertTrue(glEsVersion.isPresent());
+        assertEquals("0x00020000", glEsVersion.get().getValue());
+    }
+
 
     public void testNoUsesSdkPresenceInMain()
             throws ParserConfigurationException, SAXException, IOException {
@@ -753,5 +800,4 @@ public class XmlDocumentTest extends TestCase {
         assertTrue(xmlDocument.getByTypeAndKey(ManifestModel.NodeTypes.USES_PERMISSION,
                 "android.permission.WRITE_CALL_LOG").isPresent());
     }
-
 }
