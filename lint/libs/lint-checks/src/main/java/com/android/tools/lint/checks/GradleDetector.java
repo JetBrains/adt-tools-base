@@ -173,6 +173,21 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             Severity.WARNING,
             IMPLEMENTATION).setEnabledByDefault(false);
 
+    /** Accidentally using octal numbers */
+    public static final Issue ACCIDENTAL_OCTAL = Issue.create(
+            "AccidentalOctal", //$NON-NLS-1$
+            "Accidental Octal",
+            "Looks for integer literals that are interpreted as octal numbers",
+
+            "In Groovy, an integer literal that starts with a leading 0 will be interpreted " +
+            "as an octal number. That is usually (always?) an accident and can lead to " +
+            "subtle bugs, for example when used in the `versionCode` of an app.",
+
+            Category.CORRECTNESS,
+            2,
+            Severity.ERROR,
+            IMPLEMENTATION);
+
     private int mMinSdkVersion;
     private int mCompileSdkVersion;
     private int mTargetSdkVersion;
@@ -221,6 +236,27 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 || property.equals("packageNameSuffix");
     }
 
+    protected void checkOctal(
+            @NonNull Context context,
+            @NonNull String value,
+            @NonNull Object cookie) {
+        if (value.length() >= 2
+                && value.charAt(0) == '0'
+                && (value.length() > 2 || value.charAt(1) >= '8'
+                && isInteger(value))
+                && context.isEnabled(ACCIDENTAL_OCTAL)) {
+            String message = "The leading 0 turns this number into octal which is probably "
+                    + "not what was intended";
+            try {
+                long numericValue = Long.decode(value);
+                message += " (interpreted as " + numericValue + ")";
+            } catch (NumberFormatException nufe) {
+                message += " (and it is not a valid octal number)";
+            }
+            report(context, cookie, GRADLE_GETTER, message);
+        }
+    }
+
     /** Called with for example "android", "defaultConfig", "minSdkVersion", "7"  */
     @SuppressWarnings("UnusedDeclaration")
     protected void checkDslPropertyAssignment(
@@ -245,6 +281,11 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                     checkTargetCompatibility(context, cookie);
                 }
             }
+
+            if (value.startsWith("0")) {
+                checkOctal(context, value, cookie);
+            }
+
             if (property.equals("versionName") || property.equals("versionCode") &&
                     !isInteger(value) || !isStringLiteral(value)) {
                 // Method call -- make sure it does not match one of the getters in the
@@ -256,7 +297,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                             + "properties. For example, try using the prefix compute- "
                             + "instead of get-.";
                     report(context, cookie, GRADLE_GETTER, message);
-
                 }
             }
         } else if (property.equals("compileSdkVersion") && parent.equals("android")) {
