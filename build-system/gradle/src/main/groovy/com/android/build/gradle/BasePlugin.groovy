@@ -177,6 +177,10 @@ public abstract class BasePlugin {
 
     public static final String FILE_JACOCO_AGENT = 'jacocoagent.jar'
 
+    public final static String FD_INTERMEDIATES = "intermediates";
+    public final static String FD_OUTPUTS = "outputs";
+    public final static String FD_GENERATED = "generated";
+
 
     protected Instantiator instantiator
     private ToolingModelBuilderRegistry registry
@@ -332,7 +336,8 @@ public abstract class BasePlugin {
             PngProcessor.clearCache()
             sdkHandler.unload()
             PreDexCache.getCache().clear(
-                    project.rootProject.file("${project.rootProject.buildDir}/dex-cache/cache.xml"),
+                    project.rootProject.file(
+                            "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/dex-cache/cache.xml"),
                     logger)
             LibraryCache.getCache().unload()
         }
@@ -341,7 +346,8 @@ public abstract class BasePlugin {
             for (Task task : taskGraph.allTasks) {
                 if (task instanceof PreDex) {
                     PreDexCache.getCache().load(
-                            project.rootProject.file("${project.rootProject.buildDir}/dex-cache/cache.xml"))
+                            project.rootProject.file(
+                                    "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/dex-cache/cache.xml"))
                     break;
                 }
             }
@@ -526,7 +532,7 @@ public abstract class BasePlugin {
         }
         processManifestTask.conventionMapping.manifestOutputFile = {
             project.file(
-                    "$project.buildDir/${manifestOutDir}/" +
+                    "$project.buildDir/${FD_INTERMEDIATES}/${manifestOutDir}/" +
                             "${variantData.variantConfiguration.dirName}/AndroidManifest.xml")
         }
     }
@@ -583,7 +589,7 @@ public abstract class BasePlugin {
         }
         processManifestTask.conventionMapping.manifestOutputFile = {
             project.file(
-                    "$project.buildDir/${manifestOurDir}/${variantData.variantConfiguration.dirName}/AndroidManifest.xml")
+                    "$project.buildDir/${FD_INTERMEDIATES}/${manifestOurDir}/${variantData.variantConfiguration.dirName}/AndroidManifest.xml")
         }
     }
 
@@ -641,7 +647,7 @@ public abstract class BasePlugin {
         }
         processTestManifestTask.conventionMapping.manifestOutputFile = {
             project.file(
-                    "$project.buildDir/${manifestOurDir}/${variantData.variantConfiguration.dirName}/AndroidManifest.xml")
+                    "$project.buildDir/${FD_INTERMEDIATES}/${manifestOurDir}/${variantData.variantConfiguration.dirName}/AndroidManifest.xml")
         }
     }
 
@@ -685,16 +691,16 @@ public abstract class BasePlugin {
         renderscriptTask.conventionMapping.importDirs = { config.renderscriptImports }
 
         renderscriptTask.conventionMapping.sourceOutputDir = {
-            project.file("$project.buildDir/source/rs/${variantData.variantConfiguration.dirName}")
+            project.file("$project.buildDir/${FD_GENERATED}/source/rs/${variantData.variantConfiguration.dirName}")
         }
         renderscriptTask.conventionMapping.resOutputDir = {
-            project.file("$project.buildDir/res/rs/${variantData.variantConfiguration.dirName}")
+            project.file("$project.buildDir/${FD_GENERATED}/res/rs/${variantData.variantConfiguration.dirName}")
         }
         renderscriptTask.conventionMapping.objOutputDir = {
-            project.file("$project.buildDir/rs/${variantData.variantConfiguration.dirName}/obj")
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/rs/${variantData.variantConfiguration.dirName}/obj")
         }
         renderscriptTask.conventionMapping.libOutputDir = {
-            project.file("$project.buildDir/rs/${variantData.variantConfiguration.dirName}/lib")
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/rs/${variantData.variantConfiguration.dirName}/lib")
         }
         renderscriptTask.conventionMapping.ndkConfig = { config.ndkConfig }
     }
@@ -704,7 +710,7 @@ public abstract class BasePlugin {
         MergeResources mergeResourcesTask = basicCreateMergeResourcesTask(
                 variantData,
                 "merge",
-                "$project.buildDir/res/all/${variantData.variantConfiguration.dirName}",
+                "$project.buildDir/${FD_INTERMEDIATES}/res/${variantData.variantConfiguration.dirName}",
                 true /*includeDependencies*/,
                 process9Patch)
         variantData.mergeResourcesTask = mergeResourcesTask
@@ -723,7 +729,7 @@ public abstract class BasePlugin {
         mergeResourcesTask.dependsOn variantData.prepareDependenciesTask, variantData.resourceGenTask
         mergeResourcesTask.plugin = this
         mergeResourcesTask.incrementalFolder = project.file(
-                "$project.buildDir/incremental/${taskNamePrefix}Resources/${variantData.variantConfiguration.dirName}")
+                "$project.buildDir/${FD_INTERMEDIATES}/incremental/${taskNamePrefix}Resources/${variantData.variantConfiguration.dirName}")
 
         mergeResourcesTask.process9Patch = process9Patch
 
@@ -745,7 +751,7 @@ public abstract class BasePlugin {
                                          @Nullable String outputLocation,
                                          final boolean includeDependencies) {
         if (outputLocation == null) {
-            outputLocation = "$project.buildDir/assets/${variantData.variantConfiguration.dirName}"
+            outputLocation = "$project.buildDir/${FD_INTERMEDIATES}/assets/${variantData.variantConfiguration.dirName}"
         }
 
         def mergeAssetsTask = project.tasks.create(
@@ -756,7 +762,7 @@ public abstract class BasePlugin {
         mergeAssetsTask.dependsOn variantData.prepareDependenciesTask
         mergeAssetsTask.plugin = this
         mergeAssetsTask.incrementalFolder =
-                project.file("$project.buildDir/incremental/mergeAssets/${variantData.variantConfiguration.dirName}")
+                project.file("$project.buildDir/${FD_INTERMEDIATES}/incremental/mergeAssets/${variantData.variantConfiguration.dirName}")
 
         mergeAssetsTask.conventionMapping.inputAssetSets = {
             variantData.variantConfiguration.getAssetSets(includeDependencies)
@@ -820,7 +826,7 @@ public abstract class BasePlugin {
         }
 
         generateBuildConfigTask.conventionMapping.sourceOutputDir = {
-            project.file("$project.buildDir/source/buildConfig/${variantData.variantConfiguration.dirName}")
+            project.file("$project.buildDir/${FD_GENERATED}/source/buildConfig/${variantData.variantConfiguration.dirName}")
         }
     }
 
@@ -840,7 +846,7 @@ public abstract class BasePlugin {
         }
 
         generateResValuesTask.conventionMapping.resOutputDir = {
-            project.file("$project.buildDir/res/generated/${variantData.variantConfiguration.dirName}")
+            project.file("$project.buildDir/${FD_GENERATED}/res/generated/${variantData.variantConfiguration.dirName}")
         }
     }
 
@@ -848,7 +854,7 @@ public abstract class BasePlugin {
             @NonNull BaseVariantData variantData,
             boolean generateResourcePackage) {
         createProcessResTask(variantData,
-                "$project.buildDir/symbols/${variantData.variantConfiguration.dirName}",
+                "$project.buildDir/${FD_INTERMEDIATES}/symbols/${variantData.variantConfiguration.dirName}",
                 generateResourcePackage)
     }
 
@@ -890,7 +896,7 @@ public abstract class BasePlugin {
 
         // TODO: unify with generateBuilderConfig, compileAidl, and library packaging somehow?
         processResources.conventionMapping.sourceOutputDir = {
-            project.file("$project.buildDir/source/r/${variantData.variantConfiguration.dirName}")
+            project.file("$project.buildDir/${FD_GENERATED}/source/r/${variantData.variantConfiguration.dirName}")
         }
         processResources.conventionMapping.textSymbolOutputDir = {
             project.file(symbolLocation)
@@ -898,12 +904,12 @@ public abstract class BasePlugin {
         if (generateResourcePackage) {
             processResources.conventionMapping.packageOutputFile = {
                 project.file(
-                        "$project.buildDir/libs/${project.archivesBaseName}-${variantData.variantConfiguration.baseName}.ap_")
+                        "$project.buildDir/${FD_INTERMEDIATES}/libs/${project.archivesBaseName}-${variantData.variantConfiguration.baseName}.ap_")
             }
         }
         if (variantConfiguration.buildType.runProguard) {
             processResources.conventionMapping.proguardOutputFile = {
-                project.file("$project.buildDir/proguard/${variantData.variantConfiguration.dirName}/aapt_rules.txt")
+                project.file("$project.buildDir/${FD_INTERMEDIATES}/proguard/${variantData.variantConfiguration.dirName}/aapt_rules.txt")
             }
         }
 
@@ -935,7 +941,7 @@ public abstract class BasePlugin {
         }
 
         processResources.conventionMapping.destinationDir = {
-            project.file("$project.buildDir/javaResources/${variantData.variantConfiguration.dirName}")
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/javaResources/${variantData.variantConfiguration.dirName}")
         }
     }
 
@@ -952,13 +958,13 @@ public abstract class BasePlugin {
 
         compileTask.plugin = this
         compileTask.incrementalFolder =
-                project.file("$project.buildDir/incremental/aidl/${variantData.variantConfiguration.dirName}")
+                project.file("$project.buildDir/${FD_INTERMEDIATES}/incremental/aidl/${variantData.variantConfiguration.dirName}")
 
         compileTask.conventionMapping.sourceDirs = { variantConfiguration.aidlSourceList }
         compileTask.conventionMapping.importDirs = { variantConfiguration.aidlImports }
 
         compileTask.conventionMapping.sourceOutputDir = {
-            project.file("$project.buildDir/source/aidl/${variantData.variantConfiguration.dirName}")
+            project.file("$project.buildDir/${FD_GENERATED}/source/aidl/${variantData.variantConfiguration.dirName}")
         }
         compileTask.aidlParcelableDir = parcelableDir
     }
@@ -993,10 +999,10 @@ public abstract class BasePlugin {
         compileTask.dependsOn variantData.variantDependency.compileConfiguration.buildDependencies
 
         compileTask.conventionMapping.destinationDir = {
-            project.file("$project.buildDir/classes/${variantData.variantConfiguration.dirName}")
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/classes/${variantData.variantConfiguration.dirName}")
         }
         compileTask.conventionMapping.dependencyCacheDir = {
-            project.file("$project.buildDir/dependency-cache/${variantData.variantConfiguration.dirName}")
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/dependency-cache/${variantData.variantConfiguration.dirName}")
         }
 
         // set source/target compatibility
@@ -1044,7 +1050,7 @@ public abstract class BasePlugin {
         }
 
         ndkCompile.conventionMapping.generatedMakefile = {
-            project.file("$project.buildDir/ndk/${variantData.variantConfiguration.dirName}/Android.mk")
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/ndk/${variantData.variantConfiguration.dirName}/Android.mk")
         }
 
         ndkCompile.conventionMapping.ndkConfig = { variantConfig.ndkConfig }
@@ -1054,10 +1060,10 @@ public abstract class BasePlugin {
         }
 
         ndkCompile.conventionMapping.objFolder = {
-            project.file("$project.buildDir/ndk/${variantData.variantConfiguration.dirName}/obj")
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/ndk/${variantData.variantConfiguration.dirName}/obj")
         }
         ndkCompile.conventionMapping.soFolder = {
-            project.file("$project.buildDir/ndk/${variantData.variantConfiguration.dirName}/lib")
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/ndk/${variantData.variantConfiguration.dirName}/lib")
         }
     }
 
@@ -1122,7 +1128,7 @@ public abstract class BasePlugin {
     // TODO - should compile src/lint/java from src/lint/java and jar it into build/lint/lint.jar
     public void createLintCompileTask() {
         lintCompile = project.tasks.create("compileLint", Task)
-        File outputDir = new File("$project.buildDir/lint")
+        File outputDir = new File("$project.buildDir/${FD_INTERMEDIATES}/lint")
 
         lintCompile.doFirst{
             // create the directory for lint output if it does not exist.
@@ -1215,14 +1221,14 @@ public abstract class BasePlugin {
 
             mainConnectedTask.conventionMapping.resultsDir = {
                 String rootLocation = extension.testOptions.resultsDir != null ?
-                    extension.testOptions.resultsDir : "$project.buildDir/$FD_ANDROID_RESULTS"
+                    extension.testOptions.resultsDir : "$project.buildDir/${FD_OUTPUTS}/$FD_ANDROID_RESULTS"
 
                 project.file("$rootLocation/connected/$FD_FLAVORS_ALL")
             }
             mainConnectedTask.conventionMapping.reportsDir = {
                 String rootLocation = extension.testOptions.reportDir != null ?
                     extension.testOptions.reportDir :
-                    "$project.buildDir/$FD_REPORTS/$FD_ANDROID_TESTS"
+                    "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
 
                 project.file("$rootLocation/connected/$FD_FLAVORS_ALL")
             }
@@ -1243,14 +1249,14 @@ public abstract class BasePlugin {
 
             mainProviderTask.conventionMapping.resultsDir = {
                 String rootLocation = extension.testOptions.resultsDir != null ?
-                    extension.testOptions.resultsDir : "$project.buildDir/$FD_ANDROID_RESULTS"
+                    extension.testOptions.resultsDir : "$project.buildDir/${FD_OUTPUTS}/$FD_ANDROID_RESULTS"
 
                 project.file("$rootLocation/devices/$FD_FLAVORS_ALL")
             }
             mainProviderTask.conventionMapping.reportsDir = {
                 String rootLocation = extension.testOptions.reportDir != null ?
                     extension.testOptions.reportDir :
-                    "$project.buildDir/$FD_REPORTS/$FD_ANDROID_TESTS"
+                    "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
 
                 project.file("$rootLocation/devices/$FD_FLAVORS_ALL")
             }
@@ -1308,10 +1314,10 @@ public abstract class BasePlugin {
                     reportTask.conventionMapping.reportDir = {
                         String rootLocation = extension.testOptions.reportDir != null ?
                                 extension.testOptions.reportDir :
-                                "$project.buildDir/$FD_REPORTS/$FD_ANDROID_TESTS"
+                                "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
 
                         project.file(
-                                "$project.buildDir/$FD_REPORTS/coverage/${baseVariantData.variantConfiguration.dirName}")
+                                "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/coverage/${baseVariantData.variantConfiguration.dirName}")
                     }
 
                     reportTask.dependsOn connectedTask
@@ -1419,7 +1425,7 @@ public abstract class BasePlugin {
         testTask.conventionMapping.resultsDir = {
             String rootLocation = extension.testOptions.resultsDir != null ?
                 extension.testOptions.resultsDir :
-                "$project.buildDir/$FD_ANDROID_RESULTS"
+                "$project.buildDir/${FD_OUTPUTS}/$FD_ANDROID_RESULTS"
 
             String flavorFolder = variantData.variantConfiguration.flavorName
             if (!flavorFolder.isEmpty()) {
@@ -1431,7 +1437,7 @@ public abstract class BasePlugin {
         testTask.conventionMapping.reportsDir = {
             String rootLocation = extension.testOptions.reportDir != null ?
                 extension.testOptions.reportDir :
-                "$project.buildDir/$FD_REPORTS/$FD_ANDROID_TESTS"
+                "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
 
             String flavorFolder = variantData.variantConfiguration.flavorName
             if (!flavorFolder.isEmpty()) {
@@ -1441,7 +1447,7 @@ public abstract class BasePlugin {
             project.file("$rootLocation/$subFolder/$flavorFolder")
         }
         testTask.conventionMapping.coverageDir = {
-            String rootLocation = "$project.buildDir/code-coverage"
+            String rootLocation = "$project.buildDir/${FD_OUTPUTS}/code-coverage"
 
             String flavorFolder = variantData.variantConfiguration.flavorName
             if (!flavorFolder.isEmpty()) {
@@ -1482,7 +1488,7 @@ public abstract class BasePlugin {
         dexTask.plugin = this
 
         dexTask.conventionMapping.outputFolder = {
-            project.file("${project.buildDir}/dex/${variantConfig.dirName}")
+            project.file("${project.buildDir}/${FD_INTERMEDIATES}/dex/${variantConfig.dirName}")
         }
         dexTask.dexOptions = extension.dexOptions
 
@@ -1505,7 +1511,9 @@ public abstract class BasePlugin {
                 jacocoTask.dependsOn variantData.javaCompileTask
                 jacocoTask.conventionMapping.jacocoClasspath = { project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME] }
                 jacocoTask.conventionMapping.inputDir = { variantData.javaCompileTask.destinationDir }
-                jacocoTask.conventionMapping.outputDir = { project.file("${project.buildDir}/coverage-instrumented-classes/${variantConfig.dirName}") }
+                jacocoTask.conventionMapping.outputDir = {
+                    project.file("${project.buildDir}/${FD_INTERMEDIATES}/coverage-instrumented-classes/${variantConfig.dirName}")
+                }
 
                 dexTask.dependsOn jacocoTask
 
@@ -1565,7 +1573,7 @@ public abstract class BasePlugin {
                 dexTask.conventionMapping.libraries = {
                     Set<File> set = androidBuilder.getPackagedJars(variantConfig)
                     if (jacocoTask != null) {
-                        set.add(project.file("$project.buildDir/jacoco/jacocoagent.jar"))
+                        set.add(project.file("$project.buildDir/${FD_INTERMEDIATES}/jacoco/jacocoagent.jar"))
                     }
 
                     return set
@@ -1638,7 +1646,7 @@ public abstract class BasePlugin {
         packageApp.conventionMapping.packagingOptions = { extension.packagingOptions }
 
         packageApp.conventionMapping.outputFile = {
-            project.file("$project.buildDir/apk/${apkName}")
+            project.file("$project.buildDir/${FD_OUTPUTS}/apk/${apkName}")
         }
 
         Task appTask = packageApp
@@ -1656,14 +1664,14 @@ public abstract class BasePlugin {
                 zipAlignTask.conventionMapping.inputFile = { packageApp.outputFile }
                 zipAlignTask.conventionMapping.outputFile = {
                     project.file(
-                            "$project.buildDir/apk/${project.archivesBaseName}-${variantData.variantConfiguration.baseName}.apk")
+                            "$project.buildDir/${FD_OUTPUTS}/apk/${project.archivesBaseName}-${variantData.variantConfiguration.baseName}.apk")
                 }
                 zipAlignTask.conventionMapping.zipAlignExe = { androidBuilder.sdkInfo?.zipAlign }
 
                 appTask = zipAlignTask
                 outputFileTask = zipAlignTask
                 variantData.outputFile = project.file(
-                        "$project.buildDir/apk/${project.archivesBaseName}-${variantData.variantConfiguration.baseName}.apk")
+                        "$project.buildDir/${FD_OUTPUTS}/apk/${project.archivesBaseName}-${variantData.variantConfiguration.baseName}.apk")
             }
 
             // Add a task to install the application package
@@ -1741,7 +1749,7 @@ public abstract class BasePlugin {
             jacocoAgentTask = project.tasks.create("unzipJacocoAgent", Copy)
             jacocoAgentTask.from { project.configurations[JacocoPlugin.AGENT_CONFIGURATION_NAME].collect { project.zipTree(it) } }
             jacocoAgentTask.include FILE_JACOCO_AGENT
-            jacocoAgentTask.into "$project.buildDir/jacoco"
+            jacocoAgentTask.into "$project.buildDir/${FD_INTERMEDIATES}/jacoco"
         }
 
         return jacocoAgentTask
@@ -1800,10 +1808,10 @@ public abstract class BasePlugin {
         File outFile;
         if (variantData instanceof LibraryVariantData) {
             outFile = project.file(
-                    "${project.buildDir}/$DIR_BUNDLES/${variantData.variantConfiguration.dirName}/classes.jar")
+                    "${project.buildDir}/${FD_INTERMEDIATES}/$DIR_BUNDLES/${variantData.variantConfiguration.dirName}/classes.jar")
         } else {
             outFile = project.file(
-                    "${project.buildDir}/classes-proguard/${variantData.variantConfiguration.dirName}/classes.jar")
+                    "${project.buildDir}/${FD_INTERMEDIATES}/classes-proguard/${variantData.variantConfiguration.dirName}/classes.jar")
         }
 
         // --- Proguard Config ---
@@ -1817,7 +1825,7 @@ public abstract class BasePlugin {
                     "}")
 
             // input the mapping from the tested app so that we can deal with obfuscated code
-            proguardTask.applymapping("${project.buildDir}/proguard/${testedVariantData.variantConfiguration.dirName}/mapping.txt")
+            proguardTask.applymapping("${project.buildDir}/${FD_OUTPUTS}/proguard/${testedVariantData.variantConfiguration.dirName}/mapping.txt")
 
             // for tested app, we only care about their aapt config since the base
             // configs are the same files anyway.
@@ -1919,13 +1927,19 @@ public abstract class BasePlugin {
 
         proguardTask.outjars(outFile)
 
-        proguardTask.dump("${project.buildDir}/proguard/${variantData.variantConfiguration.dirName}/dump.txt")
-        proguardTask.printseeds(
-                "${project.buildDir}/proguard/${variantData.variantConfiguration.dirName}/seeds.txt")
-        proguardTask.printusage(
-                "${project.buildDir}/proguard/${variantData.variantConfiguration.dirName}/usage.txt")
-        proguardTask.printmapping(
-                "${project.buildDir}/proguard/${variantData.variantConfiguration.dirName}/mapping.txt")
+        final File proguardOut = project.file(
+                "${project.buildDir}/${FD_OUTPUTS}/proguard/${variantData.variantConfiguration.dirName}")
+
+        proguardTask.dump(new File(proguardOut, "dump.txt"))
+        proguardTask.printseeds(new File(proguardOut, "seeds.txt"))
+        proguardTask.printusage(new File(proguardOut, "usage.txt"))
+        proguardTask.printmapping(new File(proguardOut, "mapping.txt"))
+
+        // proguard doesn't verify that the seed/mapping/usage folders exist and will fail
+        // if they don't so create them.
+        proguardTask.doFirst {
+            proguardOut.mkdirs()
+        }
 
         return outFile
     }
@@ -2370,7 +2384,7 @@ public abstract class BasePlugin {
                         name += ":$artifact.classifier"
                     }
                     def explodedDir = project.file(
-                            "$project.rootProject.buildDir/exploded-aar/$path")
+                            "$project.rootProject.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
                     LibraryDependencyImpl adep = new LibraryDependencyImpl(
                             artifact.file, explodedDir, nestedBundles, name, artifact.classifier)
                     bundlesForThisModule << adep

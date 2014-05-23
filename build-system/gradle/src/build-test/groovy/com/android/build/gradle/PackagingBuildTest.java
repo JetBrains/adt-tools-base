@@ -16,6 +16,8 @@
 
 package com.android.build.gradle;
 
+import static com.android.build.gradle.BasePlugin.FD_OUTPUTS;
+
 import com.android.annotations.NonNull;
 
 import junit.framework.Test;
@@ -73,7 +75,7 @@ public class PackagingBuildTest extends BuildTest {
         File projectFolder = buildProject(projectName, BasePlugin.GRADLE_MIN_VERSION);
 
         // TODO replace with model access.
-        File apkFolder = new File(projectFolder, "build/apk");
+        File apkFolder = new File(projectFolder, "build/" + FD_OUTPUTS + "/apk");
 
         File apk = new File(apkFolder, projectName + "-debug-unaligned.apk");
 
