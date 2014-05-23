@@ -70,7 +70,6 @@ public interface ProductFlavor extends BaseConfig {
 
     /**
      * Returns the minSdkVersion. This is only the value set on this product flavor.
-     * TODO: make final minSdkVersion available through the model
      *
      * @return the minSdkVersion, or -1 if not specified
      */
@@ -78,7 +77,6 @@ public interface ProductFlavor extends BaseConfig {
 
     /**
      * Returns the targetSdkVersion. This is only the value set on this product flavor.
-     * TODO: make final targetSdkVersion available through the model
      *
      * @return the targetSdkVersion, or -1 if not specified
      */

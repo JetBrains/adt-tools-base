@@ -50,7 +50,7 @@ public class TestManifestGenerator {
             @NonNull File outputFile,
             @NonNull String packageName,
             @Nullable String minSdkVersion,
-            int targetSdkVersion,
+            @Nullable String targetSdkVersion,
             @NonNull String testedPackageName,
             @NonNull String testRunnerName,
             @NonNull Boolean handleProfiling,
@@ -58,7 +58,7 @@ public class TestManifestGenerator {
         mOutputFile = outputFile;
         mPackageName = packageName;
         mMinSdkVersion = minSdkVersion;
-        mTargetSdkVersion = targetSdkVersion != -1 ? Integer.toString(targetSdkVersion) : minSdkVersion;
+        mTargetSdkVersion = targetSdkVersion != null ? targetSdkVersion : minSdkVersion;
         mTestedPackageName = testedPackageName;
         mTestRunnerName = testRunnerName;
         mHandleProfiling = handleProfiling;
