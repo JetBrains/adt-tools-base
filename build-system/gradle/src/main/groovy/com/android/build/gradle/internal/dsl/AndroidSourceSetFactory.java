@@ -20,7 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import org.gradle.api.NamedDomainObjectFactory;
-import org.gradle.api.internal.file.FileResolver;
+import org.gradle.api.Project;
 import org.gradle.internal.reflect.Instantiator;
 
 /**
@@ -32,21 +32,21 @@ public class AndroidSourceSetFactory implements NamedDomainObjectFactory<Android
     @NonNull
     private final Instantiator instantiator;
     @NonNull
-    private final FileResolver fileResolver;
+    private final Project project;
 
     private final boolean isLibrary;
 
     public AndroidSourceSetFactory(@NonNull Instantiator instantiator,
-                                   @NonNull FileResolver fileResolver,
+                                   @NonNull Project project,
                                             boolean isLibrary) {
         this.instantiator = instantiator;
-        this.fileResolver = fileResolver;
         this.isLibrary = isLibrary;
+        this.project = project;
     }
 
     @Override
     public AndroidSourceSet create(String name) {
         return instantiator.newInstance(DefaultAndroidSourceSet.class,
-                name, fileResolver, isLibrary);
+                name, project, isLibrary);
     }
 }

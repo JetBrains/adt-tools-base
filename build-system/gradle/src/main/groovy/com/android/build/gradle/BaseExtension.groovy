@@ -119,7 +119,7 @@ public abstract class BaseExtension {
         jacoco = instantiator.newInstance(JacocoExtension.class)
 
         sourceSetsContainer = project.container(AndroidSourceSet,
-                new AndroidSourceSetFactory(instantiator, project.fileResolver, isLibrary))
+                new AndroidSourceSetFactory(instantiator, project, isLibrary))
 
         sourceSetsContainer.whenObjectAdded { AndroidSourceSet sourceSet ->
             ConfigurationContainer configurations = project.getConfigurations()
