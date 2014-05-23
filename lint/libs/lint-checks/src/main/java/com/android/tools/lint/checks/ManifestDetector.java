@@ -44,6 +44,7 @@ import static com.android.xml.AndroidManifest.NODE_METADATA;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.Variant;
@@ -503,17 +504,11 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             Variant variant = project.getCurrentVariant();
             if (variant != null) {
                 ProductFlavor flavor = variant.getMergedFlavor();
-                String gradleValue = null;
+                Object gradleValue = null;
                 if (ATTR_MIN_SDK_VERSION.equals(attributeName)) {
-                    int minSdkVersion = flavor.getMinSdkVersion();
-                    if (minSdkVersion >= 1) {
-                        gradleValue = Integer.toString(minSdkVersion);
-                    }
+                    gradleValue = flavor.getMinSdkVersion();
                 } else if (ATTR_TARGET_SDK_VERSION.equals(attributeName)) {
-                    int targetSdkVersion = flavor.getTargetSdkVersion();
-                    if (targetSdkVersion >= 1) {
-                        gradleValue = Integer.toString(targetSdkVersion);
-                    }
+                    gradleValue = flavor.getTargetSdkVersion();
                 } else if (ATTR_VERSION_CODE.equals(attributeName)) {
                     int versionCode = flavor.getVersionCode();
                     if (versionCode != -1) {
@@ -528,9 +523,13 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
                 if (gradleValue != null) {
                     String manifestValue = attribute.getValue();
+
+                    String gradleDisplay = gradleValue instanceof String ? (String) gradleValue :
+                            (((ApiVersion) gradleValue).getApiString());
+
                     String message = String.format("This %1$s value (%2$s) is not used; it is "
                             + "always overridden by the value specified in the Gradle build "
-                            + "script (%3$s)", attributeName,  manifestValue, gradleValue);
+                            + "script (%3$s)", attributeName,  manifestValue, gradleDisplay);
                     context.report(GRADLE_OVERRIDES, attribute, context.getLocation(attribute),
                             message, null);
                 }

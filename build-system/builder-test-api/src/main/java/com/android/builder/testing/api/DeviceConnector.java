@@ -79,6 +79,12 @@ public abstract class DeviceConnector implements IShellEnabledDevice {
     public abstract int getApiLevel();
 
     /**
+     * Returns the API codename for the device, or null if it's a release device.
+     * @return the API codename
+     */
+    public abstract String getApiCodeName();
+
+    /**
      * The device supported ABIs. This is in preferred order.
      * @return the list of supported ABIs
      */

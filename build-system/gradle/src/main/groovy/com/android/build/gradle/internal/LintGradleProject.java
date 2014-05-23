@@ -1,15 +1,15 @@
 package com.android.build.gradle.internal;
 
-import com.google.common.base.Charsets;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.google.common.io.Files;
+import static com.android.SdkConstants.APPCOMPAT_LIB_ARTIFACT;
+import static com.android.SdkConstants.SUPPORT_LIB_ARTIFACT;
+import static java.io.File.separatorChar;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.ProductFlavor;
@@ -21,6 +21,10 @@ import com.android.sdklib.AndroidVersion;
 import com.android.tools.lint.detector.api.Project;
 import com.android.utils.Pair;
 import com.android.utils.XmlUtils;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 
 import org.w3c.dom.Document;
 
@@ -31,10 +35,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
-import static com.android.SdkConstants.APPCOMPAT_LIB_ARTIFACT;
-import static com.android.SdkConstants.SUPPORT_LIB_ARTIFACT;
-import static java.io.File.separatorChar;
 
 /**
  * An implementation of Lint's {@link Project} class wrapping a Gradle model (project or
@@ -385,9 +385,10 @@ public class LintGradleProject extends Project {
 
         @Override
         public int getMinSdk() {
-            int minSdk = mProject.getDefaultConfig().getProductFlavor().getMinSdkVersion();
-            if (minSdk != -1) {
-                return minSdk;
+            ApiVersion minSdk = mProject.getDefaultConfig().getProductFlavor().getMinSdkVersion();
+            if (minSdk != null) {
+                // FIXME for codename support
+                return minSdk.getApiLevel();
             }
 
             return mMinSdk; // from manifest
@@ -395,12 +396,13 @@ public class LintGradleProject extends Project {
 
         @Override
         public int getTargetSdk() {
-            int targetSdk = mProject.getDefaultConfig().getProductFlavor().getTargetSdkVersion();
-            if (targetSdk != -1) {
-                return targetSdk;
+            ApiVersion targetSdk = mProject.getDefaultConfig().getProductFlavor().getTargetSdkVersion();
+            if (targetSdk != null) {
+                // FIXME for codename support
+                return targetSdk.getApiLevel();
             }
 
-            return targetSdk; // from manifest
+            return mTargetSdk; // from manifest
         }
 
         @Override

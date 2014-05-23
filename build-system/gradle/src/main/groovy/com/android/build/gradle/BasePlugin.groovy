@@ -98,6 +98,7 @@ import com.android.builder.internal.compiler.PreDexCache
 import com.android.builder.internal.testing.SimpleTestCallable
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
+import com.android.builder.model.ApiVersion
 import com.android.builder.model.ArtifactMetaData
 import com.android.builder.model.BuildType
 import com.android.builder.model.JavaArtifact
@@ -112,6 +113,7 @@ import com.android.builder.testing.ConnectedDeviceProvider
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
 import com.android.ide.common.internal.ExecutorSingleton
+import com.android.ide.common.sdk.SdkVersionInfo
 import com.android.utils.ILogger
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.ListMultimap
@@ -514,11 +516,11 @@ public abstract class BasePlugin {
         ProductFlavor mergedFlavor = config.mergedFlavor
 
         processManifestTask.conventionMapping.minSdkVersion = {
-            if (mergedFlavor.minSdkVersion >= 1) {
-                return Integer.toString(mergedFlavor.minSdkVersion)
+            if (androidBuilder.isPreviewTarget()) {
+                return androidBuilder.getTargetCodename()
             }
 
-            return null
+            mergedFlavor.minSdkVersion?.apiString
         }
 
         processManifestTask.conventionMapping.targetSdkVersion = {
@@ -526,11 +528,7 @@ public abstract class BasePlugin {
                 return androidBuilder.getTargetCodename()
             }
 
-            if (mergedFlavor.targetSdkVersion >= 1) {
-                return Integer.toString(mergedFlavor.targetSdkVersion)
-            }
-
-            return null
+            return mergedFlavor.targetSdkVersion?.apiString
         }
 
         processManifestTask.conventionMapping.manifestOutputFile = {
@@ -576,11 +574,11 @@ public abstract class BasePlugin {
             config.versionCode
         }
         processManifestTask.conventionMapping.minSdkVersion = {
-            if (mergedFlavor.minSdkVersion >= 1) {
-                return Integer.toString(mergedFlavor.minSdkVersion)
+            if (androidBuilder.isPreviewTarget()) {
+                return androidBuilder.getTargetCodename()
             }
 
-            return null
+            mergedFlavor.minSdkVersion?.apiString
         }
 
         processManifestTask.conventionMapping.targetSdkVersion = {
@@ -588,11 +586,7 @@ public abstract class BasePlugin {
                 return androidBuilder.getTargetCodename()
             }
 
-            if (mergedFlavor.targetSdkVersion >= 1) {
-                return Integer.toString(mergedFlavor.targetSdkVersion)
-            }
-
-            return null
+            return mergedFlavor.targetSdkVersion?.apiString
         }
         processManifestTask.conventionMapping.manifestOutputFile = {
             project.file(
@@ -624,22 +618,18 @@ public abstract class BasePlugin {
             config.packageName
         }
         processTestManifestTask.conventionMapping.minSdkVersion = {
-            if (config.minSdkVersion >= 1) {
-                return Integer.toString(config.minSdkVersion)
+            if (androidBuilder.isPreviewTarget()) {
+                return androidBuilder.getTargetCodename()
             }
 
-            return null
+            config.minSdkVersion?.apiString
         }
         processTestManifestTask.conventionMapping.targetSdkVersion = {
             if (androidBuilder.isPreviewTarget()) {
                 return androidBuilder.getTargetCodename()
             }
 
-            if (config.targetSdkVersion >= 1) {
-                return Integer.toString(config.targetSdkVersion)
-            }
-
-            return null
+            return config.targetSdkVersion?.apiString
         }
         processTestManifestTask.conventionMapping.testedPackageName = {
             config.testedPackageName
@@ -689,8 +679,17 @@ public abstract class BasePlugin {
 
         renderscriptTask.conventionMapping.targetApi = {
             int targetApi = mergedFlavor.renderscriptTargetApi
-            int minSdk = config.getMinSdkVersion()
-            targetApi > minSdk ? targetApi : minSdk
+            ApiVersion apiVersion = config.getMinSdkVersion()
+            if (apiVersion != null) {
+                int minSdk = apiVersion.apiLevel
+                if (apiVersion.codename != null) {
+                    minSdk = SdkVersionInfo.getApiByBuildCode(apiVersion.codename, true)
+                }
+
+                return targetApi > minSdk ? targetApi : minSdk
+            }
+
+            return targetApi
         }
 
         renderscriptTask.supportMode = mergedFlavor.renderscriptSupportMode

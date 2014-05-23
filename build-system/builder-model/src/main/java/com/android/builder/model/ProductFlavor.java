@@ -71,16 +71,18 @@ public interface ProductFlavor extends BaseConfig {
     /**
      * Returns the minSdkVersion. This is only the value set on this product flavor.
      *
-     * @return the minSdkVersion, or -1 if not specified
+     * @return the minSdkVersion, or null if not specified
      */
-    int getMinSdkVersion();
+    @Nullable
+    ApiVersion getMinSdkVersion();
 
     /**
      * Returns the targetSdkVersion. This is only the value set on this product flavor.
      *
-     * @return the targetSdkVersion, or -1 if not specified
+     * @return the targetSdkVersion, or null if not specified
      */
-    int getTargetSdkVersion();
+    @Nullable
+    ApiVersion getTargetSdkVersion();
 
     /**
      * Returns the renderscript target api. This is only the value set on this product flavor.
