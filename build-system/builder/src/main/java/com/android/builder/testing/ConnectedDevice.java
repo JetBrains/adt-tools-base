@@ -107,11 +107,11 @@ public class ConnectedDevice extends DeviceConnector {
             iDevice.pullFile(remote, local);
 
         } catch (TimeoutException e) {
-            throw new IOException(e);
+            throw new IOException(String.format("Failed to pull %s from device", remote), e);
         } catch (AdbCommandRejectedException e) {
-            throw new IOException(e);
+            throw new IOException(String.format("Failed to pull %s from device", remote), e);
         } catch (SyncException e) {
-            throw new IOException(e);
+            throw new IOException(String.format("Failed to pull %s from device", remote), e);
         }
     }
 

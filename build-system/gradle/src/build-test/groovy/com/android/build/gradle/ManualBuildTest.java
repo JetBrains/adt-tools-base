@@ -16,6 +16,9 @@
 
 package com.android.build.gradle;
 
+import static com.android.build.gradle.BasePlugin.FD_INTERMEDIATES;
+import static com.android.build.gradle.BasePlugin.FD_OUTPUTS;
+
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -47,7 +50,7 @@ public class ManualBuildTest extends BuildTest {
 
     public void testOverlay1Content() throws Exception {
         File project = buildProject("overlay1", BasePlugin.GRADLE_MIN_VERSION);
-        File drawableOutput = new File(project, "build/res/all/debug/drawable");
+        File drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/debug/drawable");
 
         checkImageColor(drawableOutput, "no_overlay.png", GREEN);
         checkImageColor(drawableOutput, "type_overlay.png", GREEN);
@@ -55,7 +58,7 @@ public class ManualBuildTest extends BuildTest {
 
     public void testOverlay2Content() throws Exception {
         File project = buildProject("overlay2", BasePlugin.GRADLE_MIN_VERSION);
-        File drawableOutput = new File(project, "build/res/all/one/debug/drawable");
+        File drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/one/debug/drawable");
 
         checkImageColor(drawableOutput, "no_overlay.png", GREEN);
         checkImageColor(drawableOutput, "type_overlay.png", GREEN);
@@ -66,7 +69,7 @@ public class ManualBuildTest extends BuildTest {
 
     public void testOverlay3Content() throws Exception {
         File project = buildProject("overlay3", BasePlugin.GRADLE_MIN_VERSION);
-        File drawableOutput = new File(project, "build/res/all/freebeta/debug/drawable");
+        File drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/freebeta/debug/drawable");
 
         checkImageColor(drawableOutput, "no_overlay.png", GREEN);
         checkImageColor(drawableOutput, "debug_overlay.png", GREEN);
@@ -76,7 +79,7 @@ public class ManualBuildTest extends BuildTest {
         checkImageColor(drawableOutput, "free_beta_debug_overlay.png", GREEN);
         checkImageColor(drawableOutput, "free_normal_overlay.png", RED);
 
-        drawableOutput = new File(project, "build/res/all/freenormal/debug/drawable");
+        drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/freenormal/debug/drawable");
 
         checkImageColor(drawableOutput, "no_overlay.png", GREEN);
         checkImageColor(drawableOutput, "debug_overlay.png", GREEN);
@@ -86,7 +89,7 @@ public class ManualBuildTest extends BuildTest {
         checkImageColor(drawableOutput, "free_beta_debug_overlay.png", RED);
         checkImageColor(drawableOutput, "free_normal_overlay.png", GREEN);
 
-        drawableOutput = new File(project, "build/res/all/paidbeta/debug/drawable");
+        drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/paidbeta/debug/drawable");
 
         checkImageColor(drawableOutput, "no_overlay.png", GREEN);
         checkImageColor(drawableOutput, "debug_overlay.png", GREEN);
@@ -118,7 +121,7 @@ public class ManualBuildTest extends BuildTest {
 
     public void testLibsManifestMerging() throws Exception {
         File project = new File(testDir, "libsTest");
-        File fileOutput = new File(project, "libapp/build/bundles/release/AndroidManifest.xml");
+        File fileOutput = new File(project, "libapp/build/" + FD_INTERMEDIATES + "/bundles/release/AndroidManifest.xml");
 
         runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
                 project, "clean", "build");
@@ -128,7 +131,7 @@ public class ManualBuildTest extends BuildTest {
     // test whether a library project has its fields ProGuarded
     public void testLibProguard() throws Exception {
         File project = new File(testDir, "libProguard");
-        File fileOutput = new File(project, "build/proguard/release");
+        File fileOutput = new File(project, "build/" + FD_OUTPUTS + "/proguard/release");
 
         runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
           project, "clean", "build");
@@ -139,8 +142,8 @@ public class ManualBuildTest extends BuildTest {
     // test whether proguard.txt has been correctly merged
     public void testLibProguardConsumerFile() throws Exception {
         File project = new File(testDir, "libProguardConsumerFiles");
-        File debugFileOutput = new File(project, "build/bundles/debug");
-        File releaseFileOutput = new File(project, "build/bundles/release");
+        File debugFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/bundles/debug");
+        File releaseFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/bundles/release");
 
         runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
             project, "clean", "build");
@@ -150,7 +153,7 @@ public class ManualBuildTest extends BuildTest {
 
     public void testAnnotations() throws Exception {
         File project = new File(testDir, "extractAnnotations");
-        File debugFileOutput = new File(project, "build/bundles/debug");
+        File debugFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/bundles/debug");
 
         runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
                 project, "clean", "extractDebugAnnotations");
