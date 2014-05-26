@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle
+
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.api.AndroidSourceSet
@@ -51,6 +52,7 @@ import com.android.build.gradle.internal.tasks.CheckManifest
 import com.android.build.gradle.internal.tasks.DependencyReportTask
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestLibraryTask
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
+import com.android.build.gradle.internal.tasks.GenerateApkDataTask
 import com.android.build.gradle.internal.tasks.InstallTask
 import com.android.build.gradle.internal.tasks.OutputFileTask
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask
@@ -151,6 +153,7 @@ import proguard.gradle.ProGuardTask
 import java.util.jar.Attributes
 import java.util.jar.Manifest
 
+import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML
 import static com.android.builder.BuilderConstants.ANDROID_TEST
 import static com.android.builder.BuilderConstants.CONNECTED
 import static com.android.builder.BuilderConstants.DEBUG
@@ -232,7 +235,6 @@ public abstract class BasePlugin {
 
     protected abstract Class<? extends BaseExtension> getExtensionClass()
     protected abstract VariantFactory getVariantFactory()
-    protected abstract void doCreateAndroidTasks()
 
     public Instantiator getInstantiator() {
         return instantiator
@@ -413,7 +415,7 @@ public abstract class BasePlugin {
             }
         }
 
-        doCreateAndroidTasks()
+        variantManager.createAndroidTasks()
         createReportTasks()
 
         if (lintVital != null) {
@@ -494,7 +496,7 @@ public abstract class BasePlugin {
     }
 
     public void createProcessManifestTask(BaseVariantData variantData,
-                                             String manifestOutDir) {
+                                          String manifestOutDir) {
         if (extension.getUseOldManifestMerger()) {
             createOldProcessManifestTask(variantData, manifestOutDir);
             return;
@@ -510,7 +512,15 @@ public abstract class BasePlugin {
         processManifestTask.dependsOn variantData.prepareDependenciesTask
         processManifestTask.variantConfiguration = config
         processManifestTask.conventionMapping.libraries = {
-            getManifestDependencies(config.directLibraries)
+            List<ManifestDependencyImpl> manifests = getManifestDependencies(config.directLibraries)
+
+            if (variantData.generateApkDataTask != null) {
+                manifests.add(new ManifestDependencyImpl(
+                        variantData.generateApkDataTask.getManifestFile(),
+                        Collections.emptyList()))
+            }
+
+            return manifests
         }
 
         ProductFlavor mergedFlavor = config.mergedFlavor
@@ -746,9 +756,12 @@ public abstract class BasePlugin {
         mergeResourcesTask.conventionMapping.useAaptCruncher = { extension.aaptOptions.useAaptPngCruncher }
 
         mergeResourcesTask.conventionMapping.inputResourceSets = {
-            variantData.variantConfiguration.getResourceSets(
-                    [ variantData.renderscriptCompileTask.getResOutputDir(),
-                            variantData.generateResValuesTask.getResOutputDir() ],
+            def generatedResFolders = [ variantData.renderscriptCompileTask.getResOutputDir(),
+                                        variantData.generateResValuesTask.getResOutputDir() ]
+            if (variantData.generateApkDataTask != null) {
+                generatedResFolders.add(variantData.generateApkDataTask.getResOutputDir())
+            }
+            variantData.variantConfiguration.getResourceSets(generatedResFolders,
                     includeDependencies)
         }
 
@@ -758,24 +771,30 @@ public abstract class BasePlugin {
     }
 
     public void createMergeAssetsTask(@NonNull BaseVariantData variantData,
-                                         @Nullable String outputLocation,
-                                         final boolean includeDependencies) {
+                                      @Nullable String outputLocation,
+                                      final boolean includeDependencies) {
         if (outputLocation == null) {
             outputLocation = "$project.buildDir/${FD_INTERMEDIATES}/assets/${variantData.variantConfiguration.dirName}"
         }
 
+        VariantConfiguration variantConfig = variantData.variantConfiguration
+
         def mergeAssetsTask = project.tasks.create(
-                "merge${variantData.variantConfiguration.fullName.capitalize()}Assets",
+                "merge${variantConfig.fullName.capitalize()}Assets",
                 MergeAssets)
         variantData.mergeAssetsTask = mergeAssetsTask
 
-        mergeAssetsTask.dependsOn variantData.prepareDependenciesTask
+        mergeAssetsTask.dependsOn variantData.prepareDependenciesTask, variantData.assetGenTask
         mergeAssetsTask.plugin = this
         mergeAssetsTask.incrementalFolder =
-                project.file("$project.buildDir/${FD_INTERMEDIATES}/incremental/mergeAssets/${variantData.variantConfiguration.dirName}")
+                project.file("$project.buildDir/${FD_INTERMEDIATES}/incremental/mergeAssets/${variantConfig.dirName}")
 
         mergeAssetsTask.conventionMapping.inputAssetSets = {
-            variantData.variantConfiguration.getAssetSets(includeDependencies)
+            def generatedAssets = []
+            if (variantData.copyApkTask != null) {
+                generatedAssets.add(variantData.copyApkTask.destinationDir)
+            }
+            variantConfig.getAssetSets(generatedAssets, includeDependencies)
         }
         mergeAssetsTask.conventionMapping.outputDir = { project.file(outputLocation) }
     }
@@ -1031,6 +1050,54 @@ public abstract class BasePlugin {
         }
     }
 
+    public void createCopyMicroApkTask(@NonNull BaseVariantData variantData,
+                                       @NonNull Configuration config) {
+        Copy copyTask = project.tasks.create("copy${variantData.variantConfiguration.fullName.capitalize()}MicroApk",
+                Copy)
+        variantData.copyApkTask = copyTask
+
+        File outDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/${FD_GENERATED}/assets/microapk/${variantData.variantConfiguration.dirName}")
+
+        copyTask.from { config.getFiles() }
+        copyTask.into { outDir }
+
+        // make sure the destination folder is empty first
+        copyTask.doFirst {
+            outDir.deleteDir()
+            outDir.mkdirs()
+        }
+
+        copyTask.dependsOn config
+        variantData.assetGenTask.dependsOn copyTask
+    }
+
+    public void createGenerateMicroApkDataTask(@NonNull BaseVariantData variantData,
+                                               @NonNull Configuration config) {
+        GenerateApkDataTask task = project.tasks.create(
+                "generate${variantData.variantConfiguration.fullName.capitalize()}ApkData",
+                GenerateApkDataTask)
+
+        variantData.generateApkDataTask = task
+
+        task.plugin = this
+        task.conventionMapping.resOutputDir = {
+            project.file("$project.buildDir/${FD_GENERATED}/res/microapk/${variantData.variantConfiguration.dirName}")
+        }
+        task.conventionMapping.apkFile = {
+            // only care about the first one. There shouldn't be more anyway.
+            config.getFiles().iterator().next()
+        }
+        task.conventionMapping.manifestFile = {
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/${FD_GENERATED}/manifests/microapk/${variantData.variantConfiguration.dirName}/${FN_ANDROID_MANIFEST_XML}")
+        }
+        task.conventionMapping.mainPkgName = {
+            variantData.variantConfiguration.getPackageName()
+        }
+
+        task.dependsOn config
+        variantData.resourceGenTask.dependsOn task
+    }
+
     public void createNdkTasks(@NonNull BaseVariantData variantData) {
         NdkCompile ndkCompile = project.tasks.create(
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Ndk",
@@ -1085,7 +1152,7 @@ public abstract class BasePlugin {
      * @param configDependencies the list of config dependencies
      */
     public void createTestApkTasks(@NonNull TestVariantData variantData,
-                                      @NonNull BaseVariantData testedVariantData) {
+                                   @NonNull BaseVariantData testedVariantData) {
         createAnchorTasks(variantData)
 
         // Add a task to process the manifest
@@ -1996,6 +2063,8 @@ public abstract class BasePlugin {
         // and resGenTask
         variantData.resourceGenTask = project.tasks.create(
                 "generate${variantData.variantConfiguration.fullName.capitalize()}Resources")
+        variantData.assetGenTask = project.tasks.create(
+                "generate${variantData.variantConfiguration.fullName.capitalize()}Assets")
     }
 
     public void createCheckManifestTask(@NonNull BaseVariantData variantData) {

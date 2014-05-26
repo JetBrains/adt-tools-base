@@ -22,6 +22,7 @@ import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.StringHelper;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.tasks.CheckManifest;
+import com.android.build.gradle.internal.tasks.GenerateApkDataTask;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
@@ -59,6 +60,7 @@ public abstract class BaseVariantData {
     public PrepareDependenciesTask prepareDependenciesTask;
     public Task sourceGenTask;
     public Task resourceGenTask;
+    public Task assetGenTask;
     public CheckManifest checkManifestTask;
 
     public ProcessManifest processManifestTask;
@@ -69,6 +71,8 @@ public abstract class BaseVariantData {
     public ProcessAndroidResources processResourcesTask;
     public GenerateBuildConfig generateBuildConfigTask;
     public GenerateResValues generateResValuesTask;
+    public Copy copyApkTask;
+    public GenerateApkDataTask generateApkDataTask;
 
     public JavaCompile javaCompileTask;
     public Task obfuscationTask;

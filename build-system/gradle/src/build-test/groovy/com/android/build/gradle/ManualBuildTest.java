@@ -29,6 +29,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarInputStream;
@@ -248,6 +249,18 @@ public class ManualBuildTest extends BuildTest {
                 new File(testDir, "3rdPartyTests"), "clean", "deviceCheck");
     }
 
+    public void testEmbedded() throws Exception {
+        File project = new File(testDir, "embedded");
+
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
+                project, "clean", ":main:assembleRelease");
+
+        File mainApk = new File(project, "main/build/" + FD_OUTPUTS + "/apk/main-release-unsigned.apk");
+
+        checkJar(mainApk, Collections.<String,
+                String>singletonMap("assets/embedded-release-unsigned.apk", null));
+    }
+
     private static void checkImageColor(File folder, String fileName, int expectedColor)
             throws IOException {
         File f = new File(folder, fileName);
@@ -286,6 +299,7 @@ public class ManualBuildTest extends BuildTest {
             ZipEntry entry = zis.getNextEntry();
             while (entry != null) {
                 String name = entry.getName();
+
                 String expected = pathToContents.get(name);
                 if (expected != null) {
                     notFound.remove(name);
@@ -297,6 +311,8 @@ public class ManualBuildTest extends BuildTest {
                                     expected, contents);
                         }
                     }
+                } else if (pathToContents.keySet().contains(name)) {
+                    notFound.remove(name);
                 }
                 entry = zis.getNextEntry();
             }
