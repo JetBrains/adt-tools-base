@@ -16,7 +16,7 @@
 
 package com.android.build.gradle;
 
-import static com.android.build.gradle.BasePlugin.FD_OUTPUTS;
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
 import com.android.annotations.NonNull;
 
