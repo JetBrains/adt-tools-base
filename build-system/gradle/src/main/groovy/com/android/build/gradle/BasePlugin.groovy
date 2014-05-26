@@ -161,6 +161,9 @@ import static com.android.builder.BuilderConstants.FD_FLAVORS_ALL
 import static com.android.builder.BuilderConstants.FD_REPORTS
 import static com.android.builder.BuilderConstants.RELEASE
 import static com.android.builder.VariantConfiguration.Type.TEST
+import static com.android.builder.model.AndroidProject.FD_GENERATED
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 import static java.io.File.separator
 /**
  * Base class for all Android plugins
@@ -176,11 +179,6 @@ public abstract class BasePlugin {
     public static File TEST_SDK_DIR;
 
     public static final String FILE_JACOCO_AGENT = 'jacocoagent.jar'
-
-    public final static String FD_INTERMEDIATES = "intermediates";
-    public final static String FD_OUTPUTS = "outputs";
-    public final static String FD_GENERATED = "generated";
-
 
     protected Instantiator instantiator
     private ToolingModelBuilderRegistry registry

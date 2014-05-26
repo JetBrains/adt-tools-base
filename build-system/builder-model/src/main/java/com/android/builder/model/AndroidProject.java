@@ -32,6 +32,10 @@ public interface AndroidProject {
     public static final String ARTIFACT_MAIN = "_main_";
     public static final String ARTIFACT_ANDROID_TEST = "_android_test_";
 
+    public static final String FD_INTERMEDIATES = "intermediates";
+    public static final String FD_OUTPUTS = "outputs";
+    public static final String FD_GENERATED = "generated";
+
     /**
      * Returns the model version. This is a string in the format X.Y.Z
      *

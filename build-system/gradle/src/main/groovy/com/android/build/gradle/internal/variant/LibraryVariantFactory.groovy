@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.internal.variant
+
 import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
@@ -45,8 +46,8 @@ import org.gradle.tooling.BuildException
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP
 import static com.android.SdkConstants.LIBS_FOLDER
 import static com.android.build.gradle.BasePlugin.DIR_BUNDLES
-import static com.android.build.gradle.BasePlugin.FD_INTERMEDIATES
-import static com.android.build.gradle.BasePlugin.FD_OUTPUTS
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 
 /**
  */
