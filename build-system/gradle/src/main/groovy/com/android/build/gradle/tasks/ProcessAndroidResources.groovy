@@ -75,6 +75,9 @@ public class ProcessAndroidResources extends IncrementalTask {
     @Input
     boolean debuggable
 
+    @Input
+    boolean pseudoLocalesEnabled
+
     @Nested
     AaptOptionsImpl aaptOptions
 
@@ -99,6 +102,7 @@ public class ProcessAndroidResources extends IncrementalTask {
                 getProguardOutputFile()?.absolutePath,
                 getType(),
                 getDebuggable(),
+                getPseudoLocalesEnabled(),
                 getAaptOptions(),
                 getResourceConfigs(),
                 getEnforceUniquePackageName(),

@@ -787,6 +787,7 @@ public class AndroidBuilder {
             @Nullable String proguardOutput,
                       VariantConfiguration.Type type,
                       boolean debuggable,
+                      boolean pseudoLocalesEnabled,
             @NonNull  AaptOptions options,
             @NonNull  Collection<String> resourceConfigs,
                       boolean enforceUniquePackageName,
@@ -875,6 +876,14 @@ public class AndroidBuilder {
             command.add("--debug-mode");
         }
 
+        if (pseudoLocalesEnabled) {
+            if (buildToolInfo.getRevision().getMajor() >= 21) {
+                command.add("--pseudo-localize");
+            } else {
+                throw new RuntimeException(
+                    "Pseudolocalization is only available since Build Tools version 21.0.0, please upgrade or turn it off.");
+            }
+        }
 
         if (type != VariantConfiguration.Type.TEST) {
             if (packageForR != null) {
