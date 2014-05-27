@@ -33,7 +33,7 @@ import java.util.Set;
 /** Registry which provides a list of checks to be performed on an Android project */
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
-    static final int INITIAL_CAPACITY = 195;
+    static final int INITIAL_CAPACITY = 196;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -59,6 +59,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(CheckPermissionDetector.ISSUE);
         issues.add(ChildCountDetector.ADAPTER_VIEW_ISSUE);
         issues.add(ChildCountDetector.SCROLLVIEW_ISSUE);
+        issues.add(CipherGetInstanceDetector.ISSUE);
         issues.add(CleanupDetector.COMMIT_FRAGMENT);
         issues.add(CleanupDetector.RECYCLE_RESOURCE);
         issues.add(ClickableViewAccessibilityDetector.ISSUE);
