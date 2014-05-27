@@ -37,7 +37,7 @@ public class TestManifestGenerator {
     private static final String PH_HANDLE_PROFILING = "#HANDLEPROFILING#";
     private static final String PH_FUNCTIONAL_TEST = "#FUNCTIONALTEST#";
 
-    private final String mOutputFile;
+    private final File mOutputFile;
     private final String mPackageName;
     private final String mMinSdkVersion;
     private final String mTargetSdkVersion;
@@ -46,14 +46,15 @@ public class TestManifestGenerator {
     private final boolean mHandleProfiling;
     private final boolean mFunctionalTest;
 
-    public TestManifestGenerator(@NonNull String outputFile,
-                          @NonNull String packageName,
-                          @Nullable String minSdkVersion,
-                          int targetSdkVersion,
-                          @NonNull String testedPackageName,
-                          @NonNull String testRunnerName,
-                          @NonNull Boolean handleProfiling,
-                          @NonNull Boolean functionalTest) {
+    public TestManifestGenerator(
+            @NonNull File outputFile,
+            @NonNull String packageName,
+            @Nullable String minSdkVersion,
+            int targetSdkVersion,
+            @NonNull String testedPackageName,
+            @NonNull String testRunnerName,
+            @NonNull Boolean handleProfiling,
+            @NonNull Boolean functionalTest) {
         mOutputFile = outputFile;
         mPackageName = packageName;
         mMinSdkVersion = minSdkVersion;
@@ -78,6 +79,6 @@ public class TestManifestGenerator {
                 TestManifestGenerator.class.getResourceAsStream(TEMPLATE),
                 map);
 
-        processor.generate(new File(mOutputFile));
+        processor.generate(mOutputFile);
     }
 }

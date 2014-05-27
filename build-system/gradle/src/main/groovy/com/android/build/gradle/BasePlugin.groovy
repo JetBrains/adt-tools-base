@@ -1539,7 +1539,7 @@ public abstract class BasePlugin {
                 }
                 preDexTask.conventionMapping.outputFolder = {
                     project.file(
-                            "${project.buildDir}/pre-dexed/${variantData.variantConfiguration.dirName}")
+                            "${project.buildDir}/${FD_INTERMEDIATES}/pre-dexed/${variantData.variantConfiguration.dirName}")
                 }
 
                 if (agentTask != null) {

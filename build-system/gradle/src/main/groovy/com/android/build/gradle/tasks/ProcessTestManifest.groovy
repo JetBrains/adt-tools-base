@@ -80,7 +80,7 @@ public class ProcessTestManifest extends ProcessManifest {
                 getHandleProfiling(),
                 getFunctionalTest(),
                 getLibraries(),
-                getManifestOutputFile().absolutePath)
+                getManifestOutputFile())
     }
 
 }
