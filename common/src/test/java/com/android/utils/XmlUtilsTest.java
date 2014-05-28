@@ -19,6 +19,7 @@ import static com.android.SdkConstants.XMLNS;
 
 import com.android.SdkConstants;
 import com.android.annotations.Nullable;
+import com.google.common.base.Charsets;
 
 import junit.framework.TestCase;
 
@@ -29,6 +30,12 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
 import java.io.StringReader;
 import java.util.Locale;
 
@@ -325,5 +332,102 @@ public class XmlUtilsTest extends TestCase {
         } finally {
             Locale.setDefault(originalDefaultLocale);
         }
+    }
+
+    public void testGetUtfReader() throws IOException {
+        File file = File.createTempFile(getName(), SdkConstants.DOT_XML);
+
+        BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
+        OutputStreamWriter writer = new OutputStreamWriter(stream, Charsets.UTF_8);
+        try {
+            stream.write(0xef);
+            stream.write(0xbb);
+            stream.write(0xbf);
+            writer.write("OK");
+        } finally {
+            writer.close();
+        }
+
+        Reader reader = XmlUtils.getUtfReader(file);
+        assertEquals('O', reader.read());
+        assertEquals('K', reader.read());
+        assertEquals(-1, reader.read());
+
+        //noinspection ResultOfMethodCallIgnored
+        file.delete();
+    }
+
+    public void testStripBom() {
+        assertEquals("", XmlUtils.stripBom(""));
+        assertEquals("Hello", XmlUtils.stripBom("Hello"));
+        assertEquals("Hello", XmlUtils.stripBom("\uFEFFHello"));
+    }
+
+    public void testParseDocument() throws Exception {
+        String xml = "" +
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+                "    android:layout_width=\"match_parent\"\n" +
+                "    android:layout_height=\"wrap_content\"\n" +
+                "    android:orientation=\"vertical\" >\n" +
+                "\n" +
+                "    <Button\n" +
+                "        android:id=\"@+id/button1\"\n" +
+                "        android:layout_width=\"wrap_content\"\n" +
+                "        android:layout_height=\"wrap_content\"\n" +
+                "        android:text=\"Button\" />\n" +
+                "          some text\n" +
+                "\n" +
+                "</LinearLayout>\n";
+
+        Document document = XmlUtils.parseDocument(xml, true);
+        assertNotNull(document);
+        assertNotNull(document.getDocumentElement());
+        assertEquals("LinearLayout", document.getDocumentElement().getTagName());
+
+        // Add BOM
+        xml = '\uFEFF' + xml;
+        document = XmlUtils.parseDocument(xml, true);
+        assertNotNull(document);
+        assertNotNull(document.getDocumentElement());
+        assertEquals("LinearLayout", document.getDocumentElement().getTagName());
+    }
+
+    public void testParseUtfXmlFile() throws Exception {
+        File file = File.createTempFile(getName(), SdkConstants.DOT_XML);
+        String xml = "" +
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+                "    android:layout_width=\"match_parent\"\n" +
+                "    android:layout_height=\"wrap_content\"\n" +
+                "    android:orientation=\"vertical\" >\n" +
+                "\n" +
+                "    <Button\n" +
+                "        android:id=\"@+id/button1\"\n" +
+                "        android:layout_width=\"wrap_content\"\n" +
+                "        android:layout_height=\"wrap_content\"\n" +
+                "        android:text=\"Button\" />\n" +
+                "          some text\n" +
+                "\n" +
+                "</LinearLayout>\n";
+
+        BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
+        OutputStreamWriter writer = new OutputStreamWriter(stream, Charsets.UTF_8);
+        try {
+            stream.write(0xef);
+            stream.write(0xbb);
+            stream.write(0xbf);
+            writer.write(xml);
+        } finally {
+            writer.close();
+        }
+
+        Document document = XmlUtils.parseUtfXmlFile(file, true);
+        assertNotNull(document);
+        assertNotNull(document.getDocumentElement());
+        assertEquals("LinearLayout", document.getDocumentElement().getTagName());
+
+        //noinspection ResultOfMethodCallIgnored
+        file.delete();
     }
 }

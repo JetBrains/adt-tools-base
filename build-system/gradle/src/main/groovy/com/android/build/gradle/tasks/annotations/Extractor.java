@@ -29,9 +29,12 @@ import static com.android.SdkConstants.SUPPORT_ANNOTATIONS_PREFIX;
 import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
 import static com.android.SdkConstants.TYPE_DEF_VALUE_ATTRIBUTE;
 import static com.android.SdkConstants.VALUE_TRUE;
+import static com.android.tools.lint.detector.api.LintUtils.assertionsEnabled;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.detector.api.LintUtils;
+import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -98,9 +101,6 @@ import java.util.jar.JarOutputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * Annotation extractor which looks for annotations in parsed compilation units and writes
@@ -682,11 +682,13 @@ public class Extractor {
                         String xml = stringWriter.toString();
 
                         // Validate
-                        Document document = checkDocument(xml, false);
-                        if (document == null) {
-                            error("Could not parse XML document  back in for entry " + name
-                                    + ": invalid XML?\n\"\"\"\n" + xml + "\n\"\"\"\n");
-                            return false;
+                        if (assertionsEnabled()) {
+                            Document document = checkDocument(xml, false);
+                            if (document == null) {
+                                error("Could not parse XML document back in for entry " + name
+                                        + ": invalid XML?\n\"\"\"\n" + xml + "\n\"\"\"\n");
+                                return false;
+                            }
                         }
 
                         byte[] bytes = xml.getBytes(Charsets.UTF_8);
@@ -797,13 +799,8 @@ public class Extractor {
 
     @Nullable
     private static Document checkDocument(@NonNull String xml, boolean namespaceAware) {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        InputSource is = new InputSource(new StringReader(xml));
-        factory.setNamespaceAware(namespaceAware);
-        factory.setValidating(false);
         try {
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            return builder.parse(is);
+            return XmlUtils.parseDocument(xml, namespaceAware);
         } catch (SAXException sax) {
             warning(sax.toString());
         } catch (Exception e) {
@@ -862,13 +859,8 @@ public class Extractor {
     }
 
     private void mergeAnnotationsXml(@NonNull String xml) {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        InputSource is = new InputSource(new StringReader(xml));
-        factory.setNamespaceAware(false);
-        factory.setValidating(false);
         try {
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(is);
+            Document document = XmlUtils.parseDocument(xml, false);
             mergeDocument(document);
         } catch (Exception e) {
             warning(e.toString());

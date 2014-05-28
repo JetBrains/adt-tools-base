@@ -20,26 +20,23 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.xml.XmlPrettyPrinter;
+import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -343,16 +340,8 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             return false;
         }
 
-        InputStreamReader reader = null;
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            reader = new InputStreamReader(new FileInputStream(file), Charsets.UTF_8);
-            InputSource is = new InputSource(reader);
-            factory.setNamespaceAware(true);
-            factory.setValidating(false);
-
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(is);
+            Document document = XmlUtils.parseUtfXmlFile(file, true /*namespaceAware*/);
 
             // get the root node
             Node rootNode = document.getDocumentElement();
@@ -408,8 +397,6 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             throw new MergingException(e).setFile(file);
         } catch (SAXException e) {
             throw new MergingException(e).setFile(file);
-        } finally {
-            Closeables.closeQuietly(reader);
         }
     }
 

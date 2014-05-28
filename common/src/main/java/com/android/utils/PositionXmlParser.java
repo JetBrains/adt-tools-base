@@ -113,6 +113,7 @@ public class PositionXmlParser {
     public Document parse(@NonNull byte[] data)
             throws ParserConfigurationException, SAXException, IOException {
         String xml = getXmlString(data);
+        xml = XmlUtils.stripBom(xml);
         return parse(xml, new InputSource(new StringReader(xml)), true);
     }
 
@@ -131,6 +132,7 @@ public class PositionXmlParser {
     @Nullable
     public Document parse(@NonNull String xml)
             throws ParserConfigurationException, SAXException, IOException {
+        xml = XmlUtils.stripBom(xml);
         return parse(xml, new InputSource(new StringReader(xml)), true);
     }
 
