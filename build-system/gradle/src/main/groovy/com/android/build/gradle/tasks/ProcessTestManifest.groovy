@@ -33,8 +33,8 @@ public class ProcessTestManifest extends ProcessManifest {
     @Input @Optional
     String minSdkVersion
 
-    @Input
-    int targetSdkVersion
+    @Input @Optional
+    String targetSdkVersion
 
     @Input
     String testedPackageName

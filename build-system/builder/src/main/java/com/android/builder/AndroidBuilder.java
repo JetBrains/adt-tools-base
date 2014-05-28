@@ -380,7 +380,7 @@ public class AndroidBuilder {
             int versionCode,
             String versionName,
             @Nullable String minSdkVersion,
-            int targetSdkVersion,
+            @Nullable String targetSdkVersion,
             @NonNull String outManifestLocation) {
 
         try {
@@ -404,9 +404,9 @@ public class AndroidBuilder {
                 manifestMergerInvoker.setOverride(ManifestMerger2.SystemProperty.MIN_SDK_VERSION,
                         minSdkVersion);
             }
-            if (targetSdkVersion > 0) {
+            if (!Strings.isNullOrEmpty(targetSdkVersion)) {
                 manifestMergerInvoker.setOverride(ManifestMerger2.SystemProperty.TARGET_SDK_VERSION,
-                        String.valueOf(targetSdkVersion));
+                        targetSdkVersion);
             }
             MergingReport mergingReport = manifestMergerInvoker.merge();
             mLogger.info("Merging result:" + mergingReport.getResult());
@@ -526,7 +526,7 @@ public class AndroidBuilder {
                       int versionCode,
                       String versionName,
             @Nullable String minSdkVersion,
-                      int targetSdkVersion,
+            @Nullable String targetSdkVersion,
             @NonNull  String outManifestLocation) {
         checkNotNull(mainManifest, "mainManifest cannot be null.");
         checkNotNull(manifestOverlays, "manifestOverlays cannot be null.");
@@ -626,7 +626,7 @@ public class AndroidBuilder {
     public void processTestManifest(
             @NonNull  String testPackageName,
             @Nullable String minSdkVersion,
-                      int targetSdkVersion,
+            @Nullable String targetSdkVersion,
             @NonNull  String testedPackageName,
             @NonNull  String instrumentationRunner,
             @NonNull  Boolean handleProfiling,
@@ -717,7 +717,7 @@ public class AndroidBuilder {
     public void processTestManifest2(
             @NonNull  String testPackageName,
             @Nullable String minSdkVersion,
-            int targetSdkVersion,
+            @Nullable String targetSdkVersion,
             @NonNull  String testedPackageName,
             @NonNull  String instrumentationRunner,
             @NonNull  Boolean handleProfiling,
@@ -794,7 +794,7 @@ public class AndroidBuilder {
     private static void generateTestManifest(
             @NonNull String testPackageName,
             @Nullable String minSdkVersion,
-            int targetSdkVersion,
+            @Nullable String targetSdkVersion,
             @NonNull String testedPackageName,
             @NonNull String instrumentationRunner,
             @NonNull Boolean handleProfiling,
@@ -821,7 +821,7 @@ public class AndroidBuilder {
                       int versionCode,
             @Nullable String versionName,
             @Nullable String minSdkVersion,
-                      int targetSdkVersion) {
+            @Nullable String targetSdkVersion) {
 
         Map<String, String> attributeInjection = Maps.newHashMap();
 
@@ -843,10 +843,10 @@ public class AndroidBuilder {
                     minSdkVersion);
         }
 
-        if (targetSdkVersion != -1) {
+        if (targetSdkVersion != null) {
             attributeInjection.put(
                     "/manifest/uses-sdk|http://schemas.android.com/apk/res/android targetSdkVersion",
-                    Integer.toString(targetSdkVersion));
+                    targetSdkVersion);
         }
         return attributeInjection;
     }

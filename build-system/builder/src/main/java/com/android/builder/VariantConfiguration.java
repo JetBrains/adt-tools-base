@@ -27,6 +27,7 @@ import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.internal.MergedNdkConfig;
 import com.android.builder.internal.StringHelper;
+import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.NdkConfig;
@@ -932,15 +933,16 @@ public class VariantConfiguration implements TestData {
      * @return the minSdkVersion
      */
     @Override
-    public int getMinSdkVersion() {
+    public ApiVersion getMinSdkVersion() {
         if (mTestedConfig != null) {
             return mTestedConfig.getMinSdkVersion();
         }
-        int minSdkVersion = mMergedFlavor.getMinSdkVersion();
-        if (minSdkVersion == -1) {
+        ApiVersion minSdkVersion = mMergedFlavor.getMinSdkVersion();
+        if (minSdkVersion == null) {
             // read it from the main manifest
             File manifestLocation = mDefaultSourceProvider.getManifestFile();
-            minSdkVersion = sManifestParser.getMinSdkVersion(manifestLocation);
+            minSdkVersion = DefaultApiVersion.create(
+                    sManifestParser.getMinSdkVersion(manifestLocation));
         }
 
         return minSdkVersion;
@@ -953,15 +955,16 @@ public class VariantConfiguration implements TestData {
      * from the flavor(s) (if present).
      * @return the targetSdkVersion
      */
-    public int getTargetSdkVersion() {
+    public ApiVersion getTargetSdkVersion() {
         if (mTestedConfig != null) {
             return mTestedConfig.getTargetSdkVersion();
         }
-        int targetSdkVersion = mMergedFlavor.getTargetSdkVersion();
-        if (targetSdkVersion == -1) {
+        ApiVersion targetSdkVersion = mMergedFlavor.getTargetSdkVersion();
+        if (targetSdkVersion == null) {
             // read it from the main manifest
             File manifestLocation = mDefaultSourceProvider.getManifestFile();
-            targetSdkVersion = sManifestParser.getTargetSdkVersion(manifestLocation);
+            targetSdkVersion = DefaultApiVersion.create(
+                    sManifestParser.getTargetSdkVersion(manifestLocation));
         }
 
         return targetSdkVersion;

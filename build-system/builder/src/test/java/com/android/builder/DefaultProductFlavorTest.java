@@ -35,8 +35,8 @@ public class DefaultProductFlavorTest extends TestCase {
         mDefault2 = new DefaultProductFlavor("default2");
 
         mCustom = new DefaultProductFlavor("custom");
-        mCustom.setMinSdkVersion(42);
-        mCustom.setTargetSdkVersion(43);
+        mCustom.setMinSdkVersion(new DefaultApiVersion(42));
+        mCustom.setTargetSdkVersion(new DefaultApiVersion(43));
         mCustom.setRenderscriptTargetApi(17);
         mCustom.setVersionCode(44);
         mCustom.setVersionName("42.0");
@@ -54,8 +54,10 @@ public class DefaultProductFlavorTest extends TestCase {
     public void testMergeOnDefault() {
         ProductFlavor flavor = mCustom.mergeOver(mDefault);
 
-        assertEquals(42, flavor.getMinSdkVersion());
-        assertEquals(43, flavor.getTargetSdkVersion());
+        assertNotNull(flavor.getMinSdkVersion());
+        assertEquals(42, flavor.getMinSdkVersion().getApiLevel());
+        assertNotNull(flavor.getTargetSdkVersion());
+        assertEquals(43, flavor.getTargetSdkVersion().getApiLevel());
         assertEquals(17, flavor.getRenderscriptTargetApi());
         assertEquals(44, flavor.getVersionCode());
         assertEquals("42.0", flavor.getVersionName());
@@ -69,8 +71,10 @@ public class DefaultProductFlavorTest extends TestCase {
     public void testMergeOnCustom() {
         ProductFlavor flavor = mDefault.mergeOver(mCustom);
 
-        assertEquals(42, flavor.getMinSdkVersion());
-        assertEquals(43, flavor.getTargetSdkVersion());
+        assertNotNull(flavor.getMinSdkVersion());
+        assertEquals(42, flavor.getMinSdkVersion().getApiLevel());
+        assertNotNull(flavor.getTargetSdkVersion());
+        assertEquals(43, flavor.getTargetSdkVersion().getApiLevel());
         assertEquals(17, flavor.getRenderscriptTargetApi());
         assertEquals(44, flavor.getVersionCode());
         assertEquals("42.0", flavor.getVersionName());
@@ -84,8 +88,8 @@ public class DefaultProductFlavorTest extends TestCase {
     public void testMergeDefaultOnDefault() {
         ProductFlavor flavor = mDefault.mergeOver(mDefault2);
 
-        assertEquals(-1, flavor.getMinSdkVersion());
-        assertEquals(-1, flavor.getTargetSdkVersion());
+        assertNull(flavor.getMinSdkVersion());
+        assertNull(flavor.getTargetSdkVersion());
         assertEquals(-1, flavor.getRenderscriptTargetApi());
         assertEquals(-1, flavor.getVersionCode());
         assertNull(flavor.getVersionName());

@@ -20,13 +20,17 @@ import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.builder.AndroidBuilder
 import com.android.builder.BuilderConstants
+import com.android.builder.DefaultApiVersion
 import com.android.builder.DefaultProductFlavor
+import com.android.builder.model.ApiVersion
 import com.android.builder.model.ClassField
 import com.android.builder.model.NdkConfig
+import com.android.builder.model.ProductFlavor
 import org.gradle.api.Action
 import org.gradle.api.internal.file.FileResolver
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
+
 /**
  * DSL overlay to make methods that accept String... work.
  */
@@ -54,6 +58,72 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     @Nullable
     public NdkConfig getNdkConfig() {
         return ndkConfig;
+    }
+
+    @NonNull
+    public ProductFlavor setMinSdkVersion(int minSdkVersion) {
+        setMinSdkVersion(new DefaultApiVersion(minSdkVersion));
+        return this;
+    }
+
+    @NonNull
+    public ProductFlavor minSdkVersion(int minSdkVersion) {
+        setMinSdkVersion(minSdkVersion);
+        return this;
+    }
+
+    @NonNull
+    public ProductFlavor setMinSdkVersion(String minSdkVersion) {
+        setMinSdkVersion(getApiVersion(minSdkVersion))
+        return this;
+    }
+
+    @NonNull
+    public ProductFlavor minSdkVersion(String minSdkVersion) {
+        setMinSdkVersion(minSdkVersion);
+        return this;
+    }
+
+    @NonNull
+    public ProductFlavor setTargetSdkVersion(int targetSdkVersion) {
+        setTargetSdkVersion(new DefaultApiVersion(targetSdkVersion));
+        return this;
+    }
+
+    @NonNull
+    public ProductFlavor targetSdkVersion(int targetSdkVersion) {
+        setTargetSdkVersion(targetSdkVersion);
+        return this;
+    }
+
+    @NonNull
+    public ProductFlavor setTargetSdkVersion(String targetSdkVersion) {
+        setTargetSdkVersion(getApiVersion(targetSdkVersion))
+        return this;
+    }
+
+    @NonNull
+    public ProductFlavor targetSdkVersion(String targetSdkVersion) {
+        setTargetSdkVersion(targetSdkVersion);
+        return this;
+    }
+
+    @Nullable
+    private static ApiVersion getApiVersion(@Nullable String value) {
+        if (value != null && !value.isEmpty()) {
+            if (Character.isDigit(value.charAt(0))) {
+                try {
+                    int apiLevel = Integer.valueOf(value)
+                    return new DefaultApiVersion(apiLevel)
+                } catch (NumberFormatException e) {
+                    throw new RuntimeException("'${value}' is not a valid API level. ", e)
+                }
+            }
+
+            return new DefaultApiVersion(value)
+        }
+
+        return null
     }
 
     // -- DSL Methods. TODO remove once the instantiator does what I expect it to do.

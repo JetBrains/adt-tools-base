@@ -26,6 +26,7 @@ import com.android.builder.internal.StringHelper;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ArtifactMetaData;
 import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.Dependencies;
@@ -75,6 +76,80 @@ public class AndroidProjectTest extends TestCase {
 
             return projectData;
         }
+    }
+
+    private static final class DefaultApiVersion implements ApiVersion {
+        private final int mApiLevel;
+
+        @Nullable
+        private final String mCodename;
+
+        public DefaultApiVersion(int apiLevel, @Nullable String codename) {
+            mApiLevel = apiLevel;
+            mCodename = codename;
+        }
+
+        public DefaultApiVersion(int apiLevel) {
+            this(apiLevel, null);
+        }
+
+        public DefaultApiVersion(@NonNull String codename) {
+            this(1, codename);
+        }
+
+        public static ApiVersion create(@NonNull Object value) {
+            if (value instanceof Integer) {
+                return new DefaultApiVersion((Integer) value, null);
+            } else if (value instanceof String) {
+                return new DefaultApiVersion(1, (String) value);
+            }
+
+            return null;
+        }
+
+        @Override
+        public int getApiLevel() {
+            return mApiLevel;
+        }
+
+        @Nullable
+        @Override
+        public String getCodename() {
+            return mCodename;
+        }
+
+        @NonNull
+        @Override
+        public String getApiString() {
+            return mCodename != null ? mCodename : Integer.toString(mApiLevel);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            /**
+             * Normally equals only test for the same exact class, but here me make it accept
+             * ApiVersion since we're comparing it against implementations that are serialized
+             * across Gradle's tooling api.
+             */
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof ApiVersion)) {
+                return false;
+            }
+
+            ApiVersion that = (ApiVersion) o;
+
+            if (mApiLevel != that.getApiLevel()) {
+                return false;
+            }
+            if (mCodename != null ? !mCodename.equals(that.getCodename()) : that.getCodename() != null) {
+                return false;
+            }
+
+            return true;
+        }
+
     }
 
     private ProjectData getModelForProject(String projectName) {
@@ -1071,8 +1146,8 @@ public class AndroidProjectTest extends TestCase {
         private String packageName = null;
         private int versionCode = -1;
         private String versionName = null;
-        private int minSdkVersion = -1;
-        private int targetSdkVersion = -1;
+        private ApiVersion minSdkVersion = null;
+        private ApiVersion targetSdkVersion = null;
         private int renderscriptTargetApi = -1;
         private String testPackageName = null;
         private String testInstrumentationRunner = null;
@@ -1100,12 +1175,12 @@ public class AndroidProjectTest extends TestCase {
         }
 
         ProductFlavorTester setMinSdkVersion(int minSdkVersion) {
-            this.minSdkVersion = minSdkVersion;
+            this.minSdkVersion = new DefaultApiVersion(minSdkVersion);
             return this;
         }
 
         ProductFlavorTester setTargetSdkVersion(int targetSdkVersion) {
-            this.targetSdkVersion = targetSdkVersion;
+            this.targetSdkVersion = new DefaultApiVersion(targetSdkVersion);
             return this;
         }
 

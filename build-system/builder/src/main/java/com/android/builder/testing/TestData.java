@@ -18,6 +18,7 @@ package com.android.builder.testing;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.ApiVersion;
 
 import java.util.Set;
 
@@ -55,7 +56,10 @@ public interface TestData {
      */
     boolean isTestCoverageEnabled();
 
-    int getMinSdkVersion();
+    /**
+     * The min SDK version of the app
+     */
+    ApiVersion getMinSdkVersion();
 
     /**
      * List of supported ABIs. Null means all.

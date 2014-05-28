@@ -57,8 +57,8 @@ public class ProcessAppManifest2 extends ProcessManifest {
     @Input @Optional
     String minSdkVersion
 
-    @Input
-    int targetSdkVersion
+    @Input @Optional
+    String targetSdkVersion
 
     VariantConfiguration variantConfiguration;
     List<ManifestDependencyImpl> libraries
