@@ -537,11 +537,15 @@ public class ManifestDetectorTest extends AbstractCheckTest {
 
                                 ApiVersion apiMock = createNiceMock(ApiVersion.class);
                                 expect(apiMock.getApiLevel()).andReturn(5);
+                                expect(apiMock.getApiString()).andReturn("5");
                                 expect(flavor.getMinSdkVersion()).andReturn(apiMock).anyTimes();
+                                replay(apiMock);
 
                                 apiMock = createNiceMock(ApiVersion.class);
                                 expect(apiMock.getApiLevel()).andReturn(16);
+                                expect(apiMock.getApiString()).andReturn("16");
                                 expect(flavor.getTargetSdkVersion()).andReturn(apiMock).anyTimes();
+                                replay(apiMock);
 
                                 expect(flavor.getVersionCode()).andReturn(2).anyTimes();
                                 expect(flavor.getVersionName()).andReturn("MyName").anyTimes();
