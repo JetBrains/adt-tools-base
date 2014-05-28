@@ -16,8 +16,8 @@
 
 package com.android.build.gradle;
 
-import static com.android.build.gradle.BasePlugin.FD_INTERMEDIATES;
-import static com.android.build.gradle.BasePlugin.FD_OUTPUTS;
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
