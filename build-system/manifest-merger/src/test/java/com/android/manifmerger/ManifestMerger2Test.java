@@ -69,7 +69,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "30_uses_sdk_ok",
             "32_uses_sdk_minsdk_ok",
             "33_uses_sdk_minsdk_conflict",
-//            "36_uses_sdk_targetsdk_warning",
+            "36_uses_sdk_targetsdk_warning",
             "40_uses_feat_merge",
             "41_uses_feat_errors",
             "45_uses_feat_gles_once",
