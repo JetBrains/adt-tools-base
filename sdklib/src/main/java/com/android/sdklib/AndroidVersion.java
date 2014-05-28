@@ -47,6 +47,9 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
     private final int mApiLevel;
     private final String mCodename;
 
+    /** The default AndroidVersion for minSdkVersion and targetSdkVersion if not specified */
+    public static final AndroidVersion DEFAULT = new AndroidVersion(1, null);
+
     /**
      * Thrown when an {@link AndroidVersion} object could not be created.
      * @see AndroidVersion#AndroidVersion(Properties)
@@ -311,7 +314,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
      *         less than, equal to, or greater than the specified object.
      */
     @Override
-    public int compareTo(AndroidVersion o) {
+    public int compareTo(@NonNull AndroidVersion o) {
         return compareTo(o.mApiLevel, o.mCodename);
     }
 
@@ -362,10 +365,10 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
      * @return Null for a release version or a non-empty codename.
      */
     @Nullable
-    private String sanitizeCodename(@Nullable String codename) {
+    private static String sanitizeCodename(@Nullable String codename) {
         if (codename != null) {
             codename = codename.trim();
-            if (codename.length() == 0 || SdkConstants.CODENAME_RELEASE.equals(codename)) {
+            if (codename.isEmpty() || SdkConstants.CODENAME_RELEASE.equals(codename)) {
                 codename = null;
             }
         }

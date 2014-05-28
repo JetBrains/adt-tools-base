@@ -36,8 +36,8 @@ android {
 
     defaultConfig {
         packageName "${packageName}"
-        minSdkVersion ${minApi}
-        targetSdkVersion ${targetApi}
+        minSdkVersion <#if minApi?matches("^\\d+$")>${minApi}<#else>'${minApi}'</#if>
+        targetSdkVersion <#if targetApiString?matches("^\\d+$")>${targetApiString}<#else>'${targetApiString}'</#if>
         versionCode 1
         versionName "1.0"
     }

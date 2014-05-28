@@ -506,9 +506,21 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 ProductFlavor flavor = variant.getMergedFlavor();
                 Object gradleValue = null;
                 if (ATTR_MIN_SDK_VERSION.equals(attributeName)) {
-                    gradleValue = flavor.getMinSdkVersion();
+                    try {
+                        gradleValue = flavor.getMinSdkVersion();
+                    } catch (Throwable e) {
+                        // TODO: REMOVE ME
+                        // This method was added in the 0.11 model. We'll need to drop support
+                        // for 0.10 shortly but until 0.11 is available this is a stopgap measure
+                    }
                 } else if (ATTR_TARGET_SDK_VERSION.equals(attributeName)) {
-                    gradleValue = flavor.getTargetSdkVersion();
+                    try {
+                        gradleValue = flavor.getTargetSdkVersion();
+                    } catch (Throwable e) {
+                        // TODO: REMOVE ME
+                        // This method was added in the 0.11 model. We'll need to drop support
+                        // for 0.10 shortly but until 0.11 is available this is a stopgap measure
+                    }
                 } else if (ATTR_VERSION_CODE.equals(attributeName)) {
                     int versionCode = flavor.getVersionCode();
                     if (versionCode != -1) {
