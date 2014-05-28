@@ -130,6 +130,10 @@ public class FakeDevice extends DeviceConnector {
         return 99;
     }
 
+    public String getApiCodeName() {
+        return null;
+    }
+
     @NonNull
     public List<String> getAbis() {
         return Collections.singletonList("fake");

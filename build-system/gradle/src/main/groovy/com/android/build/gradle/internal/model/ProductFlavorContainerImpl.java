@@ -63,7 +63,7 @@ class ProductFlavorContainerImpl implements ProductFlavorContainer, Serializable
         clonedContainer.add(testASP);
 
         return new ProductFlavorContainerImpl(
-                ProductFlavorImpl.cloneFlavor(productFlavorData.getProductFlavor()),
+                ProductFlavorImpl.cloneFlavor(productFlavorData.getProductFlavor(), null, null),
                 SourceProviderImpl.cloneProvider(productFlavorData.getSourceSet()),
                 clonedContainer);
     }

@@ -23,6 +23,7 @@ import static org.easymock.EasyMock.replay;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.Variant;
 import com.android.tools.lint.client.api.LintClient;
@@ -30,8 +31,6 @@ import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Project;
 import com.google.common.collect.Lists;
-
-import org.easymock.EasyMock;
 
 import java.io.File;
 import java.util.Arrays;
@@ -528,15 +527,22 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                         public Variant getCurrentVariant() {
                             ProductFlavor flavor = createNiceMock(ProductFlavor.class);
                             if (getName().equals("ManifestDetectorTest_testGradleOverridesOk")) {
-                                expect(flavor.getMinSdkVersion()).andReturn(-1).anyTimes();
-                                expect(flavor.getTargetSdkVersion()).andReturn(-1).anyTimes();
+                                expect(flavor.getMinSdkVersion()).andReturn(null).anyTimes();
+                                expect(flavor.getTargetSdkVersion()).andReturn(null).anyTimes();
                                 expect(flavor.getVersionCode()).andReturn(-1).anyTimes();
                                 expect(flavor.getVersionName()).andReturn(null).anyTimes();
                             } else {
                                 assertEquals(getName(),
                                         "ManifestDetectorTest_testGradleOverrides");
-                                expect(flavor.getMinSdkVersion()).andReturn(5).anyTimes();
-                                expect(flavor.getTargetSdkVersion()).andReturn(16).anyTimes();
+
+                                ApiVersion apiMock = createNiceMock(ApiVersion.class);
+                                expect(apiMock.getApiLevel()).andReturn(5);
+                                expect(flavor.getMinSdkVersion()).andReturn(apiMock).anyTimes();
+
+                                apiMock = createNiceMock(ApiVersion.class);
+                                expect(apiMock.getApiLevel()).andReturn(16);
+                                expect(flavor.getTargetSdkVersion()).andReturn(apiMock).anyTimes();
+
                                 expect(flavor.getVersionCode()).andReturn(2).anyTimes();
                                 expect(flavor.getVersionName()).andReturn("MyName").anyTimes();
                             }

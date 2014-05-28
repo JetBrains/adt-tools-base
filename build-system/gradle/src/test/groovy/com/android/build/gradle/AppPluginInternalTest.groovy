@@ -99,8 +99,10 @@ public class AppPluginInternalTest extends BaseTest {
         plugin.createAndroidTasks(true /*force*/)
 
         assertEquals(1, plugin.extension.defaultConfig.versionCode)
-        assertEquals(2, plugin.extension.defaultConfig.minSdkVersion)
-        assertEquals(3, plugin.extension.defaultConfig.targetSdkVersion)
+        assertNotNull(plugin.extension.defaultConfig.minSdkVersion)
+        assertEquals(2, plugin.extension.defaultConfig.minSdkVersion.apiLevel)
+        assertNotNull(plugin.extension.defaultConfig.targetSdkVersion)
+        assertEquals(3, plugin.extension.defaultConfig.targetSdkVersion.apiLevel)
         assertEquals("2.0", plugin.extension.defaultConfig.versionName)
 
         assertEquals(new File(project.projectDir, "aa"),

@@ -38,21 +38,23 @@ public interface ManifestParser {
 
     /**
      * Returns the minSdkVersion parsed from the given manifest file.
+     * The returned value can be an Integer or a String
      *
      * @param manifestFile the manifest file to parse
      *
-     * @return the minSdkVersion or 1 if not found.
+     * @return the minSdkVersion or null if not found.
      */
-    int getMinSdkVersion(@NonNull File manifestFile);
+    Object getMinSdkVersion(@NonNull File manifestFile);
 
     /**
      * Returns the targetSdkVersion parsed from the given manifest file.
+     * The returned value can be an Integer or a String
      *
      * @param manifestFile the manifest file to parse
      *
-     * @return the targetSdkVersion or -1 if not found.
+     * @return the targetSdkVersion or null if not found
      */
-    int getTargetSdkVersion(@NonNull File manifestFile);
+    Object getTargetSdkVersion(@NonNull File manifestFile);
 
     /**
      * Returns the version name parsed from the given manifest file.

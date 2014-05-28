@@ -19,9 +19,11 @@ package com.android.builder.testing;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.testing.SimpleTestCallable;
+import com.android.builder.model.ApiVersion;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.TestException;
 import com.android.ide.common.internal.WaitableExecutor;
+import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.utils.ILogger;
 
 import java.io.File;
@@ -80,22 +82,45 @@ public class SimpleTestRunner implements TestRunner {
                                     @NonNull String projectName, @NonNull String variantName) {
         int deviceApiLevel = device.getApiLevel();
         if (deviceApiLevel == 0) {
-            logger.info("Skipping device '%s' for '%s:%s': Unknown API Level",
+            logger.info("Skipping device '%1$s' for '%2$s:%3$s': Unknown API Level",
                     device.getName(), projectName, variantName);
             return false;
         }
 
-        if (testData.getMinSdkVersion() > deviceApiLevel) {
-            logger.info("Skipping device '%s' for '%s:%s'",
-                    device.getName(), projectName, variantName);
+        ApiVersion apiVersion = testData.getMinSdkVersion();
+        int minSdkVersion = apiVersion == null ? 1 : apiVersion.getApiLevel();
+        if (apiVersion != null && apiVersion.getCodename() != null) {
+            String deviceCodeName = device.getApiCodeName();
+            if (deviceCodeName != null) {
+                if (deviceCodeName.equals(apiVersion.getCodename())) {
+                    logger.info("Skipping device '%1$s', due to different API preview '%2$s' and '%3$s'",
+                            device.getName(), deviceCodeName, apiVersion.getCodename());
+                    return false;
+                }
+            } else {
+                minSdkVersion = SdkVersionInfo.getApiByBuildCode(apiVersion.getCodename(), true);
 
-            return false;
+                if (minSdkVersion > deviceApiLevel) {
+                    logger.info("Skipping device '%s' for '%s:%s'",
+                            device.getName(), projectName, variantName);
+
+                    return false;
+                }
+            }
+
+        } else {
+            if (minSdkVersion > deviceApiLevel) {
+                logger.info("Skipping device '%s' for '%s:%s'",
+                        device.getName(), projectName, variantName);
+
+                return false;
+            }
         }
 
         Set<String> appAbis = testData.getSupportedAbis();
         if (appAbis != null && !appAbis.isEmpty()) {
             List<String> deviceAbis = device.getAbis();
-            if (deviceAbis == null || deviceAbis.isEmpty()) {
+            if (deviceAbis.isEmpty()) {
                 logger.info("Skipping device '%s' for '%s:%s': Unknown ABI",
                         device.getName(), projectName, variantName);
                 return false;

@@ -77,7 +77,7 @@ public interface Variant {
      * The result of the merge of all the flavors and of the main default config. If no flavors
      * are defined then this is the same as the default config.
      *
-     * This is directly a ProductFlavor instance of a ProdutFlavorContainer since this a composite
+     * This is directly a ProductFlavor instance of a ProductFlavorContainer since this a composite
      * of existing ProductFlavors.
      *
      * @return the merged flavors.
