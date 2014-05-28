@@ -612,7 +612,7 @@ public class AndroidBuilder {
      * @param handleProfiling whether or not the Instrumentation object will turn profiling on and off
      * @param functionalTest whether or not the Instrumentation class should run as a functional test
      * @param libraries the library dependency graph
-     * @param outManifestLocation the output location for the merged manifest
+     * @param outManifest the output location for the merged manifest
      *
      * @see com.android.builder.VariantConfiguration#getPackageName()
      * @see com.android.builder.VariantConfiguration#getTestedConfig()
@@ -632,14 +632,14 @@ public class AndroidBuilder {
             @NonNull  Boolean handleProfiling,
             @NonNull  Boolean functionalTest,
             @NonNull  List<? extends ManifestDependency> libraries,
-            @NonNull  String outManifestLocation) {
+            @NonNull  File outManifest) {
         checkNotNull(testPackageName, "testPackageName cannot be null.");
         checkNotNull(testedPackageName, "testedPackageName cannot be null.");
         checkNotNull(instrumentationRunner, "instrumentationRunner cannot be null.");
         checkNotNull(handleProfiling, "handleProfiling cannot be null.");
         checkNotNull(functionalTest, "functionalTest cannot be null.");
         checkNotNull(libraries, "libraries cannot be null.");
-        checkNotNull(outManifestLocation, "outManifestLocation cannot be null.");
+        checkNotNull(outManifest, "outManifestLocation cannot be null.");
         checkState(mTargetInfo != null,
                 "Cannot call processTestManifest() before setTargetInfo() is called.");
 
@@ -668,12 +668,12 @@ public class AndroidBuilder {
                         instrumentationRunner,
                         handleProfiling,
                         functionalTest,
-                        generatedTestManifest.getAbsolutePath());
+                        generatedTestManifest);
 
                 mergeLibraryManifests(
                         generatedTestManifest,
                         libraries,
-                        new File(outManifestLocation),
+                        outManifest,
                         null, null,
                         callback);
             } catch (IOException e) {
@@ -688,7 +688,7 @@ public class AndroidBuilder {
                     instrumentationRunner,
                     handleProfiling,
                     functionalTest,
-                    outManifestLocation);
+                    outManifest);
         }
     }
 
@@ -703,7 +703,7 @@ public class AndroidBuilder {
      * @param handleProfiling whether or not the Instrumentation object will turn profiling on and off
      * @param functionalTest whether or not the Instrumentation class should run as a functional test
      * @param libraries the library dependency graph
-     * @param outManifestLocation the output location for the merged manifest
+     * @param outManifest the output location for the merged manifest
      *
      * @see com.android.builder.VariantConfiguration#getPackageName()
      * @see com.android.builder.VariantConfiguration#getTestedConfig()
@@ -723,14 +723,14 @@ public class AndroidBuilder {
             @NonNull  Boolean handleProfiling,
             @NonNull  Boolean functionalTest,
             @NonNull  List<? extends ManifestDependency> libraries,
-            @NonNull  String outManifestLocation) {
+            @NonNull  File outManifest) {
         checkNotNull(testPackageName, "testPackageName cannot be null.");
         checkNotNull(testedPackageName, "testedPackageName cannot be null.");
         checkNotNull(instrumentationRunner, "instrumentationRunner cannot be null.");
         checkNotNull(handleProfiling, "handleProfiling cannot be null.");
         checkNotNull(functionalTest, "functionalTest cannot be null.");
         checkNotNull(libraries, "libraries cannot be null.");
-        checkNotNull(outManifestLocation, "outManifestLocation cannot be null.");
+        checkNotNull(outManifest, "outManifestLocation cannot be null.");
 
         if (!libraries.isEmpty()) {
             try {
@@ -745,7 +745,7 @@ public class AndroidBuilder {
                         instrumentationRunner,
                         handleProfiling,
                         functionalTest,
-                        generatedTestManifest.getAbsolutePath());
+                        generatedTestManifest);
 
                 MergingReport mergingReport = ManifestMerger2.newInvoker(
                         generatedTestManifest, mLogger)
@@ -765,8 +765,8 @@ public class AndroidBuilder {
                         } catch (Exception e) {
                             mLogger.error(e, "cannot print resulting xml");
                         }
-                        save(xmlDocument, new File(outManifestLocation));
-                        mLogger.info("Merged manifest saved to " + outManifestLocation);
+                        save(xmlDocument, outManifest);
+                        mLogger.info("Merged manifest saved to " + outManifest);
                         break;
                     case ERROR:
                         mergingReport.log(mLogger);
@@ -787,19 +787,19 @@ public class AndroidBuilder {
                     instrumentationRunner,
                     handleProfiling,
                     functionalTest,
-                    outManifestLocation);
+                    outManifest);
         }
     }
 
     private static void generateTestManifest(
-            String testPackageName,
-            String minSdkVersion,
+            @NonNull String testPackageName,
+            @Nullable String minSdkVersion,
             int targetSdkVersion,
-            String testedPackageName,
-            String instrumentationRunner,
-            Boolean handleProfiling,
-            Boolean functionalTest,
-            String outManifestLocation) {
+            @NonNull String testedPackageName,
+            @NonNull String instrumentationRunner,
+            @NonNull Boolean handleProfiling,
+            @NonNull Boolean functionalTest,
+            @NonNull File outManifestLocation) {
         TestManifestGenerator generator = new TestManifestGenerator(
                 outManifestLocation,
                 testPackageName,
