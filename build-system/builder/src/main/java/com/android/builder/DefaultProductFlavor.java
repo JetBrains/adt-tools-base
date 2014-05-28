@@ -19,6 +19,7 @@ package com.android.builder;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.BaseConfigImpl;
+import com.android.builder.model.ApiVersion;
 import com.android.builder.model.NdkConfig;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
@@ -39,8 +40,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     private static final long serialVersionUID = 1L;
 
     private final String mName;
-    private int mMinSdkVersion = -1;
-    private int mTargetSdkVersion = -1;
+    private ApiVersion mMinSdkVersion = null;
+    private ApiVersion mTargetSdkVersion = null;
     private int mRenderscriptTargetApi = -1;
     private Boolean mRenderscriptSupportMode;
     private Boolean mRenderscriptNdkMode;
@@ -127,25 +128,25 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
     /** Sets the minSdkVersion to the given value. */
     @NonNull
-    public ProductFlavor setMinSdkVersion(int minSdkVersion) {
+    public ProductFlavor setMinSdkVersion(ApiVersion minSdkVersion) {
         mMinSdkVersion = minSdkVersion;
         return this;
     }
 
     @Override
-    public int getMinSdkVersion() {
+    public ApiVersion getMinSdkVersion() {
         return mMinSdkVersion;
     }
 
     /** Sets the targetSdkVersion to the given value. */
     @NonNull
-    public ProductFlavor setTargetSdkVersion(int targetSdkVersion) {
+    public ProductFlavor setTargetSdkVersion(ApiVersion targetSdkVersion) {
         mTargetSdkVersion = targetSdkVersion;
         return this;
     }
 
     @Override
-    public int getTargetSdkVersion() {
+    public ApiVersion getTargetSdkVersion() {
         return mTargetSdkVersion;
     }
 
@@ -295,8 +296,10 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     DefaultProductFlavor mergeOver(@NonNull DefaultProductFlavor base) {
         DefaultProductFlavor flavor = new DefaultProductFlavor("");
 
-        flavor.mMinSdkVersion = chooseInt(mMinSdkVersion, base.mMinSdkVersion);
-        flavor.mTargetSdkVersion = chooseInt(mTargetSdkVersion, base.mTargetSdkVersion);
+        flavor.mMinSdkVersion =
+                mMinSdkVersion != null ? mMinSdkVersion : base.mMinSdkVersion;
+        flavor.mTargetSdkVersion =
+                mTargetSdkVersion != null ? mTargetSdkVersion : base.mTargetSdkVersion;
         flavor.mRenderscriptTargetApi = chooseInt(mRenderscriptTargetApi,
                 base.mRenderscriptTargetApi);
         flavor.mRenderscriptSupportMode = chooseBoolean(mRenderscriptSupportMode,
@@ -349,9 +352,11 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
         DefaultProductFlavor that = (DefaultProductFlavor) o;
 
-        if (mMinSdkVersion != that.mMinSdkVersion) return false;
+        if (mMinSdkVersion != null ? !mMinSdkVersion.equals(that.mMinSdkVersion) : that.mMinSdkVersion != null)
+            return false;
         if (mRenderscriptTargetApi != that.mRenderscriptTargetApi) return false;
-        if (mTargetSdkVersion != that.mTargetSdkVersion) return false;
+        if (mTargetSdkVersion != null ? !mTargetSdkVersion.equals(that.mTargetSdkVersion) : that.mTargetSdkVersion != null)
+            return false;
         if (mVersionCode != that.mVersionCode) return false;
         if (!mName.equals(that.mName)) return false;
         if (mPackageName != null ? !mPackageName.equals(that.mPackageName) : that.mPackageName != null)
@@ -382,8 +387,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + mName.hashCode();
-        result = 31 * result + mMinSdkVersion;
-        result = 31 * result + mTargetSdkVersion;
+        result = 31 * result + (mMinSdkVersion != null ? mMinSdkVersion.hashCode() : 0);
+        result = 31 * result + (mTargetSdkVersion != null ? mTargetSdkVersion.hashCode() : 0);
         result = 31 * result + mRenderscriptTargetApi;
         result = 31 * result + (mRenderscriptSupportMode != null ? mRenderscriptSupportMode.hashCode() : 0);
         result = 31 * result + (mRenderscriptNdkMode != null ? mRenderscriptNdkMode.hashCode() : 0);

@@ -130,6 +130,23 @@ public class ConnectedDevice extends DeviceConnector {
         return 0;
     }
 
+    @Override
+    public String getApiCodeName() {
+        String codeName = iDevice.getProperty(IDevice.PROP_BUILD_CODENAME);
+        if (codeName != null) {
+            // if this is a release platform return null.
+            if ("REL".equals(codeName)) {
+                return null;
+            }
+
+            // else return the codename
+            return codeName;
+        }
+
+        // can't get it, return 0.
+        return null;
+    }
+
     @NonNull
     @Override
     public List<String> getAbis() {

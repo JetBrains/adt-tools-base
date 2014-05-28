@@ -18,6 +18,7 @@ package com.android.xml;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.io.IAbstractFile;
 import com.android.io.IAbstractFolder;
 import com.android.io.StreamException;
@@ -238,6 +239,7 @@ public final class AndroidManifest {
      * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
+    @Nullable
     public static Object getMinSdkVersion(IAbstractFile manifestFile)
             throws XPathExpressionException, StreamException {
         String result = getStringValue(manifestFile,
@@ -254,14 +256,21 @@ public final class AndroidManifest {
     }
 
     /**
-     * Returns the value of the targetSdkVersion attribute (defaults to 1 if the attribute is
-     * not set), or -1 if the value is a codename.
+     * Returns the value of the targetSdkVersion attribute.
+     * <p/>
+     * If the attribute is set with an int value, the method returns an Integer object.
+     * <p/>
+     * If the attribute is set with a codename, it returns the codename as a String object.
+     * <p/>
+     * If the attribute is not set, it returns null.
+     *
      * @param manifestFile the manifest file to read the attribute from.
      * @return the integer value or -1 if not set.
      * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
-    public static Integer getTargetSdkVersion(IAbstractFile manifestFile)
+    @Nullable
+    public static Object getTargetSdkVersion(IAbstractFile manifestFile)
             throws XPathExpressionException, StreamException {
         String result = getStringValue(manifestFile,
                 "/" + NODE_MANIFEST +
@@ -271,7 +280,7 @@ public final class AndroidManifest {
         try {
             return Integer.valueOf(result);
         } catch (NumberFormatException e) {
-            return !result.isEmpty() ? -1 : null;
+            return !result.isEmpty() ? result : null;
         }
     }
 

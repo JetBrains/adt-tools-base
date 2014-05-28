@@ -61,15 +61,9 @@ public class DefaultManifestParser implements ManifestParser {
     }
 
     @Override
-    public int getMinSdkVersion(@NonNull File manifestFile) {
+    public Object getMinSdkVersion(@NonNull File manifestFile) {
         try {
-            Object value = AndroidManifest.getMinSdkVersion(new FileWrapper(manifestFile));
-            if (value instanceof Integer) {
-                return (Integer) value;
-            } else if (value instanceof String) {
-                // TODO: support codename
-            }
-
+            return AndroidManifest.getMinSdkVersion(new FileWrapper(manifestFile));
         } catch (XPathExpressionException e) {
             // won't happen.
         } catch (StreamException e) {
@@ -80,15 +74,9 @@ public class DefaultManifestParser implements ManifestParser {
     }
 
     @Override
-    public int getTargetSdkVersion(@NonNull File manifestFile) {
+    public Object getTargetSdkVersion(@NonNull File manifestFile) {
         try {
-            Integer value = AndroidManifest.getTargetSdkVersion(new FileWrapper(manifestFile));
-            if (value != null) {
-                return value;
-            } else {
-                return -1;
-            }
-
+            return AndroidManifest.getTargetSdkVersion(new FileWrapper(manifestFile));
         } catch (XPathExpressionException e) {
             // won't happen.
         } catch (StreamException e) {

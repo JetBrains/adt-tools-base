@@ -50,7 +50,7 @@ public class TestManifestGenerator {
             @NonNull File outputFile,
             @NonNull String packageName,
             @Nullable String minSdkVersion,
-            int targetSdkVersion,
+            @Nullable String targetSdkVersion,
             @NonNull String testedPackageName,
             @NonNull String testRunnerName,
             @NonNull Boolean handleProfiling,
@@ -58,7 +58,7 @@ public class TestManifestGenerator {
         mOutputFile = outputFile;
         mPackageName = packageName;
         mMinSdkVersion = minSdkVersion;
-        mTargetSdkVersion = targetSdkVersion != -1 ? Integer.toString(targetSdkVersion) : minSdkVersion;
+        mTargetSdkVersion = targetSdkVersion != null ? targetSdkVersion : minSdkVersion;
         mTestedPackageName = testedPackageName;
         mTestRunnerName = testRunnerName;
         mHandleProfiling = handleProfiling;
@@ -68,8 +68,8 @@ public class TestManifestGenerator {
     public void generate() throws IOException {
         Map<String, String> map = new HashMap<String, String>();
         map.put(PH_PACKAGE, mPackageName);
-        map.put(PH_MIN_SDK_VERSION, mMinSdkVersion);
-        map.put(PH_TARGET_SDK_VERSION, mTargetSdkVersion);
+        map.put(PH_MIN_SDK_VERSION, mMinSdkVersion != null ? mMinSdkVersion : "1");
+        map.put(PH_TARGET_SDK_VERSION, mTargetSdkVersion != null ? mTargetSdkVersion : map.get(PH_MIN_SDK_VERSION));
         map.put(PH_TESTED_PACKAGE, mTestedPackageName);
         map.put(PH_TEST_RUNNER, mTestRunnerName);
         map.put(PH_HANDLE_PROFILING, Boolean.toString(mHandleProfiling));

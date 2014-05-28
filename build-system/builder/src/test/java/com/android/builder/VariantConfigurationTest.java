@@ -43,13 +43,13 @@ public class VariantConfigurationTest extends TestCase {
         }
 
         @Override
-        public int getMinSdkVersion(@NonNull File manifestFile) {
-            return 0;
+        public Object getMinSdkVersion(@NonNull File manifestFile) {
+            return null;
         }
 
         @Override
-        public int getTargetSdkVersion(@NonNull File manifestFile) {
-            return -1;
+        public Object getTargetSdkVersion(@NonNull File manifestFile) {
+            return null;
         }
 
         @Nullable
