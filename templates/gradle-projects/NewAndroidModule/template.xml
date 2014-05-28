@@ -60,14 +60,24 @@
         name="Target API level"
         type="string"
         constraints="apilevel"
-        default="16" />
+        default="19" />
+
+    <!--
+      Usually the same as targetApi, but when targeting a preview platform this is the code name instead
+    -->
+    <parameter
+        id="targetApiString"
+        name="Target API"
+        type="string"
+        constraints="apilevel"
+        default="19" />
 
     <parameter
         id="buildApi"
         name="Build API level"
         type="string"
         constraints="apilevel"
-        default="18" />
+        default="19" />
 
     <parameter
         id="copyIcons"
