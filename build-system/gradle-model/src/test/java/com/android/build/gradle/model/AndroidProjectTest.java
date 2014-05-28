@@ -1270,7 +1270,7 @@ public class AndroidProjectTest extends TestCase {
 
             String variantName = variant.getName();
             File build = new File(projectDir,  "build");
-            File apk = new File(build, "apk/" + outputFileName);
+            File apk = new File(build, "outputs/apk/" + outputFileName);
             assertEquals(variantName + " output", apk, artifact.getOutputFile());
 
             Collection<File> sourceFolders = artifact.getGeneratedSourceFolders();
