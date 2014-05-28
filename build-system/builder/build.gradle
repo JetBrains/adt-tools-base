@@ -23,10 +23,11 @@ dependencies {
 
 group = 'com.android.tools.build'
 archivesBaseName = 'builder'
+version = rootProject.ext.buildVersion
+
 project.ext.pomName = 'Android Builder library'
 project.ext.pomDesc = 'Library to build Android applications.'
 
-apply from: "$rootDir/buildSrc/base/buildVersion.gradle"
 apply from: "$rootDir/buildSrc/base/publish.gradle"
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 

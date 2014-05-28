@@ -3,6 +3,7 @@ apply plugin: 'sdk-java-lib'
 
 group = 'com.android.tools.lint'
 archivesBaseName = 'lint'
+version = rootProject.ext.baseVersion
 
 dependencies {
     compile project(':base:lint-checks')
@@ -36,6 +37,5 @@ sdkJar.manifest.attributes("Main-Class": "com.android.tools.lint.Main")
 project.ext.pomName = 'Android Lint Tool'
 project.ext.pomDesc = 'Lint tools. Both a Command line tool and a library to add lint features to other tools'
 
-apply from: "$rootDir/buildSrc/base/baseVersion.gradle"
 apply from: "$rootDir/buildSrc/base/publish.gradle"
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"

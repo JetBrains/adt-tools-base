@@ -60,7 +60,7 @@ import java.util.Map;
 
 public class AndroidProjectTest extends TestCase {
 
-    private static final String MODEL_VERSION = "0.11.0-SNAPSHOT";
+    private static final String MODEL_VERSION = "0.11.0";
 
     private static final Map<String, ProjectData> sProjectModelMap = Maps.newHashMap();
 

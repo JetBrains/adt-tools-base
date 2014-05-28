@@ -3,6 +3,7 @@ apply plugin: 'sdk-java-lib'
 
 group = 'com.android.tools'
 archivesBaseName = 'sdk-common'
+version = rootProject.ext.baseVersion
 
 dependencies {
     compile project(':base:sdklib')
@@ -15,7 +16,6 @@ dependencies {
 project.ext.pomName = 'Android Tools sdk-common library'
 project.ext.pomDesc = 'sdk-common library used by other Android tools libraries.'
 
-apply from: "$rootDir/buildSrc/base/baseVersion.gradle"
 apply from: "$rootDir/buildSrc/base/publish.gradle"
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 
