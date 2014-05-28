@@ -566,14 +566,11 @@ class ManifestModel {
         USES_SDK(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER,
                 AttributeModel.newModel("minSdkVersion")
                         .setDefaultValue(SdkConstants.VALUE_1)
-                        .setOnReadValidator(new AttributeModel.IntegerValueValidator())
                         .setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
-                AttributeModel.newModel("maxSdkVersion").setOnReadValidator(
-                        new AttributeModel.IntegerValueValidator())
+                AttributeModel.newModel("maxSdkVersion")
                         .setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
                 // TODO : model target's default value is minSdkVersion value.
                 AttributeModel.newModel("targetSdkVersion")
-                        .setOnReadValidator(new AttributeModel.IntegerValueValidator())
                         .setMergingPolicy(AttributeModel.NO_MERGING_POLICY)
         ),
 
