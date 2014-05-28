@@ -313,13 +313,15 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         } else if (property.equals("buildToolsVersion") && parent.equals("android")) {
             String versionString = getStringLiteralValue(value);
             if (versionString != null) {
-                FullRevision version = FullRevision.parseRevision(versionString);
-                FullRevision recommended = getLatestBuildTools(context.getClient(),
-                        version.getMajor());
-                if (recommended != null && version.compareTo(recommended) < 0) {
-                    String message = "Old buildToolsVersion; recommended version "
-                            + "is " + recommended + " or later";
-                    report(context, cookie, DEPENDENCY, message);
+                FullRevision version = parseRevisionSilently(versionString);
+                if (version != null) {
+                    FullRevision recommended = getLatestBuildTools(context.getClient(),
+                            version.getMajor());
+                    if (recommended != null && version.compareTo(recommended) < 0) {
+                        String message = "Old buildToolsVersion; recommended version "
+                                + "is " + recommended + " or later";
+                        report(context, cookie, DEPENDENCY, message);
+                    }
                 }
             }
         } else if (parent.equals("dependencies") &&
@@ -362,6 +364,15 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         }
     }
 
+    @Nullable
+    private static FullRevision parseRevisionSilently(String versionString) {
+        try {
+            return FullRevision.parseRevision(versionString);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     private static int sMajorBuildTools;
     private static FullRevision sLatestBuildTools;
 
@@ -397,8 +408,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                         if (!dir.isDirectory() || !Character.isDigit(name.charAt(0))) {
                             continue;
                         }
-                        FullRevision v = FullRevision.parseRevision(name);
-                        if (v.getMajor() == major) {
+                        FullRevision v = parseRevisionSilently(name);
+                        if (v != null && v.getMajor() == major) {
                             revisions.add(v);
                         }
                     }
@@ -562,12 +573,11 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 int start = response.indexOf('"', index) + 1;
                 int end = response.indexOf('"', start + 1);
                 if (end > start && start >= 0) {
-                    return FullRevision.parseRevision(response.substring(start, end));
+                    return parseRevisionSilently(response.substring(start, end));
                 }
             }
         }
 
-      System.out.println(response);
         return null;
     }
 
