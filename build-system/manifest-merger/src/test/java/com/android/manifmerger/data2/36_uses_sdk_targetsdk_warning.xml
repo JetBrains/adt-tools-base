@@ -16,7 +16,7 @@
     <!-- This app requires cupcake and targets at least 10. -->
     <uses-sdk
         android:minSdkVersion="3"
-        android:targetSdkVersion="ApiCodename10"
+        android:targetSdkVersion="GingerbreadMR1"
         />
 
     <application />
@@ -64,7 +64,7 @@
     <!-- This app requires cupcake and targets at least 10. -->
     <uses-sdk
         android:minSdkVersion="3"
-        android:targetSdkVersion="ApiCodename10"
+        android:targetSdkVersion="GingerbreadMR1"
         />
 
     <application />
@@ -73,5 +73,3 @@
 
 
 @errors
-
-W [ManifestMergerTest0_main.xml:4, ManifestMergerTest1_lib1.xml:4] Main manifest has <uses-sdk android:targetSdkVersion='10'> but library uses targetSdkVersion='11'

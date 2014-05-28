@@ -175,7 +175,7 @@ public class PostValidatorTest extends TestCase {
         fail("No reference to faulty PostValidatorTest#testInvalidReferenceValidator:6 found");
     }
 
-    public void testInvalidOrder()
+    public void testApplicationInvalidOrder()
             throws ParserConfigurationException, SAXException, IOException {
 
         String input = ""
@@ -193,7 +193,7 @@ public class PostValidatorTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "testInvalidOrder"), input);
+                new TestUtils.TestSourceLocation(getClass(), "testApplicationInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
         PostValidator.validate(xmlDocument, mergingReportBuilder);
@@ -206,7 +206,7 @@ public class PostValidatorTest extends TestCase {
         assertEquals(ManifestModel.NodeTypes.APPLICATION, xmlElement.getType());
     }
 
-    public void testInvalidOrder_withComments()
+    public void testApplicationInvalidOrder_withComments()
             throws ParserConfigurationException, SAXException, IOException {
 
         String input = ""
@@ -225,7 +225,7 @@ public class PostValidatorTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "testInvalidOrder"), input);
+                new TestUtils.TestSourceLocation(getClass(), "testApplicationInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
         PostValidator.validate(xmlDocument, mergingReportBuilder);
@@ -241,7 +241,7 @@ public class PostValidatorTest extends TestCase {
         assertEquals(Node.COMMENT_NODE, lastChild.getPreviousSibling().getNodeType());
     }
 
-    public void testValidOrder()
+    public void testApplicationValidOrder()
             throws ParserConfigurationException, SAXException, IOException {
 
         String input = ""
@@ -259,7 +259,7 @@ public class PostValidatorTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "testInvalidOrder"), input);
+                new TestUtils.TestSourceLocation(getClass(), "testApplicationValidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
         PostValidator.validate(xmlDocument, mergingReportBuilder);
@@ -270,5 +270,102 @@ public class PostValidatorTest extends TestCase {
         }
         OrphanXmlElement xmlElement = new OrphanXmlElement((Element) lastChild);
         assertEquals(ManifestModel.NodeTypes.APPLICATION, xmlElement.getType());
+    }
+
+    public void testUsesSdkInvalidOrder()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\"/>"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "\n"
+                + "    <uses-sdk minSdkVersion=\"14\"/>"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "testUsesSdkInvalidOrder"), input);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
+        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        // ensure uses-sdk element is first.
+        Node firstChild = xmlDocument.getRootNode().getXml().getFirstChild();
+        while(firstChild.getNodeType() != Node.ELEMENT_NODE) {
+            firstChild = firstChild.getNextSibling();
+        }
+        OrphanXmlElement xmlElement = new OrphanXmlElement((Element) firstChild);
+        assertEquals(ManifestModel.NodeTypes.USES_SDK, xmlElement.getType());
+    }
+
+    public void testUsesSdkInvalidOrder_withComments()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\"/>"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "\n"
+                + "    <!-- with comments ! -->"
+                + "    <uses-sdk minSdkVersion=\"14\"/>"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "testUsesSdkInvalidOrder"), input);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
+        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        System.out.println(xmlDocument.prettyPrint());
+        // ensure uses-sdk element is first.
+        Node firstChild = xmlDocument.getRootNode().getXml().getFirstChild();
+        while(firstChild.getNodeType() != Node.ELEMENT_NODE) {
+            firstChild = firstChild.getNextSibling();
+        }
+        OrphanXmlElement xmlElement = new OrphanXmlElement((Element) firstChild);
+        assertEquals(ManifestModel.NodeTypes.USES_SDK, xmlElement.getType());
+        // check the comment was also moved.
+        assertEquals(Node.COMMENT_NODE, firstChild.getPreviousSibling().getNodeType());
+    }
+
+    public void testUsesSdkValidOrder()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <uses-sdk minSdkVersion=\"14\"/>"
+                + "\n"
+                + "    <activity android:name=\"activityOne\"/>"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "testUsesSdkValidOrder"), input);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
+        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        // ensure uses-sdk element is first.
+        Node firstChild = xmlDocument.getRootNode().getXml().getFirstChild();
+        while(firstChild.getNodeType() != Node.ELEMENT_NODE) {
+            firstChild = firstChild.getNextSibling();
+        }
+        OrphanXmlElement xmlElement = new OrphanXmlElement((Element) firstChild);
+        assertEquals(ManifestModel.NodeTypes.USES_SDK, xmlElement.getType());
     }
 }
