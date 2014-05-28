@@ -839,9 +839,56 @@ public class XmlDocumentTest extends TestCase {
         assertFalse(mergedDocument.isPresent());
         MergingReport mergingReport = mergingReportBuilder.build();
         ImmutableList<MergingReport.Record> loggingRecords = mergingReport.getLoggingRecords();
+        assertTrue(mergingReport.getResult().isError());
         assertEquals(1, loggingRecords.size());
-        loggingRecords.get(0).getMessage().contains("XYZ");
+        assertTrue(loggingRecords.get(0).getMessage().contains("XYZ"));
     }
+
+    /**
+     * test illegal importation of a preview library (using the minSdk attribute) in a released
+     * application.
+     */
+    public void testLibraryAtPreviewInNewerApp_usingMinSdk()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\""
+                + (SdkVersionInfo.HIGHEST_KNOWN_API + 2) // fantasy version in the far future.
+                + "\"/>\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <uses-sdk android:minSdkVersion=\"XYZ\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertFalse(mergedDocument.isPresent());
+        MergingReport mergingReport = mergingReportBuilder.build();
+        ImmutableList<MergingReport.Record> loggingRecords = mergingReport.getLoggingRecords();
+        assertTrue(mergingReport.getResult().isError());
+        assertEquals(1, loggingRecords.size());
+        assertTrue(loggingRecords.get(0).getMessage().contains("XYZ"));
+    }
+
+
     /**
      * test illegal importation of a preview library (using the targetSdk attribute) in a released
      * application.
@@ -879,8 +926,9 @@ public class XmlDocumentTest extends TestCase {
         assertFalse(mergedDocument.isPresent());
         MergingReport mergingReport = mergingReportBuilder.build();
         ImmutableList<MergingReport.Record> loggingRecords = mergingReport.getLoggingRecords();
+        assertTrue(mergingReport.getResult().isError());
         assertEquals(1, loggingRecords.size());
-        loggingRecords.get(0).getMessage().contains("XYZ");
+        assertTrue(loggingRecords.get(0).getMessage().contains("XYZ"));
     }
 
     /**
