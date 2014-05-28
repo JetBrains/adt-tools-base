@@ -334,7 +334,24 @@ public class XmlDocument {
                 return;
             }
         }
-
+        // same for minSdkVersion, if the library is using a code name, the application must
+        // also be using the same code name.
+        String libraryMinSdkVersion = lowerPriorityDocument.getMinSdkVersion();
+        if (!Character.isDigit(libraryMinSdkVersion.charAt(0))) {
+            // this is a code name, ensure this document uses the same code name.
+            if (!libraryMinSdkVersion.equals(getMinSdkVersion())) {
+                mergingReport.addMessage(getSourceLocation(), 0, 0, MergingReport.Record.Severity.ERROR,
+                        String.format(
+                                "uses-sdk:minSdkVersion %1$s cannot be different than version "
+                                        + "%2$s declared in library %3$s",
+                                getMinSdkVersion(),
+                                libraryMinSdkVersion,
+                                lowerPriorityDocument.getSourceLocation().print(true)
+                        )
+                );
+                return;
+            }
+        }
 
         if (!checkUsesSdkMinVersion(lowerPriorityDocument)) {
             mergingReport.addMessage(getSourceLocation(), 0, 0, MergingReport.Record.Severity.ERROR,
