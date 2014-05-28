@@ -33,7 +33,7 @@
 </#if>
 <#if enableProGuard>
     <instantiate from="proguard-rules.txt.ftl"
-                   to="${escapeXmlAttribute(projectOut)}/proguard-rules.txt" />
+                   to="${escapeXmlAttribute(projectOut)}/proguard-rules.pro" />
 </#if>
 <#if !(isLibraryProject??) || !isLibraryProject>
     <instantiate from="res/values/styles.xml.ftl"
