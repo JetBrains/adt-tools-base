@@ -62,12 +62,26 @@ public class PostValidator {
     }
 
     /**
-     * Reorder child elements. So far, only <application> can be moved last in the list of children
+     * Reorder child elements :
+     * <li>
+     *     <ul> <application> is moved last in the list of children
      * of the <manifest> element.
-     *
+     *     <ul> uses-sdk is moved first in the list of children of the <manifest> element </ul>
+     * </li>
      * @param xmlElement the root element of the manifest document.
      */
     private static void reOrderElements(XmlElement xmlElement) {
+
+        reOrderApplication(xmlElement);
+        reOrderUsesSdk(xmlElement);
+    }
+
+    /**
+     * Reorder application element
+     *
+     * @param xmlElement the root element of the manifest document.
+     */
+    private static void reOrderApplication(XmlElement xmlElement) {
 
         // look up application element.
         Optional<XmlElement> element = xmlElement
@@ -87,6 +101,39 @@ public class PostValidator {
         // remove the application element and add it back, it will be automatically placed last.
         xmlElement.getXml().removeChild(applicationElement.getXml());
         xmlElement.getXml().appendChild(applicationElement.getXml());
+    }
+
+    /**
+     * Reorder uses-sdk element
+     *
+     * @param xmlElement the root element of the manifest document.
+     */
+    private static void reOrderUsesSdk(XmlElement xmlElement) {
+
+        // look up application element.
+        Optional<XmlElement> element = xmlElement
+                .getNodeByTypeAndKey(ManifestModel.NodeTypes.USES_SDK, null);
+        if (!element.isPresent()) {
+            return;
+        }
+
+        XmlElement usesSdk = element.get();
+        Node firstChild = xmlElement.getXml().getFirstChild();
+        // already the first element ?
+        if (firstChild == usesSdk) {
+            return;
+        }
+
+        List<Node> comments = XmlElement.getLeadingComments(usesSdk.getXml());
+
+        // move the application's comments if any.
+        for (Node comment : comments) {
+            xmlElement.getXml().removeChild(comment);
+            xmlElement.getXml().insertBefore(comment, firstChild);
+        }
+        // remove the application element and add it back, it will be automatically placed last.
+        xmlElement.getXml().removeChild(usesSdk.getXml());
+        xmlElement.getXml().insertBefore(usesSdk.getXml(), firstChild);
     }
 
     /**
@@ -188,8 +235,8 @@ public class PostValidator {
     }
 
     /**
-     * Check in our list of applied actions that a particular {@link com.android.manifmerger.Actions.ActionType}
-     * action was recorded on the passed element.
+     * Check in our list of applied actions that a particular
+     * {@link com.android.manifmerger.Actions.ActionType} action was recorded on the passed element.
      * @return true if it was applied, false otherwise.
      */
     private static boolean isNodeOperationPresent(XmlElement xmlElement,
@@ -205,8 +252,8 @@ public class PostValidator {
     }
 
     /**
-     * Check in our list of attribute actions that a particular {@link com.android.manifmerger.Actions.ActionType}
-     * action was recorded on the passed element.
+     * Check in our list of attribute actions that a particular
+     * {@link com.android.manifmerger.Actions.ActionType} action was recorded on the passed element.
      * @return true if it was applied, false otherwise.
      */
     private static boolean isAttributeOperationPresent(XmlElement xmlElement,
