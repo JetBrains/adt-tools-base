@@ -3,6 +3,7 @@ apply plugin: 'sdk-java-lib'
 
 group = 'com.android.tools'
 archivesBaseName = 'draw9patch'
+version = rootProject.ext.baseVersion
 
 dependencies {
     testCompile 'junit:junit:3.8.1'
@@ -26,5 +27,3 @@ sdk {
 }
 
 sdkJar.manifest.attributes("Main-Class": "com.android.draw9patch.Application")
-
-apply from: "$rootDir/buildSrc/base/baseVersion.gradle"

@@ -3,10 +3,9 @@ apply plugin: 'sdk-java-lib'
 
 group = 'com.android.tools'
 archivesBaseName = 'rule-api'
+version = rootProject.ext.baseVersion
 
 dependencies {
     compile project(':base:common')
     compile project(':base:layoutlib-api')
 }
-
-apply from: "$rootDir/buildSrc/base/baseVersion.gradle"

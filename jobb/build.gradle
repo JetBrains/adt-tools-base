@@ -7,6 +7,7 @@ dependencies {
 
 group = 'com.android.tools.build'
 archivesBaseName = 'jobb'
+version = rootProject.ext.baseVersion
 
 // configure the manifest of the sdkJar task
 sdkJar.manifest.attributes("Main-Class": "com.android.jobb.Main")
@@ -22,6 +23,3 @@ sdk {
         item 'etc/jobb.bat'
     }
 }
-
-
-apply from: "$rootDir/buildSrc/base/baseVersion.gradle"

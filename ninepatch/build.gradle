@@ -3,6 +3,7 @@ apply plugin: 'sdk-java-lib'
 
 group = 'com.android.tools'
 archivesBaseName = 'ninepatch'
+version = rootProject.ext.baseVersion
 
 dependencies {
     testCompile 'junit:junit:3.8.1'
@@ -12,5 +13,3 @@ sourceSets {
     main.resources.srcDir 'src/main/java'
     test.resources.srcDir 'src/test/java'
 }
-
-apply from: "$rootDir/buildSrc/base/baseVersion.gradle"

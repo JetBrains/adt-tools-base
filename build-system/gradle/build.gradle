@@ -63,10 +63,11 @@ idea {
 
 group = 'com.android.tools.build'
 archivesBaseName = 'gradle'
+version = rootProject.ext.buildVersion
+
 project.ext.pomName = 'Gradle Plug-in for Android'
 project.ext.pomDesc = 'Gradle plug-in to build Android applications.'
 
-apply from: "$rootDir/buildSrc/base/buildVersion.gradle"
 apply from: "$rootDir/buildSrc/base/publish.gradle"
 
 jar.manifest.attributes("Plugin-Version": version)
