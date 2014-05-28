@@ -1015,7 +1015,7 @@ public class AndroidBuilder {
             command.add("--debug-mode");
         }
 
-        if (type == VariantConfiguration.Type.DEFAULT) {
+        if (type != VariantConfiguration.Type.TEST) {
             if (packageForR != null) {
                 command.add("--custom-package");
                 command.add(packageForR);
