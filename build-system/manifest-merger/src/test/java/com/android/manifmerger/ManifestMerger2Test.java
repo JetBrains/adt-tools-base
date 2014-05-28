@@ -90,6 +90,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "76_app_metadata_ignore",
             "77_app_metadata_conflict",
             "78_removeAll",
+            "79_custom_node.xml",
 
     };
 
