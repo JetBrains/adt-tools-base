@@ -20,15 +20,14 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.io.FileWrapper;
 import com.android.io.StreamException;
+import com.android.utils.XmlUtils;
 import com.android.xml.AndroidManifest;
 import com.android.xml.AndroidXPathFactory;
-import com.google.common.io.Closeables;
 
 import org.xml.sax.InputSource;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
@@ -102,17 +101,13 @@ public class DefaultManifestParser implements ManifestParser {
     private static String getStringValue(@NonNull File file, @NonNull String xPath) {
         XPath xpath = AndroidXPathFactory.newXPath();
 
-        FileInputStream fis = null;
         try {
-            //noinspection IOResourceOpenedButNotSafelyClosed
-            fis = new FileInputStream(file);
-            return xpath.evaluate(xPath, new InputSource(fis));
+            InputSource source = new InputSource(XmlUtils.getUtfReader(file));
+            return xpath.evaluate(xPath, source);
         } catch (XPathExpressionException e) {
             // won't happen.
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
-        } finally {
-            Closeables.closeQuietly(fis);
         }
 
         return null;
