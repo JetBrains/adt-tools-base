@@ -153,8 +153,3 @@
 
 
 @errors
-
-W [ManifestMergerTest0_main.xml:1, ManifestMergerTest2_lib2.xml:4] /manifest/supports-screens defined in library, missing from main manifest:
-<supports-screens>
-    @android:resizeable = false
-    @android:smallScreens = false
