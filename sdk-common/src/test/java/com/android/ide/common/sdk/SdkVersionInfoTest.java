@@ -21,6 +21,7 @@ import static com.android.ide.common.sdk.SdkVersionInfo.getApiByBuildCode;
 import static com.android.ide.common.sdk.SdkVersionInfo.getApiByPreviewName;
 import static com.android.ide.common.sdk.SdkVersionInfo.getBuildCode;
 import static com.android.ide.common.sdk.SdkVersionInfo.getCodeName;
+import static com.android.ide.common.sdk.SdkVersionInfo.getVersion;
 import static com.android.ide.common.sdk.SdkVersionInfo.underlinesToCamelCase;
 
 import junit.framework.TestCase;
@@ -79,5 +80,20 @@ public class SdkVersionInfoTest extends TestCase {
         assertEquals("FooBar", underlinesToCamelCase("foo__bar"));
         assertEquals("Foo", underlinesToCamelCase("foo_"));
         assertEquals("JellyBeanMr2", underlinesToCamelCase("jelly_bean_mr2"));
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public void testGetAndroidVersion() {
+        assertNull(getVersion("", null));
+        assertNull(getVersion("4H", null));
+        assertEquals(4, getVersion("4", null).getApiLevel());
+        assertNull(getVersion("4", null).getCodename());
+        assertEquals("4", getVersion("4", null).getApiString());
+        assertEquals(19, getVersion("19", null).getApiLevel());
+        // ICS is API 14, but when expressed as a preview platform, it's not yet 14
+        assertEquals(13, getVersion("IceCreamSandwich", null).getApiLevel());
+        assertEquals("IceCreamSandwich", getVersion("IceCreamSandwich", null).getCodename());
+        assertEquals(HIGHEST_KNOWN_API, getVersion("BackToTheFuture", null).getApiLevel());
+        assertEquals("BackToTheFuture", getVersion("BackToTheFuture", null).getCodename());
     }
 }
