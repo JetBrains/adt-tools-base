@@ -253,7 +253,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             } catch (NumberFormatException nufe) {
                 message += " (and it is not a valid octal number)";
             }
-            report(context, cookie, GRADLE_GETTER, message);
+            report(context, cookie, ACCIDENTAL_OCTAL, message);
         }
     }
 
