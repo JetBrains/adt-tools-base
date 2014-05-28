@@ -45,6 +45,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.resources.ResourceFolderType;
+import com.android.sdklib.AndroidVersion;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.detector.api.Category;
@@ -507,7 +508,12 @@ public class ApiDetector extends ResourceXmlDetector
 
     protected int getMinSdk(Context context) {
         if (mMinApi == -1) {
-            mMinApi = context.getMainProject().getMinSdk();
+            AndroidVersion minSdkVersion = context.getMainProject().getMinSdkVersion();
+            mMinApi = minSdkVersion.getApiLevel();
+            if (minSdkVersion.isPreview()) {
+                // When using preview APIs consider the min API to be the next level
+                mMinApi++;
+            }
         }
 
         return mMinApi;
