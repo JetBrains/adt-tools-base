@@ -504,10 +504,11 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             Variant variant = project.getCurrentVariant();
             if (variant != null) {
                 ProductFlavor flavor = variant.getMergedFlavor();
-                Object gradleValue = null;
+                String gradleValue = null;
                 if (ATTR_MIN_SDK_VERSION.equals(attributeName)) {
                     try {
-                        gradleValue = flavor.getMinSdkVersion();
+                        ApiVersion minSdkVersion = flavor.getMinSdkVersion();
+                        gradleValue = minSdkVersion != null ? minSdkVersion.getApiString() : null;
                     } catch (Throwable e) {
                         // TODO: REMOVE ME
                         // This method was added in the 0.11 model. We'll need to drop support
@@ -515,7 +516,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                     }
                 } else if (ATTR_TARGET_SDK_VERSION.equals(attributeName)) {
                     try {
-                        gradleValue = flavor.getTargetSdkVersion();
+                        ApiVersion targetSdkVersion = flavor.getTargetSdkVersion();
+                        gradleValue = targetSdkVersion != null ? targetSdkVersion.getApiString() : null;
                     } catch (Throwable e) {
                         // TODO: REMOVE ME
                         // This method was added in the 0.11 model. We'll need to drop support
@@ -536,12 +538,9 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 if (gradleValue != null) {
                     String manifestValue = attribute.getValue();
 
-                    String gradleDisplay = gradleValue instanceof String ? (String) gradleValue :
-                            (((ApiVersion) gradleValue).getApiString());
-
                     String message = String.format("This %1$s value (%2$s) is not used; it is "
                             + "always overridden by the value specified in the Gradle build "
-                            + "script (%3$s)", attributeName,  manifestValue, gradleDisplay);
+                            + "script (%3$s)", attributeName,  manifestValue, gradleValue);
                     context.report(GRADLE_OVERRIDES, attribute, context.getLocation(attribute),
                             message, null);
                 }
