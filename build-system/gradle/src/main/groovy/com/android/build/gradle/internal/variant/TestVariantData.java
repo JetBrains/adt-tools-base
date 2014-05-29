@@ -17,7 +17,7 @@ package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask;
-import com.android.builder.VariantConfiguration;
+import com.android.builder.core.VariantConfiguration;
 import com.google.common.collect.Lists;
 
 import java.util.List;

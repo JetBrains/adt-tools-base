@@ -18,10 +18,10 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
-import com.android.builder.AndroidBuilder
-import com.android.builder.BuilderConstants
-import com.android.builder.DefaultApiVersion
-import com.android.builder.DefaultProductFlavor
+import com.android.builder.core.AndroidBuilder
+import com.android.builder.core.BuilderConstants
+import com.android.builder.core.DefaultApiVersion
+import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.ClassField
 import com.android.builder.model.NdkConfig

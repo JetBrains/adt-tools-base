@@ -17,7 +17,7 @@ package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.VariantConfiguration;
+import com.android.builder.core.VariantConfiguration;
 
 /**
  * Data about a variant that produce an application APK

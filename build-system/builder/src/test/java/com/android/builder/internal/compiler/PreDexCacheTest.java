@@ -25,7 +25,7 @@ import static com.android.SdkConstants.FN_RENDERSCRIPT;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.DexOptions;
+import com.android.builder.core.DexOptions;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.sdklib.BuildToolInfo;

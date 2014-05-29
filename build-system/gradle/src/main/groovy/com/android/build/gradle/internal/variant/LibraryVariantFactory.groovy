@@ -28,9 +28,9 @@ import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.tasks.MergeFileTask
 import com.android.build.gradle.tasks.ExtractAnnotations
 import com.android.build.gradle.tasks.MergeResources
-import com.android.builder.BuilderConstants
-import com.android.builder.DefaultBuildType
-import com.android.builder.VariantConfiguration
+import com.android.builder.core.BuilderConstants
+import com.android.builder.core.DefaultBuildType
+import com.android.builder.core.VariantConfiguration
 import com.android.builder.dependency.LibraryBundle
 import com.android.builder.dependency.LibraryDependency
 import com.android.builder.dependency.ManifestDependency

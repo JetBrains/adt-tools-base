@@ -21,7 +21,7 @@ import static com.android.build.gradle.BasePlugin.TEST_SDK_DIR;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.AndroidBuilder;
+import com.android.builder.core.AndroidBuilder;
 import com.android.builder.sdk.DefaultSdkLoader;
 import com.android.builder.sdk.PlatformLoader;
 import com.android.builder.sdk.SdkInfo;

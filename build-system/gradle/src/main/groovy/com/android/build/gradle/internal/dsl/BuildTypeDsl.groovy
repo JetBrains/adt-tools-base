@@ -18,9 +18,9 @@ package com.android.build.gradle.internal.dsl
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.annotations.VisibleForTesting
-import com.android.builder.AndroidBuilder
-import com.android.builder.BuilderConstants
-import com.android.builder.DefaultBuildType
+import com.android.builder.core.AndroidBuilder
+import com.android.builder.core.BuilderConstants
+import com.android.builder.core.DefaultBuildType
 import com.android.builder.model.ClassField
 import com.android.builder.model.NdkConfig
 import com.android.builder.model.SigningConfig

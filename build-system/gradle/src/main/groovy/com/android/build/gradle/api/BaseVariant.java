@@ -26,8 +26,8 @@ import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.ProcessManifest;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.builder.DefaultBuildType;
-import com.android.builder.DefaultProductFlavor;
+import com.android.builder.core.DefaultBuildType;
+import com.android.builder.core.DefaultProductFlavor;
 import com.android.builder.model.SourceProvider;
 
 import org.gradle.api.Task;
@@ -84,20 +84,20 @@ public interface BaseVariant {
     String getFlavorName();
 
     /**
-     * Returns the {@link com.android.builder.DefaultBuildType} for this build variant.
+     * Returns the {@link com.android.builder.core.DefaultBuildType} for this build variant.
      */
     @NonNull
     DefaultBuildType getBuildType();
 
     /**
-     * Returns a {@link com.android.builder.DefaultProductFlavor} that represents the merging
+     * Returns a {@link com.android.builder.core.DefaultProductFlavor} that represents the merging
      * of the default config and the flavors of this build variant.
      */
     @NonNull
     DefaultProductFlavor getMergedFlavor();
 
     /**
-     * Returns the list of {@link com.android.builder.DefaultProductFlavor} for this build variant.
+     * Returns the list of {@link com.android.builder.core.DefaultProductFlavor} for this build variant.
      *
      * This is always non-null but could be empty.
      */
