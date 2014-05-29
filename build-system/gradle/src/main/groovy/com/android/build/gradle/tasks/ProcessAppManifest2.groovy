@@ -16,7 +16,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
-import com.android.builder.VariantConfiguration
+import com.android.builder.core.VariantConfiguration
 import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile

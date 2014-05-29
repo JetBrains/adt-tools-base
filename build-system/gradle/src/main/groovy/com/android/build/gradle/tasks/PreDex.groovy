@@ -18,9 +18,8 @@ import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.build.gradle.internal.dsl.DexOptionsImpl
 import com.android.build.gradle.internal.tasks.BaseTask
-import com.android.builder.AndroidBuilder
-import com.android.builder.DexOptions
-import com.android.builder.internal.compiler.PreDexCache
+import com.android.builder.core.AndroidBuilder
+import com.android.builder.core.DexOptions
 import com.android.ide.common.internal.WaitableExecutor
 import com.google.common.collect.Sets
 import com.google.common.hash.HashCode

@@ -16,7 +16,7 @@
 
 package com.android.builder.compiling;
 
-import com.android.builder.AndroidBuilder;
+import com.android.builder.core.AndroidBuilder;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;

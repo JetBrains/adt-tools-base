@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
-import com.android.builder.DefaultBuildType;
+import com.android.builder.core.DefaultBuildType;
 import org.gradle.api.NamedDomainObjectFactory;
 import org.gradle.api.internal.file.FileResolver;
 import org.gradle.api.logging.Logger;

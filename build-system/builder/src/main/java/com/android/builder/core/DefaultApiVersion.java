@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.builder;
+package com.android.builder.core;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
