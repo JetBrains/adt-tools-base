@@ -120,7 +120,7 @@ import java.util.regex.Pattern;
  */
 public class AndroidBuilder {
 
-    private static final FullRevision MIN_BUILD_TOOLS_REV = new FullRevision(19, 0, 0);
+    private static final FullRevision MIN_BUILD_TOOLS_REV = new FullRevision(19, 1, 0);
 
     private static final DependencyFileProcessor sNoOpDependencyFileProcessor = new DependencyFileProcessor() {
         @Override
@@ -1388,12 +1388,6 @@ public class AndroidBuilder {
         String renderscript = buildToolInfo.getPath(BuildToolInfo.PathId.LLVM_RS_CC);
         if (renderscript == null || !new File(renderscript).isFile()) {
             throw new IllegalStateException("llvm-rs-cc is missing");
-        }
-
-        FullRevision minBuildToolsRev = new FullRevision(19,0,3);
-        if (supportMode && buildToolInfo.getRevision().compareTo(minBuildToolsRev) < 0) {
-            throw new IllegalStateException(
-                    "RenderScript Support Mode requires buildToolsVersion >= " + minBuildToolsRev.toString());
         }
 
         RenderScriptProcessor processor = new RenderScriptProcessor(

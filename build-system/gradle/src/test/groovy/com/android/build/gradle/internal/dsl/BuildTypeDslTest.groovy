@@ -47,7 +47,7 @@ public class BuildTypeDslTest extends BaseTest {
         assertFalse(type.isRenderscriptDebugBuild())
         assertNotNull(type.getSigningConfig())
         assertTrue(type.getSigningConfig().isSigningReady())
-        assertFalse(type.isZipAlign())
+        assertTrue(type.isZipAlign())
     }
 
     public void testRelease() {

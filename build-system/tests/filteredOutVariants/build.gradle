@@ -11,7 +11,7 @@ apply plugin: 'android'
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "19.0.2"
+    buildToolsVersion '19.1.0'
 
     variantFilter {
         String abi = it.flavors.get(0).name
