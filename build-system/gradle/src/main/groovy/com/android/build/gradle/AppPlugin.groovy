@@ -50,14 +50,9 @@ class AppPlugin extends BasePlugin implements Plugin<Project> {
         if (pluginHolder != null) {
             pluginHolder.plugin = this;
         }
-    }
 
-    /**
-     * Task creation entry point.
-     */
-    @Override
-    protected void doCreateAndroidTasks() {
-        variantManager.createAndroidTasks()
+        // create the config to link a wear apk.
+        project.configurations.create(ApplicationVariantFactory.CONFIG_WEAR_APP)
     }
 
     @Override
