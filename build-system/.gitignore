@@ -10,6 +10,7 @@ tests/customArtifactDep/*/build
 tests/3rdPartyTests/*/build
 tests/dependencies/jarProject/build
 tests/dependencies/jarProject2/build
+tests/embedded/*/build
 tests/flavorlib/*/build
 tests/flavoredlib/*/build
 tests/flavorlibWithFailedTests/*/build

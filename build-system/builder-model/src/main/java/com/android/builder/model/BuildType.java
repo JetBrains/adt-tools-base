@@ -112,4 +112,9 @@ public interface BuildType extends BaseConfig {
      */
     @Nullable
     NdkConfig getNdkConfig();
+
+    /**
+     * Returns whether the variant embeds the micro app.
+     */
+    boolean isEmbedMicroApp();
 }

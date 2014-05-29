@@ -1,0 +1,11 @@
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "19.0.2"
+
+    defaultConfig {
+        versionCode 42
+        versionName "foo"
+    }
+}

@@ -37,6 +37,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
     private String mVersionNameSuffix = null;
     private boolean mRunProguard = false;
     private SigningConfig mSigningConfig = null;
+    private boolean mEmbedMicroApp = true;
 
     private boolean mZipAlign = true;
 
@@ -57,6 +58,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         setRunProguard(that.isRunProguard());
         setZipAlign(that.isZipAlign());
         setSigningConfig(that.getSigningConfig());
+        setEmbedMicroApp(that.isEmbedMicroApp());
 
         return this;
     }
@@ -194,6 +196,15 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
     }
 
     @Override
+    public boolean isEmbedMicroApp() {
+        return mEmbedMicroApp;
+    }
+
+    public void setEmbedMicroApp(boolean embedMicroApp) {
+        mEmbedMicroApp = embedMicroApp;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -221,6 +232,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
                 !mSigningConfig.equals(buildType.mSigningConfig) :
                 buildType.mSigningConfig != null)
             return false;
+        if (mEmbedMicroApp != buildType.mEmbedMicroApp) return false;
 
         return true;
     }
@@ -239,6 +251,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         result = 31 * result + (mRunProguard ? 1 : 0);
         result = 31 * result + (mZipAlign ? 1 : 0);
         result = 31 * result + (mSigningConfig != null ? mSigningConfig.hashCode() : 0);
+        result = 31 * result + (mEmbedMicroApp ? 1 : 0);
         return result;
     }
 
@@ -257,6 +270,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
                 .add("runProguard", mRunProguard)
                 .add("zipAlign", mZipAlign)
                 .add("signingConfig", mSigningConfig)
+                .add("embedMicroApp", mEmbedMicroApp)
                 .toString();
     }
 }

@@ -45,6 +45,7 @@ class BuildTypeImpl implements BuildType, Serializable {
     private String versionNameSuffix;
     private boolean runProguard;
     private boolean zipAlign;
+    private boolean embedMicroApp;
 
     @NonNull
     static BuildTypeImpl cloneBuildType(BuildType buildType) {
@@ -59,6 +60,7 @@ class BuildTypeImpl implements BuildType, Serializable {
         clonedBuildType.versionNameSuffix = buildType.getVersionNameSuffix();
         clonedBuildType.runProguard = buildType.isRunProguard();
         clonedBuildType.zipAlign = buildType.isZipAlign();
+        clonedBuildType.embedMicroApp = buildType.isEmbedMicroApp();
 
         return clonedBuildType;
     }
@@ -147,5 +149,10 @@ class BuildTypeImpl implements BuildType, Serializable {
     @Nullable
     public NdkConfig getNdkConfig() {
         return null;
+    }
+
+    @Override
+    public boolean isEmbedMicroApp() {
+        return embedMicroApp;
     }
 }

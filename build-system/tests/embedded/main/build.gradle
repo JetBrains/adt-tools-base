@@ -1,0 +1,10 @@
+apply plugin: 'android'
+
+dependencies {
+    wearApp project(':embedded')
+}
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "19.0.2"
+}

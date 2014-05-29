@@ -16,27 +16,39 @@
 
 package com.android.build.gradle.internal.tasks
 
-import org.gradle.api.DefaultTask
+import com.android.builder.AndroidBuilder
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 /**
- * Class that checks the presence of the manifest.
+ * Task to generate micro app data res file.
  */
-public class CheckManifest extends DefaultTask {
+public class GenerateApkDataTask extends BaseTask {
 
     @InputFile
-    File manifest
+    File apkFile
 
-    String variantName
+    @OutputDirectory
+    File resOutputDir
+
+    @OutputFile
+    File manifestFile
+
+    @Input
+    String mainPkgName
 
     @TaskAction
-    void check() {
-        // use getter to resolve convention mapping
-        File f = getManifest()
-        if (!f.isFile()) {
-            throw new IllegalArgumentException(
-                    "Main Manifest missing for variant ${getVariantName()}. Expected path: ${f.getAbsolutePath()}");
-        }
+    void generate() {
+        // always empty output dir.
+        File outDir = getResOutputDir()
+        emptyFolder(outDir)
+
+        AndroidBuilder builder = getBuilder();
+
+        builder.generateApkData(getApkFile(), outDir, getMainPkgName())
+        builder.generateApkDataEntryInManifest(getManifestFile())
     }
 }

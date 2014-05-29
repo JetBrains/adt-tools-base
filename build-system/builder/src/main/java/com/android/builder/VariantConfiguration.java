@@ -1105,6 +1105,7 @@ public class VariantConfiguration implements TestData {
 
         Collection<File> mainResDirs = mDefaultSourceProvider.getResDirectories();
 
+        // the main + generated res folders are in the same ResourceSet
         ResourceSet resourceSet = new ResourceSet(BuilderConstants.MAIN);
         resourceSet.addSources(mainResDirs);
         if (!generatedResFolders.isEmpty()) {
@@ -1165,7 +1166,8 @@ public class VariantConfiguration implements TestData {
      * @return a list ResourceSet.
      */
     @NonNull
-    public List<AssetSet> getAssetSets(boolean includeDependencies) {
+    public List<AssetSet> getAssetSets(@NonNull List<File> generatedResFolders,
+                                       boolean includeDependencies) {
         List<AssetSet> assetSets = Lists.newArrayList();
 
         if (includeDependencies) {
@@ -1183,8 +1185,14 @@ public class VariantConfiguration implements TestData {
 
         Collection<File> mainResDirs = mDefaultSourceProvider.getAssetsDirectories();
 
+        // the main + generated asset folders are in the same AssetSet
         AssetSet assetSet = new AssetSet(BuilderConstants.MAIN);
         assetSet.addSources(mainResDirs);
+        if (!generatedResFolders.isEmpty()) {
+            for (File generatedResFolder : generatedResFolders) {
+                assetSet.addSource(generatedResFolder);
+            }
+        }
         assetSets.add(assetSet);
 
         // the list of flavor must be reversed to use the right overlay order.
