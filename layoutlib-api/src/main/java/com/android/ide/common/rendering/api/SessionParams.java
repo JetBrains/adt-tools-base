@@ -53,6 +53,7 @@ public class SessionParams extends RenderParams {
     private boolean mLayoutOnly = false;
     private Map<ResourceReference, AdapterBinding> mAdapterBindingMap;
     private boolean mExtendedViewInfoMode = false;
+    private final int mSimulatedPlatformVersion;
 
     /**
      *
@@ -77,17 +78,47 @@ public class SessionParams extends RenderParams {
             IProjectCallback projectCallback,
             int minSdkVersion, int targetSdkVersion,
             LayoutLog log) {
-        super(projectKey, hardwareConfig,
-                renderResources, projectCallback, minSdkVersion, targetSdkVersion, log);
+        this(layoutDescription, renderingMode, projectKey, hardwareConfig,
+                renderResources, projectCallback, minSdkVersion, targetSdkVersion, log, 0);
+    }
+
+    /**
+     *
+     * @param layoutDescription the {@link ILayoutPullParser} letting the LayoutLib Bridge visit the
+     * layout file.
+     * @param renderingMode The rendering mode.
+     * @param projectKey An Object identifying the project. This is used for the cache mechanism.
+     * @param hardwareConfig the {@link HardwareConfig}.
+     * @param renderResources a {@link RenderResources} object providing access to the resources.
+     * @param projectCallback The {@link IProjectCallback} object to get information from
+     * the project.
+     * @param minSdkVersion the minSdkVersion of the project
+     * @param targetSdkVersion the targetSdkVersion of the project
+     * @param log the object responsible for displaying warning/errors to the user.
+     * @param simulatedPlatformVersion try to simulate an old android platform. 0 means disabled.
+     */
+    public SessionParams(
+            ILayoutPullParser layoutDescription,
+            RenderingMode renderingMode,
+            Object projectKey,
+            HardwareConfig hardwareConfig,
+            RenderResources renderResources,
+            IProjectCallback projectCallback,
+            int minSdkVersion, int targetSdkVersion,
+            LayoutLog log, int simulatedPlatformVersion) {
+        super(projectKey, hardwareConfig, renderResources, projectCallback,
+                minSdkVersion, targetSdkVersion, log);
 
         mLayoutDescription = layoutDescription;
         mRenderingMode = renderingMode;
+        mSimulatedPlatformVersion = simulatedPlatformVersion;
     }
 
     public SessionParams(SessionParams params) {
         super(params);
         mLayoutDescription = params.mLayoutDescription;
         mRenderingMode = params.mRenderingMode;
+        mSimulatedPlatformVersion = params.mSimulatedPlatformVersion;
         if (params.mAdapterBindingMap != null) {
             mAdapterBindingMap = new HashMap<ResourceReference, AdapterBinding>(
                     params.mAdapterBindingMap);
@@ -133,5 +164,9 @@ public class SessionParams extends RenderParams {
 
     public boolean getExtendedViewInfoMode() {
         return mExtendedViewInfoMode;
+    }
+
+    public int getSimulatedPlatformVersion() {
+        return mSimulatedPlatformVersion;
     }
 }
