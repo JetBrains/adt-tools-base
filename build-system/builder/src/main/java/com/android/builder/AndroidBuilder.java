@@ -16,6 +16,10 @@
 
 package com.android.builder;
 
+import static com.android.SdkConstants.DOT_XML;
+import static com.android.SdkConstants.FD_RES_XML;
+import static com.android.builder.BuilderConstants.ANDROID_WEAR;
+import static com.android.builder.BuilderConstants.ANDROID_WEAR_MICRO_APK;
 import static com.android.manifmerger.ManifestMerger2.Invoker;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -50,13 +54,13 @@ import com.android.builder.packaging.SealedPackageException;
 import com.android.builder.packaging.SigningException;
 import com.android.builder.sdk.SdkInfo;
 import com.android.builder.sdk.TargetInfo;
-import com.android.ide.common.signing.CertificateInfo;
-import com.android.ide.common.signing.KeystoreHelper;
-import com.android.ide.common.signing.KeytoolException;
 import com.android.ide.common.internal.AaptCruncher;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.PngCruncher;
+import com.android.ide.common.signing.CertificateInfo;
+import com.android.ide.common.signing.KeystoreHelper;
+import com.android.ide.common.signing.KeytoolException;
 import com.android.manifmerger.ICallback;
 import com.android.manifmerger.ManifestMerger;
 import com.android.manifmerger.ManifestMerger2;
@@ -69,6 +73,7 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.android.utils.SdkUtils;
+import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
@@ -91,6 +96,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This is the main builder class. It is given all the data to process the build (such as
@@ -1035,6 +1042,11 @@ public class AndroidBuilder {
             command.add(ignoreAssets);
         }
 
+        // never compress apks.
+        command.add("-0");
+        command.add("apk");
+
+        // add custom no-compress extensions
         Collection<String> noCompressList = options.getNoCompress();
         if (noCompressList != null) {
             for (String noCompress : noCompressList) {
@@ -1137,6 +1149,97 @@ public class AndroidBuilder {
                 writer.write();
             }
         }
+    }
+
+    public void generateApkData(@NonNull File apkFile,
+                                @NonNull File outResFolder,
+                                @NonNull String mainPkgName)
+            throws InterruptedException, LoggedErrorException, IOException {
+
+        // need to run aapt to get apk information
+        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
+
+        // launch aapt: create the command line
+        ArrayList<String> command = Lists.newArrayList();
+
+        String aapt = buildToolInfo.getPath(BuildToolInfo.PathId.AAPT);
+        if (aapt == null || !new File(aapt).isFile()) {
+            throw new IllegalStateException("aapt is missing");
+        }
+
+        command.add(aapt);
+        command.add("dump");
+        command.add("badging");
+        command.add(apkFile.getPath());
+
+        final List<String> aaptOutput = Lists.newArrayList();
+
+        mCmdLineRunner.runCmdLine(command, new CommandLineRunner.CommandLineOutput() {
+            @Override
+            public void out(@Nullable String line) {
+                if (line != null) {
+                    aaptOutput.add(line);
+                }
+            }
+            @Override
+            public void err(@Nullable String line) {
+                super.err(line);
+
+            }
+        }, null /*env vars*/);
+
+        Pattern p = Pattern.compile("^package: name='(.+)' versionCode='([0-9]*)' versionName='(.*)'$");
+
+        String pkgName = null, versionCode = null, versionName = null;
+
+        for (String line : aaptOutput) {
+            Matcher m = p.matcher(line);
+            if (m.matches()) {
+                pkgName = m.group(1);
+                versionCode = m.group(2);
+                versionName = m.group(3);
+                break;
+            }
+        }
+
+        if (pkgName == null) {
+            throw new RuntimeException("Failed to find apk information with aapt");
+        }
+
+        if (!pkgName.equals(mainPkgName)) {
+            throw new RuntimeException("The main and the micro apps do not have the same package name.");
+        }
+
+        String content = String.format(
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                "<wearableApp package=\"%1$s\">\n" +
+                "    <versionCode>%2$s</versionCode>\n" +
+                "    <versionName>%3$s</versionName>\n" +
+                "    <path>%4$s</path>\n" +
+                "</wearableApp>", pkgName, versionCode, versionName, apkFile.getName());
+
+        // xml folder
+        File resXmlFile = new File(outResFolder, FD_RES_XML);
+        resXmlFile.mkdirs();
+
+        Files.write(content,
+                new File(resXmlFile, ANDROID_WEAR_MICRO_APK + DOT_XML),
+                Charsets.UTF_8);
+    }
+
+    public void generateApkDataEntryInManifest(@NonNull File manifestFile)
+            throws InterruptedException, LoggedErrorException, IOException {
+
+        String content =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                "<manifest package=\"\" xmlns:android=\"http://schemas.android.com/apk/res/android\">\n" +
+                "    <application>\n" +
+                        "        <meta-data android:name=\"" + ANDROID_WEAR + "\"\n" +
+                "                   android:resource=\"@xml/" + ANDROID_WEAR_MICRO_APK + "\" />\n" +
+                "    </application>\n" +
+                "</manifest>\n";
+
+        Files.write(content, manifestFile, Charsets.UTF_8);
     }
 
     /**

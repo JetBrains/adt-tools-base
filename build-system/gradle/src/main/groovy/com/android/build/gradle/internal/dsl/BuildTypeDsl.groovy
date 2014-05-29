@@ -72,6 +72,7 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
         if (BuilderConstants.DEBUG.equals(getName())) {
             setDebuggable(true)
             setZipAlign(false)
+            setEmbedMicroApp(false)
 
             assert debugSigningConfig != null
             setSigningConfig(debugSigningConfig)
