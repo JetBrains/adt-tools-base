@@ -24,7 +24,6 @@ import static com.android.SdkConstants.FD_TOOLS;
 import static com.android.SdkConstants.FN_ADB;
 import static com.android.SdkConstants.FN_ANNOTATIONS_JAR;
 import static com.android.SdkConstants.FN_SOURCE_PROP;
-import static com.android.SdkConstants.FN_ZIPALIGN;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -128,9 +127,7 @@ public class DefaultSdkLoader implements SdkLoader {
 
             mSdkInfo = new SdkInfo(
                     new File(supportToolsFolder, FN_ANNOTATIONS_JAR),
-                    new File(platformTools, FN_ADB),
-                    // TODO: fix and move to the platform-tools?
-                    new File(toolsFolder, FN_ZIPALIGN));
+                    new File(platformTools, FN_ADB));
         }
     }
 

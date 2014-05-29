@@ -9,7 +9,7 @@ repositories {
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "19.0.2"
+    buildToolsVersion '19.1.0'
 
     deviceProvider project.ext.fakeProvider
     testServer project.ext.fakeServer

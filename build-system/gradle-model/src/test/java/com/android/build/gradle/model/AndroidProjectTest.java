@@ -572,7 +572,7 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull("f1faDebug Variant null-check", f1faDebugVariant);
         new ProductFlavorTester(f1faDebugVariant.getMergedFlavor(), "F1faDebug Merged Flavor")
                 .test();
-        new VariantTester(f1faDebugVariant, projectDir, "flavors-f1-fa-debug-unaligned.apk").test();
+        new VariantTester(f1faDebugVariant, projectDir, "flavors-f1-fa-debug.apk").test();
     }
 
     public void testTicTacToe() throws Exception {
