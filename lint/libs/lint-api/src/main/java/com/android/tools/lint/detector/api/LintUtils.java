@@ -33,14 +33,18 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ApiVersion;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.resources.ResourceUrl;
+import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
+import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.utils.PositionXmlParser;
 import com.android.utils.SdkUtils;
@@ -1016,5 +1020,34 @@ public class LintUtils {
         } else {
             return prefix + Character.toUpperCase(name.charAt(0)) + name.substring(1);
         }
+    }
+
+
+    /**
+     * Convert an {@link com.android.builder.model.ApiVersion} to a {@link
+     * com.android.sdklib.AndroidVersion}. The chief problem here is that the {@link
+     * com.android.builder.model.ApiVersion}, when using a codename, will not encode the
+     * corresponding API level (it just reflects the string entered by the user in the gradle file)
+     * so we perform a search here (since lint really wants to know the actual numeric API level)
+     *
+     * @param api     the api version to convert
+     * @param targets if known, the installed targets (used to resolve platform codenames, only
+     *                needed to resolve platforms newer than the tools since {@link
+     *                com.android.ide.common.sdk.SdkVersionInfo} knows the rest)
+     * @return the corresponding version
+     */
+    @NonNull
+    public static AndroidVersion convertVersion(
+            @NonNull ApiVersion api,
+            @Nullable IAndroidTarget[] targets) {
+        String codename = api.getCodename();
+        if (codename != null) {
+            AndroidVersion version = SdkVersionInfo.getVersion(codename, targets);
+            if (version != null) {
+                return version;
+            }
+            return new AndroidVersion(api.getApiLevel(), codename);
+        }
+        return new AndroidVersion(api.getApiLevel(), null);
     }
 }

@@ -18,6 +18,7 @@ import com.android.builder.model.SourceProvider;
 import com.android.builder.model.Variant;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
+import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Project;
 import com.android.utils.Pair;
 import com.android.utils.XmlUtils;
@@ -41,6 +42,9 @@ import java.util.Set;
  * library)
  */
 public class LintGradleProject extends Project {
+    protected AndroidVersion mMinSdkVersion;
+    protected AndroidVersion mTargetSdkVersion;
+
     private LintGradleProject(
             @NonNull LintGradleClient client,
             @NonNull File dir,
@@ -384,25 +388,35 @@ public class LintGradleProject extends Project {
         }
 
         @Override
-        public int getMinSdk() {
-            ApiVersion minSdk = mProject.getDefaultConfig().getProductFlavor().getMinSdkVersion();
-            if (minSdk != null) {
-                // FIXME for codename support
-                return minSdk.getApiLevel();
+        @NonNull
+        public AndroidVersion getMinSdkVersion() {
+            if (mMinSdkVersion == null) {
+                ProductFlavor flavor = mProject.getDefaultConfig().getProductFlavor();
+                ApiVersion minSdk = flavor.getMinSdkVersion();
+                if (minSdk != null) {
+                    mMinSdkVersion = LintUtils.convertVersion(minSdk, mClient.getTargets());
+                } else {
+                    mMinSdkVersion = super.getMinSdkVersion(); // from manifest
+                }
             }
 
-            return mMinSdk; // from manifest
+            return mMinSdkVersion;
         }
 
         @Override
-        public int getTargetSdk() {
-            ApiVersion targetSdk = mProject.getDefaultConfig().getProductFlavor().getTargetSdkVersion();
-            if (targetSdk != null) {
-                // FIXME for codename support
-                return targetSdk.getApiLevel();
+        @NonNull
+        public AndroidVersion getTargetSdkVersion() {
+            if (mTargetSdkVersion == null) {
+                ProductFlavor flavor = mProject.getDefaultConfig().getProductFlavor();
+                ApiVersion targetSdk = flavor.getTargetSdkVersion();
+                if (targetSdk != null) {
+                    mTargetSdkVersion = LintUtils.convertVersion(targetSdk, mClient.getTargets());
+                } else {
+                    mTargetSdkVersion = super.getTargetSdkVersion(); // from manifest
+                }
             }
 
-            return mTargetSdk; // from manifest
+            return mTargetSdkVersion;
         }
 
         @Override

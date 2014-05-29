@@ -17,12 +17,15 @@
 package com.android.tools.lint.detector.api;
 
 import static com.android.tools.lint.detector.api.LintUtils.computeResourceName;
+import static com.android.tools.lint.detector.api.LintUtils.convertVersion;
 import static com.android.tools.lint.detector.api.LintUtils.getLocaleAndRegion;
 import static com.android.tools.lint.detector.api.LintUtils.isImported;
 import static com.android.tools.lint.detector.api.LintUtils.splitPath;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.ApiVersion;
+import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.EcjParser;
 import com.android.tools.lint.LintCliClient;
@@ -389,6 +392,45 @@ public class LintUtilsTest extends TestCase {
         Node compilationUnit = parser.parseJava(context);
         assertNotNull(javaSource, compilationUnit);
         return compilationUnit;
+    }
+
+    public void testConvertVersion() {
+        assertEquals(new AndroidVersion(5, null), convertVersion(new DefaultApiVersion(5, null),
+                null));
+        assertEquals(new AndroidVersion(19, null), convertVersion(new DefaultApiVersion(19, null),
+                null));
+        //noinspection SpellCheckingInspection
+        assertEquals(new AndroidVersion(18, "KITKAT"), // a preview platform API level is not final
+                convertVersion(new DefaultApiVersion(0, "KITKAT"),
+                null));
+    }
+
+    private static final class DefaultApiVersion implements ApiVersion {
+        private final int mApiLevel;
+        private final String mCodename;
+
+        public DefaultApiVersion(int apiLevel, @Nullable String codename) {
+            mApiLevel = apiLevel;
+            mCodename = codename;
+        }
+
+        @Override
+        public int getApiLevel() {
+            return mApiLevel;
+        }
+
+        @Nullable
+        @Override
+        public String getCodename() {
+            return mCodename;
+        }
+
+        @NonNull
+        @Override
+        public String getApiString() {
+            fail("Not needed in this test");
+            return "<invalid>";
+        }
     }
 
     private static class TestContext extends JavaContext {
