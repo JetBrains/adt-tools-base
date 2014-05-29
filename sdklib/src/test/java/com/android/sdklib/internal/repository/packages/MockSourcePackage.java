@@ -23,7 +23,7 @@ import com.android.sdklib.internal.repository.sources.SdkSource;
 
 
 /**
- * A mock {@link SystemImagePackage} for testing.
+ * A mock {@link MockSourcePackage} for testing.
  *
  * By design, this package contains one and only one archive.
  */

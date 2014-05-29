@@ -110,12 +110,12 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
 
         IAndroidTarget t = mSdkMan.getTargets()[0];
         makeSystemImageFolder(new SystemImage(mSdkMan, t,
-                LocationType.IN_PLATFORM_SUBFOLDER,
+                LocationType.IN_IMAGES_SUBFOLDER,
                 SystemImage.DEFAULT_TAG,
                 SdkConstants.ABI_ARMEABI_V7A,
                 FileOp.EMPTY_FILE_ARRAY));
         makeSystemImageFolder(new SystemImage(mSdkMan, t,
-                LocationType.IN_PLATFORM_SUBFOLDER,
+                LocationType.IN_IMAGES_SUBFOLDER,
                 SystemImage.DEFAULT_TAG,
                 SdkConstants.ABI_INTEL_ATOM,
                 FileOp.EMPTY_FILE_ARRAY));
@@ -233,7 +233,7 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
         assertEquals("[SDK/platforms/v0_0/skins/HVGA]",
                 sanitizeInput(p.getSkins()));
 
-        assertEquals("[SystemImage tag=default, ABI=armeabi, location in platform legacy='SDK/platforms/v0_0/images']",
+        assertEquals("[SystemImage tag=default, ABI=armeabi, location in legacy folder='SDK/platforms/v0_0/images']",
                 sanitizeInput(p.getSystemImages()));
 
         // the in-platform system image has no skins
@@ -260,7 +260,7 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
                 sanitizeInput(p.getSkins()));
 
         assertEquals(
-                "[SystemImage tag=default, ABI=armeabi, location in platform legacy='SDK/platforms/v0_0/images', " +
+                "[SystemImage tag=default, ABI=armeabi, location in legacy folder='SDK/platforms/v0_0/images', " +
                  "SystemImage tag=tag-1, ABI=x86, location in system image='SDK/system-images/v0_0/tag-1/x86']",
                 sanitizeInput(p.getSystemImages()));
 

@@ -44,7 +44,7 @@ final class PkgDescAddon extends PkgDesc implements IPkgDescAddon {
                  boolean isObsolete,
                  @NonNull  MajorRevision majorRevision,
                  @NonNull  AndroidVersion androidVersion,
-                 @NonNull  IdDisplay vendor,
+                 @NonNull  IdDisplay addonVendor,
                  @NonNull  IdDisplay addonName) {
         super(type,
               license,
@@ -55,11 +55,11 @@ final class PkgDescAddon extends PkgDesc implements IPkgDescAddon {
               null,     //fullRevision
               majorRevision,
               androidVersion,
-              AndroidTargetHash.getAddonHashString(vendor.getDisplay(),
+              AndroidTargetHash.getAddonHashString(addonVendor.getDisplay(),
                                                    addonName.getDisplay(),
                                                    androidVersion),
               null,     //tag
-              vendor,
+              addonVendor,
               null,     //minToolsRev
               null,     //minPlatformToolsRev
               null,     //customIsUpdateFor

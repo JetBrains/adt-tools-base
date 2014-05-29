@@ -48,6 +48,16 @@ public class LocalSdkTest extends TestCase {
         mLS.setLocation(new File("/sdk"));
     }
 
+    public final void testLocalSdkTest_allPkgTypes() {
+        // Make sure getPkgInfo() can handle all defined package types.
+        for(PkgType type : PkgType.values()) {
+            mLS.getPkgsInfos(EnumSet.of(type));
+        }
+
+        // And do the same thing differently, using PKG_ALL
+        assertNotNull(mLS.getPkgsInfos(PkgType.PKG_ALL));
+    }
+
     public final void testLocalSdkTest_getLocation() {
         MockFileOp fop = new MockFileOp();
         LocalSdk ls = new LocalSdk(fop);

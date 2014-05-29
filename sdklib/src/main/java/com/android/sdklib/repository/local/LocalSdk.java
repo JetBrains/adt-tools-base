@@ -467,13 +467,7 @@ public class LocalSdk {
                 case PKG_DOCS:
                     info = scanDoc(uniqueDir);
                     break;
-                case PKG_BUILD_TOOLS:
-                case PKG_EXTRAS:
-                case PKG_PLATFORMS:
-                case PKG_ADDONS:
-                case PKG_SAMPLES:
-                case PKG_SOURCES:
-                case PKG_SYS_IMAGES:
+                default:
                     break;
                 }
             }
@@ -560,7 +554,11 @@ public class LocalSdk {
                             break;
 
                         case PKG_SYS_IMAGES:
-                            scanSysImages(subDir, existing);
+                            scanSysImages(subDir, existing, false);
+                            break;
+
+                        case PKG_ADDON_SYS_IMAGES:
+                            scanSysImages(subDir, existing, true);
                             break;
 
                         case PKG_ADDONS:
@@ -583,6 +581,9 @@ public class LocalSdk {
                         case PKG_PLATFORM_TOOLS:
                         case PKG_DOCS:
                             break;
+                        default:
+                            throw new IllegalArgumentException(
+                                    "Unsupported pkg type " + filter.toString());
                         }
                         mVisitedDirs.put(filter, new LocalDirInfo(mFileOp, subDir));
                         list.addAll(existing);
@@ -953,11 +954,16 @@ public class LocalSdk {
         }
     }
 
-    private void scanSysImages(File collectionDir, Collection<LocalPkgInfo> outCollection) {
+    private void scanSysImages(
+            File collectionDir,
+            Collection<LocalPkgInfo> outCollection,
+            boolean scanAddons) {
         List<File> propFiles = Lists.newArrayList();
 
-        // Create a list of sys-img/target/tag/abi or sys-img/target/abi folders
-        // that contain a source.properties file.
+        // Create a list of folders that contains a source.properties file matching these pattenrs:
+        // sys-img/target/tag/abi
+        // sys-img/target/abis
+        // sys-img/add-on-target/abi
         for (File platformDir : mFileOp.listFiles(collectionDir)) {
             if (!shouldVisitDir(PkgType.PKG_SYS_IMAGES, platformDir)) {
                 continue;
@@ -972,7 +978,9 @@ public class LocalSdk {
                 File prop1 = new File(dir1, SdkConstants.FN_SOURCE_PROP);
                 if (mFileOp.isFile(prop1)) {
                     // dir1 was a legacy abi folder.
-                    propFiles.add(prop1);
+                    if (!propFiles.contains(prop1)) {
+                        propFiles.add(prop1);
+                    }
                 } else {
                     File[] dir1Files = mFileOp.listFiles(dir1);
                     for (File dir2 : dir1Files) {
@@ -983,7 +991,9 @@ public class LocalSdk {
 
                         File prop2 = new File(dir2, SdkConstants.FN_SOURCE_PROP);
                         if (mFileOp.isFile(prop2)) {
-                            propFiles.add(prop2);
+                            if (!propFiles.contains(prop2)) {
+                                propFiles.add(prop2);
+                            }
                         }
                     }
                 }
@@ -1000,10 +1010,24 @@ public class LocalSdk {
             try {
                 AndroidVersion vers = new AndroidVersion(props);
 
+                IdDisplay tag = LocalSysImgPkgInfo.extractTagFromProps(props);
+                String vendorId = props.getProperty(PkgProps.ADDON_VENDOR_ID, null);
                 File abiDir = propFile.getParentFile();
-                LocalSysImgPkgInfo pkgInfo =
-                    new LocalSysImgPkgInfo(this, abiDir, props, vers, abiDir.getName(), rev);
-                outCollection.add(pkgInfo);
+
+                if (vendorId == null && !scanAddons) {
+                    LocalSysImgPkgInfo pkgInfo =
+                      new LocalSysImgPkgInfo(this, abiDir, props, vers, tag, abiDir.getName(), rev);
+                    outCollection.add(pkgInfo);
+
+                } else if (vendorId != null && scanAddons) {
+                    String vendorDisp = props.getProperty(PkgProps.ADDON_VENDOR_DISPLAY, vendorId);
+                    IdDisplay vendor = new IdDisplay(vendorId, vendorDisp);
+
+                    LocalAddonSysImgPkgInfo pkgInfo =
+                            new LocalAddonSysImgPkgInfo(
+                                    this, abiDir, props, vers, vendor, tag, abiDir.getName(), rev);
+                    outCollection.add(pkgInfo);
+                }
 
             } catch (AndroidVersionException e) {
                 continue; // skip invalid or missing android version.

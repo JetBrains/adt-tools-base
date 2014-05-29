@@ -211,11 +211,11 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
     protected void makeSystemImageFolder(ISystemImage systemImage) throws Exception {
         File sysImgDir = systemImage.getLocation();
 
-        if (systemImage.getLocationType() == LocationType.IN_PLATFORM_LEGACY) {
+        if (systemImage.getLocationType() == LocationType.IN_LEGACY_FOLDER) {
             // legacy mode. Path should look like SDK/platforms/platform-N/userdata.img
             makeFakeLegacySysImg(sysImgDir.getParentFile(), systemImage.getAbiType());
 
-        } else  if (systemImage.getLocationType() == LocationType.IN_PLATFORM_SUBFOLDER) {
+        } else  if (systemImage.getLocationType() == LocationType.IN_IMAGES_SUBFOLDER) {
             // not-so-legacy mode.
             // Path should look like SDK/platforms/platform-N/images/userdata.img
             makeFakeSysImgInternal(

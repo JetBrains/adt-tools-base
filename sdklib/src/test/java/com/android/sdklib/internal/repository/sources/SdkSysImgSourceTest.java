@@ -336,7 +336,13 @@ public class SdkSysImgSourceTest extends TestCase {
                 "Found ARM EABI System Image, Android API 42, revision 12\n" +
                 "Found MIPS64 System Image, Android API 42, revision 12\n" +
                 "Found MIPS system image for tag MIPS-only, Android API 44, revision 14\n" +
-                "Found Tag name is Sanitized if Display is Missing MIPS System Image, Android API 45, revision 15\n",
+                "Found Tag name is Sanitized if Display is Missing MIPS System Image, Android API 45, revision 15\n" +
+                "Found x86 System Image for some add-on, Acme Vendor Inc. API 2, revision 1\n" +
+                "Found Some Add-on ARM EABI v7a System Image, Acme Vendor Inc. API 2, revision 2\n" +
+                "Found Some Add-on Intel x86 Atom_64 System Image, Acme Vendor Inc. API 2, revision 3\n" +
+                "Found Some Add-on ARM 64 v8a System Image, Acme Vendor Inc. API 2, revision 4\n" +
+                "Found Some Add-on MIPS System Image, Acme Vendor Inc. API 2, revision 5\n" +
+                "Found Some Add-on MIPS64 System Image, Acme Vendor Inc. API 2, revision 6\n",
                 monitor.getCapturedVerboseLog());
         assertEquals("", monitor.getCapturedLog());
         assertEquals("", monitor.getCapturedErrorLog());
@@ -350,7 +356,7 @@ public class SdkSysImgSourceTest extends TestCase {
 
         Package[] pkgs = mSource.getPackages();
 
-        assertEquals(9, pkgs.length);
+        assertEquals(15, pkgs.length);
         for (Package p : pkgs) {
             // We expected to find packages with each at least one archive.
             assertTrue(p.getArchives().length >= 1);
@@ -370,16 +376,22 @@ public class SdkSysImgSourceTest extends TestCase {
             }
         }
         assertEquals(
-                "[45 mips: tag-name---is-Sanitized----if-Display-is-Missing [Tag name is Sanitized if Display is Missing], " +
-                 "44 mips: mips-only [This is an arbitrary string,], " +
-                 "42 armeabi: default [Default], " +
-                 "42 mips64: default [Default], " +
-                 "2 arm64-v8a: default [Ignored in description for default tag], " +
-                 "2 armeabi-v7a: default [Ignored in description for default tag], " +
-                 "2 x86_64: default [Default], " +
-                 "2 x86: default [Default], " +
-                 "2 armeabi-v7a: other [Another tag name]]",
-                Arrays.toString(sysImgInfo.toArray()));
+                "[45 mips: tag-name---is-Sanitized----if-Display-is-Missing [Tag name is Sanitized if Display is Missing]\n" +
+                 "44 mips: mips-only [This is an arbitrary string,]\n" +
+                 "42 armeabi: default [Default]\n" +
+                 "42 mips64: default [Default]\n" +
+                  "2 arm64-v8a: default [Ignored in description for default tag]\n" +
+                  "2 armeabi-v7a: default [Ignored in description for default tag]\n" +
+                  "2 x86_64: default [Default]\n" +
+                  "2 x86: default [Default]\n" +
+                  "2 armeabi-v7a: other [Another tag name]\n" +
+                  "2 arm64-v8a: some-addon [Some Add-on]\n" +
+                  "2 armeabi-v7a: some-addon [Some Add-on]\n" +
+                  "2 x86_64: some-addon [Some Add-on]\n" +
+                  "2 x86: some-addon [Some Add-on]\n" +
+                  "2 mips64: some-addon [Some Add-on]\n" +
+                  "2 mips: some-addon [Some Add-on]]",
+                Arrays.toString(sysImgInfo.toArray()).replace(", ", "\n"));
 
         // Check the default install-paths of the packages
         ArrayList<File> sysImgPath = new ArrayList<File>();
@@ -391,16 +403,22 @@ public class SdkSysImgSourceTest extends TestCase {
         }
         assertEquals(Arrays.toString(new File[] {
                 FileOp.append("root", "system-images", "android-45", "tag-name-is-sanitized-if-display-is-missing", "mips"),
-                FileOp.append("root", "system-images", "android-44", "mips-only", "mips"),
-                FileOp.append("root", "system-images", "android-42", "default", "armeabi"),
-                FileOp.append("root", "system-images", "android-42", "default", "mips64"),
-                FileOp.append("root", "system-images", "android-2" , "default", "arm64-v8a"),
-                FileOp.append("root", "system-images", "android-2" , "default", "armeabi-v7a"),
-                FileOp.append("root", "system-images", "android-2" , "default", "x86_64"),
-                FileOp.append("root", "system-images", "android-2" , "default", "x86"),
-                FileOp.append("root", "system-images", "android-2" , "other",   "armeabi-v7a"),
-                }).replace(File.separatorChar, '/'),
-                Arrays.toString(sysImgPath.toArray()).replace(File.separatorChar, '/'));
+                FileOp.append("root", "system-images", "android-44", "mips-only",  "mips"),
+                FileOp.append("root", "system-images", "android-42", "default",    "armeabi"),
+                FileOp.append("root", "system-images", "android-42", "default",    "mips64"),
+                FileOp.append("root", "system-images", "android-2" , "default",    "arm64-v8a"),
+                FileOp.append("root", "system-images", "android-2" , "default",    "armeabi-v7a"),
+                FileOp.append("root", "system-images", "android-2" , "default",    "x86_64"),
+                FileOp.append("root", "system-images", "android-2" , "default",    "x86"),
+                FileOp.append("root", "system-images", "android-2" , "other",      "armeabi-v7a"),
+                FileOp.append("root", "system-images", "android-2" , "some-addon", "arm64-v8a"),
+                FileOp.append("root", "system-images", "android-2" , "some-addon", "armeabi-v7a"),
+                FileOp.append("root", "system-images", "android-2" , "some-addon", "x86_64"),
+                FileOp.append("root", "system-images", "android-2" , "some-addon", "x86"),
+                FileOp.append("root", "system-images", "android-2" , "some-addon", "mips64"),
+                FileOp.append("root", "system-images", "android-2" , "some-addon", "mips"),
+                }).replace(File.separatorChar, '/').replace(", ", "\n"),
+                Arrays.toString(sysImgPath.toArray()).replace(File.separatorChar, '/').replace(", ", "\n"));
 
         // Check the list display of the packages
         ArrayList<String> listDescs = new ArrayList<String>();
@@ -408,16 +426,53 @@ public class SdkSysImgSourceTest extends TestCase {
             listDescs.add(p.getListDescription());
         }
         assertEquals(
-                "[Tag name is Sanitized if Display is Missing MIPS System Image, " +
-                 "MIPS system image for tag MIPS-only, " +    // list-display override
-                 "ARM EABI System Image, " +
-                 "MIPS64 System Image, " +
-                 "ARM 64 v8a System Image, " +
-                 "ARM EABI v7a System Image, " +
-                 "System Image for x86-64 CPU for API 2, " +   // list-display override
-                 "System Image for x86 CPU for API 2, " +      // list-display override
-                 "Another tag name ARM EABI v7a System Image]",
-                Arrays.toString(listDescs.toArray()));
+                "[Tag name is Sanitized if Display is Missing MIPS System Image\n" +
+                 "MIPS system image for tag MIPS-only\n" +          // list-display override
+                 "ARM EABI System Image\n" +
+                 "MIPS64 System Image\n" +
+                 "ARM 64 v8a System Image\n" +
+                 "ARM EABI v7a System Image\n" +
+                 "System Image for x86-64 CPU for API 2\n" +        // list-display override
+                 "System Image for x86 CPU for API 2\n" +           // list-display override
+                 "Another tag name ARM EABI v7a System Image\n" +
+                 "Some Add-on ARM 64 v8a System Image\n" +
+                 "Some Add-on ARM EABI v7a System Image\n" +
+                 "Some Add-on Intel x86 Atom_64 System Image\n" +
+                 "x86 System Image for some add-on\n" +             // list-display override
+                 "Some Add-on MIPS64 System Image\n" +
+                 "Some Add-on MIPS System Image]",
+                Arrays.toString(listDescs.toArray()).replace(", ", "\n"));
+
+        // Check platfomr vs add-ons system-images
+        ArrayList<String> addonProps = new ArrayList<String>();
+        for (Package p : pkgs) {
+            if (p instanceof SystemImagePackage) {
+                SystemImagePackage sip = (SystemImagePackage) p;
+                String s = sip.isPlatform() ? "Platform" : "Addon: ";
+                if (!sip.isPlatform()) {
+                    s += sip.getTag().toString() + " by " + sip.getAddonVendor().toString();
+                }
+                addonProps.add(s);
+            }
+        }
+        assertEquals(
+                "[Platform\n" +
+                 "Platform\n" +
+                 "Platform\n" +
+                 "Platform\n" +
+                 "Platform\n" +
+                 "Platform\n" +
+                 "Platform\n" +
+                 "Platform\n" +
+                 "Platform\n" +
+                 "Addon: some-addon [Some Add-on] by some-vendor [Acme Vendor Inc.]\n" +
+                 "Addon: some-addon [Some Add-on] by some-vendor [Acme Vendor Inc.]\n" +
+                 "Addon: some-addon [Some Add-on] by some-vendor [Acme Vendor Inc.]\n" +
+                 "Addon: some-addon [Some Add-on] by some-vendor [Acme Vendor Inc.]\n" +
+                 "Addon: some-addon [Some Add-on] by some-vendor [Acme Vendor Inc.]\n" +
+                 "Addon: some-addon [Some Add-on] by some-vendor [Acme Vendor Inc.]]",
+                Arrays.toString(addonProps.toArray()).replace(", ", "\n"));
+
     }
 
     /**

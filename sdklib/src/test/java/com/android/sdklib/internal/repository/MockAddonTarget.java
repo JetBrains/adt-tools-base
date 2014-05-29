@@ -80,7 +80,7 @@ public class MockAddonTarget implements IAndroidTarget {
         if (mSystemImages == null) {
             SystemImage si = new SystemImage(
                     FileOp.append(getLocation(), SdkConstants.OS_IMAGES_FOLDER),
-                    LocationType.IN_PLATFORM_LEGACY,
+                    LocationType.IN_LEGACY_FOLDER,
                     SystemImage.DEFAULT_TAG,
                     SdkConstants.ABI_ARMEABI,
                     FileOp.EMPTY_FILE_ARRAY);

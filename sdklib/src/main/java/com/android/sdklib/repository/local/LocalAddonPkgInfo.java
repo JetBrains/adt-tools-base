@@ -35,10 +35,13 @@ import com.android.sdklib.repository.AddonManifestIniProps;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.IPkgDescAddon;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.utils.Pair;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.TreeMultimap;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -62,7 +65,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
     private static final Pattern PATTERN_USB_IDS = Pattern.compile(
            "^0x[a-f0-9]{4}$", Pattern.CASE_INSENSITIVE);                    //$NON-NLS-1$
 
-    private final @NonNull IPkgDesc mAddonDesc;
+    private final @NonNull IPkgDescAddon mAddonDesc;
 
     public LocalAddonPkgInfo(@NonNull LocalSdk localSdk,
                              @NonNull File localDir,
@@ -72,7 +75,8 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                              @NonNull IdDisplay vendor,
                              @NonNull IdDisplay name) {
         super(localSdk, localDir, sourceProps, version, revision, FullRevision.NOT_SPECIFIED);
-        mAddonDesc = PkgDesc.Builder.newAddon(version, revision, vendor, name).create();
+        mAddonDesc = (IPkgDescAddon) PkgDesc.Builder.newAddon(version, revision, vendor, name)
+                                                    .create();
     }
 
     @NonNull
@@ -224,7 +228,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             }
 
             // get the abi list.
-            ISystemImage[] systemImages = getAddonSystemImages();
+            ISystemImage[] systemImages = getAddonSystemImages(fileOp);
 
             // check whether the add-on provides its own rendering info/library.
             boolean hasRenderingLibrary = false;
@@ -412,33 +416,78 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
 
     /**
      * Get all the system images supported by an add-on target.
-     * For an add-on, we first look for sub-folders in the addon/images directory.
+     * For an add-on,  we first look in the new sdk/system-images folders then we look
+     * for sub-folders in the addon/images directory.
      * If none are found but the directory exists and is not empty, assume it's a legacy
      * arm eabi system image.
+     * If any given API appears twice or more, the first occurrence wins.
      * <p/>
      * Note that it's OK for an add-on to have no system-images at all, since it can always
      * rely on the ones from its base platform.
      *
+     * @param fileOp File operation wrapper.
      * @return an array of ISystemImage containing all the system images for the target.
      *              The list can be empty but not null.
     */
     @NonNull
-    private ISystemImage[] getAddonSystemImages() {
+    private ISystemImage[] getAddonSystemImages(IFileOp fileOp) {
         Set<ISystemImage> found = new TreeSet<ISystemImage>();
+        SetMultimap<IdDisplay, String> tagToAbiFound = TreeMultimap.create();
 
-        IFileOp fileOp = getLocalSdk().getFileOp();
-        File imagesDir = new File(getLocalDir(), SdkConstants.OS_IMAGES_FOLDER);
+
+        // Look in the SDK/system-image/platform-n/tag/abi folders.
+        // Look in the SDK/system-image/platform-n/abi folders.
+        // If we find multiple occurrences of the same platform/abi, the first one read wins.
+
+        LocalPkgInfo[] sysImgInfos = getLocalSdk().getPkgsInfos(PkgType.PKG_ADDON_SYS_IMAGES);
+        for (LocalPkgInfo pkg : sysImgInfos) {
+            IPkgDesc d = pkg.getDesc();
+            if (pkg instanceof LocalAddonSysImgPkgInfo &&
+                    d.hasVendor() &&
+                    mAddonDesc.getVendor().equals(d.getVendor()) &&
+                    mAddonDesc.getName().equals(d.getTag())) {
+                final IdDisplay tag = mAddonDesc.getName();
+                final String abi = d.getPath();
+                if (abi != null && !tagToAbiFound.containsEntry(tag, abi)) {
+                    List<File> parsedSkins = parseSkinFolder(
+                            new File(pkg.getLocalDir(), SdkConstants.FD_SKINS));
+                    File[] skins = FileOp.EMPTY_FILE_ARRAY;
+                    if (!parsedSkins.isEmpty()) {
+                        skins = parsedSkins.toArray(new File[parsedSkins.size()]);
+                    }
+
+                    found.add(new SystemImage(
+                            pkg.getLocalDir(),
+                            LocationType.IN_SYSTEM_IMAGE,
+                            tag,
+                            mAddonDesc.getVendor(),
+                            abi,
+                            skins));
+                    tagToAbiFound.put(tag, abi);
+                }
+            }
+        }
 
         // Look for sub-directories
+        boolean useLegacy = true;
         boolean hasImgFiles = false;
+        final IdDisplay defaultTag = SystemImage.DEFAULT_TAG;
+
+        File imagesDir = new File(getLocalDir(), SdkConstants.OS_IMAGES_FOLDER);
         File[] files = fileOp.listFiles(imagesDir);
         for (File file : files) {
             if (fileOp.isDirectory(file)) {
-                found.add(new SystemImage(file,
-                                          LocationType.IN_PLATFORM_SUBFOLDER,
-                                          SystemImage.DEFAULT_TAG,
-                                          file.getName(),
-                                          FileOp.EMPTY_FILE_ARRAY));
+                useLegacy = false;
+                String abi = file.getName();
+                if (!tagToAbiFound.containsEntry(defaultTag, abi)) {
+                    found.add(new SystemImage(
+                            file,
+                            LocationType.IN_IMAGES_SUBFOLDER,
+                            SystemImage.DEFAULT_TAG,
+                            file.getName(),
+                            FileOp.EMPTY_FILE_ARRAY));
+                    tagToAbiFound.put(defaultTag, abi);
+                }
             } else if (!hasImgFiles && fileOp.isFile(file)) {
                 if (file.getName().endsWith(".img")) {                  //$NON-NLS-1$
                     hasImgFiles = true;
@@ -446,14 +495,18 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             }
         }
 
-        if (found.isEmpty() && hasImgFiles && fileOp.isDirectory(imagesDir)) {
+        if (useLegacy &&
+                hasImgFiles &&
+                fileOp.isDirectory(imagesDir) &&
+                !tagToAbiFound.containsEntry(defaultTag, SdkConstants.ABI_ARMEABI)) {
             // We found no sub-folder system images but it looks like the top directory
             // has some img files in it. It must be a legacy ARM EABI system image folder.
-            found.add(new SystemImage(imagesDir,
-                                      LocationType.IN_PLATFORM_LEGACY,
-                                      SystemImage.DEFAULT_TAG,
-                                      SdkConstants.ABI_ARMEABI,
-                                      FileOp.EMPTY_FILE_ARRAY));
+            found.add(new SystemImage(
+                    imagesDir,
+                    LocationType.IN_LEGACY_FOLDER,
+                    SystemImage.DEFAULT_TAG,
+                    SdkConstants.ABI_ARMEABI,
+                    FileOp.EMPTY_FILE_ARRAY));
         }
 
         return found.toArray(new ISystemImage[found.size()]);
