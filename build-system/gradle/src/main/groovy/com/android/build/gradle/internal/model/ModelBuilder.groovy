@@ -27,8 +27,8 @@ import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
-import com.android.builder.DefaultProductFlavor
-import com.android.builder.VariantConfiguration
+import com.android.builder.core.DefaultProductFlavor
+import com.android.builder.core.VariantConfiguration
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.ApiVersion

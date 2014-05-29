@@ -23,7 +23,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.AndroidBuilder;
+import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.ClassField;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.utils.XmlUtils;

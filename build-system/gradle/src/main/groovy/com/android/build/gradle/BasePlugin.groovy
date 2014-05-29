@@ -89,10 +89,10 @@ import com.android.build.gradle.tasks.ProcessTestManifest
 import com.android.build.gradle.tasks.ProcessTestManifest2
 import com.android.build.gradle.tasks.RenderscriptCompile
 import com.android.build.gradle.tasks.ZipAlign
-import com.android.builder.AndroidBuilder
-import com.android.builder.DefaultBuildType
-import com.android.builder.DefaultProductFlavor
-import com.android.builder.VariantConfiguration
+import com.android.builder.core.AndroidBuilder
+import com.android.builder.core.DefaultBuildType
+import com.android.builder.core.DefaultProductFlavor
+import com.android.builder.core.VariantConfiguration
 import com.android.builder.dependency.DependencyContainer
 import com.android.builder.dependency.JarDependency
 import com.android.builder.dependency.LibraryDependency
@@ -154,18 +154,18 @@ import java.util.jar.Attributes
 import java.util.jar.Manifest
 
 import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML
-import static com.android.builder.BuilderConstants.ANDROID_TEST
-import static com.android.builder.BuilderConstants.CONNECTED
-import static com.android.builder.BuilderConstants.DEBUG
-import static com.android.builder.BuilderConstants.DEVICE
-import static com.android.builder.BuilderConstants.EXT_LIB_ARCHIVE
-import static com.android.builder.BuilderConstants.FD_ANDROID_RESULTS
-import static com.android.builder.BuilderConstants.FD_ANDROID_TESTS
-import static com.android.builder.BuilderConstants.FD_FLAVORS
-import static com.android.builder.BuilderConstants.FD_FLAVORS_ALL
-import static com.android.builder.BuilderConstants.FD_REPORTS
-import static com.android.builder.BuilderConstants.RELEASE
-import static com.android.builder.VariantConfiguration.Type.TEST
+import static com.android.builder.core.BuilderConstants.ANDROID_TEST
+import static com.android.builder.core.BuilderConstants.CONNECTED
+import static com.android.builder.core.BuilderConstants.DEBUG
+import static com.android.builder.core.BuilderConstants.DEVICE
+import static com.android.builder.core.BuilderConstants.EXT_LIB_ARCHIVE
+import static com.android.builder.core.BuilderConstants.FD_ANDROID_RESULTS
+import static com.android.builder.core.BuilderConstants.FD_ANDROID_TESTS
+import static com.android.builder.core.BuilderConstants.FD_FLAVORS
+import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL
+import static com.android.builder.core.BuilderConstants.FD_REPORTS
+import static com.android.builder.core.BuilderConstants.RELEASE
+import static com.android.builder.core.VariantConfiguration.Type.TEST
 import static com.android.builder.model.AndroidProject.FD_GENERATED
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
