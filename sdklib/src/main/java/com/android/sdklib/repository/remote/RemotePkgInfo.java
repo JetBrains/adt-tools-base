@@ -21,14 +21,13 @@ import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.IListDescription;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 
-import java.util.Locale;
-
 
 /**
  * This class provides information on a remote package available for download
  * via a remote SDK repository server.
  */
-public class RemotePkgInfo implements IListDescription, Comparable<RemotePkgInfo> {
+public class RemotePkgInfo
+        implements IDescription, IListDescription, Comparable<RemotePkgInfo> {
 
     /** Information on the package provided by the remote server. */
     @NonNull
@@ -99,43 +98,40 @@ public class RemotePkgInfo implements IListDescription, Comparable<RemotePkgInfo
         return builder.toString();
     }
 
-  @Override
-  public String getListDescription() {
-      // TODO *temporary WIP*
-      // Inject all the meta-data needed to properly reconstruct the display,
-      // e.g. especially the new list-display. Code should be common with LocalPkgInfo.
-      StringBuilder sb = new StringBuilder();
+    @Override
+    public String getListDescription() {
+        return getDesc().getListDescription();
+    }
 
-      IPkgDesc d = getDesc();
+    @Override
+    public String getShortDescription() {
+        // TODO revisit to differentiate from list-description depending
+        // on how we'll use it in the sdkman UI.
+        return getListDescription();
+    }
 
-      sb.append(d.getType().toString().toLowerCase(Locale.US));
+    @Override
+    public String getLongDescription() {
+        StringBuilder sb = new StringBuilder();
+        IPkgDesc desc = getDesc();
 
-      if (d.hasTag()) {
-          assert d.getTag() != null;
-          sb.append(' ').append(d.getTag().getDisplay());
-      }
+        sb.append(desc.getListDescription()).append('\n');
 
-      if (d.hasPath()) {
-          sb.append(' ').append(d.getPath());
-      }
+        if (desc.hasVendor()) {
+            assert desc.getVendor() != null;
+            sb.append("By ").append(desc.getVendor().getDisplay()).append('\n');
+        }
 
-      if (d.hasVendor()) {
-          sb.append(", by").append(d.getVendor().getDisplay());
-      }
+        if (desc.hasMinPlatformToolsRev()) {
+            assert desc.getMinPlatformToolsRev() != null;
+            sb.append("Requires Platform-Tools revision ").append(desc.getMinPlatformToolsRev().toShortString()).append('\n');
+        }
 
-      if (d.hasAndroidVersion()) {
-          assert d.getAndroidVersion() != null;
-          sb.append(", API").append(d.getAndroidVersion().getApiString());
-      }
+        if (desc.hasMinToolsRev()) {
+            assert desc.getMinToolsRev() != null;
+            sb.append("Requires Tools revision ").append(desc.getMinToolsRev().toShortString()).append('\n');
+        }
 
-      if (d.hasFullRevision()) {
-          sb.append(", ").append(d.getFullRevision());
-      }
-
-      if (d.hasMajorRevision()) {
-          sb.append(", ").append(d.getMajorRevision());
-      }
-
-      return sb.toString();
-  }
+        return sb.toString();
+    }
 }
