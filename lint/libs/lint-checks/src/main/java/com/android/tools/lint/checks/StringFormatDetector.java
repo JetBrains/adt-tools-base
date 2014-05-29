@@ -768,7 +768,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
      * observed arguments into it.
      */
     @VisibleForTesting
-    static int getFormatArgumentCount(String s, Set<Integer> seenArguments) {
+    static int getFormatArgumentCount(@NonNull String s, @Nullable Set<Integer> seenArguments) {
         Matcher matcher = FORMAT.matcher(s);
         int index = 0;
         int prevIndex = 0;
