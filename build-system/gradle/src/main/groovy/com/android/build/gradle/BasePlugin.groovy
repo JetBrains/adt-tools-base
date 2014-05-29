@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.api.AndroidSourceSet
@@ -169,6 +168,7 @@ import static com.android.builder.core.VariantConfiguration.Type.TEST
 import static com.android.builder.model.AndroidProject.FD_GENERATED
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
+import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN
 import static java.io.File.separator
 /**
  * Base class for all Android plugins
@@ -1743,9 +1743,17 @@ public abstract class BasePlugin {
                     project.file(
                             "$project.buildDir/${FD_OUTPUTS}/apk/${project.archivesBaseName}-${variantData.variantConfiguration.baseName}.apk")
                 }
-                zipAlignTask.conventionMapping.zipAlignExe = { androidBuilder.sdkInfo?.zipAlign }
+                zipAlignTask.conventionMapping.zipAlignExe = {
+                    String path = androidBuilder.targetInfo?.buildTools?.getPath(ZIP_ALIGN)
+                    if (path != null) {
+                        return new File(path)
+                    }
+
+                    return null
+                }
 
                 appTask = zipAlignTask
+
                 outputFileTask = zipAlignTask
                 variantData.outputFile = project.file(
                         "$project.buildDir/${FD_OUTPUTS}/apk/${project.archivesBaseName}-${variantData.variantConfiguration.baseName}.apk")
