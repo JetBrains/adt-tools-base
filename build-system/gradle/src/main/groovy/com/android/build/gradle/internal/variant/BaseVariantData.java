@@ -33,7 +33,7 @@ import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.ProcessManifest;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.builder.VariantConfiguration;
+import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.SourceProvider;
 import com.google.common.collect.Lists;
 

@@ -30,9 +30,9 @@ import com.android.build.gradle.internal.dsl.LintOptionsImpl
 import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.build.gradle.internal.dsl.ProductFlavorDsl
 import com.android.build.gradle.internal.test.TestOptions
-import com.android.builder.BuilderConstants
-import com.android.builder.DefaultBuildType
-import com.android.builder.DefaultProductFlavor
+import com.android.builder.core.BuilderConstants
+import com.android.builder.core.DefaultBuildType
+import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.model.BuildType
 import com.android.builder.model.ProductFlavor
 import com.android.builder.model.SigningConfig

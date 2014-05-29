@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.model;
 
-import static com.android.builder.BuilderConstants.ANDROID_TEST;
+import static com.android.builder.core.BuilderConstants.ANDROID_TEST;
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
 
 import com.android.SdkConstants;

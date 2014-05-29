@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal.dsl;
 
-import com.android.builder.BuilderConstants;
+import com.android.builder.core.BuilderConstants;
 import junit.framework.TestCase;
 
 public class SigningConfigDslTest extends TestCase {

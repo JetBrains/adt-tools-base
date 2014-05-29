@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.builder;
+package com.android.builder.core;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;

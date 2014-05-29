@@ -15,7 +15,7 @@
  */
 package com.android.build.gradle.internal.tasks
 import com.android.build.gradle.BasePlugin
-import com.android.builder.AndroidBuilder
+import com.android.builder.core.AndroidBuilder
 import org.gradle.api.DefaultTask
 
 public abstract class BaseTask extends DefaultTask {

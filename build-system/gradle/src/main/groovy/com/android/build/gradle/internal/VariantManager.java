@@ -16,10 +16,10 @@
 
 package com.android.build.gradle.internal;
 
-import static com.android.builder.BuilderConstants.DEBUG;
-import static com.android.builder.BuilderConstants.ANDROID_TEST;
-import static com.android.builder.BuilderConstants.LINT;
-import static com.android.builder.BuilderConstants.UI_TEST;
+import static com.android.builder.core.BuilderConstants.DEBUG;
+import static com.android.builder.core.BuilderConstants.ANDROID_TEST;
+import static com.android.builder.core.BuilderConstants.LINT;
+import static com.android.builder.core.BuilderConstants.UI_TEST;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -38,8 +38,8 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
-import com.android.builder.DefaultProductFlavor;
-import com.android.builder.VariantConfiguration;
+import com.android.builder.core.DefaultProductFlavor;
+import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.google.common.collect.ArrayListMultimap;

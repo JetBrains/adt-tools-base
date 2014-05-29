@@ -20,8 +20,8 @@ import com.android.build.gradle.internal.BadPluginException
 import com.android.build.gradle.internal.test.BaseTest
 import com.android.build.gradle.internal.test.PluginHolder
 import com.android.build.gradle.internal.variant.BaseVariantData
-import com.android.builder.BuilderConstants
-import com.android.builder.DefaultBuildType
+import com.android.builder.core.BuilderConstants
+import com.android.builder.core.DefaultBuildType
 import com.android.builder.model.SigningConfig
 import com.android.ide.common.signing.KeystoreHelper
 import org.gradle.api.Project

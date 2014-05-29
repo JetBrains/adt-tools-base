@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
-import com.android.builder.BuilderConstants;
+import com.android.builder.core.BuilderConstants;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.prefs.AndroidLocation;

@@ -21,7 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.internal.api.ApplicationVariantImpl;
-import com.android.builder.VariantConfiguration;
+import com.android.builder.core.VariantConfiguration;
 
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
