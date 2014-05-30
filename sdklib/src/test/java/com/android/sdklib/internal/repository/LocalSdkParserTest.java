@@ -23,6 +23,8 @@ import com.android.sdklib.SdkManager;
 import com.android.sdklib.SdkManagerTestCase;
 import com.android.sdklib.SystemImage;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
+import com.android.sdklib.internal.repository.archives.ArchFilter;
+import com.android.sdklib.internal.repository.archives.HostOs;
 import com.android.sdklib.io.FileOp;
 
 import java.io.File;
@@ -267,6 +269,44 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
                 sanitizeInput(p.getSystemImages()[0].getSkins()));
         assertEquals("[SDK/system-images/v0_0/tag-1/x86/skins/Tag1ArmSkin]",
                 sanitizeInput(p.getSystemImages()[1].getSkins()));
+    }
+
+    public void testLocalSdkParser_BuildTools_InvalidOs() throws Exception {
+        assertEquals(
+                "[Android SDK Build-tools, revision 18.3.4 rc5, " +
+                 "Android SDK Build-tools, revision 3.0.1, " +
+                 "Android SDK Build-tools, revision 3, " +
+                 "Platform Tools, revision 17.1.2, Tools, revision 1.0.1]",
+                Arrays.toString(mParser.parseSdk(mSdkMan.getLocation(),
+                        mSdkMan,
+                        LocalSdkParser.PARSE_BUILD_TOOLS |
+                        LocalSdkParser.PARSE_EXTRAS,
+                        mMonitor)));
+
+        // We have many OS possible. Choose 2 that do not match the current platform.
+        ArchFilter current = ArchFilter.getCurrent();
+        HostOs others[] = new HostOs[2];
+        int i = 0;
+        for (HostOs o : HostOs.values()) {
+            if (o != current.getHostOS() && i < others.length) {
+                others[i++] = o;
+            }
+        }
+        createFakeBuildTools(new File(mSdkMan.getLocation()), others[0].toString(), "5.0.1");
+        createFakeBuildTools(new File(mSdkMan.getLocation()), others[1].toString(), "5.0.2");
+
+        assertEquals(
+                "[Android SDK Build-tools, revision 18.3.4 rc5, " +
+                "Android SDK Build-tools, revision 3.0.1, " +
+                "Android SDK Build-tools, revision 3, " +
+                "Broken Build-Tools Package, revision 5.0.1, " +
+                "Broken Build-Tools Package, revision 5.0.2, " +
+                "Platform Tools, revision 17.1.2, Tools, revision 1.0.1]",
+                Arrays.toString(mParser.parseSdk(mSdkMan.getLocation(),
+                        mSdkMan,
+                        LocalSdkParser.PARSE_BUILD_TOOLS |
+                        LocalSdkParser.PARSE_EXTRAS,
+                        mMonitor)));
     }
 
     private String sanitizeInput(Object[] array) {
