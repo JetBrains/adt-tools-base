@@ -25,12 +25,15 @@ import static com.android.SdkConstants.R_PREFIX;
 import static com.android.SdkConstants.TAG_STRING;
 import static com.android.tools.lint.checks.SharedPrefsDetector.ANDROID_CONTENT_SHARED_PREFERENCES;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BYTE;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_CHAR;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_NULL;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_OBJECT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_SHORT;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 
@@ -1123,7 +1126,11 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                                 case 'a':
                                 case 'A':
                                     valid = type == Integer.TYPE
-                                            || type == Float.TYPE;
+                                            || type == Float.TYPE
+                                            || type == Double.TYPE
+                                            || type == Long.TYPE
+                                            || type == Byte.TYPE
+                                            || type == Short.TYPE;
                                     break;
                                 case 'c':
                                 case 'C':
@@ -1348,6 +1355,24 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             } else if (fqcn.equals("BigInteger")                //$NON-NLS-1$
                     || fqcn.equals("java.math.BigInteger")) {   //$NON-NLS-1$
                 return Integer.TYPE;
+            } else if (fqcn.equals(TYPE_OBJECT)) {
+              return null;
+            } else if (fqcn.startsWith("java.lang.")) {
+              if (fqcn.equals("java.lang.Integer")
+                  || fqcn.equals("java.lang.Short")
+                  || fqcn.equals("java.lang.Byte")
+                  || fqcn.equals("java.lang.Long")) {
+                return Integer.TYPE;
+              } else if (fqcn.equals("java.lang.Float")
+                || fqcn.equals("java.lang.Double")) {
+                return Float.TYPE;
+              } else {
+                return null;
+              }
+            } else if (fqcn.equals(TYPE_BYTE)) {
+              return Byte.TYPE;
+            } else if (fqcn.equals(TYPE_SHORT)) {
+                return Short.TYPE;
             } else {
                 return null;
             }
