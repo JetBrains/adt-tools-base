@@ -21,7 +21,7 @@ import com.android.build.gradle.internal.model.JavaLibraryImpl;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.JavaLibrary;
-import com.beust.jcommander.internal.Sets;
+import com.google.common.collect.Sets;
 
 import org.gradle.api.artifacts.Configuration;
 
