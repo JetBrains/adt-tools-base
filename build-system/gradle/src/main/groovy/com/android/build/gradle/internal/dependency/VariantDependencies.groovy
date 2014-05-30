@@ -93,7 +93,12 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
         if (publishVariant) {
             publish = project.configurations.create(name)
             publish.description = "Published Configuration for Variant ${name}"
-            publish.setExtendsFrom(apkConfigs)
+            // if the variant is not a library, then the publishing configuration should
+            // not extend from the apkConfigs. It's mostly there to access the artifact from
+            // another project but it shouldn't bring any dependencies with it.
+            if (isLibrary) {
+                publish.setExtendsFrom(apkConfigs)
+            }
         }
 
         return new VariantDependencies(name, compile, apk, publish);

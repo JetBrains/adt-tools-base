@@ -70,7 +70,6 @@ import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.TestedVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
-import com.android.build.gradle.internal.variant.VariantHelper
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.Dex
 import com.android.build.gradle.tasks.GenerateBuildConfig
@@ -1788,8 +1787,6 @@ public abstract class BasePlugin {
             String fullName = variantData.variantConfiguration.fullName
 
             if (extension.defaultPublishConfig.equals(fullName)) {
-                VariantHelper.setupDefaultConfig(project,
-                        variantData.variantDependency.packageConfiguration)
 
                 // add the artifact that will be published
                 project.artifacts.add("default", new ApkPublishArtifact(
