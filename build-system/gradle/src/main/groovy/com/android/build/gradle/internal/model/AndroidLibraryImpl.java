@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.MavenCoordinates;
 
 import java.io.File;
 import java.io.Serializable;
@@ -170,5 +171,18 @@ public class AndroidLibraryImpl implements AndroidLibrary, Serializable {
     @Override
     public File getLintJar() {
         return lintJar;
+    }
+
+
+    @Nullable
+    @Override
+    public MavenCoordinates getRequestedCoordinates() {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public MavenCoordinates getResolvedCoordinates() {
+        return null;
     }
 }

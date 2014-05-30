@@ -35,6 +35,7 @@ import com.android.builder.dependency.LibraryBundle
 import com.android.builder.dependency.LibraryDependency
 import com.android.builder.dependency.ManifestDependency
 import com.android.builder.model.AndroidLibrary
+import com.android.builder.model.MavenCoordinates
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.Copy
@@ -343,10 +344,23 @@ public class LibraryVariantFactory implements VariantFactory {
                 return variantConfig.directLibraries
             }
 
+
             @NonNull
             @Override
             List<ManifestDependency> getManifestDependencies() {
                 return variantConfig.directLibraries
+            }
+
+            @Override
+            @Nullable
+            MavenCoordinates getRequestedCoordinates() {
+                return null
+            }
+
+            @Override
+            @Nullable
+            MavenCoordinates getResolvedCoordinates() {
+                return null
             }
         };
     }

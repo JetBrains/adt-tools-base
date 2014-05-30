@@ -17,8 +17,11 @@
 package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.model.JavaLibraryImpl;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
+import com.beust.jcommander.internal.Sets;
 
 import org.gradle.api.artifacts.Configuration;
 
@@ -26,6 +29,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Implementation of {@link com.android.builder.model.Dependencies} over a Gradle
@@ -49,8 +53,16 @@ public class ConfigurationDependencies implements Dependencies {
 
     @NonNull
     @Override
-    public Collection<File> getJars() {
-        return configuration.getFiles();
+    public Collection<JavaLibrary> getJavaLibraries() {
+        Set<File> files = configuration.getFiles();
+        if (files.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<JavaLibrary> javaLibraries = Sets.newHashSet();
+        for (File file : files) {
+            javaLibraries.add(new JavaLibraryImpl(file));
+        }
+        return javaLibraries;
     }
 
     @NonNull

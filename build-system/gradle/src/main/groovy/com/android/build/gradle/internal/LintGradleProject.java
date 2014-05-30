@@ -12,6 +12,7 @@ import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SourceProvider;
@@ -360,9 +361,10 @@ public class LintGradleProject extends Project {
         @Override
         public List<File> getJavaLibraries() {
             if (mJavaLibraries == null) {
-                Collection<File> jars = mVariant.getMainArtifact().getDependencies().getJars();
-                mJavaLibraries = Lists.newArrayListWithExpectedSize(jars.size());
-                for (File jar : jars) {
+                Collection<JavaLibrary> libs = mVariant.getMainArtifact().getDependencies().getJavaLibraries();
+                mJavaLibraries = Lists.newArrayListWithExpectedSize(libs.size());
+                for (JavaLibrary lib : libs) {
+                    File jar = lib.getJarFile();
                     if (jar.exists()) {
                         mJavaLibraries.add(jar);
                     }
