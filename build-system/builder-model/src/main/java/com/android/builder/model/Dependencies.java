@@ -37,12 +37,12 @@ public interface Dependencies {
     List<AndroidLibrary> getLibraries();
 
     /**
-     * The list of jar dependencies. This only includes external dependencies.
+     * The list of Java library dependencies. This only includes external dependencies.
      *
-     * @return the list of jar files.
+     * @return the list of Java library dependencies.
      */
     @NonNull
-    Collection<File> getJars();
+    Collection<JavaLibrary> getJavaLibraries();
 
     /**
      * The list of project dependencies. This is only for non Android module dependencies (which

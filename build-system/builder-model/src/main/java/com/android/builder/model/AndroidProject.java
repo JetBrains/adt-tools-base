@@ -28,6 +28,7 @@ import java.util.Collection;
  */
 public interface AndroidProject {
     String BUILD_MODEL_ONLY_SYSTEM_PROPERTY =  "android.build.model.only";
+    String INVOKED_FROM_IDE_PROPERTY = "android.invoked.from.ide";
 
     public static final String ARTIFACT_MAIN = "_main_";
     public static final String ARTIFACT_ANDROID_TEST = "_android_test_";
