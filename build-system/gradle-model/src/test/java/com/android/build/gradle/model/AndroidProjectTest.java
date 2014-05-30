@@ -32,6 +32,7 @@ import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.JavaArtifact;
 import com.android.builder.model.JavaCompileOptions;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SigningConfig;
@@ -407,7 +408,7 @@ public class AndroidProjectTest extends TestCase {
         // check debug dependencies
         Dependencies dependencies = debugMainInfo.getDependencies();
         assertNotNull(dependencies);
-        assertEquals(2, dependencies.getJars().size());
+        assertEquals(2, dependencies.getJavaLibraries().size());
         assertEquals(1, dependencies.getLibraries().size());
 
         AndroidLibrary lib = dependencies.getLibraries().iterator().next();
@@ -725,10 +726,10 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("project dep count", 1, projects.size());
         assertEquals("dep on :util check", ":util", projects.iterator().next());
 
-        Collection<File> jars = dependencies.getJars();
-        assertNotNull("jar dep list null-check", jars);
+        Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries();
+        assertNotNull("jar dep list null-check", javaLibraries);
         // TODO these are jars coming from ':util' They shouldn't be there.
-        assertEquals("jar dep count", 2, jars.size());
+        assertEquals("jar dep count", 2, javaLibraries.size());
     }
 
     public void testTestWithDep() {
@@ -747,7 +748,7 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull(testArtifact);
 
         Dependencies testDependencies = testArtifact.getDependencies();
-        assertEquals(1, testDependencies.getJars().size());
+        assertEquals(1, testDependencies.getJavaLibraries().size());
     }
 
     public void testLibTestDep() {
@@ -766,9 +767,10 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull(testArtifact);
 
         Dependencies testDependencies = testArtifact.getDependencies();
-        Collection<File> jars = testDependencies.getJars();
-        assertEquals(2, jars.size());
-        for (File f : jars) {
+        Collection<JavaLibrary> javaLibraries = testDependencies.getJavaLibraries();
+        assertEquals(2, javaLibraries.size());
+        for (JavaLibrary lib : javaLibraries) {
+            File f = lib.getJarFile();
             assertTrue(f.getName().equals("guava-11.0.2.jar") || f.getName().equals("jsr305-1.3.9.jar"));
         }
     }
@@ -786,10 +788,11 @@ public class AndroidProjectTest extends TestCase {
         AndroidArtifact mainArtifact = debugVariant.getMainArtifact();
         Dependencies dependencies = mainArtifact.getDependencies();
 
-        assertFalse(dependencies.getJars().isEmpty());
+        assertFalse(dependencies.getJavaLibraries().isEmpty());
 
         boolean foundSupportJar = false;
-        for (File file : dependencies.getJars()) {
+        for (JavaLibrary lib : dependencies.getJavaLibraries()) {
+            File file = lib.getJarFile();
             if (SdkConstants.FN_RENDERSCRIPT_V8_JAR.equals(file.getName())) {
                 foundSupportJar = true;
                 break;
@@ -965,7 +968,7 @@ public class AndroidProjectTest extends TestCase {
 
             Dependencies deps = javaArtifact.getDependencies();
             assertNotNull("java artifact deps null-check", deps);
-            assertFalse(deps.getJars().isEmpty());
+            assertFalse(deps.getJavaLibraries().isEmpty());
         }
     }
 
@@ -993,9 +996,9 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull("project dep list null-check", projects);
         assertTrue("project dep empty check", projects.isEmpty());
 
-        Collection<File> jars = dependencies.getJars();
-        assertNotNull("jar dep list null-check", jars);
-        assertEquals("jar dep count", 1, jars.size());
+        Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries();
+        assertNotNull("jar dep list null-check", javaLibraries);
+        assertEquals("jar dep count", 1, javaLibraries.size());
     }
 
     /**

@@ -27,6 +27,7 @@ import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.Project;
@@ -46,17 +47,17 @@ public class DependenciesImpl implements Dependencies, Serializable {
     @NonNull
     private final List<AndroidLibrary> libraries;
     @NonNull
-    private final List<File> jars;
+    private final List<JavaLibrary> javaLibraries;
     @NonNull
     private final List<String> projects;
 
     @NonNull
     static DependenciesImpl cloneDependenciesForJavaArtifacts(@NonNull Dependencies dependencies) {
         List<AndroidLibrary> libraries = Collections.emptyList();
-        List<File> jars = Lists.newArrayList(dependencies.getJars());
+        List<JavaLibrary> javaLibraries = Lists.newArrayList(dependencies.getJavaLibraries());
         List<String> projects = Collections.emptyList();
 
-        return new DependenciesImpl(libraries, jars, projects);
+        return new DependenciesImpl(libraries, javaLibraries, projects);
     }
 
     @NonNull
@@ -68,7 +69,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
         VariantDependencies variantDependencies = variantData.getVariantDependency();
 
         List<AndroidLibrary> libraries;
-        List<File> jars;
+        List<JavaLibrary> javaLibraries;
         List<String> projects;
 
         List<LibraryDependencyImpl> libs = variantDependencies.getLibraries();
@@ -81,7 +82,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
         List<JarDependency> jarDeps = variantDependencies.getJarDependencies();
         List<JarDependency> localDeps = variantDependencies.getLocalDependencies();
 
-        jars = Lists.newArrayListWithExpectedSize(jarDeps.size() + localDeps.size());
+        javaLibraries = Lists.newArrayListWithExpectedSize(jarDeps.size() + localDeps.size());
         projects = Lists.newArrayList();
 
         for (JarDependency jarDep : jarDeps) {
@@ -93,35 +94,35 @@ public class DependenciesImpl implements Dependencies, Serializable {
             if (!customArtifact && (projectMatch = getProject(jarFile, gradleProjects)) != null) {
                 projects.add(projectMatch.getPath());
             } else {
-                jars.add(jarFile);
+                javaLibraries.add(new JavaLibraryImpl(jarFile));
             }
         }
 
         for (JarDependency jarDep : localDeps) {
-            jars.add(jarDep.getJarFile());
+            javaLibraries.add(new JavaLibraryImpl(jarDep.getJarFile()));
         }
 
         if (variantData.getVariantConfiguration().getMergedFlavor().getRenderscriptSupportMode()) {
             File supportJar = basePlugin.getAndroidBuilder().getRenderScriptSupportJar();
             if (supportJar != null) {
-                jars.add(supportJar);
+                javaLibraries.add(new JavaLibraryImpl(supportJar));
             }
         }
 
-        return new DependenciesImpl(libraries, jars, projects);
+        return new DependenciesImpl(libraries, javaLibraries, projects);
     }
 
-    public DependenciesImpl(@NonNull Set<File> jars) {
-        this.jars = Lists.newArrayList(jars);
+    public DependenciesImpl(@NonNull Set<JavaLibrary> javaLibraries) {
+        this.javaLibraries = Lists.newArrayList(javaLibraries);
         this.libraries = Collections.emptyList();
         this.projects = Collections.emptyList();
     }
 
     private DependenciesImpl(@NonNull List<AndroidLibrary> libraries,
-                             @NonNull List<File> jars,
+                             @NonNull List<JavaLibrary> javaLibraries,
                              @NonNull List<String> projects) {
         this.libraries = libraries;
-        this.jars = jars;
+        this.javaLibraries = javaLibraries;
         this.projects = projects;
     }
 
@@ -133,8 +134,8 @@ public class DependenciesImpl implements Dependencies, Serializable {
 
     @NonNull
     @Override
-    public List<File> getJars() {
-        return jars;
+    public List<JavaLibrary> getJavaLibraries() {
+        return javaLibraries;
     }
 
     @NonNull
