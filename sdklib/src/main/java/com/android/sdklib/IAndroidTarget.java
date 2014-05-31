@@ -129,6 +129,7 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     /**
      * Returns the version of the target. This is guaranteed to be non-null.
      */
+    @NonNull
     AndroidVersion getVersion();
 
     /**

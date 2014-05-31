@@ -198,6 +198,7 @@ public final class AddOnTarget implements IAndroidTarget {
         return mDescription;
     }
 
+    @NonNull
     @Override
     public AndroidVersion getVersion() {
         // this is always defined by the base platform
