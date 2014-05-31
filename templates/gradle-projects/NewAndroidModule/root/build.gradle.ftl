@@ -31,7 +31,7 @@ repositories {
 </#if>
 
 android {
-    compileSdkVersion ${buildApi}
+    compileSdkVersion <#if buildApiString?matches("^\\d+$")>${buildApiString}<#else>'${buildApiString}'</#if>
     buildToolsVersion "${buildToolsVersion}"
 
     defaultConfig {

@@ -79,6 +79,16 @@
         constraints="apilevel"
         default="19" />
 
+    <!--
+      Usually the same as buildApi, but when targeting a preview platform this is the code name instead
+    -->
+    <parameter
+        id="buildApiString"
+        name="Build API level"
+        type="string"
+        constraints="apilevel"
+        default="19" />
+
     <parameter
         id="copyIcons"
         name="Include launcher icons"
