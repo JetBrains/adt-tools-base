@@ -49,6 +49,8 @@ public abstract class JavaParser {
     public static final String TYPE_FLOAT = "float";                    //$NON-NLS-1$
     public static final String TYPE_DOUBLE = "double";                  //$NON-NLS-1$
     public static final String TYPE_BOOLEAN = "boolean";                //$NON-NLS-1$
+    public static final String TYPE_SHORT = "short";                    //$NON-NLS-1$
+    public static final String TYPE_BYTE = "byte";                      //$NON-NLS-1$
     public static final String TYPE_NULL = "null";                      //$NON-NLS-1$
 
     /**
