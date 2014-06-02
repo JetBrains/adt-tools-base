@@ -356,4 +356,14 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                 ));
 
     }
+
+    public void testWrapperClasses() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=70496
+        assertEquals("No warnings.",
+
+                lintProject(
+                        "res/values/formatstrings10.xml",
+                        "src/test/pkg/StringFormat11.java.txt=>src/test/pkg/StringFormat11.java"
+                ));
+    }
 }
