@@ -47,8 +47,8 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
     private boolean mRenderscriptNdkMode = false;
     private int mVersionCode = -1;
     private String mVersionName = null;
-    private String mPackageName = null;
-    private String mTestPackageName = null;
+    private String mApplicationId = null;
+    private String mTestApplicationId = null;
     private String mTestInstrumentationRunner = null;
     private Boolean mTestHandleProfiling = null;
     private Boolean mTestFunctionalTest = null;
@@ -75,9 +75,9 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
         clonedFlavor.mVersionCode = productFlavor.getVersionCode();
         clonedFlavor.mVersionName = productFlavor.getVersionName();
 
-        clonedFlavor.mPackageName = productFlavor.getPackageName();
+        clonedFlavor.mApplicationId = productFlavor.getApplicationId();
 
-        clonedFlavor.mTestPackageName = productFlavor.getTestPackageName();
+        clonedFlavor.mTestApplicationId = productFlavor.getTestApplicationId();
         clonedFlavor.mTestInstrumentationRunner = productFlavor.getTestInstrumentationRunner();
         clonedFlavor.mTestHandleProfiling = productFlavor.getTestHandleProfiling();
         clonedFlavor.mTestFunctionalTest = productFlavor.getTestFunctionalTest();
@@ -99,8 +99,8 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
 
     @Override
     @Nullable
-    public String getPackageName() {
-        return mPackageName;
+    public String getApplicationId() {
+        return mApplicationId;
     }
 
     @Override
@@ -143,8 +143,8 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
 
     @Nullable
     @Override
-    public String getTestPackageName() {
-        return mTestPackageName;
+    public String getTestApplicationId() {
+        return mTestApplicationId;
     }
 
     @Nullable
@@ -212,8 +212,8 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
                 ", mRenderscriptNdkMode=" + mRenderscriptNdkMode +
                 ", mVersionCode=" + mVersionCode +
                 ", mVersionName='" + mVersionName + '\'' +
-                ", mPackageName='" + mPackageName + '\'' +
-                ", mTestPackageName='" + mTestPackageName + '\'' +
+                ", mApplicationId='" + mApplicationId + '\'' +
+                ", mTestApplicationId='" + mTestApplicationId + '\'' +
                 ", mTestInstrumentationRunner='" + mTestInstrumentationRunner + '\'' +
                 ", mTestHandleProfiling='" + mTestHandleProfiling + '\'' +
                 ", mTestFunctionalTest='" + mTestFunctionalTest + '\'' +

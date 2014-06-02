@@ -74,42 +74,50 @@ public class VariantConfigurationTest extends TestCase {
     public void testPackageOverrideNone() {
         VariantConfiguration variant = getVariant();
 
-        assertNull(variant.getPackageOverride());
+        assertNull(variant.getIdOverride());
     }
 
     public void testPackageOverridePackageFromFlavor() {
-        mFlavorConfig.setPackageName("foo.bar");
+        mFlavorConfig.setApplicationId("foo.bar");
 
         VariantConfiguration variant = getVariant();
 
-        assertEquals("foo.bar", variant.getPackageOverride());
+        assertEquals("foo.bar", variant.getIdOverride());
+    }
+
+    public void testIdOverrideIdFromFlavor() {
+        mFlavorConfig.setApplicationId("foo.bar");
+
+        VariantConfiguration variant = getVariant();
+
+        assertEquals("foo.bar", variant.getIdOverride());
     }
 
     public void testPackageOverridePackageFromFlavorWithSuffix() {
-        mFlavorConfig.setPackageName("foo.bar");
-        mBuildType.setPackageNameSuffix(".fortytwo");
+        mFlavorConfig.setApplicationId("foo.bar");
+        mBuildType.setApplicationIdSuffix(".fortytwo");
 
         VariantConfiguration variant = getVariant();
 
-        assertEquals("foo.bar.fortytwo", variant.getPackageOverride());
+        assertEquals("foo.bar.fortytwo", variant.getIdOverride());
     }
 
     public void testPackageOverridePackageFromFlavorWithSuffix2() {
-        mFlavorConfig.setPackageName("foo.bar");
-        mBuildType.setPackageNameSuffix("fortytwo");
+        mFlavorConfig.setApplicationId("foo.bar");
+        mBuildType.setApplicationIdSuffix("fortytwo");
 
         VariantConfiguration variant = getVariant();
 
-        assertEquals("foo.bar.fortytwo", variant.getPackageOverride());
+        assertEquals("foo.bar.fortytwo", variant.getIdOverride());
     }
 
     public void testPackageOverridePackageWithSuffixOnly() {
 
-        mBuildType.setPackageNameSuffix("fortytwo");
+        mBuildType.setApplicationIdSuffix("fortytwo");
 
         VariantConfiguration variant = getVariantWithManifestPackage("fake.package.name");
 
-        assertEquals("fake.package.name.fortytwo", variant.getPackageOverride());
+        assertEquals("fake.package.name.fortytwo", variant.getIdOverride());
     }
 
     public void testVersionNameFromFlavorWithSuffix() {

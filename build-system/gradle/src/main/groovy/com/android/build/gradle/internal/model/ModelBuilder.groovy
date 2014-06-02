@@ -250,7 +250,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 variantData.outputFile,
                 vC.isSigningReady(),
                 signingConfigName,
-                vC.packageName,
+                vC.applicationId,
                 variantData.sourceGenTask.name,
                 variantData.javaCompileTask.name,
                 variantData.manifestProcessorTask.manifestOutputFile,
