@@ -628,37 +628,37 @@ public class AndroidBuilder {
     /**
      * Creates the manifest for a test variant
      *
-     * @param testPackageName the package name of the test application
+     * @param testApplicationId the application id of the test application
      * @param minSdkVersion the minSdkVersion of the test application
      * @param targetSdkVersion the targetSdkVersion of the test application
-     * @param testedPackageName the package name of the tested application
+     * @param testedApplicationId the application id of the tested application
      * @param instrumentationRunner the name of the instrumentation runner
      * @param handleProfiling whether or not the Instrumentation object will turn profiling on and off
      * @param functionalTest whether or not the Instrumentation class should run as a functional test
      * @param libraries the library dependency graph
      * @param outManifest the output location for the merged manifest
      *
-     * @see VariantConfiguration#getPackageName()
+     * @see VariantConfiguration#getApplicationId()
      * @see VariantConfiguration#getTestedConfig()
      * @see VariantConfiguration#getMinSdkVersion()
-     * @see VariantConfiguration#getTestedPackageName()
+     * @see VariantConfiguration#getTestedApplicationId()
      * @see VariantConfiguration#getInstrumentationRunner()
      * @see VariantConfiguration#getHandleProfiling()
      * @see VariantConfiguration#getFunctionalTest()
      * @see VariantConfiguration#getDirectLibraries()
      */
     public void processTestManifest(
-            @NonNull  String testPackageName,
+            @NonNull  String testApplicationId,
             @Nullable String minSdkVersion,
             @Nullable String targetSdkVersion,
-            @NonNull  String testedPackageName,
+            @NonNull  String testedApplicationId,
             @NonNull  String instrumentationRunner,
             @NonNull  Boolean handleProfiling,
             @NonNull  Boolean functionalTest,
             @NonNull  List<? extends ManifestDependency> libraries,
             @NonNull  File outManifest) {
-        checkNotNull(testPackageName, "testPackageName cannot be null.");
-        checkNotNull(testedPackageName, "testedPackageName cannot be null.");
+        checkNotNull(testApplicationId, "testApplicationId cannot be null.");
+        checkNotNull(testedApplicationId, "testedApplicationId cannot be null.");
         checkNotNull(instrumentationRunner, "instrumentationRunner cannot be null.");
         checkNotNull(handleProfiling, "handleProfiling cannot be null.");
         checkNotNull(functionalTest, "functionalTest cannot be null.");
@@ -685,10 +685,10 @@ public class AndroidBuilder {
                 File generatedTestManifest = File.createTempFile("manifestMerge", ".xml");
 
                 generateTestManifest(
-                        testPackageName,
+                        testApplicationId,
                         minSdkVersion,
                         targetSdkVersion,
-                        testedPackageName,
+                        testedApplicationId,
                         instrumentationRunner,
                         handleProfiling,
                         functionalTest,
@@ -705,10 +705,10 @@ public class AndroidBuilder {
             }
         } else {
             generateTestManifest(
-                    testPackageName,
+                    testApplicationId,
                     minSdkVersion,
                     targetSdkVersion,
-                    testedPackageName,
+                    testedApplicationId,
                     instrumentationRunner,
                     handleProfiling,
                     functionalTest,
@@ -719,37 +719,37 @@ public class AndroidBuilder {
     /**
      * Creates the manifest for a test variant
      *
-     * @param testPackageName the package name of the test application
+     * @param testApplicationId the application id of the test application
      * @param minSdkVersion the minSdkVersion of the test application
      * @param targetSdkVersion the targetSdkVersion of the test application
-     * @param testedPackageName the package name of the tested application
+     * @param testedApplicationId the application id of the tested application
      * @param instrumentationRunner the name of the instrumentation runner
      * @param handleProfiling whether or not the Instrumentation object will turn profiling on and off
      * @param functionalTest whether or not the Instrumentation class should run as a functional test
      * @param libraries the library dependency graph
      * @param outManifest the output location for the merged manifest
      *
-     * @see VariantConfiguration#getPackageName()
+     * @see VariantConfiguration#getApplicationId()
      * @see VariantConfiguration#getTestedConfig()
      * @see VariantConfiguration#getMinSdkVersion()
-     * @see VariantConfiguration#getTestedPackageName()
+     * @see VariantConfiguration#getTestedApplicationId()
      * @see VariantConfiguration#getInstrumentationRunner()
      * @see VariantConfiguration#getHandleProfiling()
      * @see VariantConfiguration#getFunctionalTest()
      * @see VariantConfiguration#getDirectLibraries()
      */
     public void processTestManifest2(
-            @NonNull  String testPackageName,
+            @NonNull  String testApplicationId,
             @Nullable String minSdkVersion,
             @Nullable String targetSdkVersion,
-            @NonNull  String testedPackageName,
+            @NonNull  String testedApplicationId,
             @NonNull  String instrumentationRunner,
             @NonNull  Boolean handleProfiling,
             @NonNull  Boolean functionalTest,
             @NonNull  List<? extends ManifestDependency> libraries,
             @NonNull  File outManifest) {
-        checkNotNull(testPackageName, "testPackageName cannot be null.");
-        checkNotNull(testedPackageName, "testedPackageName cannot be null.");
+        checkNotNull(testApplicationId, "testApplicationId cannot be null.");
+        checkNotNull(testedApplicationId, "testedApplicationId cannot be null.");
         checkNotNull(instrumentationRunner, "instrumentationRunner cannot be null.");
         checkNotNull(handleProfiling, "handleProfiling cannot be null.");
         checkNotNull(functionalTest, "functionalTest cannot be null.");
@@ -762,10 +762,10 @@ public class AndroidBuilder {
                 File generatedTestManifest = File.createTempFile("manifestMerge", ".xml");
 
                 generateTestManifest(
-                        testPackageName,
+                        testApplicationId,
                         minSdkVersion,
                         targetSdkVersion,
-                        testedPackageName,
+                        testedApplicationId,
                         instrumentationRunner,
                         handleProfiling,
                         functionalTest,
@@ -789,7 +789,7 @@ public class AndroidBuilder {
 
                 MergingReport mergingReport = ManifestMerger2.newMerger(
                         mainManifestFile, mLogger, ManifestMerger2.MergeType.APPLICATION)
-                        .setOverride(SystemProperty.PACKAGE, testPackageName)
+                        .setOverride(SystemProperty.PACKAGE, testApplicationId)
                         .addLibraryManifests(reworkedLibraries.build())
                         .merge();
 
@@ -821,10 +821,10 @@ public class AndroidBuilder {
             }
         } else {
             generateTestManifest(
-                    testPackageName,
+                    testApplicationId,
                     minSdkVersion,
                     targetSdkVersion,
-                    testedPackageName,
+                    testedApplicationId,
                     instrumentationRunner,
                     handleProfiling,
                     functionalTest,
@@ -833,20 +833,20 @@ public class AndroidBuilder {
     }
 
     private static void generateTestManifest(
-            @NonNull String testPackageName,
+            @NonNull String testApplicationId,
             @Nullable String minSdkVersion,
             @Nullable String targetSdkVersion,
-            @NonNull String testedPackageName,
+            @NonNull String testedApplicationId,
             @NonNull String instrumentationRunner,
             @NonNull Boolean handleProfiling,
             @NonNull Boolean functionalTest,
             @NonNull File outManifestLocation) {
         TestManifestGenerator generator = new TestManifestGenerator(
                 outManifestLocation,
-                testPackageName,
+                testApplicationId,
                 minSdkVersion,
                 targetSdkVersion,
-                testedPackageName,
+                testedApplicationId,
                 instrumentationRunner,
                 handleProfiling,
                 functionalTest);

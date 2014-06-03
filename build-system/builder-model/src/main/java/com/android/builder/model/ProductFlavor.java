@@ -43,12 +43,12 @@ public interface ProductFlavor extends BaseConfig {
 
     /**
      * Returns the name of the product flavor. This is only the value set on this product flavor.
-     * To get the final package name, use {@link AndroidArtifact#getPackageName()}.
+     * To get the final application id name, use {@link AndroidArtifact#getApplicationId()}.
      *
-     * @return the package name.
+     * @return the application id.
      */
     @Nullable
-    String getPackageName();
+    String getApplicationId();
 
     /**
      * Returns the version code. This is only the value set on this product flavor.
@@ -107,14 +107,14 @@ public interface ProductFlavor extends BaseConfig {
     boolean getRenderscriptNdkMode();
 
     /**
-     * Returns the test package name. This is only the value set on this product flavor.
+     * Returns the test application id. This is only the value set on this product flavor.
      * To get the final value, use {@link Variant#getTestArtifactInfo()} and
-     * {@link AndroidArtifact#getPackageName()}
+     * {@link AndroidArtifact#getApplicationId()}
      *
      * @return the test package name.
      */
     @Nullable
-    String getTestPackageName();
+    String getTestApplicationId();
 
     /**
      * Returns the test instrumentation runner. This is only the value set on this product flavor.

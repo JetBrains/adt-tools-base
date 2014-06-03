@@ -44,7 +44,7 @@ class ProcessManifest extends ManifestProcessorTask {
 
     @Input @Optional
     String getPackageOverride() {
-        return variantConfiguration.getPackageOverride();
+        return variantConfiguration.getApplicationId();
     }
 
     @Input

@@ -13,6 +13,6 @@ android {
     buildToolsVersion '19.1.0'
 
     defaultConfig {
-        packageName "com.android.tests.basic.foo"
+        applicationId "com.android.tests.basic.foo"
     }
 }

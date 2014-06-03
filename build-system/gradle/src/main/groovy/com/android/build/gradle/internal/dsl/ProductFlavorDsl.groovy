@@ -214,4 +214,43 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     void resConfigs(@NonNull Collection<String> config) {
         addResourceConfigurations(config);
     }
+
+    // ---------------
+    // TEMP for compatibility
+    // STOPSHIP Remove in 1.0
+
+    /**
+     * Sets the package name.
+     *
+     * @param packageName the package name
+     * @return the flavor object
+     */
+    @NonNull
+    public ProductFlavor setPackageName(String packageName) {
+        logger.warn("WARNING: packageName is deprecated (and will soon stop working); change to \"applicationId\" instead");
+        return setApplicationId(packageName);
+    }
+
+    @NonNull
+    public ProductFlavor packageName(String packageName) {
+        return setApplicationId(packageName);
+    }
+
+    @Nullable
+    public String getPackageName() {
+        logger.warn("WARNING: packageName is deprecated (and will soon stop working); change to \"applicationId\" instead");
+        return getApplicationId();
+    }
+
+    @Nullable
+    public String getTestPackageName() {
+        logger.warn("WARNING: testPackageName is deprecated (and will soon stop working); change to \"testApplicationId\" instead");
+        return getTestApplicationId();
+    }
+
+    @Nullable
+    public ProductFlavor setTestPackageName(String packageName) {
+        logger.warn("WARNING: testPackageName is deprecated (and will soon stop working); change to \"testApplicationId\" instead");
+        return setTestApplicationId(packageName);
+    }
 }

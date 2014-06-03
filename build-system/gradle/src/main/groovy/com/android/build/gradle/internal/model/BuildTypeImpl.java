@@ -41,7 +41,7 @@ class BuildTypeImpl implements BuildType, Serializable {
     private boolean jniDebugBuild;
     private boolean renderscriptDebugBuild;
     private int renderscriptOptimLevel;
-    private String packageNameSuffix;
+    private String applicationIdSuffix;
     private String versionNameSuffix;
     private boolean runProguard;
     private boolean zipAlign;
@@ -56,7 +56,7 @@ class BuildTypeImpl implements BuildType, Serializable {
         clonedBuildType.jniDebugBuild = buildType.isJniDebugBuild();
         clonedBuildType.renderscriptDebugBuild = buildType.isRenderscriptDebugBuild();
         clonedBuildType.renderscriptOptimLevel = buildType.getRenderscriptOptimLevel();
-        clonedBuildType.packageNameSuffix = buildType.getPackageNameSuffix();
+        clonedBuildType.applicationIdSuffix = buildType.getApplicationIdSuffix();
         clonedBuildType.versionNameSuffix = buildType.getVersionNameSuffix();
         clonedBuildType.runProguard = buildType.isRunProguard();
         clonedBuildType.zipAlign = buildType.isZipAlign();
@@ -101,8 +101,8 @@ class BuildTypeImpl implements BuildType, Serializable {
 
     @Nullable
     @Override
-    public String getPackageNameSuffix() {
-        return packageNameSuffix;
+    public String getApplicationIdSuffix() {
+        return applicationIdSuffix;
     }
 
     @Nullable

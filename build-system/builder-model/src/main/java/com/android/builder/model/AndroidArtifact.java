@@ -56,12 +56,12 @@ public interface AndroidArtifact extends BaseArtifact {
     String getSigningConfigName();
 
     /**
-     * Returns the package name of this artifact.
+     * Returns the application id of this artifact.
      *
-     * @return the package name.
+     * @return the application id.
      */
     @NonNull
-    String getPackageName();
+    String getApplicationId();
 
     /**
      * Returns the name of the task used to generate the source code. The actual value might

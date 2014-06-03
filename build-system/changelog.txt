@@ -1,3 +1,13 @@
+0.11.0:
+- Replaced the various DSL properties used to define the "package
+  name" with an "application ID", to decouple the persistent ID of the
+  application from the implementation package used to contain for
+  example the R and BuildConfig classes.
+  packageName => applicationId
+  packageNameSuffix => applicationIdSuffix
+  testPackageName => testApplicationId
+  testedPackageName => testedApplicationId
+
 0.10.2:
 
 - More fixes on the Manifest merger, including better handling of minSdkVersion.
