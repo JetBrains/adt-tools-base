@@ -199,6 +199,7 @@ public final class PlatformTarget implements IAndroidTarget {
         return String.format("Standard Android platform %s", mVersionName);
     }
 
+    @NonNull
     @Override
     public AndroidVersion getVersion() {
         return mVersion;
