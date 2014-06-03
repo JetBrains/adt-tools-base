@@ -85,7 +85,7 @@ public class ApplicationVariantFactory implements VariantFactory {
         handleMicroApp(variantData);
 
         // Add a task to process the manifest(s)
-        basePlugin.createProcessManifestTask(variantData, "manifests");
+        basePlugin.createMergeManifestsTask(variantData, "manifests");
 
         // Add a task to create the res values
         basePlugin.createGenerateResValuesTask(variantData);

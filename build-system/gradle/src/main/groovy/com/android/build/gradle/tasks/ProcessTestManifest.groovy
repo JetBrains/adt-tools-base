@@ -23,7 +23,7 @@ import org.gradle.api.tasks.Optional
 /**
  * A task that processes the manifest
  */
-public class ProcessTestManifest extends ProcessManifest {
+public class ProcessTestManifest extends ManifestProcessorTask {
 
     // ----- PRIVATE TASK API -----
 

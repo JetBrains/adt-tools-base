@@ -28,7 +28,6 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
@@ -138,8 +137,8 @@ public class ManifestMerger2Test extends ManifestMergerTest {
     void processTestFiles(TestFiles testFiles) throws Exception {
 
         StdLogger stdLogger = new StdLogger(StdLogger.Level.VERBOSE);
-        ManifestMerger2.Invoker invoker = ManifestMerger2.newInvoker(testFiles.getMain(),
-                stdLogger)
+        ManifestMerger2.Invoker invoker = ManifestMerger2.newMerger(testFiles.getMain(),
+                stdLogger, ManifestMerger2.MergeType.APPLICATION)
                 .addLibraryManifests(testFiles.getLibs())
                 .withFeatures(ManifestMerger2.Invoker.Feature.KEEP_INTERMEDIARY_STAGES);
 
