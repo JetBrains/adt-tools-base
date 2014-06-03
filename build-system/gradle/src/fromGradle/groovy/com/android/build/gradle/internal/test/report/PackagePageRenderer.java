@@ -15,9 +15,6 @@
  */
 package com.android.build.gradle.internal.test.report;
 
-import org.gradle.internal.ErroringAction;
-import org.gradle.api.internal.html.SimpleHtmlWriter;
-
 import java.io.IOException;
 
 /**
