@@ -8,6 +8,7 @@
     description="Creates a new empty activity">
 
     <category value="Activity" />
+    <formfactor value="Phone and Tablet" />
 
     <parameter
         id="activityClass"
