@@ -82,7 +82,8 @@ import com.android.build.gradle.tasks.PackageApplication
 import com.android.build.gradle.tasks.PreDex
 import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.android.build.gradle.tasks.ProcessAppManifest
-import com.android.build.gradle.tasks.ProcessAppManifest2
+import com.android.build.gradle.tasks.MergeManifests
+import com.android.build.gradle.tasks.ProcessManifest
 import com.android.build.gradle.tasks.ProcessTestManifest
 import com.android.build.gradle.tasks.ProcessTestManifest2
 import com.android.build.gradle.tasks.RenderscriptCompile
@@ -494,7 +495,7 @@ public abstract class BasePlugin {
         }
     }
 
-    public void createProcessManifestTask(BaseVariantData variantData,
+    public void createMergeManifestsTask(BaseVariantData variantData,
                                           String manifestOutDir) {
         if (extension.getUseOldManifestMerger()) {
             createOldProcessManifestTask(variantData, manifestOutDir);
@@ -504,8 +505,8 @@ public abstract class BasePlugin {
 
         def processManifestTask = project.tasks.create(
                 "process${variantData.variantConfiguration.fullName.capitalize()}Manifest",
-                ProcessAppManifest2)
-        variantData.processManifestTask = processManifestTask
+                MergeManifests)
+        variantData.manifestProcessorTask = processManifestTask
         processManifestTask.plugin = this
 
         processManifestTask.dependsOn variantData.prepareDependenciesTask
@@ -547,14 +548,54 @@ public abstract class BasePlugin {
         }
     }
 
+    public void createProcessManifestTask(BaseVariantData variantData, String manifestOutDir) {
+        if (extension.getUseOldManifestMerger()) {
+            createOldProcessManifestTask(variantData, manifestOutDir);
+            return;
+        }
+        VariantConfiguration config = variantData.variantConfiguration
+
+        def processManifest = project.tasks.create(
+                "process${variantData.variantConfiguration.fullName.capitalize()}Manifest",
+                ProcessManifest)
+        variantData.manifestProcessorTask = processManifest
+        processManifest.plugin = this
+
+        processManifest.dependsOn variantData.prepareDependenciesTask
+        processManifest.variantConfiguration = config
+
+        ProductFlavor mergedFlavor = config.mergedFlavor
+
+        processManifest.conventionMapping.minSdkVersion = {
+            if (androidBuilder.isPreviewTarget()) {
+                return androidBuilder.getTargetCodename()
+            }
+            return mergedFlavor.minSdkVersion?.apiString
+        }
+
+        processManifest.conventionMapping.targetSdkVersion = {
+            if (androidBuilder.isPreviewTarget()) {
+                return androidBuilder.getTargetCodename()
+            }
+
+            return mergedFlavor.targetSdkVersion?.apiString
+        }
+
+        processManifest.conventionMapping.manifestOutputFile = {
+            project.file(
+                    "$project.buildDir/${FD_INTERMEDIATES}/${manifestOutDir}/" +
+                            "${variantData.variantConfiguration.dirName}/AndroidManifest.xml")
+        }
+    }
+
     public void createOldProcessManifestTask(BaseVariantData variantData,
             String manifestOurDir) {
         VariantConfiguration config = variantData.variantConfiguration
 
         def processManifestTask = project.tasks.create(
-                "process${variantData.variantConfiguration.fullName.capitalize()}Manifest",
+                "merge${variantData.variantConfiguration.fullName.capitalize()}Manifests",
                 ProcessAppManifest)
-        variantData.processManifestTask = processManifestTask
+        variantData.manifestProcessorTask = processManifestTask
         processManifestTask.dependsOn variantData.prepareDependenciesTask
         if (config.type != TEST) {
             processManifestTask.dependsOn variantData.checkManifestTask
@@ -616,7 +657,7 @@ public abstract class BasePlugin {
                     ProcessTestManifest2)
         }
 
-        variantData.processManifestTask = processTestManifestTask
+        variantData.manifestProcessorTask = processTestManifestTask
         processTestManifestTask.dependsOn variantData.prepareDependenciesTask
 
         processTestManifestTask.plugin = this
@@ -669,7 +710,7 @@ public abstract class BasePlugin {
                 RenderscriptCompile)
         variantData.renderscriptCompileTask = renderscriptTask
         if (config.type == TEST) {
-            renderscriptTask.dependsOn variantData.processManifestTask
+            renderscriptTask.dependsOn variantData.manifestProcessorTask
         } else {
             renderscriptTask.dependsOn variantData.checkManifestTask
         }
@@ -810,7 +851,7 @@ public abstract class BasePlugin {
         if (variantConfiguration.type == TEST) {
             // in case of a test project, the manifest is generated so we need to depend
             // on its creation.
-            generateBuildConfigTask.dependsOn variantData.processManifestTask
+            generateBuildConfigTask.dependsOn variantData.manifestProcessorTask
         } else {
             generateBuildConfigTask.dependsOn variantData.checkManifestTask
         }
@@ -896,7 +937,7 @@ public abstract class BasePlugin {
         variantData.processResourcesTask = processResources
 
         variantData.sourceGenTask.dependsOn processResources
-        processResources.dependsOn variantData.processManifestTask, variantData.mergeResourcesTask, variantData.mergeAssetsTask
+        processResources.dependsOn variantData.manifestProcessorTask, variantData.mergeResourcesTask, variantData.mergeAssetsTask
 
         processResources.plugin = this
         processResources.enforceUniquePackageName = extension.getEnforceUniquePackageName()
@@ -904,7 +945,7 @@ public abstract class BasePlugin {
         VariantConfiguration variantConfiguration = variantData.variantConfiguration
 
         processResources.conventionMapping.manifestFile = {
-            variantData.processManifestTask.manifestOutputFile
+            variantData.manifestProcessorTask.manifestOutputFile
         }
 
         processResources.conventionMapping.resDir = {
@@ -1172,7 +1213,7 @@ public abstract class BasePlugin {
         if (testedVariantData.variantConfiguration.type == VariantConfiguration.Type.LIBRARY) {
             // in this case the tested library must be fully built before test can be built!
             if (testedVariantData.assembleTask != null) {
-                variantData.processManifestTask.dependsOn testedVariantData.assembleTask
+                variantData.manifestProcessorTask.dependsOn testedVariantData.assembleTask
                 variantData.mergeResourcesTask.dependsOn testedVariantData.assembleTask
             }
         }

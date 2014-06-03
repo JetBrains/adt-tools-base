@@ -27,7 +27,6 @@ import com.google.common.collect.ImmutableList;
 
 import junit.framework.TestCase;
 
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
