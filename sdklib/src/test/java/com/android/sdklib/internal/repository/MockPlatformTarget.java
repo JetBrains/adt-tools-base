@@ -188,6 +188,7 @@ public class MockPlatformTarget implements IAndroidTarget {
         return "platform r" + Integer.toString(mApiLevel);
     }
 
+    @NonNull
     @Override
     public AndroidVersion getVersion() {
         return new AndroidVersion(mApiLevel, null /*codename*/);

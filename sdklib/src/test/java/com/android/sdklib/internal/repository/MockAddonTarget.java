@@ -172,6 +172,7 @@ public class MockAddonTarget implements IAndroidTarget {
         return 0;
     }
 
+    @NonNull
     @Override
     public AndroidVersion getVersion() {
         return mParentTarget.getVersion();
