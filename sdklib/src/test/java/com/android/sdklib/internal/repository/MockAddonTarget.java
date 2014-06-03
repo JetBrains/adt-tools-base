@@ -42,6 +42,7 @@ public class MockAddonTarget implements IAndroidTarget {
     private final int mRevision;
     private final String mName;
     private ISystemImage[] mSystemImages;
+    private IOptionalLibrary[] mOptionalLibraries;
 
     public MockAddonTarget(String name, IAndroidTarget parentTarget, int revision) {
         mName = name;
@@ -104,7 +105,11 @@ public class MockAddonTarget implements IAndroidTarget {
 
     @Override
     public IOptionalLibrary[] getOptionalLibraries() {
-        return null;
+        return mOptionalLibraries;
+    }
+
+    public void setOptionalLibraries(IOptionalLibrary[] libraries) {
+        mOptionalLibraries = libraries;
     }
 
     @Override

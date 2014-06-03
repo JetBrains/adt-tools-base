@@ -21,15 +21,19 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.ddmlib.log.LogReceiver;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -88,6 +92,9 @@ final class Device implements IDevice {
 
     /** Flag indicating whether the device has the screen recorder binary. */
     private Boolean mHasScreenRecorder;
+
+    /** Cached list of hardware characteristics */
+    private Set<String> mHardwareCharacteristics;
 
     private int mApiLevel;
     private String mName;
@@ -423,6 +430,23 @@ final class Device implements IDevice {
             default:
                 return false;
         }
+    }
+
+    // The full list of features can be obtained from /etc/permissions/features*
+    // However, since we only support the "watch" feature, we can determine that by simply
+    // reading the build characteristics property.
+    @Override
+    public boolean supportsFeature(@NonNull HardwareFeature feature) {
+        if (mHardwareCharacteristics == null) {
+            try {
+                String characteristics = getPropertyCacheOrSync(PROP_BUILD_CHARACTERISTICS);
+                mHardwareCharacteristics = Sets.newHashSet(Splitter.on(',').split(characteristics));
+            } catch (Exception e) {
+                mHardwareCharacteristics = Collections.emptySet();
+            }
+        }
+
+        return mHardwareCharacteristics.contains(feature.getCharacteristic());
     }
 
     private int getApiLevel() {
