@@ -17,8 +17,14 @@
 package com.android.tools.gradle.eclipse;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static com.android.SdkConstants.DOT_GRADLE;
 import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.FD_GRADLE;
+import static com.android.SdkConstants.FD_GRADLE_WRAPPER;
+import static com.android.SdkConstants.FD_TEMPLATES;
 import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML;
+import static com.android.SdkConstants.FN_GRADLE_WRAPPER_UNIX;
+import static com.android.SdkConstants.FN_GRADLE_WRAPPER_WIN;
 import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.SdkConstants.FN_PROJECT_PROPERTIES;
 import static com.android.tools.gradle.eclipse.GradleImport.ANDROID_GRADLE_PLUGIN;
@@ -3130,8 +3136,7 @@ public class GradleImportTest extends TestCase {
                     .getParentFile()
                     .getParentFile()
                     .getParentFile();
-            File wrapper = new File(top, "templates" + separator + "gradle" + separator +
-                    "wrapper");
+            File wrapper = new File(top, FD_TEMPLATES + separator + FD_GRADLE_WRAPPER);
             if (wrapper.exists()) {
                 return wrapper;
             }
@@ -3145,7 +3150,7 @@ public class GradleImportTest extends TestCase {
     }
 
     public static void assertBuildsCleanly(File base, boolean allowWarnings) throws Exception {
-        File gradlew = new File(base, "gradlew" + (isWindows() ? ".bat" : ""));
+        File gradlew = new File(base, isWindows() ? FN_GRADLE_WRAPPER_WIN : FN_GRADLE_WRAPPER_UNIX);
         if (!gradlew.exists()) {
             // Not using a wrapper; can't easily test building (we don't have a gradle prebuilt)
             return;
@@ -3189,10 +3194,10 @@ public class GradleImportTest extends TestCase {
         // Skip wrapper, since it may or may not be present for unit tests
         if (depth == 1) {
             String name = file.getName();
-            if (name.equals(".gradle")
-                    || name.equals("gradle")
-                    || name.equals("gradlew")
-                    || name.equals("gradlew.bat")) {
+            if (name.equals(DOT_GRADLE)
+                    || name.equals(FD_GRADLE)
+                    || name.equals(FN_GRADLE_WRAPPER_UNIX)
+                    || name.equals(FN_GRADLE_WRAPPER_WIN)) {
                 return;
             }
         }
