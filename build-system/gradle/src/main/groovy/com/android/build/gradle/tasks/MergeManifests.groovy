@@ -17,6 +17,7 @@ package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
 import com.android.builder.core.VariantConfiguration
+import com.android.manifmerger.ManifestMerger2
 import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -26,7 +27,7 @@ import org.gradle.api.tasks.Optional
 /**
  * A task that processes the manifest
  */
-public class ProcessAppManifest2 extends ProcessManifest {
+public class MergeManifests extends ManifestProcessorTask {
 
     // ----- PRIVATE TASK API -----
     @InputFile
@@ -60,7 +61,7 @@ public class ProcessAppManifest2 extends ProcessManifest {
     @Input @Optional
     String targetSdkVersion
 
-    VariantConfiguration variantConfiguration;
+    VariantConfiguration variantConfiguration
     List<ManifestDependencyImpl> libraries
 
     /**
@@ -85,7 +86,7 @@ public class ProcessAppManifest2 extends ProcessManifest {
     @Override
     protected void doFullTaskAction() {
 
-        getBuilder().processManifest2(
+        getBuilder().mergeManifests(
                 getMainManifest(),
                 getManifestOverlays(),
                 getLibraries(),
@@ -94,7 +95,8 @@ public class ProcessAppManifest2 extends ProcessManifest {
                 getVersionName(),
                 getMinSdkVersion(),
                 getTargetSdkVersion(),
-                getManifestOutputFile().absolutePath)
+                getManifestOutputFile().absolutePath,
+                ManifestMerger2.MergeType.APPLICATION)
     }
 
 }
