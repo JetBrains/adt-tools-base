@@ -45,6 +45,7 @@ import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.repository.FullRevision;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.utils.PositionXmlParser;
 import com.android.utils.SdkUtils;
@@ -1049,5 +1050,29 @@ public class LintUtils {
             return new AndroidVersion(api.getApiLevel(), codename);
         }
         return new AndroidVersion(api.getApiLevel(), null);
+    }
+
+    /**
+     * Returns true if the given Gradle model is older than the given version number
+     */
+    public static boolean isModelOlderThan(@Nullable AndroidProject project,
+            int major, int minor, int micro) {
+        if (project != null) {
+            String modelVersion = project.getModelVersion();
+            try {
+                FullRevision version = FullRevision.parseRevision(modelVersion);
+                if (version.getMajor() != major) {
+                    return version.getMajor() < major;
+                }
+                if (version.getMinor() != minor) {
+                    return version.getMinor() < minor;
+                }
+                return version.getMicro() < micro;
+            } catch (NumberFormatException e) {
+                // ignore
+            }
+        }
+
+        return false;
     }
 }
