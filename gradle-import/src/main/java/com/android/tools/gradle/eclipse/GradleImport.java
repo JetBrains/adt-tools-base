@@ -794,7 +794,7 @@ public class GradleImport {
             sb.append(NL);
             sb.append("    defaultConfig {").append(NL);
             if (module.getPackage() != null) {
-                sb.append("        packageName \"").append(module.getPackage()).append('"')
+                sb.append("        applicationId \"").append(module.getPackage()).append('"')
                         .append(NL);
             }
             sb.append("        minSdkVersion ").append(minSdkVersion).append(NL);
@@ -829,7 +829,7 @@ public class GradleImport {
                 if (manifest != null && manifest.getDocumentElement() != null) {
                     String pkg = manifest.getDocumentElement().getAttribute(ATTR_PACKAGE);
                     if (pkg != null && !pkg.isEmpty()) {
-                        sb.append("        testPackageName \"").append(pkg).append("\"")
+                        sb.append("        testApplicationId \"").append(pkg).append("\"")
                                 .append(NL);
                     }
                     NodeList list = manifest.getElementsByTagName(NODE_INSTRUMENTATION);
