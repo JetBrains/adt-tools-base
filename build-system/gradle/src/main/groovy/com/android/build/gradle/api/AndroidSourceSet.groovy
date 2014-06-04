@@ -75,23 +75,6 @@ public interface AndroidSourceSet {
     AndroidSourceSet java(Closure configureClosure);
 
     /**
-     * All Java source files for this source set. This includes, for example, source which is
-     * directly compiled, and source which is indirectly compiled through joint compilation.
-     *
-     * @return the Java source. Never returns null.
-     */
-    @NonNull
-    AndroidSourceDirectorySet getAllJava();
-
-    /**
-     * All source files for this source set.
-     *
-     * @return the source. Never returns null.
-     */
-    @NonNull
-    AndroidSourceDirectorySet getAllSource();
-
-    /**
      * Returns the name of the compile configuration for this source set.
      * @return The configuration name
      */
