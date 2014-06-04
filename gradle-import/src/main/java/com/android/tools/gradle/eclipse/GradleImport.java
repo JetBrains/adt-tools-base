@@ -21,9 +21,12 @@ import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.FD_EXTRAS;
+import static com.android.SdkConstants.FD_GRADLE;
 import static com.android.SdkConstants.FD_RES;
 import static com.android.SdkConstants.FD_SOURCES;
 import static com.android.SdkConstants.FN_BUILD_GRADLE;
+import static com.android.SdkConstants.FN_GRADLE_WRAPPER_UNIX;
+import static com.android.SdkConstants.FN_GRADLE_WRAPPER_WIN;
 import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.SdkConstants.FN_SETTINGS_GRADLE;
 import static com.android.SdkConstants.GRADLE_PLUGIN_LATEST_VERSION;
@@ -692,16 +695,17 @@ public class GradleImport {
 
     private void exportGradleWrapper(@NonNull File destDir) throws IOException {
         if (mGradleWrapperLocation != null && mGradleWrapperLocation.exists()) {
-            File gradlewDest = new File(destDir, "gradlew");
-            copyDir(new File(mGradleWrapperLocation, "gradlew"), gradlewDest, null);
+            File gradlewDest = new File(destDir, FN_GRADLE_WRAPPER_UNIX);
+            copyDir(new File(mGradleWrapperLocation, FN_GRADLE_WRAPPER_UNIX), gradlewDest, null);
             boolean madeExecutable = gradlewDest.setExecutable(true);
             if (!madeExecutable) {
-                reportWarning((ImportModule)null, gradlewDest,
+                reportWarning((ImportModule) null, gradlewDest,
                         "Could not make gradle wrapper script executable");
             }
-            copyDir(new File(mGradleWrapperLocation, "gradlew.bat"), new File(destDir,
-                    "gradlew.bat"), null);
-            copyDir(new File(mGradleWrapperLocation, "gradle"), new File(destDir, "gradle"), null);
+            copyDir(new File(mGradleWrapperLocation, FN_GRADLE_WRAPPER_WIN),
+                    new File(destDir, FN_GRADLE_WRAPPER_WIN), null);
+            copyDir(new File(mGradleWrapperLocation, FD_GRADLE), new File(destDir, FD_GRADLE),
+                    null);
         }
     }
 
