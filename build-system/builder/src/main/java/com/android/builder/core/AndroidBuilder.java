@@ -67,6 +67,7 @@ import com.android.manifmerger.ManifestMerger;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.manifmerger.MergerLog;
 import com.android.manifmerger.MergingReport;
+import com.android.manifmerger.PlaceholderHandler;
 import com.android.manifmerger.XmlDocument;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
@@ -109,7 +110,7 @@ import java.util.regex.Pattern;
  * create a builder with {@link #AndroidBuilder(String, ILogger, boolean)}
  *
  * then build steps can be done with
- * {@link #mergeManifests(java.io.File, java.util.List, java.util.List, String, int, String, String, String, String)}
+ * {@link #mergeManifests(java.io.File, java.util.List, java.util.List, String, int, String, String, String, String, com.android.manifmerger.ManifestMerger2.MergeType, java.util.Map)}
  * {@link #processTestManifest2(String, String, String, String, String, Boolean, Boolean, java.util.List, java.io.File)}
  * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.core.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions, java.util.Collection, boolean)}
  * {@link #compileAllAidlFiles(java.util.List, java.io.File, java.io.File, java.util.List, com.android.builder.compiling.DependencyFileProcessor)}
@@ -390,11 +391,13 @@ public class AndroidBuilder {
             @Nullable String minSdkVersion,
             @Nullable String targetSdkVersion,
             @NonNull String outManifestLocation,
-            ManifestMerger2.MergeType mergeType) {
+            ManifestMerger2.MergeType mergeType,
+            Map<String, String> placeHolders) {
 
         try {
             Invoker manifestMergerInvoker =
                     ManifestMerger2.newMerger(mainManifest, mLogger, mergeType)
+                    .setPlaceHolderValues(placeHolders)
                     .addFlavorAndBuildTypeManifests(
                             manifestOverlays.toArray(new File[manifestOverlays.size()]))
                     .addLibraryManifests(collectLibraries(libraries));
