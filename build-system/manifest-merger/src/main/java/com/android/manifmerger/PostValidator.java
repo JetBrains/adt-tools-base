@@ -18,6 +18,7 @@ package com.android.manifmerger;
 
 import static com.android.manifmerger.Actions.ActionType;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -55,10 +56,30 @@ public class PostValidator {
 
         Preconditions.checkNotNull(xmlDocument);
         Preconditions.checkNotNull(mergingReport);
+        enforceAndroidNamespaceDeclaration(xmlDocument);
         reOrderElements(xmlDocument.getRootNode());
         validate(xmlDocument.getRootNode(),
                 mergingReport.getActionRecorder().build(),
                 mergingReport);
+    }
+
+    /**
+     * Enforces {@link com.android.SdkConstants#ANDROID_URI} declaration in the top level element.
+     * It is possible that the original manifest file did not contain any attribute declaration,
+     * therefore not requiring a xmlns: declaration. Yet the implicit elements handling may have
+     * added attributes requiring the namespace declaration.
+     */
+    private static void enforceAndroidNamespaceDeclaration(@NonNull XmlDocument xmlDocument) {
+        XmlElement manifest = xmlDocument.getRootNode();
+        for (XmlAttribute xmlAttribute : manifest.getAttributes()) {
+            if (xmlAttribute.getXml().getName().startsWith(SdkConstants.XMLNS) &&
+                    xmlAttribute.getValue().equals(SdkConstants.ANDROID_URI)) {
+                return;
+            }
+        }
+        // if we are here, we did not find the namespace declaration, add it.
+        manifest.getXml().setAttribute(SdkConstants.XMLNS + ":" + "android",
+                SdkConstants.ANDROID_URI);
     }
 
     /**
