@@ -526,11 +526,11 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
     }
 
 
-    private void createSourceProps(File parentDir, String...paramValuePairs) throws IOException {
+    protected void createSourceProps(File parentDir, String...paramValuePairs) throws IOException {
         createFileProps(SdkConstants.FN_SOURCE_PROP, parentDir, paramValuePairs);
     }
 
-    private void createFileProps(String fileName, File parentDir, String...paramValuePairs) throws IOException {
+    protected void createFileProps(String fileName, File parentDir, String...paramValuePairs) throws IOException {
         File sourceProp = new File(parentDir, fileName);
         parentDir = sourceProp.getParentFile();
         if (!parentDir.isDirectory()) {
