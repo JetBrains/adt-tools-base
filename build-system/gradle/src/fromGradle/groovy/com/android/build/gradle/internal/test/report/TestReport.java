@@ -18,8 +18,6 @@ package com.android.build.gradle.internal.test.report;
 import com.google.common.io.Closeables;
 
 import org.gradle.api.GradleException;
-import org.gradle.api.internal.tasks.testing.junit.report.LocaleSafeDecimalFormat;
-import org.gradle.reporting.HtmlReportRenderer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -29,6 +27,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.ParseException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -99,8 +100,7 @@ public class TestReport {
                 Element testCase = (Element) testCases.item(i);
                 String className = testCase.getAttribute("classname");
                 String testName = testCase.getAttribute("name");
-                LocaleSafeDecimalFormat format = new LocaleSafeDecimalFormat();
-                BigDecimal duration = format.parse(testCase.getAttribute("time"));
+                BigDecimal duration = parse(testCase.getAttribute("time"));
                 duration = duration.multiply(BigDecimal.valueOf(1000));
                 NodeList failures = testCase.getElementsByTagName("failure");
                 TestResult testResult = model.addTest(className, testName, duration.longValue(),
@@ -156,4 +156,20 @@ public class TestReport {
     private <T extends CompositeTestResults> void generatePage(T model, PageRenderer<T> renderer,
                                                                File outputFile) throws Exception {
         htmlRenderer.renderer(renderer).writeTo(model, outputFile);
-    }}
+    }
+
+    /**
+     * Regardless of the default locale, comma ('.') is used as decimal separator
+     *
+     * @param source
+     * @return
+     * @throws java.text.ParseException
+     */
+    public BigDecimal parse(String source) throws ParseException {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+        symbols.setDecimalSeparator('.');
+        DecimalFormat format = new DecimalFormat("#.#", symbols);
+        format.setParseBigDecimal(true);
+        return (BigDecimal) format.parse(source);
+    }
+}

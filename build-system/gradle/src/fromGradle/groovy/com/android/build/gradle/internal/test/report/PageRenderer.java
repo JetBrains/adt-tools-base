@@ -16,11 +16,7 @@
 package com.android.build.gradle.internal.test.report;
 
 import org.gradle.api.Action;
-import org.gradle.internal.ErroringAction;
-import org.gradle.api.internal.html.SimpleHtmlWriter;
 import org.gradle.reporting.ReportRenderer;
-import org.gradle.reporting.TabbedPageRenderer;
-import org.gradle.reporting.TabsRenderer;
 
 import java.io.IOException;
 import java.util.Map;
