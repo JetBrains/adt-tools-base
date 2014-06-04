@@ -54,7 +54,7 @@ public class SourceSetSourceProviderWrapper implements SourceProvider {
     @NonNull
     @Override
     public Collection<File> getJavaDirectories() {
-        return sourceSet.getAllJava().getSrcDirs();
+        return sourceSet.getJava().getSrcDirs();
     }
 
     @NonNull

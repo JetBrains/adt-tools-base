@@ -260,11 +260,6 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
         return this;
     }
 
-    @Override
-    @NonNull
-    public AndroidSourceDirectorySet getAllJava() {
-        return allJavaSource;
-    }
 
     @Override
     @NonNull
@@ -277,12 +272,6 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
     public AndroidSourceSet resources(Closure configureClosure) {
         ConfigureUtil.configure(configureClosure, getResources());
         return this;
-    }
-
-    @Override
-    @NonNull
-    public AndroidSourceDirectorySet getAllSource() {
-        return allSource;
     }
 
     @Override
