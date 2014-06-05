@@ -8,7 +8,7 @@
     minBuildApi="7">
 
     <category value="Google" />
-    <formfactor value="Phone and Tablet" />
+    <formfactor value="Mobile" />
 
     <parameter
         id="activityClass"

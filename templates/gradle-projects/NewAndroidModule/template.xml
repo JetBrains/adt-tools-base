@@ -7,7 +7,7 @@
 
     <category value="Application" />
 
-    <formfactor value="Phone and Tablet" />
+    <formfactor value="Mobile" />
 
     <thumbs>
         <thumb>template_new_project.png</thumb>
