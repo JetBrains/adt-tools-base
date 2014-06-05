@@ -67,6 +67,43 @@ public class ToolsInstructionsCleanerTest extends TestCase {
         assertFalse(activity.isPresent());
     }
 
+    public void testNodeWithChildrenRemoveOperation()
+            throws ParserConfigurationException, SAXException, IOException {
+        MockLog mockLog = new MockLog();
+        String main = "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "        xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "        package=\"com.example.lib3\" >\n"
+                + "\n"
+                + "        <application>\n"
+                + "             <activity android:name=\"com.example.lib3.activityOne\" >\n"
+                + "                 <intent-filter tools:node=\"remove\" >\n"
+                + "                     <action android:name=\"android.intent.action.VIEW\" />\n"
+                + "                     <category android:name=\"android.intent.category.DEFAULT\" />\n"
+                + "                     <category android:name=\"android.intent.category.BROWSABLE\" />\n"
+                + "                 </intent-filter>\n"
+                + "             </activity>\n"
+                + "        </application>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(
+                        getClass(), "testNodeRemoveWithChildrenOperation"), main);
+
+        Element rootElement = mainDocument.getRootNode().getXml();
+        ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);
+
+        Optional<Element> application = getChildElementByName(rootElement, "application");
+        assertTrue(application.isPresent());
+
+        Optional<Element> activity = getChildElementByName(application.get(), "activity");
+        assertTrue(activity.isPresent());
+        Optional<Element> intentFilter = getChildElementByName(application.get(), "intent-filter");
+
+        // ensure the intent-filter did get deleted.
+        assertFalse(intentFilter.isPresent());
+    }
+
     public void testInvalidToolsRemoveOperation()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();

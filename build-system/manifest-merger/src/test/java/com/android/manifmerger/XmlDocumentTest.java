@@ -34,6 +34,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -1113,5 +1114,422 @@ public class XmlDocumentTest extends TestCase {
                 .getNodeRecords(XmlNode.NodeKey.fromXml(xmlElement.getXml()));
         assertEquals(1, nodeRecords.size());
         assertEquals(nodeRecords.iterator().next().mReason, "targetSdkVersion < 4");
+    }
+
+    /**
+     * Test that multiple intent-filters with the same key and no override are not merged or
+     * discarded.
+     */
+    public void testMultipleIntentFilter_sameKey_noLibraryDeclaration()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application>\n"
+                + "         <activity android:name=\"activityOne\">\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"myspecialdeeplinkscheme\"/>\n"
+                + "                 <data android:host=\"home\"/>\n"
+                + "             </intent-filter>\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"https\"/>\n"
+                + "                 <data android:host=\"www.foo.com\"/>\n"
+                + "             </intent-filter>\n"
+                + "         </activity>\n"
+                + "     </application>"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <uses-sdk android:targetSdkVersion=\"3\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        XmlDocument xmlDocument = mergedDocument.get();
+        List<XmlElement> allIntentFilters = getAllElementsOfType(xmlDocument,
+                ManifestModel.NodeTypes.INTENT_FILTER);
+        assertEquals(2, allIntentFilters.size());
+        assertEquals(allIntentFilters.get(0).getId(), allIntentFilters.get(1).getId());
+    }
+
+    /**
+     * Test that multiple intent-filters with the same key and no override are not merged or
+     * discarded.
+     */
+    public void testMultipleIntentFilter_sameKey_noOverride()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application>\n"
+                + "         <activity android:name=\"activityOne\">\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"myspecialdeeplinkscheme\"/>\n"
+                + "                 <data android:host=\"home\"/>\n"
+                + "             </intent-filter>\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"https\"/>\n"
+                + "                 <data android:host=\"www.foo.com\"/>\n"
+                + "             </intent-filter>\n"
+                + "         </activity>\n"
+                + "     </application>"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application>\n"
+                + "         <activity android:name=\"activityOne\">\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.SEARCH\" />\n"
+                + "             </intent-filter>\n"
+                + "         </activity>"
+                + "     </application>"
+                + "    <uses-sdk android:targetSdkVersion=\"3\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        XmlDocument xmlDocument = mergedDocument.get();
+        List<XmlElement> allIntentFilters = getAllElementsOfType(xmlDocument,
+                ManifestModel.NodeTypes.INTENT_FILTER);
+        assertEquals(3, allIntentFilters.size());
+    }
+
+    /**
+     * Test that multiple intent-filters with the same key and no override are not merged or
+     * discarded.
+     */
+    public void testMultipleIntentFilter_sameKey_sameOverride()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application>\n"
+                + "         <activity android:name=\"activityOne\">\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"myspecialdeeplinkscheme\"/>\n"
+                + "                 <data android:host=\"home\"/>\n"
+                + "             </intent-filter>\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"https\"/>\n"
+                + "                 <data android:host=\"www.foo.com\"/>\n"
+                + "             </intent-filter>\n"
+                + "         </activity>\n"
+                + "     </application>"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application>\n"
+                + "         <activity android:name=\"activityOne\">\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.SEARCH\" />\n"
+                + "             </intent-filter>\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"https\"/>\n"
+                + "                 <data android:host=\"www.foo.com\"/>\n"
+            + "                 </intent-filter>\n"
+                + "         </activity>"
+                + "    </application>"
+                + "    <uses-sdk android:targetSdkVersion=\"3\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        XmlDocument xmlDocument = mergedDocument.get();
+        List<XmlElement> allIntentFilters = getAllElementsOfType(xmlDocument,
+                ManifestModel.NodeTypes.INTENT_FILTER);
+
+        // the second intent-filter of the library should not have been merged in.
+        assertEquals(3, allIntentFilters.size());
+    }
+
+    /**
+     * Test that multiple intent-filters with the same key and no override are not merged or
+     * discarded.
+     */
+    public void testMultipleIntentFilter_sameKey_differentOverride()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application>\n"
+                + "         <activity android:name=\"activityOne\">\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"myspecialdeeplinkscheme\"/>\n"
+                + "                 <data android:host=\"home\"/>\n"
+                + "             </intent-filter>\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"https\"/>\n"
+                + "                 <data android:host=\"www.foo.com\"/>\n"
+                + "             </intent-filter>\n"
+                + "         </activity>\n"
+                + "     </application>"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application>\n"
+                + "         <activity android:name=\"activityOne\">\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.SEARCH\" />\n"
+                + "             </intent-filter>\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"https\"/>\n"
+                + "                 <data android:host=\"www.bar.com\"/>\n"
+                + "                 </intent-filter>\n"
+                + "         </activity>"
+                + "    </application>"
+                + "    <uses-sdk android:targetSdkVersion=\"3\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        XmlDocument xmlDocument = mergedDocument.get();
+        List<XmlElement> allIntentFilters = getAllElementsOfType(xmlDocument,
+                ManifestModel.NodeTypes.INTENT_FILTER);
+        // all intent-filters should have been merged.
+        assertEquals(4, allIntentFilters.size());
+    }
+
+    /**
+     * Test that multiple intent-filters with the same key and no override are not merged or
+     * discarded.
+     */
+    public void testMultipleIntentFilter_sameKey_removal()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application>\n"
+                + "         <activity android:name=\"activityOne\">\n"
+                + "             <intent-filter tools:node=\"remove\">\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "             </intent-filter>\n"
+                + "         </activity>\n"
+                + "     </application>"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application>\n"
+                + "         <activity android:name=\"activityOne\">\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.SEARCH\" />\n"
+                + "             </intent-filter>\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"https\"/>\n"
+                + "                 <data android:host=\"www.bar.com\"/>\n"
+                + "             </intent-filter>\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"https\"/>\n"
+                + "                 <data android:host=\"www.foo.com\"/>\n"
+                + "             </intent-filter>\n"
+                + "         </activity>"
+                + "    </application>"
+                + "    <uses-sdk android:targetSdkVersion=\"3\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        XmlDocument xmlDocument = mergedDocument.get();
+        List<XmlElement> allIntentFilters = getAllElementsOfType(xmlDocument,
+                ManifestModel.NodeTypes.INTENT_FILTER);
+        // the cleaner is not removed the "remove" node so we should have 2.
+        assertEquals(2, allIntentFilters.size());
+    }
+
+    public void testMultipleIntentFilter_sameKey_removalAll()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application>\n"
+                + "         <activity android:name=\"activityOne\">\n"
+                + "             <intent-filter tools:node=\"removeAll\"/>\n"
+                + "         </activity>\n"
+                + "     </application>"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application>\n"
+                + "         <activity android:name=\"activityOne\">\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.SEARCH\" />\n"
+                + "             </intent-filter>\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"https\"/>\n"
+                + "                 <data android:host=\"www.bar.com\"/>\n"
+                + "             </intent-filter>\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"https\"/>\n"
+                + "                 <data android:host=\"www.foo.com\"/>\n"
+                + "             </intent-filter>\n"
+                + "         </activity>"
+                + "    </application>"
+                + "    <uses-sdk android:targetSdkVersion=\"3\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        XmlDocument xmlDocument = mergedDocument.get();
+        List<XmlElement> allIntentFilters = getAllElementsOfType(xmlDocument,
+                ManifestModel.NodeTypes.INTENT_FILTER);
+        // since the cleaner has not run, there is one intent-filter with the removeAll annotation.
+        assertEquals(1, allIntentFilters.size());
+    }
+
+    private static List<XmlElement> getAllElementsOfType(
+            XmlDocument xmlDocument,
+            ManifestModel.NodeTypes nodeType) {
+        ImmutableList.Builder<XmlElement> listBuilder = ImmutableList.builder();
+        getAllElementsOfType(xmlDocument.getRootNode(), nodeType, listBuilder);
+        return listBuilder.build();
+    }
+
+    private static void getAllElementsOfType(XmlElement element,
+            ManifestModel.NodeTypes nodeType,
+            ImmutableList.Builder<XmlElement> allElementsBuilder) {
+
+        for (XmlElement xmlElement : element.getMergeableElements()) {
+            if (xmlElement.isA(nodeType)) {
+                allElementsBuilder.add(xmlElement);
+            } else {
+                getAllElementsOfType(xmlElement, nodeType, allElementsBuilder);
+            }
+        }
     }
 }

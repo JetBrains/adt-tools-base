@@ -104,7 +104,7 @@ public class PreValidator {
             } else {
                 if (checkKeyPresence(mergingReport, childElement)) {
                     XmlElement twin = childrenKeys.get(childElement.getId());
-                    if (twin != null) {
+                    if (twin != null && !childElement.getType().areMultipleDeclarationAllowed()) {
                         // we have 2 elements with the same identity, if they are equals,
                         // issue a warning, if not, issue an error.
                         String message = String.format(
