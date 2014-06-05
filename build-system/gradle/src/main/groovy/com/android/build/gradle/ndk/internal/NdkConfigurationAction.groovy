@@ -36,11 +36,11 @@ class NdkConfigurationAction implements Action<Project> {
 
     NdkExtension ndkExtension
 
-    NdkBuilder ndkBuilder
+    NdkHandler ndkHandler
 
-    NdkConfigurationAction(NdkBuilder ndkBuilder, NdkExtension ndkExtension) {
+    NdkConfigurationAction(NdkHandler ndkHandler, NdkExtension ndkExtension) {
         this.ndkExtension = ndkExtension
-        this.ndkBuilder = ndkBuilder
+        this.ndkHandler = ndkHandler
     }
 
     public void execute(Project project) {
@@ -93,8 +93,9 @@ class NdkConfigurationAction implements Action<Project> {
 
                 // Set output library filename.
                 sharedLibraryFile = new File(
-                        ndkBuilder.getOutputDirectory( buildType, targetPlatform),
-                        "/lib" + ndkExtension.getModuleName() + ".so")
+                        project.buildDir,
+                        NdkNamingScheme.getOutputDirectoryName(binary) + "/" +
+                        NdkNamingScheme.getSharedLibraryFileName(ndkExtension.getModuleName()))
 
                 // Replace output directory of compile tasks.
                 binary.tasks.withType(CCompile) {
@@ -110,7 +111,7 @@ class NdkConfigurationAction implements Action<Project> {
                                     "${binary.namingScheme.outputDirectoryBase}/$sourceSetName")
                 }
 
-                String sysroot = ndkBuilder.getSysroot(targetPlatform)
+                String sysroot = ndkHandler.getSysroot(targetPlatform)
                 cCompiler.args  "--sysroot=$sysroot"
                 cppCompiler.args  "--sysroot=$sysroot"
                 linker.args "--sysroot=$sysroot"
@@ -123,11 +124,8 @@ class NdkConfigurationAction implements Action<Project> {
                     linker.args "-L$sysroot/usr/lib/rs"
                 }
 
-                // Currently do not support customization of stl library.
-                cppCompiler.args "-I${ndkBuilder.getNdkDirectory()}/sources/cxx-stl/stlport/stlport"
-                cppCompiler.args "-I${ndkBuilder.getNdkDirectory()}/sources/cxx-stl//gabi++/include"
-
-                NativeToolSpecificationFactory.create(ndkBuilder, buildType, targetPlatform).apply(binary)
+                StlConfiguration.apply(ndkHandler, ndkExtension.getStl(), project, binary)
+                NativeToolSpecificationFactory.create(ndkHandler, buildType, targetPlatform).apply(binary)
 
                 // Add flags defined in NdkExtension
                 if (ndkExtension.getcFlags() != null) {

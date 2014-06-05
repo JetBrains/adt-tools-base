@@ -28,21 +28,6 @@ import org.gradle.nativebinaries.toolchain.Gcc
  */
 class ToolchainConfigurationAction implements Action<Project> {
 
-    private static final String[] ABI32 = [
-            SdkConstants.ABI_INTEL_ATOM,
-            SdkConstants.ABI_ARMEABI_V7A,
-            SdkConstants.ABI_ARMEABI,
-            SdkConstants.ABI_MIPS]
-
-    private static final String[] ALL_ABI = [
-            SdkConstants.ABI_INTEL_ATOM,
-            SdkConstants.ABI_INTEL_ATOM64,
-            SdkConstants.ABI_ARMEABI_V7A,
-            SdkConstants.ABI_ARMEABI,
-            SdkConstants.ABI_ARM64_V8A,
-            SdkConstants.ABI_MIPS,
-            SdkConstants.ABI_MIPS64]
-
     private static final GCC_PREFIX = [
             (SdkConstants.ABI_INTEL_ATOM) : "i686-linux-android",
             (SdkConstants.ABI_INTEL_ATOM64) : "x86_64-linux-android",
@@ -53,17 +38,17 @@ class ToolchainConfigurationAction implements Action<Project> {
             (SdkConstants.ABI_MIPS64) : "mips64el-linux-android"
     ]
 
-    private NdkBuilder ndkBuilder
+    private NdkHandler ndkHandler
 
     private NdkExtension ndkExtension
 
-    public ToolchainConfigurationAction(NdkBuilder ndkBuilder, NdkExtension ndkExtension) {
-        this.ndkBuilder = ndkBuilder
+    public ToolchainConfigurationAction(NdkHandler ndkHandler, NdkExtension ndkExtension) {
+        this.ndkHandler = ndkHandler
         this.ndkExtension = ndkExtension
     }
 
     public void execute(Project project) {
-        String[] abiList = ndkBuilder.supports64Bits() ? ALL_ABI : ABI32;
+        List<String> abiList = ndkHandler.getSupportedAbis();
         project.model {
             platforms {
                 for (String abi: abiList) {
@@ -99,7 +84,7 @@ class ToolchainConfigurationAction implements Action<Project> {
             String platform) {
         String name = "$toolchainName-$toolchainVersion-$platform"
         String bin = (
-                ndkBuilder.getToolchainPath(toolchainName, toolchainVersion, platform).toString()
+                ndkHandler.getToolchainPath(toolchainName, toolchainVersion, platform).toString()
                         + "/bin")
 
         project.model {

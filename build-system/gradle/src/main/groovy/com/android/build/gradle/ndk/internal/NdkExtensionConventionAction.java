@@ -1,5 +1,6 @@
 package com.android.build.gradle.ndk.internal;
 
+
 import com.android.build.gradle.AppPlugin;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.LibraryPlugin;
@@ -24,6 +25,8 @@ public class NdkExtensionConventionAction implements Action<ProjectInternal> {
     private static final String DEFAULT_GCC_L_VERSION = "4.9";  // Default for r10 is 4.9.
 
     private static final String DEFAULT_CLANG_VERSION = "3.4";
+
+    private static final String DEFAULT_STL = "system";
 
     @Override
     public void execute(ProjectInternal project) {
@@ -70,6 +73,12 @@ public class NdkExtensionConventionAction implements Action<ProjectInternal> {
         if (extension.getCppFilePattern().getIncludes().isEmpty()) {
             extension.getCppFilePattern().include("**/*.cpp");
             extension.getCppFilePattern().include("**/*.cc");
+        }
+
+        if (extension.getStl() == null) {
+            extension.setStl(DEFAULT_STL);
+        } else {
+            StlConfiguration.checkStl(extension.getStl());
         }
 
         // Define default source set.  Currently do not support configuration of sourceSets for

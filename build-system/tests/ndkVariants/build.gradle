@@ -19,6 +19,7 @@ android {
 
         // TODO: Include a way to set include directories the DSL.
         cppFlags "-I$rootDir/src/include"
+        stl "stlport_static"
     }
 
     productFlavors {

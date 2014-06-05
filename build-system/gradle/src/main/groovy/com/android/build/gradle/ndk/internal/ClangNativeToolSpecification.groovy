@@ -26,7 +26,7 @@ import org.gradle.nativebinaries.platform.Platform
  */
 class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
 
-    private NdkBuilder ndkBuilder
+    private NdkHandler ndkHandler
 
     private Platform platform
 
@@ -178,10 +178,10 @@ class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
     ]
 
     public ClangNativeToolSpecification(
-            NdkBuilder ndkBuilder,
+            NdkHandler ndkHandler,
             BuildType buildType,
             Platform platform) {
-        this.ndkBuilder = ndkBuilder
+        this.ndkHandler = ndkHandler
         this.isDebugBuild = (buildType.name.equals(BuilderConstants.DEBUG))
         this.platform = platform
     }
@@ -203,12 +203,12 @@ class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
     }
 
     private Iterable<String> getTargetFlags() {
-        // For compiled version 19 or below, use GCC 4.8.
-        String gccVersion = ndkBuilder.supports64Bits() ? "4.9" : "4.8"
-
         [
                 "-gcc-toolchain",
-                ndkBuilder.getToolchainPath("gcc", gccVersion, platform.name),
+                ndkHandler.getToolchainPath(
+                        "gcc",
+                        ndkHandler.getGccToolchainVersion(),
+                        platform.name),
                 "-target",
                 TARGET_TRIPLE[platform.name]
         ]
