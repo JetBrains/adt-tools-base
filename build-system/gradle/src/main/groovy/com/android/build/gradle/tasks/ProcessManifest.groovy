@@ -18,10 +18,6 @@ package com.android.build.gradle.tasks
 
 import com.android.builder.core.VariantConfiguration
 import com.android.manifmerger.ManifestMerger2
-import com.google.common.base.Function
-import com.google.common.base.Joiner
-import com.google.common.collect.Iterables
-import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
