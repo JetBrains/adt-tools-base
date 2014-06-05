@@ -108,7 +108,7 @@ public abstract class BaseExtension {
         this.signingConfigs = signingConfigs
 
         defaultConfig = instantiator.newInstance(ProductFlavorDsl.class, BuilderConstants.MAIN,
-                project.fileResolver, instantiator, project.getLogger())
+                project, instantiator, project.getLogger())
 
         aaptOptions = instantiator.newInstance(AaptOptionsImpl.class)
         dexOptions = instantiator.newInstance(DexOptionsImpl.class)
@@ -384,6 +384,10 @@ public abstract class BaseExtension {
         return plugin.logger
     }
 
+    protected getPlugin() {
+        return plugin
+    }
+
     public File getDefaultProguardFile(String name) {
         return new File(sdkDirectory,
                 SdkConstants.FD_TOOLS + File.separatorChar
@@ -400,7 +404,7 @@ public abstract class BaseExtension {
 
     void useOldManifestMerger(boolean flag) {
         if (flag) {
-            logger.warning("WARNING: support for old manifest merger is deprecated and will be removed in 1.0")
+            plugin.displayDeprecationWarning("Support for old manifest merger is deprecated and will be removed in 1.0")
         }
         this.useOldManifestMerger = flag;
     }
@@ -409,7 +413,7 @@ public abstract class BaseExtension {
 
     public void enforceUniquePackageName(boolean value) {
         if (!value) {
-            logger.warning("WARNING: support for libraries with same package name is deprecated and will be removed in 1.0")
+            plugin.displayDeprecationWarning("Support for libraries with same package name is deprecated and will be removed in 1.0")
         }
         enforceUniquePackageName = value
     }
@@ -423,7 +427,7 @@ public abstract class BaseExtension {
     }
 
     public void flavorGroups(String... groups) {
-        logger.warning("WARNING: flavorGroups has been renamed flavorDimensions. It will be removed in 1.0")
+        plugin.displayDeprecationWarning("'flavorGroups' has been renamed 'flavorDimensions'. It will be removed in 1.0")
         flavorDimensions(groups);
     }
 }

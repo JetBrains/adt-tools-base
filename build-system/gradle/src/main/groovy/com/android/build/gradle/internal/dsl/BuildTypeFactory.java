@@ -18,8 +18,9 @@ package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
 import com.android.builder.core.DefaultBuildType;
+
 import org.gradle.api.NamedDomainObjectFactory;
-import org.gradle.api.internal.file.FileResolver;
+import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
 import org.gradle.internal.reflect.Instantiator;
 
@@ -31,21 +32,21 @@ public class BuildTypeFactory implements NamedDomainObjectFactory<DefaultBuildTy
     @NonNull
     private final Instantiator instantiator;
     @NonNull
-    private final FileResolver fileResolver;
+    private final Project project;
 
     @NonNull
     private final Logger logger;
 
     public BuildTypeFactory(@NonNull Instantiator instantiator,
-                            @NonNull FileResolver fileResolver,
+                            @NonNull Project project,
                             @NonNull Logger logger) {
         this.instantiator = instantiator;
-        this.fileResolver = fileResolver;
+        this.project = project;
         this.logger = logger;
     }
 
     @Override
     public DefaultBuildType create(String name) {
-        return instantiator.newInstance(BuildTypeDsl.class, name, fileResolver, instantiator, logger);
+        return instantiator.newInstance(BuildTypeDsl.class, name, project, instantiator, logger);
     }
 }

@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle
+
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.api.AndroidSourceSet
@@ -76,13 +77,13 @@ import com.android.build.gradle.tasks.GenerateBuildConfig
 import com.android.build.gradle.tasks.GenerateResValues
 import com.android.build.gradle.tasks.Lint
 import com.android.build.gradle.tasks.MergeAssets
+import com.android.build.gradle.tasks.MergeManifests
 import com.android.build.gradle.tasks.MergeResources
 import com.android.build.gradle.tasks.NdkCompile
 import com.android.build.gradle.tasks.PackageApplication
 import com.android.build.gradle.tasks.PreDex
 import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.android.build.gradle.tasks.ProcessAppManifest
-import com.android.build.gradle.tasks.MergeManifests
 import com.android.build.gradle.tasks.ProcessManifest
 import com.android.build.gradle.tasks.ProcessTestManifest
 import com.android.build.gradle.tasks.ProcessTestManifest2
@@ -137,6 +138,7 @@ import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.artifacts.result.UnresolvedDependencyResult
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.logging.LogLevel
+import org.gradle.api.logging.Logger
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.specs.Specs
@@ -170,6 +172,7 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN
 import static java.io.File.separator
+
 /**
  * Base class for all Android plugins
  */
@@ -264,9 +267,9 @@ public abstract class BasePlugin {
         registry.register(new ModelBuilder());
 
         def buildTypeContainer = project.container(DefaultBuildType,
-                new BuildTypeFactory(instantiator,  project.fileResolver, project.getLogger()))
+                new BuildTypeFactory(instantiator,  project, project.getLogger()))
         def productFlavorContainer = project.container(GroupableProductFlavorDsl,
-                new GroupableProductFlavorFactory(instantiator, project.fileResolver, project.getLogger()))
+                new GroupableProductFlavorFactory(instantiator, project, project.getLogger()))
         def signingConfigContainer = project.container(SigningConfig,
                 new SigningConfigFactory(instantiator))
 
@@ -2629,5 +2632,21 @@ public abstract class BasePlugin {
 
     public Project getProject() {
         return project
+    }
+
+    public void displayDeprecationWarning(String message) {
+        displayDeprecationWarning(logger, project, message)
+    }
+
+    public static void displayDeprecationWarning(ILogger logger, Project project, String message) {
+        logger.warning(createDeprecationWarning(project.name, message))
+    }
+
+    public static void displayDeprecationWarning(Logger logger, Project project, String message) {
+        logger.warn(createDeprecationWarning(project.name, message))
+    }
+
+    private static String createDeprecationWarning(String projectName, String message) {
+        return "WARNING [Project: $projectName] $message"
     }
 }
