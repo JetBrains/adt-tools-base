@@ -289,6 +289,13 @@ public class XmlElement extends OrphanXmlElement {
         return mMergeableChildren;
     }
 
+    /**
+     * Returns a child of a particular type and a particular key.
+     * @param type the requested child type.
+     * @param keyValue the requested child key.
+     * @return the child of {@link com.google.common.base.Optional#absent()} if no child of this
+     * type and key exist.
+     */
     public Optional<XmlElement> getNodeByTypeAndKey(
             ManifestModel.NodeTypes type,
             @Nullable String keyValue) {
@@ -300,6 +307,22 @@ public class XmlElement extends OrphanXmlElement {
             }
         }
         return Optional.absent();
+    }
+
+    /**
+     * Returns all immediate children of this node for a particular type, irrespective of their
+     * key.
+     * @param type the type of children element requested.
+     * @return the list (potentially empty) of children.
+     */
+    public ImmutableList<XmlElement> getAllNodesByType(ManifestModel.NodeTypes type) {
+        ImmutableList.Builder<XmlElement> listBuilder = ImmutableList.builder();
+        for (XmlElement mergeableChild : initMergeableChildren()) {
+            if (mergeableChild.isA(type)) {
+                listBuilder.add(mergeableChild);
+            }
+        }
+        return listBuilder.build();
     }
 
     // merge this higher priority node with a lower priority node.
@@ -352,10 +375,26 @@ public class XmlElement extends OrphanXmlElement {
                 ));
                 break;
             case ALWAYS:
+
                 // no merging, we consume the lower priority node unmodified.
                 // if the two elements are equal, just skip it.
-                if (thisChild.compareTo(lowerPriorityChild).isPresent()) {
-                    addElement(lowerPriorityChild, mergingReport);
+
+                // but check first that we are not supposed to replace or remove it.
+                NodeOperationType operationType =
+                        calculateNodeOperationType(thisChild, lowerPriorityChild);
+                if (operationType == NodeOperationType.REMOVE ||
+                        operationType == NodeOperationType.REPLACE) {
+                    mergingReport.getActionRecorder().recordNodeAction(thisChild,
+                            Actions.ActionType.REJECTED, lowerPriorityChild);
+                    break;
+                }
+
+                if (thisChild.getType().areMultipleDeclarationAllowed()) {
+                    mergeChildrenWithMultipleDeclarations(lowerPriorityChild, mergingReport);
+                } else {
+                    if (!thisChild.isEquals(lowerPriorityChild)) {
+                        addElement(lowerPriorityChild, mergingReport);
+                    }
                 }
                 break;
             default:
@@ -363,6 +402,34 @@ public class XmlElement extends OrphanXmlElement {
                 handleTwoElementsExistence(thisChild, lowerPriorityChild, mergingReport);
                 break;
         }
+    }
+
+    /**
+     * Merges two children when this children's type allow multiple elements declaration with the
+     * same key value. In that case, we only merge the lower priority child if there is not already
+     * an element with the same key value that is equal to the lower priority child. Two children
+     * are equals if they have the same attributes and children declared irrespective of the
+     * declaration order.
+     *
+     * @param lowerPriorityChild the lower priority element's child.
+     * @param mergingReport the merging report to log errors and actions.
+     */
+    private void mergeChildrenWithMultipleDeclarations(
+            XmlElement lowerPriorityChild,
+            MergingReport.Builder mergingReport) {
+
+        Preconditions.checkArgument(lowerPriorityChild.getType().areMultipleDeclarationAllowed());
+        if (lowerPriorityChild.getType().areMultipleDeclarationAllowed()) {
+            for (XmlElement sameTypeChild : getAllNodesByType(lowerPriorityChild.getType())) {
+                if (sameTypeChild.getId().equals(lowerPriorityChild.getId()) &&
+                        sameTypeChild.isEquals(lowerPriorityChild)) {
+                    return;
+                }
+            }
+        }
+        // if we end up here, we never found a child of this element with the same key and strictly
+        // equals to the lowerPriorityChild so we should merge it in.
+        addElement(lowerPriorityChild, mergingReport);
     }
 
     /**
@@ -519,15 +586,24 @@ public class XmlElement extends OrphanXmlElement {
         mergingReport.getLogger().verbose("Adopted " + node);
     }
 
+    public boolean isEquals(XmlElement otherNode) {
+        return !compareTo(otherNode).isPresent();
+    }
+
     /**
      * Compares this element with another {@link XmlElement} ignoring all attributes belonging to
      * the {@link com.android.SdkConstants#TOOLS_URI} namespace.
      *
-     * @param otherNode the other element to compare against.
+     * @param other the other element to compare against.
      * @return a {@link String} describing the differences between the two XML elements or
      * {@link Optional#absent()} if they are equals.
      */
-    public Optional<String> compareTo(XmlElement otherNode) {
+    public Optional<String> compareTo(Object other) {
+
+        if (!(other instanceof XmlElement)) {
+            return Optional.of("Wrong type");
+        }
+        XmlElement otherNode = (XmlElement) other;
 
         // compare element names
         if (getXml().getNamespaceURI() != null) {
@@ -616,10 +692,27 @@ public class XmlElement extends OrphanXmlElement {
         for (Node potentialNode : otherElementChildren) {
             if (potentialNode.getNodeType() == Node.ELEMENT_NODE) {
                 XmlElement otherChildNode = new XmlElement((Element) potentialNode, mDocument);
-                if (childNode.getType() == otherChildNode.getType()
-                        && ((childNode.getKey() == null && otherChildNode.getKey() == null)
-                        || childNode.getKey().equals(otherChildNode.getKey()))) {
-                    return childNode.compareTo(otherChildNode);
+                if (childNode.getType() == otherChildNode.getType()) {
+                    // check if this element uses a key.
+                    if (childNode.getType().getNodeKeyResolver().getKeyAttributesNames()
+                            .isEmpty()) {
+                        // no key... try all the other elements, if we find one equal, we are done.
+                        if (!childNode.compareTo(otherChildNode).isPresent()) {
+                            return Optional.absent();
+                        }
+                    } else {
+                        // key...
+                        if (childNode.getKey() == null) {
+                            // other key MUST also be null.
+                            if (otherChildNode.getKey() == null) {
+                                return childNode.compareTo(otherChildNode);
+                            }
+                        } else {
+                            if (childNode.getKey().equals(otherChildNode.getKey())) {
+                                return childNode.compareTo(otherChildNode);
+                            }
+                        }
+                    }
                 }
             }
         }

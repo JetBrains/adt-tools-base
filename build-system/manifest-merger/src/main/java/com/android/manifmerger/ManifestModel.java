@@ -250,6 +250,8 @@ class ManifestModel {
     private static final AttributeModel.BooleanValidator BOOLEAN_VALIDATOR =
             new AttributeModel.BooleanValidator();
 
+    private static final boolean MULTIPLE_DECLARATION_FOR_SAME_KEY_ALLOWED = true;
+
     /**
      * Definitions of the support node types in the Android Manifest file.
      * {@link <a href=http://developer.android.com/guide/topics/manifest/manifest-intro.html/>}
@@ -378,8 +380,8 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/intent-filter-element.html>
          *     Intent-filter Xml documentation</a>}
          */
-        // TODO: key is provided by sub elements...
-        INTENT_FILTER(MergeType.ALWAYS, INTENT_FILTER_KEY_RESOLVER),
+        INTENT_FILTER(MergeType.ALWAYS, INTENT_FILTER_KEY_RESOLVER,
+                MULTIPLE_DECLARATION_FOR_SAME_KEY_ALLOWED),
 
         /**
          * Manifest (top level node)
@@ -583,10 +585,19 @@ class ManifestModel {
         private final MergeType mMergeType;
         private final NodeKeyResolver mNodeKeyResolver;
         private final ImmutableList<AttributeModel> mAttributeModels;
+        private final boolean mMultipleDeclarationAllowed;
 
         private NodeTypes(
                 @NonNull MergeType mergeType,
                 @NonNull NodeKeyResolver nodeKeyResolver,
+                @Nullable AttributeModel.Builder... attributeModelBuilders) {
+            this(mergeType, nodeKeyResolver, false, attributeModelBuilders);
+        }
+
+        private NodeTypes(
+                @NonNull MergeType mergeType,
+                @NonNull NodeKeyResolver nodeKeyResolver,
+                boolean mutipleDeclarationAllowed,
                 @Nullable AttributeModel.Builder... attributeModelBuilders) {
             this.mMergeType = Preconditions.checkNotNull(mergeType);
             this.mNodeKeyResolver = Preconditions.checkNotNull(nodeKeyResolver);
@@ -598,6 +609,7 @@ class ManifestModel {
                 }
             }
             this.mAttributeModels = attributeModels.build();
+            this.mMultipleDeclarationAllowed = mutipleDeclarationAllowed;
         }
 
         @NonNull
@@ -659,6 +671,14 @@ class ManifestModel {
 
         MergeType getMergeType() {
             return mMergeType;
+        }
+
+        /**
+         * Returns true if multiple declaration for the same type and key are allowed or false if
+         * there must be only one declaration of this element for a particular key value.
+         */
+        boolean areMultipleDeclarationAllowed() {
+            return mMultipleDeclarationAllowed;
         }
     }
 }
