@@ -22,6 +22,7 @@ import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.NdkConfig;
 import com.android.builder.model.ProductFlavor;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.io.File;
@@ -53,6 +54,7 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
     private Boolean mTestHandleProfiling = null;
     private Boolean mTestFunctionalTest = null;
     private Set<String> mResourceConfigurations = null;
+    private Map<String, String> mManifestPlaceholders = null;
 
     @NonNull
     static ProductFlavorImpl cloneFlavor(
@@ -84,6 +86,9 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
 
         clonedFlavor.mResourceConfigurations = Sets.newHashSet(
                 productFlavor.getResourceConfigurations());
+
+        clonedFlavor.mManifestPlaceholders = Maps.newHashMap(
+                productFlavor.getManifestPlaceholders());
 
         return clonedFlavor;
     }
@@ -201,6 +206,12 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
         return mResourceConfigurations;
     }
 
+    @NonNull
+    @Override
+    public Map<String, String> getManifestPlaceholders() {
+        return mManifestPlaceholders;
+    }
+
     @Override
     public String toString() {
         return "ProductFlavorImpl{" +
@@ -218,6 +229,7 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
                 ", mTestHandleProfiling='" + mTestHandleProfiling + '\'' +
                 ", mTestFunctionalTest='" + mTestFunctionalTest + '\'' +
                 ", mResourceConfigurations='" + mResourceConfigurations + '\'' +
+                ", mManifestPlaceholders='" + mManifestPlaceholders + '\'' +
                 '}';
     }
 }

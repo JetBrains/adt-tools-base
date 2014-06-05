@@ -17,10 +17,12 @@
 package com.android.builder.core;
 
 import com.android.builder.model.ProductFlavor;
+import com.google.common.collect.ImmutableMap;
 
 import junit.framework.TestCase;
 
 import java.util.Collection;
+import java.util.Map;
 
 public class DefaultProductFlavorTest extends TestCase {
 
@@ -46,9 +48,12 @@ public class DefaultProductFlavorTest extends TestCase {
         mCustom.setTestHandleProfiling(true);
         mCustom.setTestFunctionalTest(true);
         mCustom.addResourceConfiguration("hdpi");
+        mCustom.addManifestPlaceHolders(ImmutableMap.of("one", "oneValue", "two", "twoValue"));
 
         mCustom2 = new DefaultProductFlavor("custom2");
         mCustom2.addResourceConfigurations("ldpi", "hdpi");
+        mCustom2.addManifestPlaceHolders(
+                ImmutableMap.of("two","twoValueBis", "three", "threeValue"));
     }
 
     public void testMergeOnDefault() {
@@ -107,5 +112,16 @@ public class DefaultProductFlavorTest extends TestCase {
         assertEquals(2, configs.size());
         assertTrue(configs.contains("hdpi"));
         assertTrue(configs.contains("ldpi"));
+    }
+
+    public void testManifestPlaceholdersMerge() {
+        ProductFlavor productFlavor = mCustom.mergeOver(mCustom2);
+
+        Map<String, String> manifestPlaceholders = productFlavor.getManifestPlaceholders();
+        assertEquals(3, manifestPlaceholders.size());
+        assertEquals("oneValue", manifestPlaceholders.get("one"));
+        assertEquals("twoValue", manifestPlaceholders.get("two"));
+        assertEquals("threeValue", manifestPlaceholders.get("three"));
+
     }
 }

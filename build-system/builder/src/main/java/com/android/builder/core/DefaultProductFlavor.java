@@ -24,10 +24,13 @@ import com.android.builder.model.NdkConfig;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Objects;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -54,6 +57,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     private Boolean mTestFunctionalTest = null;
     private SigningConfig mSigningConfig = null;
     private Set<String> mResourceConfiguration = null;
+    private Map<String, String> mManifestPlaceholders = null;
 
     /**
      * Creates a ProductFlavor with a given name.
@@ -287,6 +291,25 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return mResourceConfiguration;
     }
 
+    @NonNull
+    public Map<String, String> getManifestPlaceholders() {
+        if (mManifestPlaceholders == null) {
+            mManifestPlaceholders = Maps.newHashMap();
+        }
+        return mManifestPlaceholders;
+    }
+
+    public void addManifestPlaceHolders(@NonNull Map<String, String> manifestPlaceholders) {
+        if (mManifestPlaceholders == null) {
+            mManifestPlaceholders = Maps.newHashMap();
+        }
+        mManifestPlaceholders.putAll(manifestPlaceholders);
+    }
+
+    public void setManifestPlaceholders(Map<String, String> manifestPlaceholders) {
+        this.mManifestPlaceholders = manifestPlaceholders;
+    }
+
     /**
      * Merges the flavor on top of a base platform and returns a new object with the result.
      * @param base the flavor to merge on top of
@@ -327,6 +350,9 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
         flavor.addResourceConfigurations(getResourceConfigurations());
         flavor.addResourceConfigurations(base.getResourceConfigurations());
+
+        flavor.addManifestPlaceHolders(base.getManifestPlaceholders());
+        flavor.addManifestPlaceHolders(getManifestPlaceholders());
 
         return flavor;
     }

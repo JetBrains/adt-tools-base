@@ -530,6 +530,15 @@ public class ManifestMerger2 {
         }
 
         /**
+         * Adds placeholders names and associated values for substitution.
+         * @return itself.
+         */
+        public Invoker setPlaceHolderValues(Map<String, String> keyValuePairs) {
+            mPlaceHolders.putAll(keyValuePairs);
+            return thisAsT();
+        }
+
+        /**
          * Adds a new placeholder name and value for substitution.
          * @return itself.
          */
