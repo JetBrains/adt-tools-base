@@ -16,6 +16,7 @@
 
 package com.android.manifmerger;
 
+import com.android.SdkConstants;
 import com.android.utils.ILogger;
 
 import junit.framework.TestCase;
@@ -367,5 +368,76 @@ public class PostValidatorTest extends TestCase {
         }
         OrphanXmlElement xmlElement = new OrphanXmlElement((Element) firstChild);
         assertEquals(ManifestModel.NodeTypes.USES_SDK, xmlElement.getType());
+    }
+
+    public void testAndroidNamespacePresence()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <uses-sdk minSdkVersion=\"14\"/>"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "testApplicationInvalidOrder"), input);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
+        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        // ensure application element is last.
+        String attribute = xmlDocument.getRootNode().getXml().getAttribute("xmlns:android");
+        assertEquals(SdkConstants.ANDROID_URI, attribute);
+    }
+
+    public void testAndroidNamespacePresence_differentPrefix()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:A=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <uses-sdk A:minSdkVersion=\"14\"/>"
+                + "\n"
+                + "    <application A:label=\"@string/lib_name\" />\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "testApplicationInvalidOrder"), input);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
+        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        // ensure application element is last.
+        String attribute = xmlDocument.getRootNode().getXml().getAttribute("xmlns:A");
+        assertEquals(SdkConstants.ANDROID_URI, attribute);
+    }
+
+    public void testAndroidNamespaceAbsence()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        String input = ""
+                + "<manifest\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application />\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "testApplicationInvalidOrder"), input);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
+        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        // ensure application element is last.
+        String attribute = xmlDocument.getRootNode().getXml().getAttribute("xmlns:android");
+        assertEquals(SdkConstants.ANDROID_URI, attribute);
     }
 }
