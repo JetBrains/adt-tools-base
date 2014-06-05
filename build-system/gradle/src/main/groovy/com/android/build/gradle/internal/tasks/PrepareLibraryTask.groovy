@@ -30,6 +30,6 @@ public class PrepareLibraryTask extends DefaultTask {
 
     @TaskAction
     def prepare() {
-        LibraryCache.getCache().unzipLibrary(project, getBundle(), getExplodedDir())
+        LibraryCache.getCache().unzipLibrary(this.name, project, getBundle(), getExplodedDir())
     }
 }

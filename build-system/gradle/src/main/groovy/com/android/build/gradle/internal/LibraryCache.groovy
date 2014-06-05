@@ -47,29 +47,35 @@ public class LibraryCache {
     }
 
     @GuardedBy("this")
-    private final Map<File, CountDownLatch> bundleLatches = Maps.newHashMap()
+    private final Map<String, CountDownLatch> bundleLatches = Maps.newHashMap()
 
-    public void unzipLibrary(@NonNull Project project,
-            @NonNull File bundle, @NonNull File folderOut) {
+    public void unzipLibrary(
+            @NonNull String taskName,
+            @NonNull Project project,
+            @NonNull File bundle,
+            @NonNull File folderOut) {
 
         // only synchronize access to the latch so that unzipping 2+ different
         // libraries in parallel will work.
         boolean newItem = false;
         CountDownLatch latch;
         synchronized (this) {
-            latch = bundleLatches.get(bundle)
+            String path = bundle.getCanonicalPath()
+            latch = bundleLatches.get(path)
             if (latch == null) {
                 latch = new CountDownLatch(1)
-                bundleLatches.put(bundle, latch)
+                bundleLatches.put(path, latch)
                 newItem = true
             }
         }
 
         if (newItem) {
             try {
+                project.logger.debug("$taskName: ERASE ${folderOut.getPath()}")
                 folderOut.deleteDir()
                 folderOut.mkdirs()
 
+                project.logger.debug("$taskName: UNZIP ${bundle.getPath()} -> ${folderOut.getPath()}")
                 project.copy {
                     from project.zipTree(bundle)
                     into folderOut
