@@ -20,7 +20,6 @@ import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.manifmerger.AttributeModel.Hexadecimal32BitsWithMinimumValue;
 import static com.android.manifmerger.AttributeModel.MultiValueValidator;
-import static com.android.manifmerger.AttributeModel.ReferenceValidator;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -431,8 +430,6 @@ class ManifestModel {
          */
         PERMISSION(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
                 AttributeModel.newModel(SdkConstants.ATTR_NAME),
-                AttributeModel.newModel("permissionGroup")
-                        .setOnWriteValidator(new ReferenceValidator(PERMISSION_GROUP)),
                 AttributeModel.newModel("protectionLevel")
                         .setDefaultValue("normal")
                         // TODO : this will need to be populated from
