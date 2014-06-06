@@ -23,6 +23,7 @@ android {
                 //    srcDir 'src'
                 // would *add* to the default folder so we use a different syntax
                 srcDirs = ['src']
+                exclude 'some/unwanted/packageName/**'
             }
             res {
                 srcDirs = ['res']
