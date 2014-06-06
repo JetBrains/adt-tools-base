@@ -1899,7 +1899,7 @@ public abstract class BasePlugin {
 
         zipAlignTask.inputFile = inputFile
         zipAlignTask.outputFile = outputFile
-        zipAlignTask.conventionMapping.zipAlignExe = { androidBuilder.sdkInfo?.zipAlign }
+        zipAlignTask.conventionMapping.zipAlignExe = { androidBuilder.targetInfo?.buildTools?.getPath(ZIP_ALIGN) }
 
         return zipAlignTask
     }
