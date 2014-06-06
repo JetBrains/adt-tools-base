@@ -144,38 +144,6 @@ public class PostValidatorTest extends TestCase {
         fail("No reference to faulty PostValidatorTest#testIncorrectRemoveMain:8 found");
     }
 
-    public void testInvalidReferenceValidator()
-            throws ParserConfigurationException, SAXException, IOException {
-
-        String input = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.lib3\">\n"
-                + "\n"
-                + "    <permission android:name=\"permissionOne\" "
-                + "         android:permissionGroup=\"permissionGroupOne\"/>\n"
-                + "\n"
-                + "    <permission-group android:name=\"permissionGroupXXX\" "
-                + "         android:label=\"@res/foo\"/>\n"
-                + "\n"
-                + "</manifest>";
-
-        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "testInvalidReferenceValidator"), input);
-
-        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
-        for (MergingReport.Record record : mergingReportBuilder.build().getLoggingRecords()) {
-            Logger.getAnonymousLogger().severe(record.toString());
-            if (record.getSeverity() == MergingReport.Record.Severity.ERROR
-                    && record.toString().contains("PostValidatorTest#testInvalidReferenceValidator:6:55 ")) {
-                return;
-            }
-        }
-        fail("No reference to faulty PostValidatorTest#testInvalidReferenceValidator:6 found");
-    }
-
     public void testApplicationInvalidOrder()
             throws ParserConfigurationException, SAXException, IOException {
 
