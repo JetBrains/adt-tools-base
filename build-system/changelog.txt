@@ -1,4 +1,9 @@
 0.11.0:
+- Updated IDE model, requires Studio 0.6
+- New Manifest merger is now the default merger.
+   - lots of fixes
+   - added ability to add custom placeholders for merger.
+
 - Replaced the various DSL properties used to define the "package
   name" with an "application ID", to decouple the persistent ID of the
   application from the implementation package used to contain for
@@ -7,6 +12,12 @@
   packageNameSuffix => applicationIdSuffix
   testPackageName => testApplicationId
   testedPackageName => testedApplicationId
+- min/targetSdkVersion on ProductFlavor is now a ApiVersion which contains both an integer and a string.
+- DSL impact: cannot use setter: flavor {minSdkVersion = 9}, must use method: flavor { minSdkVersion 9}, due to a groovy limitation preventing overloaded setters.
+
+- Moved files and folders around in the buildDir for better IDE integration.
+- Generated APK can now be published. Same configuration as libraries with defaultPublishConfig and publishNonDefault flags.
+
 
 0.10.2:
 
