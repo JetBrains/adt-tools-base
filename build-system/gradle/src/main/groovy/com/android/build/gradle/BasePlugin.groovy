@@ -98,7 +98,6 @@ import com.android.builder.dependency.LibraryDependency
 import com.android.builder.internal.compiler.PreDexCache
 import com.android.builder.internal.testing.SimpleTestCallable
 import com.android.builder.model.AndroidArtifact
-import com.android.builder.model.AndroidProject
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.ArtifactMetaData
 import com.android.builder.model.BuildType
@@ -166,6 +165,7 @@ import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL
 import static com.android.builder.core.BuilderConstants.FD_REPORTS
 import static com.android.builder.core.BuilderConstants.RELEASE
 import static com.android.builder.core.VariantConfiguration.Type.TEST
+import static com.android.builder.model.AndroidProject.BUILD_MODEL_ONLY_SYSTEM_PROPERTY
 import static com.android.builder.model.AndroidProject.FD_GENERATED
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
@@ -2446,12 +2446,24 @@ public abstract class BasePlugin {
         }
     }
 
-    private static void collectArtifacts(
+    private void collectArtifacts(
             Configuration configuration,
             Map<ModuleVersionIdentifier,
             List<ResolvedArtifact>> artifacts) {
 
-        boolean buildModelOnly = Boolean.getBoolean(AndroidProject.BUILD_MODEL_ONLY_SYSTEM_PROPERTY)
+        // To keep backwards-compatibility, we check first if we have the JVM arg. If not, we look for
+        // the project property.
+        boolean buildModelOnly = false;
+        String val = System.getProperty(BUILD_MODEL_ONLY_SYSTEM_PROPERTY);
+        if (val instanceof Boolean) {
+            buildModelOnly = val.booleanValue();
+        }
+        else if (project.hasProperty(BUILD_MODEL_ONLY_SYSTEM_PROPERTY)) {
+            Object value = project.getProperties().get(BUILD_MODEL_ONLY_SYSTEM_PROPERTY);
+            if (value instanceof String) {
+                buildModelOnly = Boolean.parseBoolean(value);
+            }
+        }
 
         Set<ResolvedArtifact> allArtifacts
         if (buildModelOnly) {
