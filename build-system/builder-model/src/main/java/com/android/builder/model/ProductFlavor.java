@@ -109,7 +109,8 @@ public interface ProductFlavor extends BaseConfig {
 
     /**
      * Returns the test application id. This is only the value set on this product flavor.
-     * To get the final value, use {@link Variant#getTestArtifactInfo()} and
+     * To get the final value, use {@link Variant#getExtraAndroidArtifacts()} with
+     * {@link AndroidProject#ARTIFACT_ANDROID_TEST} and then
      * {@link AndroidArtifact#getApplicationId()}
      *
      * @return the test package name.

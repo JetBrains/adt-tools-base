@@ -24,7 +24,6 @@ import org.gradle.internal.reflect.Instantiator
  * A version of ProductFlavorDsl that can receive a group name
  */
 public class GroupableProductFlavorDsl extends ProductFlavorDsl {
-    private static final long serialVersionUID = 1L
 
     String flavorDimension
 

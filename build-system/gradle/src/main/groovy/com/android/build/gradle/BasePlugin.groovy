@@ -254,7 +254,9 @@ public abstract class BasePlugin {
 
         checkGradleVersion()
         sdkHandler = new SdkHandler(project, logger)
-        androidBuilder = new AndroidBuilder(creator, logger, verbose)
+        androidBuilder = new AndroidBuilder(
+                project == project.rootProject ? project.name : project.path,
+                creator, logger, verbose)
 
         project.apply plugin: JavaBasePlugin
 
