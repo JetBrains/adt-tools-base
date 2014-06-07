@@ -17,6 +17,8 @@ package com.android.build.gradle.internal.tasks
 
 import com.android.build.gradle.internal.dependency.DependencyChecker
 import com.android.build.gradle.internal.variant.BaseVariantData
+import com.android.builder.model.ApiVersion
+import com.android.ide.common.sdk.SdkVersionInfo
 import com.android.utils.Pair
 import org.gradle.api.tasks.TaskAction
 
@@ -31,14 +33,22 @@ public class PrepareDependenciesTask extends BaseTask {
 
     @TaskAction
     protected void prepare() {
-        def minSdkVersion = variant.variantConfiguration.minSdkVersion
+        ApiVersion minSdkVersion = variant.variantConfiguration.minSdkVersion
+        int minSdk = 1
+        if (minSdkVersion != null) {
+            if (minSdkVersion.getCodename() != null) {
+                minSdk = SdkVersionInfo.getApiByBuildCode(minSdkVersion.getCodename(), true)
+            } else {
+                minSdk = minSdkVersion.getApiLevel()
+            }
+        }
 
         for (DependencyChecker checker : checkers) {
             for (Integer api : checker.foundAndroidApis) {
-                if (api > minSdkVersion) {
+                if (api > minSdk) {
                     throw new RuntimeException(String.format(
                             "ERROR: %s has an indirect dependency on Android API level %d, but minSdkVersion for variant '%s' is API level %d",
-                            checker.configurationDependencies.name.capitalize(), api, variant.name, minSdkVersion))
+                            checker.configurationDependencies.name.capitalize(), api, variant.name, minSdk))
                 }
             }
 
