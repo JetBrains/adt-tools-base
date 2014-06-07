@@ -23,6 +23,19 @@ import java.util.List;
 
 /**
  * A build Variant.
+ *
+ * This is the combination of a Build Type and 0+ Product Flavors (exactly one for each existing
+ * Flavor Dimension).
+ *
+ * Build Types and Flavors both contribute source folders, so this Variant is the direct
+ * representation of a set of source folders (and configuration parameters) used to build something.
+ *
+ * However the output of a Variant is not a single item.
+ *
+ * First there can be several artifacts.
+ * - Main Artifact: this is the main Android output(s). The app or the library being generated.
+ * - Extra Android Artifacts: these are ancillary artifacts, most likely test app(s).
+ * - Extra Java artifacts: these are pure-Java ancillary artifacts (junit support for instance).
  */
 public interface Variant {
 

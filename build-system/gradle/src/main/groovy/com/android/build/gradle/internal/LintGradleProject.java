@@ -189,7 +189,9 @@ public class LintGradleProject extends Project {
                 @NonNull File referenceDir,
                 @NonNull AndroidProject project,
                 @NonNull Variant variant) {
-            super(client, dir, referenceDir, variant.getMainArtifact().getGeneratedManifest());
+            //TODO FIXME: handle multi-apk
+            super(client, dir, referenceDir,
+                    variant.getMainArtifact().getOutputs().iterator().next().getGeneratedManifest());
 
             mProject = project;
             mVariant = variant;

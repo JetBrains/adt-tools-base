@@ -19,11 +19,13 @@ package com.android.build.gradle.internal.model;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidArtifactOutput;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.SourceProvider;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -33,7 +35,7 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
     private static final long serialVersionUID = 1L;
 
     @NonNull
-    private final File outputFile;
+    private final Collection<AndroidArtifactOutput> outputs;
     private final boolean isSigned;
     @Nullable
     private final String signingConfigName;
@@ -42,21 +44,18 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
     @NonNull
     private final String sourceGenTaskName;
     @NonNull
-    private final File generatedManifest;
-    @NonNull
     private final List<File> generatedSourceFolders;
     @NonNull
     private final List<File> generatedResourceFolders;
 
     AndroidArtifactImpl(@NonNull String name,
+                        @NonNull Collection<AndroidArtifactOutput> outputs,
                         @NonNull String assembleTaskName,
-                        @NonNull File outputFile,
                         boolean isSigned,
                         @Nullable String signingConfigName,
                         @NonNull String applicationId,
                         @NonNull String sourceGenTaskName,
                         @NonNull String javaCompileTaskName,
-                        @NonNull File generatedManifest,
                         @NonNull List<File> generatedSourceFolders,
                         @NonNull List<File> generatedResourceFolders,
                         @NonNull File classesFolder,
@@ -66,20 +65,19 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
         super(name, assembleTaskName, javaCompileTaskName, classesFolder, dependencies,
                 variantSourceProvider, multiFlavorSourceProviders);
 
-        this.outputFile = outputFile;
+        this.outputs = outputs;
         this.isSigned = isSigned;
         this.signingConfigName = signingConfigName;
         this.applicationId = applicationId;
         this.sourceGenTaskName = sourceGenTaskName;
-        this.generatedManifest = generatedManifest;
         this.generatedSourceFolders = generatedSourceFolders;
         this.generatedResourceFolders = generatedResourceFolders;
     }
 
     @NonNull
     @Override
-    public File getOutputFile() {
-        return outputFile;
+    public Collection<AndroidArtifactOutput> getOutputs() {
+        return outputs;
     }
 
     @Override
@@ -103,12 +101,6 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
     @Override
     public String getSourceGenTaskName() {
         return sourceGenTaskName;
-    }
-
-    @NonNull
-    @Override
-    public File getGeneratedManifest() {
-        return generatedManifest;
     }
 
     @NonNull
