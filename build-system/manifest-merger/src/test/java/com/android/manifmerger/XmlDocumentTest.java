@@ -28,15 +28,22 @@ import junit.framework.TestCase;
 
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.List;
 import java.util.logging.Logger;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 /**
@@ -321,7 +328,6 @@ public class XmlDocumentTest extends TestCase {
                 mainDocument.merge(libraryDocument, mergingReportBuilder);
 
         assertTrue(mergedDocument.isPresent());
-        Logger.getAnonymousLogger().info(mergedDocument.get().prettyPrint());
         XmlElement rootNode = mergedDocument.get().getRootNode();
         assertTrue(rootNode.getNodeByTypeAndKey(
                 ManifestModel.NodeTypes.APPLICATION, null).isPresent());
@@ -350,6 +356,85 @@ public class XmlDocumentTest extends TestCase {
         assertTrue(foundAnother);
         assertTrue(foundFantasyOne);
         assertTrue(foundFantasyTwo);
+
+        Element validated = validate(mergedDocument.get().prettyPrint());
+
+        // make sure acme: namespace is defined.
+        Node namedItem = validated.getAttributes().getNamedItem("xmlns:acme");
+        assertEquals(namedItem.getNodeValue(), "http://acme.org/schemas");
+    }
+
+    public void testMultipleCustomElements()
+            throws ParserConfigurationException, SAXException, IOException {
+        String main = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" />\n"
+                + "\n"
+                + "</manifest>";
+        String library = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:acme=\"http://acme.org/schemas\"\n"
+                + "    xmlns:acme2=\"http://acme2.org/schemas\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" />\n"
+                + "    <acme:another acme:name=\"anotherOne\" \n"
+                + "         acme:ns-attribute=\"ns-value\" >\n"
+                + "        <acme:some-child acme:child-attr=\"foo\" /> \n"
+                + "    </acme:another>\n"
+                + "    <acme:another2 acme:name=\"anotherOne\" \n"
+                + "         acme:ns-attribute=\"ns-value\" >\n"
+                + "        <acme:some-child acme:child-attr=\"foo\" /> \n"
+                + "    </acme:another2>\n"
+                + "    <acme2:another acme2:name=\"anotherOne\" \n"
+                + "         acme2:ns-attribute=\"ns-value\" >\n"
+                + "        <acme2:some-child acme2:child-attr=\"foo\" /> \n"
+                + "    </acme2:another>\n"
+                + "    <acme2:another2 acme2:name=\"anotherOne\" \n"
+                + "         acme2:ns-attribute=\"ns-value\" >\n"
+                + "        <acme2:some-child acme2:child-attr=\"foo\" /> \n"
+                + "    </acme2:another2>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "main"), main);
+        XmlDocument libraryDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "library"), library);
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
+        Optional<XmlDocument> mergedDocument =
+                mainDocument.merge(libraryDocument, mergingReportBuilder);
+
+        assertTrue(mergedDocument.isPresent());
+        XmlElement rootNode = mergedDocument.get().getRootNode();
+        assertTrue(rootNode.getNodeByTypeAndKey(
+                ManifestModel.NodeTypes.APPLICATION, null).isPresent());
+        Optional<XmlElement> activityOne = rootNode
+                .getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,
+                        "com.example.lib3.activityOne");
+        assertTrue(activityOne.isPresent());
+
+        Element validated = validate(mergedDocument.get().prettyPrint());
+
+        // make sure acme: and acme2: namespaces are defined.
+        Node namedItem = validated.getAttributes().getNamedItem("xmlns:acme");
+        assertEquals(namedItem.getNodeValue(), "http://acme.org/schemas");
+        namedItem = validated.getAttributes().getNamedItem("xmlns:acme2");
+        assertEquals(namedItem.getNodeValue(), "http://acme2.org/schemas");
+
+        // check we have all the children we expected.
+        int elementsNumber = 0;
+        for (int i = 0; i < validated.getChildNodes().getLength(); i++) {
+            Node item = validated.getChildNodes().item(i);
+            if (item instanceof Element) {
+                elementsNumber++;
+            }
+        }
+        assertEquals(6, elementsNumber);
     }
 
     public void testIllegalLibraryVersionMerge()
@@ -1531,5 +1616,32 @@ public class XmlDocumentTest extends TestCase {
                 getAllElementsOfType(xmlElement, nodeType, allElementsBuilder);
             }
         }
+    }
+
+    private static Element validate(String xml)
+            throws ParserConfigurationException, IOException, SAXException {
+
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        dbFactory.setNamespaceAware(true);
+        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+        dBuilder.setErrorHandler(new ErrorHandler() {
+            @Override
+            public void warning(SAXParseException e) throws SAXException {
+
+            }
+
+            @Override
+            public void error(SAXParseException e) throws SAXException {
+                fail(e.getMessage());
+            }
+
+            @Override
+            public void fatalError(SAXParseException e) throws SAXException {
+                fail(e.getMessage());
+            }
+        });
+        Document validated = dBuilder.parse(
+                new InputSource(new StringReader(xml)));
+        return (Element) validated.getChildNodes().item(0);
     }
 }

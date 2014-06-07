@@ -348,7 +348,7 @@ public class XmlElement extends OrphanXmlElement {
 
         // If this a custom element, we just blindly merge it in.
         if (lowerPriorityChild.getType() == ManifestModel.NodeTypes.CUSTOM) {
-            addElement(lowerPriorityChild, mergingReport);
+            handleCustomElement(lowerPriorityChild, mergingReport);
             return;
         }
 
@@ -401,6 +401,32 @@ public class XmlElement extends OrphanXmlElement {
                 // 2 nodes exist, some merging need to happen
                 handleTwoElementsExistence(thisChild, lowerPriorityChild, mergingReport);
                 break;
+        }
+    }
+
+    /**
+     * Handles presence of custom elements (elements not part of the android or tools
+     * namespaces). Such elements are merged unchanged into the resulting document, and
+     * optionally, the namespace definition is added to the merged document root element.
+     * @param customElement the custom element present in the lower priority document.
+     * @param mergingReport the merging report to log errors and actions.
+     */
+    private void handleCustomElement(XmlElement customElement,
+            MergingReport.Builder mergingReport) {
+        addElement(customElement, mergingReport);
+
+        // add the custom namespace to the document generation.
+        String nodeName = customElement.getXml().getNodeName();
+        if (!nodeName.contains(":")) {
+            return;
+        }
+        String prefix = nodeName.substring(0, nodeName.indexOf(':'));
+        String namespace = customElement.getDocument().getRootNode()
+                .getXml().getAttribute(SdkConstants.XMLNS_PREFIX + prefix);
+
+        if (namespace != null) {
+            getDocument().getRootNode().getXml().setAttributeNS(
+                    SdkConstants.XMLNS_URI, SdkConstants.XMLNS_PREFIX + prefix, namespace);
         }
     }
 
