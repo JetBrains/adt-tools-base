@@ -364,6 +364,7 @@ public class AndroidProjectTest extends TestCase {
                 .setTestFunctionalTest(null)
             .test();
 
+        // debug variant, tested.
         AndroidArtifact debugMainInfo = debugVariant.getMainArtifact();
         assertNotNull("Debug main info null-check", debugMainInfo);
         assertEquals("Debug package name", "com.android.tests.basic.debug",
@@ -373,10 +374,8 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Debug sourceGenTask", "generateDebugSources", debugMainInfo.getSourceGenTaskName());
         assertEquals("Debug javaCompileTask", "compileDebugJava", debugMainInfo.getJavaCompileTaskName());
 
-        Collection<AndroidArtifact> debugExtraAndroidArtifacts = debugVariant.getExtraAndroidArtifacts();
-
-
         // this variant is tested.
+        Collection<AndroidArtifact> debugExtraAndroidArtifacts = debugVariant.getExtraAndroidArtifacts();
         AndroidArtifact debugTestInfo = getAndroidArtifact(debugExtraAndroidArtifacts,
                 ARTIFACT_ANDROID_TEST);
         assertNotNull("Test info null-check", debugTestInfo);

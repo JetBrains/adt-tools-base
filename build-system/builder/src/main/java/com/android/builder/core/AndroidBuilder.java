@@ -67,7 +67,6 @@ import com.android.manifmerger.ManifestMerger;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.manifmerger.MergerLog;
 import com.android.manifmerger.MergingReport;
-import com.android.manifmerger.PlaceholderHandler;
 import com.android.manifmerger.XmlDocument;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
@@ -107,7 +106,7 @@ import java.util.regex.Pattern;
  * build steps.
  *
  * To use:
- * create a builder with {@link #AndroidBuilder(String, ILogger, boolean)}
+ * create a builder with {@link #AndroidBuilder(String, String, ILogger, boolean)}
  *
  * then build steps can be done with
  * {@link #mergeManifests(java.io.File, java.util.List, java.util.List, String, int, String, String, String, String, com.android.manifmerger.ManifestMerger2.MergeType, java.util.Map)}
@@ -131,6 +130,7 @@ public class AndroidBuilder {
         }
     };
 
+    private final String mProjectId;
     private final ILogger mLogger;
     private final CommandLineRunner mCmdLineRunner;
     private final boolean mVerboseExec;
@@ -151,9 +151,11 @@ public class AndroidBuilder {
      * @param verboseExec whether external tools are launched in verbose mode
      */
     public AndroidBuilder(
+            @NonNull String projectId,
             @Nullable String createdBy,
             @NonNull ILogger logger,
             boolean verboseExec) {
+        mProjectId = projectId;
         mCreatedBy = createdBy;
         mLogger = checkNotNull(logger);
         mVerboseExec = verboseExec;
@@ -162,9 +164,11 @@ public class AndroidBuilder {
 
     @VisibleForTesting
     AndroidBuilder(
+            @NonNull String projectId,
             @NonNull CommandLineRunner cmdLineRunner,
             @NonNull ILogger logger,
             boolean verboseExec) {
+        mProjectId = projectId;
         mCmdLineRunner = checkNotNull(cmdLineRunner);
         mLogger = checkNotNull(logger);
         mVerboseExec = verboseExec;
@@ -185,8 +189,8 @@ public class AndroidBuilder {
 
         if (mTargetInfo.getBuildTools().getRevision().compareTo(MIN_BUILD_TOOLS_REV) < 0) {
             throw new IllegalArgumentException(String.format(
-                    "The SDK Build Tools revision (%1$s) is too low. Minimum required is %2$s",
-                    mTargetInfo.getBuildTools().getRevision(), MIN_BUILD_TOOLS_REV));
+                    "The SDK Build Tools revision (%1$s) is too low for project '%2$s'. Minimum required is %3$s",
+                    mTargetInfo.getBuildTools().getRevision(), mProjectId, MIN_BUILD_TOOLS_REV));
         }
     }
 
