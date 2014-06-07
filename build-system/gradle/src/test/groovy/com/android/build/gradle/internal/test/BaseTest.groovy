@@ -19,6 +19,7 @@ import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.sdklib.internal.project.ProjectProperties
 import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy
+import com.google.common.collect.Lists
 import junit.framework.TestCase
 import org.gradle.tooling.GradleConnector
 import org.gradle.tooling.ProjectConnection
@@ -131,17 +132,25 @@ public abstract class BaseTest extends TestCase {
         return (File) localProp.file
     }
 
-    protected File runTasksOn(String name, String gradleVersion, String... tasks) {
+    protected File runTasksOn(
+            @NonNull String name,
+            @NonNull String gradleVersion,
+            @NonNull String... tasks) {
         File project = new File(testDir, name)
 
-        runGradleTasks(sdkDir, ndkDir, gradleVersion, project, tasks)
+        runGradleTasks(sdkDir, ndkDir, gradleVersion, project,
+                Collections.<String>emptyList(), tasks)
 
         return project;
     }
 
-    protected static void runGradleTasks(File sdkDir, File ndkDir,
-                                         String gradleVersion,
-                                         File project, String... tasks) {
+    protected static void runGradleTasks(
+            @NonNull File sdkDir,
+            @NonNull File ndkDir,
+            @NonNull String gradleVersion,
+            @NonNull File project,
+            @NonNull List<String> arguments,
+            @NonNull String... tasks) {
         File localProp = createLocalProp(project, sdkDir, ndkDir)
 
         try {
@@ -153,7 +162,12 @@ public abstract class BaseTest extends TestCase {
                     .forProjectDirectory(project)
                     .connect()
             try {
-                connection.newBuild().forTasks(tasks).withArguments("-i","-u").run()
+                List<String> args = Lists.newArrayListWithCapacity(2 + arguments.size());
+                args.add("-i");
+                args.add("-u");
+                args.addAll(arguments);
+
+                connection.newBuild().forTasks(tasks).withArguments(args.toArray() as String[]).run()
             } finally {
                 connection.close()
             }

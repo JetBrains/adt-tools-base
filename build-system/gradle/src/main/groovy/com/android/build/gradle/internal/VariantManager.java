@@ -158,13 +158,15 @@ public class VariantManager {
 
     /**
      * Task creation entry point.
+     *
+     * @param signingOverride a signing override. Generally driven through the IDE.
      */
-    public void createAndroidTasks() {
+    public void createAndroidTasks(@Nullable SigningConfig signingOverride) {
         // Add a compile lint task
         basePlugin.createLintCompileTask();
 
         if (productFlavors.isEmpty()) {
-            createTasksForDefaultBuild();
+            createTasksForDefaultBuild(signingOverride);
         } else {
             // there'll be more than one test app, so we need a top level assembleTest
             Task assembleTest = project.getTasks().create("assembleTest");
@@ -176,7 +178,7 @@ public class VariantManager {
             List<String> flavorDimensionList = extension.getFlavorDimensionList();
             if (flavorDimensionList == null || flavorDimensionList.size() < 2) {
                 for (ProductFlavorData productFlavorData : productFlavors.values()) {
-                    createTasksForFlavoredBuild(productFlavorData);
+                    createTasksForFlavoredBuild(signingOverride, productFlavorData);
                 }
             } else {
                 // need to group the flavor per dimension.
@@ -202,7 +204,7 @@ public class VariantManager {
 
                 // now we use the flavor dimensions to generate an ordered array of flavor to use
                 ProductFlavorData[] array = new ProductFlavorData[flavorDimensionList.size()];
-                createTasksForMultiFlavoredBuilds(array, 0, map);
+                createTasksForMultiFlavoredBuilds(array, 0, map, signingOverride);
             }
         }
 
@@ -225,13 +227,15 @@ public class VariantManager {
      * @param datas the arrays to fill
      * @param index the current index to fill
      * @param map the map of dimension -> list(ProductFlavor)
+     * @param signingOverride a signing override. Generally driven through the IDE.
      */
     private void createTasksForMultiFlavoredBuilds(
             ProductFlavorData[] datas,
             int index,
-            ListMultimap<String, ? extends ProductFlavorData> map) {
+            ListMultimap<String, ? extends ProductFlavorData> map,
+            @Nullable SigningConfig signingOverride) {
         if (index == datas.length) {
-            createTasksForFlavoredBuild(datas);
+            createTasksForFlavoredBuild(signingOverride, datas);
             return;
         }
 
@@ -246,7 +250,7 @@ public class VariantManager {
         // indices.
         for (ProductFlavorData flavor : flavorList) {
             datas[index] = flavor;
-            createTasksForMultiFlavoredBuilds(datas, index + 1, map);
+            createTasksForMultiFlavoredBuilds(datas, index + 1, map, signingOverride);
         }
     }
 
@@ -254,8 +258,10 @@ public class VariantManager {
      * Creates Tasks for non-flavored build. This means assembleDebug, assembleRelease, and other
      * assemble<Type> are directly building the <type> build instead of all build of the given
      * <type>.
+     *
+     * @param signingOverride a signing override. Generally driven through the IDE.
      */
-    private void createTasksForDefaultBuild() {
+    private void createTasksForDefaultBuild(@Nullable SigningConfig signingOverride) {
         BuildTypeData testData = buildTypes.get(extension.getTestBuildType());
         if (testData == null) {
             throw new RuntimeException(String.format(
@@ -285,7 +291,8 @@ public class VariantManager {
                         defaultConfigSourceSet,
                         buildTypeData.getBuildType(),
                         buildTypeData.getSourceSet(),
-                        variantFactory.getVariantConfigurationType());
+                        variantFactory.getVariantConfigurationType(),
+                        signingOverride);
 
                 // create the variant and get its internal storage object.
                 BaseVariantData variantData = variantFactory.createVariantData(variantConfig);
@@ -318,7 +325,8 @@ public class VariantManager {
                     defaultConfigData.getTestSourceSet(),
                     testData.getBuildType(),
                     null,
-                    VariantConfiguration.Type.TEST, testedConfig);
+                    VariantConfiguration.Type.TEST, testedConfig,
+                    signingOverride);
 
             // create the internal storage for this test variant.
             TestVariantData testVariantData = new TestVariantData(testVariantConfig, (TestedVariantData) testedVariantData);
@@ -346,9 +354,12 @@ public class VariantManager {
     /**
      * Creates Task for a given flavor. This will create tasks for all build types for the given
      * flavor.
+     *
+     * @param signingOverride a signing override. Generally driven through the IDE.
      * @param flavorDataList the flavor(s) to build.
      */
-    private void createTasksForFlavoredBuild(@NonNull ProductFlavorData... flavorDataList) {
+    private void createTasksForFlavoredBuild(@Nullable SigningConfig signingOverride,
+            @NonNull ProductFlavorData... flavorDataList) {
 
         BuildTypeData testData = buildTypes.get(extension.getTestBuildType());
         if (testData == null) {
@@ -403,7 +414,8 @@ public class VariantManager {
                         defaultConfigSourceSet,
                         buildTypeData.getBuildType(),
                         buildTypeData.getSourceSet(),
-                        variantFactory.getVariantConfigurationType());
+                        variantFactory.getVariantConfigurationType(),
+                        signingOverride);
 
                 for (ProductFlavorData data : flavorDataList) {
                     String dimensionName = "";
@@ -486,7 +498,8 @@ public class VariantManager {
                     testData.getBuildType(),
                     null,
                     VariantConfiguration.Type.TEST,
-                    testedVariantData.getVariantConfiguration());
+                    testedVariantData.getVariantConfiguration(),
+                    signingOverride);
 
             /// add the container of dependencies
             // the order of the libraries is important. In descending order:

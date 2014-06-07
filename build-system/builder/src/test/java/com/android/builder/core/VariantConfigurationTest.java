@@ -18,6 +18,9 @@ package com.android.builder.core;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.SigningConfig;
+import com.android.builder.signing.DefaultSigningConfig;
+
 import junit.framework.TestCase;
 
 import java.io.File;
@@ -137,11 +140,44 @@ public class VariantConfigurationTest extends TestCase {
         assertEquals("2.0b1-DEBUG", variant.getVersionName());
     }
 
+    public void testSigningBuildTypeOverride() {
+        // DefaultSigningConfig doesn't compare the name, so put some content.
+        DefaultSigningConfig debugSigning = new DefaultSigningConfig("debug");
+        debugSigning.setStorePassword("debug");
+        mBuildType.setSigningConfig(debugSigning);
+
+        DefaultSigningConfig override = new DefaultSigningConfig("override");
+        override.setStorePassword("override");
+
+        VariantConfiguration variant = getVariant(override);
+
+        assertEquals(override, variant.getSigningConfig());
+    }
+
+    public void testSigningProductFlavorOverride() {
+        // DefaultSigningConfig doesn't compare the name, so put some content.
+        DefaultSigningConfig defaultConfig = new DefaultSigningConfig("defaultConfig");
+        defaultConfig.setStorePassword("debug");
+        mDefaultConfig.setSigningConfig(defaultConfig);
+
+        DefaultSigningConfig override = new DefaultSigningConfig("override");
+        override.setStorePassword("override");
+
+        VariantConfiguration variant = getVariant(override);
+
+        assertEquals(override, variant.getSigningConfig());
+    }
+
     private VariantConfiguration getVariant() {
+        return getVariant(null /*signingOverride*/);
+    }
+
+    private VariantConfiguration getVariant(SigningConfig signingOverride) {
         VariantConfiguration variant = new VariantConfiguration(
                 mDefaultConfig, new MockSourceProvider("main"),
                 mBuildType, new MockSourceProvider("debug"),
-                VariantConfiguration.Type.DEFAULT);
+                VariantConfiguration.Type.DEFAULT,
+                signingOverride);
 
         variant.addProductFlavor(mFlavorConfig, new MockSourceProvider("custom"), "");
 
@@ -152,7 +188,8 @@ public class VariantConfigurationTest extends TestCase {
         VariantConfiguration variant = new VariantConfiguration(
                 mDefaultConfig, new MockSourceProvider("main"),
                 mBuildType, new MockSourceProvider("debug"),
-                VariantConfiguration.Type.DEFAULT) {
+                VariantConfiguration.Type.DEFAULT,
+                null /*signingConfigOverride*/) {
             @Override
             public String getPackageFromManifest() {
                 return packageName;
@@ -167,7 +204,8 @@ public class VariantConfigurationTest extends TestCase {
         VariantConfiguration variant = new VariantConfiguration(
                 mDefaultConfig, new MockSourceProvider("main"),
                 mBuildType, new MockSourceProvider("debug"),
-                VariantConfiguration.Type.DEFAULT) {
+                VariantConfiguration.Type.DEFAULT,
+                null /*signingConfigOverride*/) {
             @Override
             public String getVersionNameFromManifest() {
                 return versionName;
