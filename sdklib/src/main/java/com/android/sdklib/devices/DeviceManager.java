@@ -33,6 +33,7 @@ import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+import com.google.common.io.Closeables;
 
 import org.xml.sax.SAXException;
 
@@ -306,13 +307,29 @@ public class DeviceManager {
                 stream = DeviceManager.class.getResourceAsStream("nexus.xml");
                 mVendorDevices.addAll(DeviceParser.parse(stream));
             } catch (Exception e) {
-                mLog.error(e, null, "Could not load devices");
+                mLog.error(e, null, "Could not load nexus devices");
             } finally {
-                if (stream != null) {
-                    try {
-                        stream.close();
-                    } catch (IOException ignore) {}
-                }
+                Closeables.closeQuietly(stream);
+            }
+
+            stream = null;
+            try {
+                stream = DeviceManager.class.getResourceAsStream("wear.xml");
+                mVendorDevices.addAll(DeviceParser.parse(stream));
+            } catch (Exception e) {
+                mLog.error(e, null, "Could not load wear devices");
+            } finally {
+                Closeables.closeQuietly(stream);
+            }
+
+            stream = null;
+            try {
+                stream = DeviceManager.class.getResourceAsStream("tv.xml");
+                mVendorDevices.addAll(DeviceParser.parse(stream));
+            } catch (Exception e) {
+                mLog.error(e, null, "Could not load tv devices");
+            } finally {
+                Closeables.closeQuietly(stream);
             }
 
             if (mOsSdkPath != null) {
