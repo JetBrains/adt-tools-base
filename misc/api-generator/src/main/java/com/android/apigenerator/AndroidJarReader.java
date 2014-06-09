@@ -57,7 +57,7 @@ public class AndroidJarReader {
         HashMap<String, ApiClass> map = new HashMap<String, ApiClass>();
 
         // Get all the android.jar. They are in platforms-#
-        int apiLevel = mMinApi;
+        int apiLevel = mMinApi - 1;
         while (true) {
             apiLevel++;
             try {
