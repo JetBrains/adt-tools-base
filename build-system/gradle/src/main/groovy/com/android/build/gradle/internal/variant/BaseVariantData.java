@@ -207,7 +207,7 @@ public abstract class BaseVariantData {
             // First the actual source folders.
             List<SourceProvider> providers = variantConfiguration.getSortedSourceProviders();
             for (SourceProvider provider : providers) {
-                sourceList.add(((AndroidSourceSet) provider).getJava());
+                sourceList.add(((AndroidSourceSet) provider).getJava().getSourceFiles());
             }
 
             // then all the generated src folders.

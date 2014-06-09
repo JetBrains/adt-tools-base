@@ -997,15 +997,15 @@ public abstract class BasePlugin {
         variantData.processJavaResourcesTask = processResources
 
         // set the input
-        processResources.from(((AndroidSourceSet) variantConfiguration.defaultSourceSet).resources)
+        processResources.from(((AndroidSourceSet) variantConfiguration.defaultSourceSet).resources.getSourceFiles())
 
         if (variantConfiguration.type != TEST) {
             processResources.from(
-                    ((AndroidSourceSet) variantConfiguration.buildTypeSourceSet).resources)
+                    ((AndroidSourceSet) variantConfiguration.buildTypeSourceSet).resources.getSourceFiles())
         }
         if (variantConfiguration.hasFlavors()) {
             for (SourceProvider flavorSourceSet : variantConfiguration.flavorSourceProviders) {
-                processResources.from(((AndroidSourceSet) flavorSourceSet).resources)
+                processResources.from(((AndroidSourceSet) flavorSourceSet).resources.getSourceFiles())
             }
         }
 

@@ -23,11 +23,9 @@ import com.android.build.gradle.api.AndroidSourceFile;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.builder.model.SourceProvider;
 
-import org.gradle.api.file.FileTreeElement;
+import org.gradle.api.Project;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.file.DefaultSourceDirectorySet;
-import org.gradle.api.internal.file.FileResolver;
-import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.util.ConfigureUtil;
 import org.gradle.util.GUtil;
@@ -46,9 +44,9 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
     private final String name;
     private final boolean isLibrary;
 
-    private final SourceDirectorySet javaSource;
-    private final SourceDirectorySet allJavaSource;
-    private final SourceDirectorySet javaResources;
+    private final AndroidSourceDirectorySet javaSource;
+    private final AndroidSourceDirectorySet allJavaSource;
+    private final AndroidSourceDirectorySet javaResources;
     private final AndroidSourceFile manifest;
     private final AndroidSourceDirectorySet assets;
     private final AndroidSourceDirectorySet res;
@@ -57,57 +55,51 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
     private final AndroidSourceDirectorySet jni;
     private final AndroidSourceDirectorySet jniLibs;
     private final String displayName;
-    private final SourceDirectorySet allSource;
+    private final AndroidSourceDirectorySet allSource;
 
-    public DefaultAndroidSourceSet(@NonNull String name, @NonNull FileResolver fileResolver,
-            boolean isLibrary) {
+    public DefaultAndroidSourceSet(@NonNull String name,
+            Project project, boolean isLibrary) {
         this.name = name;
         this.isLibrary = isLibrary;
         displayName = GUtil.toWords(this.name);
 
         String javaSrcDisplayName = String.format("%s Java source", displayName);
 
-        javaSource = new DefaultSourceDirectorySet(javaSrcDisplayName, fileResolver);
+        javaSource = new DefaultAndroidSourceDirectorySet(javaSrcDisplayName, project);
         javaSource.getFilter().include("**/*.java");
 
-        allJavaSource = new DefaultSourceDirectorySet(javaSrcDisplayName, fileResolver);
+        allJavaSource = new DefaultAndroidSourceDirectorySet(javaSrcDisplayName, project);
         allJavaSource.getFilter().include("**/*.java");
-        allJavaSource.source(javaSource);
+        allJavaSource.srcDirs(javaSource);
 
         String javaResourcesDisplayName = String.format("%s Java resources", displayName);
-        javaResources = new DefaultSourceDirectorySet(javaResourcesDisplayName, fileResolver);
-        javaResources.getFilter().exclude(new Spec<FileTreeElement>() {
-            @Override
-            public boolean isSatisfiedBy(FileTreeElement element) {
-                return javaSource.contains(element.getFile());
-            }
-        });
+        javaResources = new DefaultAndroidSourceDirectorySet(javaResourcesDisplayName, project);
+        javaResources.getFilter().exclude("**/*.java");
 
         String allSourceDisplayName = String.format("%s source", displayName);
-        allSource = new DefaultSourceDirectorySet(allSourceDisplayName, fileResolver);
-        allSource.source(javaResources);
-        allSource.source(javaSource);
+        allSource = new DefaultAndroidSourceDirectorySet(allSourceDisplayName, project);
+        allSource.srcDirs(javaResources, javaSource);
 
         String manifestDisplayName = String.format("%s manifest", displayName);
-        manifest = new DefaultAndroidSourceFile(manifestDisplayName, fileResolver);
+        manifest = new DefaultAndroidSourceFile(manifestDisplayName, project);
 
         String assetsDisplayName = String.format("%s assets", displayName);
-        assets = new DefaultAndroidSourceDirectorySet(assetsDisplayName, fileResolver);
+        assets = new DefaultAndroidSourceDirectorySet(assetsDisplayName, project);
 
         String resourcesDisplayName = String.format("%s resources", displayName);
-        res = new DefaultAndroidSourceDirectorySet(resourcesDisplayName, fileResolver);
+        res = new DefaultAndroidSourceDirectorySet(resourcesDisplayName, project);
 
         String aidlDisplayName = String.format("%s aidl", displayName);
-        aidl = new DefaultAndroidSourceDirectorySet(aidlDisplayName, fileResolver);
+        aidl = new DefaultAndroidSourceDirectorySet(aidlDisplayName, project);
 
         String renderscriptDisplayName = String.format("%s renderscript", displayName);
-        renderscript = new DefaultAndroidSourceDirectorySet(renderscriptDisplayName, fileResolver);
+        renderscript = new DefaultAndroidSourceDirectorySet(renderscriptDisplayName, project);
 
         String jniDisplayName = String.format("%s jni", displayName);
-        jni = new DefaultAndroidSourceDirectorySet(jniDisplayName, fileResolver);
+        jni = new DefaultAndroidSourceDirectorySet(jniDisplayName, project);
 
         String libsDisplayName = String.format("%s jniLibs", displayName);
-        jniLibs = new DefaultAndroidSourceDirectorySet(libsDisplayName, fileResolver);
+        jniLibs = new DefaultAndroidSourceDirectorySet(libsDisplayName, project);
     }
 
     @Override
@@ -257,7 +249,7 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
 
     @Override
     @NonNull
-    public SourceDirectorySet getJava() {
+    public AndroidSourceDirectorySet getJava() {
         return javaSource;
     }
 
@@ -270,13 +262,13 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
 
     @Override
     @NonNull
-    public SourceDirectorySet getAllJava() {
+    public AndroidSourceDirectorySet getAllJava() {
         return allJavaSource;
     }
 
     @Override
     @NonNull
-    public SourceDirectorySet getResources() {
+    public AndroidSourceDirectorySet getResources() {
         return javaResources;
     }
 
@@ -289,7 +281,7 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
 
     @Override
     @NonNull
-    public SourceDirectorySet getAllSource() {
+    public AndroidSourceDirectorySet getAllSource() {
         return allSource;
     }
 
