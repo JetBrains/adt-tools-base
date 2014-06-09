@@ -169,6 +169,11 @@ import static com.android.builder.model.AndroidProject.BUILD_MODEL_ONLY_SYSTEM_P
 import static com.android.builder.model.AndroidProject.FD_GENERATED
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
+import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_KEY_ALIAS
+import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_KEY_PASSWORD
+import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_STORE_FILE
+import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_STORE_PASSWORD
+import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_STORE_STYPE
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN
 import static java.io.File.separator
 /**
@@ -418,7 +423,7 @@ public abstract class BasePlugin {
             }
         }
 
-        variantManager.createAndroidTasks()
+        variantManager.createAndroidTasks(getSigningOverride())
         createReportTasks()
 
         if (lintVital != null) {
@@ -428,6 +433,29 @@ public abstract class BasePlugin {
                 }
             }
         }
+    }
+
+    private SigningConfig getSigningOverride() {
+        if (project.hasProperty(SIGNING_OVERRIDE_STORE_FILE) &&
+                project.hasProperty(SIGNING_OVERRIDE_STORE_PASSWORD) &&
+                project.hasProperty(SIGNING_OVERRIDE_KEY_ALIAS) &&
+                project.hasProperty(SIGNING_OVERRIDE_KEY_PASSWORD)) {
+
+            SigningConfigDsl signingConfigDsl = new SigningConfigDsl("externalOverride")
+            Map<String, ?> props = project.getProperties();
+
+            signingConfigDsl.setStoreFile(new File((String) props.get(SIGNING_OVERRIDE_STORE_FILE)))
+            signingConfigDsl.setStorePassword((String) props.get(SIGNING_OVERRIDE_STORE_PASSWORD));
+            signingConfigDsl.setKeyAlias((String) props.get(SIGNING_OVERRIDE_KEY_ALIAS));
+            signingConfigDsl.setKeyPassword((String) props.get(SIGNING_OVERRIDE_KEY_PASSWORD));
+
+            if (project.hasProperty(SIGNING_OVERRIDE_STORE_STYPE)) {
+                signingConfigDsl.setStoreType((String) props.get(SIGNING_OVERRIDE_STORE_STYPE))
+            }
+
+            return signingConfigDsl
+        }
+        return null
     }
 
     void checkTasksAlreadyCreated() {
@@ -1743,6 +1771,7 @@ public abstract class BasePlugin {
         packageApp.conventionMapping.jniDebugBuild = { variantConfig.buildType.jniDebugBuild }
 
         SigningConfigDsl sc = (SigningConfigDsl) variantConfig.signingConfig
+
         packageApp.conventionMapping.signingConfig = { sc }
         if (sc != null) {
             ValidateSigningTask validateSigningTask = validateSigningTaskMap.get(sc)

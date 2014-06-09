@@ -16,11 +16,14 @@
 
 package com.android.build.gradle;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.test.BaseTest;
 import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Base class for build tests.
@@ -53,18 +56,26 @@ abstract class BuildTest extends BaseTest {
       return IGNORED_GRADLE_VERSIONS.contains(gradleVersion);
     }
 
-    protected File buildProject(String name, String gradleVersion) {
-        return runTasksOnProject(name, gradleVersion, "clean", "assembleDebug", "lint");
+    protected File buildProject(@NonNull String name, @NonNull String gradleVersion) {
+        return runTasksOnProject(
+                name,
+                gradleVersion,
+                Collections.<String>emptyList(),
+                "clean", "assembleDebug", "lint");
     }
 
-    protected File runTasksOnProject(String name, String gradleVersion, String... tasks) {
+    protected File runTasksOnProject(
+            @NonNull String name,
+            @NonNull String gradleVersion,
+            @NonNull List<String> arguments,
+            @NonNull String... tasks) {
         File project = new File(testDir, name);
 
         File buildGradle = new File(project, "build.gradle");
         assertTrue("Missing file: " + buildGradle, buildGradle.isFile());
 
         // build the project
-        runGradleTasks(sdkDir, ndkDir, gradleVersion, project, tasks);
+        runGradleTasks(sdkDir, ndkDir, gradleVersion, project, arguments, tasks);
 
         return project;
     }

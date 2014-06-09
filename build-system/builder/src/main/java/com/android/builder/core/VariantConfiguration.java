@@ -125,6 +125,12 @@ public class VariantConfiguration implements TestData {
      * of latter ones. */
     private final List<LibraryDependency> mFlatLibraries = Lists.newArrayList();
 
+    /**
+     * Signing Override to be used instead of any signing config provided by Build Type or
+     * Product Flavors.
+     */
+    private final SigningConfig mSigningConfigOverride;
+
     public static enum Type {
         DEFAULT, LIBRARY, TEST
     }
@@ -153,11 +159,12 @@ public class VariantConfiguration implements TestData {
             @NonNull DefaultProductFlavor defaultConfig,
             @NonNull SourceProvider defaultSourceProvider,
             @NonNull DefaultBuildType buildType,
-            @Nullable SourceProvider buildTypeSourceProvider) {
+            @Nullable SourceProvider buildTypeSourceProvider,
+            @Nullable SigningConfig signingConfigOverride) {
         this(
                 defaultConfig, defaultSourceProvider,
                 buildType, buildTypeSourceProvider,
-                Type.DEFAULT, null /*testedConfig*/);
+                Type.DEFAULT, null /*testedConfig*/, signingConfigOverride);
     }
 
     /**
@@ -168,17 +175,19 @@ public class VariantConfiguration implements TestData {
      * @param buildType the build type for this variant. Required.
      * @param buildTypeSourceProvider the source provider for the build type.
      * @param type the type of the project.
+     * @param signingConfigOverride an optional Signing override to be used for signing.
      */
     public VariantConfiguration(
             @NonNull DefaultProductFlavor defaultConfig,
             @NonNull SourceProvider defaultSourceProvider,
             @NonNull DefaultBuildType buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
-            @NonNull Type type) {
+            @NonNull Type type,
+            @Nullable SigningConfig signingConfigOverride) {
         this(
                 defaultConfig, defaultSourceProvider,
                 buildType, buildTypeSourceProvider,
-                type, null /*testedConfig*/);
+                type, null /*testedConfig*/, signingConfigOverride);
     }
 
     /**
@@ -190,6 +199,7 @@ public class VariantConfiguration implements TestData {
      * @param buildTypeSourceProvider the source provider for the build type.
      * @param type the type of the project.
      * @param testedConfig the reference to the tested project. Required if type is Type.TEST
+     * @param signingConfigOverride an optional Signing override to be used for signing.
      */
     public VariantConfiguration(
             @NonNull DefaultProductFlavor defaultConfig,
@@ -197,13 +207,15 @@ public class VariantConfiguration implements TestData {
             @NonNull DefaultBuildType buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
             @NonNull Type type,
-            @Nullable VariantConfiguration testedConfig) {
+            @Nullable VariantConfiguration testedConfig,
+            @Nullable SigningConfig signingConfigOverride) {
         mDefaultConfig = checkNotNull(defaultConfig);
         mDefaultSourceProvider = checkNotNull(defaultSourceProvider);
         mBuildType = checkNotNull(buildType);
         mBuildTypeSourceProvider = buildTypeSourceProvider;
         mType = checkNotNull(type);
         mTestedConfig = testedConfig;
+        mSigningConfigOverride = signingConfigOverride;
         checkState(mType != Type.TEST || mTestedConfig != null);
 
         mMergedFlavor = mDefaultConfig;
@@ -1524,6 +1536,10 @@ public class VariantConfiguration implements TestData {
 
     @Nullable
     public SigningConfig getSigningConfig() {
+        if (mSigningConfigOverride != null) {
+            return mSigningConfigOverride;
+        }
+
         SigningConfig signingConfig = mBuildType.getSigningConfig();
         if (signingConfig != null) {
             return signingConfig;
