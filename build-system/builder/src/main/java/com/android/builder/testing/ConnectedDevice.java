@@ -17,6 +17,7 @@
 package com.android.builder.testing;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
 import com.android.ddmlib.AdbCommandRejectedException;
@@ -145,6 +146,12 @@ public class ConnectedDevice extends DeviceConnector {
 
         // can't get it, return 0.
         return null;
+    }
+
+    @Nullable
+    @Override
+    public IDevice.DeviceState getState() {
+        return iDevice.getState();
     }
 
     @NonNull
