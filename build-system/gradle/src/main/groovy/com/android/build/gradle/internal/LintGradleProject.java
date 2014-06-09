@@ -380,7 +380,7 @@ public class LintGradleProject extends Project {
             // package. As part of the Gradle work on the Lint API we should make two separate
             // package lookup methods -- one for the manifest package, one for the build package
             if (mPackage == null) { // only used as a fallback in case manifest somehow is null
-                String packageName = mProject.getDefaultConfig().getProductFlavor().getPackageName();
+                String packageName = mProject.getDefaultConfig().getProductFlavor().getApplicationId();
                 if (packageName != null) {
                     return packageName;
                 }

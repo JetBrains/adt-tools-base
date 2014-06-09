@@ -40,8 +40,8 @@ public class DefaultProductFlavorTest extends TestCase {
         mCustom.setRenderscriptTargetApi(17);
         mCustom.setVersionCode(44);
         mCustom.setVersionName("42.0");
-        mCustom.setPackageName("com.forty.two");
-        mCustom.setTestPackageName("com.forty.two.test");
+        mCustom.setApplicationId("com.forty.two");
+        mCustom.setTestApplicationId("com.forty.two.test");
         mCustom.setTestInstrumentationRunner("com.forty.two.test.Runner");
         mCustom.setTestHandleProfiling(true);
         mCustom.setTestFunctionalTest(true);
@@ -61,8 +61,8 @@ public class DefaultProductFlavorTest extends TestCase {
         assertEquals(17, flavor.getRenderscriptTargetApi());
         assertEquals(44, flavor.getVersionCode());
         assertEquals("42.0", flavor.getVersionName());
-        assertEquals("com.forty.two", flavor.getPackageName());
-        assertEquals("com.forty.two.test", flavor.getTestPackageName());
+        assertEquals("com.forty.two", flavor.getApplicationId());
+        assertEquals("com.forty.two.test", flavor.getTestApplicationId());
         assertEquals("com.forty.two.test.Runner", flavor.getTestInstrumentationRunner());
         assertEquals(Boolean.TRUE, flavor.getTestHandleProfiling());
         assertEquals(Boolean.TRUE, flavor.getTestFunctionalTest());
@@ -78,8 +78,8 @@ public class DefaultProductFlavorTest extends TestCase {
         assertEquals(17, flavor.getRenderscriptTargetApi());
         assertEquals(44, flavor.getVersionCode());
         assertEquals("42.0", flavor.getVersionName());
-        assertEquals("com.forty.two", flavor.getPackageName());
-        assertEquals("com.forty.two.test", flavor.getTestPackageName());
+        assertEquals("com.forty.two", flavor.getApplicationId());
+        assertEquals("com.forty.two.test", flavor.getTestApplicationId());
         assertEquals("com.forty.two.test.Runner", flavor.getTestInstrumentationRunner());
         assertEquals(Boolean.TRUE, flavor.getTestHandleProfiling());
         assertEquals(Boolean.TRUE, flavor.getTestFunctionalTest());
@@ -93,8 +93,8 @@ public class DefaultProductFlavorTest extends TestCase {
         assertEquals(-1, flavor.getRenderscriptTargetApi());
         assertEquals(-1, flavor.getVersionCode());
         assertNull(flavor.getVersionName());
-        assertNull(flavor.getPackageName());
-        assertNull(flavor.getTestPackageName());
+        assertNull(flavor.getApplicationId());
+        assertNull(flavor.getTestApplicationId());
         assertNull(flavor.getTestInstrumentationRunner());
         assertNull(flavor.getTestHandleProfiling());
         assertNull(flavor.getTestFunctionalTest());

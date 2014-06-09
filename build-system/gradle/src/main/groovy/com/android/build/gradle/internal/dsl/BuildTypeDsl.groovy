@@ -21,8 +21,10 @@ import com.android.annotations.VisibleForTesting
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
+import com.android.builder.model.BuildType
 import com.android.builder.model.ClassField
 import com.android.builder.model.NdkConfig
+import com.android.builder.model.ProductFlavor
 import com.android.builder.model.SigningConfig
 import org.gradle.api.Action
 import org.gradle.api.internal.file.FileResolver
@@ -153,5 +155,34 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
 
     void ndk(Action<NdkConfigDsl> action) {
         action.execute(ndkConfig)
+    }
+
+    // ---------------
+    // TEMP for compatibility
+    // STOPSHIP Remove in 1.0
+
+    /**
+     * Sets the package name.
+     *
+     * @param packageName the package name
+     * @return the flavor object
+     */
+
+    /** Package name suffix applied to this build type. */
+    @NonNull
+    public BuildType setPackageNameSuffix(@Nullable String packageNameSuffix) {
+        logger.warn("WARNING: packageNameSuffix is deprecated (and will soon stop working); change to \"applicationIdSuffix\" instead");
+        return setApplicationIdSuffix(packageNameSuffix);
+    }
+
+    @NonNull
+    public BuildType packageNameSuffix(@Nullable String packageNameSuffix) {
+        return setPackageNameSuffix(packageNameSuffix);
+    }
+
+    @Nullable
+    public String getPackageNameSuffix() {
+        logger.warn("WARNING: packageNameSuffix is deprecated (and will soon stop working); change to \"applicationIdSuffix\" instead");
+        return getApplicationIdSuffix();
     }
 }

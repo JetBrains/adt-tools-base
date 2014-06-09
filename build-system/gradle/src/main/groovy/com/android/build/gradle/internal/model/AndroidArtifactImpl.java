@@ -38,7 +38,7 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
     @Nullable
     private final String signingConfigName;
     @NonNull
-    private final String packageName;
+    private final String applicationId;
     @NonNull
     private final String sourceGenTaskName;
     @NonNull
@@ -53,7 +53,7 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
                         @NonNull File outputFile,
                         boolean isSigned,
                         @Nullable String signingConfigName,
-                        @NonNull String packageName,
+                        @NonNull String applicationId,
                         @NonNull String sourceGenTaskName,
                         @NonNull String javaCompileTaskName,
                         @NonNull File generatedManifest,
@@ -69,7 +69,7 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
         this.outputFile = outputFile;
         this.isSigned = isSigned;
         this.signingConfigName = signingConfigName;
-        this.packageName = packageName;
+        this.applicationId = applicationId;
         this.sourceGenTaskName = sourceGenTaskName;
         this.generatedManifest = generatedManifest;
         this.generatedSourceFolders = generatedSourceFolders;
@@ -95,8 +95,8 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
 
     @NonNull
     @Override
-    public String getPackageName() {
-        return packageName;
+    public String getApplicationId() {
+        return applicationId;
     }
 
     @NonNull

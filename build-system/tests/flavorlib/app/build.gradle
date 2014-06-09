@@ -6,10 +6,10 @@ android {
 
     productFlavors {
         flavor1 {
-            packageName = "com.android.tests.flavorlib.app.flavor1"
+            applicationId = "com.android.tests.flavorlib.app.flavor1"
         }
         flavor2 {
-            packageName = "com.android.tests.flavorlib.app.flavor2"
+            applicationId = "com.android.tests.flavorlib.app.flavor2"
         }
     }
 

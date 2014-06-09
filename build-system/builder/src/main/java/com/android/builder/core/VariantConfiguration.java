@@ -711,64 +711,64 @@ public class VariantConfiguration implements TestData {
     }
 
     /**
-     * Returns the original package name before any overrides from flavors.
-     * If the variant is a test variant, then the package name is the one coming from the
-     * configuration of the tested variant, and this call is similar to #getPackageName()
-     * @return the package name
+     * Returns the original application ID before any overrides from flavors.
+     * If the variant is a test variant, then the application ID is the one coming from the
+     * configuration of the tested variant, and this call is similar to {@link #getApplicationId()}
+     * @return the original application ID
      */
     @Nullable
-    public String getOriginalPackageName() {
+    public String getOriginalApplicationId() {
         if (mType == VariantConfiguration.Type.TEST) {
-            return getPackageName();
+            return getApplicationId();
         }
 
         return getPackageFromManifest();
     }
 
     /**
-     * Returns the package name for this variant. This could be coming from the manifest or
-     * could be overridden through the product flavors and/or the build Type.
-     * @return the package
+     * Returns the application ID for this variant. This could be coming from the manifest or
+     * could be overridden through the product flavors and/or the build type.
+     * @return the application ID
      */
     @Override
     @NonNull
-    public String getPackageName() {
-        String packageName;
+    public String getApplicationId() {
+        String id;
 
         if (mType == Type.TEST) {
             assert mTestedConfig != null;
 
-            packageName = mMergedFlavor.getTestPackageName();
-            if (packageName == null) {
-                String testedPackage = mTestedConfig.getPackageName();
-                packageName = testedPackage + ".test";
+            id = mMergedFlavor.getTestApplicationId();
+            if (id == null) {
+                String testedPackage = mTestedConfig.getApplicationId();
+                id = testedPackage + ".test";
             }
         } else {
             // first get package override.
-            packageName = getPackageOverride();
+            id = getIdOverride();
             // if it's null, this means we just need the default package
             // from the manifest since both flavor and build type do nothing.
-            if (packageName == null) {
-                packageName = getPackageFromManifest();
+            if (id == null) {
+                id = getPackageFromManifest();
             }
         }
 
-        if (packageName == null) {
-            throw new RuntimeException("Failed get query package name for " + getFullName());
+        if (id == null) {
+            throw new RuntimeException("Failed to get application id for " + getFullName());
         }
 
-        return packageName;
+        return id;
     }
 
     @Override
     @Nullable
-    public String getTestedPackageName() {
+    public String getTestedApplicationId() {
         if (mType == Type.TEST) {
             assert mTestedConfig != null;
             if (mTestedConfig.mType == Type.LIBRARY) {
-                return getPackageName();
+                return getApplicationId();
             } else {
-                return mTestedConfig.getPackageName();
+                return mTestedConfig.getApplicationId();
             }
         }
 
@@ -776,29 +776,29 @@ public class VariantConfiguration implements TestData {
     }
 
     /**
-     * Returns the package override values coming from the Product Flavor and/or the Build Type.
-     * If the package is not overridden then this returns null.
+     * Returns the application id override value coming from the Product Flavor and/or the
+     * Build Type. If the package/id is not overridden then this returns null.
      *
-     * @return the package override or null
+     * @return the id override or null
      */
     @Nullable
-    public String getPackageOverride() {
-        String packageName = mMergedFlavor.getPackageName();
-        String packageSuffix = mBuildType.getPackageNameSuffix();
+    public String getIdOverride() {
+        String idName = mMergedFlavor.getApplicationId();
+        String idSuffix = mBuildType.getApplicationIdSuffix();
 
-        if (packageSuffix != null && !packageSuffix.isEmpty()) {
-            if (packageName == null) {
-                packageName = getPackageFromManifest();
+        if (idSuffix != null && !idSuffix.isEmpty()) {
+            if (idName == null) {
+                idName = getPackageFromManifest();
             }
 
-            if (packageSuffix.charAt(0) == '.') {
-                packageName = packageName + packageSuffix;
+            if (idSuffix.charAt(0) == '.') {
+                idName = idName + idSuffix;
             } else {
-                packageName = packageName + '.' + packageSuffix;
+                idName = idName + '.' + idSuffix;
             }
         }
 
-        return packageName;
+        return idName;
     }
 
     /**

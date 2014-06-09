@@ -110,7 +110,7 @@ public abstract class BaseVariantData {
 
     @NonNull
     public String getPackageName() {
-        return variantConfiguration.getPackageName();
+        return variantConfiguration.getApplicationId();
     }
 
     @NonNull

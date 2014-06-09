@@ -42,7 +42,7 @@ public class MergeManifests extends ManifestProcessorTask {
 
     @Input @Optional
     String getPackageOverride() {
-        return variantConfiguration.getPackageOverride();
+        return variantConfiguration.getIdOverride();
     }
 
     @Input

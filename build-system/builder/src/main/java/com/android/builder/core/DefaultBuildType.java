@@ -33,7 +33,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
     private boolean mJniDebugBuild = false;
     private boolean mRenderscriptDebugBuild = false;
     private int mRenderscriptOptimLevel = 3;
-    private String mPackageNameSuffix = null;
+    private String mApplicationIdSuffix = null;
     private String mVersionNameSuffix = null;
     private boolean mRunProguard = false;
     private SigningConfig mSigningConfig = null;
@@ -53,7 +53,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         setJniDebugBuild(that.isJniDebugBuild());
         setRenderscriptDebugBuild(that.isRenderscriptDebugBuild());
         setRenderscriptOptimLevel(that.getRenderscriptOptimLevel());
-        setPackageNameSuffix(that.getPackageNameSuffix());
+        setApplicationIdSuffix(that.getApplicationIdSuffix());
         setVersionNameSuffix(that.getVersionNameSuffix());
         setRunProguard(that.isRunProguard());
         setZipAlign(that.isZipAlign());
@@ -127,17 +127,19 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         mRenderscriptOptimLevel = renderscriptOptimLevel;
     }
 
-    /** Package name suffix applied to this build type. */
+    /**
+     * Application id suffix applied to this build type.
+     */
     @NonNull
-    public BuildType setPackageNameSuffix(@Nullable String packageNameSuffix) {
-        mPackageNameSuffix = packageNameSuffix;
+    public BuildType setApplicationIdSuffix(@Nullable String applicationIdSuffix) {
+        mApplicationIdSuffix = applicationIdSuffix;
         return this;
     }
 
     @Override
     @Nullable
-    public String getPackageNameSuffix() {
-        return mPackageNameSuffix;
+    public String getApplicationIdSuffix() {
+        return mApplicationIdSuffix;
     }
 
     /** Version name suffix. */
@@ -220,9 +222,9 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         if (mRenderscriptOptimLevel != buildType.mRenderscriptOptimLevel) return false;
         if (mRunProguard != buildType.mRunProguard) return false;
         if (mZipAlign != buildType.mZipAlign) return false;
-        if (mPackageNameSuffix != null ?
-                !mPackageNameSuffix.equals(buildType.mPackageNameSuffix) :
-                buildType.mPackageNameSuffix != null)
+        if (mApplicationIdSuffix != null ?
+                !mApplicationIdSuffix.equals(buildType.mApplicationIdSuffix) :
+                buildType.mApplicationIdSuffix != null)
             return false;
         if (mVersionNameSuffix != null ?
                 !mVersionNameSuffix.equals(buildType.mVersionNameSuffix) :
@@ -246,7 +248,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         result = 31 * result + (mJniDebugBuild ? 1 : 0);
         result = 31 * result + (mRenderscriptDebugBuild ? 1 : 0);
         result = 31 * result + mRenderscriptOptimLevel;
-        result = 31 * result + (mPackageNameSuffix != null ? mPackageNameSuffix.hashCode() : 0);
+        result = 31 * result + (mApplicationIdSuffix != null ? mApplicationIdSuffix.hashCode() : 0);
         result = 31 * result + (mVersionNameSuffix != null ? mVersionNameSuffix.hashCode() : 0);
         result = 31 * result + (mRunProguard ? 1 : 0);
         result = 31 * result + (mZipAlign ? 1 : 0);
@@ -265,7 +267,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
                 .add("jniDebugBuild", mJniDebugBuild)
                 .add("renderscriptDebugBuild", mRenderscriptDebugBuild)
                 .add("renderscriptOptimLevel", mRenderscriptOptimLevel)
-                .add("packageNameSuffix", mPackageNameSuffix)
+                .add("applicationIdSuffix", mApplicationIdSuffix)
                 .add("versionNameSuffix", mVersionNameSuffix)
                 .add("runProguard", mRunProguard)
                 .add("zipAlign", mZipAlign)

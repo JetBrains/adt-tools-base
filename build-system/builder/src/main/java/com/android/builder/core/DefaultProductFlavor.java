@@ -47,8 +47,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     private Boolean mRenderscriptNdkMode;
     private int mVersionCode = -1;
     private String mVersionName = null;
-    private String mPackageName = null;
-    private String mTestPackageName = null;
+    private String mApplicationId = null;
+    private String mTestApplicationId = null;
     private String mTestInstrumentationRunner = null;
     private Boolean mTestHandleProfiling = null;
     private Boolean mTestFunctionalTest = null;
@@ -74,21 +74,21 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     }
 
     /**
-     * Sets the package name.
+     * Sets the application id.
      *
-     * @param packageName the package name
+     * @param applicationId the application id
      * @return the flavor object
      */
     @NonNull
-    public ProductFlavor setPackageName(String packageName) {
-        mPackageName = packageName;
+    public ProductFlavor setApplicationId(String applicationId) {
+        mApplicationId = applicationId;
         return this;
     }
 
     @Override
     @Nullable
-    public String getPackageName() {
-        return mPackageName;
+    public String getApplicationId() {
+        return mApplicationId;
     }
 
     /**
@@ -187,15 +187,15 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
     /** Sets the test package name. */
     @NonNull
-    public ProductFlavor setTestPackageName(String testPackageName) {
-        mTestPackageName = testPackageName;
+    public ProductFlavor setTestApplicationId(String applicationId) {
+        mTestApplicationId = applicationId;
         return this;
     }
 
     @Override
     @Nullable
-    public String getTestPackageName() {
-        return mTestPackageName;
+    public String getTestApplicationId() {
+        return mTestApplicationId;
     }
 
     /** Sets the test instrumentation runner to the given value. */
@@ -310,9 +310,9 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mVersionCode = chooseInt(mVersionCode, base.mVersionCode);
         flavor.mVersionName = chooseString(mVersionName, base.mVersionName);
 
-        flavor.mPackageName = chooseString(mPackageName, base.mPackageName);
+        flavor.mApplicationId = chooseString(mApplicationId, base.mApplicationId);
 
-        flavor.mTestPackageName = chooseString(mTestPackageName, base.mTestPackageName);
+        flavor.mTestApplicationId = chooseString(mTestApplicationId, base.mTestApplicationId);
         flavor.mTestInstrumentationRunner = chooseString(mTestInstrumentationRunner,
                 base.mTestInstrumentationRunner);
 
@@ -359,7 +359,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
             return false;
         if (mVersionCode != that.mVersionCode) return false;
         if (!mName.equals(that.mName)) return false;
-        if (mPackageName != null ? !mPackageName.equals(that.mPackageName) : that.mPackageName != null)
+        if (mApplicationId != null ? !mApplicationId.equals(that.mApplicationId) : that.mApplicationId != null)
             return false;
         if (mRenderscriptNdkMode != null ? !mRenderscriptNdkMode.equals(that.mRenderscriptNdkMode) : that.mRenderscriptNdkMode != null)
             return false;
@@ -375,7 +375,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
             return false;
         if (mTestInstrumentationRunner != null ? !mTestInstrumentationRunner.equals(that.mTestInstrumentationRunner) : that.mTestInstrumentationRunner != null)
             return false;
-        if (mTestPackageName != null ? !mTestPackageName.equals(that.mTestPackageName) : that.mTestPackageName != null)
+        if (mTestApplicationId != null ? !mTestApplicationId.equals(that.mTestApplicationId) : that.mTestApplicationId != null)
             return false;
         if (mVersionName != null ? !mVersionName.equals(that.mVersionName) : that.mVersionName != null)
             return false;
@@ -394,8 +394,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         result = 31 * result + (mRenderscriptNdkMode != null ? mRenderscriptNdkMode.hashCode() : 0);
         result = 31 * result + mVersionCode;
         result = 31 * result + (mVersionName != null ? mVersionName.hashCode() : 0);
-        result = 31 * result + (mPackageName != null ? mPackageName.hashCode() : 0);
-        result = 31 * result + (mTestPackageName != null ? mTestPackageName.hashCode() : 0);
+        result = 31 * result + (mApplicationId != null ? mApplicationId.hashCode() : 0);
+        result = 31 * result + (mTestApplicationId != null ? mTestApplicationId.hashCode() : 0);
         result = 31 * result + (mTestInstrumentationRunner != null ? mTestInstrumentationRunner.hashCode() : 0);
         result = 31 * result + (mTestHandleProfiling != null ? mTestHandleProfiling.hashCode() : 0);
         result = 31 * result + (mTestFunctionalTest != null ? mTestFunctionalTest.hashCode() : 0);
@@ -416,8 +416,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 .add("renderscriptNdkMode", mRenderscriptNdkMode)
                 .add("versionCode", mVersionCode)
                 .add("versionName", mVersionName)
-                .add("packageName", mPackageName)
-                .add("testPackageName", mTestPackageName)
+                .add("applicationId", mApplicationId)
+                .add("testApplicationId", mTestApplicationId)
                 .add("testInstrumentationRunner", mTestInstrumentationRunner)
                 .add("testHandleProfiling", mTestHandleProfiling)
                 .add("testFunctionalTest", mTestFunctionalTest)

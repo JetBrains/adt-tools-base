@@ -98,7 +98,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
         long time = System.currentTimeMillis();
         boolean success = false;
 
-        String coverageFile = "/data/data/" + testData.getTestedPackageName() + "/" + FILE_COVERAGE_EC;
+        String coverageFile = "/data/data/" + testData.getTestedApplicationId() + "/" + FILE_COVERAGE_EC;
 
         try {
             device.connect(timeout, logger);
@@ -113,7 +113,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
             isInstalled = true;
 
             RemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
-                    testData.getPackageName(),
+                    testData.getApplicationId(),
                     testData.getInstrumentationRunner(),
                     device);
 
@@ -152,7 +152,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
                 // Get the coverage if needed.
                 if (success && testData.isTestCoverageEnabled()) {
                     device.executeShellCommand(
-                            "run-as " + testData.getTestedPackageName() + " chmod 644 " + coverageFile,
+                            "run-as " + testData.getTestedApplicationId() + " chmod 644 " + coverageFile,
                             new NullOutputReceiver(),
                             30, TimeUnit.SECONDS);
                     device.pullFile(
@@ -163,10 +163,10 @@ public class SimpleTestCallable implements Callable<Boolean> {
                 // uninstall the apps
                 // This should really not be null, because if it was the build
                 // would have broken before.
-                uninstall(testApk, testData.getPackageName(), deviceName);
+                uninstall(testApk, testData.getApplicationId(), deviceName);
 
                 if (testedApk != null) {
-                   uninstall(testedApk, testData.getTestedPackageName(), deviceName);
+                   uninstall(testedApk, testData.getTestedApplicationId(), deviceName);
                 }
             }
 

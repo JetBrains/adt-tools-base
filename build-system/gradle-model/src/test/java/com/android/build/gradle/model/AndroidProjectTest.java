@@ -367,7 +367,7 @@ public class AndroidProjectTest extends TestCase {
         AndroidArtifact debugMainInfo = debugVariant.getMainArtifact();
         assertNotNull("Debug main info null-check", debugMainInfo);
         assertEquals("Debug package name", "com.android.tests.basic.debug",
-                debugMainInfo.getPackageName());
+                debugMainInfo.getApplicationId());
         assertTrue("Debug signed check", debugMainInfo.isSigned());
         assertEquals("Debug signingConfig name", "myConfig", debugMainInfo.getSigningConfigName());
         assertEquals("Debug sourceGenTask", "generateDebugSources", debugMainInfo.getSourceGenTaskName());
@@ -381,7 +381,7 @@ public class AndroidProjectTest extends TestCase {
                 ARTIFACT_ANDROID_TEST);
         assertNotNull("Test info null-check", debugTestInfo);
         assertEquals("Test package name", "com.android.tests.basic.debug.test",
-                debugTestInfo.getPackageName());
+                debugTestInfo.getApplicationId());
         assertNotNull("Test output file null-check", debugTestInfo.getOutputFile());
         assertTrue("Test signed check", debugTestInfo.isSigned());
         assertEquals("Test signingConfig name", "myConfig", debugTestInfo.getSigningConfigName());
@@ -395,7 +395,7 @@ public class AndroidProjectTest extends TestCase {
         AndroidArtifact relMainInfo = releaseVariant.getMainArtifact();
         assertNotNull("Release main info null-check", relMainInfo);
         assertEquals("Release package name", "com.android.tests.basic",
-                relMainInfo.getPackageName());
+                relMainInfo.getApplicationId());
         assertFalse("Release signed check", relMainInfo.isSigned());
         assertNull("Release signingConfig name", relMainInfo.getSigningConfigName());
         assertEquals("Release sourceGenTask", "generateReleaseSources", relMainInfo.getSourceGenTaskName());
@@ -1146,13 +1146,13 @@ public class AndroidProjectTest extends TestCase {
         @NonNull private final ProductFlavor productFlavor;
         @NonNull private final String name;
 
-        private String packageName = null;
+        private String applicationId = null;
         private int versionCode = -1;
         private String versionName = null;
         private ApiVersion minSdkVersion = null;
         private ApiVersion targetSdkVersion = null;
         private int renderscriptTargetApi = -1;
-        private String testPackageName = null;
+        private String testApplicationId = null;
         private String testInstrumentationRunner = null;
         private Boolean testHandleProfiling = null;
         private Boolean testFunctionalTest = null;
@@ -1162,8 +1162,8 @@ public class AndroidProjectTest extends TestCase {
             this.name = name;
         }
 
-        ProductFlavorTester setPackageName(String packageName) {
-            this.packageName = packageName;
+        ProductFlavorTester setApplicationId(String applicationId) {
+            this.applicationId = applicationId;
             return this;
         }
 
@@ -1192,8 +1192,8 @@ public class AndroidProjectTest extends TestCase {
             return this;
         }
 
-        ProductFlavorTester setTestPackageName(String testPackageName) {
-            this.testPackageName = testPackageName;
+        ProductFlavorTester setTestApplicationId(String testApplicationId) {
+            this.testApplicationId = testApplicationId;
             return this;
         }
 
@@ -1213,7 +1213,7 @@ public class AndroidProjectTest extends TestCase {
         }
 
         void test() {
-            assertEquals(name + ":packageName", packageName, productFlavor.getPackageName());
+            assertEquals(name + ":applicationId", applicationId, productFlavor.getApplicationId());
             assertEquals(name + ":VersionCode", versionCode, productFlavor.getVersionCode());
             assertEquals(name + ":VersionName", versionName, productFlavor.getVersionName());
             assertEquals(name + ":minSdkVersion", minSdkVersion, productFlavor.getMinSdkVersion());
@@ -1221,8 +1221,8 @@ public class AndroidProjectTest extends TestCase {
                     targetSdkVersion, productFlavor.getTargetSdkVersion());
             assertEquals(name + ":renderscriptTargetApi",
                     renderscriptTargetApi, productFlavor.getRenderscriptTargetApi());
-            assertEquals(name + ":testPackageName",
-                    testPackageName, productFlavor.getTestPackageName());
+            assertEquals(name + ":testApplicationId",
+                    testApplicationId, productFlavor.getTestApplicationId());
             assertEquals(name + ":testInstrumentationRunner",
                     testInstrumentationRunner, productFlavor.getTestInstrumentationRunner());
             assertEquals(name + ":testHandleProfiling",

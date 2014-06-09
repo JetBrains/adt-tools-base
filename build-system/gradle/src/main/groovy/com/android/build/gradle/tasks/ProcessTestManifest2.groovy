@@ -21,11 +21,13 @@ public class ProcessTestManifest2 extends ProcessTestManifest {
 
     @Override
     protected void doFullTaskAction() {
+        migrateProperties()
+
         getBuilder().processTestManifest2(
-                getTestPackageName(),
+                getTestApplicationId(),
                 getMinSdkVersion(),
                 getTargetSdkVersion(),
-                getTestedPackageName(),
+                getTestedApplicationId(),
                 getInstrumentationRunner(),
                 getHandleProfiling(),
                 getFunctionalTest(),
