@@ -98,13 +98,13 @@ public class ProcessTestManifest extends ManifestProcessorTask {
     }
 
     protected void migrateProperties() {
-        if (getTestPackageName() != null) {
+        if (getTestApplicationId() == null && getTestPackageName() != null) {
             logger.warn(
                     "WARNING: testPackageName is deprecated; change to \"testApplicationId\" instead");
             testApplicationId = getTestPackageName();
         }
 
-        if (getTestedPackageName() != null) {
+        if (getTestedApplicationId() == null && getTestedPackageName() != null) {
             logger.warn(
                     "WARNING: testedPackageName is deprecated; change to \"testedApplicationId\" instead");
             testedApplicationId = getTestedPackageName();

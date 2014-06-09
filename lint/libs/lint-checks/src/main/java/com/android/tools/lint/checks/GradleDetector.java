@@ -233,6 +233,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 || property.equals("versionCode")
                 || property.equals("compileSdkVersion")
                 || property.equals("minSdkVersion")
+                || property.equals("applicationIdSuffix")
+                || property.equals("packageName")
                 || property.equals("packageNameSuffix");
     }
 
@@ -298,6 +300,9 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                             + "instead of get-.";
                     report(context, cookie, GRADLE_GETTER, message);
                 }
+            } else if (property.equals("packageName")) {
+                String message = "Deprecated: Replace 'packageName' with 'applicationId'";
+                report(context, getPropertyKeyCookie(cookie), IDE_SUPPORT, message);
             }
         } else if (property.equals("compileSdkVersion") && parent.equals("android")) {
             int version = getIntLiteralValue(value, -1);
@@ -356,6 +361,9 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 }
             }
         } else if (property.equals("packageNameSuffix")) {
+            String message = "Deprecated: Replace 'packageNameSuffix' with 'applicationIdSuffix'";
+            report(context, getPropertyKeyCookie(cookie), IDE_SUPPORT, message);
+        } else if (property.equals("applicationIdSuffix")) {
             String suffix = getStringLiteralValue(value);
             if (suffix != null && !suffix.startsWith(".")) {
                 String message = "Package suffix should probably start with a \".\"";
@@ -482,7 +490,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         Issue issue = DEPENDENCY;
         if ("com.android.tools.build".equals(dependency.getGroupId()) &&
                 "gradle".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, 0, 10, 1);
+            version = getNewerRevision(dependency, 0, 11, 0);
         } else if ("com.google.guava".equals(dependency.getGroupId()) &&
                 "guava".equals(dependency.getArtifactId())) {
             version = getNewerRevision(dependency, 17, 0, 0);
@@ -762,6 +770,16 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
             context.report(issue, createLocation(context, cookie), message, null);
         }
+    }
+
+    @NonNull
+    protected Object getPropertyKeyCookie(@NonNull Object cookie) {
+        return cookie;
+    }
+
+    @NonNull
+    protected Object getPropertyPairCookie(@NonNull Object cookie) {
+      return cookie;
     }
 
     @SuppressWarnings("MethodMayBeStatic")
