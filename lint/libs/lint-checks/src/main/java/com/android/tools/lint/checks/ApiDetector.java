@@ -28,6 +28,7 @@ import static com.android.SdkConstants.ATTR_TARGET_API;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
 import static com.android.SdkConstants.PREFIX_ANDROID;
 import static com.android.SdkConstants.R_CLASS;
+import static com.android.SdkConstants.TAG;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_STYLE;
 import static com.android.SdkConstants.TARGET_API;
@@ -40,7 +41,6 @@ import static com.android.tools.lint.detector.api.Location.SearchDirection.BACKW
 import static com.android.tools.lint.detector.api.Location.SearchDirection.FORWARD;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.NEAREST;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.sdk.SdkVersionInfo;
@@ -145,6 +145,7 @@ public class ApiDetector extends ResourceXmlDetector
     private static final boolean AOSP_BUILD = System.getenv("ANDROID_BUILD_TOP") != null; //$NON-NLS-1$
 
     /** Accessing an unsupported API */
+    @SuppressWarnings("unchecked")
     public static final Issue UNSUPPORTED = Issue.create(
             "NewApi", //$NON-NLS-1$
             "Calling new methods on older versions",
@@ -257,7 +258,10 @@ public class ApiDetector extends ResourceXmlDetector
             "application, you should consider finding an alternative way to achieve the " +
             "same result with only available attributes, and then you can optionally create " +
             "a copy of the layout in a layout-vNN folder which will be used on API NN or " +
-            "higher where you can take advantage of the newer attribute.",
+            "higher where you can take advantage of the newer attribute.\n" +
+            "\n" +
+            "Note: This check does not only apply to attributes. For example, some tags can be " +
+            "unused too, such as the new `<tag>` element in layouts introduced in API 21.",
             Category.CORRECTNESS,
             6,
             Severity.WARNING,
@@ -392,7 +396,6 @@ public class ApiDetector extends ResourceXmlDetector
                 return;
             }
         }
-        assert name != null : value;
         int api = mApiDatabase.getFieldVersion(owner, name);
         int minSdk = getMinSdk(context);
         if (api > minSdk && api > context.getFolderVersion()
@@ -439,6 +442,11 @@ public class ApiDetector extends ResourceXmlDetector
 
         ResourceFolderType folderType = context.getResourceFolderType();
         if (folderType != ResourceFolderType.LAYOUT) {
+            if (folderType == ResourceFolderType.DRAWABLE) {
+                checkElement(context, element, "ripple", 21, UNSUPPORTED);
+                checkElement(context, element, "vector", 21, UNSUPPORTED);
+                checkElement(context, element, "animated-selector", 21, UNSUPPORTED);
+            }
             if (element.getParentNode().getNodeType() != Node.ELEMENT_NODE) {
                 // Root node
                 return;
@@ -448,7 +456,7 @@ public class ApiDetector extends ResourceXmlDetector
                 Node textNode = childNodes.item(i);
                 if (textNode.getNodeType() == Node.TEXT_NODE) {
                     String text = textNode.getNodeValue();
-                    if (text.indexOf(ANDROID_PREFIX) != -1) {
+                    if (text.contains(ANDROID_PREFIX)) {
                         text = text.trim();
                         // Convert @android:type/foo into android/R$type and "foo"
                         int index = text.indexOf('/', ANDROID_PREFIX.length());
@@ -473,27 +481,28 @@ public class ApiDetector extends ResourceXmlDetector
                     }
                 }
             }
-        } else if (folderType == ResourceFolderType.LAYOUT) {
+        } else {
             if (VIEW_TAG.equals(tag)) {
                 tag = element.getAttribute(ATTR_CLASS);
                 if (tag == null || tag.isEmpty()) {
                     return;
                 }
+            } else {
+                // TODO: Complain if <tag> is used at the root level!
+                checkElement(context, element, TAG, 21, UNUSED);
             }
 
             // Check widgets to make sure they're available in this version of the SDK.
-            if (tag.indexOf('.') != -1 ||
-                    folderType != ResourceFolderType.LAYOUT) {
+            if (tag.indexOf('.') != -1) {
                 // Custom views aren't in the index
                 return;
             }
+            String fqn = "android/widget/" + tag;    //$NON-NLS-1$
+            if (tag.equals("TextureView")) {         //$NON-NLS-1$
+                fqn = "android/view/TextureView";    //$NON-NLS-1$
+            }
             // TODO: Consider other widgets outside of android.widget.*
-            int api = mApiDatabase.getCallVersion("android/widget/" + tag,  //$NON-NLS-1$
-                    CONSTRUCTOR_NAME,
-                    // Not all views provided this constructor right away, for example,
-                    // LinearLayout added it in API 11 yet LinearLayout is much older:
-                    // "(Landroid/content/Context;Landroid/util/AttributeSet;I)V"); //$NON-NLS-1$
-                    "(Landroid/content/Context;)"); //$NON-NLS-1$
+            int api = mApiDatabase.getClassVersion(fqn);
             int minSdk = getMinSdk(context);
             if (api > minSdk && api > context.getFolderVersion()
                     && api > getLocalMinSdk(element)) {
@@ -502,6 +511,32 @@ public class ApiDetector extends ResourceXmlDetector
                         "View requires API level %1$d (current min is %2$d): <%3$s>",
                         api, minSdk, tag);
                 context.report(UNSUPPORTED, element, location, message, null);
+            }
+        }
+    }
+
+    /** Checks whether the given element is the given tag, and if so, whether it satisfied
+     * the minimum version that the given tag is supported in */
+    private void checkElement(@NonNull XmlContext context, @NonNull Element element,
+            @NonNull String tag, int api, @NonNull Issue issue) {
+        if (tag.equals(element.getTagName())) {
+            int minSdk = getMinSdk(context);
+            if (api > minSdk && api > context.getFolderVersion()
+                    && api > getLocalMinSdk(element)) {
+                Location location = context.getLocation(element);
+                String message;
+                if (issue == UNSUPPORTED) {
+                    message = String.format(
+                            "<%1$s> requires API level %2$d (current min is %3$d)", tag, api,
+                            minSdk);
+                } else {
+                    assert issue == UNUSED : issue;
+                    message = String.format(
+                            "<%1$s> is only used in API level %2$d and higher "
+                                    + "(current min is %3$d)", tag, api, minSdk
+                    );
+                }
+                context.report(issue, element, location, message, null);
             }
         }
     }
@@ -1059,7 +1094,7 @@ public class ApiDetector extends ResourceXmlDetector
                             if (key.equals("value")) {  //$NON-NLS-1$
                                 Object value = annotation.values.get(i + 1);
                                 if (value instanceof Integer) {
-                                    return ((Integer) value).intValue();
+                                    return (Integer) value;
                                 }
                             }
                         }

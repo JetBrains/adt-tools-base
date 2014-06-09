@@ -720,6 +720,7 @@ public final class SdkConstants {
     public static final String TAG_ARRAY = "array";                    //$NON-NLS-1$
     public static final String TAG_STYLE = "style";                    //$NON-NLS-1$
     public static final String TAG_ITEM = "item";                      //$NON-NLS-1$
+    public static final String TAG_GROUP = "group";                    //$NON-NLS-1$
     public static final String TAG_STRING_ARRAY = "string-array";      //$NON-NLS-1$
     public static final String TAG_PLURALS = "plurals";                //$NON-NLS-1$
     public static final String TAG_INTEGER_ARRAY = "integer-array";    //$NON-NLS-1$
@@ -743,6 +744,7 @@ public final class SdkConstants {
     public static final String VIEW_MERGE = "merge";                   //$NON-NLS-1$
     public static final String VIEW_FRAGMENT = "fragment";             //$NON-NLS-1$
     public static final String REQUEST_FOCUS = "requestFocus";         //$NON-NLS-1$
+    public static final String TAG = "tag";                            //$NON-NLS-1$
 
     public static final String VIEW = "View";                          //$NON-NLS-1$
     public static final String VIEW_GROUP = "ViewGroup";               //$NON-NLS-1$

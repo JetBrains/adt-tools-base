@@ -63,6 +63,32 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testXmlApi2() throws Exception {
+        assertEquals(""
+                + "res/layout/textureview.xml:8: Error: View requires API level 14 (current min is 1): <TextureView> [NewApi]\n"
+                + "    <TextureView\n"
+                + "    ^\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "res/layout/textureview.xml=>res/layout/textureview.xml"
+                ));
+    }
+
+    public void testTag() throws Exception {
+        assertEquals(""
+                + "res/layout/tag.xml:12: Warning: <tag> is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
+                + "        <tag id=\"@+id/test\" />\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "res/layout/tag.xml=>res/layout/tag.xml"
+                ));
+    }
+
     public void testAttrWithoutSlash() throws Exception {
         assertEquals(""
                 + "res/layout/attribute.xml:4: Error: ?android:indicatorStart requires API level 18 (current min is 1) [NewApi]\n"
@@ -1039,6 +1065,48 @@ public class ApiDetectorTest extends AbstractCheckTest {
                     "apicheck/ApiCallTest.java.txt=>src/foo/bar/ApiCallTest.java",
                     "apicheck/ApiCallTest.class.data=>bin/classes/foo/bar/ApiCallTest.class"
             ));
+    }
+
+    public void testRipple() throws Exception {
+        assertEquals(""
+                + "res/drawable/ripple.xml:1: Error: <ripple> requires API level 21 (current min is 14) [NewApi]\n"
+                + "<ripple\n"
+                + "^\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        "apicheck/minsdk14.xml=>AndroidManifest.xml",
+                        "apicheck/ripple.xml=>res/drawable/ripple.xml"
+                ));
+    }
+
+    public void testRippleOk1() throws Exception {
+        // minSdkVersion satisfied
+        assertEquals("No warnings.",
+                lintProject(
+                        "apicheck/minsdk21.xml=>AndroidManifest.xml",
+                        "apicheck/ripple.xml=>res/drawable/ripple.xml"
+                ));
+    }
+
+    public void testRippleOk2() throws Exception {
+        // -vNN location satisfied
+        assertEquals("No warnings.",
+                lintProject(
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "apicheck/ripple.xml=>res/drawable-v21/ripple.xml"
+                ));
+    }
+
+    public void testVector() throws Exception {
+        assertEquals(""
+                + "res/drawable/vector.xml:1: Error: <vector> requires API level 21 (current min is 1) [NewApi]\n"
+                + "<vector xmlns:android=\"http://schemas.android.com/apk/res/android\" >\n"
+                + "^\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        "apicheck/vector.xml=>AndroidManifest.xml",
+                        "apicheck/vector.xml=>res/drawable/vector.xml"
+                ));
     }
 
     @Override
