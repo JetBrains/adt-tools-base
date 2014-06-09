@@ -212,7 +212,7 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
         }
     }
 
-    private static boolean getExported(Element element) {
+    public static boolean getExported(Element element) {
         // Used to check whether an activity, service or broadcast receiver is exported.
         String exportValue = element.getAttributeNS(ANDROID_URI, ATTR_EXPORTED);
         if (exportValue != null && !exportValue.isEmpty()) {
