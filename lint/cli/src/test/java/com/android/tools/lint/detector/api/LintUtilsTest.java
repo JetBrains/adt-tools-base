@@ -21,10 +21,15 @@ import static com.android.tools.lint.detector.api.LintUtils.convertVersion;
 import static com.android.tools.lint.detector.api.LintUtils.getLocaleAndRegion;
 import static com.android.tools.lint.detector.api.LintUtils.isImported;
 import static com.android.tools.lint.detector.api.LintUtils.splitPath;
+import static org.easymock.EasyMock.createNiceMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
+import com.android.builder.model.ProductFlavor;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.EcjParser;
@@ -403,6 +408,40 @@ public class LintUtilsTest extends TestCase {
         assertEquals(new AndroidVersion(18, "KITKAT"), // a preview platform API level is not final
                 convertVersion(new DefaultApiVersion(0, "KITKAT"),
                 null));
+    }
+
+    public void testIsModelOlderThan() throws Exception {
+        AndroidProject project = createNiceMock(AndroidProject.class);
+        expect(project.getModelVersion()).andReturn("0.10.4").anyTimes();
+        replay(project);
+
+        assertTrue(LintUtils.isModelOlderThan(project, 0, 10, 5));
+        assertTrue(LintUtils.isModelOlderThan(project, 0, 11, 0));
+        assertTrue(LintUtils.isModelOlderThan(project, 0, 11, 4));
+        assertTrue(LintUtils.isModelOlderThan(project, 1, 0, 0));
+
+        project = createNiceMock(AndroidProject.class);
+        expect(project.getModelVersion()).andReturn("0.11.0").anyTimes();
+        replay(project);
+
+        assertTrue(LintUtils.isModelOlderThan(project, 1, 0, 0));
+        assertFalse(LintUtils.isModelOlderThan(project, 0, 11, 0));
+        assertFalse(LintUtils.isModelOlderThan(project, 0, 10, 4));
+
+        project = createNiceMock(AndroidProject.class);
+        expect(project.getModelVersion()).andReturn("0.11.5").anyTimes();
+        replay(project);
+
+        assertTrue(LintUtils.isModelOlderThan(project, 1, 0, 0));
+        assertFalse(LintUtils.isModelOlderThan(project, 0, 11, 0));
+
+        project = createNiceMock(AndroidProject.class);
+        expect(project.getModelVersion()).andReturn("1.0.0").anyTimes();
+        replay(project);
+
+        assertTrue(LintUtils.isModelOlderThan(project, 1, 0, 1));
+        assertFalse(LintUtils.isModelOlderThan(project, 1, 0, 0));
+        assertFalse(LintUtils.isModelOlderThan(project, 0, 11, 0));
     }
 
     private static final class DefaultApiVersion implements ApiVersion {

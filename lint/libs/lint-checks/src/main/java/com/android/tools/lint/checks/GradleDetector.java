@@ -27,6 +27,7 @@ import static java.io.File.separatorChar;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
 import com.android.ide.common.repository.GradleCoordinate;
 import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.sdklib.repository.FullRevision;
@@ -36,6 +37,7 @@ import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -301,6 +303,9 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                     report(context, cookie, GRADLE_GETTER, message);
                 }
             } else if (property.equals("packageName")) {
+                if (isModelOlderThan011(context)) {
+                    return;
+                }
                 String message = "Deprecated: Replace 'packageName' with 'applicationId'";
                 report(context, getPropertyKeyCookie(cookie), IDE_SUPPORT, message);
             }
@@ -361,6 +366,9 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 }
             }
         } else if (property.equals("packageNameSuffix")) {
+            if (isModelOlderThan011(context)) {
+                return;
+            }
             String message = "Deprecated: Replace 'packageNameSuffix' with 'applicationIdSuffix'";
             report(context, getPropertyKeyCookie(cookie), IDE_SUPPORT, message);
         } else if (property.equals("applicationIdSuffix")) {
@@ -379,6 +387,10 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         } catch (Throwable t) {
             return null;
         }
+    }
+
+    private static boolean isModelOlderThan011(@NonNull Context context) {
+        return LintUtils.isModelOlderThan(context.getProject().getGradleProjectModel(), 0, 11, 0);
     }
 
     private static int sMajorBuildTools;
@@ -772,11 +784,13 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         }
     }
 
+    @SuppressWarnings("MethodMayBeStatic")
     @NonNull
     protected Object getPropertyKeyCookie(@NonNull Object cookie) {
         return cookie;
     }
 
+    @SuppressWarnings("MethodMayBeStatic")
     @NonNull
     protected Object getPropertyPairCookie(@NonNull Object cookie) {
       return cookie;
