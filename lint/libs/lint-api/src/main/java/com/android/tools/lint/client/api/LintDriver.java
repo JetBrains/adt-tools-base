@@ -1586,7 +1586,11 @@ public class LintDriver {
                 } catch (IOException e) {
                     mClient.log(e, "Could not read jar file contents from %1$s", jarFile);
                 } finally {
-                    Closeables.closeQuietly(zis);
+                    try {
+                        Closeables.close(zis, true /* swallowIOException */);
+                    } catch (IOException e) {
+                        // cannot happen
+                    }
                 }
             } else if (classPathEntry.isDirectory()) {
                 //noinspection UnnecessaryLocalVariable

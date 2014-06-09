@@ -156,7 +156,11 @@ public class DefaultSdkLoader implements SdkLoader {
         } catch (NumberFormatException ignore) {
             // return null below.
         } finally {
-            Closeables.closeQuietly(reader);
+            try {
+                Closeables.close(reader, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
         }
 
         return null;

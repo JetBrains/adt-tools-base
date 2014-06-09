@@ -108,9 +108,21 @@ public class GrabProcessOutput {
                 } catch (IOException e) {
                     // do nothing.
                 } finally {
-                    Closeables.closeQuietly(is);
-                    Closeables.closeQuietly(isr);
-                    Closeables.closeQuietly(errReader);
+                    try {
+                        Closeables.close(is, true /* swallowIOException */);
+                    } catch (IOException e) {
+                        // cannot happen
+                    }
+                    try {
+                        Closeables.close(isr, true /* swallowIOException */);
+                    } catch (IOException e) {
+                        // cannot happen
+                    }
+                    try {
+                        Closeables.close(errReader, true /* swallowIOException */);
+                    } catch (IOException e) {
+                        // cannot happen
+                    }
                 }
             }
         };
@@ -135,9 +147,21 @@ public class GrabProcessOutput {
                 } catch (IOException e) {
                     // do nothing.
                 } finally {
-                    Closeables.closeQuietly(is);
-                    Closeables.closeQuietly(isr);
-                    Closeables.closeQuietly(outReader);
+                    try {
+                        Closeables.close(is, true /* swallowIOException */);
+                    } catch (IOException e) {
+                        // cannot happen
+                    }
+                    try {
+                        Closeables.close(isr, true /* swallowIOException */);
+                    } catch (IOException e) {
+                        // cannot happen
+                    }
+                    try {
+                        Closeables.close(outReader, true /* swallowIOException */);
+                    } catch (IOException e) {
+                        // cannot happen
+                    }
                 }
             }
         };

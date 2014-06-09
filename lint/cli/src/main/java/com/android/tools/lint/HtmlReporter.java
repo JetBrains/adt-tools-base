@@ -517,10 +517,13 @@ public class HtmlReporter extends Reporter {
         if (mSimpleFormat) {
             // Inline the CSS
             mWriter.write("<style>\n");                                   //$NON-NLS-1$
-            @SuppressWarnings("resource") // Eclipse doesn't know about Closeables.closeQuietly
             InputStream input = cssUrl.openStream();
             byte[] bytes = ByteStreams.toByteArray(input);
-            Closeables.closeQuietly(input);
+            try {
+                Closeables.close(input, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
             String css = new String(bytes, Charsets.UTF_8);
             mWriter.write(css);
             mWriter.write("</style>\n");                                  //$NON-NLS-1$
