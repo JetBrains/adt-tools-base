@@ -233,7 +233,7 @@ class ProductFlavorDsl extends DefaultProductFlavor {
 
     @NonNull
     public ProductFlavor packageName(String packageName) {
-        return setApplicationId(packageName);
+        return setPackageName(packageName); // not setApplicationId: we want the warning message
     }
 
     @Nullable
