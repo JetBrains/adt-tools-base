@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.api;
 import com.android.build.gradle.api.AndroidSourceFile;
 
 import org.gradle.api.Project;
-import org.gradle.api.internal.file.FileResolver;
 
 import java.io.File;
 

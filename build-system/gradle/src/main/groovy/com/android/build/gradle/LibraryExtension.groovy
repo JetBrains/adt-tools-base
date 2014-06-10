@@ -57,7 +57,7 @@ public class LibraryExtension extends BaseExtension {
 
     public void packageBuildConfig(boolean value) {
         if (!value) {
-            logger.warning("WARNING: support for not packaging BuildConfig is deprecated and will be removed in 1.0")
+            plugin.displayDeprecationWarning("Support for not packaging BuildConfig is deprecated and will be removed in 1.0")
         }
 
         packageBuildConfig = value

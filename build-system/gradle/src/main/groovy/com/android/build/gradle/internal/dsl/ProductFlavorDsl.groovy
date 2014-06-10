@@ -15,9 +15,9 @@
  */
 
 package com.android.build.gradle.internal.dsl
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
+import com.android.build.gradle.BasePlugin
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultApiVersion
@@ -27,10 +27,9 @@ import com.android.builder.model.ClassField
 import com.android.builder.model.NdkConfig
 import com.android.builder.model.ProductFlavor
 import org.gradle.api.Action
-import org.gradle.api.internal.file.FileResolver
+import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
-
 /**
  * DSL overlay to make methods that accept String... work.
  */
@@ -38,18 +37,18 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     private static final long serialVersionUID = 1L
 
     @NonNull
-    private final FileResolver fileResolver
+    private final Project project
     @NonNull
     protected final Logger logger
 
     private final NdkConfigDsl ndkConfig
 
     ProductFlavorDsl(@NonNull String name,
-                     @NonNull FileResolver fileResolver,
+                     @NonNull Project project,
                      @NonNull Instantiator instantiator,
                      @NonNull Logger logger) {
         super(name)
-        this.fileResolver = fileResolver
+        this.project = project
         this.logger = logger
         ndkConfig = instantiator.newInstance(NdkConfigDsl.class)
     }
@@ -166,13 +165,13 @@ class ProductFlavorDsl extends DefaultProductFlavor {
 
     @NonNull
     public ProductFlavorDsl proguardFile(Object proguardFile) {
-        proguardFiles.add(fileResolver.resolve(proguardFile))
+        proguardFiles.add(project.file(proguardFile))
         return this
     }
 
     @NonNull
     public ProductFlavorDsl proguardFiles(Object... proguardFileArray) {
-        proguardFiles.addAll(fileResolver.resolveFiles(proguardFileArray).files)
+        proguardFiles.addAll(project.files(proguardFileArray).files)
         return this
     }
 
@@ -180,14 +179,14 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     public ProductFlavorDsl setProguardFiles(Iterable<?> proguardFileIterable) {
         proguardFiles.clear()
         for (Object proguardFile : proguardFileIterable) {
-            proguardFiles.add(fileResolver.resolve(proguardFile))
+            proguardFiles.add(project.file(proguardFile))
         }
         return this
     }
 
     @NonNull
     public ProductFlavorDsl consumerProguardFiles(Object... proguardFileArray) {
-        consumerProguardFiles.addAll(fileResolver.resolveFiles(proguardFileArray).files)
+        consumerProguardFiles.addAll(project.files(proguardFileArray).files)
         return this
     }
 
@@ -195,7 +194,7 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     public ProductFlavorDsl setConsumerProguardFiles(Iterable<?> proguardFileIterable) {
         consumerProguardFiles.clear()
         for (Object proguardFile : proguardFileIterable) {
-            consumerProguardFiles.add(fileResolver.resolve(proguardFile))
+            consumerProguardFiles.add(project.file(proguardFile))
         }
         return this
     }
@@ -227,7 +226,7 @@ class ProductFlavorDsl extends DefaultProductFlavor {
      */
     @NonNull
     public ProductFlavor setPackageName(String packageName) {
-        logger.warn("WARNING: packageName is deprecated (and will soon stop working); change to \"applicationId\" instead");
+        BasePlugin.displayDeprecationWarning(logger, project, "\"packageName\" is deprecated (and will soon stop working); change to \"applicationId\" instead");
         return setApplicationId(packageName);
     }
 
@@ -238,19 +237,19 @@ class ProductFlavorDsl extends DefaultProductFlavor {
 
     @Nullable
     public String getPackageName() {
-        logger.warn("WARNING: packageName is deprecated (and will soon stop working); change to \"applicationId\" instead");
+        BasePlugin.displayDeprecationWarning(logger, project, "\"packageName\" is deprecated (and will soon stop working); change to \"applicationId\" instead");
         return getApplicationId();
     }
 
     @Nullable
     public String getTestPackageName() {
-        logger.warn("WARNING: testPackageName is deprecated (and will soon stop working); change to \"testApplicationId\" instead");
+        BasePlugin.displayDeprecationWarning(logger, project, "\"testPackageName\" is deprecated (and will soon stop working); change to \"testApplicationId\" instead");
         return getTestApplicationId();
     }
 
     @Nullable
     public ProductFlavor setTestPackageName(String packageName) {
-        logger.warn("WARNING: testPackageName is deprecated (and will soon stop working); change to \"testApplicationId\" instead");
+        BasePlugin.displayDeprecationWarning(logger, project, "\"testPackageName\" is deprecated (and will soon stop working); change to \"testApplicationId\" instead");
         return setTestApplicationId(packageName);
     }
 }

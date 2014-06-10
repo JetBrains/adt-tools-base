@@ -15,13 +15,11 @@
  */
 
 package com.android.build.gradle.internal.dsl
-
 import com.android.annotations.NonNull
-import org.gradle.api.internal.file.FileResolver
-import org.gradle.api.logging.LogLevel
+import com.android.build.gradle.BasePlugin
+import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
-
 /**
  * A version of ProductFlavorDsl that can receive a group name
  */
@@ -32,10 +30,10 @@ public class GroupableProductFlavorDsl extends ProductFlavorDsl {
 
     public GroupableProductFlavorDsl(
             @NonNull String name,
-            @NonNull FileResolver fileResolver,
+            @NonNull Project project,
             @NonNull Instantiator instantiator,
             @NonNull Logger logger) {
-        super(name, fileResolver, instantiator, logger)
+        super(name, project, instantiator, logger)
     }
 
     // ---------------
@@ -43,8 +41,7 @@ public class GroupableProductFlavorDsl extends ProductFlavorDsl {
     // STOPSHIP Remove in 1.0
 
     public void flavorGroup(String value) {
-        logger.log(LogLevel.WARN,
-                "WARNING: flavorGroup has been renamed flavorDimension. It will be removed in 1.0")
+        BasePlugin.displayDeprecationWarning(logger, project, "'flavorGroup' has been renamed 'flavorDimension'. It will be removed in 1.0")
         flavorDimension = value
     }
 
