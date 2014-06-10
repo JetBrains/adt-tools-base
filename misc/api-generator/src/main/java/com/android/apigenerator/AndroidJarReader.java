@@ -29,6 +29,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,25 +45,28 @@ public class AndroidJarReader {
 
     private static final byte[] BUFFER = new byte[65535];
 
-    private final String mSdkFolder;
+    private final int mMinApi;
+    private final ArrayList<String> mPatterns;
 
-    public AndroidJarReader(String sdkFolder) {
-        mSdkFolder = sdkFolder;
+    public AndroidJarReader(ArrayList<String> patterns, int minApi) {
+        mPatterns = patterns;
+        mMinApi = minApi;
     }
 
     public Map<String, ApiClass> getClasses() {
         HashMap<String, ApiClass> map = new HashMap<String, ApiClass>();
 
         // Get all the android.jar. They are in platforms-#
-        int apiLevel = 0;
+        int apiLevel = mMinApi;
         while (true) {
             apiLevel++;
             try {
-                File jar = new File(mSdkFolder, "platforms/android-" + apiLevel + "/android.jar");
-                if (jar.exists() == false) {
+                File jar = getAndroidJarFile(apiLevel);
+                if (jar == null || !jar.isFile()) {
                     System.out.println("Last API level found: " + (apiLevel-1));
                     break;
                 }
+                System.out.println("Found API " + apiLevel + " at " + jar.getPath());
 
                 FileInputStream fis = new FileInputStream(jar);
                 ZipInputStream zis = new ZipInputStream(fis);
@@ -143,6 +147,16 @@ public class AndroidJarReader {
         postProcessClasses(map);
 
         return map;
+    }
+
+    private File getAndroidJarFile(int apiLevel) {
+        for (String pattern : mPatterns) {
+            File f = new File(pattern.replace("%", Integer.toString(apiLevel)));
+            if (f.isFile()) {
+                return f;
+            }
+        }
+        return null;
     }
 
     private void postProcessClasses(Map<String, ApiClass> classes) {
