@@ -1905,7 +1905,7 @@ public abstract class BasePlugin {
                 return new File(path)
             }
 
-            retur null
+            return null
         }
 
         return zipAlignTask
