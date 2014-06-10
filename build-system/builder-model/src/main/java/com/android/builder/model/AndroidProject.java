@@ -35,9 +35,9 @@ public interface AndroidProject {
     String PROPERTY_SIGNING_STORE_PASSWORD = "android.injected.signing.store.password";
     String PROPERTY_SIGNING_KEY_ALIAS = "android.injected.signing.key.alias";
     String PROPERTY_SIGNING_KEY_PASSWORD = "android.injected.signing.key.password";
-    String PROPERTY_SIGNING_STORE_STYPE = "android.injected.signing.store.type";
+    String PROPERTY_SIGNING_STORE_TYPE = "android.injected.signing.store.type";
 
-    String PROPERTY_LOCATION_OVERRIDE_APK = "android.injected.apk.location";
+    String PROPERTY_APK_LOCATION = "android.injected.apk.location";
 
     String ARTIFACT_MAIN = "_main_";
     String ARTIFACT_ANDROID_TEST = "_android_test_";
