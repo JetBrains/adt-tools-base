@@ -24,6 +24,8 @@ import com.android.sdklib.internal.repository.packages.License;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
 
+import java.io.File;
+
 /**
  * {@link IPkgDesc} keeps information on individual SDK packages
  * (both local or remote packages definitions.)
@@ -135,5 +137,19 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
      */
     public boolean isUpdateFor(@NonNull IPkgDesc existingDesc);
 
+    /**
+     * Returns a stable string id that can be used to reference this package.
+     * @return A stable string id that can be used to reference this package.
+     */
+    @NonNull
+    public String getInstallId();
+
+    /**
+     * Returns the canonical location where such a package would be installed.
+     * @param sdkLocation The root of the SDK.
+     * @return the canonical location where such a package would be installed.
+     */
+    @NonNull
+    public File getCanonicalInstallFolder(@NonNull File sdkLocation);
 }
 
