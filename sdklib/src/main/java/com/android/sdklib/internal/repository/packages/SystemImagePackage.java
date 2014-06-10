@@ -431,7 +431,22 @@ public class SystemImagePackage extends MajorRevisionPackage
      */
     @Override
     public String installId() {
-        return "sysimg-" + mVersion.getApiString();    //$NON-NLS-1$
+        StringBuilder sb = new StringBuilder("sys-img-");   //$NON-NLS-1$
+        sb.append(getAbi()).append('-');
+        if (!isPlatform()) {
+            sb.append("addon-");
+        }
+        sb.append(SystemImage.DEFAULT_TAG.equals(getTag()) ? "android" : getTag().getId());
+        sb.append('-');
+        if (!isPlatform()) {
+            sb.append(getAddonVendor().getId()).append('-');
+        }
+        sb.append(getAndroidVersion().getApiString());
+
+        String s = sb.toString();
+        s = s.toLowerCase(Locale.US).replaceAll("[^a-z0-9_.-]+", "_").replaceAll("_+", "_");
+        return s;
+
     }
 
     /**

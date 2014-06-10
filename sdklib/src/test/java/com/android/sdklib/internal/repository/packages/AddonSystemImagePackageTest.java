@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 The Android Open Source Project
+ * Copyright (C) 2014 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,26 +17,32 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.SystemImage;
 import com.android.sdklib.AndroidVersion.AndroidVersionException;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.repository.PkgProps;
 
 import java.util.Properties;
 
-public class SystemImagePackageTest extends PackageTest {
+public class AddonSystemImagePackageTest extends PackageTest {
 
     private static class SysImgPackageFakeArchive extends SystemImagePackage {
         protected SysImgPackageFakeArchive(
                 AndroidVersion platformVersion,
                 int revision,
+                String addonVendorId,
+                String addonNameId,
                 String abi,
                 Properties props) {
             super(platformVersion,
                     revision,
                     abi,
                     props,
-                    String.format("/sdk/system-images/android-%s/%s",
-                            platformVersion.getApiString(), abi));
+                    String.format("/sdk/system-images/addon-%s-%s-%s/%s",
+                            addonNameId,
+                            addonVendorId,
+                            platformVersion.getApiString(),
+                            abi));
         }
 
         @Override
@@ -52,7 +58,9 @@ public class SystemImagePackageTest extends PackageTest {
         SystemImagePackage p = new SysImgPackageFakeArchive(
                 new AndroidVersion(props),
                 1 /*revision*/,
-                null /*abi*/,
+                props.getProperty(PkgProps.ADDON_VENDOR_ID),
+                props.getProperty(PkgProps.SYS_IMG_TAG_ID),
+                props.getProperty(PkgProps.SYS_IMG_ABI),
                 props);
         return p;
     }
@@ -64,8 +72,12 @@ public class SystemImagePackageTest extends PackageTest {
         // SystemImagePackage properties
         props.setProperty(PkgProps.VERSION_API_LEVEL,   "5");
         props.setProperty(PkgProps.SYS_IMG_ABI,         "armeabi-v7a");
-        props.setProperty(PkgProps.SYS_IMG_TAG_ID,      "default");
-        props.setProperty(PkgProps.SYS_IMG_TAG_DISPLAY, "Default");
+
+        // Addon-specific SystemImagePackage properties
+        props.setProperty(PkgProps.ADDON_VENDOR_ID, "vendor_id");
+        props.setProperty(PkgProps.ADDON_VENDOR_DISPLAY, "Vendor Name");
+        props.setProperty(PkgProps.SYS_IMG_TAG_ID, "addon_name");
+        props.setProperty(PkgProps.SYS_IMG_TAG_DISPLAY, "Add-on Name");
 
         return props;
     }
@@ -129,6 +141,6 @@ public class SystemImagePackageTest extends PackageTest {
         Properties props = createExpectedProps();
         SystemImagePackage p = createSystemImagePackage(props);
 
-        assertEquals("sysimg-5", p.installId());
+        assertEquals("sys-img-armeabi-v7a-addon-addon_name-vendor_id-5", p.installId());
     }
 }
