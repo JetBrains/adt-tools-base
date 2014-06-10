@@ -339,41 +339,6 @@ class AttributeModel {
     }
 
     /**
-     * A {@link com.android.manifmerger.AttributeModel.Validator} that validates a reference.
-     * The referenced item must be present in the same document for a successful validation.
-     */
-    static class ReferenceValidator implements Validator {
-
-        private final ManifestModel.NodeTypes referencedType;
-
-        ReferenceValidator(ManifestModel.NodeTypes referencedType) {
-            this.referencedType = referencedType;
-        }
-
-
-        @Override
-        public boolean validates(@NonNull MergingReport.Builder mergingReport,
-                @NonNull XmlAttribute attribute, @NonNull String value) {
-
-            Optional<XmlElement> referencedElement = attribute.getOwnerElement().getDocument()
-                    .getByTypeAndKey(referencedType, value);
-            if (!referencedElement.isPresent()) {
-                attribute.addMessage(mergingReport, MergingReport.Record.Severity.ERROR,
-                        String.format(
-                                "Referenced element %1$s=%2$s, in element %3$s declared at %4$s "
-                                        + "does not exist",
-                                attribute.getName(),
-                                value,
-                                attribute.getOwnerElement().getId(),
-                                attribute.printPosition()
-                        ));
-                return false;
-            }
-            return true;
-        }
-    }
-
-    /**
      * A {@link com.android.manifmerger.AttributeModel.Validator} for verifying that a proposed
      * value is part of the acceptable list of possible values.
      */
