@@ -63,48 +63,48 @@ public enum PkgType implements IPkgCapabilities {
 
     /** Filter the SDK/docs folder.
      *  Has {@link MajorRevision}. */
-    PKG_DOCS(0x0010, SdkConstants.FD_DOCS,
+    PKG_DOC(0x0010, SdkConstants.FD_DOCS,
             "Documentation for Android SDK $API{?$MAJ>1:, rev $MAJ}",
             true /*maj-r*/, false, true /*api*/, false, false, false, false, false),
 
     /** Filter the SDK/platforms.
      *  Has {@link AndroidVersion}. Has {@link MajorRevision}.
      *  Path returns the platform's target hash. */
-    PKG_PLATFORMS(0x0100, SdkConstants.FD_PLATFORMS,
+    PKG_PLATFORM(0x0100, SdkConstants.FD_PLATFORMS,
             "Android SDK Platform $API{?$MAJ>1:, rev $MAJ}",
             true /*maj-r*/, false, true /*api*/, true /*path*/, false, false, true /*min-t-r*/, false),
 
-    /** Filter the SDK/sys-images.
+    /** Filter the SDK/system-images/android.
      * Has {@link AndroidVersion}. Has {@link MajorRevision}. Has tag.
      * Path returns the system image ABI. */
-    PKG_SYS_IMAGES(0x0200, SdkConstants.FD_SYSTEM_IMAGES,
+    PKG_SYS_IMAGE(0x0200, SdkConstants.FD_SYSTEM_IMAGES,
             "$PATH System Image, Android $API{?$MAJ>1:, rev $MAJ}",
             true /*maj-r*/, false, true /*api*/, true /*path*/, true /*tag*/, false /*vend*/, false, false),
 
     /** Filter the SDK/addons.
      *  Has {@link AndroidVersion}. Has {@link MajorRevision}.
      *  Path returns the add-on's target hash. */
-    PKG_ADDONS(0x0400, SdkConstants.FD_ADDONS,
+    PKG_ADDON(0x0400, SdkConstants.FD_ADDONS,
             "{|$NAME|$VEND $PATH|}, Android $API{?$MAJ>1:, rev $MAJ}",
             true /*maj-r*/, false, true /*api*/, true /*path*/, false, true /*vend*/, false, false),
 
-    /** Filter the SDK/addons/sys-images.
+    /** Filter the SDK/system-images/addons.
      * Has {@link AndroidVersion}. Has {@link MajorRevision}. Has tag.
      * Path returns the system image ABI. */
-    PKG_ADDON_SYS_IMAGES(0x0800, SdkConstants.FD_SYSTEM_IMAGES,
+    PKG_ADDON_SYS_IMAGE(0x0800, SdkConstants.FD_SYSTEM_IMAGES,
             "{|$NAME|$VEND $PATH|} System Image, Android $API{?$MAJ>1:, rev $MAJ}",
             true /*maj-r*/, false, true /*api*/, true /*path*/, true /*tag*/, true /*vend*/, false, false),
 
     /** Filter the SDK/samples folder.
      *  Note: this will not detect samples located in the SDK/extras packages.
      *  Has {@link AndroidVersion}. Has {@link MajorRevision}. */
-    PKG_SAMPLES(0x1000, SdkConstants.FD_SAMPLES,
+    PKG_SAMPLE(0x1000, SdkConstants.FD_SAMPLES,
             "Samples for Android $API{?$MAJ>1:, rev $MAJ}",
             true /*maj-r*/, false, true /*api*/, false, false, false, true /*min-t-r*/, false),
 
     /** Filter the SDK/sources folder.
      *  Has {@link AndroidVersion}. Has {@link MajorRevision}. */
-    PKG_SOURCES(0x2000, SdkConstants.FD_ANDROID_SOURCES,
+    PKG_SOURCE(0x2000, SdkConstants.FD_ANDROID_SOURCES,
             "Sources for Android $API{?$MAJ>1:, rev $MAJ}",
             true /*maj-r*/, false, true /*api*/, false, false, false, false, false),
 
@@ -112,7 +112,7 @@ public enum PkgType implements IPkgCapabilities {
      *  Has {@code Path}. Has {@link MajorRevision}.
      *  Path returns the combined vendor id + extra path.
      *  Cast the descriptor to {@link IPkgDescExtra} to get extra's specific attributes. */
-    PKG_EXTRAS(0x4000, SdkConstants.FD_EXTRAS,
+    PKG_EXTRA(0x4000, SdkConstants.FD_EXTRAS,
             "{|$NAME|$VEND $PATH|}{?$FULL>1:, rev $FULL}",
             false, true /*full-r*/, false, true /*path*/, false, true /*vend*/, false, false);
 

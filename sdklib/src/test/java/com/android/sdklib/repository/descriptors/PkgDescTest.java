@@ -183,7 +183,7 @@ public class PkgDescTest extends TestCase {
         IPkgDesc p =
                 PkgDesc.Builder.newDoc(new AndroidVersion("19"), new MajorRevision(1)).create();
 
-        assertEquals(PkgType.PKG_DOCS, p.getType());
+        assertEquals(PkgType.PKG_DOC, p.getType());
 
         assertFalse(p.hasFullRevision());
         assertNull(p.getFullRevision());
@@ -203,7 +203,7 @@ public class PkgDescTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull(p.getMinPlatformToolsRev());
 
-        assertEquals("<PkgDesc Type=docs Android=API 19 MajorRev=1>", p.toString());
+        assertEquals("<PkgDesc Type=doc Android=API 19 MajorRev=1>", p.toString());
         assertEquals("Documentation for Android SDK 19", p.getListDescription());
     }
 
@@ -312,7 +312,7 @@ public class PkgDescTest extends TestCase {
                           new NoPreviewRevision(1, 2, 3))
                 .create();
 
-        assertEquals(PkgType.PKG_EXTRAS, p.getType());
+        assertEquals(PkgType.PKG_EXTRA, p.getType());
 
         assertTrue  (p.hasFullRevision());
         assertEquals(new FullRevision(1, 2, 3), p.getFullRevision());
@@ -332,7 +332,7 @@ public class PkgDescTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull (p.getMinPlatformToolsRev());
 
-        assertEquals("<PkgDesc Type=extras Vendor=vendor [The Vendor] Path=extra_path FullRev=1.2.3>", p.toString());
+        assertEquals("<PkgDesc Type=extra Vendor=vendor [The Vendor] Path=extra_path FullRev=1.2.3>", p.toString());
         assertEquals("My Extra, rev 1.2.3", p.getListDescription());
 
         IPkgDescExtra e = (IPkgDescExtra) p;
@@ -393,7 +393,7 @@ public class PkgDescTest extends TestCase {
         IPkgDesc p =
                 PkgDesc.Builder.newSource(new AndroidVersion("19"), new MajorRevision(1)).create();
 
-        assertEquals(PkgType.PKG_SOURCES, p.getType());
+        assertEquals(PkgType.PKG_SOURCE, p.getType());
 
         assertFalse(p.hasFullRevision());
         assertNull (p.getFullRevision());
@@ -413,7 +413,7 @@ public class PkgDescTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull (p.getMinPlatformToolsRev());
 
-        assertEquals("<PkgDesc Type=sources Android=API 19 MajorRev=1>", p.toString());
+        assertEquals("<PkgDesc Type=source Android=API 19 MajorRev=1>", p.toString());
         assertEquals("Sources for Android 19", p.getListDescription());
     }
 
@@ -448,7 +448,7 @@ public class PkgDescTest extends TestCase {
                                        new MajorRevision(1),
                                        new FullRevision(5, 6, 7, 8)).create();
 
-        assertEquals(PkgType.PKG_SAMPLES, p.getType());
+        assertEquals(PkgType.PKG_SAMPLE, p.getType());
 
         assertFalse(p.hasFullRevision());
         assertNull (p.getFullRevision());
@@ -469,7 +469,7 @@ public class PkgDescTest extends TestCase {
         assertNull (p.getMinPlatformToolsRev());
 
         assertEquals(
-                "<PkgDesc Type=samples Android=API 19 MajorRev=1 MinToolsRev=5.6.7 rc8>",
+                "<PkgDesc Type=sample Android=API 19 MajorRev=1 MinToolsRev=5.6.7 rc8>",
                 p.toString());
         assertEquals("Samples for Android 19", p.getListDescription());
     }
@@ -515,7 +515,7 @@ public class PkgDescTest extends TestCase {
                                          new MajorRevision(1),
                                          new FullRevision(5, 6, 7, 8)).create();
 
-        assertEquals(PkgType.PKG_PLATFORMS, p.getType());
+        assertEquals(PkgType.PKG_PLATFORM, p.getType());
 
         assertFalse(p.hasFullRevision());
         assertNull (p.getFullRevision());
@@ -536,7 +536,7 @@ public class PkgDescTest extends TestCase {
         assertNull (p.getMinPlatformToolsRev());
 
         assertEquals(
-                "<PkgDesc Type=platforms Android=API 19 Path=android-19 MajorRev=1 MinToolsRev=5.6.7 rc8>",
+                "<PkgDesc Type=platform Android=API 19 Path=android-19 MajorRev=1 MinToolsRev=5.6.7 rc8>",
                 p.toString());
         assertEquals("Android SDK Platform 19", p.getListDescription());
     }
@@ -584,7 +584,7 @@ public class PkgDescTest extends TestCase {
                 .newAddon(new AndroidVersion("19"), new MajorRevision(1), vendor, name)
                 .create();
 
-        assertEquals(PkgType.PKG_ADDONS, p1.getType());
+        assertEquals(PkgType.PKG_ADDON, p1.getType());
 
         assertFalse(p1.hasFullRevision());
         assertNull (p1.getFullRevision());
@@ -605,7 +605,7 @@ public class PkgDescTest extends TestCase {
         assertNull (p1.getMinPlatformToolsRev());
 
         assertEquals(
-                "<PkgDesc Type=addons Android=API 19 Vendor=vendor [The Vendor] Path=The Vendor:The Add-on:19 MajorRev=1>",
+                "<PkgDesc Type=addon Android=API 19 Vendor=vendor [The Vendor] Path=The Vendor:The Add-on:19 MajorRev=1>",
                 p1.toString());
         assertEquals("The Add-on, Android 19", p1.getListDescription());
     }
@@ -666,7 +666,7 @@ public class PkgDescTest extends TestCase {
                 "eabi",
                 new MajorRevision(1)).create();
 
-        assertEquals(PkgType.PKG_SYS_IMAGES, p.getType());
+        assertEquals(PkgType.PKG_SYS_IMAGE, p.getType());
 
         assertFalse(p.hasFullRevision());
         assertNull (p.getFullRevision());
@@ -687,7 +687,7 @@ public class PkgDescTest extends TestCase {
         assertNull (p.getMinPlatformToolsRev());
 
         assertEquals(
-                "<PkgDesc Type=sys_images Android=API 19 Tag=tag [My Tag] Path=eabi MajorRev=1>",
+                "<PkgDesc Type=sys_image Android=API 19 Tag=tag [My Tag] Path=eabi MajorRev=1>",
                 p.toString());
         assertEquals("eabi System Image, Android 19", p.getListDescription());
     }

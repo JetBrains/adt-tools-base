@@ -169,7 +169,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             PlatformTarget baseTarget = null;
 
             // Look for a platform that has a matching api level or codename.
-            LocalPkgInfo plat = sdk.getPkgInfo(PkgType.PKG_PLATFORMS,
+            LocalPkgInfo plat = sdk.getPkgInfo(PkgType.PKG_PLATFORM,
                                                getDesc().getAndroidVersion());
             if (plat instanceof LocalPlatformPkgInfo) {
                 baseTarget = (PlatformTarget) ((LocalPlatformPkgInfo) plat).getAndroidTarget();
@@ -349,7 +349,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
 
             // Look for a platform that has a matching api level or codename.
             IAndroidTarget baseTarget = null;
-            LocalPkgInfo plat = getLocalSdk().getPkgInfo(PkgType.PKG_PLATFORMS,
+            LocalPkgInfo plat = getLocalSdk().getPkgInfo(PkgType.PKG_PLATFORM,
                                                          getDesc().getAndroidVersion());
             if (plat instanceof LocalPlatformPkgInfo) {
                 baseTarget = ((LocalPlatformPkgInfo) plat).getAndroidTarget();
@@ -439,7 +439,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
         // Look in the SDK/system-image/platform-n/abi folders.
         // If we find multiple occurrences of the same platform/abi, the first one read wins.
 
-        LocalPkgInfo[] sysImgInfos = getLocalSdk().getPkgsInfos(PkgType.PKG_ADDON_SYS_IMAGES);
+        LocalPkgInfo[] sysImgInfos = getLocalSdk().getPkgsInfos(PkgType.PKG_ADDON_SYS_IMAGE);
         for (LocalPkgInfo pkg : sysImgInfos) {
             IPkgDesc d = pkg.getDesc();
             if (pkg instanceof LocalAddonSysImgPkgInfo &&
