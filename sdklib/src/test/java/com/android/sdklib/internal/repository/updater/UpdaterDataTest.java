@@ -131,13 +131,13 @@ public class UpdaterDataTest extends SdkManagerTestCase {
         data.acceptLicense(infos , acceptLicenses, 3);
         assertEquals(
                 "[P -------------------------------\n" +
-                "License id: sdk-license-dddb8a39\n" +
-                "Used by: \n" +
+                ", P License id: sdk-license-dddb8a39\n" +
+                ", P Used by: \n" +
                 " - MockEmptyPackage 'test'\n" +
-                "-------------------------------\n" +
-                "This is the license text.\n" +
-                "Etc etc.\n" +
+                ", P -------------------------------\n" +
                 "\n" +
+                ", P This is the license text.\n" +
+                "Etc etc.\n" +
                 "\n" +
                 ", P Do you accept the license 'sdk-license-dddb8a39' [y/n]: , P \n" +
                 ", P Unknown response ''.\n" +
@@ -170,13 +170,13 @@ public class UpdaterDataTest extends SdkManagerTestCase {
         data.acceptLicense(infos , acceptLicenses, 3);
         assertEquals(
                 "[P -------------------------------\n" +
-                "License id: sdk-license-dddb8a39\n" +
-                "Used by: \n" +
+                ", P License id: sdk-license-dddb8a39\n" +
+                ", P Used by: \n" +
                 " - MockEmptyPackage 'test'\n" +
-                "-------------------------------\n" +
-                "This is the license text.\n" +
-                "Etc etc.\n" +
+                ", P -------------------------------\n" +
                 "\n" +
+                ", P This is the license text.\n" +
+                "Etc etc.\n" +
                 "\n" +
                 ", P Do you accept the license 'sdk-license-dddb8a39' [y/n]: , P \n" +
                 "]", Arrays.toString(inputLog.getMessages().toArray()));
