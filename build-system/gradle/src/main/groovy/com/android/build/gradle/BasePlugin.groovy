@@ -115,6 +115,7 @@ import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
 import com.android.ide.common.internal.ExecutorSingleton
 import com.android.ide.common.sdk.SdkVersionInfo
+import com.android.manifmerger.PlaceholderHandler
 import com.android.utils.ILogger
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.ListMultimap

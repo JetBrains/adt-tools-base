@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * a Product Flavor. This is only the configuration of the flavor.
@@ -158,4 +159,13 @@ public interface ProductFlavor extends BaseConfig {
      */
     @NonNull
     Collection<String> getResourceConfigurations();
+
+    /**
+     * Returns the map of key value pairs for placeholder substitution in the android manifest file.
+     *
+     * This map will be used by the manifest merger.
+     * @return the map of key value pairs.
+     */
+    @NonNull
+    Map<String, String> getManifestPlaceholders();
 }
