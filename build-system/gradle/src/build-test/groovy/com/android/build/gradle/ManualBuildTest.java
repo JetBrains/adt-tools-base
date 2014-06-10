@@ -16,10 +16,15 @@
 
 package com.android.build.gradle;
 
-import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
+import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_KEY_ALIAS;
+import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_KEY_PASSWORD;
+import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_STORE_FILE;
+import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_STORE_PASSWORD;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
@@ -30,6 +35,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarInputStream;
@@ -106,13 +112,21 @@ public class ManualBuildTest extends BuildTest {
 
         try {
             runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
-                    new File(repo, "util"), "clean", "uploadArchives");
+                    new File(repo, "util"),
+                    Collections.<String>emptyList(),
+                    "clean", "uploadArchives");
             runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
-                    new File(repo, "baseLibrary"), "clean", "uploadArchives");
+                    new File(repo, "baseLibrary"),
+                    Collections.<String>emptyList(),
+                    "clean", "uploadArchives");
             runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
-                    new File(repo, "library"), "clean", "uploadArchives");
+                    new File(repo, "library"),
+                    Collections.<String>emptyList(),
+                    "clean", "uploadArchives");
             runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
-                    new File(repo, "app"), "clean", "assemble");
+                    new File(repo, "app"),
+                    Collections.<String>emptyList(),
+                    "clean", "assemble");
         } finally {
             // clean up the test repository.
             File testRepo = new File(repo, "testrepo");
@@ -125,7 +139,9 @@ public class ManualBuildTest extends BuildTest {
         File fileOutput = new File(project, "libapp/build/" + FD_INTERMEDIATES + "/bundles/release/AndroidManifest.xml");
 
         runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
-                project, "clean", "build");
+                project,
+                Collections.<String>emptyList(),
+                "clean", "build");
         assertTrue(fileOutput.exists());
     }
 
@@ -135,7 +151,9 @@ public class ManualBuildTest extends BuildTest {
         File fileOutput = new File(project, "build/" + FD_OUTPUTS + "/proguard/release");
 
         runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
-          project, "clean", "build");
+                project,
+                Collections.<String>emptyList(),
+                "clean", "build");
         checkFile(fileOutput, "mapping.txt", new String[]{"int proguardInt -> a"});
 
     }
@@ -147,7 +165,9 @@ public class ManualBuildTest extends BuildTest {
         File releaseFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/bundles/release");
 
         runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
-            project, "clean", "build");
+                project,
+                Collections.<String>emptyList(),
+                "clean", "build");
         checkFile(debugFileOutput, "proguard.txt", new String[]{"A"});
         checkFile(releaseFileOutput, "proguard.txt", new String[]{"A", "B", "C"});
     }
@@ -157,7 +177,9 @@ public class ManualBuildTest extends BuildTest {
         File debugFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/bundles/debug");
 
         runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
-                project, "clean", "extractDebugAnnotations");
+                project,
+                Collections.<String>emptyList(),
+                "clean", "extractDebugAnnotations");
         File file = new File(debugFileOutput, "annotations.zip");
 
         Map<String,String> map = Maps.newHashMap();
@@ -246,20 +268,50 @@ public class ManualBuildTest extends BuildTest {
         // a fake DeviceProvider that doesn't use a device, but only record the calls made
         // to the DeviceProvider and the DeviceConnector.
         runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
-                new File(testDir, "3rdPartyTests"), "clean", "deviceCheck");
+                new File(testDir, "3rdPartyTests"),
+                Collections.<String>emptyList(),
+                "clean", "deviceCheck");
     }
 
     public void testEmbedded() throws Exception {
         File project = new File(testDir, "embedded");
 
         runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
-                project, "clean", ":main:assembleRelease");
+                project,
+                Collections.<String>emptyList(),
+                "clean", ":main:assembleRelease");
 
         File mainApk = new File(project, "main/build/" + FD_OUTPUTS + "/apk/main-release-unsigned.apk");
 
         checkJar(mainApk, Collections.<String,
                 String>singletonMap("assets/embedded-release-unsigned.apk", null));
     }
+
+    public void testBasicWithSigningOverride() throws Exception {
+        File project = new File(testDir, "basic");
+
+        // add prop args for signing override.
+        List<String> args = Lists.newArrayListWithExpectedSize(4);
+        args.add("-P" + SIGNING_OVERRIDE_STORE_FILE + "=" + new File(project, "debug.keystore").getPath());
+        args.add("-P" + SIGNING_OVERRIDE_STORE_PASSWORD + "=android");
+        args.add("-P" + SIGNING_OVERRIDE_KEY_ALIAS + "=AndroidDebugKey");
+        args.add("-P" + SIGNING_OVERRIDE_KEY_PASSWORD + "=android");
+
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
+                project,
+                args,
+                "clean", ":assembleRelease");
+
+        // check that the output exist. Since the filename is tried to signing/zipaligning
+        // this gives us a fairly good idea about signing already.
+        File releaseApk = new File(project, "build/" + FD_OUTPUTS + "/apk/basic-release.apk");
+        assertTrue(releaseApk.isFile());
+
+        // now check for signing file inside the archive.
+        checkJar(releaseApk, Collections.<String,
+                String>singletonMap("META-INF/CERT.RSA", null));
+    }
+
 
     private static void checkImageColor(File folder, String fileName, int expectedColor)
             throws IOException {

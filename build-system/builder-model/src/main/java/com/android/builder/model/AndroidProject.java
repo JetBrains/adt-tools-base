@@ -37,6 +37,12 @@ public interface AndroidProject {
     public static final String FD_OUTPUTS = "outputs";
     public static final String FD_GENERATED = "generated";
 
+    public static final String SIGNING_OVERRIDE_STORE_FILE = "androidSigningStoreFile";
+    public static final String SIGNING_OVERRIDE_STORE_PASSWORD = "androidSigningStorePassword";
+    public static final String SIGNING_OVERRIDE_KEY_ALIAS = "androidSigningKeyAlias";
+    public static final String SIGNING_OVERRIDE_KEY_PASSWORD = "androidSigningKeyPassword";
+    public static final String SIGNING_OVERRIDE_STORE_STYPE = "androidSigningStoreType";
+
     /**
      * Returns the model version. This is a string in the format X.Y.Z
      *
