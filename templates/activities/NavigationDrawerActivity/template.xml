@@ -8,7 +8,7 @@
     description="Creates a new Activity with a Navigation Drawer.">
 
     <category value="Activity" />
-    <formfactor value="Phone and Tablet" />
+    <formfactor value="Mobile" />
 
     <parameter
         id="activityClass"

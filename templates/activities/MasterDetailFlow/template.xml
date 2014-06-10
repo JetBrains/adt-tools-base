@@ -10,7 +10,7 @@
     <dependency name="android-support-v4" revision="8" />
 
     <category value="Activity" />
-    <formfactor value="Phone and Tablet" />
+    <formfactor value="Mobile" />
 
     <thumbs>
         <thumb>template_master_detail.png</thumb>

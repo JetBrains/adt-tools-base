@@ -8,7 +8,7 @@
     description="Creates a new blank activity, with an action bar and navigational elements such as tabs or horizontal swipe.">
 
     <category value="Activity" />
-    <formfactor value="Phone and Tablet" />
+    <formfactor value="Mobile" />
 
     <parameter
         id="activityClass"
