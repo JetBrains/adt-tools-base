@@ -78,6 +78,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(FieldGetterDetector.ISSUE);
         issues.add(FragmentDetector.ISSUE);
         issues.add(GradleDetector.COMPATIBILITY);
+        issues.add(GradleDetector.GRADLE_PLUGIN_COMPATIBILITY);
         issues.add(GradleDetector.DEPENDENCY);
         issues.add(GradleDetector.GRADLE_GETTER);
         issues.add(GradleDetector.IDE_SUPPORT);
