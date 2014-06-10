@@ -2486,8 +2486,8 @@ public abstract class BasePlugin {
         // the project property.
         boolean buildModelOnly = false;
         String val = System.getProperty(BUILD_MODEL_ONLY_SYSTEM_PROPERTY);
-        if (val instanceof Boolean) {
-            buildModelOnly = val.booleanValue();
+        if ("true".equalsIgnoreCase(val)) {
+            buildModelOnly = true;
         }
         else if (project.hasProperty(BUILD_MODEL_ONLY_SYSTEM_PROPERTY)) {
             Object value = project.getProperties().get(BUILD_MODEL_ONLY_SYSTEM_PROPERTY);
