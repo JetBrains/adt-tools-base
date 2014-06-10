@@ -11,6 +11,7 @@
     <dependency name="android-support-v4" revision="8" />
 
     <category value="Activity" />
+    <formfactor value="Phone and Tablet" />
 
     <parameter
         id="activityClass"
