@@ -165,15 +165,16 @@ import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL
 import static com.android.builder.core.BuilderConstants.FD_REPORTS
 import static com.android.builder.core.BuilderConstants.RELEASE
 import static com.android.builder.core.VariantConfiguration.Type.TEST
-import static com.android.builder.model.AndroidProject.PROPERTY_BUILD_MODEL_ONLY
 import static com.android.builder.model.AndroidProject.FD_GENERATED
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
+import static com.android.builder.model.AndroidProject.PROPERTY_BUILD_MODEL_ONLY
+import static com.android.builder.model.AndroidProject.PROPERTY_APK_LOCATION
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_ALIAS
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASSWORD
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_STYPE
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_TYPE
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN
 import static java.io.File.separator
 /**
@@ -449,8 +450,8 @@ public abstract class BasePlugin {
             signingConfigDsl.setKeyAlias((String) props.get(PROPERTY_SIGNING_KEY_ALIAS));
             signingConfigDsl.setKeyPassword((String) props.get(PROPERTY_SIGNING_KEY_PASSWORD));
 
-            if (project.hasProperty(PROPERTY_SIGNING_STORE_STYPE)) {
-                signingConfigDsl.setStoreType((String) props.get(PROPERTY_SIGNING_STORE_STYPE))
+            if (project.hasProperty(PROPERTY_SIGNING_STORE_TYPE)) {
+                signingConfigDsl.setStoreType((String) props.get(PROPERTY_SIGNING_STORE_TYPE))
             }
 
             return signingConfigDsl
@@ -1787,15 +1788,29 @@ public abstract class BasePlugin {
             packageApp.dependsOn validateSigningTask
         }
 
-        def signedApk = variantData.isSigned()
-        def apkName = signedApk ?
-            "${project.archivesBaseName}-${variantData.variantConfiguration.baseName}-unaligned.apk" :
-            "${project.archivesBaseName}-${variantData.variantConfiguration.baseName}-unsigned.apk"
+        boolean signedApk = variantData.isSigned()
+        String projectBaseName = project.archivesBaseName
+        String apkName = signedApk ?
+            "$projectBaseName-${variantData.variantConfiguration.baseName}-unaligned.apk" :
+            "$projectBaseName-${variantData.variantConfiguration.baseName}-unsigned.apk"
 
         packageApp.conventionMapping.packagingOptions = { extension.packagingOptions }
 
+        String defaultLocation = "$project.buildDir/${FD_OUTPUTS}/apk"
+        String apkLocation = defaultLocation
+        if (project.hasProperty(PROPERTY_APK_LOCATION)) {
+            apkLocation = project.getProperties().get(PROPERTY_APK_LOCATION)
+        }
+
         packageApp.conventionMapping.outputFile = {
-            project.file("$project.buildDir/${FD_OUTPUTS}/apk/${apkName}")
+            // if this is the final task then the location is
+            // the potentially overriden one.
+            if (!signedApk || !variantData.zipAlign) {
+                project.file("$apkLocation/${apkName}")
+            } else {
+                // otherwise default one.
+                project.file("$defaultLocation/${apkName}")
+            }
         }
 
         Task appTask = packageApp
@@ -1813,7 +1828,7 @@ public abstract class BasePlugin {
                 zipAlignTask.conventionMapping.inputFile = { packageApp.outputFile }
                 zipAlignTask.conventionMapping.outputFile = {
                     project.file(
-                            "$project.buildDir/${FD_OUTPUTS}/apk/${project.archivesBaseName}-${variantData.variantConfiguration.baseName}.apk")
+                            "$apkLocation/$projectBaseName-${variantData.variantConfiguration.baseName}.apk")
                 }
                 zipAlignTask.conventionMapping.zipAlignExe = {
                     String path = androidBuilder.targetInfo?.buildTools?.getPath(ZIP_ALIGN)
@@ -1827,8 +1842,6 @@ public abstract class BasePlugin {
                 appTask = zipAlignTask
 
                 outputFileTask = zipAlignTask
-                variantData.outputFile = project.file(
-                        "$project.buildDir/${FD_OUTPUTS}/apk/${project.archivesBaseName}-${variantData.variantConfiguration.baseName}.apk")
             }
 
             // Add a task to install the application package
@@ -1863,7 +1876,7 @@ public abstract class BasePlugin {
 
                 // add the artifact that will be published
                 project.artifacts.add("default", new ApkPublishArtifact(
-                        project.archivesBaseName,
+                        projectBaseName,
                         null,
                         outputFileTask))
             }
@@ -1872,7 +1885,7 @@ public abstract class BasePlugin {
             if (extension.publishNonDefault) {
                 project.artifacts.add(variantData.variantDependency.publishConfiguration.name,
                         new ApkPublishArtifact(
-                                project.archivesBaseName,
+                                projectBaseName,
                                 variantData.variantDependency.publishConfiguration.name,
                                 outputFileTask))
             }
