@@ -132,6 +132,14 @@ public class PackageTest extends TestCase {
      * a similar creation test.
      */
     protected Properties createExpectedProps() {
+        return createDefaultProps();
+    }
+
+    /**
+     * Similar to {@link #createExpectedProps()} but static so that
+     * it can be reused by test not deriving from {@link PackageTest}.
+     */
+    public static Properties createDefaultProps() {
         Properties props = new Properties();
 
         // Package properties
