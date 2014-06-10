@@ -48,7 +48,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypeDoc() {
-        IPkgCapabilities p = PkgType.PKG_DOCS;
+        IPkgCapabilities p = PkgType.PKG_DOC;
         assertTrue (p.hasMajorRevision());
         assertFalse(p.hasFullRevision());
         assertTrue (p.hasAndroidVersion());
@@ -72,7 +72,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypeExtra() {
-        IPkgCapabilities p = PkgType.PKG_EXTRAS;
+        IPkgCapabilities p = PkgType.PKG_EXTRA;
 
         assertFalse(p.hasMajorRevision());
         assertTrue (p.hasFullRevision());
@@ -85,7 +85,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypeSource() throws Exception {
-        IPkgCapabilities p = PkgType.PKG_SOURCES;
+        IPkgCapabilities p = PkgType.PKG_SOURCE;
 
         assertTrue (p.hasMajorRevision());
         assertFalse(p.hasFullRevision());
@@ -98,7 +98,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypeSample() throws Exception {
-        IPkgCapabilities p = PkgType.PKG_SAMPLES;
+        IPkgCapabilities p = PkgType.PKG_SAMPLE;
 
         assertTrue (p.hasMajorRevision());
         assertFalse(p.hasFullRevision());
@@ -111,7 +111,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypePlatform() throws Exception {
-        IPkgCapabilities p = PkgType.PKG_PLATFORMS;
+        IPkgCapabilities p = PkgType.PKG_PLATFORM;
 
         assertTrue (p.hasMajorRevision());
         assertFalse(p.hasFullRevision());
@@ -124,7 +124,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypeAddon() throws Exception {
-        IPkgCapabilities p = PkgType.PKG_ADDONS;
+        IPkgCapabilities p = PkgType.PKG_ADDON;
 
         assertTrue (p.hasMajorRevision());
         assertFalse(p.hasFullRevision());
@@ -137,7 +137,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypeSysImg() throws Exception {
-        IPkgCapabilities p = PkgType.PKG_SYS_IMAGES;
+        IPkgCapabilities p = PkgType.PKG_SYS_IMAGE;
 
         assertTrue (p.hasMajorRevision());
         assertFalse(p.hasFullRevision());
@@ -150,7 +150,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypeAddonSysImg() throws Exception {
-        IPkgCapabilities p = PkgType.PKG_ADDON_SYS_IMAGES;
+        IPkgCapabilities p = PkgType.PKG_ADDON_SYS_IMAGE;
 
         assertTrue (p.hasMajorRevision());
         assertFalse(p.hasFullRevision());

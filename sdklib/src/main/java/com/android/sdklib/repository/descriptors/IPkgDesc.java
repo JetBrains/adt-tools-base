@@ -87,10 +87,10 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
     /**
      * Returns the package's path string or null.
      * <p/>
-     * For {@link PkgType#PKG_SYS_IMAGES}, the path is the system-image ABI. <br/>
-     * For {@link PkgType#PKG_PLATFORMS}, the path is the platform hash string. <br/>
-     * For {@link PkgType#PKG_ADDONS}, the path is the platform hash string. <br/>
-     * For {@link PkgType#PKG_EXTRAS}, the path is the extra-path string. <br/>
+     * For {@link PkgType#PKG_SYS_IMAGE}, the path is the system-image ABI. <br/>
+     * For {@link PkgType#PKG_PLATFORM}, the path is the platform hash string. <br/>
+     * For {@link PkgType#PKG_ADDON}, the path is the platform hash string. <br/>
+     * For {@link PkgType#PKG_EXTRA}, the path is the extra-path string. <br/>
      *
      * @return A non-null value if {@link #hasPath()} is true; otherwise a null value.
      */

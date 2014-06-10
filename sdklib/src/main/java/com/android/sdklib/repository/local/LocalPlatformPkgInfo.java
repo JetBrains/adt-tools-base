@@ -287,13 +287,13 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
         pt.setSkins(skins.toArray(new File[skins.size()]));
 
         // add path to the non-legacy samples package if it exists
-        LocalPkgInfo samples = sdk.getPkgInfo(PkgType.PKG_SAMPLES, getDesc().getAndroidVersion());
+        LocalPkgInfo samples = sdk.getPkgInfo(PkgType.PKG_SAMPLE, getDesc().getAndroidVersion());
         if (samples != null) {
             pt.setSamplesPath(samples.getLocalDir().getAbsolutePath());
         }
 
         // add path to the non-legacy sources package if it exists
-        LocalPkgInfo sources = sdk.getPkgInfo(PkgType.PKG_SOURCES, getDesc().getAndroidVersion());
+        LocalPkgInfo sources = sdk.getPkgInfo(PkgType.PKG_SOURCE, getDesc().getAndroidVersion());
         if (sources != null) {
             pt.setSourcesPath(sources.getLocalDir().getAbsolutePath());
         }
@@ -326,7 +326,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
         // Look in the SDK/system-image/platform-n/abi folders.
         // If we find multiple occurrences of the same platform/abi, the first one read wins.
 
-        LocalPkgInfo[] sysImgInfos = getLocalSdk().getPkgsInfos(PkgType.PKG_SYS_IMAGES);
+        LocalPkgInfo[] sysImgInfos = getLocalSdk().getPkgsInfos(PkgType.PKG_SYS_IMAGE);
         for (LocalPkgInfo pkg : sysImgInfos) {
             IPkgDesc d = pkg.getDesc();
             if (pkg instanceof LocalSysImgPkgInfo &&
