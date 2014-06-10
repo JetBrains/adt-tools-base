@@ -34,10 +34,9 @@ import org.gradle.internal.reflect.Instantiator
  * DSL overlay to make methods that accept String... work.
  */
 class ProductFlavorDsl extends DefaultProductFlavor {
-    private static final long serialVersionUID = 1L
 
     @NonNull
-    private final Project project
+    protected final Project project
     @NonNull
     protected final Logger logger
 
