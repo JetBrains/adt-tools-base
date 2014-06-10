@@ -171,4 +171,123 @@
         </sdk:archives>
     </sdk:system-image>
 
+    <!-- add-on -->
+
+    <sdk:system-image>
+        <sdk:list-display>x86 System Image for some add-on</sdk:list-display>
+        <sdk:api-level>2</sdk:api-level>
+        <sdk:revision>1</sdk:revision>
+        <sdk:tag-id>some-addon</sdk:tag-id>
+        <sdk:tag-display>Some Add-on</sdk:tag-display>
+        <sdk:add-on>
+            <sdk:vendor-id>some-vendor</sdk:vendor-id>
+            <sdk:vendor-display>Acme Vendor Inc.</sdk:vendor-display>
+        </sdk:add-on>
+        <sdk:abi>x86</sdk:abi>
+        <sdk:archives>
+            <sdk:archive>
+                <sdk:host-os>windows</sdk:host-os>
+                <sdk:host-bits>32</sdk:host-bits>
+                <sdk:size>65535</sdk:size>
+                <sdk:checksum type="sha1">1234ae37115ebf13412bbef91339ee0d94541234</sdk:checksum>
+                <sdk:url>http://www.example.com/plat1/x86/image1.zip</sdk:url>
+            </sdk:archive>
+        </sdk:archives>
+    </sdk:system-image>
+
+    <sdk:system-image>
+        <sdk:api-level>2</sdk:api-level>
+        <sdk:revision>2</sdk:revision>
+        <sdk:tag-id>some-addon</sdk:tag-id>
+        <sdk:tag-display>Some Add-on</sdk:tag-display>
+        <sdk:add-on>
+            <sdk:vendor-id>some-vendor</sdk:vendor-id>
+            <sdk:vendor-display>Acme Vendor Inc.</sdk:vendor-display>
+        </sdk:add-on>
+        <sdk:abi>armeabi-v7a</sdk:abi>
+        <sdk:archives>
+            <sdk:archive>
+                <sdk:size>65535</sdk:size>
+                <sdk:checksum type="sha1">1234ae37115ebf13412bbef91339ee0d94541234</sdk:checksum>
+                <sdk:url>http://www.example.com/plat1/x86/image1.zip</sdk:url>
+            </sdk:archive>
+        </sdk:archives>
+    </sdk:system-image>
+
+    <sdk:system-image>
+        <sdk:api-level>2</sdk:api-level>
+        <sdk:revision>3</sdk:revision>
+        <sdk:tag-id>some-addon</sdk:tag-id>
+        <sdk:tag-display>Some Add-on</sdk:tag-display>
+        <sdk:add-on>
+            <sdk:vendor-id>some-vendor</sdk:vendor-id>
+            <sdk:vendor-display>Acme Vendor Inc.</sdk:vendor-display>
+        </sdk:add-on>
+        <sdk:abi>x86_64</sdk:abi>
+        <sdk:archives>
+            <sdk:archive>
+                <sdk:size>65535</sdk:size>
+                <sdk:checksum type="sha1">1234ae37115ebf13412bbef91339ee0d94541234</sdk:checksum>
+                <sdk:url>http://www.example.com/plat1/x86/image1.zip</sdk:url>
+            </sdk:archive>
+        </sdk:archives>
+    </sdk:system-image>
+
+    <sdk:system-image>
+        <sdk:api-level>2</sdk:api-level>
+        <sdk:revision>4</sdk:revision>
+        <sdk:tag-id>some-addon</sdk:tag-id>
+        <sdk:tag-display>Some Add-on</sdk:tag-display>
+        <sdk:add-on>
+            <sdk:vendor-id>some-vendor</sdk:vendor-id>
+            <sdk:vendor-display>Acme Vendor Inc.</sdk:vendor-display>
+        </sdk:add-on>
+        <sdk:abi>arm64-v8a</sdk:abi>
+        <sdk:archives>
+            <sdk:archive>
+                <sdk:size>65535</sdk:size>
+                <sdk:checksum type="sha1">1234ae37115ebf13412bbef91339ee0d94541234</sdk:checksum>
+                <sdk:url>http://www.example.com/plat1/x86/image1.zip</sdk:url>
+            </sdk:archive>
+        </sdk:archives>
+    </sdk:system-image>
+
+    <sdk:system-image>
+        <sdk:api-level>2</sdk:api-level>
+        <sdk:revision>5</sdk:revision>
+        <sdk:tag-id>some-addon</sdk:tag-id>
+        <sdk:tag-display>Some Add-on</sdk:tag-display>
+        <sdk:add-on>
+            <sdk:vendor-id>some-vendor</sdk:vendor-id>
+            <sdk:vendor-display>Acme Vendor Inc.</sdk:vendor-display>
+        </sdk:add-on>
+        <sdk:abi>mips</sdk:abi>
+        <sdk:archives>
+            <sdk:archive>
+                <sdk:size>65535</sdk:size>
+                <sdk:checksum type="sha1">1234ae37115ebf13412bbef91339ee0d94541234</sdk:checksum>
+                <sdk:url>http://www.example.com/plat1/x86/image1.zip</sdk:url>
+            </sdk:archive>
+        </sdk:archives>
+    </sdk:system-image>
+
+    <sdk:system-image>
+        <sdk:api-level>2</sdk:api-level>
+        <sdk:revision>6</sdk:revision>
+        <sdk:tag-id>some-addon</sdk:tag-id>
+        <sdk:tag-display>Some Add-on</sdk:tag-display>
+        <sdk:add-on>
+            <sdk:vendor-id>some-vendor</sdk:vendor-id>
+            <sdk:vendor-display>Acme Vendor Inc.</sdk:vendor-display>
+        </sdk:add-on>
+        <sdk:abi>mips64</sdk:abi>
+        <sdk:archives>
+            <sdk:archive>
+                <sdk:size>65535</sdk:size>
+                <sdk:checksum type="sha1">1234ae37115ebf13412bbef91339ee0d94541234</sdk:checksum>
+                <sdk:url>http://www.example.com/plat1/x86/image1.zip</sdk:url>
+            </sdk:archive>
+        </sdk:archives>
+    </sdk:system-image>
+
 </sdk:sdk-sys-img>

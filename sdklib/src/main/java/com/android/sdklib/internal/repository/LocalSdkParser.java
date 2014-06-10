@@ -236,7 +236,7 @@ public class LocalSdkParser {
                                             new File(siDir, SdkConstants.FN_SOURCE_PROP));
                                     Package pkg2 = new SystemImagePackage(
                                             target.getVersion(),
-                                            0 /*rev*/,   // this will use the one from siProps
+                                            0 /*rev*/,   // use the one from siProps
                                             systemImage.getAbiType(),
                                             siProps,
                                             siDir.getAbsolutePath());

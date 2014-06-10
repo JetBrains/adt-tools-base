@@ -328,10 +328,12 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
 
         LocalPkgInfo[] sysImgInfos = getLocalSdk().getPkgsInfos(PkgType.PKG_SYS_IMAGES);
         for (LocalPkgInfo pkg : sysImgInfos) {
+            IPkgDesc d = pkg.getDesc();
             if (pkg instanceof LocalSysImgPkgInfo &&
-                    apiVersion.equals(pkg.getDesc().getAndroidVersion())) {
-                IdDisplay tag = pkg.getDesc().getTag();
-                String abi = pkg.getDesc().getPath();
+                    !d.hasVendor() &&
+                    apiVersion.equals(d.getAndroidVersion())) {
+                IdDisplay tag = d.getTag();
+                String abi = d.getPath();
                 if (tag != null && abi != null && !tagToAbiFound.containsEntry(tag, abi)) {
                     List<File> parsedSkins = parseSkinFolder(
                             new File(pkg.getLocalDir(), SdkConstants.FD_SKINS));
@@ -366,7 +368,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                 if (!tagToAbiFound.containsEntry(defaultTag, abi)) {
                     found.add(new SystemImage(
                             file,
-                            LocationType.IN_PLATFORM_SUBFOLDER,
+                            LocationType.IN_IMAGES_SUBFOLDER,
                             defaultTag,
                             abi,
                             FileOp.EMPTY_FILE_ARRAY));
@@ -387,7 +389,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
             // has some img files in it. It must be a legacy ARM EABI system image folder.
             found.add(new SystemImage(
                     imgDir,
-                    LocationType.IN_PLATFORM_LEGACY,
+                    LocationType.IN_LEGACY_FOLDER,
                     defaultTag,
                     SdkConstants.ABI_ARMEABI,
                     FileOp.EMPTY_FILE_ARRAY));
