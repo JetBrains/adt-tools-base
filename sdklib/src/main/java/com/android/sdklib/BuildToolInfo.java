@@ -33,17 +33,39 @@ import static com.android.sdklib.BuildToolInfo.PathId.*;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
+import com.android.annotations.VisibleForTesting.Visibility;
+import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.utils.ILogger;
 import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Information on a specific build-tool folder.
+ * <p/>
+ * For unit tests, see:
+ * - sdklib/src/test/.../LocalSdkTest
+ * - sdklib/src/test/.../SdkManagerTest
+ * - sdklib/src/test/.../BuildToolInfoTest
  */
 public class BuildToolInfo {
+
+    /** Name of the file read by {@link #getRuntimeProps()} */
+    private static final String FN_RUNTIME_PROPS = "runtime.properties";
+
+    /**
+     * Property in {@link #FN_RUNTIME_PROPS} indicating the desired runtime JVM.
+     * Type: {@link NoPreviewRevision#toShortString()}, e.g. "1.7.0"
+     */
+    private static final String PROP_RUNTIME_JVM = "Runtime.Jvm";
+
 
     public enum PathId {
         /** OS Path to the target's version of the aapt tool. */
@@ -105,6 +127,7 @@ public class BuildToolInfo {
     /** The build-tool revision. */
     @NonNull
     private final FullRevision mRevision;
+
     /** The path to the build-tool folder specific to this revision. */
     @NonNull
     private final File mPath;
@@ -246,6 +269,58 @@ public class BuildToolInfo {
             }
         }
         return true;
+    }
+
+    /**
+     * Parses the build-tools runtime.props file, if present.
+     *
+     * @return The properties from runtime.props if present, otherwise an empty properties set.
+     */
+    @NonNull
+    public Properties getRuntimeProps() {
+        FileOp fop = new FileOp();
+        return fop.loadProperties(new File(mPath, FN_RUNTIME_PROPS));
+    }
+
+    /**
+     * Checks whether this build-tools package can run on the current JVM.
+     *
+     * @return True if the build-tools package has a Runtime.Jvm property and it is lesser or
+     *  equal to the current JVM version.
+     *         False if the property is present and the requirement is not met.
+     *         True if there's an error parsing either versions and the comparison cannot be made.
+     */
+    public boolean canRunOnJvm() {
+        Properties props = getRuntimeProps();
+        String required = props.getProperty(PROP_RUNTIME_JVM);
+        if (required == null) {
+            // No requirement ==> accepts.
+            return true;
+        }
+        try {
+            NoPreviewRevision requiredVersion = NoPreviewRevision.parseRevision(required);
+            NoPreviewRevision currentVersion = getCurrentJvmVersion();
+            return currentVersion.compareTo(requiredVersion) >= 0;
+
+        } catch (NumberFormatException ignore) {
+            // Either we failed to parse the property version or the running JVM version.
+            // Right now take the relaxed policy of accepting it if we can't compare.
+            return true;
+        }
+    }
+
+    @VisibleForTesting(visibility=Visibility.PRIVATE)
+    @Nullable
+    protected NoPreviewRevision getCurrentJvmVersion() throws NumberFormatException {
+        String javav = System.getProperty("java.version");              //$NON-NLS-1$
+        // java Version is typically in the form "1.2.3_45" and we just need to keep up to "1.2.3"
+        // since our revision numbers are in 3-parts form (1.2.3).
+        Pattern p = Pattern.compile("((\\d+)(\\.\\d+)?(\\.\\d+)?).*");  //$NON-NLS-1$
+        Matcher m = p.matcher(javav);
+        if (m.matches()) {
+            return NoPreviewRevision.parseRevision(m.group(1));
+        }
+        return null;
     }
 
     /**

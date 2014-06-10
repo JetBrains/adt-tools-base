@@ -18,15 +18,20 @@ package com.android.sdklib;
 
 
 import com.android.SdkConstants;
+import com.android.sdklib.BuildToolInfoTest.BuildToolInfoWrapper;
 import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.SdkManager.LayoutlibVersion;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.google.common.collect.Sets;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
@@ -100,6 +105,48 @@ public class SdkManagerTest extends SdkManagerTestCase {
                     "LD_MIPS=$SDK/build-tools/18.3.4 rc5/mipsel-linux-android-ld" +
                     "}>",
                 cleanPath(sdkman, i.toString()));
+    }
+
+    public void testSdkManager_BuildTools_canRunOnJvm() throws IOException {
+        SdkManager sdkman = getSdkManager();
+        BuildToolInfo bt = sdkman.getBuildTool(new FullRevision(18, 3, 4, 5));
+        assertNotNull(bt);
+
+        // By default there is no runtime.properties file and no Runtime.Jvm value.
+        // Since there is no requirement, this build-tool package can run everywhere.
+        Properties props1 = bt.getRuntimeProps();
+        assertTrue(props1.isEmpty());
+        assertTrue(bt.canRunOnJvm());
+
+        // We know our tests require at least a JVM 1.5 to run so this build-tool can run here.
+        createFileProps("runtime.properties", bt.getLocation(), "Runtime.Jvm", "1.5.0");
+        Properties props15 = bt.getRuntimeProps();
+        assertFalse(props15.isEmpty());
+        assertTrue(bt.canRunOnJvm());
+
+        createFileProps("runtime.properties", bt.getLocation(), "Runtime.Jvm", "42.0.0");
+        Properties props42 = bt.getRuntimeProps();
+        assertFalse(props42.isEmpty());
+
+        BuildToolInfoWrapper wrap = new BuildToolInfoTest.BuildToolInfoWrapper(bt);
+
+        // Let's assume a real JVM 42.0.0 doesn't exist yet
+        wrap.overrideJvmVersion(new NoPreviewRevision(1, 6, 0));
+        assertFalse(wrap.canRunOnJvm());
+
+        // Let's assume a real JVM 42.0.0 and above exists
+        wrap.overrideJvmVersion(new NoPreviewRevision(42, 0, 0));
+        assertTrue(wrap.canRunOnJvm());
+
+        wrap.overrideJvmVersion(new NoPreviewRevision(42, 0, 1));
+        assertTrue(wrap.canRunOnJvm());
+
+        wrap.overrideJvmVersion(new NoPreviewRevision(42, 1, 1));
+        assertTrue(wrap.canRunOnJvm());
+
+        wrap.overrideJvmVersion(new NoPreviewRevision(43, 1, 1));
+        assertTrue(wrap.canRunOnJvm());
+
     }
 
     public void testSdkManager_SystemImage() throws Exception {
