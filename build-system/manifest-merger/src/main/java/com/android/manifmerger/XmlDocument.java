@@ -54,6 +54,24 @@ public class XmlDocument {
 
     private static final String DEFAULT_SDK_VERSION = "1";
 
+    /**
+     * The document type.
+     */
+    enum Type {
+        /**
+         * A manifest overlay as found in the build types and variants.
+         */
+        OVERLAY,
+        /**
+         * The main android manifest file.
+         */
+        MAIN,
+        /**
+         * A library manifest that is imported in the application.
+         */
+        LIBRARY
+    }
+
     private final Element mRootElement;
     // this is initialized lazily to avoid un-necessary early parsing.
     private final AtomicReference<XmlElement> mRootNode = new AtomicReference<XmlElement>(null);
@@ -61,17 +79,20 @@ public class XmlDocument {
     private final XmlLoader.SourceLocation mSourceLocation;
     private final KeyResolver<String> mSelectors;
     private final KeyBasedValueResolver<SystemProperty> mSystemPropertyResolver;
+    private final Type mType;
 
     public XmlDocument(@NonNull PositionXmlParser positionXmlParser,
             @NonNull XmlLoader.SourceLocation sourceLocation,
             @NonNull KeyResolver<String> selectors,
             @NonNull KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
-            @NonNull Element element) {
+            @NonNull Element element,
+            @NonNull Type type) {
         this.mPositionXmlParser = Preconditions.checkNotNull(positionXmlParser);
         this.mSourceLocation = Preconditions.checkNotNull(sourceLocation);
         this.mRootElement = Preconditions.checkNotNull(element);
         this.mSelectors = Preconditions.checkNotNull(selectors);
         this.mSystemPropertyResolver = Preconditions.checkNotNull(systemPropertyResolver);
+        this.mType = type;
     }
 
     /**
@@ -119,7 +140,8 @@ public class XmlDocument {
                 mSourceLocation,
                 mSelectors,
                 mSystemPropertyResolver,
-                mRootElement);
+                mRootElement,
+                mType);
     }
 
     /**
@@ -311,6 +333,14 @@ public class XmlDocument {
     @SuppressWarnings("unchecked") // compiler confused about varargs and generics.
     private void addImplicitElements(XmlDocument lowerPriorityDocument,
             MergingReport.Builder mergingReport) {
+
+        // if this document is an overlay, tolerate the absence of uses-sdk and do not
+        // assume implicit minimum versions.
+        Optional<XmlElement> usesSdk = getByTypeAndKey(
+                ManifestModel.NodeTypes.USES_SDK, null);
+        if (mType == Type.OVERLAY && !usesSdk.isPresent()) {
+            return;
+        }
 
         int thisTargetSdk = getApiLevelFromAttribute(getTargetSdkVersion());
         int libraryTargetSdk = getApiLevelFromAttribute(
