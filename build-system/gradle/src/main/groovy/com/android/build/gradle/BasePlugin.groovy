@@ -165,15 +165,15 @@ import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL
 import static com.android.builder.core.BuilderConstants.FD_REPORTS
 import static com.android.builder.core.BuilderConstants.RELEASE
 import static com.android.builder.core.VariantConfiguration.Type.TEST
-import static com.android.builder.model.AndroidProject.BUILD_MODEL_ONLY_SYSTEM_PROPERTY
+import static com.android.builder.model.AndroidProject.PROPERTY_BUILD_MODEL_ONLY
 import static com.android.builder.model.AndroidProject.FD_GENERATED
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
-import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_KEY_ALIAS
-import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_KEY_PASSWORD
-import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_STORE_FILE
-import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_STORE_PASSWORD
-import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_STORE_STYPE
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_ALIAS
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASSWORD
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_STYPE
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN
 import static java.io.File.separator
 /**
@@ -436,21 +436,21 @@ public abstract class BasePlugin {
     }
 
     private SigningConfig getSigningOverride() {
-        if (project.hasProperty(SIGNING_OVERRIDE_STORE_FILE) &&
-                project.hasProperty(SIGNING_OVERRIDE_STORE_PASSWORD) &&
-                project.hasProperty(SIGNING_OVERRIDE_KEY_ALIAS) &&
-                project.hasProperty(SIGNING_OVERRIDE_KEY_PASSWORD)) {
+        if (project.hasProperty(PROPERTY_SIGNING_STORE_FILE) &&
+                project.hasProperty(PROPERTY_SIGNING_STORE_PASSWORD) &&
+                project.hasProperty(PROPERTY_SIGNING_KEY_ALIAS) &&
+                project.hasProperty(PROPERTY_SIGNING_KEY_PASSWORD)) {
 
             SigningConfigDsl signingConfigDsl = new SigningConfigDsl("externalOverride")
             Map<String, ?> props = project.getProperties();
 
-            signingConfigDsl.setStoreFile(new File((String) props.get(SIGNING_OVERRIDE_STORE_FILE)))
-            signingConfigDsl.setStorePassword((String) props.get(SIGNING_OVERRIDE_STORE_PASSWORD));
-            signingConfigDsl.setKeyAlias((String) props.get(SIGNING_OVERRIDE_KEY_ALIAS));
-            signingConfigDsl.setKeyPassword((String) props.get(SIGNING_OVERRIDE_KEY_PASSWORD));
+            signingConfigDsl.setStoreFile(new File((String) props.get(PROPERTY_SIGNING_STORE_FILE)))
+            signingConfigDsl.setStorePassword((String) props.get(PROPERTY_SIGNING_STORE_PASSWORD));
+            signingConfigDsl.setKeyAlias((String) props.get(PROPERTY_SIGNING_KEY_ALIAS));
+            signingConfigDsl.setKeyPassword((String) props.get(PROPERTY_SIGNING_KEY_PASSWORD));
 
-            if (project.hasProperty(SIGNING_OVERRIDE_STORE_STYPE)) {
-                signingConfigDsl.setStoreType((String) props.get(SIGNING_OVERRIDE_STORE_STYPE))
+            if (project.hasProperty(PROPERTY_SIGNING_STORE_STYPE)) {
+                signingConfigDsl.setStoreType((String) props.get(PROPERTY_SIGNING_STORE_STYPE))
             }
 
             return signingConfigDsl
@@ -2485,12 +2485,11 @@ public abstract class BasePlugin {
         // To keep backwards-compatibility, we check first if we have the JVM arg. If not, we look for
         // the project property.
         boolean buildModelOnly = false;
-        String val = System.getProperty(BUILD_MODEL_ONLY_SYSTEM_PROPERTY);
+        String val = System.getProperty(PROPERTY_BUILD_MODEL_ONLY);
         if ("true".equalsIgnoreCase(val)) {
             buildModelOnly = true;
-        }
-        else if (project.hasProperty(BUILD_MODEL_ONLY_SYSTEM_PROPERTY)) {
-            Object value = project.getProperties().get(BUILD_MODEL_ONLY_SYSTEM_PROPERTY);
+        } else if (project.hasProperty(PROPERTY_BUILD_MODEL_ONLY)) {
+            Object value = project.getProperties().get(PROPERTY_BUILD_MODEL_ONLY);
             if (value instanceof String) {
                 buildModelOnly = Boolean.parseBoolean(value);
             }

@@ -18,10 +18,10 @@ package com.android.build.gradle;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
-import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_KEY_ALIAS;
-import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_KEY_PASSWORD;
-import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_STORE_FILE;
-import static com.android.builder.model.AndroidProject.SIGNING_OVERRIDE_STORE_PASSWORD;
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_ALIAS;
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASSWORD;
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE;
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
@@ -292,10 +292,10 @@ public class ManualBuildTest extends BuildTest {
 
         // add prop args for signing override.
         List<String> args = Lists.newArrayListWithExpectedSize(4);
-        args.add("-P" + SIGNING_OVERRIDE_STORE_FILE + "=" + new File(project, "debug.keystore").getPath());
-        args.add("-P" + SIGNING_OVERRIDE_STORE_PASSWORD + "=android");
-        args.add("-P" + SIGNING_OVERRIDE_KEY_ALIAS + "=AndroidDebugKey");
-        args.add("-P" + SIGNING_OVERRIDE_KEY_PASSWORD + "=android");
+        args.add("-P" + PROPERTY_SIGNING_STORE_FILE + "=" + new File(project, "debug.keystore").getPath());
+        args.add("-P" + PROPERTY_SIGNING_STORE_PASSWORD + "=android");
+        args.add("-P" + PROPERTY_SIGNING_KEY_ALIAS + "=AndroidDebugKey");
+        args.add("-P" + PROPERTY_SIGNING_KEY_PASSWORD + "=android");
 
         runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
                 project,
