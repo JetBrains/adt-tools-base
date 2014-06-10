@@ -156,6 +156,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(PluralsDetector.EXTRA);
         issues.add(PluralsDetector.MISSING);
         issues.add(PluralsDetector.IMPLIED_QUANTITY);
+        issues.add(PreferenceActivityDetector.ISSUE);
         issues.add(PrivateKeyDetector.ISSUE);
         issues.add(PrivateResourceDetector.ISSUE);
         issues.add(ProguardDetector.SPLIT_CONFIG);
