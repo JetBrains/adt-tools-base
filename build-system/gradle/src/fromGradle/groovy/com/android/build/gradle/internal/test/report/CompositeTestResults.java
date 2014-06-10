@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.test.report;
 
 import com.android.builder.core.BuilderConstants;
-import org.gradle.api.internal.tasks.testing.junit.report.TestResultModel;
 
 import java.math.BigDecimal;
 import java.util.Map;

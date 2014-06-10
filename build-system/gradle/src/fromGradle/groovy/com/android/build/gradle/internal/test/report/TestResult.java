@@ -15,9 +15,6 @@
  */
 package com.android.build.gradle.internal.test.report;
 
-import org.gradle.api.internal.tasks.testing.junit.result.TestFailure;
-import org.gradle.api.internal.tasks.testing.junit.report.TestResultModel;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -134,4 +131,29 @@ class TestResult extends TestResultModel implements Comparable<TestResult> {
         int otherIdentity = System.identityHashCode(testResult);
         return thisIdentity.compareTo(otherIdentity);
     }
+
+    public static class TestFailure {
+        private final String message;
+        private final String stackTrace;
+        private final String exceptionType;
+
+        public TestFailure(String message, String stackTrace, String exceptionType) {
+            this.message = message;
+            this.stackTrace = stackTrace;
+            this.exceptionType = exceptionType;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public String getStackTrace() {
+            return stackTrace;
+        }
+
+        public String getExceptionType() {
+            return exceptionType;
+        }
+    }
+
 }
