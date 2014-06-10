@@ -1410,7 +1410,7 @@ public class GradleImport {
         SdkManager sdkManager = getSdkManager();
         if (sdkManager != null) {
             LocalSdk localSdk = sdkManager.getLocalSdk();
-            LocalPkgInfo[] infos = localSdk.getPkgsInfos(PkgType.PKG_EXTRAS);
+            LocalPkgInfo[] infos = localSdk.getPkgsInfos(PkgType.PKG_EXTRA);
             for (LocalPkgInfo info : infos) {
                 IPkgDesc d = info.getDesc();
                 //noinspection ConstantConditions,ConstantConditions

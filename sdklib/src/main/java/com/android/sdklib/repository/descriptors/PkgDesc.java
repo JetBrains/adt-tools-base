@@ -709,7 +709,7 @@ public class PkgDesc implements IPkgDesc {
         @NonNull
         public static Builder newDoc(@NonNull AndroidVersion version,
                                      @NonNull MajorRevision revision) {
-            Builder p = new Builder(PkgType.PKG_DOCS);
+            Builder p = new Builder(PkgType.PKG_DOC);
             p.mAndroidVersion = version;
             p.mMajorRevision = revision;
             p.mCustomIsUpdateFor = new IIsUpdateFor() {
@@ -748,7 +748,7 @@ public class PkgDesc implements IPkgDesc {
                                        @NonNull  String displayName,
                                        @Nullable String[] oldPaths,
                                        @NonNull  NoPreviewRevision revision) {
-            Builder p = new Builder(PkgType.PKG_EXTRAS);
+            Builder p = new Builder(PkgType.PKG_EXTRA);
             p.mFullRevision = revision;
             p.mVendor = vendor;
             p.mPath = path;
@@ -771,7 +771,7 @@ public class PkgDesc implements IPkgDesc {
         public static Builder newPlatform(@NonNull AndroidVersion version,
                                           @NonNull MajorRevision revision,
                                           @NonNull FullRevision minToolsRev) {
-            Builder p = new Builder(PkgType.PKG_PLATFORMS);
+            Builder p = new Builder(PkgType.PKG_PLATFORM);
             p.mAndroidVersion = version;
             p.mMajorRevision = revision;
             p.mMinToolsRev = minToolsRev;
@@ -802,7 +802,7 @@ public class PkgDesc implements IPkgDesc {
                                        @NonNull MajorRevision revision,
                                        @NonNull IdDisplay addonVendor,
                                        @NonNull IdDisplay addonName) {
-            Builder p = new Builder(PkgType.PKG_ADDONS);
+            Builder p = new Builder(PkgType.PKG_ADDON);
             p.mAndroidVersion = version;
             p.mMajorRevision  = revision;
             p.mVendor         = addonVendor;
@@ -826,7 +826,7 @@ public class PkgDesc implements IPkgDesc {
                                         @NonNull IdDisplay tag,
                                         @NonNull String abi,
                                         @NonNull MajorRevision revision) {
-            Builder p = new Builder(PkgType.PKG_SYS_IMAGES);
+            Builder p = new Builder(PkgType.PKG_SYS_IMAGE);
             p.mAndroidVersion = version;
             p.mMajorRevision  = revision;
             p.mTag            = tag;
@@ -853,7 +853,7 @@ public class PkgDesc implements IPkgDesc {
                                         @NonNull IdDisplay addonName,
                                         @NonNull String abi,
                                         @NonNull MajorRevision revision) {
-            Builder p = new Builder(PkgType.PKG_ADDON_SYS_IMAGES);
+            Builder p = new Builder(PkgType.PKG_ADDON_SYS_IMAGE);
             p.mAndroidVersion = version;
             p.mMajorRevision  = revision;
             p.mTag            = addonName;
@@ -872,7 +872,7 @@ public class PkgDesc implements IPkgDesc {
         @NonNull
         public static Builder newSource(@NonNull AndroidVersion version,
                                         @NonNull MajorRevision revision) {
-            Builder p = new Builder(PkgType.PKG_SOURCES);
+            Builder p = new Builder(PkgType.PKG_SOURCE);
             p.mAndroidVersion = version;
             p.mMajorRevision = revision;
             return p;
@@ -892,7 +892,7 @@ public class PkgDesc implements IPkgDesc {
         public static Builder newSample(@NonNull AndroidVersion version,
                                         @NonNull MajorRevision revision,
                                         @NonNull FullRevision minToolsRev) {
-            Builder p = new Builder(PkgType.PKG_SAMPLES);
+            Builder p = new Builder(PkgType.PKG_SAMPLE);
             p.mAndroidVersion = version;
             p.mMajorRevision  = revision;
             p.mMinToolsRev    = minToolsRev;
@@ -934,7 +934,7 @@ public class PkgDesc implements IPkgDesc {
         }
 
         public IPkgDesc create() {
-            if (mType == PkgType.PKG_ADDONS) {
+            if (mType == PkgType.PKG_ADDON) {
                 return new PkgDescAddon(
                         mType,
                         mLicense,
@@ -948,7 +948,7 @@ public class PkgDesc implements IPkgDesc {
                         mNameIdDisplay);
             }
 
-            if (mType == PkgType.PKG_EXTRAS) {
+            if (mType == PkgType.PKG_EXTRA) {
                 return new PkgDescExtra(
                     mType,
                     mLicense,
