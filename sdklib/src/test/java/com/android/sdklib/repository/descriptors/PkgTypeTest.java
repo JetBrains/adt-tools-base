@@ -16,6 +16,9 @@
 
 package com.android.sdklib.repository.descriptors;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import junit.framework.TestCase;
 
 public class PkgTypeTest extends TestCase {
@@ -26,6 +29,7 @@ public class PkgTypeTest extends TestCase {
         assertTrue (p.hasFullRevision());
         assertFalse(p.hasAndroidVersion());
         assertFalse(p.hasPath());
+        assertFalse(p.hasTag());
         assertFalse(p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertTrue (p.hasMinPlatformToolsRev());
@@ -37,6 +41,7 @@ public class PkgTypeTest extends TestCase {
         assertTrue (p.hasFullRevision());
         assertFalse(p.hasAndroidVersion());
         assertFalse(p.hasPath());
+        assertFalse(p.hasTag());
         assertFalse(p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
@@ -48,6 +53,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasFullRevision());
         assertTrue (p.hasAndroidVersion());
         assertFalse(p.hasPath());
+        assertFalse(p.hasTag());
         assertFalse(p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
@@ -59,6 +65,7 @@ public class PkgTypeTest extends TestCase {
         assertTrue (p.hasFullRevision());
         assertFalse(p.hasAndroidVersion());
         assertFalse(p.hasPath());
+        assertFalse(p.hasTag());
         assertFalse(p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
@@ -71,6 +78,7 @@ public class PkgTypeTest extends TestCase {
         assertTrue (p.hasFullRevision());
         assertFalse(p.hasAndroidVersion());
         assertTrue (p.hasPath());
+        assertFalse(p.hasTag());
         assertTrue (p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
@@ -83,6 +91,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasFullRevision());
         assertTrue (p.hasAndroidVersion());
         assertFalse(p.hasPath());
+        assertFalse(p.hasTag());
         assertFalse(p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
@@ -95,6 +104,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasFullRevision());
         assertTrue (p.hasAndroidVersion());
         assertFalse(p.hasPath());
+        assertFalse(p.hasTag());
         assertFalse(p.hasVendor());
         assertTrue (p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
@@ -107,6 +117,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasFullRevision());
         assertTrue (p.hasAndroidVersion());
         assertTrue (p.hasPath());               // platform path is its hash string
+        assertFalse(p.hasTag());
         assertFalse(p.hasVendor());
         assertTrue (p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
@@ -119,6 +130,7 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasFullRevision());
         assertTrue (p.hasAndroidVersion());
         assertTrue (p.hasPath());               // add-on path is its hash string
+        assertFalse(p.hasTag());
         assertTrue (p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
@@ -131,9 +143,36 @@ public class PkgTypeTest extends TestCase {
         assertFalse(p.hasFullRevision());
         assertTrue (p.hasAndroidVersion());
         assertTrue (p.hasPath());               // sys-img path is its ABI string
+        assertTrue (p.hasTag());
         assertFalse(p.hasVendor());
         assertFalse(p.hasMinToolsRev());
         assertFalse(p.hasMinPlatformToolsRev());
+    }
+
+    public final void testPkgTypeAddonSysImg() throws Exception {
+        IPkgCapabilities p = PkgType.PKG_ADDON_SYS_IMAGES;
+
+        assertTrue (p.hasMajorRevision());
+        assertFalse(p.hasFullRevision());
+        assertTrue (p.hasAndroidVersion());
+        assertTrue (p.hasPath());               // sys-img path is its ABI string
+        assertTrue (p.hasTag());
+        assertTrue (p.hasVendor());
+        assertFalse(p.hasMinToolsRev());
+        assertFalse(p.hasMinPlatformToolsRev());
+    }
+
+    public final void testPkgType_UniqueIntValues() {
+        // Check all types have a unique int value
+        Map<Integer, PkgType> ints = new HashMap<Integer, PkgType>();
+        for (PkgType type : PkgType.values()) {
+            Integer i = type.getIntValue();
+            if (ints.containsKey(i)) {
+                fail(String.format("Int value 0x%04x defined by both PkgType.%s and PkgType.%s",
+                        i, type, ints.get(i)));
+            }
+            ints.put(i, type);
+        }
     }
 
 }

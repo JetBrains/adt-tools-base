@@ -18,6 +18,8 @@ package com.android.sdklib;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.sdklib.devices.Abi;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.descriptors.IdDisplay;
@@ -32,19 +34,18 @@ import java.util.Locale;
  */
 public class SystemImage implements ISystemImage {
 
-    public static final String ANDROID_PREFIX = "android-";                 //$NON-NLS-1$
-
     public static final IdDisplay DEFAULT_TAG = new IdDisplay("default",    //$NON-NLS-1$
                                                               "Default");   //$NON-NLS-1$
 
     private final LocationType mLocationtype;
     private final IdDisplay mTag;
+    private final IdDisplay mAddonVendor;
     private final String mAbiType;
     private final File mLocation;
     private final File[] mSkins;
 
     /**
-     * Creates a {@link SystemImage} description for an existing system image folder.
+     * Creates a {@link SystemImage} description for an existing platform system image folder.
      *
      * @param location The location of an installed system image.
      * @param locationType Where the system image folder is located for this ABI.
@@ -55,21 +56,46 @@ public class SystemImage implements ISystemImage {
      * @param skins A non-null, possibly empty list of skins specific to this system image.
      */
     public SystemImage(
-            @NonNull File location,
-            @NonNull LocationType locationType,
-            @NonNull IdDisplay tag,
-            @NonNull String abiType,
-            @NonNull File[] skins) {
+            @NonNull  File location,
+            @NonNull  LocationType locationType,
+            @NonNull  IdDisplay tag,
+            @NonNull  String abiType,
+            @NonNull  File[] skins) {
+        this(location, locationType, tag, null /*addonVendor*/, abiType, skins);
+    }
+
+    /**
+     * Creates a {@link SystemImage} description for an existing system image folder,
+     * for either platform or add-on.
+     *
+     * @param location The location of an installed system image.
+     * @param locationType Where the system image folder is located for this ABI.
+     * @param tagName The tag of the system-image.
+     *                For an add-on, the tag-id must match the add-on's name-id.
+     * @param addonVendor Non-null add-on vendor name. Null for platforms.
+     * @param abiType The ABI type. For example, one of {@link SdkConstants#ABI_ARMEABI},
+     *          {@link SdkConstants#ABI_ARMEABI_V7A}, {@link SdkConstants#ABI_INTEL_ATOM} or
+     *          {@link SdkConstants#ABI_MIPS}.
+     * @param skins A non-null, possibly empty list of skins specific to this system image.
+     */
+    public SystemImage(
+            @NonNull  File location,
+            @NonNull  LocationType locationType,
+            @NonNull  IdDisplay tagName,
+            @Nullable IdDisplay addonVendor,
+            @NonNull  String abiType,
+            @NonNull  File[] skins) {
         mLocation = location;
         mLocationtype = locationType;
-        mTag = tag;
+        mTag = tagName;
+        mAddonVendor = addonVendor;
         mAbiType = abiType;
         mSkins = skins;
     }
 
     /**
-     * Creates a {@link SystemImage} description for a non-existing system image folder.
-     * The actual location is computed based on the {@code locationtype}.
+     * Creates a {@link SystemImage} description for a non-existing platform system image folder.
+     * The actual location is computed based on the {@code locationType}.
      *
      * @param sdkManager The current SDK manager.
      * @param locationType Where the system image folder is located for this ABI.
@@ -82,36 +108,61 @@ public class SystemImage implements ISystemImage {
      *         {@link ISystemImage.LocationType#IN_SYSTEM_IMAGE} is not a {@link PlatformTarget}.
      */
     public SystemImage(
-            @NonNull SdkManager sdkManager,
-            @NonNull IAndroidTarget target,
-            @NonNull LocationType locationType,
-            @NonNull IdDisplay tag,
-            @NonNull String abiType,
-            @NonNull File[] skins) {
+            @NonNull  SdkManager sdkManager,
+            @NonNull  IAndroidTarget target,
+            @NonNull  LocationType locationType,
+            @NonNull  IdDisplay tag,
+            @NonNull  String abiType,
+            @NonNull  File[] skins) {
+        this(sdkManager, target, locationType, tag, null /*addonVendor*/, abiType, skins);
+    }
+
+
+    /**
+     * Creates a {@link SystemImage} description for a non-existing system image folder,
+     * for either platform or add-on.
+     * The actual location is computed based on the {@code locationType}.
+     *
+     * @param sdkManager The current SDK manager.
+     * @param locationType Where the system image folder is located for this ABI.
+     * @param tag The tag of the system-image. Use {@link #DEFAULT_TAG} for backward compatibility.
+     * @param addonVendor Non-null add-on vendor name. Null for platforms.
+     * @param abiType The ABI type. For example, one of {@link SdkConstants#ABI_ARMEABI},
+     *          {@link SdkConstants#ABI_ARMEABI_V7A}, {@link SdkConstants#ABI_INTEL_ATOM} or
+     *          {@link SdkConstants#ABI_MIPS}.
+     * @param skins A non-null, possibly empty list of skins specific to this system image.
+     * @throws IllegalArgumentException if the {@code target} used for
+     *         {@link ISystemImage.LocationType#IN_SYSTEM_IMAGE} is not a {@link PlatformTarget}.
+     */
+    public SystemImage(
+            @NonNull  SdkManager sdkManager,
+            @NonNull  IAndroidTarget target,
+            @NonNull  LocationType locationType,
+            @NonNull  IdDisplay tag,
+            @Nullable IdDisplay addonVendor,
+            @NonNull  String abiType,
+            @NonNull  File[] skins) {
         mLocationtype = locationType;
         mTag = tag;
+        mAddonVendor = addonVendor;
         mAbiType = abiType;
         mSkins = skins;
 
         File location = null;
         switch(locationType) {
-        case IN_PLATFORM_LEGACY:
+        case IN_LEGACY_FOLDER:
             location = new File(target.getLocation(), SdkConstants.OS_IMAGES_FOLDER);
             break;
 
-        case IN_PLATFORM_SUBFOLDER:
+        case IN_IMAGES_SUBFOLDER:
             location = FileOp.append(target.getLocation(), SdkConstants.OS_IMAGES_FOLDER, abiType);
             break;
 
         case IN_SYSTEM_IMAGE:
-            if (!target.isPlatform()) {
-                throw new IllegalArgumentException(
-                        "Add-ons do not support the system-image location type"); //$NON-NLS-1$
-            }
-
             location = getCanonicalFolder(sdkManager.getLocation(),
                                           target.getVersion(),
                                           tag.getId(),
+                                          addonVendor == null ? null : addonVendor.getId(),
                                           abiType);
             break;
         default:
@@ -133,22 +184,32 @@ public class SystemImage implements ISystemImage {
      * @param platformVersion The platform version.
      * @param tagId An optional tag. If null, not tag folder is used.
      *          For legacy, use {@code SystemImage.DEFAULT_TAG.getId()}.
+     * @param addonVendorId An optional vendor-id for an add-on. If null, it's a platform sys-img.
      * @param abiType An optional ABI type. If null, the parent directory is returned.
      * @return A file that represents the location of the canonical system-image folder
      *         for this configuration.
      */
     @NonNull
-    public static File getCanonicalFolder(
-            String sdkOsPath,
-            AndroidVersion platformVersion,
-            String tagId,
-            String abiType) {
-        File root = FileOp.append(
-                sdkOsPath,
-                SdkConstants.FD_SYSTEM_IMAGES,
-                ANDROID_PREFIX + platformVersion.getApiString());
-        if (tagId != null) {
-            root = FileOp.append(root, tagId);
+    private static File getCanonicalFolder(
+            @NonNull  String sdkOsPath,
+            @NonNull  AndroidVersion platformVersion,
+            @Nullable String tagId,
+            @Nullable String addonVendorId,
+            @Nullable String abiType) {
+        File root;
+        if (addonVendorId == null) {
+            root = FileOp.append(
+                    sdkOsPath,
+                    SdkConstants.FD_SYSTEM_IMAGES,
+                    AndroidTargetHash.getPlatformHashString(platformVersion));
+            if (tagId != null) {
+                root = FileOp.append(root, tagId);
+            }
+        } else {
+            root = FileOp.append(
+                    sdkOsPath,
+                    SdkConstants.FD_SYSTEM_IMAGES,
+                    AndroidTargetHash.getAddonHashString(addonVendorId, tagId, platformVersion));
         }
         if (abiType == null) {
             return root;
@@ -158,38 +219,45 @@ public class SystemImage implements ISystemImage {
     }
 
     /** Returns the actual location of an installed system image. */
-    @Override
     @NonNull
+    @Override
     public File getLocation() {
         return mLocation;
     }
 
     /** Indicates the location strategy for this system image in the SDK. */
-    @Override
     @NonNull
+    @Override
     public LocationType getLocationType() {
         return mLocationtype;
     }
 
     /** Returns the tag of the system image. */
-    @Override
     @NonNull
+    @Override
     public IdDisplay getTag() {
         return mTag;
     }
 
+    /** Returns the vendor for an add-on's system image, or null for a platform system-image. */
+    @Nullable
+    @Override
+    public IdDisplay getAddonVendor() {
+        return mAddonVendor;
+    }
+
     /**
-     * Returns the ABI type. For example, one of {@link SdkConstants#ABI_ARMEABI},
-     * {@link SdkConstants#ABI_ARMEABI_V7A}, {@link SdkConstants#ABI_INTEL_ATOM} or
-     * {@link SdkConstants#ABI_MIPS}.
+     * Returns the ABI type.
+     * See {@link Abi} for a full list.
      * Cannot be null nor empty.
      */
-    @Override
     @NonNull
+    @Override
     public String getAbiType() {
         return mAbiType;
     }
 
+    @NonNull
     @Override
     public File[] getSkins() {
         return mSkins;
@@ -213,15 +281,22 @@ public class SystemImage implements ISystemImage {
      *
      * {@inheritDoc}
      */
-    @Override
     @NonNull
+    @Override
     public String toString() {
-        return String.format("SystemImage tag=%s, ABI=%s, location %s='%s'",           //$NON-NLS-1$
-                mTag.getId(),
-                mAbiType,
-                mLocationtype.toString().replace('_', ' ').toLowerCase(Locale.US),
-                mLocation
-                );
+        StringBuilder sb = new StringBuilder();
+        sb.append("SystemImage");
+        if (mAddonVendor != null) {
+            sb.append(" addon-vendor=").append(mAddonVendor.getId()).append(',');
+        }
+        sb.append(" tag=").append(mTag.getId());
+        sb.append(", ABI=").append(mAbiType);
+        sb.append(", location ")
+          .append(mLocationtype.toString().replace('_', ' ').toLowerCase(Locale.US))
+          .append("='")
+          .append(mLocation)
+          .append("'");
+        return sb.toString();
     }
 
 

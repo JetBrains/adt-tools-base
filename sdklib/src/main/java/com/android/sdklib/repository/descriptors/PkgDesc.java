@@ -479,7 +479,7 @@ public class PkgDesc implements IPkgDesc {
         }
 
         if (hasVendor()) {
-            builder.append(" Vendor=").append(getVendor().toString());            //NON-NLS-1$
+            builder.append(" Vendor=").append(getVendor().toString());              //NON-NLS-1$
         }
 
         if (hasTag()) {
@@ -811,7 +811,7 @@ public class PkgDesc implements IPkgDesc {
         }
 
         /**
-         * Create a new system-image package descriptor.
+         * Create a new platform system-image package descriptor.
          * <p/>
          * For system-images, {@link PkgDesc#getPath()} returns the ABI.
          *
@@ -828,9 +828,37 @@ public class PkgDesc implements IPkgDesc {
                                         @NonNull MajorRevision revision) {
             Builder p = new Builder(PkgType.PKG_SYS_IMAGES);
             p.mAndroidVersion = version;
-            p.mMajorRevision = revision;
-            p.mTag = tag;
-            p.mPath = abi;
+            p.mMajorRevision  = revision;
+            p.mTag            = tag;
+            p.mPath           = abi;
+            p.mVendor         = null;
+            return p;
+        }
+
+        /**
+         * Create a new add-on system-image package descriptor.
+         * <p/>
+         * For system-images, {@link PkgDesc#getPath()} returns the ABI.
+         *
+         * @param version The android version of the system-image package.
+         * @param addonVendor The vendor id/display of an associated add-on.
+         * @param addonName The tag of the system-image package is the add-on name.
+         * @param abi The ABI of the system-image package.
+         * @param revision The revision of the system-image package.
+         * @return A {@link PkgDesc} describing this system-image package.
+         */
+        @NonNull
+        public static Builder newAddonSysImg(@NonNull AndroidVersion version,
+                                        @NonNull IdDisplay addonVendor,
+                                        @NonNull IdDisplay addonName,
+                                        @NonNull String abi,
+                                        @NonNull MajorRevision revision) {
+            Builder p = new Builder(PkgType.PKG_ADDON_SYS_IMAGES);
+            p.mAndroidVersion = version;
+            p.mMajorRevision  = revision;
+            p.mTag            = addonName;
+            p.mPath           = abi;
+            p.mVendor         = addonVendor;
             return p;
         }
 

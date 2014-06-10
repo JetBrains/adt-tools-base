@@ -341,7 +341,8 @@ public class SdkUpdaterLogic {
                 if (pp.getIncludedAbi() == null) {
                     for (Package p2 : remotePkgs) {
                         if (!(p2 instanceof SystemImagePackage) ||
-                             (p2.isObsolete() && !includeAll)) {
+                            ((SystemImagePackage)p2).isPlatform() ||
+                            (p2.isObsolete() && !includeAll)) {
                             continue;
                         }
                         SystemImagePackage sip = (SystemImagePackage) p2;

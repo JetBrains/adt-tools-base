@@ -40,6 +40,8 @@ public enum PkgType implements IPkgCapabilities {
     //
     // Corresponding flags for list description pattern string:
     //      $MAJ  $FULL  $API  $PATH  $TAG  $VEND  $NAME (for extras & add-ons)
+    //
+    //
 
     /** Filter the SDK/tools folder.
      *  Has {@link FullRevision}. */
@@ -77,7 +79,7 @@ public enum PkgType implements IPkgCapabilities {
      * Path returns the system image ABI. */
     PKG_SYS_IMAGES(0x0200, SdkConstants.FD_SYSTEM_IMAGES,
             "$PATH System Image, Android $API{?$MAJ>1:, rev $MAJ}",
-            true /*maj-r*/, false, true /*api*/, true /*path*/, true /*tag*/, false, false, false),
+            true /*maj-r*/, false, true /*api*/, true /*path*/, true /*tag*/, false /*vend*/, false, false),
 
     /** Filter the SDK/addons.
      *  Has {@link AndroidVersion}. Has {@link MajorRevision}.
@@ -86,16 +88,23 @@ public enum PkgType implements IPkgCapabilities {
             "{|$NAME|$VEND $PATH|}, Android $API{?$MAJ>1:, rev $MAJ}",
             true /*maj-r*/, false, true /*api*/, true /*path*/, false, true /*vend*/, false, false),
 
+    /** Filter the SDK/addons/sys-images.
+     * Has {@link AndroidVersion}. Has {@link MajorRevision}. Has tag.
+     * Path returns the system image ABI. */
+    PKG_ADDON_SYS_IMAGES(0x0800, SdkConstants.FD_SYSTEM_IMAGES,
+            "{|$NAME|$VEND $PATH|} System Image, Android $API{?$MAJ>1:, rev $MAJ}",
+            true /*maj-r*/, false, true /*api*/, true /*path*/, true /*tag*/, true /*vend*/, false, false),
+
     /** Filter the SDK/samples folder.
      *  Note: this will not detect samples located in the SDK/extras packages.
      *  Has {@link AndroidVersion}. Has {@link MajorRevision}. */
-    PKG_SAMPLES(0x0800, SdkConstants.FD_SAMPLES,
+    PKG_SAMPLES(0x1000, SdkConstants.FD_SAMPLES,
             "Samples for Android $API{?$MAJ>1:, rev $MAJ}",
             true /*maj-r*/, false, true /*api*/, false, false, false, true /*min-t-r*/, false),
 
     /** Filter the SDK/sources folder.
      *  Has {@link AndroidVersion}. Has {@link MajorRevision}. */
-    PKG_SOURCES(0x1000, SdkConstants.FD_ANDROID_SOURCES,
+    PKG_SOURCES(0x2000, SdkConstants.FD_ANDROID_SOURCES,
             "Sources for Android $API{?$MAJ>1:, rev $MAJ}",
             true /*maj-r*/, false, true /*api*/, false, false, false, false, false),
 
@@ -150,10 +159,12 @@ public enum PkgType implements IPkgCapabilities {
         mHasMinPlatformToolsRev = hasMinPlatformToolsRev;
     }
 
+    /** Returns the integer value matching the type, compatible with the old LocalSdkParer. */
     public int getIntValue() {
         return mIntValue;
     }
 
+    /** Returns the name of SDK top-folder where this type of package is stored. */
     @NonNull
     public String getFolderName() {
         return mFolderName;
@@ -199,6 +210,10 @@ public enum PkgType implements IPkgCapabilities {
         return mHasMinPlatformToolsRev;
     }
 
+    /*
+     * Returns a pattern string used by {@link PkgDesc#getListDescription()} to
+     * compute a default list-display representation string for this package.
+     */
     public String getListDisplayPattern() {
         return mListDisplayPattern;
     }

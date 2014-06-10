@@ -41,6 +41,7 @@
             - it changes <archive os=... arch=...> to sub-elements: <host-os>, <host-bits>,
               <jvm-bits> and <min-jvm-version>.
             - Support for new ABIs arm64-v8a, x86_64 and mips64.
+            - Support for new <addon><vendor-id/name></addon> element.
     -->
 
     <xsd:element name="sdk-sys-img" type="sdk:repositoryType" />
@@ -83,6 +84,17 @@
             <!-- The displayed tag of the system emulated by this image. Optional. -->
             <xsd:element name="tag-display" type="xsd:normalizedString" minOccurs="0" />
 
+            <!-- Indicates a system-image is tied to an add-on and which one.
+                 Mandatory for add-on system-images.
+                 Must not be present for platform system-images. -->
+            <xsd:element name="add-on"      type="sdk:addonType" minOccurs="0" />
+
+            <!-- The vendor id of the system-image when it is associated with an add-on.
+                 Must not be present for system-image associated with a platform. -->
+            <xsd:element name="vendor-id"       type="sdk:idType" minOccurs="0" />
+            <!-- The displayed vendor name of the system-image's add-on. -->
+            <xsd:element name="vendor-display"  type="xsd:normalizedString" minOccurs="0" />
+
             <!-- The optional display list item. When missing, it is auto-computed. -->
             <xsd:element name="list-display"   type="xsd:normalizedString" minOccurs="0" />
 
@@ -107,6 +119,26 @@
             <!-- An optional element indicating the package is obsolete.
                  The string content is however currently not defined and ignored. -->
             <xsd:element name="obsolete"  type="xsd:string" minOccurs="0" />
+        </xsd:all>
+    </xsd:complexType>
+
+
+    <!-- The definition of a system image used by a platform. -->
+
+    <xsd:complexType name="addonType" >
+        <xsd:annotation>
+            <xsd:documentation>
+                Indicates a system-image is tied to an add-on and which one
+                (the combo tag-id + vendor-id uniquely identifies the add-on.)
+                Mandatory for add-on system-images.
+                Must not be present for platform system-images.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:all>
+            <!-- The vendor id of the add-on. -->
+            <xsd:element name="vendor-id"       type="sdk:idType" />
+            <!-- The displayed vendor name of the add-on. -->
+            <xsd:element name="vendor-display"  type="xsd:normalizedString" minOccurs="0" />
         </xsd:all>
     </xsd:complexType>
 

@@ -59,6 +59,9 @@ public class SdkSysImgConstants extends RepoConstants {
     /** The user-visible display part of a system-image tag id. Optional. */
     public static final String ATTR_TAG_DISPLAY = "tag-display";                //$NON-NLS-1$
 
+    /** An add-on sub-element, indicating this is an add-on system image. */
+    public static final String NODE_ADD_ON = SdkAddonConstants.NODE_ADD_ON;
+
     /**
      * List of possible nodes in a repository XML. Used to populate options automatically
      * in the no-GUI mode.

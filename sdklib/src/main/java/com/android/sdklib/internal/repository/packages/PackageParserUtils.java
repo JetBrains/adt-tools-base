@@ -171,7 +171,7 @@ public class PackageParserUtils {
     }
 
     /**
-     * Returns the first child element with the given XML local name.
+     * Returns the first child element with the given XML local name and the same NS URI.
      * If xmlLocalName is null, returns the very first child element.
      */
     public static Node findChildElement(Node node, String xmlLocalName) {
