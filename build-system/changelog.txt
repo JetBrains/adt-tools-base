@@ -1,3 +1,8 @@
+0.11.1:
+- Fix issue with artifact depending on android.jar artifact on MavenCentral.
+- Fix issue with missing custom namespace declaration in generated manifest.
+- Fix issue with validation of permission group in manifest merger.
+
 0.11.0:
 - Updated IDE model, requires Studio 0.6
 - New Manifest merger is now the default merger.
