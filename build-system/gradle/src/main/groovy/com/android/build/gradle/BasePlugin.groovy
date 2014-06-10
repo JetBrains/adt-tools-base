@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.api.AndroidSourceSet
@@ -116,7 +115,6 @@ import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
 import com.android.ide.common.internal.ExecutorSingleton
 import com.android.ide.common.sdk.SdkVersionInfo
-import com.android.manifmerger.PlaceholderHandler
 import com.android.utils.ILogger
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.ListMultimap
@@ -173,7 +171,6 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN
 import static java.io.File.separator
-
 /**
  * Base class for all Android plugins
  */
@@ -2640,11 +2637,11 @@ public abstract class BasePlugin {
     }
 
     public static void displayDeprecationWarning(ILogger logger, Project project, String message) {
-        logger.warning(createDeprecationWarning(project.name, message))
+        logger.warning(createDeprecationWarning(project.path, message))
     }
 
     public static void displayDeprecationWarning(Logger logger, Project project, String message) {
-        logger.warn(createDeprecationWarning(project.name, message))
+        logger.warn(createDeprecationWarning(project.path, message))
     }
 
     private static String createDeprecationWarning(String projectName, String message) {
