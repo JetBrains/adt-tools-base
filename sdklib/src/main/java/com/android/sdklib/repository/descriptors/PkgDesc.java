@@ -25,11 +25,13 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SystemImage;
 import com.android.sdklib.internal.repository.packages.License;
 import com.android.sdklib.internal.repository.packages.Package;
+import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.FullRevision.PreviewComparison;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.NoPreviewRevision;
 
+import java.io.File;
 import java.util.Locale;
 
 /**
@@ -222,6 +224,152 @@ public class PkgDesc implements IPkgDesc {
     @Override
     public FullRevision getMinPlatformToolsRev() {
         return mMinPlatformToolsRev;
+    }
+
+    @Override
+    public String getInstallId() {
+        StringBuilder sb = new StringBuilder();
+
+        /* iid patterns:
+        tools, platform-tools => FOLDER / FOLDER-preview
+        build-tools => FOLDER-REV
+        doc, sample, source => ENUM-API
+        extra => ENUM-VENDOR.id-PATH
+        platform => android-API
+        add-on => addon-NAME.id-VENDOR.id-API
+        platform sys-img => sys-img-ABI-TAG|android-API
+        add-on sys-img => sys-img-ABI-addon-NAME.id-VENDOR.id-API
+        */
+
+        switch (mType) {
+        case PKG_TOOLS:
+        case PKG_PLATFORM_TOOLS:
+            sb.append(mType.getFolderName());
+            if (getFullRevision().isPreview()) {
+                sb.append("-preview");
+            }
+            break;
+
+        case PKG_BUILD_TOOLS:
+            sb.append(mType.getFolderName());
+            sb.append('-').append(getFullRevision().toString());
+            break;
+
+        case PKG_DOC:
+        case PKG_SAMPLE:
+        case PKG_SOURCE:
+            sb.append(mType.toString().toLowerCase(Locale.US).replace("pkg_", ""));
+            sb.append('-').append(getAndroidVersion().getApiString());
+            break;
+
+        case PKG_EXTRA:
+            sb.append("extra-")
+              .append(getVendor().getId())
+              .append('-')
+              .append(getPath());
+            break;
+
+        case PKG_PLATFORM:
+            sb.append("android-").append(getAndroidVersion().getApiString());
+            break;
+
+        case PKG_ADDON:
+            sb.append("addon-")
+              .append(((IPkgDescAddon) this).getName().getId())
+              .append('-')
+              .append(getVendor().getId())
+              .append('-')
+              .append(getAndroidVersion().getApiString());
+            break;
+
+        case PKG_SYS_IMAGE:
+            sb.append("sys-img-")
+              .append(getPath())    // path==ABI for sys-img
+              .append('-')
+              .append(SystemImage.DEFAULT_TAG.equals(getTag()) ? "android" : getTag().getId())
+              .append('-')
+              .append(getAndroidVersion().getApiString());
+            break;
+
+        case PKG_ADDON_SYS_IMAGE:
+            sb.append("sys-img-")
+              .append(getPath())    // path==ABI for sys-img
+              .append("-addon-")
+              .append(SystemImage.DEFAULT_TAG.equals(getTag()) ? "android" : getTag().getId())
+              .append('-')
+              .append(getVendor().getId())
+              .append('-')
+              .append(getAndroidVersion().getApiString());
+          break;
+
+        default:
+            throw new IllegalArgumentException("IID not defined for type " + mType.toString());
+        }
+
+        return sanitize(sb.toString());
+    }
+
+    @Override
+    public File getCanonicalInstallFolder(@NonNull File sdkLocation) {
+        File f = FileOp.append(sdkLocation, mType.getFolderName());
+
+        /* folder patterns:
+        tools, platform-tools, doc => FOLDER
+        build-tools, add-on => FOLDER/IID
+        platform, sample, source => FOLDER/android-API
+        platform sys-img => FOLDER/android-API/TAG/ABI
+        add-on sys-img => FOLDER/addon-NAME.id-VENDOR.id-API/ABI
+        extra => FOLDER/VENDOR.id/PATH
+        */
+
+        switch (mType) {
+        case PKG_TOOLS:
+        case PKG_PLATFORM_TOOLS:
+        case PKG_DOC:
+            // no-op, top-folder is all what is needed here
+            break;
+
+        case PKG_BUILD_TOOLS:
+        case PKG_ADDON:
+            f = FileOp.append(f, getInstallId());
+            break;
+
+        case PKG_PLATFORM:
+        case PKG_SAMPLE:
+        case PKG_SOURCE:
+            f = FileOp.append(f, "android-" + sanitize(getAndroidVersion().getApiString()));
+            break;
+
+        case PKG_SYS_IMAGE:
+            f = FileOp.append(f,
+                    "android-" + sanitize(getAndroidVersion().getApiString()),
+                    sanitize(SystemImage.DEFAULT_TAG.equals(getTag()) ? "android" : getTag().getId()),
+                    sanitize(getPath()));   // path==abi
+            break;
+
+        case PKG_ADDON_SYS_IMAGE:
+            String name = "addon-"
+                        + (SystemImage.DEFAULT_TAG.equals(getTag()) ? "android" : getTag().getId())
+                        + '-'
+                        + getVendor().getId()
+                        + '-'
+                        + getAndroidVersion().getApiString();
+            f = FileOp.append(f,
+                    sanitize(name),
+                    sanitize(getPath()));   // path==abi
+          break;
+
+        case PKG_EXTRA:
+            f = FileOp.append(f,
+                    sanitize(getVendor().getId()),
+                    sanitize(getPath()));
+            break;
+
+        default:
+            throw new IllegalArgumentException("CanonicalFolder not defined for type " + mType.toString());
+        }
+
+        return f;
     }
 
     //---- Updating ----
@@ -986,6 +1134,14 @@ public class PkgDesc implements IPkgDesc {
                     mCustomIsUpdateFor,
                     mCustomPath);
         }
+    }
+
+    // ---- Helpers -----
+
+    @NonNull
+    private static String sanitize(@NonNull String str) {
+        str = str.toLowerCase(Locale.US).replaceAll("[^a-z0-9_.-]+", "_").replaceAll("_+", "_");
+        return str;
     }
 }
 

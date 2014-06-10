@@ -17,25 +17,30 @@
 package com.android.sdklib.repository.descriptors;
 
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.NoPreviewRevision;
 
+import java.io.File;
 import java.util.Arrays;
 
 import junit.framework.TestCase;
 
 public class PkgDescTest extends TestCase {
 
-    public final void testPkgDescTool() {
+    public final File mRoot = new File("/sdk");
+
+    public final void testPkgDescTool_NotPreview() {
         IPkgDesc p = PkgDesc.Builder.newTool(
-                new FullRevision(1, 2, 3, 4),
+                new FullRevision(1, 2, 3),
                 new FullRevision(5, 6, 7, 8)).create();
 
         assertEquals(PkgType.PKG_TOOLS, p.getType());
 
         assertTrue  (p.hasFullRevision());
-        assertEquals(new FullRevision(1, 2, 3, 4), p.getFullRevision());
+        assertEquals(new FullRevision(1, 2, 3), p.getFullRevision());
+        assertFalse (p.getFullRevision().isPreview());
 
         assertFalse(p.hasMajorRevision());
         assertNull (p.getMajorRevision());
@@ -51,6 +56,44 @@ public class PkgDescTest extends TestCase {
 
         assertTrue  (p.hasMinPlatformToolsRev());
         assertEquals(new FullRevision(5, 6, 7, 8), p.getMinPlatformToolsRev());
+
+        assertEquals("tools", p.getInstallId());
+        assertEquals(FileOp.append(mRoot, "tools"),
+                p.getCanonicalInstallFolder(mRoot));
+
+        assertEquals("<PkgDesc Type=tools FullRev=1.2.3 MinPlatToolsRev=5.6.7 rc8>", p.toString());
+        assertEquals("Android SDK Tools 1.2.3", p.getListDescription());
+    }
+
+    public final void testPkgDescTool_Preview() {
+        IPkgDesc p = PkgDesc.Builder.newTool(
+                new FullRevision(1, 2, 3, 4),
+                new FullRevision(5, 6, 7, 8)).create();
+
+        assertEquals(PkgType.PKG_TOOLS, p.getType());
+
+        assertTrue  (p.hasFullRevision());
+        assertEquals(new FullRevision(1, 2, 3, 4), p.getFullRevision());
+        assertTrue  (p.getFullRevision().isPreview());
+
+        assertFalse(p.hasMajorRevision());
+        assertNull (p.getMajorRevision());
+
+        assertFalse(p.hasAndroidVersion());
+        assertNull (p.getAndroidVersion());
+
+        assertFalse(p.hasPath());
+        assertNull (p.getPath());
+
+        assertFalse(p.hasMinToolsRev());
+        assertNull (p.getMinToolsRev());
+
+        assertTrue  (p.hasMinPlatformToolsRev());
+        assertEquals(new FullRevision(5, 6, 7, 8), p.getMinPlatformToolsRev());
+
+        assertEquals("tools-preview", p.getInstallId());
+        assertEquals(FileOp.append(mRoot, "tools"),
+                p.getCanonicalInstallFolder(mRoot));
 
         assertEquals("<PkgDesc Type=tools FullRev=1.2.3 rc4 MinPlatToolsRev=5.6.7 rc8>", p.toString());
         assertEquals("Android SDK Tools 1.2.3 rc4", p.getListDescription());
@@ -109,13 +152,14 @@ public class PkgDescTest extends TestCase {
 
     //----
 
-    public final void testPkgDescPlatformTool() {
-        IPkgDesc p = PkgDesc.Builder.newPlatformTool(new FullRevision(1, 2, 3, 4)).create();
+    public final void testPkgDescPlatformTool_NotPreview() {
+        IPkgDesc p = PkgDesc.Builder.newPlatformTool(new FullRevision(1, 2, 3)).create();
 
         assertEquals(PkgType.PKG_PLATFORM_TOOLS, p.getType());
 
         assertTrue  (p.hasFullRevision());
-        assertEquals(new FullRevision(1, 2, 3, 4), p.getFullRevision());
+        assertEquals(new FullRevision(1, 2, 3), p.getFullRevision());
+        assertFalse (p.getFullRevision().isPreview());
 
         assertFalse(p.hasMajorRevision());
         assertNull (p.getMajorRevision());
@@ -131,6 +175,42 @@ public class PkgDescTest extends TestCase {
 
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull (p.getMinPlatformToolsRev());
+
+        assertEquals("platform-tools", p.getInstallId());
+        assertEquals(FileOp.append(mRoot, "platform-tools"),
+                p.getCanonicalInstallFolder(mRoot));
+
+        assertEquals("<PkgDesc Type=platform_tools FullRev=1.2.3>", p.toString());
+        assertEquals("Android SDK Platform-Tools 1.2.3", p.getListDescription());
+    }
+
+    public final void testPkgDescPlatformTool_Preview() {
+        IPkgDesc p = PkgDesc.Builder.newPlatformTool(new FullRevision(1, 2, 3, 4)).create();
+
+        assertEquals(PkgType.PKG_PLATFORM_TOOLS, p.getType());
+
+        assertTrue  (p.hasFullRevision());
+        assertEquals(new FullRevision(1, 2, 3, 4), p.getFullRevision());
+        assertTrue  (p.getFullRevision().isPreview());
+
+        assertFalse(p.hasMajorRevision());
+        assertNull (p.getMajorRevision());
+
+        assertFalse(p.hasAndroidVersion());
+        assertNull (p.getAndroidVersion());
+
+        assertFalse(p.hasPath());
+        assertNull (p.getPath());
+
+        assertFalse(p.hasMinToolsRev());
+        assertNull (p.getMinToolsRev());
+
+        assertFalse(p.hasMinPlatformToolsRev());
+        assertNull (p.getMinPlatformToolsRev());
+
+        assertEquals("platform-tools-preview", p.getInstallId());
+        assertEquals(FileOp.append(mRoot, "platform-tools"),
+                p.getCanonicalInstallFolder(mRoot));
 
         assertEquals("<PkgDesc Type=platform_tools FullRev=1.2.3 rc4>", p.toString());
         assertEquals("Android SDK Platform-Tools 1.2.3 rc4", p.getListDescription());
@@ -203,6 +283,10 @@ public class PkgDescTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull(p.getMinPlatformToolsRev());
 
+        assertEquals("doc-19", p.getInstallId());
+        assertEquals(FileOp.append(mRoot, "docs"),
+                p.getCanonicalInstallFolder(mRoot));
+
         assertEquals("<PkgDesc Type=doc Android=API 19 MajorRev=1>", p.toString());
         assertEquals("Documentation for Android SDK 19", p.getListDescription());
     }
@@ -231,13 +315,14 @@ public class PkgDescTest extends TestCase {
 
     //----
 
-    public final void testPkgDescBuildTool() {
-        IPkgDesc p = PkgDesc.Builder.newBuildTool(new FullRevision(1, 2, 3, 4)).create();
+    public final void testPkgDescBuildTool_NotPreview() {
+        IPkgDesc p = PkgDesc.Builder.newBuildTool(new FullRevision(1, 2, 3)).create();
 
         assertEquals(PkgType.PKG_BUILD_TOOLS, p.getType());
 
         assertTrue  (p.hasFullRevision());
-        assertEquals(new FullRevision(1, 2, 3, 4), p.getFullRevision());
+        assertEquals(new FullRevision(1, 2, 3), p.getFullRevision());
+        assertFalse (p.getFullRevision().isPreview());
 
         assertFalse(p.hasMajorRevision());
         assertNull (p.getMajorRevision());
@@ -253,6 +338,42 @@ public class PkgDescTest extends TestCase {
 
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull (p.getMinPlatformToolsRev());
+
+        assertEquals("build-tools-1.2.3", p.getInstallId());
+        assertEquals(FileOp.append(mRoot, "build-tools", "build-tools-1.2.3"),
+                p.getCanonicalInstallFolder(mRoot));
+
+        assertEquals("<PkgDesc Type=build_tools FullRev=1.2.3>", p.toString());
+        assertEquals("Android SDK Build-Tools 1.2.3", p.getListDescription());
+    }
+
+    public final void testPkgDescBuildTool_Preview() {
+        IPkgDesc p = PkgDesc.Builder.newBuildTool(new FullRevision(1, 2, 3, 4)).create();
+
+        assertEquals(PkgType.PKG_BUILD_TOOLS, p.getType());
+
+        assertTrue  (p.hasFullRevision());
+        assertEquals(new FullRevision(1, 2, 3, 4), p.getFullRevision());
+        assertTrue  (p.getFullRevision().isPreview());
+
+        assertFalse(p.hasMajorRevision());
+        assertNull (p.getMajorRevision());
+
+        assertFalse(p.hasAndroidVersion());
+        assertNull (p.getAndroidVersion());
+
+        assertFalse(p.hasPath());
+        assertNull (p.getPath());
+
+        assertFalse(p.hasMinToolsRev());
+        assertNull (p.getMinToolsRev());
+
+        assertFalse(p.hasMinPlatformToolsRev());
+        assertNull (p.getMinPlatformToolsRev());
+
+        assertEquals("build-tools-1.2.3_rc4", p.getInstallId());
+        assertEquals(FileOp.append(mRoot, "build-tools", "build-tools-1.2.3_rc4"),
+                p.getCanonicalInstallFolder(mRoot));
 
         assertEquals("<PkgDesc Type=build_tools FullRev=1.2.3 rc4>", p.toString());
         assertEquals("Android SDK Build-Tools 1.2.3 rc4", p.getListDescription());
@@ -331,6 +452,10 @@ public class PkgDescTest extends TestCase {
 
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull (p.getMinPlatformToolsRev());
+
+        assertEquals("extra-vendor-extra_path", p.getInstallId());
+        assertEquals(FileOp.append(mRoot, "extras", "vendor", "extra_path"),
+                p.getCanonicalInstallFolder(mRoot));
 
         assertEquals("<PkgDesc Type=extra Vendor=vendor [The Vendor] Path=extra_path FullRev=1.2.3>", p.toString());
         assertEquals("My Extra, rev 1.2.3", p.getListDescription());
@@ -413,6 +538,10 @@ public class PkgDescTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull (p.getMinPlatformToolsRev());
 
+        assertEquals("source-19", p.getInstallId());
+        assertEquals(FileOp.append(mRoot, "sources", "android-19"),
+                p.getCanonicalInstallFolder(mRoot));
+
         assertEquals("<PkgDesc Type=source Android=API 19 MajorRev=1>", p.toString());
         assertEquals("Sources for Android 19", p.getListDescription());
     }
@@ -467,6 +596,10 @@ public class PkgDescTest extends TestCase {
 
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull (p.getMinPlatformToolsRev());
+
+        assertEquals("sample-19", p.getInstallId());
+        assertEquals(FileOp.append(mRoot, "samples", "android-19"),
+                p.getCanonicalInstallFolder(mRoot));
 
         assertEquals(
                 "<PkgDesc Type=sample Android=API 19 MajorRev=1 MinToolsRev=5.6.7 rc8>",
@@ -534,6 +667,10 @@ public class PkgDescTest extends TestCase {
 
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull (p.getMinPlatformToolsRev());
+
+        assertEquals("android-19", p.getInstallId());
+        assertEquals(FileOp.append(mRoot, "platforms", "android-19"),
+                p.getCanonicalInstallFolder(mRoot));
 
         assertEquals(
                 "<PkgDesc Type=platform Android=API 19 Path=android-19 MajorRev=1 MinToolsRev=5.6.7 rc8>",
@@ -604,6 +741,15 @@ public class PkgDescTest extends TestCase {
         assertFalse(p1.hasMinPlatformToolsRev());
         assertNull (p1.getMinPlatformToolsRev());
 
+        assertTrue(p1.hasVendor());
+        assertEquals(new IdDisplay("vendor", "only the id is compared with"), p1.getVendor());
+
+        assertEquals(new IdDisplay("addon_name", "ignored"), ((IPkgDescAddon) p1).getName());
+
+        assertEquals("addon-addon_name-vendor-19", p1.getInstallId());
+        assertEquals(FileOp.append(mRoot, "add-ons", "addon-addon_name-vendor-19"),
+                p1.getCanonicalInstallFolder(mRoot));
+
         assertEquals(
                 "<PkgDesc Type=addon Android=API 19 Vendor=vendor [The Vendor] Path=The Vendor:The Add-on:19 MajorRev=1>",
                 p1.toString());
@@ -658,7 +804,7 @@ public class PkgDescTest extends TestCase {
 
     //----
 
-    public final void testPkgDescSysImg() throws Exception {
+    public final void testPkgDescSysImg_Platform() throws Exception {
         IdDisplay tag = new IdDisplay("tag", "My Tag");
         IPkgDesc p = PkgDesc.Builder.newSysImg(
                 new AndroidVersion("19"),
@@ -686,13 +832,17 @@ public class PkgDescTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull (p.getMinPlatformToolsRev());
 
+        assertEquals("sys-img-eabi-tag-19", p.getInstallId());
+        assertEquals(FileOp.append(mRoot, "system-images", "android-19", "tag", "eabi"),
+                p.getCanonicalInstallFolder(mRoot));
+
         assertEquals(
                 "<PkgDesc Type=sys_image Android=API 19 Tag=tag [My Tag] Path=eabi MajorRev=1>",
                 p.toString());
         assertEquals("eabi System Image, Android 19", p.getListDescription());
     }
 
-    public final void testPkgDescSysImg_Update() throws Exception {
+    public final void testPkgDescSysImg_Platform_Update() throws Exception {
         IdDisplay tag1 = new IdDisplay("tag1", "My Tag 1");
         final AndroidVersion api19 = new AndroidVersion("19");
         final MajorRevision rev1 = new MajorRevision(1);
@@ -730,6 +880,52 @@ public class PkgDescTest extends TestCase {
                 PkgDesc.Builder.newSysImg(api19, tag2, "eabi", new MajorRevision(2)).create();
         assertFalse(p19_t2.isUpdateFor(p19_1));
         assertTrue (p19_t2.compareTo(p19_1) > 0);
+    }
+
+    public final void testPkgDescSysImg_Addon() throws Exception {
+        IdDisplay vendor = new IdDisplay("vendor", "The Vendor");
+        IdDisplay name   = new IdDisplay("addon_name", "The Add-on");
+        IPkgDesc p = PkgDesc.Builder.newAddonSysImg(
+                new AndroidVersion("19"),
+                vendor,
+                name,
+                "eabi",
+                new MajorRevision(1)).create();
+
+        assertEquals(PkgType.PKG_ADDON_SYS_IMAGE, p.getType());
+
+        assertFalse(p.hasFullRevision());
+        assertNull (p.getFullRevision());
+
+        assertTrue  (p.hasMajorRevision());
+        assertEquals(new MajorRevision(1), p.getMajorRevision());
+
+        assertTrue  (p.hasAndroidVersion());
+        assertEquals(new AndroidVersion("19"), p.getAndroidVersion());
+
+        assertTrue  (p.hasPath());
+        assertEquals("eabi", p.getPath());
+
+        assertFalse(p.hasMinToolsRev());
+        assertNull (p.getMinToolsRev());
+
+        assertFalse(p.hasMinPlatformToolsRev());
+        assertNull (p.getMinPlatformToolsRev());
+
+        assertTrue(p.hasVendor());
+        assertEquals(new IdDisplay("vendor", "only the id is compared with"), p.getVendor());
+
+        assertTrue(p.hasTag());
+        assertEquals(new IdDisplay("addon_name", "ignored"), p.getTag());
+
+        assertEquals("sys-img-eabi-addon-addon_name-vendor-19", p.getInstallId());
+        assertEquals(FileOp.append(mRoot, "system-images", "addon-addon_name-vendor-19", "eabi"),
+                p.getCanonicalInstallFolder(mRoot));
+
+        assertEquals(
+                "<PkgDesc Type=addon_sys_image Android=API 19 Vendor=vendor [The Vendor] Tag=addon_name [The Add-on] Path=eabi MajorRev=1>",
+                p.toString());
+        assertEquals("The Vendor eabi System Image, Android 19", p.getListDescription());
     }
 
 }
