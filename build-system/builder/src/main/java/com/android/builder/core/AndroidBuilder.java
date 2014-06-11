@@ -778,26 +778,10 @@ public class AndroidBuilder {
                         functionalTest,
                         generatedTestManifest);
 
-                ImmutableList<Pair<String, File>> namedLibraries = collectLibraries(libraries);
-                ImmutableList.Builder<Pair<String, File>> reworkedLibraries =
-                        ImmutableList.builder();
-
-                File mainManifestFile;
-                if (namedLibraries.isEmpty()) {
-                    mainManifestFile = generatedTestManifest;
-                } else {
-                    // swap the generated test manifest with the first library
-                    mainManifestFile = namedLibraries.get(0).getSecond();
-                    reworkedLibraries.add(Pair.of("test manifest", generatedTestManifest));
-                    for (int i = 1; i < namedLibraries.size(); i++) {
-                        reworkedLibraries.add(namedLibraries.get(i));
-                    }
-                }
-
                 MergingReport mergingReport = ManifestMerger2.newMerger(
-                        mainManifestFile, mLogger, ManifestMerger2.MergeType.APPLICATION)
+                        generatedTestManifest, mLogger, ManifestMerger2.MergeType.APPLICATION)
                         .setOverride(SystemProperty.PACKAGE, testApplicationId)
-                        .addLibraryManifests(reworkedLibraries.build())
+                        .addLibraryManifests(collectLibraries(libraries))
                         .merge();
 
                 mLogger.info("Merging result:" + mergingReport.getResult());
