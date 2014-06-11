@@ -17,6 +17,7 @@
 package com.android.builder.testing.api;
 
 import com.android.annotations.NonNull;
+import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellEnabledDevice;
 import com.android.ddmlib.TimeoutException;
 import com.android.utils.ILogger;
@@ -83,6 +84,13 @@ public abstract class DeviceConnector implements IShellEnabledDevice {
      * @return the API codename
      */
     public abstract String getApiCodeName();
+
+    /**
+     * Returns the {@link com.android.ddmlib.IDevice.DeviceState} for the device, or null
+     * if if cannot determined.
+     * @return the device state.
+     */
+    public abstract IDevice.DeviceState getState();
 
     /**
      * The device supported ABIs. This is in preferred order.

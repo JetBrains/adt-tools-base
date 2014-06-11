@@ -4,6 +4,7 @@ import com.android.annotations.NonNull;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
 import com.android.ddmlib.AdbCommandRejectedException;
+import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.TimeoutException;
@@ -124,6 +125,11 @@ public class FakeDevice extends DeviceConnector {
         }
 
         return null;
+    }
+
+
+    public IDevice.DeviceState getState() {
+        return IDevice.DeviceState.ONLINE;
     }
 
     public int getApiLevel() {
