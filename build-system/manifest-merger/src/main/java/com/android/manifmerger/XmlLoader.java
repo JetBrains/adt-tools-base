@@ -78,7 +78,8 @@ public final class XmlLoader {
             KeyResolver<String> selectors,
             KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
             String displayName,
-            File xmlFile)
+            File xmlFile,
+            XmlDocument.Type type)
             throws IOException, SAXException, ParserConfigurationException {
         InputStream inputStream = new BufferedInputStream(new FileInputStream(xmlFile));
 
@@ -89,7 +90,8 @@ public final class XmlLoader {
                 new FileSourceLocation(displayName, xmlFile),
                 selectors,
                 systemPropertyResolver,
-                domDocument.getDocumentElement())
+                domDocument.getDocumentElement(),
+                type)
                 : null;
     }
 
@@ -107,7 +109,7 @@ public final class XmlLoader {
     public static XmlDocument load(
             KeyResolver<String> selectors,
             KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
-            SourceLocation sourceLocation, String xml)
+            SourceLocation sourceLocation, String xml, XmlDocument.Type type)
             throws IOException, SAXException, ParserConfigurationException {
         PositionXmlParser positionXmlParser = new PositionXmlParser();
         Document domDocument = positionXmlParser.parse(xml);
@@ -117,7 +119,8 @@ public final class XmlLoader {
                         sourceLocation,
                         selectors,
                         systemPropertyResolver,
-                        domDocument.getDocumentElement())
+                        domDocument.getDocumentElement(),
+                        type)
                 : null;
     }
 

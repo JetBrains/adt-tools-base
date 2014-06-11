@@ -446,7 +446,8 @@ public class Actions {
                 xmlDocument.getSelectors(),
                 xmlDocument.getSystemPropertyResolver(),
                 inMemory,
-                xmlDocument.prettyPrint());
+                xmlDocument.prettyPrint(),
+                XmlDocument.Type.MAIN);
 
         ImmutableMultimap.Builder<Integer, Record> mappingBuilder = ImmutableMultimap.builder();
         for (XmlElement xmlElement : loadedWithLineNumbers.getRootNode().getMergeableElements()) {
