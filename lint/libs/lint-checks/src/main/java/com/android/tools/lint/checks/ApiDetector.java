@@ -509,11 +509,7 @@ public class ApiDetector extends ResourceXmlDetector
     protected int getMinSdk(Context context) {
         if (mMinApi == -1) {
             AndroidVersion minSdkVersion = context.getMainProject().getMinSdkVersion();
-            mMinApi = minSdkVersion.getApiLevel();
-            if (minSdkVersion.isPreview()) {
-                // When using preview APIs consider the min API to be the next level
-                mMinApi++;
-            }
+            mMinApi = minSdkVersion.getFeatureLevel();
         }
 
         return mMinApi;

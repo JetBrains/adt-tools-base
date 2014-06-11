@@ -100,4 +100,14 @@ public class AndroidVersionTest extends TestCase {
             }
         }
     }
+
+    public void testGetFeatureLevel() {
+        assertEquals(1, AndroidVersion.DEFAULT.getFeatureLevel());
+
+        assertEquals(5, new AndroidVersion(5, null).getApiLevel());
+        assertEquals(5, new AndroidVersion(5, null).getFeatureLevel());
+
+        assertEquals(5, new AndroidVersion(5, "codename").getApiLevel());
+        assertEquals(6, new AndroidVersion(5, "codename").getFeatureLevel());
+    }
 }
