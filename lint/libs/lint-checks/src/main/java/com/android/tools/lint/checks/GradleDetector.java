@@ -27,9 +27,7 @@ import static java.io.File.separatorChar;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.model.AndroidProject;
 import com.android.ide.common.repository.GradleCoordinate;
-import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.sdklib.repository.FullRevision;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
@@ -287,7 +285,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         if (parent.equals("defaultConfig")) {
             if (property.equals("targetSdkVersion")) {
                 int version = getIntLiteralValue(value, -1);
-                if (version > 0 && version < SdkVersionInfo.HIGHEST_KNOWN_API) {
+                if (version > 0 && version < context.getClient().getHighestKnownApiLevel()) {
                     String message =
                             "Not targeting the latest versions of Android; compatibility " +
                             "modes apply. Consider testing and updating this version. " +
@@ -678,9 +676,9 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         if (mTargetSdkVersion > 0 && dependency.getMajorVersion() < mTargetSdkVersion &&
                 dependency.getMajorVersion() != GradleCoordinate.PLUS_REV_VALUE &&
                 context.isEnabled(COMPATIBILITY)) {
-            String message = "The support library should not use a lower version ("
+            String message = "This support library should not use a lower version ("
                 + dependency.getMajorVersion() + ") than the targetSdkVersion ("
-                    + mCompileSdkVersion + ")";
+                    + mTargetSdkVersion + ")";
             report(context, cookie, COMPATIBILITY, message);
         }
 

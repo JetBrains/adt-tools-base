@@ -33,6 +33,11 @@ public class SdkVersionInfo {
     public static final int HIGHEST_KNOWN_API = 19;
 
     /**
+     * Like {@link #HIGHEST_KNOWN_API} but does not include preview platforms
+     */
+    public static final int HIGHEST_KNOWN_STABLE_API = HIGHEST_KNOWN_API;
+
+    /**
      * Returns the Android version and code name of the given API level, or null
      * if not known. The highest number (inclusive) that is supported
      * is {@link SdkVersionInfo#HIGHEST_KNOWN_API}.

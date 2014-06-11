@@ -717,7 +717,7 @@ public abstract class LintClient {
      * @return the highest known API level
      */
     public int getHighestKnownApiLevel() {
-        int max = SdkVersionInfo.HIGHEST_KNOWN_API;
+        int max = SdkVersionInfo.HIGHEST_KNOWN_STABLE_API;
 
         for (IAndroidTarget target : getTargets()) {
             if (target.isPlatform()) {
