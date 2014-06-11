@@ -147,7 +147,8 @@ public class MergingReportTest extends TestCase {
                         mSourceLocation,
                         mKeyResolver,
                         mPropertyResolver,
-                        mElement);
+                        mElement,
+                        XmlDocument.Type.MAIN);
 
         MergingReport mergingReport = new MergingReport.Builder(mLoggerMock)
                 .setMergedDocument(xmlDocument)

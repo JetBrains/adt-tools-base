@@ -117,7 +117,7 @@ public class XmlAttributeTest extends TestCase {
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
-        XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
+        XmlDocument otherDocument = TestUtils.xmlLibraryFromString(
                 new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
@@ -178,7 +178,7 @@ public class XmlAttributeTest extends TestCase {
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
-        XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
+        XmlDocument otherDocument = TestUtils.xmlLibraryFromString(
                 new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
@@ -227,7 +227,7 @@ public class XmlAttributeTest extends TestCase {
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
-        XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
+        XmlDocument otherDocument = TestUtils.xmlLibraryFromString(
                 new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
@@ -288,9 +288,9 @@ public class XmlAttributeTest extends TestCase {
 
         XmlDocument highPriority = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "highPriority"), higherPriority);
-        XmlDocument lowPriority = TestUtils.xmlDocumentFromString(
+        XmlDocument lowPriority = TestUtils.xmlLibraryFromString(
                 new TestUtils.TestSourceLocation(getClass(), "lowPriority"), lowerPriority);
-        XmlDocument lowestPriority = TestUtils.xmlDocumentFromString(
+        XmlDocument lowestPriority = TestUtils.xmlLibraryFromString(
                 new TestUtils.TestSourceLocation(getClass(), "lowestPriority"), evenLowerPriority);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
@@ -368,7 +368,7 @@ public class XmlAttributeTest extends TestCase {
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
-        XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
+        XmlDocument otherDocument = TestUtils.xmlLibraryFromString(
                 new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(

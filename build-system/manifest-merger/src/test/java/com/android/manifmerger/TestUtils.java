@@ -85,7 +85,24 @@ public class TestUtils {
             XmlLoader.SourceLocation location,
             String input)  throws IOException, SAXException, ParserConfigurationException {
 
-        return XmlLoader.load(NULL_RESOLVER, NO_PROPERTY_RESOLVER, location, input);
+        return XmlLoader.load(
+                NULL_RESOLVER, NO_PROPERTY_RESOLVER, location, input, XmlDocument.Type.MAIN);
+    }
+
+    static XmlDocument xmlLibraryFromString(
+            XmlLoader.SourceLocation location,
+            String input)  throws IOException, SAXException, ParserConfigurationException {
+
+        return XmlLoader.load(
+                NULL_RESOLVER, NO_PROPERTY_RESOLVER, location, input, XmlDocument.Type.LIBRARY);
+    }
+
+    static XmlDocument xmlDocumentFromString(
+            XmlLoader.SourceLocation location,
+            String input,
+            XmlDocument.Type type)  throws IOException, SAXException, ParserConfigurationException {
+
+        return XmlLoader.load(NULL_RESOLVER, NO_PROPERTY_RESOLVER, location, input, type);
     }
 
     static XmlDocument xmlDocumentFromString(
@@ -93,7 +110,8 @@ public class TestUtils {
             @NonNull XmlLoader.SourceLocation location,
             String input)  throws IOException, SAXException, ParserConfigurationException {
 
-        return XmlLoader.load(selectors, NO_PROPERTY_RESOLVER, location, input);
+        return XmlLoader.load(selectors, NO_PROPERTY_RESOLVER, location, input,
+                XmlDocument.Type.LIBRARY);
     }
 
 }

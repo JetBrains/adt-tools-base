@@ -101,7 +101,7 @@ public class ManifestMerger2 {
         for (File inputFile : mFlavorsAndBuildTypeFiles) {
             mLogger.info("Merging flavors and build manifest %s \n", inputFile.getPath());
             xmlDocumentOptional = merge(xmlDocumentOptional,
-                    load(new ManifestInfo(null, inputFile, ManifestInfo.Type.OVERLAY), selectors),
+                    load(new ManifestInfo(null, inputFile, XmlDocument.Type.OVERLAY), selectors),
                     mergingReportBuilder);
 
             if (!xmlDocumentOptional.isPresent()) {
@@ -114,7 +114,7 @@ public class ManifestMerger2 {
 
         mLogger.info("Merging main manifest %s\n", mManifestFile.getPath());
         LoadedManifestInfo loadedMainManifestInfo = load(
-                new ManifestInfo(mManifestFile.getName(), mManifestFile, ManifestInfo.Type.MAIN),
+                new ManifestInfo(mManifestFile.getName(), mManifestFile, XmlDocument.Type.MAIN),
                 selectors);
         xmlDocumentOptional =
                 merge(xmlDocumentOptional, loadedMainManifestInfo, mergingReportBuilder);
@@ -199,7 +199,8 @@ public class ManifestMerger2 {
             lowerPriorityDocument = XmlLoader.load(selectors,
                     mSystemPropertyResolver,
                     lowerPriorityManifest.mName,
-                    lowerPriorityManifest.mLocation);
+                    lowerPriorityManifest.mLocation,
+                    lowerPriorityManifest.getType());
         } catch (Exception e) {
             throw new MergeFailureException(e);
         }
@@ -247,12 +248,13 @@ public class ManifestMerger2 {
         for (Pair<String, File> libraryFile : mLibraryFiles) {
             mLogger.info("Loading library manifest " + libraryFile.getSecond().getPath());
             ManifestInfo manifestInfo = new ManifestInfo(libraryFile.getFirst(), libraryFile.getSecond(),
-                    ManifestInfo.Type.LIBRARY);
+                    XmlDocument.Type.LIBRARY);
             XmlDocument libraryDocument;
             try {
                 libraryDocument = XmlLoader.load(selectors,
                         mSystemPropertyResolver,
-                        manifestInfo.mName, manifestInfo.mLocation);
+                        manifestInfo.mName, manifestInfo.mLocation,
+                        XmlDocument.Type.LIBRARY);
             } catch (Exception e) {
                 throw new MergeFailureException(e);
             }
@@ -713,22 +715,22 @@ public class ManifestMerger2 {
 
     private static class ManifestInfo {
 
-        private ManifestInfo(String name, File location, Type type) {
+        private ManifestInfo(String name, File location, XmlDocument.Type type) {
             mName = name;
             mLocation = location;
             mType = type;
         }
 
-        enum Type {
-            OVERLAY, MAIN, LIBRARY
-        }
-
         private final String mName;
         private final File mLocation;
-        private final Type mType;
+        private final XmlDocument.Type mType;
 
         File getLocation() {
             return mLocation;
+        }
+
+        XmlDocument.Type getType() {
+            return mType;
         }
     }
 
