@@ -17,6 +17,7 @@
     <orderEntry type="module" module-name="builder-model" exported="" />
     <orderEntry type="library" name="easymock-tools" level="project" />
     <orderEntry type="library" name="ecj" level="project" />
+    <orderEntry type="library" scope="TEST" name="groovy" level="project" />
   </component>
 </module>
 

@@ -28,6 +28,7 @@ import static java.io.File.separatorChar;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.repository.GradleCoordinate;
 import com.android.sdklib.repository.FullRevision;
 import com.android.tools.lint.client.api.LintClient;
@@ -204,6 +205,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             Severity.ERROR,
             IMPLEMENTATION);
 
+    /** A newer version is available on a remote server */
     public static final Issue REMOTE_VERSION = Issue.create(
             "NewerVersionAvailable", //$NON-NLS-1$
             "Newer Library Versions Available",
@@ -797,7 +799,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         Issue issue = DEPENDENCY;
         if ("com.android.tools.build".equals(dependency.getGroupId()) &&
                 "gradle".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, 0, 12, 1);
+            version = getNewerRevision(dependency, 0, 12, 2);
         } else if ("com.google.guava".equals(dependency.getGroupId()) &&
                 "guava".equals(dependency.getArtifactId())) {
             version = getNewerRevision(dependency, 17, 0, 0);
@@ -907,11 +909,23 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         return null;
     }
 
+    /** Normally null; used for testing */
+    @Nullable
+    @VisibleForTesting
+    static Map<String,String> ourMockData;
+
     @Nullable
     private static String readUrlData(
             @NonNull Context context,
             @NonNull GradleCoordinate dependency,
             @NonNull String query) {
+        // For unit testing: avoid network as well as unexpected new versions
+        if (ourMockData != null) {
+            String value = ourMockData.get(query);
+            assert value != null : query;
+            return value;
+        }
+
         LintClient client = context.getClient();
         try {
             URL url = new URL(query);
