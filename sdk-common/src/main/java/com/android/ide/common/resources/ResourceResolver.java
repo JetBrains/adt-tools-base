@@ -94,6 +94,34 @@ public class ResourceResolver extends RenderResources {
         return resolver;
     }
 
+    /**
+     * Sets up the light and dark default styles with the given concrete styles. This is used if we
+     * want to override the defaults configured in the framework for this particular platform.
+     */
+    public void setDeviceDefaults(@Nullable String lightStyle, @Nullable String darkStyle) {
+        if (darkStyle != null) {
+            replace("Theme.DeviceDefault", darkStyle);
+        }
+        if (lightStyle != null && replace("Theme.DeviceDefault.Light", lightStyle)) {
+            replace("Theme.DeviceDefault.Light.DarkActionBar", lightStyle + ".DarkActionBar");
+        }
+    }
+
+    private boolean replace(String fromStyleName, String toStyleName) {
+        Map<String, ResourceValue> map = mFrameworkResources.get(ResourceType.STYLE);
+        if (map != null) {
+            ResourceValue from = map.get(fromStyleName);
+            if (from instanceof StyleResourceValue) {
+                ResourceValue to = map.get(toStyleName);
+                if (to instanceof StyleResourceValue) {
+                    mStyleInheritanceMap.put((StyleResourceValue)from, (StyleResourceValue)to);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     // ---- Methods to help dealing with older LayoutLibs.
 
     public String getThemeName() {
@@ -636,7 +664,8 @@ public class ResourceResolver extends RenderResources {
      * {@code parentStyle}
      */
     public boolean themeExtends(@NonNull String parentStyle, @NonNull String themeStyle) {
-        ResourceValue parentValue = findResValue(parentStyle, parentStyle.startsWith(ANDROID_STYLE_RESOURCE_PREFIX));
+        ResourceValue parentValue = findResValue(parentStyle,
+                parentStyle.startsWith(ANDROID_STYLE_RESOURCE_PREFIX));
         if (parentValue instanceof StyleResourceValue) {
             ResourceValue themeValue = findResValue(themeStyle,
                     themeStyle.startsWith(ANDROID_STYLE_RESOURCE_PREFIX));
