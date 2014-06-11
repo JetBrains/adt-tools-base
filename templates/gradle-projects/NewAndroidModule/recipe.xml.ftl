@@ -38,6 +38,10 @@
 <#if !(isLibraryProject??) || !isLibraryProject>
     <instantiate from="res/values/styles.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/styles.xml" />
+<#if buildApi gte 21>
+    <copy from="res/values-v21/styles.xml"
+          to="${escapeXmlAttribute(resOut)}/values-v21/styles.xml" />
+</#if>
 </#if>
 
     <instantiate from="res/values/strings.xml.ftl"
