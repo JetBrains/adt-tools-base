@@ -1409,7 +1409,7 @@ public class XmlElementTest extends TestCase {
         assertTrue(activityOne.isPresent());
 
         assertEquals(1, activityOne.get().getMergeableElements().size());
-        assertEquals(3, activityOne.get().getAttributes().size());
+        assertEquals(4, activityOne.get().getAttributes().size());
 
         // check that we kept the right child from the higher priority node.
         XmlNode.NodeName nodeName = XmlNode.fromXmlName(

@@ -131,11 +131,13 @@ public class XmlAttributeTest extends TestCase {
                         "com.example.lib3.activityOne");
         assertTrue(activityOne.isPresent());
 
-        // verify that only android:name remains in the result.
+        // verify that only android:name and tools:remove remains in the result.
         List<XmlAttribute> attributes = activityOne.get().getAttributes();
-        assertEquals(1, attributes.size());
+        assertEquals(2, attributes.size());
         assertTrue(activityOne.get().getAttribute(
                 XmlNode.fromXmlName("android:name")).isPresent());
+        assertTrue(activityOne.get().getAttribute(
+                XmlNode.fromNSName(SdkConstants.TOOLS_URI, "tools", "remove")).isPresent());
 
         Actions actions = mergingReportBuilder.getActionRecorder().build();
         // check the recorded actions.
@@ -190,11 +192,12 @@ public class XmlAttributeTest extends TestCase {
                         "com.example.lib3.activityOne");
         assertTrue(activityOne.isPresent());
 
-        // verify that both attributes are in the resulting merged element.
         List<XmlAttribute> attributes = activityOne.get().getAttributes();
-        assertEquals(1, attributes.size());
+        assertEquals(2, attributes.size());
         assertTrue(activityOne.get().getAttribute(
                 XmlNode.fromXmlName("android:name")).isPresent());
+        assertTrue(activityOne.get().getAttribute(
+                XmlNode.fromNSName(SdkConstants.TOOLS_URI, "tools", "remove")).isPresent());
     }
 
     public void testMultipleAttributesRemoval()
@@ -238,11 +241,12 @@ public class XmlAttributeTest extends TestCase {
                         "com.example.lib3.activityOne");
         assertTrue(activityOne.isPresent());
 
-        // verify that both attributes are in the resulting merged element.
         List<XmlAttribute> attributes = activityOne.get().getAttributes();
-        assertEquals(1, attributes.size());
+        assertEquals(2, attributes.size());
         assertTrue(activityOne.get().getAttribute(
                 XmlNode.fromXmlName("android:name")).isPresent());
+        assertTrue(activityOne.get().getAttribute(
+                XmlNode.fromNSName(SdkConstants.TOOLS_URI, "tools", "remove")).isPresent());
     }
 
     public void testDeepAttributeRemoval()
@@ -303,13 +307,14 @@ public class XmlAttributeTest extends TestCase {
                         "com.example.lib3.activityOne");
         assertTrue(activityOne.isPresent());
 
-        // verify that both attributes are in the resulting merged element.
         List<XmlAttribute> attributes = activityOne.get().getAttributes();
-        assertEquals(2, attributes.size());
+        assertEquals(3, attributes.size());
         assertTrue(activityOne.get().getAttribute(
                 XmlNode.fromXmlName("android:name")).isPresent());
         assertTrue(activityOne.get().getAttribute(
                 XmlNode.fromXmlName("android:screenOrientation")).isPresent());
+        assertTrue(activityOne.get().getAttribute(
+                XmlNode.fromNSName(SdkConstants.TOOLS_URI, "tools", "remove")).isPresent());
 
         Actions actions = mergingReportBuilder.getActionRecorder().build();
         // check the recorded actions.
@@ -370,5 +375,110 @@ public class XmlAttributeTest extends TestCase {
                 new StdLogger(StdLogger.Level.VERBOSE));
         Optional<XmlDocument> result = refDocument.merge(otherDocument, mergingReportBuilder);
         assertTrue(result.isPresent());
+
+    }
+
+    public void testToolsAttributeMerging()
+            throws ParserConfigurationException, SAXException, IOException {
+        String higherPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\"\n"
+                + "         tools:remove=\"theme,exported\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        String lowerPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" \n"
+                +"          tools:remove=\"bar\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+        XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
+                new StdLogger(StdLogger.Level.VERBOSE));
+        Optional<XmlDocument> result = refDocument.merge(otherDocument, mergingReportBuilder);
+        assertTrue(result.isPresent());
+
+        Optional<XmlElement> activityOne = result.get().getRootNode()
+                .getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,
+                        "com.example.lib3.activityOne");
+        assertTrue(activityOne.isPresent());
+
+        // verify that only android:name and tools:remove remains in the result.
+        List<XmlAttribute> attributes = activityOne.get().getAttributes();
+        assertEquals(2, attributes.size());
+        assertTrue(activityOne.get().getAttribute(
+                XmlNode.fromXmlName("android:name")).isPresent());
+        Optional<XmlAttribute> toolsRemove = activityOne.get().getAttribute(
+                XmlNode.fromNSName(SdkConstants.TOOLS_URI, "tools", "remove"));
+        assertTrue(toolsRemove.isPresent());
+        assertEquals("theme,exported,bar", toolsRemove.get().getValue());
+
+    }
+
+    public void testToolsNodeAttributeNotMerging()
+            throws ParserConfigurationException, SAXException, IOException {
+        String higherPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\"\n"
+                + "         tools:node=\"replace\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        String lowerPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" \n"
+                +"          tools:node=\"remove\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+        XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
+                new StdLogger(StdLogger.Level.VERBOSE));
+        Optional<XmlDocument> result = refDocument.merge(otherDocument, mergingReportBuilder);
+        assertTrue(result.isPresent());
+
+        Optional<XmlElement> activityOne = result.get().getRootNode()
+                .getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY,
+                        "com.example.lib3.activityOne");
+        assertTrue(activityOne.isPresent());
+
+        // verify that only android:name and tools:remove remains in the result.
+        List<XmlAttribute> attributes = activityOne.get().getAttributes();
+        assertEquals(2, attributes.size());
+        assertTrue(activityOne.get().getAttribute(
+                XmlNode.fromXmlName("android:name")).isPresent());
+        Optional<XmlAttribute> toolsRemove = activityOne.get().getAttribute(
+                XmlNode.fromNSName(SdkConstants.TOOLS_URI, "tools", "node"));
+        assertTrue(toolsRemove.isPresent());
+        assertEquals("replace", toolsRemove.get().getValue());
+
     }
 }

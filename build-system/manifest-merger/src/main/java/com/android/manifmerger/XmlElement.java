@@ -134,14 +134,10 @@ public class XmlElement extends OrphanXmlElement {
         mAttributesOperationTypes = attributeOperationTypeBuilder.build();
         for (int i = 0; i < namedNodeMap.getLength(); i++) {
             Node attribute = namedNodeMap.item(i);
-            if (!SdkConstants.TOOLS_URI.equals(attribute.getNamespaceURI())) {
-
-                XmlAttribute xmlAttribute = new XmlAttribute(
-                        this, (Attr) attribute, getType().getAttributeModel(XmlNode.fromXmlName(
-                                ((Attr) attribute).getName())));
-                attributesListBuilder.add(xmlAttribute);
-            }
-
+            XmlAttribute xmlAttribute = new XmlAttribute(
+                    this, (Attr) attribute, getType().getAttributeModel(XmlNode.fromXmlName(
+                            ((Attr) attribute).getName())));
+            attributesListBuilder.add(xmlAttribute);
         }
         mNodeOperationType = lastNodeOperationType;
         mAttributes = attributesListBuilder.build();
