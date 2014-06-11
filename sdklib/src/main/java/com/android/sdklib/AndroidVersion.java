@@ -179,6 +179,21 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
     }
 
     /**
+     * Returns the API level as an integer. If this is a preview platform, it
+     * will return the expected final version of the API rather than the current API
+     * level. This is the "feature level" as opposed to the "release level" returned by
+     * {@link #getApiLevel()} in the sense that it is useful when you want
+     * to check the presence of a given feature from an API, and we consider the feature
+     * present in preview platforms as well.
+     *
+     * @return the API level of this version, +1 for preview platforms
+     */
+    public int getFeatureLevel() {
+        //noinspection VariableNotUsedInsideIf
+        return mCodename != null ? mApiLevel + 1 : mApiLevel;
+    }
+
+    /**
      * Returns the version code name if applicable, null otherwise.
      * <p/>If the codename is non null, then the API level should be ignored, and this should be
      * used as a unique identifier of the target instead.
