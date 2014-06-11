@@ -84,7 +84,8 @@ public interface IDevice extends IShellEnabledDevice {
         BOOTLOADER("bootloader"), //$NON-NLS-1$
         OFFLINE("offline"), //$NON-NLS-1$
         ONLINE("device"), //$NON-NLS-1$
-        RECOVERY("recovery"); //$NON-NLS-1$
+        RECOVERY("recovery"), //$NON-NLS-1$
+        UNAUTHORIZED("unauthorized"); //$NON-NLS-1$
 
         private String mState;
 
@@ -98,6 +99,7 @@ public interface IDevice extends IShellEnabledDevice {
          * @param state the device state.
          * @return a {@link DeviceState} object or <code>null</code> if the state is unknown.
          */
+        @Nullable
         public static DeviceState getState(String state) {
             for (DeviceState deviceState : values()) {
                 if (deviceState.mState.equals(state)) {

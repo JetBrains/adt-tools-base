@@ -22,6 +22,7 @@ import com.android.builder.internal.testing.SimpleTestCallable;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.TestException;
+import com.android.ddmlib.IDevice;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.utils.ILogger;
@@ -47,18 +48,25 @@ public class SimpleTestRunner implements TestRunner {
                       int timeout,
             @NonNull  File resultsDir,
             @NonNull  File coverageDir,
-            @NonNull  ILogger logger) throws TestException, InterruptedException {
+            @NonNull  ILogger logger) throws TestException, NoAuthorizedDeviceFoundException, InterruptedException {
 
         WaitableExecutor<Boolean> executor = new WaitableExecutor<Boolean>(maxThreads);
 
+        boolean foundAtLeastOneAuthorizedDevice = false;
         for (DeviceConnector device : deviceList) {
-            if (filterOutDevice(device, testData, logger, projectName, variantName)) {
-                executor.execute(new SimpleTestCallable(device, projectName, variantName,
-                        testApk, testedApk, testData,
-                        resultsDir, coverageDir, timeout, logger));
+            if (device.getState() != IDevice.DeviceState.UNAUTHORIZED) {
+                foundAtLeastOneAuthorizedDevice = true;
+                if (filterOutDevice(device, testData, logger, projectName, variantName)) {
+                    executor.execute(new SimpleTestCallable(device, projectName, variantName,
+                            testApk, testedApk, testData,
+                            resultsDir, coverageDir, timeout, logger));
+                }
             }
         }
 
+        if (!foundAtLeastOneAuthorizedDevice) {
+            throw new NoAuthorizedDeviceFoundException();
+        }
         List<WaitableExecutor.TaskResult<Boolean>> results = executor.waitForAllTasks();
 
         boolean success = true;
