@@ -65,8 +65,9 @@ public final class ValueResourceParser extends DefaultHandler {
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
         if (mCurrentValue != null) {
-            mCurrentValue.setValue(
-                    ValueXmlHelper.unescapeResourceString(mCurrentValue.getValue(), false, true));
+            String value = mCurrentValue.getValue();
+            value = value == null ? "" : ValueXmlHelper.unescapeResourceString(value, false, true);
+            mCurrentValue.setValue(value);
         }
 
         if (inResources && qName.equals(NODE_RESOURCES)) {
