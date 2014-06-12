@@ -16,9 +16,6 @@
 
 package com.android.tools.lint.checks;
 
-import static com.android.tools.lint.client.api.JavaParser.TYPE_OBJECT;
-import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.JavaParser;
@@ -39,10 +36,9 @@ import java.util.Set;
 import lombok.ast.AstVisitor;
 import lombok.ast.Expression;
 import lombok.ast.MethodInvocation;
-import lombok.ast.Select;
+import lombok.ast.Node;
 import lombok.ast.StrictListAccessor;
 import lombok.ast.StringLiteral;
-import lombok.ast.VariableReference;
 
 /**
  * Ensures that Cipher.getInstance is not called with AES as the parameter.
@@ -50,7 +46,7 @@ import lombok.ast.VariableReference;
 public class CipherGetInstanceDetector extends Detector implements Detector.JavaScanner {
     public static final Issue ISSUE = Issue.create(
             "GetInstance", //$NON-NLS-1$
-            "getInstance Called",
+            "Cipher.getInstance with ECB",
             "Checks that `Cipher#getInstance` is not called using the ECB cipher mode",
             "`Cipher#getInstance` should not be called with ECB as the cipher mode or without "
                     + "setting the cipher mode because the default mode on android is ECB, which "
@@ -99,16 +95,34 @@ public class CipherGetInstanceDetector extends Detector implements Detector.Java
             Expression expression = argumentList.first();
             if (expression instanceof StringLiteral) {
                 StringLiteral argument = (StringLiteral)expression;
-                if (ALGORITHM_ONLY.contains(argument.astValue())) {
-                    String message = "Cipher.getInstance should not be called without setting the"
-                            + " encryption mode and padding.";
-                    context.report(ISSUE, node, context.getLocation(argument), message, null);
-                } else if (argument.toString().contains(ECB)) {
-                    String message = "ECB encryption mode should not be used.";
-                    context.report(ISSUE, node, context.getLocation(argument), message, null);
+                String parameter = argument.astValue();
+                checkParameter(context, node, argument, parameter, false);
+            } else {
+                JavaParser.ResolvedNode resolve = context.resolve(expression);
+                if (resolve instanceof JavaParser.ResolvedField) {
+                    JavaParser.ResolvedField field = (JavaParser.ResolvedField) resolve;
+                    Object value = field.getValue();
+                    if (value instanceof String) {
+                        checkParameter(context, node, expression, (String)value, true);
+                    }
                 }
             }
         }
     }
 
+    private static void checkParameter(@NonNull JavaContext context,
+            @NonNull MethodInvocation call, @NonNull Node node, @NonNull String value,
+            boolean includeValue) {
+        if (ALGORITHM_ONLY.contains(value)) {
+            String message = "Cipher.getInstance should not be called without setting the"
+                    + " encryption mode and padding";
+            context.report(ISSUE, call, context.getLocation(node), message, null);
+        } else if (value.contains(ECB)) {
+            String message = "ECB encryption mode should not be used";
+            if (includeValue) {
+                message += " (was \"" + value + "\")";
+            }
+            context.report(ISSUE, call, context.getLocation(node), message, null);
+        }
+    }
 }
