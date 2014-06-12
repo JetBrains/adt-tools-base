@@ -202,9 +202,43 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             Severity.ERROR,
             IMPLEMENTATION);
 
+    /** A statement appearing at the root of the top-level build file that shouldn't be there */
+    public static final Issue IMPROPER_PROJECT_LEVEL_STATEMENT = Issue.create(
+            "ImproperProjectLevelStatement", //$NON-NLS-1$
+            "Improper project-level build file statement",
+            "Looks for statements that likely don't belong in a project-level build file",
+
+            "The top-level build file in a multi-module project is generally used to configure project-wide " +
+            "build parameters and often does not describe a corresponding top-level module. In build files " +
+            "without a module, it is an error to use build file constructs that require a module; doing so can " +
+            "lead to unpredictable error messages.",
+
+            Category.CORRECTNESS,
+            2,
+            Severity.WARNING,
+            IMPLEMENTATION);
+
+    /** A statement appearing within the wrong scope of a build file */
+    public static final Issue MISPLACED_STATEMENT = Issue.create(
+            "MisplacedStatement", //$NON-NLS-1$
+            "Misplaced statement",
+            "Looks for build file statements that belong elsewhere in the build file",
+
+            "Most build file directives only make sense in certain contexts in the build file. If you put a " +
+            "statement in the wrong place, you can get errors or unexpected behavior.",
+
+            Category.CORRECTNESS,
+            2,
+            Severity.WARNING,
+            IMPLEMENTATION);
+
     private int mMinSdkVersion;
     private int mCompileSdkVersion;
     private int mTargetSdkVersion;
+    private Object myAndroidPluginCookie;
+    private Object myDependenciesCookie;
+    private Object myRepositoriesCookie;
+    private Object myAndroidBlockCookie;
 
     @Override
     public boolean appliesTo(@NonNull Context context, @NonNull File file) {
@@ -230,7 +264,14 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         return parent.equals("defaultConfig")
                 || parent.equals("android")
                 || parent.equals("dependencies")
+                || parent.equals("repositories")
                 || parentParent != null && parentParent.equals("buildTypes");
+    }
+
+    protected static boolean isInterestingStatement(
+            @NonNull String statement,
+            @Nullable String parent) {
+        return parent == null && statement.equals("apply");
     }
 
     @SuppressWarnings("UnusedDeclaration")
@@ -241,15 +282,14 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             @Nullable String parentParent) {
         return property.equals("targetSdkVersion")
                 || property.equals("buildToolsVersion")
-                || property.equals("compile") || property.endsWith("Compile")
-                || property.equals("classpath")
                 || property.equals("versionName")
                 || property.equals("versionCode")
                 || property.equals("compileSdkVersion")
                 || property.equals("minSdkVersion")
                 || property.equals("applicationIdSuffix")
                 || property.equals("packageName")
-                || property.equals("packageNameSuffix");
+                || property.equals("packageNameSuffix")
+                || parent.equals("dependencies");
     }
 
     protected void checkOctal(
@@ -281,7 +321,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         @NonNull String value,
         @NonNull String parent,
         @Nullable String parentParent,
-        @NonNull Object cookie) {
+        @NonNull Object valueCookie,
+        @NonNull Object statementCookie) {
         if (parent.equals("defaultConfig")) {
             if (property.equals("targetSdkVersion")) {
                 int version = getIntLiteralValue(value, -1);
@@ -290,16 +331,16 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                             "Not targeting the latest versions of Android; compatibility " +
                             "modes apply. Consider testing and updating this version. " +
                            "Consult the android.os.Build.VERSION_CODES javadoc for details.";
-                    report(context, cookie, TARGET_NEWER, message);
+                    report(context, valueCookie, TARGET_NEWER, message);
                 }
                 if (version > 0) {
                     mTargetSdkVersion = version;
-                    checkTargetCompatibility(context, cookie);
+                    checkTargetCompatibility(context, valueCookie);
                 }
             }
 
             if (value.startsWith("0")) {
-                checkOctal(context, value, cookie);
+                checkOctal(context, value, valueCookie);
             }
 
             if (property.equals("versionName") || property.equals("versionCode") &&
@@ -312,20 +353,20 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                             + "conflict with the implicit getters for the defaultConfig "
                             + "properties. For example, try using the prefix compute- "
                             + "instead of get-.";
-                    report(context, cookie, GRADLE_GETTER, message);
+                    report(context, valueCookie, GRADLE_GETTER, message);
                 }
             } else if (property.equals("packageName")) {
                 if (isModelOlderThan011(context)) {
                     return;
                 }
                 String message = "Deprecated: Replace 'packageName' with 'applicationId'";
-                report(context, getPropertyKeyCookie(cookie), IDE_SUPPORT, message);
+                report(context, getPropertyKeyCookie(valueCookie), IDE_SUPPORT, message);
             }
         } else if (property.equals("compileSdkVersion") && parent.equals("android")) {
             int version = getIntLiteralValue(value, -1);
             if (version > 0) {
                 mCompileSdkVersion = version;
-                checkTargetCompatibility(context, cookie);
+                checkTargetCompatibility(context, valueCookie);
             }
         } else if (property.equals("minSdkVersion") && parent.equals("android")) {
             int version = getIntLiteralValue(value, -1);
@@ -342,24 +383,21 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                     if (recommended != null && version.compareTo(recommended) < 0) {
                         String message = "Old buildToolsVersion; recommended version "
                                 + "is " + recommended + " or later";
-                        report(context, cookie, DEPENDENCY, message);
+                        report(context, valueCookie, DEPENDENCY, message);
                     }
                 }
             }
-        } else if (parent.equals("dependencies") &&
-                (property.equals("compile")
-                        || property.endsWith("Compile")
-                        || property.equals("classpath"))) {
+        } else if (parent.equals("dependencies")) {
             if (value.startsWith("files('") && value.endsWith("')")) {
                 String path = value.substring("files('".length(), value.length() - 2);
                 if (path.contains("\\\\")) {
                     String message = "Do not use Windows file separators in .gradle files; "
                             + "use / instead";
-                    report(context, cookie, PATH, message);
+                    report(context, valueCookie, PATH, message);
 
                 } else if (new File(path.replace('/', File.separatorChar)).isAbsolute()) {
                     String message = "Avoid using absolute paths in .gradle files";
-                    report(context, cookie, PATH, message);
+                    report(context, valueCookie, PATH, message);
                 }
             } else {
                 String dependency = getStringLiteralValue(value);
@@ -368,27 +406,96 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                     if (gc != null) {
                         if (gc.acceptsGreaterRevisions()) {
                             String message = "Avoid using + in version numbers; can lead " + "to unpredictable and  unrepeatable builds";
-                            report(context, cookie, PLUS, message);
+                            report(context, valueCookie, PLUS, message);
                         }
-                        if (!dependency.startsWith(SdkConstants.GRADLE_PLUGIN_NAME) || !checkGradlePluginDependency(context, gc, cookie)) {
-                            checkDependency(context, gc, cookie);
+                        if (!dependency.startsWith(SdkConstants.GRADLE_PLUGIN_NAME) ||
+                            !checkGradlePluginDependency(context, gc, valueCookie)) {
+                            checkDependency(context, gc, valueCookie);
                         }
                     }
                 }
+            }
+            if ((!property.equals("classpath")) && "buildscript".equals(parentParent)) {
+                String message = "Only `classpath` dependencies should appear in the `buildscript` dependencies block";
+                report(context, statementCookie, IMPROPER_PROJECT_LEVEL_STATEMENT, message);
             }
         } else if (property.equals("packageNameSuffix")) {
             if (isModelOlderThan011(context)) {
                 return;
             }
             String message = "Deprecated: Replace 'packageNameSuffix' with 'applicationIdSuffix'";
-            report(context, getPropertyKeyCookie(cookie), IDE_SUPPORT, message);
+            report(context, getPropertyKeyCookie(valueCookie), IDE_SUPPORT, message);
         } else if (property.equals("applicationIdSuffix")) {
             String suffix = getStringLiteralValue(value);
             if (suffix != null && !suffix.startsWith(".")) {
                 String message = "Package suffix should probably start with a \".\"";
-                report(context, cookie, PATH, message);
+                report(context, valueCookie, PATH, message);
             }
         }
+    }
+
+    protected void checkBlock(
+            @NonNull Context context,
+            @NonNull String block,
+            @Nullable String parent,
+            @NonNull Object cookie) {
+        if ("android".equals(block) && parent == null) {
+            myAndroidBlockCookie = cookie;
+        } else if ("dependencies".equals(block)) {
+            if (parent == null) {
+                myDependenciesCookie = cookie;
+            } else if (!parent.equals("buildscript") && !parent.equals("allprojects")) {
+                String message = "A `dependencies` block doesn't belong here.";
+                report(context, cookie, MISPLACED_STATEMENT, message);
+            }
+        } else if ("repositories".equals(block)) {
+            if (parent == null) {
+                myRepositoriesCookie = cookie;
+            } else if (!parent.equals("buildscript") && !parent.equals("allprojects")) {
+                String message = "A `repositories` block doesn't belong here.";
+                report(context, cookie, MISPLACED_STATEMENT, message);
+            }
+        }
+    }
+
+    protected void checkMethodCall(
+            @NonNull Context context,
+            @NonNull String statement,
+            @Nullable String parent,
+            @NonNull Map<String, String> namedArguments,
+            @NonNull List<String> unnamedArguments,
+            @NonNull Object cookie) {
+        String plugin = namedArguments.get("plugin");
+        if (statement.equals("apply") && parent == null && "android".equals(plugin) || "android-library".equals(plugin)) {
+           myAndroidPluginCookie = cookie;
+        }
+    }
+
+    @Override
+    public void afterCheckFile(@NonNull Context context) {
+        if (myAndroidPluginCookie != null && !isAndroidProject()) {
+            String message = "The `apply plugin` statement should only be used if there is a corresponding module for this build file.";
+            report(context, myAndroidPluginCookie, IMPROPER_PROJECT_LEVEL_STATEMENT, message);
+        }
+        if (myAndroidBlockCookie != null && !isAndroidProject()) {
+            String message = "An `android` block should only appear in build files that correspond to a module and have an " +
+                             "`apply plugin: 'android'` or `apply plugin: 'android-library'` statement.";
+            report(context, myAndroidBlockCookie, IMPROPER_PROJECT_LEVEL_STATEMENT, message);
+        }
+        if (myDependenciesCookie != null && !isAndroidProject()) {
+            String message = "A top-level `dependencies` block should only appear in build files that correspond to a module.";
+            report(context, myDependenciesCookie, IMPROPER_PROJECT_LEVEL_STATEMENT, message);
+            super.afterCheckFile(context);
+        }
+        if (myRepositoriesCookie != null && !isAndroidProject()) {
+            String message = "A top-level `repositories` block should only appear in build files that correspond to a module.";
+            report(context, myRepositoriesCookie, IMPROPER_PROJECT_LEVEL_STATEMENT, message);
+            super.afterCheckFile(context);
+        }
+    }
+
+    private boolean isAndroidProject() {
+        return myAndroidBlockCookie != null && myAndroidPluginCookie  != null;
     }
 
     @Nullable
