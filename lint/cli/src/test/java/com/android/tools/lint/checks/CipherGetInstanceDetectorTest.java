@@ -28,7 +28,7 @@ public class CipherGetInstanceDetectorTest extends AbstractCheckTest {
 
     public void testCipherGetInstanceAES() throws Exception {
         assertEquals(
-                "src/test/pkg/CipherGetInstanceAES.java:7: Warning: Cipher.getInstance should not be called without setting the encryption mode and padding. [GetInstance]\n"
+                "src/test/pkg/CipherGetInstanceAES.java:7: Warning: Cipher.getInstance should not be called without setting the encryption mode and padding [GetInstance]\n"
                         + "    Cipher.getInstance(\"AES\");\n"
                         + "                       ~~~~~\n"
                         + "0 errors, 1 warnings\n",
@@ -40,7 +40,7 @@ public class CipherGetInstanceDetectorTest extends AbstractCheckTest {
 
     public void testCipherGetInstanceDES() throws Exception {
         assertEquals(
-                "src/test/pkg/CipherGetInstanceDES.java:7: Warning: Cipher.getInstance should not be called without setting the encryption mode and padding. [GetInstance]\n"
+                "src/test/pkg/CipherGetInstanceDES.java:7: Warning: Cipher.getInstance should not be called without setting the encryption mode and padding [GetInstance]\n"
                         + "    Cipher.getInstance(\"DES\");\n"
                         + "                       ~~~~~\n"
                         + "0 errors, 1 warnings\n",
@@ -52,7 +52,7 @@ public class CipherGetInstanceDetectorTest extends AbstractCheckTest {
 
     public void testCipherGetInstanceAESECB() throws Exception {
         assertEquals(
-                "src/test/pkg/CipherGetInstanceAESECB.java:7: Warning: ECB encryption mode should not be used. [GetInstance]\n"
+                "src/test/pkg/CipherGetInstanceAESECB.java:7: Warning: ECB encryption mode should not be used [GetInstance]\n"
                         + "    Cipher.getInstance(\"AES/ECB/NoPadding\");\n"
                         + "                       ~~~~~~~~~~~~~~~~~~~\n"
                         + "0 errors, 1 warnings\n",
@@ -67,6 +67,18 @@ public class CipherGetInstanceDetectorTest extends AbstractCheckTest {
                 "No warnings.",
                 lintProject(
                         "src/test/pkg/CipherGetInstanceAESCBC.java.txt=>src/test/pkg/CipherGetInstanceAESCBC.java"
+                )
+        );
+    }
+
+    public void testResolveConstants() throws Exception {
+        assertEquals(
+                "src/test/pkg/CipherGetInstanceTest.java:10: Warning: ECB encryption mode should not be used (was \"DES/ECB/NoPadding\") [GetInstance]\n"
+                        + "        Cipher des = Cipher.getInstance(Constants.DES);\n"
+                        + "                                        ~~~~~~~~~~~~~\n"
+                        + "0 errors, 1 warnings\n",
+                lintProject(
+                        "src/test/pkg/CipherGetInstanceTest.java.txt=>src/test/pkg/CipherGetInstanceTest.java"
                 )
         );
     }

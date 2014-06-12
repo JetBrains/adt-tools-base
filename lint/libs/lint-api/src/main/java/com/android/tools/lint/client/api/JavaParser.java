@@ -293,6 +293,9 @@ public abstract class JavaParser {
 
         @NonNull
         public abstract ResolvedClass getContainingClass();
+
+        @Nullable
+        public abstract Object getValue();
     }
 
     /** A local variable or parameter declaration */
