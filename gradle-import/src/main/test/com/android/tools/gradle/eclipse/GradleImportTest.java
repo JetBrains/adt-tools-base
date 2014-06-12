@@ -386,6 +386,36 @@ public class GradleImportTest extends TestCase {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testImportWithoutMinSdkVersion() throws Exception {
+        // Regression test for importing project which does not explicitly set minSdkVersion
+        // and/or targetSdkVersion; this would earlier result in "-1" being written into
+        // build.gradle which fails the build with "> Cannot invoke method minus() on null object"
+        File projectDir = createProject("test1", "test.pkg");
+
+        // Remove <uses-sdk ...>
+        File manifestFile = new File(projectDir, FN_ANDROID_MANIFEST_XML);
+        String manifestContents = Files.toString(manifestFile,  UTF_8);
+        int index = manifestContents.indexOf("<uses-sdk");
+        int endIndex = manifestContents.indexOf('>', index);
+        assertFalse(index == -1);
+        assertFalse(endIndex == -1);
+        manifestContents = manifestContents.substring(0, index) +
+                manifestContents.substring(endIndex + 1);
+        Files.write(manifestContents, manifestFile, UTF_8);
+
+        File imported = checkProject(projectDir, ""
+                        + MSG_HEADER
+                        + MSG_FOLDER_STRUCTURE
+                        + "* AndroidManifest.xml => app/src/main/AndroidManifest.xml\n"
+                        + "* res/ => app/src/main/res/\n"
+                        + "* src/ => app/src/main/java/\n"
+                        + MSG_FOOTER,
+                true /* checkBuild */);
+        deleteDir(projectDir);
+        deleteDir(imported);
+    }
+
+  @SuppressWarnings("ResultOfMethodCallIgnored")
     public void testMoveRsAndAidl() throws Exception {
         File projectDir = createProject("test1", "test.pkg");
         createSampleAidlFile(projectDir, "src", "test.pkg");
