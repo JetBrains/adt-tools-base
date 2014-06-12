@@ -305,6 +305,26 @@ public class LocalSdk {
 
     //--------- Generic querying ---------
 
+
+    /**
+     * Retrieves information on a package identified by an {@link IPkgDesc}.
+     *
+     * @param descriptor {@link IPkgDesc} describing a package.
+     * @return The first package found with the same descriptor or null.
+     */
+    @Nullable
+    public LocalPkgInfo getPkgInfo(@NonNull IPkgDesc descriptor) {
+
+        for (LocalPkgInfo pkg : getPkgsInfos(EnumSet.of(descriptor.getType()))) {
+            IPkgDesc d = pkg.getDesc();
+            if (d.equals(descriptor)) {
+                return pkg;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Retrieves information on a package identified by an {@link AndroidVersion}.
      *
