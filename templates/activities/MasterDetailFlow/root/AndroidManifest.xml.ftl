@@ -22,7 +22,7 @@
 
         <activity android:name="${relativePackage}.${DetailName}Activity"
             android:label="@string/title_${detail_name}"
-            <#if buildApi gte 16>android:parentActivityName=".${CollectionName}Activity"</#if>>
+            <#if buildApi gte 16>android:parentActivityName="${relativePackage}.${CollectionName}Activity"</#if>>
             <meta-data android:name="android.support.PARENT_ACTIVITY"
                 android:value="${relativePackage}.${CollectionName}Activity" />
         </activity>
