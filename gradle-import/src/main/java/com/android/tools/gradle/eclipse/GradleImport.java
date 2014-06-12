@@ -445,6 +445,7 @@ public class GradleImport {
         return null;
     }
 
+    @Nullable
     private File getDirFromWorkspaceSetting(@NonNull File settings, @NonNull String property) {
         //noinspection VariableNotUsedInsideIf
         if (mWorkspaceLocation != null) {
@@ -453,6 +454,9 @@ public class GradleImport {
                     Properties properties = getProperties(settings);
                     if (properties != null) {
                         String path = properties.getProperty(property);
+                        if (path == null) {
+                            return null;
+                        }
                         File dir = new File(path);
                         if (dir.exists()) {
                             return dir;
