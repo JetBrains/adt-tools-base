@@ -794,8 +794,10 @@ public class GradleImport {
             }
             sb.append("android {").append(NL);
             String compileSdkVersion = Integer.toString(module.getCompileSdkVersion());
-            String minSdkVersion = Integer.toString(module.getMinSdkVersion());
-            String targetSdkVersion = Integer.toString(module.getTargetSdkVersion());
+            int minSdkVersion = module.getMinSdkVersion();
+            int targetSdkVersion = module.getTargetSdkVersion();
+            String minSdkVersionString = Integer.toString(minSdkVersion);
+            String targetSdkVersionString = Integer.toString(targetSdkVersion);
             sb.append("    compileSdkVersion ").append(compileSdkVersion).append(NL);
             sb.append("    buildToolsVersion \"").append(getBuildToolsVersion()).append("\"")
                     .append(NL);
@@ -805,9 +807,11 @@ public class GradleImport {
                 sb.append("        applicationId \"").append(module.getPackage()).append('"')
                         .append(NL);
             }
-            sb.append("        minSdkVersion ").append(minSdkVersion).append(NL);
-            if (module.getTargetSdkVersion() > 1 && module.getCompileSdkVersion() > 3) {
-                sb.append("        targetSdkVersion ").append(targetSdkVersion).append(NL);
+            if (minSdkVersion >= 1) {
+                sb.append("        minSdkVersion ").append(minSdkVersionString).append(NL);
+            }
+            if (targetSdkVersion > 1 && module.getCompileSdkVersion() > 3) {
+                sb.append("        targetSdkVersion ").append(targetSdkVersionString).append(NL);
             }
 
             String languageLevel = module.getLanguageLevel();
