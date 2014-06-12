@@ -140,7 +140,7 @@ public class GroovyGradleDetector extends GradleDetector {
                 String property = c.getMethodAsString();
                 if (isInterestingProperty(property, parent, getParentParent())) {
                     String value = getText(c.getArguments());
-                    checkDslPropertyAssignment(context, property, value, parent, parentParent, c);
+                    checkDslPropertyAssignment(context, property, value, parent, parentParent, c, c);
                 }
             }
 
