@@ -38,6 +38,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static java.io.File.separator;
 import static java.io.File.separatorChar;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
@@ -117,7 +118,7 @@ import java.util.TreeMap;
 public class GradleImport {
     public static final String NL = SdkUtils.getLineSeparator();
     public static final int CURRENT_COMPILE_VERSION = 19;
-    public static final String CURRENT_BUILD_TOOLS_VERSION = "19.1.0";
+    public static final String CURRENT_BUILD_TOOLS_VERSION = SdkConstants.MIN_BUILD_TOOLS_VERSION;
     public static final String ANDROID_GRADLE_PLUGIN =
             GRADLE_PLUGIN_NAME + GRADLE_PLUGIN_LATEST_VERSION;
     public static final String MAVEN_URL_PROPERTY = "android.mavenRepoUrl";
