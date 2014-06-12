@@ -38,7 +38,7 @@ public class BuildTypeDslTest extends BaseTest {
             compileSdkVersion 15
         }
 
-        AppPlugin plugin = AppPlugin.pluginHolder.plugin
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         DefaultBuildType type = plugin.variantManager.buildTypes.get(BuilderConstants.DEBUG).buildType
 
@@ -60,7 +60,7 @@ public class BuildTypeDslTest extends BaseTest {
             compileSdkVersion 15
         }
 
-        AppPlugin plugin = AppPlugin.pluginHolder.plugin
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         DefaultBuildType type = plugin.variantManager.buildTypes.get(BuilderConstants.RELEASE).buildType
 
