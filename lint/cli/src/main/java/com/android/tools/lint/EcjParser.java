@@ -67,7 +67,17 @@ import org.eclipse.jdt.internal.compiler.batch.FileSystem;
 import org.eclipse.jdt.internal.compiler.classfmt.ClassFileConstants;
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit;
 import org.eclipse.jdt.internal.compiler.env.INameEnvironment;
+import org.eclipse.jdt.internal.compiler.impl.BooleanConstant;
+import org.eclipse.jdt.internal.compiler.impl.ByteConstant;
+import org.eclipse.jdt.internal.compiler.impl.CharConstant;
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
+import org.eclipse.jdt.internal.compiler.impl.Constant;
+import org.eclipse.jdt.internal.compiler.impl.DoubleConstant;
+import org.eclipse.jdt.internal.compiler.impl.FloatConstant;
+import org.eclipse.jdt.internal.compiler.impl.IntConstant;
+import org.eclipse.jdt.internal.compiler.impl.LongConstant;
+import org.eclipse.jdt.internal.compiler.impl.ShortConstant;
+import org.eclipse.jdt.internal.compiler.impl.StringConstant;
 import org.eclipse.jdt.internal.compiler.lookup.Binding;
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.LocalVariableBinding;
@@ -964,6 +974,34 @@ public class EcjParser extends JavaParser {
         @Override
         public ResolvedClass getContainingClass() {
             return new EcjResolvedClass(mBinding.declaringClass);
+        }
+
+        @Nullable
+        @Override
+        public Object getValue() {
+            Constant constant = mBinding.constant();
+            if (constant != null) {
+                if (constant instanceof StringConstant) {
+                    return constant.stringValue();
+                } else if (constant instanceof IntConstant) {
+                    return constant.intValue();
+                } else if (constant instanceof BooleanConstant) {
+                    return constant.booleanValue();
+                } else if (constant instanceof LongConstant) {
+                    return constant.longValue();
+                } else if (constant instanceof DoubleConstant) {
+                    return constant.doubleValue();
+                } else if (constant instanceof CharConstant) {
+                    return constant.charValue();
+                } else if (constant instanceof FloatConstant) {
+                    return constant.floatValue();
+                } else if (constant instanceof ShortConstant) {
+                    return constant.shortValue();
+                } else if (constant instanceof ByteConstant) {
+                    return constant.byteValue();
+                }
+            }
+            return null;
         }
 
         @Override
