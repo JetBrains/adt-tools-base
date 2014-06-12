@@ -22,6 +22,7 @@ import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -36,18 +37,28 @@ import java.io.File;
 import java.util.Collections;
 import java.util.List;
 
+import lombok.ast.Assert;
 import lombok.ast.AstVisitor;
+import lombok.ast.Block;
+import lombok.ast.Case;
+import lombok.ast.ClassDeclaration;
 import lombok.ast.ConstructorDeclaration;
+import lombok.ast.DoWhile;
 import lombok.ast.Expression;
+import lombok.ast.ExpressionStatement;
+import lombok.ast.For;
 import lombok.ast.ForwardingAstVisitor;
+import lombok.ast.If;
 import lombok.ast.MethodDeclaration;
 import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
 import lombok.ast.NormalTypeBody;
 import lombok.ast.Return;
+import lombok.ast.Statement;
 import lombok.ast.VariableDeclaration;
 import lombok.ast.VariableDefinition;
 import lombok.ast.VariableReference;
+import lombok.ast.While;
 
 /**
  * Detector looking for SharedPreferences.edit() calls without a corresponding
@@ -175,7 +186,7 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
             return;
         }
 
-        CommitFinder finder = new CommitFinder(node, allowCommitBeforeTarget);
+        CommitFinder finder = new CommitFinder(context, node, allowCommitBeforeTarget);
         method.accept(finder);
         if (!finder.isCommitCalled()) {
             context.report(ISSUE, method, context.getLocation(node),
@@ -222,12 +233,17 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
         private final MethodInvocation mTarget;
         /** whether it allows the commit call to be seen before the target node */
         private final boolean mAllowCommitBeforeTarget;
+
+        private final JavaContext mContext;
+
         /** Whether we've found one of the commit/cancel methods */
         private boolean mFound;
         /** Whether we've seen the target edit node yet */
         private boolean mSeenTarget;
 
-        private CommitFinder(MethodInvocation target, boolean allowCommitBeforeTarget) {
+        private CommitFinder(JavaContext context, MethodInvocation target,
+                boolean allowCommitBeforeTarget) {
+            mContext = context;
             mTarget = target;
             mAllowCommitBeforeTarget = allowCommitBeforeTarget;
         }
@@ -238,10 +254,58 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
                 mSeenTarget = true;
             } else if (mAllowCommitBeforeTarget || mSeenTarget || node.astOperand() == mTarget) {
                 String name = node.astName().astValue();
-                if ("commit".equals(name) || "apply".equals(name)) { //$NON-NLS-1$ //$NON-NLS-2$
+                boolean isCommit = "commit".equals(name);
+                if (isCommit || "apply".equals(name)) { //$NON-NLS-1$ //$NON-NLS-2$
                     // TODO: Do more flow analysis to see whether we're really calling commit/apply
                     // on the right type of object?
                     mFound = true;
+
+                    ResolvedNode resolved = mContext.resolve(node);
+                    if (resolved instanceof JavaParser.ResolvedMethod) {
+                        ResolvedMethod method = (ResolvedMethod) resolved;
+                        JavaParser.ResolvedClass clz = method.getContainingClass();
+                        if (clz.isSubclassOf("android.content.SharedPreferences.Editor", false)
+                                && mContext.getProject().getMinSdkVersion().getApiLevel() >= 9) {
+                            // See if the return value is read: can only replace commit with
+                            // apply if the return value is not considered
+                            Node parent = node.getParent();
+                            boolean returnValueIgnored = false;
+                            if (parent instanceof MethodDeclaration ||
+                                    parent instanceof ConstructorDeclaration ||
+                                    parent instanceof ClassDeclaration ||
+                                    parent instanceof Block ||
+                                    parent instanceof ExpressionStatement) {
+                                returnValueIgnored = true;
+                            } else if (parent instanceof Statement) {
+                                if (parent instanceof If) {
+                                    returnValueIgnored = ((If) parent).astCondition() != node;
+                                } else if (parent instanceof Return) {
+                                    returnValueIgnored = false;
+                                } else if (parent instanceof VariableDeclaration) {
+                                    returnValueIgnored = false;
+                                } else if (parent instanceof For) {
+                                    returnValueIgnored = ((For) parent).astCondition() != node;
+                                } else if (parent instanceof While) {
+                                    returnValueIgnored = ((While) parent).astCondition() != node;
+                                } else if (parent instanceof DoWhile) {
+                                    returnValueIgnored = ((DoWhile) parent).astCondition() != node;
+                                } else if (parent instanceof Case) {
+                                    returnValueIgnored = ((Case) parent).astCondition() != node;
+                                } else if (parent instanceof Assert) {
+                                    returnValueIgnored = ((Assert) parent).astAssertion() != node;
+                                } else {
+                                    returnValueIgnored = true;
+                                }
+                            }
+                            if (returnValueIgnored) {
+                                String message = "Consider using apply() instead; commit writes "
+                                        + "its data to persistent storage immediately, whereas "
+                                        + "apply will handle it in the background";
+                                mContext.report(ISSUE, node, mContext.getLocation(node), message,
+                                        null);
+                            }
+                        }
+                    }
                 }
             }
 
