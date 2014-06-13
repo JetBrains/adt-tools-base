@@ -444,14 +444,14 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         } else if ("dependencies".equals(block)) {
             if (parent == null) {
                 myDependenciesCookie = cookie;
-            } else if (!parent.equals("buildscript") && !parent.equals("allprojects")) {
+            } else if (!parent.equals("buildscript") && !parent.equals("allprojects") && !parent.equals("subprojects")) {
                 String message = "A `dependencies` block doesn't belong here.";
                 report(context, cookie, MISPLACED_STATEMENT, message);
             }
         } else if ("repositories".equals(block)) {
             if (parent == null) {
                 myRepositoriesCookie = cookie;
-            } else if (!parent.equals("buildscript") && !parent.equals("allprojects")) {
+            } else if (!parent.equals("buildscript") && !parent.equals("allprojects") && !parent.equals("subprojects")) {
                 String message = "A `repositories` block doesn't belong here.";
                 report(context, cookie, MISPLACED_STATEMENT, message);
             }
