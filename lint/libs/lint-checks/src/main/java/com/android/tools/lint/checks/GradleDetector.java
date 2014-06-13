@@ -172,6 +172,24 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             Severity.ERROR,
             IMPLEMENTATION);
 
+    /** Using a string where an integer is expected */
+    public static final Issue STRING_INTEGER = Issue.create(
+            "StringShouldBeInt", //$NON-NLS-1$
+            "String should be int",
+            "Checks for uses of strings where an integer should be used",
+
+            "The properties `compileSdkVersion`, `minSdkVersion` and `targetSdkVersion` are " +
+            "usually numbers, but can be strings when you are using an add-on (in the case " +
+            "of `compileSdkVersion`) or a preview platform (for the other two properties).\n" +
+            "\n" +
+            "However, you can not use a number as a string (e.g. \"19\" instead of 19); that " +
+            "will result in a platform not found error message at build/sync time.",
+
+            Category.CORRECTNESS,
+            8,
+            Severity.ERROR,
+            IMPLEMENTATION);
+
     public static final Issue REMOTE_VERSION = Issue.create(
             "NewerVersionAvailable", //$NON-NLS-1$
             "Newer Library Versions Available",
@@ -336,7 +354,16 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 if (version > 0) {
                     mTargetSdkVersion = version;
                     checkTargetCompatibility(context, valueCookie);
+                } else {
+                    checkIntegerAsString(context, value, valueCookie);
                 }
+            } else if (property.equals("minSdkVersion")) {
+              int version = getIntLiteralValue(value, -1);
+              if (version > 0) {
+                mMinSdkVersion = version;
+              } else {
+                checkIntegerAsString(context, value, valueCookie);
+              }
             }
 
             if (value.startsWith("0")) {
@@ -367,11 +394,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             if (version > 0) {
                 mCompileSdkVersion = version;
                 checkTargetCompatibility(context, valueCookie);
-            }
-        } else if (property.equals("minSdkVersion") && parent.equals("android")) {
-            int version = getIntLiteralValue(value, -1);
-            if (version > 0) {
-                mMinSdkVersion = version;
+            } else {
+                checkIntegerAsString(context, value, valueCookie);
             }
         } else if (property.equals("buildToolsVersion") && parent.equals("android")) {
             String versionString = getStringLiteralValue(value);
@@ -405,7 +429,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                     GradleCoordinate gc = GradleCoordinate.parseCoordinateString(dependency);
                     if (gc != null) {
                         if (gc.acceptsGreaterRevisions()) {
-                            String message = "Avoid using + in version numbers; can lead " + "to unpredictable and  unrepeatable builds";
+                            String message = "Avoid using + in version numbers; can lead "
+                                    + "to unpredictable and  unrepeatable builds";
                             report(context, valueCookie, PLUS, message);
                         }
                         if (!dependency.startsWith(SdkConstants.GRADLE_PLUGIN_NAME) ||
@@ -432,6 +457,35 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 report(context, valueCookie, PATH, message);
             }
         }
+    }
+
+    private void checkIntegerAsString(Context context, String value, Object valueCookie) {
+        // When done developing with a preview platform you might be tempted to switch from
+        //     compileSdkVersion 'android-G'
+        // to
+        //     compileSdkVersion '19'
+        // but that won't work; it needs to be
+        //     compileSdkVersion 19
+        String string = getStringLiteralValue(value);
+        if (isNumberString(string)) {
+            String quote = Character.toString(value.charAt(0));
+            String message = String.format("Use an integer rather than a string here "
+                    + "(replace %1$s%2$s%1$s with just %2$s)", quote, string);
+            report(context, valueCookie, STRING_INTEGER, message);
+        }
+    }
+
+    private static boolean isNumberString(@Nullable String s) {
+        if (s == null || s.isEmpty()) {
+            return false;
+        }
+        for (int i = 0, n = s.length(); i < n; i++) {
+            if (!Character.isDigit(s.charAt(i))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     protected void checkBlock(
