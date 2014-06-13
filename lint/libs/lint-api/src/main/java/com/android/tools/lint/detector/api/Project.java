@@ -563,7 +563,7 @@ public class Project {
      */
     @NonNull
     public AndroidVersion getMinSdkVersion() {
-        return mManifestMinSdk;
+        return mManifestMinSdk == null ? AndroidVersion.DEFAULT : mManifestMinSdk;
     }
 
     /**
