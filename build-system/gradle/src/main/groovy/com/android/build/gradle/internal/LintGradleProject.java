@@ -393,8 +393,11 @@ public class LintGradleProject extends Project {
         @NonNull
         public AndroidVersion getMinSdkVersion() {
             if (mMinSdkVersion == null) {
-                ProductFlavor flavor = mProject.getDefaultConfig().getProductFlavor();
-                ApiVersion minSdk = flavor.getMinSdkVersion();
+                ApiVersion minSdk = mVariant.getMergedFlavor().getMinSdkVersion();
+                if (minSdk == null) {
+                    ProductFlavor flavor = mProject.getDefaultConfig().getProductFlavor();
+                    minSdk = flavor.getMinSdkVersion();
+                }
                 if (minSdk != null) {
                     mMinSdkVersion = LintUtils.convertVersion(minSdk, mClient.getTargets());
                 } else {
@@ -409,8 +412,11 @@ public class LintGradleProject extends Project {
         @NonNull
         public AndroidVersion getTargetSdkVersion() {
             if (mTargetSdkVersion == null) {
-                ProductFlavor flavor = mProject.getDefaultConfig().getProductFlavor();
-                ApiVersion targetSdk = flavor.getTargetSdkVersion();
+                ApiVersion targetSdk = mVariant.getMergedFlavor().getTargetSdkVersion();
+                if (targetSdk == null) {
+                    ProductFlavor flavor = mProject.getDefaultConfig().getProductFlavor();
+                    targetSdk = flavor.getTargetSdkVersion();
+                }
                 if (targetSdk != null) {
                     mTargetSdkVersion = LintUtils.convertVersion(targetSdk, mClient.getTargets());
                 } else {
