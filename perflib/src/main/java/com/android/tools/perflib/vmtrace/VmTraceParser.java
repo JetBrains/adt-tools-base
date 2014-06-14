@@ -28,13 +28,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 public class VmTraceParser {
     private static final int TRACE_MAGIC = 0x574f4c53; // 'SLOW'
@@ -64,7 +63,7 @@ public class VmTraceParser {
 
     public void parse() throws IOException {
         long headerLength = parseHeader(mTraceFile);
-        MappedByteBuffer buffer = mapFile(mTraceFile, headerLength);
+        ByteBuffer buffer = mapFile(mTraceFile, headerLength);
         parseData(buffer);
         computeTimingStatistics();
     }
@@ -233,7 +232,7 @@ public class VmTraceParser {
      *
      * All values are stored in little-endian order.
      */
-    private void parseData(MappedByteBuffer buffer) {
+    private void parseData(ByteBuffer buffer) {
         int recordSize = readDataFileHeader(buffer);
         parseMethodTraceData(buffer, recordSize);
     }
@@ -258,7 +257,7 @@ public class VmTraceParser {
      *
      * 32 bits of microseconds is 70 minutes.
      */
-    private void parseMethodTraceData(MappedByteBuffer buffer, int recordSize) {
+    private void parseMethodTraceData(ByteBuffer buffer, int recordSize) {
         int methodId;
         int threadId;
         int version = mTraceDataBuilder.getVersion();
@@ -329,7 +328,7 @@ public class VmTraceParser {
      * @param buffer byte buffer pointing to the header
      * @return record size for each data entry following the header
      */
-    private int readDataFileHeader(MappedByteBuffer buffer) {
+    private int readDataFileHeader(ByteBuffer buffer) {
         int magic = buffer.getInt();
         if (magic != TRACE_MAGIC) {
             String msg = String.format("Error: magic number mismatch; got 0x%x, expected 0x%x\n",
@@ -382,17 +381,16 @@ public class VmTraceParser {
         return recordSize;
     }
 
-    private MappedByteBuffer mapFile(File f, long offset) throws IOException {
-        FileInputStream dataFile = new FileInputStream(f);
-        try {
-            FileChannel fc = dataFile.getChannel();
-            MappedByteBuffer buffer = fc.map(FileChannel.MapMode.READ_ONLY, offset,
-                    f.length() - offset);
-            buffer.order(ByteOrder.LITTLE_ENDIAN);
-            return buffer;
-        } finally {
-            dataFile.close(); // this *also* closes the associated channel, fc
-        }
+    private static ByteBuffer mapFile(@NonNull File f, long offset) throws IOException {
+      FileInputStream dataFile = new FileInputStream(f);
+      try {
+        FileChannel fc = dataFile.getChannel();
+        MappedByteBuffer buffer = fc.map(FileChannel.MapMode.READ_ONLY, offset, f.length() - offset);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        return buffer;
+      } finally {
+        dataFile.close(); // this *also* closes the associated channel, fc
+      }
     }
 
     private void computeTimingStatistics() {
