@@ -24,6 +24,7 @@ import static com.android.SdkConstants.ATTR_ID;
 import static com.android.SdkConstants.ATTR_LAYOUT_HEIGHT;
 import static com.android.SdkConstants.ATTR_LAYOUT_WIDTH;
 import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_TARGET_API;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
 import static com.android.SdkConstants.PREFIX_ANDROID;
@@ -374,7 +375,12 @@ public class ApiDetector extends ResourceXmlDetector
             && TAG_STYLE.equals(attribute.getOwnerElement().getParentNode().getNodeName())) {
             owner = "android/R$attr"; //$NON-NLS-1$
             name = value.substring(PREFIX_ANDROID.length());
-            prefix = PREFIX_ANDROID;
+            prefix = null;
+        } else if (value.startsWith(PREFIX_ANDROID) && ATTR_PARENT.equals(attribute.getName())
+                && TAG_STYLE.equals(attribute.getOwnerElement().getTagName())) {
+            owner = "android/R$style"; //$NON-NLS-1$
+            name = getFieldName(value.substring(PREFIX_ANDROID.length()));
+            prefix = null;
         } else {
             return;
         }
@@ -385,10 +391,7 @@ public class ApiDetector extends ResourceXmlDetector
             if (index != -1) {
                 owner = "android/R$"    //$NON-NLS-1$
                         + value.substring(prefix.length(), index);
-                name = value.substring(index + 1);
-                if (name.indexOf('.') != -1) {
-                    name = name.replace('.', '_');
-                }
+                name = getFieldName(value.substring(index + 1));
             } else if (value.startsWith(ANDROID_THEME_PREFIX)) {
                 owner = "android/R$attr";  //$NON-NLS-1$
                 name = value.substring(ANDROID_THEME_PREFIX.length());
@@ -430,6 +433,10 @@ public class ApiDetector extends ResourceXmlDetector
                 context.report(UNSUPPORTED, attribute, location, message, null);
             }
         }
+    }
+
+    private static String getFieldName(String styleName) {
+        return styleName.replace('.', '_').replace('-', '_').replace(':', '_');
     }
 
     @Override
