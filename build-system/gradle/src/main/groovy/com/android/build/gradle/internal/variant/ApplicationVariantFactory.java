@@ -21,13 +21,20 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.internal.api.ApplicationVariantImpl;
-import com.android.builder.VariantConfiguration;
+import com.android.builder.core.VariantConfiguration;
 
 import org.gradle.api.Task;
+import org.gradle.api.artifacts.Configuration;
+
+import java.io.File;
+import java.util.Set;
 
 /**
  */
 public class ApplicationVariantFactory implements VariantFactory {
+
+    public static final String CONFIG_WEAR_APP = "wearApp";
+
 
     @NonNull
     private final BasePlugin basePlugin;
@@ -55,11 +62,6 @@ public class ApplicationVariantFactory implements VariantFactory {
     }
 
     @Override
-    public boolean isVariantPublished() {
-        return false;
-    }
-
-    @Override
     public boolean isLibrary() {
         return false;
     }
@@ -78,11 +80,12 @@ public class ApplicationVariantFactory implements VariantFactory {
         ApplicationVariantData appVariantData = (ApplicationVariantData) variantData;
 
         basePlugin.createAnchorTasks(variantData);
-
         basePlugin.createCheckManifestTask(variantData);
 
+        handleMicroApp(variantData);
+
         // Add a task to process the manifest(s)
-        basePlugin.createProcessManifestTask(variantData, "manifests");
+        basePlugin.createMergeManifestsTask(variantData, "manifests");
 
         // Add a task to create the res values
         basePlugin.createGenerateResValuesTask(variantData);
@@ -105,7 +108,7 @@ public class ApplicationVariantFactory implements VariantFactory {
         // Add a task to process the java resources
         basePlugin.createProcessJavaResTask(variantData);
 
-        basePlugin.createAidlTask(variantData);
+        basePlugin.createAidlTask(variantData, null /*parcelableDir*/);
 
         // Add a compile task
         basePlugin.createCompileTask(variantData, null/*testedVariant*/);
@@ -113,6 +116,24 @@ public class ApplicationVariantFactory implements VariantFactory {
         // Add NDK tasks
         basePlugin.createNdkTasks(variantData);
 
-        basePlugin.addPackageTasks(appVariantData, assembleTask);
+        basePlugin.addPackageTasks(appVariantData, assembleTask, true /*publishApk*/);
+    }
+
+    private void handleMicroApp(@NonNull BaseVariantData variantData) {
+
+        Configuration config = basePlugin.getProject().getConfigurations().findByName(
+                CONFIG_WEAR_APP);
+        Set<File> file = config.getFiles();
+
+        int count = file.size();
+        if (count == 1) {
+            if (variantData.getVariantConfiguration().getBuildType().isEmbedMicroApp()) {
+                basePlugin.createCopyMicroApkTask(variantData, config);
+                basePlugin.createGenerateMicroApkDataTask(variantData, config);
+            }
+        } else if (count > 1) {
+            throw new RuntimeException(
+                    CONFIG_WEAR_APP + " configuration resolves to more than one apk.");
+        }
     }
 }

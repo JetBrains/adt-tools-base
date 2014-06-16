@@ -1,8 +1,9 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
+apply plugin: 'sdk-java-lib'
 
 group = 'com.android.tools'
 archivesBaseName = 'draw9patch'
+version = rootProject.ext.baseVersion
 
 dependencies {
     testCompile 'junit:junit:3.8.1'
@@ -13,10 +14,16 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
-shipping {
-    launcherScripts = ['etc/draw9patch', 'etc/draw9patch.bat']
+sdk {
+    linux {
+        item('etc/draw9patch') { executable true}
+    }
+    mac {
+        item('etc/draw9patch') { executable true}
+    }
+    windows {
+        item 'etc/draw9patch.bat'
+    }
 }
 
-buildDistributionJar.manifest.attributes("Main-Class": "com.android.draw9patch.Application")
-
-apply from: '../baseVersion.gradle'
+sdkJar.manifest.attributes("Main-Class": "com.android.draw9patch.Application")

@@ -37,7 +37,7 @@ public class TestManifestGenerator {
     private static final String PH_HANDLE_PROFILING = "#HANDLEPROFILING#";
     private static final String PH_FUNCTIONAL_TEST = "#FUNCTIONALTEST#";
 
-    private final String mOutputFile;
+    private final File mOutputFile;
     private final String mPackageName;
     private final String mMinSdkVersion;
     private final String mTargetSdkVersion;
@@ -46,18 +46,19 @@ public class TestManifestGenerator {
     private final boolean mHandleProfiling;
     private final boolean mFunctionalTest;
 
-    public TestManifestGenerator(@NonNull String outputFile,
-                          @NonNull String packageName,
-                          @Nullable String minSdkVersion,
-                          int targetSdkVersion,
-                          @NonNull String testedPackageName,
-                          @NonNull String testRunnerName,
-                          @NonNull Boolean handleProfiling,
-                          @NonNull Boolean functionalTest) {
+    public TestManifestGenerator(
+            @NonNull File outputFile,
+            @NonNull String packageName,
+            @Nullable String minSdkVersion,
+            @Nullable String targetSdkVersion,
+            @NonNull String testedPackageName,
+            @NonNull String testRunnerName,
+            @NonNull Boolean handleProfiling,
+            @NonNull Boolean functionalTest) {
         mOutputFile = outputFile;
         mPackageName = packageName;
         mMinSdkVersion = minSdkVersion;
-        mTargetSdkVersion = targetSdkVersion != -1 ? Integer.toString(targetSdkVersion) : minSdkVersion;
+        mTargetSdkVersion = targetSdkVersion != null ? targetSdkVersion : minSdkVersion;
         mTestedPackageName = testedPackageName;
         mTestRunnerName = testRunnerName;
         mHandleProfiling = handleProfiling;
@@ -67,8 +68,8 @@ public class TestManifestGenerator {
     public void generate() throws IOException {
         Map<String, String> map = new HashMap<String, String>();
         map.put(PH_PACKAGE, mPackageName);
-        map.put(PH_MIN_SDK_VERSION, mMinSdkVersion);
-        map.put(PH_TARGET_SDK_VERSION, mTargetSdkVersion);
+        map.put(PH_MIN_SDK_VERSION, mMinSdkVersion != null ? mMinSdkVersion : "1");
+        map.put(PH_TARGET_SDK_VERSION, mTargetSdkVersion != null ? mTargetSdkVersion : map.get(PH_MIN_SDK_VERSION));
         map.put(PH_TESTED_PACKAGE, mTestedPackageName);
         map.put(PH_TEST_RUNNER, mTestRunnerName);
         map.put(PH_HANDLE_PROFILING, Boolean.toString(mHandleProfiling));
@@ -78,6 +79,6 @@ public class TestManifestGenerator {
                 TestManifestGenerator.class.getResourceAsStream(TEMPLATE),
                 map);
 
-        processor.generate(new File(mOutputFile));
+        processor.generate(mOutputFile);
     }
 }

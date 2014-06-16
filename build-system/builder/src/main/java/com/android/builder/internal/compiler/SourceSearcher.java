@@ -16,6 +16,7 @@
 
 package com.android.builder.internal.compiler;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
@@ -30,16 +31,18 @@ import java.util.concurrent.Callable;
  */
 public class SourceSearcher {
 
+    @NonNull
     private final List<File> mSourceFolders;
     private final String[] mExtensions;
     @Nullable
     private WaitableExecutor<Void> mExecutor;
 
     public interface SourceFileProcessor {
-        void processFile(File sourceFile) throws IOException, InterruptedException, LoggedErrorException;
+        void processFile(@NonNull File sourceFolder, @NonNull File sourceFile)
+                throws IOException, InterruptedException, LoggedErrorException;
     }
 
-    public SourceSearcher(List<File> sourceFolders, String... extensions) {
+    public SourceSearcher(@NonNull List<File> sourceFolders, String... extensions) {
         mSourceFolders = sourceFolders;
         mExtensions = extensions;
     }
@@ -52,10 +55,12 @@ public class SourceSearcher {
         }
     }
 
-    public void search(SourceFileProcessor processor)
+    public void search(@NonNull SourceFileProcessor processor)
             throws IOException, InterruptedException, LoggedErrorException {
         for (File file : mSourceFolders) {
-            processFile(file, processor);
+            // pass both the root folder (the source folder) and the file/folder to process,
+            // in this case the source folder as well.
+            processFile(file, file, processor);
         }
 
         if (mExecutor != null) {
@@ -63,7 +68,10 @@ public class SourceSearcher {
         }
     }
 
-    private void processFile(final File file, final SourceFileProcessor processor)
+    private void processFile(
+            @NonNull final File rootFolder,
+            @NonNull final File file,
+            @NonNull final SourceFileProcessor processor)
             throws IOException, InterruptedException, LoggedErrorException {
         if (file.isFile()) {
             // get the extension of the file.
@@ -72,19 +80,19 @@ public class SourceSearcher {
                     mExecutor.execute(new Callable<Void>() {
                         @Override
                         public Void call() throws Exception {
-                            processor.processFile(file);
+                            processor.processFile(rootFolder, file);
                             return null;
                         }
                     });
                 } else {
-                    processor.processFile(file);
+                    processor.processFile(rootFolder, file);
                 }
             }
         } else if (file.isDirectory()) {
             File[] children = file.listFiles();
             if (children != null) {
                 for (File child : children) {
-                    processFile(child, processor);
+                    processFile(rootFolder, child, processor);
                 }
             }
         }

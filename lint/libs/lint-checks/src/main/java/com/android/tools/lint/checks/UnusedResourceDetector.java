@@ -20,9 +20,6 @@ import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_REF_PREFIX;
 import static com.android.SdkConstants.ATTR_TYPE;
-import static com.android.SdkConstants.DOT_GIF;
-import static com.android.SdkConstants.DOT_JPG;
-import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.RESOURCE_CLR_STYLEABLE;
 import static com.android.SdkConstants.RESOURCE_CLZ_ARRAY;
@@ -38,7 +35,6 @@ import static com.android.SdkConstants.TAG_PLURALS;
 import static com.android.SdkConstants.TAG_RESOURCES;
 import static com.android.SdkConstants.TAG_STRING_ARRAY;
 import static com.android.SdkConstants.TAG_STYLE;
-import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -158,12 +154,9 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
     public void beforeCheckFile(@NonNull Context context) {
         File file = context.file;
 
-        String fileName = file.getName();
-        boolean isXmlFile = endsWith(fileName, DOT_XML);
-        if (isXmlFile
-                || endsWith(fileName, DOT_PNG)
-                || endsWith(fileName, DOT_JPG)
-                || endsWith(fileName, DOT_GIF)) {
+        boolean isXmlFile = LintUtils.isXmlFile(file);
+        if (isXmlFile || LintUtils.isBitmapFile(file)) {
+            String fileName = file.getName();
             String parentName = file.getParentFile().getName();
             int dash = parentName.indexOf('-');
             String typeName = parentName.substring(0, dash == -1 ? parentName.length() : dash);
@@ -256,6 +249,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                 for (Map.Entry<String, Location> entry : mUnused.entrySet()) {
                     String resource = entry.getKey();
                     Location location = entry.getValue();
+                    //noinspection VariableNotUsedInsideIf
                     if (location != null) {
                         continue;
                     }
@@ -427,7 +421,8 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                     }
                 }
             }
-        } else if (mReferences != null) {
+        } else //noinspection VariableNotUsedInsideIf
+            if (mReferences != null) {
             assert TAG_STYLE.equals(element.getTagName())
                 || TAG_ARRAY.equals(element.getTagName())
                 || TAG_PLURALS.equals(element.getTagName())

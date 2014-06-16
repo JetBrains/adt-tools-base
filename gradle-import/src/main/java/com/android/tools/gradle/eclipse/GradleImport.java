@@ -21,9 +21,12 @@ import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.FD_EXTRAS;
+import static com.android.SdkConstants.FD_GRADLE;
 import static com.android.SdkConstants.FD_RES;
 import static com.android.SdkConstants.FD_SOURCES;
 import static com.android.SdkConstants.FN_BUILD_GRADLE;
+import static com.android.SdkConstants.FN_GRADLE_WRAPPER_UNIX;
+import static com.android.SdkConstants.FN_GRADLE_WRAPPER_WIN;
 import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.SdkConstants.FN_SETTINGS_GRADLE;
 import static com.android.SdkConstants.GRADLE_PLUGIN_LATEST_VERSION;
@@ -35,6 +38,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static java.io.File.separator;
 import static java.io.File.separatorChar;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
@@ -47,9 +51,14 @@ import com.android.sdklib.repository.local.LocalSdk;
 import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
+import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Predicate;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import com.google.common.primitives.Bytes;
@@ -58,7 +67,6 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -66,16 +74,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * Importer which can generate Android Gradle projects.
@@ -114,7 +118,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 public class GradleImport {
     public static final String NL = SdkUtils.getLineSeparator();
     public static final int CURRENT_COMPILE_VERSION = 19;
-    public static final String CURRENT_BUILD_TOOLS_VERSION = "19.0.3";
+    public static final String CURRENT_BUILD_TOOLS_VERSION = SdkConstants.MIN_BUILD_TOOLS_VERSION;
     public static final String ANDROID_GRADLE_PLUGIN =
             GRADLE_PLUGIN_NAME + GRADLE_PLUGIN_LATEST_VERSION;
     public static final String MAVEN_URL_PROPERTY = "android.mavenRepoUrl";
@@ -442,6 +446,7 @@ public class GradleImport {
         return null;
     }
 
+    @Nullable
     private File getDirFromWorkspaceSetting(@NonNull File settings, @NonNull String property) {
         //noinspection VariableNotUsedInsideIf
         if (mWorkspaceLocation != null) {
@@ -450,6 +455,9 @@ public class GradleImport {
                     Properties properties = getProperties(settings);
                     if (properties != null) {
                         String path = properties.getProperty(property);
+                        if (path == null) {
+                            return null;
+                        }
                         File dir = new File(path);
                         if (dir.exists()) {
                             return dir;
@@ -692,16 +700,17 @@ public class GradleImport {
 
     private void exportGradleWrapper(@NonNull File destDir) throws IOException {
         if (mGradleWrapperLocation != null && mGradleWrapperLocation.exists()) {
-            File gradlewDest = new File(destDir, "gradlew");
-            copyDir(new File(mGradleWrapperLocation, "gradlew"), gradlewDest, null);
+            File gradlewDest = new File(destDir, FN_GRADLE_WRAPPER_UNIX);
+            copyDir(new File(mGradleWrapperLocation, FN_GRADLE_WRAPPER_UNIX), gradlewDest, null);
             boolean madeExecutable = gradlewDest.setExecutable(true);
             if (!madeExecutable) {
-                reportWarning((ImportModule)null, gradlewDest,
+                reportWarning((ImportModule) null, gradlewDest,
                         "Could not make gradle wrapper script executable");
             }
-            copyDir(new File(mGradleWrapperLocation, "gradlew.bat"), new File(destDir,
-                    "gradlew.bat"), null);
-            copyDir(new File(mGradleWrapperLocation, "gradle"), new File(destDir, "gradle"), null);
+            copyDir(new File(mGradleWrapperLocation, FN_GRADLE_WRAPPER_WIN),
+                    new File(destDir, FN_GRADLE_WRAPPER_WIN), null);
+            copyDir(new File(mGradleWrapperLocation, FD_GRADLE), new File(destDir, FD_GRADLE),
+                    null);
         }
     }
 
@@ -786,16 +795,24 @@ public class GradleImport {
             }
             sb.append("android {").append(NL);
             String compileSdkVersion = Integer.toString(module.getCompileSdkVersion());
-            String minSdkVersion = Integer.toString(module.getMinSdkVersion());
-            String targetSdkVersion = Integer.toString(module.getTargetSdkVersion());
+            int minSdkVersion = module.getMinSdkVersion();
+            int targetSdkVersion = module.getTargetSdkVersion();
+            String minSdkVersionString = Integer.toString(minSdkVersion);
+            String targetSdkVersionString = Integer.toString(targetSdkVersion);
             sb.append("    compileSdkVersion ").append(compileSdkVersion).append(NL);
             sb.append("    buildToolsVersion \"").append(getBuildToolsVersion()).append("\"")
                     .append(NL);
             sb.append(NL);
             sb.append("    defaultConfig {").append(NL);
-            sb.append("        minSdkVersion ").append(minSdkVersion).append(NL);
-            if (module.getTargetSdkVersion() > 1 && module.getCompileSdkVersion() > 3) {
-                sb.append("        targetSdkVersion ").append(targetSdkVersion).append(NL);
+            if (module.getPackage() != null) {
+                sb.append("        applicationId \"").append(module.getPackage()).append('"')
+                        .append(NL);
+            }
+            if (minSdkVersion >= 1) {
+                sb.append("        minSdkVersion ").append(minSdkVersionString).append(NL);
+            }
+            if (targetSdkVersion > 1 && module.getCompileSdkVersion() > 3) {
+                sb.append("        targetSdkVersion ").append(targetSdkVersionString).append(NL);
             }
 
             String languageLevel = module.getLanguageLevel();
@@ -825,7 +842,7 @@ public class GradleImport {
                 if (manifest != null && manifest.getDocumentElement() != null) {
                     String pkg = manifest.getDocumentElement().getAttribute(ATTR_PACKAGE);
                     if (pkg != null && !pkg.isEmpty()) {
-                        sb.append("        testPackageName \"").append(pkg).append("\"")
+                        sb.append("        testApplicationId \"").append(pkg).append("\"")
                                 .append(NL);
                     }
                     NodeList list = manifest.getElementsByTagName(NODE_INSTRUMENTATION);
@@ -1267,14 +1284,8 @@ public class GradleImport {
 
     Document getXmlDocument(File file, boolean namespaceAware) throws IOException {
         String xml = Files.toString(file, UTF_8);
-
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        InputSource is = new InputSource(new StringReader(xml));
-        factory.setNamespaceAware(namespaceAware);
-        factory.setValidating(false);
         try {
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            return builder.parse(is);
+            return XmlUtils.parseDocument(xml, namespaceAware);
         } catch (Exception e) {
             reportError(null, file, "Invalid XML file: " + file.getPath() + ":\n"
                     + e.getMessage());
@@ -1408,10 +1419,11 @@ public class GradleImport {
         SdkManager sdkManager = getSdkManager();
         if (sdkManager != null) {
             LocalSdk localSdk = sdkManager.getLocalSdk();
-            LocalPkgInfo[] infos = localSdk.getPkgsInfos(PkgType.PKG_EXTRAS);
+            LocalPkgInfo[] infos = localSdk.getPkgsInfos(PkgType.PKG_EXTRA);
             for (LocalPkgInfo info : infos) {
                 IPkgDesc d = info.getDesc();
-                if (d.hasVendorId() && vendor.equals(d.getVendorId()) &&
+                //noinspection ConstantConditions,ConstantConditions
+                if (d.hasVendor() && vendor.equals(d.getVendor().getId()) &&
                         d.hasPath() && "m2repository".equals(d.getPath())) {
                       return true;
                 }

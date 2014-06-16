@@ -77,7 +77,7 @@ public class MockPlatformTarget implements IAndroidTarget {
         if (mSystemImages == null) {
             SystemImage si = new SystemImage(
                     FileOp.append(getLocation(), SdkConstants.OS_IMAGES_FOLDER),
-                    LocationType.IN_PLATFORM_LEGACY,
+                    LocationType.IN_LEGACY_FOLDER,
                     SystemImage.DEFAULT_TAG,
                     SdkConstants.ABI_ARMEABI,
                     FileOp.EMPTY_FILE_ARRAY);
@@ -188,6 +188,7 @@ public class MockPlatformTarget implements IAndroidTarget {
         return "platform r" + Integer.toString(mApiLevel);
     }
 
+    @NonNull
     @Override
     public AndroidVersion getVersion() {
         return new AndroidVersion(mApiLevel, null /*codename*/);

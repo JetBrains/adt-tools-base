@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ANDROID_LIBRARY;
 import static com.android.SdkConstants.ANDROID_LIBRARY_REFERENCE_FORMAT;
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.APPCOMPAT_LIB_ARTIFACT;
 import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
@@ -31,6 +32,7 @@ import static com.android.SdkConstants.RES_FOLDER;
 import static com.android.SdkConstants.SUPPORT_LIB_ARTIFACT;
 import static com.android.SdkConstants.TAG_USES_SDK;
 import static com.android.SdkConstants.VALUE_TRUE;
+import static com.android.ide.common.sdk.SdkVersionInfo.HIGHEST_KNOWN_API;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -39,6 +41,7 @@ import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Variant;
 import com.android.ide.common.sdk.SdkVersionInfo;
+import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.client.api.CircularDependencyException;
 import com.android.tools.lint.client.api.Configuration;
@@ -84,10 +87,12 @@ public class Project {
     protected final File mReferenceDir;
     protected Configuration mConfiguration;
     protected String mPackage;
-    protected int mMinSdk = 1;
-    protected int mTargetSdk = -1;
     protected int mBuildSdk = -1;
     protected IAndroidTarget mTarget;
+
+    protected AndroidVersion mManifestMinSdk = AndroidVersion.DEFAULT;
+    protected AndroidVersion mManifestTargetSdk = AndroidVersion.DEFAULT;
+
     protected boolean mLibrary;
     protected String mName;
     protected String mProguardPath;
@@ -113,6 +118,7 @@ public class Project {
     protected boolean mReportIssues = true;
     protected Boolean mGradleProject;
     protected Boolean mSupportLib;
+    protected Boolean mAppCompat;
 
     /**
      * Creates a new {@link Project} for the given directory.
@@ -148,6 +154,7 @@ public class Project {
      *
      * @return true if this project is an Android project.
      */
+    @SuppressWarnings("MethodMayBeStatic")
     public boolean isAndroidProject() {
         return true;
     }
@@ -439,7 +446,7 @@ public class Project {
 
             if (folders.size() == 1 && isAospFrameworksProject(mDir)) {
                 // No manifest file for this project: just init the manifest values here
-                mMinSdk = mTargetSdk = SdkVersionInfo.HIGHEST_KNOWN_API;
+                mManifestMinSdk = mManifestTargetSdk = new AndroidVersion(HIGHEST_KNOWN_API, null);
                 File folder = new File(folders.get(0), RES_FOLDER);
                 if (!folder.exists()) {
                     folders = Collections.emptyList();
@@ -550,29 +557,48 @@ public class Project {
     }
 
     /**
-     * Returns the minimum API level requested by the manifest, or -1 if not
-     * specified
+     * Returns the minimum API level for the project
+     *
+     * @return the minimum API level or {@link AndroidVersion#DEFAULT} if unknown
+     */
+    @NonNull
+    public AndroidVersion getMinSdkVersion() {
+        return mManifestMinSdk == null ? AndroidVersion.DEFAULT : mManifestMinSdk;
+    }
+
+    /**
+     * Returns the minimum API <b>level</b> requested by the manifest, or -1 if not
+     * specified. Use {@link #getMinSdkVersion()} to get a full version if you need
+     * to check if the platform is a preview platform etc.
      *
      * @return the minimum API level or -1 if unknown
      */
     public int getMinSdk() {
-        //assert !mLibrary; // Should call getMinSdk on the master project, not the library
-        // Assertion disabled because you might be running lint on a standalone library project.
-
-        return mMinSdk;
+        AndroidVersion version = getMinSdkVersion();
+        return version == AndroidVersion.DEFAULT ? -1 : version.getApiLevel();
     }
 
     /**
-     * Returns the target API level specified by the manifest, or -1 if not
-     * specified
+     * Returns the target API level for the project
+     *
+     * @return the target API level or {@link AndroidVersion#DEFAULT} if unknown
+     */
+    @NonNull
+    public AndroidVersion getTargetSdkVersion() {
+        return mManifestTargetSdk == AndroidVersion.DEFAULT
+                ? getMinSdkVersion() : mManifestTargetSdk;
+    }
+
+    /**
+     * Returns the target API <b>level</b> specified by the manifest, or -1 if not
+     * specified. Use {@link #getTargetSdkVersion()} to get a full version if you need
+     * to check if the platform is a preview platform etc.
      *
      * @return the target API level or -1 if unknown
      */
     public int getTargetSdk() {
-        //assert !mLibrary; // Should call getTargetSdk on the master project, not the library
-        // Assertion disabled because you might be running lint on a standalone library project.
-
-        return mTargetSdk;
+        AndroidVersion version = getTargetSdkVersion();
+        return version == AndroidVersion.DEFAULT ? -1 : version.getApiLevel();
     }
 
     /**
@@ -612,6 +638,8 @@ public class Project {
         mPackage = root.getAttribute(ATTR_PACKAGE);
 
         // Initialize minSdk and targetSdk
+        mManifestMinSdk = AndroidVersion.DEFAULT;
+        mManifestTargetSdk = AndroidVersion.DEFAULT;
         NodeList usesSdks = root.getElementsByTagName(TAG_USES_SDK);
         if (usesSdks.getLength() > 0) {
             Element element = (Element) usesSdks.item(0);
@@ -621,29 +649,22 @@ public class Project {
                 minSdk = element.getAttributeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION);
             }
             if (minSdk != null) {
-                try {
-                    mMinSdk = Integer.valueOf(minSdk);
-                } catch (NumberFormatException e) {
-                    // Codename?
-                    mMinSdk = SdkVersionInfo.getApiByPreviewName(minSdk, true);
-                }
+                IAndroidTarget[] targets = mClient.getTargets();
+                mManifestMinSdk = SdkVersionInfo.getVersion(minSdk, targets);
             }
 
-            String targetSdk = null;
             if (element.hasAttributeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION)) {
-                targetSdk = element.getAttributeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION);
-            } else if (minSdk != null) {
-                targetSdk = minSdk;
-            }
-            if (targetSdk != null) {
-                try {
-                    mTargetSdk = Integer.valueOf(targetSdk);
-                } catch (NumberFormatException e) {
-                    mTargetSdk = SdkVersionInfo.getApiByPreviewName(minSdk, false);
+                String targetSdk = element.getAttributeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION);
+                if (targetSdk != null) {
+                    IAndroidTarget[] targets = mClient.getTargets();
+                    mManifestTargetSdk = SdkVersionInfo.getVersion(targetSdk, targets);
                 }
+            } else {
+                mManifestTargetSdk = mManifestMinSdk;
             }
         } else if (isAospBuildEnvironment()) {
             extractAospMinSdkVersion();
+            mManifestTargetSdk = mManifestMinSdk;
         }
     }
 
@@ -901,7 +922,7 @@ public class Project {
             sAospBuild = getAospTop() != null;
         }
 
-        return sAospBuild.booleanValue();
+        return sAospBuild;
     }
 
     /**
@@ -1044,14 +1065,10 @@ public class Project {
                         found = true;
                         String version = matcher.group(1);
                         if (version.equals("current")) { //$NON-NLS-1$
-                            mMinSdk = findCurrentAospVersion();
+                            mManifestMinSdk = findCurrentAospVersion();
                         } else {
-                            try {
-                                mMinSdk = Integer.valueOf(version);
-                            } catch (NumberFormatException e) {
-                                // Codename - just use current
-                                mMinSdk = findCurrentAospVersion();
-                            }
+                            mManifestMinSdk = SdkVersionInfo.getVersion(version,
+                                    mClient.getTargets());
                         }
                         break;
                     }
@@ -1062,21 +1079,21 @@ public class Project {
         }
 
         if (!found) {
-            mMinSdk = findCurrentAospVersion();
+            mManifestMinSdk = findCurrentAospVersion();
         }
     }
 
     /** Cache for {@link #findCurrentAospVersion()} */
-    private static int sCurrentVersion;
+    private static AndroidVersion sCurrentVersion;
 
     /** In an AOSP build environment, identify the currently built image version, if available */
-    private static int findCurrentAospVersion() {
-        if (sCurrentVersion < 1) {
+    private static AndroidVersion findCurrentAospVersion() {
+        if (sCurrentVersion == null) {
             File apiDir = new File(getAospTop(), "frameworks/base/api" //$NON-NLS-1$
                     .replace('/', File.separatorChar));
             File[] apiFiles = apiDir.listFiles();
             if (apiFiles == null) {
-                sCurrentVersion = 1;
+                sCurrentVersion = AndroidVersion.DEFAULT;
                 return sCurrentVersion;
             }
             int max = 1;
@@ -1097,7 +1114,7 @@ public class Project {
                     }
                 }
             }
-            sCurrentVersion = max;
+            sCurrentVersion = new AndroidVersion(max, null);
         }
 
         return sCurrentVersion;
@@ -1119,7 +1136,8 @@ public class Project {
             if (mSupportLib == null) {
                 for (File file : getJavaLibraries()) {
                     String name = file.getName();
-                    if (name.equals("android-support-v4.jar") || name.startsWith("support-v4-")) {
+                    if (name.equals("android-support-v4.jar")      //$NON-NLS-1$
+                            || name.startsWith("support-v4-")) {   //$NON-NLS-1$
                         mSupportLib = true;
                         break;
                     }
@@ -1139,7 +1157,32 @@ public class Project {
             }
 
             return mSupportLib;
+        } else if (APPCOMPAT_LIB_ARTIFACT.equals(artifact)) {
+            if (mAppCompat == null) {
+                for (File file : getJavaLibraries()) {
+                    String name = file.getName();
+                    if (name.startsWith("appcompat-v7-")) { //$NON-NLS-1$
+                        mAppCompat = true;
+                        break;
+                    }
+                }
+                if (mAppCompat == null) {
+                    for (Project dependency : getDirectLibraries()) {
+                        Boolean b = dependency.dependsOn(artifact);
+                        if (b != null && b) {
+                            mAppCompat = true;
+                            break;
+                        }
+                    }
+                }
+                if (mAppCompat == null) {
+                    mAppCompat = false;
+                }
+            }
+
+            return mAppCompat;
         }
+
         return null;
     }
 }

@@ -27,16 +27,19 @@ import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
-import com.android.builder.DefaultProductFlavor
-import com.android.builder.VariantConfiguration
+import com.android.builder.core.DefaultProductFlavor
+import com.android.builder.core.VariantConfiguration
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
+import com.android.builder.model.ApiVersion
 import com.android.builder.model.ArtifactMetaData
 import com.android.builder.model.JavaArtifact
 import com.android.builder.model.LintOptions
 import com.android.builder.model.SigningConfig
 import com.android.builder.model.SourceProvider
 import com.android.builder.model.SourceProviderContainer
+import com.android.sdklib.AndroidVersion
+import com.android.sdklib.IAndroidTarget
 import com.google.common.collect.Lists
 import org.gradle.api.Project
 import org.gradle.api.plugins.UnknownPluginException
@@ -74,15 +77,11 @@ public class ModelBuilder implements ToolingModelBuilder {
             return null
         }
 
-        // need to parse the SDK now.
-        String targetHash = basePlugin.extension.getCompileSdkVersion()
-        basePlugin.getSdkHandler().initTarget(
-                targetHash,
-                basePlugin.extension.buildToolsRevision)
-
         signingConfigs = basePlugin.extension.signingConfigs
 
-        List<String> bootClasspath = basePlugin.androidBuilder.bootClasspath
+        // get the boot classpath. This will ensure the target is configured.
+        List<String> bootClasspath = basePlugin.bootClasspath
+
         List<File> frameworkSource = Collections.emptyList();
 
         // list of extra artifacts
@@ -100,7 +99,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         DefaultAndroidProject androidProject = new DefaultAndroidProject(
                 getModelVersion(),
                 project.name,
-                targetHash,
+                basePlugin.getAndroidBuilder().getTarget().hashString(),
                 bootClasspath,
                 frameworkSource,
                 cloneSigningConfigs(signingConfigs),
@@ -190,12 +189,23 @@ public class ModelBuilder implements ToolingModelBuilder {
             clonedJavaArtifacts.add(JavaArtifactImpl.clone(javaArtifact))
         }
 
+        // if the target is a codename, override the model value.
+        ApiVersion sdkVersionOverride = null
+        IAndroidTarget androidTarget = basePlugin.androidBuilder.getTargetInfo().target
+        AndroidVersion version = androidTarget.getVersion()
+        if (version.codename != null) {
+            sdkVersionOverride = ApiVersionImpl.clone(version)
+        }
+
         VariantImpl variant = new VariantImpl(
                 variantName,
                 variantData.variantConfiguration.baseName,
                 variantData.variantConfiguration.buildType.name,
                 getProductFlavorNames(variantData),
-                ProductFlavorImpl.cloneFlavor(variantData.variantConfiguration.mergedFlavor),
+                ProductFlavorImpl.cloneFlavor(
+                        variantData.variantConfiguration.mergedFlavor,
+                        sdkVersionOverride,
+                        sdkVersionOverride),
                 mainArtifact,
                 extraAndroidArtifacts,
                 clonedJavaArtifacts)
@@ -240,10 +250,10 @@ public class ModelBuilder implements ToolingModelBuilder {
                 variantData.outputFile,
                 vC.isSigningReady(),
                 signingConfigName,
-                vC.packageName,
+                vC.applicationId,
                 variantData.sourceGenTask.name,
                 variantData.javaCompileTask.name,
-                variantData.processManifestTask.manifestOutputFile,
+                variantData.manifestProcessorTask.manifestOutputFile,
                 getGeneratedSourceFolders(variantData),
                 getGeneratedResourceFolders(variantData),
                 variantData.javaCompileTask.destinationDir,

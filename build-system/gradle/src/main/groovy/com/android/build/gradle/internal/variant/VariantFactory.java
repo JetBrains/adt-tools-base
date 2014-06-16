@@ -19,7 +19,7 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.api.BaseVariant;
-import com.android.builder.VariantConfiguration;
+import com.android.builder.core.VariantConfiguration;
 
 import org.gradle.api.Task;
 
@@ -39,8 +39,6 @@ public interface VariantFactory {
 
     @NonNull
     VariantConfiguration.Type getVariantConfigurationType();
-
-    boolean isVariantPublished();
 
     boolean isLibrary();
 

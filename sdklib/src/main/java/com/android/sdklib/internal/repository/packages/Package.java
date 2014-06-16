@@ -26,18 +26,12 @@ import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.IListDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
-import com.android.sdklib.internal.repository.archives.ArchFilter;
 import com.android.sdklib.internal.repository.archives.Archive;
-import com.android.sdklib.internal.repository.archives.BitSize;
-import com.android.sdklib.internal.repository.archives.HostOs;
-import com.android.sdklib.internal.repository.archives.LegacyArch;
-import com.android.sdklib.internal.repository.archives.LegacyOs;
 import com.android.sdklib.internal.repository.sources.SdkAddonSource;
 import com.android.sdklib.internal.repository.sources.SdkRepoSource;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.io.IFileOp;
 import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.sdklib.repository.SdkRepoConstants;
@@ -71,7 +65,9 @@ public abstract class Package implements IDescription, IListDescription, Compara
     private final String mListDisplay;
     private final String mDescription;
     private final String mDescUrl;
+    @Deprecated
     private final String mReleaseNote;
+    @Deprecated
     private final String mReleaseUrl;
     private final Archive[] mArchives;
     private final SdkSource mSource;
@@ -81,93 +77,6 @@ public abstract class Package implements IDescription, IListDescription, Compara
     private static final boolean sUsingUnixPerm =
                 SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_DARWIN ||
                 SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_LINUX;
-
-    /** License text, with an optional license XML reference. */
-    public static class License {
-        private final String mLicense;
-        private final String mLicenseRef;
-
-        public License(@NonNull String license) {
-            mLicense = license;
-            mLicenseRef = null;
-        }
-
-        public License(@NonNull String license, @Nullable String licenseRef) {
-            mLicense = license;
-            mLicenseRef = licenseRef;
-        }
-
-        /** Returns the license text. Never null. */
-        @NonNull
-        public String getLicense() {
-            return mLicense;
-        }
-
-        /**
-         * Returns the license XML reference.
-         * Could be null, e.g. in tests or synthetic packages
-         * recreated from local source.properties.
-         */
-        @Nullable
-        public String getLicenseRef() {
-            return mLicenseRef;
-        }
-
-        /**
-         * Returns a string representation of the license, useful for debugging.
-         * This is not designed to be shown to the user.
-         */
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("<License ref:")
-              .append(mLicenseRef)
-              .append(", text:")
-              .append(mLicense)
-              .append(">");
-            return sb.toString();
-        }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result
-                    + ((mLicense == null) ? 0 : mLicense.hashCode());
-            result = prime * result
-                    + ((mLicenseRef == null) ? 0 : mLicenseRef.hashCode());
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (!(obj instanceof License)) {
-                return false;
-            }
-            License other = (License) obj;
-            if (mLicense == null) {
-                if (other.mLicense != null) {
-                    return false;
-                }
-            } else if (!mLicense.equals(other.mLicense)) {
-                return false;
-            }
-            if (mLicenseRef == null) {
-                if (other.mLicenseRef != null) {
-                    return false;
-                }
-            } else if (!mLicenseRef.equals(other.mLicenseRef)) {
-                return false;
-            }
-            return true;
-        }
-    }
 
     /**
      * Enum for the result of {@link Package#canBeUpdatedBy(Package)}. This used so that we can
@@ -493,7 +402,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * Can be empty but not null.
      */
     @NonNull
-    protected String getListDisplay() {
+    public String getListDisplay() {
         return mListDisplay;
     }
 

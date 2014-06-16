@@ -1,26 +1,32 @@
 package com.android.build.gradle.internal;
 
-import com.google.common.base.Charsets;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.google.common.io.Files;
+import static com.android.SdkConstants.APPCOMPAT_LIB_ARTIFACT;
+import static com.android.SdkConstants.SUPPORT_LIB_ARTIFACT;
+import static java.io.File.separatorChar;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SourceProvider;
 import com.android.builder.model.Variant;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
+import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Project;
 import com.android.utils.Pair;
 import com.android.utils.XmlUtils;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 
 import org.w3c.dom.Document;
 
@@ -32,13 +38,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static java.io.File.separatorChar;
-
 /**
  * An implementation of Lint's {@link Project} class wrapping a Gradle model (project or
  * library)
  */
 public class LintGradleProject extends Project {
+    protected AndroidVersion mMinSdkVersion;
+    protected AndroidVersion mTargetSdkVersion;
+
     private LintGradleProject(
             @NonNull LintGradleClient client,
             @NonNull File dir,
@@ -89,7 +96,6 @@ public class LintGradleProject extends Project {
         return Pair.<LintGradleProject,List<File>>of(lintProject, customRules);
     }
 
-
     @Override
     protected void initialize() {
         // Deliberately not calling super; that code is for ADT compatibility
@@ -112,6 +118,38 @@ public class LintGradleProject extends Project {
     @Override
     public boolean isGradleProject() {
         return true;
+    }
+
+    protected static boolean dependsOn(@NonNull Dependencies dependencies,
+            @NonNull String artifact) {
+        for (AndroidLibrary library : dependencies.getLibraries()) {
+            if (dependsOn(library, artifact)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected static boolean dependsOn(@NonNull AndroidLibrary library, @NonNull String artifact) {
+        if (SUPPORT_LIB_ARTIFACT.equals(artifact)) {
+            if (library.getJarFile().getName().startsWith("support-v4-")) {
+                return true;
+            }
+
+        } else if (APPCOMPAT_LIB_ARTIFACT.equals(artifact)) {
+            File bundle = library.getBundle();
+            if (bundle.getName().startsWith("appcompat-v7-")) {
+                return true;
+            }
+        }
+
+        for (AndroidLibrary dependency : library.getLibraryDependencies()) {
+            if (dependsOn(dependency, artifact)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     void addDirectLibrary(@NonNull Project project) {
@@ -269,6 +307,13 @@ public class LintGradleProject extends Project {
                         }
                     }
                 }
+
+                for (File file : mVariant.getMainArtifact().getGeneratedResourceFolders()) {
+                    if (file.exists()) {
+                        mResourceFolders.add(file);
+                    }
+                }
+
             }
 
             return mResourceFolders;
@@ -280,11 +325,17 @@ public class LintGradleProject extends Project {
             if (mJavaSourceFolders == null) {
                 mJavaSourceFolders = Lists.newArrayList();
                 for (SourceProvider provider : getSourceProviders()) {
-                    Collection<File> resDirs = provider.getJavaDirectories();
-                    for (File res : resDirs) {
-                        if (res.exists()) { // model returns path whether or not it exists
-                            mJavaSourceFolders.add(res);
+                    Collection<File> srcDirs = provider.getJavaDirectories();
+                    for (File srcDir : srcDirs) {
+                        if (srcDir.exists()) { // model returns path whether or not it exists
+                            mJavaSourceFolders.add(srcDir);
                         }
+                    }
+                }
+
+                for (File file : mVariant.getMainArtifact().getGeneratedSourceFolders()) {
+                    if (file.exists()) {
+                        mJavaSourceFolders.add(file);
                     }
                 }
             }
@@ -310,9 +361,10 @@ public class LintGradleProject extends Project {
         @Override
         public List<File> getJavaLibraries() {
             if (mJavaLibraries == null) {
-                Collection<File> jars = mVariant.getMainArtifact().getDependencies().getJars();
-                mJavaLibraries = Lists.newArrayListWithExpectedSize(jars.size());
-                for (File jar : jars) {
+                Collection<JavaLibrary> libs = mVariant.getMainArtifact().getDependencies().getJavaLibraries();
+                mJavaLibraries = Lists.newArrayListWithExpectedSize(libs.size());
+                for (JavaLibrary lib : libs) {
+                    File jar = lib.getJarFile();
                     if (jar.exists()) {
                         mJavaLibraries.add(jar);
                     }
@@ -328,7 +380,7 @@ public class LintGradleProject extends Project {
             // package. As part of the Gradle work on the Lint API we should make two separate
             // package lookup methods -- one for the manifest package, one for the build package
             if (mPackage == null) { // only used as a fallback in case manifest somehow is null
-                String packageName = mProject.getDefaultConfig().getProductFlavor().getPackageName();
+                String packageName = mProject.getDefaultConfig().getProductFlavor().getApplicationId();
                 if (packageName != null) {
                     return packageName;
                 }
@@ -338,23 +390,41 @@ public class LintGradleProject extends Project {
         }
 
         @Override
-        public int getMinSdk() {
-            int minSdk = mProject.getDefaultConfig().getProductFlavor().getMinSdkVersion();
-            if (minSdk != -1) {
-                return minSdk;
+        @NonNull
+        public AndroidVersion getMinSdkVersion() {
+            if (mMinSdkVersion == null) {
+                ApiVersion minSdk = mVariant.getMergedFlavor().getMinSdkVersion();
+                if (minSdk == null) {
+                    ProductFlavor flavor = mProject.getDefaultConfig().getProductFlavor();
+                    minSdk = flavor.getMinSdkVersion();
+                }
+                if (minSdk != null) {
+                    mMinSdkVersion = LintUtils.convertVersion(minSdk, mClient.getTargets());
+                } else {
+                    mMinSdkVersion = super.getMinSdkVersion(); // from manifest
+                }
             }
 
-            return mMinSdk; // from manifest
+            return mMinSdkVersion;
         }
 
         @Override
-        public int getTargetSdk() {
-            int targetSdk = mProject.getDefaultConfig().getProductFlavor().getTargetSdkVersion();
-            if (targetSdk != -1) {
-                return targetSdk;
+        @NonNull
+        public AndroidVersion getTargetSdkVersion() {
+            if (mTargetSdkVersion == null) {
+                ApiVersion targetSdk = mVariant.getMergedFlavor().getTargetSdkVersion();
+                if (targetSdk == null) {
+                    ProductFlavor flavor = mProject.getDefaultConfig().getProductFlavor();
+                    targetSdk = flavor.getTargetSdkVersion();
+                }
+                if (targetSdk != null) {
+                    mTargetSdkVersion = LintUtils.convertVersion(targetSdk, mClient.getTargets());
+                } else {
+                    mTargetSdkVersion = super.getTargetSdkVersion(); // from manifest
+                }
             }
 
-            return targetSdk; // from manifest
+            return mTargetSdkVersion;
         }
 
         @Override
@@ -366,6 +436,26 @@ public class LintGradleProject extends Project {
             }
 
             return super.getBuildSdk();
+        }
+
+        @Nullable
+        @Override
+        public Boolean dependsOn(@NonNull String artifact) {
+            if (SUPPORT_LIB_ARTIFACT.equals(artifact)) {
+                if (mSupportLib == null) {
+                    Dependencies dependencies = mVariant.getMainArtifact().getDependencies();
+                    mSupportLib = dependsOn(dependencies, artifact);
+                }
+                return mSupportLib;
+            } else if (APPCOMPAT_LIB_ARTIFACT.equals(artifact)) {
+                if (mAppCompat == null) {
+                    Dependencies dependencies = mVariant.getMainArtifact().getDependencies();
+                    mAppCompat = dependsOn(dependencies, artifact);
+                }
+                return mAppCompat;
+            } else {
+                return super.dependsOn(artifact);
+            }
         }
     }
 
@@ -474,6 +564,24 @@ public class LintGradleProject extends Project {
             }
 
             return mJavaLibraries;
+        }
+
+        @Nullable
+        @Override
+        public Boolean dependsOn(@NonNull String artifact) {
+            if (SUPPORT_LIB_ARTIFACT.equals(artifact)) {
+                if (mSupportLib == null) {
+                    mSupportLib = dependsOn(mLibrary, artifact);
+                }
+                return mSupportLib;
+            } else if (APPCOMPAT_LIB_ARTIFACT.equals(artifact)) {
+                if (mAppCompat == null) {
+                    mAppCompat = dependsOn(mLibrary, artifact);
+                }
+                return mAppCompat;
+            } else {
+                return super.dependsOn(artifact);
+            }
         }
     }
 }

@@ -1,11 +1,11 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
 
 group = 'com.android.tools'
 archivesBaseName = 'testutils'
+version = rootProject.ext.baseVersion
 
 dependencies {
-    compile project(':common')
+    compile project(':base:common')
     compile 'junit:junit:3.8.1'
 }
 
@@ -13,9 +13,3 @@ sourceSets {
     main.resources.srcDir 'src/main/java'
     test.resources.srcDir 'src/test/java'
 }
-
-// Needed for ADT
-// TODO: be able to ship to prebuilts/devtools/adt
-shipping.isShipping = false
-
-apply from: '../baseVersion.gradle'

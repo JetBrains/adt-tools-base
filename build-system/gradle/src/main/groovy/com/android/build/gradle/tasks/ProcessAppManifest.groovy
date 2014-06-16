@@ -23,7 +23,7 @@ import org.gradle.api.tasks.Optional
 /**
  * A task that processes the manifest
  */
-public class ProcessAppManifest extends ProcessManifest {
+public class ProcessAppManifest extends ManifestProcessorTask {
 
     // ----- PRIVATE TASK API -----
 
@@ -47,8 +47,8 @@ public class ProcessAppManifest extends ProcessManifest {
     @Input @Optional
     String minSdkVersion
 
-    @Input
-    int targetSdkVersion
+    @Input @Optional
+    String targetSdkVersion
 
     /*
      * since libraries above can't return it's input files (@Nested doesn't

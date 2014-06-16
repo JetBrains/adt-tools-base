@@ -3,7 +3,7 @@
 
     <application>
 
-        <receiver android:name="${packageName}.${className}" >
+        <receiver android:name="${relativePackage}.${className}" >
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -14,7 +14,7 @@
         </receiver>
 
     <#if configurable>
-        <activity android:name="${packageName}.${className}ConfigureActivity" >
+        <activity android:name="${relativePackage}.${className}ConfigureActivity" >
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>

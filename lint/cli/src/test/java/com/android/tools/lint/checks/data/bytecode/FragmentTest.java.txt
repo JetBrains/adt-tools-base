@@ -52,4 +52,8 @@ public class FragmentTest {
 	// (Not a fragment)
 	private class NotAFragment {
 	}
+
+	// Ok: Has implicit constructor
+	public static class Fragment7 extends Fragment {
+	}
 }

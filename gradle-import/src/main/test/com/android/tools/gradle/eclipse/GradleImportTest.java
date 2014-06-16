@@ -17,8 +17,14 @@
 package com.android.tools.gradle.eclipse;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static com.android.SdkConstants.DOT_GRADLE;
 import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.FD_GRADLE;
+import static com.android.SdkConstants.FD_GRADLE_WRAPPER;
+import static com.android.SdkConstants.FD_TEMPLATES;
 import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML;
+import static com.android.SdkConstants.FN_GRADLE_WRAPPER_UNIX;
+import static com.android.SdkConstants.FN_GRADLE_WRAPPER_WIN;
 import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.SdkConstants.FN_PROJECT_PROPERTIES;
 import static com.android.tools.gradle.eclipse.GradleImport.ANDROID_GRADLE_PLUGIN;
@@ -380,6 +386,36 @@ public class GradleImportTest extends TestCase {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testImportWithoutMinSdkVersion() throws Exception {
+        // Regression test for importing project which does not explicitly set minSdkVersion
+        // and/or targetSdkVersion; this would earlier result in "-1" being written into
+        // build.gradle which fails the build with "> Cannot invoke method minus() on null object"
+        File projectDir = createProject("test1", "test.pkg");
+
+        // Remove <uses-sdk ...>
+        File manifestFile = new File(projectDir, FN_ANDROID_MANIFEST_XML);
+        String manifestContents = Files.toString(manifestFile,  UTF_8);
+        int index = manifestContents.indexOf("<uses-sdk");
+        int endIndex = manifestContents.indexOf('>', index);
+        assertFalse(index == -1);
+        assertFalse(endIndex == -1);
+        manifestContents = manifestContents.substring(0, index) +
+                manifestContents.substring(endIndex + 1);
+        Files.write(manifestContents, manifestFile, UTF_8);
+
+        File imported = checkProject(projectDir, ""
+                        + MSG_HEADER
+                        + MSG_FOLDER_STRUCTURE
+                        + "* AndroidManifest.xml => app/src/main/AndroidManifest.xml\n"
+                        + "* res/ => app/src/main/res/\n"
+                        + "* src/ => app/src/main/java/\n"
+                        + MSG_FOOTER,
+                true /* checkBuild */);
+        deleteDir(projectDir);
+        deleteDir(imported);
+    }
+
+  @SuppressWarnings("ResultOfMethodCallIgnored")
     public void testMoveRsAndAidl() throws Exception {
         File projectDir = createProject("test1", "test.pkg");
         createSampleAidlFile(projectDir, "src", "test.pkg");
@@ -813,6 +849,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -855,6 +892,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.lib2.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 8\n"
                 + "    }\n"
@@ -1036,6 +1074,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -1140,6 +1179,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -1287,6 +1327,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "\n"
@@ -1497,10 +1538,11 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "\n"
-                + "        testPackageName \"my.test.pkg.name\"\n"
+                + "        testApplicationId \"my.test.pkg.name\"\n"
                 + "        testInstrumentationRunner \"android.test.InstrumentationTestRunner\"\n"
                 + "        testFunctionalTest false\n"
                 + "        testHandlingProfiling true\n"
@@ -1695,6 +1737,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -2199,6 +2242,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -2240,6 +2284,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.android.lib.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 8\n"
                 + "    }\n"
@@ -2898,6 +2943,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -3120,8 +3166,7 @@ public class GradleImportTest extends TestCase {
                     .getParentFile()
                     .getParentFile()
                     .getParentFile();
-            File wrapper = new File(top, "templates" + separator + "gradle" + separator +
-                    "wrapper");
+            File wrapper = new File(top, FD_TEMPLATES + separator + FD_GRADLE_WRAPPER);
             if (wrapper.exists()) {
                 return wrapper;
             }
@@ -3135,7 +3180,7 @@ public class GradleImportTest extends TestCase {
     }
 
     public static void assertBuildsCleanly(File base, boolean allowWarnings) throws Exception {
-        File gradlew = new File(base, "gradlew" + (isWindows() ? ".bat" : ""));
+        File gradlew = new File(base, isWindows() ? FN_GRADLE_WRAPPER_WIN : FN_GRADLE_WRAPPER_UNIX);
         if (!gradlew.exists()) {
             // Not using a wrapper; can't easily test building (we don't have a gradle prebuilt)
             return;
@@ -3171,17 +3216,20 @@ public class GradleImportTest extends TestCase {
     }
 
     private static void appendFiles(StringBuilder sb, boolean includeDirs, File file, int depth) {
+        // Skip output
+        if ((depth == 1 || depth == 2) && file.getName().equals("build")) {
+            return;
+        }
+
         // Skip wrapper, since it may or may not be present for unit tests
         if (depth == 1) {
             String name = file.getName();
-            if (name.equals(".gradle")
-                    || name.equals("gradle")
-                    || name.equals("gradlew")
-                    || name.equals("gradlew.bat")) {
+            if (name.equals(DOT_GRADLE)
+                    || name.equals(FD_GRADLE)
+                    || name.equals(FN_GRADLE_WRAPPER_UNIX)
+                    || name.equals(FN_GRADLE_WRAPPER_WIN)) {
                 return;
             }
-        } else if (depth == 2 && file.getName().equals("build")) { // Skip output
-            return;
         }
 
         boolean isDirectory = file.isDirectory();

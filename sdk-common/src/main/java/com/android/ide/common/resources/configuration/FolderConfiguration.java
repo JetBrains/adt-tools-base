@@ -564,6 +564,30 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
     }
 
     /**
+     * Normalize a folder configuration based on the API level of its qualifiers
+     */
+    public void normalize() {
+        int minSdk = 1;
+        for (ResourceQualifier qualifier : mQualifiers) {
+            if (qualifier != null) {
+                int min = qualifier.since();
+                if (min > minSdk) {
+                    minSdk = min;
+                }
+            }
+        }
+
+        if (minSdk == 1) {
+            return;
+        }
+
+        if (mQualifiers[INDEX_VERSION] == null ||
+                ((VersionQualifier)mQualifiers[INDEX_VERSION]).getVersion() < minSdk) {
+            mQualifiers[INDEX_VERSION] = new VersionQualifier(minSdk);
+        }
+    }
+
+    /**
      * Updates the {@link SmallestScreenWidthQualifier}, {@link ScreenWidthQualifier}, and
      * {@link ScreenHeightQualifier} based on the (required) values of
      * {@link ScreenDimensionQualifier} {@link DensityQualifier}, and

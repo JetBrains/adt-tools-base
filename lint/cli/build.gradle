@@ -1,16 +1,17 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
+apply plugin: 'sdk-java-lib'
 
 group = 'com.android.tools.lint'
 archivesBaseName = 'lint'
+version = rootProject.ext.baseVersion
 
 dependencies {
-    compile project(':lint-checks')
+    compile project(':base:lint-checks')
     compile 'org.eclipse.jdt.core.compiler:ecj:4.2.2'
 
     testCompile 'org.easymock:easymock:3.1'
     testCompile 'junit:junit:3.8.1'
-    testCompile project(':testutils')
+    testCompile project(':base:testutils')
 }
 
 sourceSets {
@@ -18,20 +19,23 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
-jar {
-    from 'NOTICE'
+sdk {
+    linux {
+        item('etc/lint') { executable true }
+    }
+    mac {
+        item('etc/lint') { executable true }
+    }
+    windows {
+        item 'etc/lint.bat'
+    }
 }
 
-shipping {
-    launcherScripts = ['etc/lint', 'etc/lint.bat']
-}
-
-// configure the manifest of the buildDistributionJar task.
-buildDistributionJar.manifest.attributes("Main-Class": "com.android.tools.lint.Main")
+// configure the manifest of the sdkJar task.
+sdkJar.manifest.attributes("Main-Class": "com.android.tools.lint.Main")
 
 project.ext.pomName = 'Android Lint Tool'
 project.ext.pomDesc = 'Lint tools. Both a Command line tool and a library to add lint features to other tools'
 
-apply from: '../../baseVersion.gradle'
-apply from: '../../publish.gradle'
-apply from: '../../javadoc.gradle'
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"

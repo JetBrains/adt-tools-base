@@ -285,10 +285,30 @@ public class XmlElementTest extends TestCase {
                     new TestUtils.TestSourceLocation(getClass(), "testDiff6()"), input);
             xmlDocument.getRootNode();
             fail("Exception not thrown");
-        } catch (IllegalArgumentException expected) {
+        } catch (RuntimeException expected) {
             // expected.
         }
     }
+
+    public void testOtherToolsInstruction()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <activity android:name=\"activityOne\" "
+                + "         tools:ignore=\"android:theme\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "testOtherToolsInstruction"), input);
+        xmlDocument.getRootNode();
+    }
+
 
     public void testDiff1()
             throws Exception {
@@ -1389,7 +1409,7 @@ public class XmlElementTest extends TestCase {
         assertTrue(activityOne.isPresent());
 
         assertEquals(1, activityOne.get().getMergeableElements().size());
-        assertEquals(3, activityOne.get().getAttributes().size());
+        assertEquals(4, activityOne.get().getAttributes().size());
 
         // check that we kept the right child from the higher priority node.
         XmlNode.NodeName nodeName = XmlNode.fromXmlName(
@@ -1692,5 +1712,68 @@ public class XmlElementTest extends TestCase {
             }
 
         }
+    }
+
+    public void testCompatibleScreens()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        String higherPriority = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <compatible-screens>\n"
+                + "        <!-- all small size screens -->\n"
+                + "        <screen android:screenSize=\"small\" android:screenDensity=\"ldpi\" />\n"
+                + "        <screen android:screenSize=\"small\" android:screenDensity=\"mdpi\" />\n"
+                + "        <screen android:screenSize=\"small\" android:screenDensity=\"xhdpi\" />\n"
+                + "        <!-- all normal size screens -->\n"
+                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"ldpi\" />\n"
+                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"hdpi\" />\n"
+                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"xhdpi\" />\n"
+                + "    </compatible-screens>"
+                + "\n"
+                + "</manifest>";
+
+        String lowerPriorityOne = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib1\">\n"
+                + "\n"
+                + "    <compatible-screens>\n"
+                + "        <!-- all small size screens -->\n"
+                + "        <screen android:screenSize=\"small\" android:screenDensity=\"ldpi\" />\n"
+                + "        <screen android:screenSize=\"small\" android:screenDensity=\"mdpi\" />\n"
+                + "        <screen android:screenSize=\"small\" android:screenDensity=\"hdpi\" />\n"
+                + "        <!-- all normal size screens -->\n"
+                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"mdpi\" />\n"
+                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"hdpi\" />\n"
+                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"xhdpi\" />\n"
+                + "    </compatible-screens>"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+
+        XmlDocument firstLibrary = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "lowerPriorityOne"), lowerPriorityOne);
+
+        MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
+                new StdLogger(StdLogger.Level.VERBOSE));
+        Optional<XmlDocument> result = refDocument.merge(firstLibrary, mergingReportBuilder);
+        assertTrue(result.isPresent());
+
+        ImmutableList<XmlElement> mergeableElements = result.get().getRootNode()
+                .getMergeableElements();
+
+        assertEquals(1, mergeableElements.size());
+        ImmutableList<XmlElement> mergedScreens = mergeableElements.get(0)
+                .getMergeableElements();
+
+        // we should have merged screens with no duplicated elements.
+        assertEquals(8, mergedScreens.size());
     }
 }

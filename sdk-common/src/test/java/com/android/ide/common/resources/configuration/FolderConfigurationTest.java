@@ -145,6 +145,35 @@ public class FolderConfigurationTest extends TestCase {
         assertEquals("-en-rUS", configForFolder.getUniqueKey());
     }
 
+    public void testNormalize() {
+        // test normal qualifiers that all have the same min SDK
+        doTestNormalize(4, "large");
+        doTestNormalize(8, "notnight");
+        doTestNormalize(13, "sw42dp");
+        doTestNormalize(17, "ldrtl");
+
+        // test we take the highest qualifier
+        doTestNormalize(13, "sw42dp", "large");
+
+        // test where different values have different minSdk
+        doTestNormalize(8, "car");
+        doTestNormalize(13, "television");
+        doTestNormalize(16, "appliance");
+
+        // test case where there's already a higher -v# qualifier
+        doTestNormalize(18, "sw42dp", "v18");
+
+        // finally test that in some cases it won't add a -v# value.
+        FolderConfiguration configForFolder = FolderConfiguration.getConfigFromQualifiers(
+                Collections.singletonList("port"));
+
+        assertNotNull(configForFolder);
+
+        configForFolder.normalize();
+        VersionQualifier versionQualifier = configForFolder.getVersionQualifier();
+        assertNull(versionQualifier);
+    }
+
     // --- helper methods
 
     private static final class MockConfigurable implements Configurable {
@@ -232,6 +261,19 @@ public class FolderConfigurationTest extends TestCase {
         }
         assertEquals("-fr-rCA,-en-port,-en-notouch-12key,-en,-port-ldpi,-port-notouch-12key,",
                 Joiner.on(",").skipNulls().join(strings));
+
+    }
+
+    private void doTestNormalize(int expectedVersion, String... segments) {
+        FolderConfiguration configForFolder = FolderConfiguration.getConfigFromQualifiers(
+                Arrays.asList(segments));
+
+        assertNotNull(configForFolder);
+
+        configForFolder.normalize();
+        VersionQualifier versionQualifier = configForFolder.getVersionQualifier();
+        assertNotNull(versionQualifier);
+        assertEquals(expectedVersion, versionQualifier.getVersion());
 
     }
 }

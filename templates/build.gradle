@@ -1,0 +1,10 @@
+apply plugin: 'sdk-files'
+
+sdk {
+    common {
+        item('projects')   { into 'templates/projects' }
+        item('activities') { into 'templates/activities' }
+        item('gradle')     { into 'templates/gradle' }
+        item('other')      { into 'templates/other' }
+    }
+}

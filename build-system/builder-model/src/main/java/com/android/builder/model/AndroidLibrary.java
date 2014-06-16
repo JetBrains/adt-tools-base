@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * Represents an Android Library dependency, its content and its own dependencies
  */
-public interface AndroidLibrary {
+public interface AndroidLibrary extends Library {
 
     /**
      * Returns an optional project identifier if the library is output

@@ -16,7 +16,7 @@
 
 package com.android.ddmlib.testrunner;
 
-
+import com.android.annotations.NonNull;
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.IShellEnabledDevice;
 import com.android.ddmlib.Log;
@@ -62,6 +62,7 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
     private static final String COVERAGE_ARG_NAME = "coverage";
     private static final String PACKAGE_ARG_NAME = "package";
     private static final String SIZE_ARG_NAME = "size";
+    private String mRunOptions = "";
 
     /**
      * Creates a remote Android test runner.
@@ -208,8 +209,8 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
     public void run(Collection<ITestRunListener> listeners)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             IOException {
-        final String runCaseCommandStr = String.format("am instrument -w -r %1$s %2$s",
-            getArgsCommand(), getRunnerPath());
+        final String runCaseCommandStr = String.format("am instrument -w %1$s-r %2$s %3$s",
+                getRunOptions(), getArgsCommand(), getRunnerPath());
         Log.i(LOG_TAG, String.format("Running %1$s on %2$s", runCaseCommandStr,
                 mRemoteDevice.getName()));
         String runName = mRunName == null ? mPackageName : mRunName;
@@ -246,6 +247,18 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
             mParser.handleTestRunFailed(e.toString());
             throw e;
         }
+    }
+
+    @NonNull private String getRunOptions() {
+        return mRunOptions;
+    }
+
+    /**
+     * Sets options for the am instrument command.
+     * See com/android/commands/am/Am.java for full list of options.
+     */
+    public void setRunOptions(@NonNull String options) {
+        mRunOptions = options + " ";
     }
 
     @Override

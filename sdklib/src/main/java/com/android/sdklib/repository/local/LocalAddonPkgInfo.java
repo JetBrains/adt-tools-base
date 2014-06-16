@@ -19,7 +19,6 @@ package com.android.sdklib.repository.local;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
@@ -32,18 +31,23 @@ import com.android.sdklib.internal.repository.packages.AddonPackage;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.io.IFileOp;
+import com.android.sdklib.repository.AddonManifestIniProps;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
-import com.android.sdklib.repository.descriptors.IAddonDesc;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.IPkgDescAddon;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.utils.Pair;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.TreeMultimap;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -54,16 +58,6 @@ import java.util.regex.Pattern;
 @SuppressWarnings("MethodMayBeStatic")
 public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
 
-    public static final String ADDON_NAME         = "name";                 //$NON-NLS-1$
-    public static final String ADDON_VENDOR       = "vendor";               //$NON-NLS-1$
-    public static final String ADDON_API          = "api";                  //$NON-NLS-1$
-    public static final String ADDON_DESCRIPTION  = "description";          //$NON-NLS-1$
-    public static final String ADDON_LIBRARIES    = "libraries";            //$NON-NLS-1$
-    public static final String ADDON_DEFAULT_SKIN = "skin";                 //$NON-NLS-1$
-    public static final String ADDON_USB_VENDOR   = "usb-vendor";           //$NON-NLS-1$
-    public static final String ADDON_REVISION     = "revision";             //$NON-NLS-1$
-    public static final String ADDON_REVISION_OLD = "version";              //$NON-NLS-1$
-
     private static final Pattern PATTERN_LIB_DATA = Pattern.compile(
             "^([a-zA-Z0-9._-]+\\.jar);(.*)$", Pattern.CASE_INSENSITIVE);    //$NON-NLS-1$
 
@@ -71,31 +65,18 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
     private static final Pattern PATTERN_USB_IDS = Pattern.compile(
            "^0x[a-f0-9]{4}$", Pattern.CASE_INSENSITIVE);                    //$NON-NLS-1$
 
-    private final @NonNull IPkgDesc mAddonDesc;
-    private String mTargetHash;
-    private String mVendorId;
+    private final @NonNull IPkgDescAddon mAddonDesc;
 
     public LocalAddonPkgInfo(@NonNull LocalSdk localSdk,
                              @NonNull File localDir,
                              @NonNull Properties sourceProps,
                              @NonNull AndroidVersion version,
-                             @NonNull MajorRevision revision) {
+                             @NonNull MajorRevision revision,
+                             @NonNull IdDisplay vendor,
+                             @NonNull IdDisplay name) {
         super(localSdk, localDir, sourceProps, version, revision, FullRevision.NOT_SPECIFIED);
-        mAddonDesc = PkgDesc.newAddon(version, revision, new IAddonDesc() {
-            @NonNull
-            @Override
-            public String getTargetHash() {
-                // Lazily compute the target hash the first time it is required.
-                return LocalAddonPkgInfo.this.getTargetHash();
-            }
-
-            @NonNull
-            @Override
-            public String getVendorId() {
-                // Lazily compute the vendor id the first time it is required.
-                return LocalAddonPkgInfo.this.getVendorId();
-            }
-        });
+        mAddonDesc = (IPkgDescAddon) PkgDesc.Builder.newAddon(version, revision, vendor, name)
+                                                    .create();
     }
 
     @NonNull
@@ -104,68 +85,35 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
         return mAddonDesc;
     }
 
+    /** The "path" of an add-on is its Target Hash. */
+    @Override
     @NonNull
-    public String getVendorId() {
-        if (mVendorId == null) {
-            IAndroidTarget target = getAndroidTarget();
-
-            String vendor = null;
-
-            if (target != null) {
-                vendor = target.getVendor();
-            } else {
-                Pair<Map<String, String>, String> infos = parseAddonProperties();
-                Map<String, String> map = infos.getFirst();
-                if (map != null) {
-                    vendor = map.get(ADDON_VENDOR);
-                }
-            }
-
-            if (vendor == null) {
-                return "invalid";                                           //$NON-NLS-1$
-            }
-
-            mVendorId = vendor;
-        }
-        return mVendorId;
+    public String getTargetHash() {
+        return getDesc().getPath();
     }
 
-    @NonNull
-    @Override
-    public String getTargetHash() {
-        if (mTargetHash == null) {
-            IAndroidTarget target = getAndroidTarget();
+    //-----
 
-            String vendor = null;
-            String name   = null;
+    /**
+     * Computes a sanitized name-id based on an addon name-display.
+     * This is used to provide compatibility with older add-ons that lacks the new fields.
+     *
+     * @param displayName A name-display field or a old-style name field.
+     * @return A non-null sanitized name-id that fits in the {@code [a-zA-Z0-9_-]+} pattern.
+     */
+    public static String sanitizeDisplayToNameId(@NonNull String displayName) {
+        String name = displayName.toLowerCase(Locale.US);
+        name = name.replaceAll("[^a-z0-9_-]+", "_");      //$NON-NLS-1$ //$NON-NLS-2$
+        name = name.replaceAll("_+", "_");                //$NON-NLS-1$ //$NON-NLS-2$
 
-            if (target != null) {
-                vendor = target.getVendor();
-                name   = target.getName();
-            } else {
-                Pair<Map<String, String>, String> infos = parseAddonProperties();
-                Map<String, String> map = infos.getFirst();
-                if (map != null) {
-                    vendor = map.get(ADDON_VENDOR);
-                    name   = map.get(ADDON_NAME);
-                }
-            }
-
-            if (vendor == null) {
-                vendor = mVendorId;
-            }
-
-            if (vendor == null || name == null) {
-                return "invalid";                                       //$NON-NLS-1$
-            }
-
-            mVendorId = vendor;
-            mTargetHash = AndroidTargetHash.getAddonHashString(
-                    vendor,
-                    name,
-                    getDesc().getAndroidVersion());
+        // Trim leading and trailing underscores
+        if (name.length() > 1) {
+            name = name.replaceAll("^_+", "");            //$NON-NLS-1$ //$NON-NLS-2$
         }
-        return mTargetHash;
+        if (name.length() > 1) {
+            name = name.replaceAll("_+$", "");            //$NON-NLS-1$ //$NON-NLS-2$
+        }
+        return name;
     }
 
     //-----
@@ -210,9 +158,9 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
         try {
             assert propertyMap != null;
 
-            String api = propertyMap.get(ADDON_API);
-            String name = propertyMap.get(ADDON_NAME);
-            String vendor = propertyMap.get(ADDON_VENDOR);
+            String api = propertyMap.get(AddonManifestIniProps.ADDON_API);
+            String name = propertyMap.get(AddonManifestIniProps.ADDON_NAME);
+            String vendor = propertyMap.get(AddonManifestIniProps.ADDON_VENDOR);
 
             assert api != null;
             assert name != null;
@@ -221,7 +169,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             PlatformTarget baseTarget = null;
 
             // Look for a platform that has a matching api level or codename.
-            LocalPkgInfo plat = sdk.getPkgInfo(PkgType.PKG_PLATFORMS,
+            LocalPkgInfo plat = sdk.getPkgInfo(PkgType.PKG_PLATFORM,
                                                getDesc().getAndroidVersion());
             if (plat instanceof LocalPlatformPkgInfo) {
                 baseTarget = (PlatformTarget) ((LocalPlatformPkgInfo) plat).getAndroidTarget();
@@ -229,20 +177,20 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             assert baseTarget != null;
 
             // get the optional description
-            String description = propertyMap.get(ADDON_DESCRIPTION);
+            String description = propertyMap.get(AddonManifestIniProps.ADDON_DESCRIPTION);
 
             // get the add-on revision
             int revisionValue = 1;
-            String revision = propertyMap.get(ADDON_REVISION);
+            String revision = propertyMap.get(AddonManifestIniProps.ADDON_REVISION);
             if (revision == null) {
-                revision = propertyMap.get(ADDON_REVISION_OLD);
+                revision = propertyMap.get(AddonManifestIniProps.ADDON_REVISION_OLD);
             }
             if (revision != null) {
                 revisionValue = Integer.parseInt(revision);
             }
 
             // get the optional libraries
-            String librariesValue = propertyMap.get(ADDON_LIBRARIES);
+            String librariesValue = propertyMap.get(AddonManifestIniProps.ADDON_LIBRARIES);
             Map<String, String[]> libMap = null;
 
             if (librariesValue != null) {
@@ -280,7 +228,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             }
 
             // get the abi list.
-            ISystemImage[] systemImages = getAddonSystemImages();
+            ISystemImage[] systemImages = getAddonSystemImages(fileOp);
 
             // check whether the add-on provides its own rendering info/library.
             boolean hasRenderingLibrary = false;
@@ -313,7 +261,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
 
             // get the default skin
             File defaultSkin = null;
-            String defaultSkinName = propertyMap.get(ADDON_DEFAULT_SKIN);
+            String defaultSkinName = propertyMap.get(AddonManifestIniProps.ADDON_DEFAULT_SKIN);
             if (defaultSkinName != null) {
                 defaultSkin = new File(targetSkinFolder, defaultSkinName);
             } else {
@@ -327,7 +275,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             }
 
             // get the USB ID (if available)
-            int usbVendorId = convertId(propertyMap.get(ADDON_USB_VENDOR));
+            int usbVendorId = convertId(propertyMap.get(AddonManifestIniProps.ADDON_USB_VENDOR));
             if (usbVendorId != IAndroidTarget.NO_USB_ID) {
                 target.setUsbVendorId(usbVendorId);
             }
@@ -381,27 +329,27 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
 
             // look for some specific values in the map.
             // we require name, vendor, and api
-            String name = propertyMap.get(ADDON_NAME);
+            String name = propertyMap.get(AddonManifestIniProps.ADDON_NAME);
             if (name == null) {
-                error = addonManifestWarning(ADDON_NAME);
+                error = addonManifestWarning(AddonManifestIniProps.ADDON_NAME);
                 break;
             }
 
-            String vendor = propertyMap.get(ADDON_VENDOR);
+            String vendor = propertyMap.get(AddonManifestIniProps.ADDON_VENDOR);
             if (vendor == null) {
-                error = addonManifestWarning(ADDON_VENDOR);
+                error = addonManifestWarning(AddonManifestIniProps.ADDON_VENDOR);
                 break;
             }
 
-            String api = propertyMap.get(ADDON_API);
+            String api = propertyMap.get(AddonManifestIniProps.ADDON_API);
             if (api == null) {
-                error = addonManifestWarning(ADDON_API);
+                error = addonManifestWarning(AddonManifestIniProps.ADDON_API);
                 break;
             }
 
             // Look for a platform that has a matching api level or codename.
             IAndroidTarget baseTarget = null;
-            LocalPkgInfo plat = getLocalSdk().getPkgInfo(PkgType.PKG_PLATFORMS,
+            LocalPkgInfo plat = getLocalSdk().getPkgInfo(PkgType.PKG_PLATFORM,
                                                          getDesc().getAndroidVersion());
             if (plat instanceof LocalPlatformPkgInfo) {
                 baseTarget = ((LocalPlatformPkgInfo) plat).getAndroidTarget();
@@ -413,9 +361,9 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             }
 
             // get the add-on revision
-            String revision = propertyMap.get(ADDON_REVISION);
+            String revision = propertyMap.get(AddonManifestIniProps.ADDON_REVISION);
             if (revision == null) {
-                revision = propertyMap.get(ADDON_REVISION_OLD);
+                revision = propertyMap.get(AddonManifestIniProps.ADDON_REVISION_OLD);
             }
             if (revision != null) {
                 try {
@@ -423,7 +371,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                 } catch (NumberFormatException e) {
                     // looks like revision does not parse to a number.
                     error = String.format("%1$s is not a valid number in %2$s.",
-                            ADDON_REVISION, SdkConstants.FN_BUILD_PROP);
+                            AddonManifestIniProps.ADDON_REVISION, SdkConstants.FN_BUILD_PROP);
                     break;
                 }
             }
@@ -468,33 +416,78 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
 
     /**
      * Get all the system images supported by an add-on target.
-     * For an add-on, we first look for sub-folders in the addon/images directory.
+     * For an add-on,  we first look in the new sdk/system-images folders then we look
+     * for sub-folders in the addon/images directory.
      * If none are found but the directory exists and is not empty, assume it's a legacy
      * arm eabi system image.
+     * If any given API appears twice or more, the first occurrence wins.
      * <p/>
      * Note that it's OK for an add-on to have no system-images at all, since it can always
      * rely on the ones from its base platform.
      *
+     * @param fileOp File operation wrapper.
      * @return an array of ISystemImage containing all the system images for the target.
      *              The list can be empty but not null.
     */
     @NonNull
-    private ISystemImage[] getAddonSystemImages() {
+    private ISystemImage[] getAddonSystemImages(IFileOp fileOp) {
         Set<ISystemImage> found = new TreeSet<ISystemImage>();
+        SetMultimap<IdDisplay, String> tagToAbiFound = TreeMultimap.create();
 
-        IFileOp fileOp = getLocalSdk().getFileOp();
-        File imagesDir = new File(getLocalDir(), SdkConstants.OS_IMAGES_FOLDER);
+
+        // Look in the SDK/system-image/platform-n/tag/abi folders.
+        // Look in the SDK/system-image/platform-n/abi folders.
+        // If we find multiple occurrences of the same platform/abi, the first one read wins.
+
+        LocalPkgInfo[] sysImgInfos = getLocalSdk().getPkgsInfos(PkgType.PKG_ADDON_SYS_IMAGE);
+        for (LocalPkgInfo pkg : sysImgInfos) {
+            IPkgDesc d = pkg.getDesc();
+            if (pkg instanceof LocalAddonSysImgPkgInfo &&
+                    d.hasVendor() &&
+                    mAddonDesc.getVendor().equals(d.getVendor()) &&
+                    mAddonDesc.getName().equals(d.getTag())) {
+                final IdDisplay tag = mAddonDesc.getName();
+                final String abi = d.getPath();
+                if (abi != null && !tagToAbiFound.containsEntry(tag, abi)) {
+                    List<File> parsedSkins = parseSkinFolder(
+                            new File(pkg.getLocalDir(), SdkConstants.FD_SKINS));
+                    File[] skins = FileOp.EMPTY_FILE_ARRAY;
+                    if (!parsedSkins.isEmpty()) {
+                        skins = parsedSkins.toArray(new File[parsedSkins.size()]);
+                    }
+
+                    found.add(new SystemImage(
+                            pkg.getLocalDir(),
+                            LocationType.IN_SYSTEM_IMAGE,
+                            tag,
+                            mAddonDesc.getVendor(),
+                            abi,
+                            skins));
+                    tagToAbiFound.put(tag, abi);
+                }
+            }
+        }
 
         // Look for sub-directories
+        boolean useLegacy = true;
         boolean hasImgFiles = false;
+        final IdDisplay defaultTag = SystemImage.DEFAULT_TAG;
+
+        File imagesDir = new File(getLocalDir(), SdkConstants.OS_IMAGES_FOLDER);
         File[] files = fileOp.listFiles(imagesDir);
         for (File file : files) {
             if (fileOp.isDirectory(file)) {
-                found.add(new SystemImage(file,
-                                          LocationType.IN_PLATFORM_SUBFOLDER,
-                                          SystemImage.DEFAULT_TAG,
-                                          file.getName(),
-                                          FileOp.EMPTY_FILE_ARRAY));
+                useLegacy = false;
+                String abi = file.getName();
+                if (!tagToAbiFound.containsEntry(defaultTag, abi)) {
+                    found.add(new SystemImage(
+                            file,
+                            LocationType.IN_IMAGES_SUBFOLDER,
+                            SystemImage.DEFAULT_TAG,
+                            file.getName(),
+                            FileOp.EMPTY_FILE_ARRAY));
+                    tagToAbiFound.put(defaultTag, abi);
+                }
             } else if (!hasImgFiles && fileOp.isFile(file)) {
                 if (file.getName().endsWith(".img")) {                  //$NON-NLS-1$
                     hasImgFiles = true;
@@ -502,14 +495,18 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             }
         }
 
-        if (found.isEmpty() && hasImgFiles && fileOp.isDirectory(imagesDir)) {
+        if (useLegacy &&
+                hasImgFiles &&
+                fileOp.isDirectory(imagesDir) &&
+                !tagToAbiFound.containsEntry(defaultTag, SdkConstants.ABI_ARMEABI)) {
             // We found no sub-folder system images but it looks like the top directory
             // has some img files in it. It must be a legacy ARM EABI system image folder.
-            found.add(new SystemImage(imagesDir,
-                                      LocationType.IN_PLATFORM_LEGACY,
-                                      SystemImage.DEFAULT_TAG,
-                                      SdkConstants.ABI_ARMEABI,
-                                      FileOp.EMPTY_FILE_ARRAY));
+            found.add(new SystemImage(
+                    imagesDir,
+                    LocationType.IN_LEGACY_FOLDER,
+                    SystemImage.DEFAULT_TAG,
+                    SdkConstants.ABI_ARMEABI,
+                    FileOp.EMPTY_FILE_ARRAY));
         }
 
         return found.toArray(new ISystemImage[found.size()]);

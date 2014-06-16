@@ -16,6 +16,10 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.tools.lint.checks.BuiltinIssueRegistry
+
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS
+
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable;
 import com.android.builder.model.LintOptions
@@ -106,7 +110,7 @@ public class LintOptionsImpl implements LintOptions, Serializable {
             boolean showAll,
             boolean explainIssues,
             boolean checkReleaseBuilds,
-            Map<String,Integer> severityOverrides) {
+            @Nullable Map<String,Integer> severityOverrides) {
         this.disable = disable
         this.enable = enable
         this.check = check
@@ -524,6 +528,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
             @NonNull String extension,
             boolean fatalOnly) {
         StringBuilder base = new StringBuilder()
+        base.append(FD_OUTPUTS)
+        base.append(File.separator)
         base.append("lint-results")
         if (variantName != null) {
             base.append("-")
@@ -539,7 +545,7 @@ public class LintOptionsImpl implements LintOptions, Serializable {
     @Override
     @Nullable
     public Map<String, Integer> getSeverityOverrides() {
-        if (severities == null) {
+        if (severities == null || severities.isEmpty()) {
             return null
         }
 
@@ -566,6 +572,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
 
     public void enable(String id) {
         enable.add(id)
+        def issue = new BuiltinIssueRegistry().getIssue(id)
+        severities.put(id, issue != null ? issue.defaultSeverity : Severity.WARNING)
     }
 
     public void enable(String... ids) {

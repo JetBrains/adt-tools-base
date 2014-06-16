@@ -16,8 +16,8 @@
 package com.android.build.gradle
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariant
-import com.android.builder.DefaultBuildType
-import com.android.builder.DefaultProductFlavor
+import com.android.builder.core.DefaultBuildType
+import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.model.SigningConfig
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.internal.DefaultDomainObjectSet

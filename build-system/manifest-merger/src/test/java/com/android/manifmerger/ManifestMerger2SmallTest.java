@@ -16,9 +16,11 @@
 
 package com.android.manifmerger;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import com.android.SdkConstants;
 import com.android.sdklib.mock.MockLog;
+import com.google.common.base.Optional;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 
 import junit.framework.TestCase;
 
@@ -30,6 +32,7 @@ import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -47,27 +50,6 @@ public class ManifestMerger2SmallTest extends TestCase {
         super.setUp();
         MockitoAnnotations.initMocks(this);
     }
-
-    PlaceholderHandler.KeyBasedValueResolver<ManifestMerger2.SystemProperty> nullSystemResolver =
-            new PlaceholderHandler.KeyBasedValueResolver<ManifestMerger2.SystemProperty>() {
-                @Nullable
-                @Override
-                public String getValue(@NonNull ManifestMerger2.SystemProperty key) {
-                    return null;
-                }
-            };
-
-    PlaceholderHandler.KeyBasedValueResolver<ManifestMerger2.SystemProperty> keyBasedValueResolver =
-            new PlaceholderHandler.KeyBasedValueResolver<ManifestMerger2.SystemProperty>() {
-                @Nullable
-                @Override
-                public String getValue(@NonNull ManifestMerger2.SystemProperty key) {
-                    if (key == ManifestMerger2.SystemProperty.PACKAGE) {
-                        return "com.bar.new";
-                    }
-                    return null;
-                }
-            };
 
     public void testValidationFailure()
             throws ParserConfigurationException, SAXException, IOException,
@@ -91,7 +73,8 @@ public class ManifestMerger2SmallTest extends TestCase {
         assertTrue(tmpFile.exists());
 
         try {
-            MergingReport mergingReport = ManifestMerger2.newInvoker(tmpFile, mockLog).merge();
+            MergingReport mergingReport = ManifestMerger2.newMerger(tmpFile, mockLog,
+                    ManifestMerger2.MergeType.APPLICATION).merge();
             assertEquals(MergingReport.Result.ERROR, mergingReport.getResult());
             // check the log complains about the incorrect "tools:replace"
             assertStringPresenceInLogRecords(mergingReport, "tools:replace");
@@ -100,6 +83,82 @@ public class ManifestMerger2SmallTest extends TestCase {
             assertTrue(tmpFile.delete());
         }
     }
+
+    public void testToolsAnnotationRemoval()
+            throws ParserConfigurationException, SAXException, IOException,
+            ManifestMerger2.MergeFailureException {
+
+        MockLog mockLog = new MockLog();
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" "
+                + "         tools:replace=\"label\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        File tmpFile = inputAsFile("testToolsAnnotationRemoval", input);
+        assertTrue(tmpFile.exists());
+
+        try {
+            MergingReport mergingReport = ManifestMerger2.newMerger(tmpFile, mockLog,
+                    ManifestMerger2.MergeType.APPLICATION).merge();
+            assertEquals(MergingReport.Result.WARNING, mergingReport.getResult());
+            // ensure tools annotation removal.
+            XmlDocument mergedDocument = mergingReport.getMergedDocument().get();
+            Optional<XmlElement> applicationNode = mergedDocument
+                    .getByTypeAndKey(ManifestModel.NodeTypes.APPLICATION, null);
+            assertTrue(applicationNode.isPresent());
+            String replaceAttribute = applicationNode.get().getXml().getAttributeNS(
+                    SdkConstants.TOOLS_URI, "replace");
+            assertTrue(Strings.isNullOrEmpty(replaceAttribute));
+            System.out.println(mergedDocument.prettyPrint());
+            mergedDocument.prettyPrint();
+        } finally {
+            assertTrue(tmpFile.delete());
+        }
+    }
+
+    public void testToolsAnnotationPresence()
+            throws ParserConfigurationException, SAXException, IOException,
+            ManifestMerger2.MergeFailureException {
+
+        MockLog mockLog = new MockLog();
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\" "
+                + "         tools:replace=\"label\"/>\n"
+                + "\n"
+                + "</manifest>";
+
+        File tmpFile = inputAsFile("testToolsAnnotationRemoval", input);
+        assertTrue(tmpFile.exists());
+
+        try {
+            MergingReport mergingReport = ManifestMerger2.newMerger(tmpFile, mockLog,
+                    ManifestMerger2.MergeType.LIBRARY).merge();
+            assertEquals(MergingReport.Result.WARNING, mergingReport.getResult());
+            // ensure tools annotation removal.
+            XmlDocument mergedDocument = mergingReport.getMergedDocument().get();
+            Optional<XmlElement> applicationNode = mergedDocument
+                    .getByTypeAndKey(ManifestModel.NodeTypes.APPLICATION, null);
+            assertTrue(applicationNode.isPresent());
+            String replaceAttribute = applicationNode.get().getXml().getAttributeNS(
+                    SdkConstants.TOOLS_URI, "replace");
+            assertEquals("label", replaceAttribute);
+            System.out.println(mergedDocument.prettyPrint());
+        } finally {
+            assertTrue(tmpFile.delete());
+        }
+    }
+
 
     public void testPackageOverride()
             throws ParserConfigurationException, SAXException, IOException {
@@ -224,10 +283,43 @@ public class ManifestMerger2SmallTest extends TestCase {
         assertEquals("14", usesSdk.getAttribute("android:targetSdkVersion"));
     }
 
+    public void testPlaceholderSubstitution()
+            throws ParserConfigurationException, SAXException, IOException,
+            ManifestMerger2.MergeFailureException {
+        String xml = ""
+                + "<manifest versionCode=\"34\" versionName=\"3.4\"\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity android:name=\".activityOne\" android:label=\"${labelName}\"/>\n"
+                + "</manifest>";
+
+        Map<String, String> placeholders = ImmutableMap.of("labelName", "injectedLabelName");
+        MockLog mockLog = new MockLog();
+        File inputFile = inputAsFile("testPlaceholderSubstitution", xml);
+        try {
+            MergingReport mergingReport = ManifestMerger2
+                    .newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                    .setPlaceHolderValues(placeholders)
+                    .merge();
+
+            assertTrue(mergingReport.getResult().isSuccess());
+            assertTrue(mergingReport.getMergedDocument().isPresent());
+            XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+            Optional<XmlElement> activityOne = xmlDocument
+                    .getByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY, ".activityOne");
+            assertTrue(activityOne.isPresent());
+            Optional<XmlAttribute> attribute = activityOne.get()
+                    .getAttribute(XmlNode.fromXmlName("android:label"));
+            assertTrue(attribute.isPresent());
+            assertEquals("injectedLabelName", attribute.get().getValue());
+        } finally {
+            inputFile.delete();
+        }
+    }
+
     /**
      * Utility method to save a {@link String} XML into a file.
      */
-    private File inputAsFile(String testName, String input) throws IOException {
+    private static File inputAsFile(String testName, String input) throws IOException {
         File tmpFile = File.createTempFile(testName, ".xml");
         FileWriter fw = null;
         try {
@@ -239,7 +331,7 @@ public class ManifestMerger2SmallTest extends TestCase {
         return tmpFile;
     }
 
-    private void assertStringPresenceInLogRecords(MergingReport mergingReport, String s) {
+    private static void assertStringPresenceInLogRecords(MergingReport mergingReport, String s) {
         for (MergingReport.Record record : mergingReport.getLoggingRecords()) {
             if (record.toString().contains(s)) {
                 return;

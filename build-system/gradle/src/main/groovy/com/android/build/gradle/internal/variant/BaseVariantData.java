@@ -22,6 +22,7 @@ import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.StringHelper;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.tasks.CheckManifest;
+import com.android.build.gradle.internal.tasks.GenerateApkDataTask;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
@@ -30,9 +31,9 @@ import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
-import com.android.build.gradle.tasks.ProcessManifest;
+import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.builder.VariantConfiguration;
+import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.SourceProvider;
 import com.google.common.collect.Lists;
 
@@ -59,9 +60,10 @@ public abstract class BaseVariantData {
     public PrepareDependenciesTask prepareDependenciesTask;
     public Task sourceGenTask;
     public Task resourceGenTask;
+    public Task assetGenTask;
     public CheckManifest checkManifestTask;
 
-    public ProcessManifest processManifestTask;
+    public ManifestProcessorTask manifestProcessorTask;
     public RenderscriptCompile renderscriptCompileTask;
     public AidlCompile aidlCompileTask;
     public MergeResources mergeResourcesTask;
@@ -69,6 +71,8 @@ public abstract class BaseVariantData {
     public ProcessAndroidResources processResourcesTask;
     public GenerateBuildConfig generateBuildConfigTask;
     public GenerateResValues generateResValuesTask;
+    public Copy copyApkTask;
+    public GenerateApkDataTask generateApkDataTask;
 
     public JavaCompile javaCompileTask;
     public Task obfuscationTask;
@@ -106,7 +110,7 @@ public abstract class BaseVariantData {
 
     @NonNull
     public String getPackageName() {
-        return variantConfiguration.getPackageName();
+        return variantConfiguration.getApplicationId();
     }
 
     @NonNull
@@ -203,7 +207,7 @@ public abstract class BaseVariantData {
             // First the actual source folders.
             List<SourceProvider> providers = variantConfiguration.getSortedSourceProviders();
             for (SourceProvider provider : providers) {
-                sourceList.add(((AndroidSourceSet) provider).getJava());
+                sourceList.add(((AndroidSourceSet) provider).getJava().getSourceFiles());
             }
 
             // then all the generated src folders.

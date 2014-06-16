@@ -3,5 +3,5 @@ apply plugin: 'android-library'
 android {
     resourcePrefix 'lib2b_'
     compileSdkVersion 19
-    buildToolsVersion "19.0.2"
+    buildToolsVersion '19.1.0'
 }

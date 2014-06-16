@@ -20,6 +20,10 @@ import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ANDROID_PREFIX;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.BIN_FOLDER;
+import static com.android.SdkConstants.DOT_GIF;
+import static com.android.SdkConstants.DOT_JPEG;
+import static com.android.SdkConstants.DOT_JPG;
+import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.ID_PREFIX;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
@@ -28,16 +32,23 @@ import static com.android.SdkConstants.UTF_8;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ApiVersion;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.resources.ResourceUrl;
+import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
+import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.repository.FullRevision;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.utils.PositionXmlParser;
+import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -130,9 +141,22 @@ public class LintUtils {
      * @return true if the given file is an xml file
      */
     public static boolean isXmlFile(@NonNull File file) {
-        String string = file.getName();
-        return string.regionMatches(true, string.length() - DOT_XML.length(),
-                DOT_XML, 0, DOT_XML.length());
+        return SdkUtils.endsWithIgnoreCase(file.getPath(), DOT_XML);
+    }
+
+    /**
+     * Returns true if the given file represents a bitmap drawable file
+     *
+     * @param file the file to be checked
+     * @return true if the given file is an xml file
+     */
+    public static boolean isBitmapFile(@NonNull File file) {
+        String path = file.getPath();
+        // endsWith(name, DOT_PNG) is also true for endsWith(name, DOT_9PNG)
+        return endsWith(path, DOT_PNG)
+                || endsWith(path, DOT_JPG)
+                || endsWith(path, DOT_GIF)
+                || endsWith(path, DOT_JPEG);
     }
 
     /**
@@ -954,6 +978,98 @@ public class LintUtils {
             if (parent1 != null && parent2 != null &&
                     parent1.getName().equals(parent2.getName())) {
                 return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether we should attempt to look up the prefix from the model. Set to false
+     * if we encounter a model which is too old.
+     * <p>
+     * This is public such that code which for example syncs to a new gradle model
+     * can reset it.
+     */
+    public static boolean sTryPrefixLookup = true;
+
+    /** Looks up the resource prefix for the given Gradle project, if possible */
+    @Nullable
+    public static String computeResourcePrefix(@Nullable AndroidProject project) {
+        try {
+            if (sTryPrefixLookup && project != null) {
+                return project.getResourcePrefix();
+            }
+        } catch (Exception e) {
+            // This happens if we're talking to an older model than 0.10
+            // Ignore; fall through to normal handling and never try again.
+            //noinspection AssignmentToStaticFieldFromInstanceMethod
+            sTryPrefixLookup = false;
+        }
+
+        return null;
+    }
+
+    /** Computes a suggested name given a resource prefix and resource name */
+    public static String computeResourceName(@NonNull String prefix, @NonNull String name) {
+        if (prefix.isEmpty()) {
+            return name;
+        } else if (name.isEmpty()) {
+            return prefix;
+        } else if (prefix.endsWith("_")) {
+            return prefix + name;
+        } else {
+            return prefix + Character.toUpperCase(name.charAt(0)) + name.substring(1);
+        }
+    }
+
+
+    /**
+     * Convert an {@link com.android.builder.model.ApiVersion} to a {@link
+     * com.android.sdklib.AndroidVersion}. The chief problem here is that the {@link
+     * com.android.builder.model.ApiVersion}, when using a codename, will not encode the
+     * corresponding API level (it just reflects the string entered by the user in the gradle file)
+     * so we perform a search here (since lint really wants to know the actual numeric API level)
+     *
+     * @param api     the api version to convert
+     * @param targets if known, the installed targets (used to resolve platform codenames, only
+     *                needed to resolve platforms newer than the tools since {@link
+     *                com.android.ide.common.sdk.SdkVersionInfo} knows the rest)
+     * @return the corresponding version
+     */
+    @NonNull
+    public static AndroidVersion convertVersion(
+            @NonNull ApiVersion api,
+            @Nullable IAndroidTarget[] targets) {
+        String codename = api.getCodename();
+        if (codename != null) {
+            AndroidVersion version = SdkVersionInfo.getVersion(codename, targets);
+            if (version != null) {
+                return version;
+            }
+            return new AndroidVersion(api.getApiLevel(), codename);
+        }
+        return new AndroidVersion(api.getApiLevel(), null);
+    }
+
+    /**
+     * Returns true if the given Gradle model is older than the given version number
+     */
+    public static boolean isModelOlderThan(@Nullable AndroidProject project,
+            int major, int minor, int micro) {
+        if (project != null) {
+            String modelVersion = project.getModelVersion();
+            try {
+                FullRevision version = FullRevision.parseRevision(modelVersion);
+                if (version.getMajor() != major) {
+                    return version.getMajor() < major;
+                }
+                if (version.getMinor() != minor) {
+                    return version.getMinor() < minor;
+                }
+                return version.getMicro() < micro;
+            } catch (NumberFormatException e) {
+                // ignore
             }
         }
 

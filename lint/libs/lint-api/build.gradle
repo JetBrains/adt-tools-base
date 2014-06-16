@@ -1,12 +1,14 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
+apply plugin: 'sdk-java-lib'
+
 
 group = 'com.android.tools.lint'
 archivesBaseName = 'lint-api'
+version = rootProject.ext.baseVersion
 
 dependencies {
-    compile project(':sdk-common')
-    compile project(':builder-model')
+    compile project(':base:sdk-common')
+    compile project(':base:builder-model')
 
     compile 'com.android.tools.external.lombok:lombok-ast:0.2.2'
     compile 'org.ow2.asm:asm:4.0'
@@ -18,14 +20,9 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
-jar {
-    from 'NOTICE'
-}
-
 project.ext.pomName = 'Android Tools Lint API'
 project.ext.pomDesc = 'API to build lint checks'
 
-apply from: '../../../baseVersion.gradle'
-apply from: '../../../publish.gradle'
-apply from: '../../../javadoc.gradle'
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 

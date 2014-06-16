@@ -54,6 +54,7 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.ResourceContext;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -67,7 +68,7 @@ import com.google.common.collect.Sets;
 
 import org.w3c.dom.Element;
 
-import java.awt.Dimension;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -476,6 +477,8 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         }
     }
 
+    /** Like {@link LintUtils#isBitmapFile(File)} but (a) operates on Strings instead
+     * of files and (b) also considers XML drawables as images */
     private static boolean isDrawableFile(String name) {
         // endsWith(name, DOT_PNG) is also true for endsWith(name, DOT_9PNG)
         return endsWith(name, DOT_PNG)|| endsWith(name, DOT_JPG) || endsWith(name, DOT_GIF)
@@ -1178,6 +1181,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                 context.getProject().getMinSdk() >= 4) {
             for (File file : files) {
                 String name = file.getName();
+                //noinspection StatementWithEmptyBody
                 if (name.endsWith(DOT_XML)) {
                     // pass - most common case, avoids checking other extensions
                 } else if (endsWith(name, DOT_PNG)
@@ -1310,7 +1314,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
      * if known (for use by other checks)
      */
     private Dimension checkColor(Context context, File file, boolean isActionBarIcon) {
-        int folderVersion = Context.getFolderVersion(file);
+        int folderVersion = ResourceContext.getFolderVersion(file);
         if (isActionBarIcon) {
             if (folderVersion != -1 && folderVersion < 11
                     || !isAndroid30(context, folderVersion)) {
@@ -1458,9 +1462,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                         }
                     }
                 } finally {
-                    if (input != null) {
-                        input.close();
-                    }
+                    input.close();
                 }
             }
         } catch (IOException e) {
@@ -1529,7 +1531,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             }
         }
 
-        assert !conflicts.isEmpty() : conflictSet;
+        assert conflicts != null && !conflicts.isEmpty() : conflictSet;
         List<String> names = new ArrayList<String>(conflicts.keySet());
         Collections.sort(names);
         for (String name : names) {
@@ -1562,7 +1564,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         }
 
         String folderName = folder.getName();
-        int folderVersion = Context.getFolderVersion(files[0]);
+        int folderVersion = ResourceContext.getFolderVersion(files[0]);
 
         for (File file : files) {
             String name = file.getName();
@@ -1696,7 +1698,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
 
         Dimension size = getSize(file);
         if (size != null) {
-            if (exactMatch && size.width != width || size.height != height) {
+            if (exactMatch && (size.width != width || size.height != height)) {
                 context.report(
                         ICON_EXPECTED_SIZE,
                     Location.create(file),
@@ -1705,7 +1707,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                         folderName + File.separator + file.getName(),
                         width, height, size.width, size.height),
                     null);
-            } else if (!exactMatch && size.width > width || size.height > height) {
+            } else if (!exactMatch && (size.width > width || size.height > height)) {
                 context.report(
                         ICON_EXPECTED_SIZE,
                     Location.create(file),
@@ -1734,9 +1736,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                         }
                     }
                 } finally {
-                    if (input != null) {
-                        input.close();
-                    }
+                    input.close();
                 }
             }
 
@@ -1763,6 +1763,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         assert name.indexOf('.') == -1 : name; // Should supply base name
 
         // Naming convention
+        //noinspection SimplifiableIfStatement
         if (name.startsWith("ic_launcher")) { //$NON-NLS-1$
             return true;
         }
@@ -1773,6 +1774,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         assert name.indexOf('.') == -1; // Should supply base name
 
         // Naming convention
+        //noinspection SimplifiableIfStatement
         if (name.startsWith("ic_stat_")) { //$NON-NLS-1$
             return true;
         }
@@ -1784,6 +1786,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         assert name.indexOf('.') == -1; // Should supply base name
 
         // Naming convention
+        //noinspection SimplifiableIfStatement
         if (name.startsWith("ic_action_")) { //$NON-NLS-1$
             return true;
         }
@@ -1799,8 +1802,9 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         }
 
         // As of Android 3.0 ic_menu_ are action icons
+        //noinspection SimplifiableIfStatement,RedundantIfStatement
         if (file != null && name.startsWith("ic_menu_") //$NON-NLS-1$
-                && isAndroid30(context, Context.getFolderVersion(file))) {
+                && isAndroid30(context, ResourceContext.getFolderVersion(file))) {
             // Naming convention
             return true;
         }

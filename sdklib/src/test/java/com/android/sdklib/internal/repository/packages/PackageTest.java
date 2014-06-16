@@ -84,7 +84,9 @@ public class PackageTest extends TestCase {
 
         @Override
         public IPkgDesc getPkgDesc() {
-            return PkgDesc.newTool(new FullRevision(1, 2, 3, 4), FullRevision.NOT_SPECIFIED);
+            return PkgDesc.Builder.newTool(
+                    new FullRevision(1, 2, 3, 4),
+                    FullRevision.NOT_SPECIFIED).create();
         }
     }
 
@@ -130,6 +132,14 @@ public class PackageTest extends TestCase {
      * a similar creation test.
      */
     protected Properties createExpectedProps() {
+        return createDefaultProps();
+    }
+
+    /**
+     * Similar to {@link #createExpectedProps()} but static so that
+     * it can be reused by test not deriving from {@link PackageTest}.
+     */
+    public static Properties createDefaultProps() {
         Properties props = new Properties();
 
         // Package properties

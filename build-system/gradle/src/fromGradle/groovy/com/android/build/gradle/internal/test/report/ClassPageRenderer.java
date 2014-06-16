@@ -22,11 +22,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import org.gradle.api.internal.html.SimpleHtmlWriter;
-import org.gradle.api.internal.tasks.testing.junit.result.TestFailure;
-import org.gradle.internal.ErroringAction;
-import org.gradle.reporting.CodePanelRenderer;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -206,7 +201,7 @@ class ClassPageRenderer extends PageRenderer<ClassTestResults> {
             htmlWriter.startElement("div").attribute("class", "test")
                 .startElement("a").attribute("name", test.getId().toString()).characters("").endElement() //browsers dont understand <a name="..."/>
                     .startElement("h3").attribute("class", test.getStatusClass()).characters(name).endElement();
-            for (TestFailure failure : test.getFailures()) {
+            for (TestResult.TestFailure failure : test.getFailures()) {
                 codePanelRenderer.render(failure.getStackTrace(), htmlWriter);
             }
             htmlWriter.endElement();

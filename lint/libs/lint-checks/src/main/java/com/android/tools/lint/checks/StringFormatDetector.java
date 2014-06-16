@@ -25,12 +25,15 @@ import static com.android.SdkConstants.R_PREFIX;
 import static com.android.SdkConstants.TAG_STRING;
 import static com.android.tools.lint.checks.SharedPrefsDetector.ANDROID_CONTENT_SHARED_PREFERENCES;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BYTE;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_CHAR;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_NULL;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_OBJECT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_SHORT;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 
@@ -710,6 +713,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
 
     /** Given a format string returns the format type of the given argument */
     @VisibleForTesting
+    @Nullable
     static String getFormatArgumentType(String s, int argument) {
         Matcher matcher = FORMAT.matcher(s);
         int index = 0;
@@ -767,7 +771,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
      * observed arguments into it.
      */
     @VisibleForTesting
-    static int getFormatArgumentCount(String s, Set<Integer> seenArguments) {
+    static int getFormatArgumentCount(@NonNull String s, @Nullable Set<Integer> seenArguments) {
         Matcher matcher = FORMAT.matcher(s);
         int index = 0;
         int prevIndex = 0;
@@ -1089,6 +1093,9 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                         if (type != null) {
                             boolean valid = true;
                             String formatType = getFormatArgumentType(s, i);
+                            if (formatType == null) {
+                                continue;
+                            }
                             char last = formatType.charAt(formatType.length() - 1);
                             if (formatType.length() >= 2 &&
                                     Character.toLowerCase(
@@ -1119,7 +1126,11 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                                 case 'a':
                                 case 'A':
                                     valid = type == Integer.TYPE
-                                            || type == Float.TYPE;
+                                            || type == Float.TYPE
+                                            || type == Double.TYPE
+                                            || type == Long.TYPE
+                                            || type == Byte.TYPE
+                                            || type == Short.TYPE;
                                     break;
                                 case 'c':
                                 case 'C':
@@ -1178,8 +1189,8 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
         JavaParser.ResolvedNode resolved = context.resolve(call);
         if (resolved instanceof JavaParser.ResolvedMethod) {
             JavaParser.ResolvedMethod resolvedMethod = (JavaParser.ResolvedMethod) resolved;
-            TypeDescriptor containingClass = resolvedMethod.getContainingClass();
-            return ANDROID_CONTENT_SHARED_PREFERENCES.equals(containingClass.getName());
+            JavaParser.ResolvedClass containingClass = resolvedMethod.getContainingClass();
+            return containingClass.isSubclassOf(ANDROID_CONTENT_SHARED_PREFERENCES, false);
         }
 
         return false; // not certain
@@ -1338,6 +1349,30 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                 return Double.TYPE;
             } else if (fqcn.equals(TYPE_CHAR)) {
                 return Character.TYPE;
+            } else if (fqcn.equals("BigDecimal")                //$NON-NLS-1$
+                    || fqcn.equals("java.math.BigDecimal")) {   //$NON-NLS-1$
+                return Float.TYPE;
+            } else if (fqcn.equals("BigInteger")                //$NON-NLS-1$
+                    || fqcn.equals("java.math.BigInteger")) {   //$NON-NLS-1$
+                return Integer.TYPE;
+            } else if (fqcn.equals(TYPE_OBJECT)) {
+              return null;
+            } else if (fqcn.startsWith("java.lang.")) {
+              if (fqcn.equals("java.lang.Integer")
+                  || fqcn.equals("java.lang.Short")
+                  || fqcn.equals("java.lang.Byte")
+                  || fqcn.equals("java.lang.Long")) {
+                return Integer.TYPE;
+              } else if (fqcn.equals("java.lang.Float")
+                || fqcn.equals("java.lang.Double")) {
+                return Float.TYPE;
+              } else {
+                return null;
+              }
+            } else if (fqcn.equals(TYPE_BYTE)) {
+              return Byte.TYPE;
+            } else if (fqcn.equals(TYPE_SHORT)) {
+                return Short.TYPE;
             } else {
                 return null;
             }

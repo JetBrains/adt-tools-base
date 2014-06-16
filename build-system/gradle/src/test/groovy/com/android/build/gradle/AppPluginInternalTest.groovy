@@ -20,10 +20,10 @@ import com.android.build.gradle.internal.BadPluginException
 import com.android.build.gradle.internal.test.BaseTest
 import com.android.build.gradle.internal.test.PluginHolder
 import com.android.build.gradle.internal.variant.BaseVariantData
-import com.android.builder.BuilderConstants
-import com.android.builder.DefaultBuildType
+import com.android.builder.core.BuilderConstants
+import com.android.builder.core.DefaultBuildType
 import com.android.builder.model.SigningConfig
-import com.android.builder.signing.KeystoreHelper
+import com.android.ide.common.signing.KeystoreHelper
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 
@@ -99,8 +99,10 @@ public class AppPluginInternalTest extends BaseTest {
         plugin.createAndroidTasks(true /*force*/)
 
         assertEquals(1, plugin.extension.defaultConfig.versionCode)
-        assertEquals(2, plugin.extension.defaultConfig.minSdkVersion)
-        assertEquals(3, plugin.extension.defaultConfig.targetSdkVersion)
+        assertNotNull(plugin.extension.defaultConfig.minSdkVersion)
+        assertEquals(2, plugin.extension.defaultConfig.minSdkVersion.apiLevel)
+        assertNotNull(plugin.extension.defaultConfig.targetSdkVersion)
+        assertEquals(3, plugin.extension.defaultConfig.targetSdkVersion.apiLevel)
         assertEquals("2.0", plugin.extension.defaultConfig.versionName)
 
         assertEquals(new File(project.projectDir, "aa"),

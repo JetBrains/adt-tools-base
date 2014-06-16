@@ -35,14 +35,13 @@ import java.io.File;
  * to adjust your code for the next tools release.</b>
  */
 @Beta
-public class XmlContext extends Context {
+public class XmlContext extends ResourceContext {
     static final String SUPPRESS_COMMENT_PREFIX = "<!--suppress "; //$NON-NLS-1$
 
     /** The XML parser */
     private final XmlParser mParser;
     /** The XML document */
     public Document document;
-    private final ResourceFolderType mFolderType;
 
     /**
      * Construct a new {@link XmlContext}
@@ -63,8 +62,7 @@ public class XmlContext extends Context {
             @NonNull File file,
             @Nullable ResourceFolderType folderType,
             @NonNull XmlParser parser) {
-        super(driver, project, main, file);
-        mFolderType = folderType;
+        super(driver, project, main, file, folderType);
         mParser = parser;
     }
 
@@ -142,23 +140,13 @@ public class XmlContext extends Context {
         super.report(issue, location, message, data);
     }
 
-    /**
-     * Returns the resource folder type of this XML file, if any.
-     *
-     * @return the resource folder type or null
-     */
-    @Nullable
-    public ResourceFolderType getResourceFolderType() {
-        return mFolderType;
-    }
-
     @Override
     @Nullable
     protected String getSuppressCommentPrefix() {
         return SUPPRESS_COMMENT_PREFIX;
     }
 
-    public boolean isSuppressed(@NonNull Node node, @NonNull Issue issue) {
+    public boolean isSuppressedWithComment(@NonNull Node node, @NonNull Issue issue) {
         // Check whether there is a comment marker
         String contents = getContents();
         assert contents != null; // otherwise we wouldn't be here

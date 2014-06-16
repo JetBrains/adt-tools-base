@@ -16,8 +16,10 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.ManifestMerger2.SystemProperty;
+import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
+
 import com.android.annotations.Nullable;
-import com.android.utils.Pair;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Strings;
 
@@ -73,7 +75,11 @@ public final class XmlLoader {
      * @return the initialized {@link com.android.manifmerger.XmlDocument}
      */
     public static XmlDocument load(
-            KeyResolver<String> selectors, String displayName, File xmlFile)
+            KeyResolver<String> selectors,
+            KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
+            String displayName,
+            File xmlFile,
+            XmlDocument.Type type)
             throws IOException, SAXException, ParserConfigurationException {
         InputStream inputStream = new BufferedInputStream(new FileInputStream(xmlFile));
 
@@ -83,7 +89,9 @@ public final class XmlLoader {
                 ? new XmlDocument(positionXmlParser,
                 new FileSourceLocation(displayName, xmlFile),
                 selectors,
-                domDocument.getDocumentElement())
+                systemPropertyResolver,
+                domDocument.getDocumentElement(),
+                type)
                 : null;
     }
 
@@ -99,7 +107,9 @@ public final class XmlLoader {
      * @throws ParserConfigurationException if the xml engine cannot be configured.
      */
     public static XmlDocument load(
-            KeyResolver<String> selectors, SourceLocation sourceLocation, String xml)
+            KeyResolver<String> selectors,
+            KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
+            SourceLocation sourceLocation, String xml, XmlDocument.Type type)
             throws IOException, SAXException, ParserConfigurationException {
         PositionXmlParser positionXmlParser = new PositionXmlParser();
         Document domDocument = positionXmlParser.parse(xml);
@@ -108,7 +118,9 @@ public final class XmlLoader {
                         positionXmlParser,
                         sourceLocation,
                         selectors,
-                        domDocument.getDocumentElement())
+                        systemPropertyResolver,
+                        domDocument.getDocumentElement(),
+                        type)
                 : null;
     }
 

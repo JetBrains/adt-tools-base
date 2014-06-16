@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * a Product Flavor. This is only the configuration of the flavor.
@@ -43,12 +44,12 @@ public interface ProductFlavor extends BaseConfig {
 
     /**
      * Returns the name of the product flavor. This is only the value set on this product flavor.
-     * To get the final package name, use {@link AndroidArtifact#getPackageName()}.
+     * To get the final application id name, use {@link AndroidArtifact#getApplicationId()}.
      *
-     * @return the package name.
+     * @return the application id.
      */
     @Nullable
-    String getPackageName();
+    String getApplicationId();
 
     /**
      * Returns the version code. This is only the value set on this product flavor.
@@ -70,19 +71,19 @@ public interface ProductFlavor extends BaseConfig {
 
     /**
      * Returns the minSdkVersion. This is only the value set on this product flavor.
-     * TODO: make final minSdkVersion available through the model
      *
-     * @return the minSdkVersion, or -1 if not specified
+     * @return the minSdkVersion, or null if not specified
      */
-    int getMinSdkVersion();
+    @Nullable
+    ApiVersion getMinSdkVersion();
 
     /**
      * Returns the targetSdkVersion. This is only the value set on this product flavor.
-     * TODO: make final targetSdkVersion available through the model
      *
-     * @return the targetSdkVersion, or -1 if not specified
+     * @return the targetSdkVersion, or null if not specified
      */
-    int getTargetSdkVersion();
+    @Nullable
+    ApiVersion getTargetSdkVersion();
 
     /**
      * Returns the renderscript target api. This is only the value set on this product flavor.
@@ -107,14 +108,15 @@ public interface ProductFlavor extends BaseConfig {
     boolean getRenderscriptNdkMode();
 
     /**
-     * Returns the test package name. This is only the value set on this product flavor.
-     * To get the final value, use {@link Variant#getTestArtifactInfo()} and
-     * {@link AndroidArtifact#getPackageName()}
+     * Returns the test application id. This is only the value set on this product flavor.
+     * To get the final value, use {@link Variant#getExtraAndroidArtifacts()} with
+     * {@link AndroidProject#ARTIFACT_ANDROID_TEST} and then
+     * {@link AndroidArtifact#getApplicationId()}
      *
      * @return the test package name.
      */
     @Nullable
-    String getTestPackageName();
+    String getTestApplicationId();
 
     /**
      * Returns the test instrumentation runner. This is only the value set on this product flavor.
@@ -158,4 +160,13 @@ public interface ProductFlavor extends BaseConfig {
      */
     @NonNull
     Collection<String> getResourceConfigurations();
+
+    /**
+     * Returns the map of key value pairs for placeholder substitution in the android manifest file.
+     *
+     * This map will be used by the manifest merger.
+     * @return the map of key value pairs.
+     */
+    @NonNull
+    Map<String, String> getManifestPlaceholders();
 }

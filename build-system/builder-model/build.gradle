@@ -1,18 +1,20 @@
 apply plugin: 'java'
 apply plugin: 'clone-artifacts'
-apply plugin: 'distrib'
+apply plugin: 'sdk-java-lib'
 
 dependencies {
-    compile project(':common')
+    compile project(':base:common')
 }
 
 group = 'com.android.tools.build'
 archivesBaseName = 'builder-model'
+version = rootProject.ext.buildVersion
+
 project.ext.pomName = 'Android Builder Model library'
 project.ext.pomDesc = 'Model for the Builder library.'
 
-apply from: '../../buildVersion.gradle'
-apply from: '../../publish.gradle'
-apply from: '../../javadoc.gradle'
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 
 jar.manifest.attributes("Model-Version": "$version")
+sdkJar.manifest.attributes("Model-Version": "$version")

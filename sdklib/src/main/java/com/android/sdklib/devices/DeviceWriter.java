@@ -16,7 +16,6 @@
 
 package com.android.sdklib.devices;
 
-import com.android.SdkConstants;
 import com.android.dvlib.DeviceSchema;
 import com.android.resources.UiMode;
 
@@ -52,7 +51,7 @@ public class DeviceWriter {
 
     /**
      * Writes the XML definition of the given {@link Collection} of {@link Device}s according to
-     * {@link SdkConstants#NS_DEVICES_XSD} to the {@link OutputStream}.
+     * {@link DeviceSchema#NS_DEVICES_URI} to the {@link OutputStream}.
      * Note that it is up to the caller to close the {@link OutputStream}.
      * @param out The {@link OutputStream} to write the resulting XML to.
      * @param devices The {@link Device}s from which to generate the XML.
@@ -64,11 +63,12 @@ public class DeviceWriter {
             ParserConfigurationException,
             TransformerFactoryConfigurationError,
             TransformerException {
+
         Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
         Element root = doc.createElement(PREFIX + DeviceSchema.NODE_DEVICES);
         root.setAttribute(XMLConstants.XMLNS_ATTRIBUTE + ":xsi",
                 XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI);
-        root.setAttribute(XMLConstants.XMLNS_ATTRIBUTE + ":" + LOCAL_NS, SdkConstants.NS_DEVICES_XSD);
+        root.setAttribute(XMLConstants.XMLNS_ATTRIBUTE + ":" + LOCAL_NS, DeviceSchema.NS_DEVICES_URI);
         doc.appendChild(root);
 
         for (Device device : devices) {

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 package com.android.build.gradle
-
 import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
@@ -31,9 +30,9 @@ import com.android.build.gradle.internal.dsl.LintOptionsImpl
 import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.build.gradle.internal.dsl.ProductFlavorDsl
 import com.android.build.gradle.internal.test.TestOptions
-import com.android.builder.BuilderConstants
-import com.android.builder.DefaultBuildType
-import com.android.builder.DefaultProductFlavor
+import com.android.builder.core.BuilderConstants
+import com.android.builder.core.DefaultBuildType
+import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.model.BuildType
 import com.android.builder.model.ProductFlavor
 import com.android.builder.model.SigningConfig
@@ -76,8 +75,9 @@ public abstract class BaseExtension {
 
     List<String> flavorDimensionList
     String testBuildType = "debug"
-    // for now, use the old manifest merger.
-    boolean useOldManifestMerger = true;
+
+    private String defaultPublishConfig = "release"
+    private boolean publishNonDefault = false
 
     private Closure<Void> variantFilter
 
@@ -87,7 +87,7 @@ public abstract class BaseExtension {
     private final List<DeviceProvider> deviceProviderList = Lists.newArrayList();
     private final List<TestServer> testServerList = Lists.newArrayList();
 
-    protected final BasePlugin plugin
+    private final BasePlugin plugin
 
     /**
      * The source sets container.
@@ -108,7 +108,7 @@ public abstract class BaseExtension {
         this.signingConfigs = signingConfigs
 
         defaultConfig = instantiator.newInstance(ProductFlavorDsl.class, BuilderConstants.MAIN,
-                project.fileResolver, instantiator, project.getLogger())
+                project, instantiator, project.getLogger())
 
         aaptOptions = instantiator.newInstance(AaptOptionsImpl.class)
         dexOptions = instantiator.newInstance(DexOptionsImpl.class)
@@ -119,7 +119,7 @@ public abstract class BaseExtension {
         jacoco = instantiator.newInstance(JacocoExtension.class)
 
         sourceSetsContainer = project.container(AndroidSourceSet,
-                new AndroidSourceSetFactory(instantiator, project.fileResolver, isLibrary))
+                new AndroidSourceSetFactory(instantiator, project, isLibrary))
 
         sourceSetsContainer.whenObjectAdded { AndroidSourceSet sourceSet ->
             ConfigurationContainer configurations = project.getConfigurations()
@@ -162,28 +162,21 @@ public abstract class BaseExtension {
         }
     }
 
-    void compileSdkVersion(int apiLevel) {
-        plugin.checkTasksAlreadyCreated()
-        this.target = "android-" + apiLevel
-    }
-
-    void setCompileSdkVersion(int apiLevel) {
-        plugin.checkTasksAlreadyCreated()
-        compileSdkVersion(apiLevel)
-    }
-
     void compileSdkVersion(String target) {
         plugin.checkTasksAlreadyCreated()
         this.target = target
     }
 
-    void setCompileSdkVersion(String target) {
-        plugin.checkTasksAlreadyCreated()
-        compileSdkVersion(target)
+    void compileSdkVersion(int apiLevel) {
+        compileSdkVersion("android-" + apiLevel)
     }
 
-    void useOldManifestMerger(boolean flag) {
-        this.useOldManifestMerger = flag;
+    void setCompileSdkVersion(int apiLevel) {
+        compileSdkVersion(apiLevel)
+    }
+
+    void setCompileSdkVersion(String target) {
+        compileSdkVersion(target)
     }
 
     void buildToolsVersion(String version) {
@@ -192,7 +185,6 @@ public abstract class BaseExtension {
     }
 
     void setBuildToolsVersion(String version) {
-        plugin.checkTasksAlreadyCreated()
         buildToolsVersion(version)
     }
 
@@ -285,6 +277,22 @@ public abstract class BaseExtension {
         return testServerList
     }
 
+    public void defaultPublishConfig(String value) {
+        defaultPublishConfig = value
+    }
+
+    public void publishNonDefault(boolean value) {
+        publishNonDefault = value
+    }
+
+    public String getDefaultPublishConfig() {
+        return defaultPublishConfig
+    }
+
+    public boolean getPublishNonDefault() {
+        return publishNonDefault
+    }
+
     void variantFilter(Closure<Void> filter) {
         variantFilter = filter
     }
@@ -360,16 +368,28 @@ public abstract class BaseExtension {
         return buildToolsRevision
     }
 
+    public File getSdkDirectory() {
+        return plugin.getSdkFolder()
+    }
+
+    public List<String> getBootClasspath() {
+        return plugin.getBootClasspath()
+    }
+
     public File getAdbExe() {
-        return plugin.sdkParser.adb
+        return plugin.getSdkInfo().adb
     }
 
     public ILogger getLogger() {
         return plugin.logger
     }
 
+    protected getPlugin() {
+        return plugin
+    }
+
     public File getDefaultProguardFile(String name) {
-        return new File(plugin.sdkDirectory,
+        return new File(sdkDirectory,
                 SdkConstants.FD_TOOLS + File.separatorChar
                         + SdkConstants.FD_PROGUARD + File.separatorChar
                         + name);
@@ -379,11 +399,21 @@ public abstract class BaseExtension {
     // TEMP for compatibility
     // STOPSHIP Remove in 1.0
 
+    // by default, use the new manifest merger.
+    boolean useOldManifestMerger = false;
+
+    void useOldManifestMerger(boolean flag) {
+        if (flag) {
+            plugin.displayDeprecationWarning("Support for old manifest merger is deprecated and will be removed in 1.0")
+        }
+        this.useOldManifestMerger = flag;
+    }
+
     private boolean enforceUniquePackageName = true
 
     public void enforceUniquePackageName(boolean value) {
         if (!value) {
-            logger.warning("WARNING: support for libraries with same package name is deprecated and will be removed in 1.0")
+            plugin.displayDeprecationWarning("Support for libraries with same package name is deprecated and will be removed in 1.0")
         }
         enforceUniquePackageName = value
     }
@@ -397,7 +427,7 @@ public abstract class BaseExtension {
     }
 
     public void flavorGroups(String... groups) {
-        logger.warning("WARNING: flavorGroups has been renamed flavorDimensions. It will be removed in 1.0")
+        plugin.displayDeprecationWarning("'flavorGroups' has been renamed 'flavorDimensions'. It will be removed in 1.0")
         flavorDimensions(groups);
     }
 }

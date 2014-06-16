@@ -18,6 +18,7 @@ package com.android.builder.testing;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.ApiVersion;
 
 import java.util.Set;
 
@@ -26,20 +27,20 @@ import java.util.Set;
 public interface TestData {
 
     /**
-     * Returns the package name.
+     * Returns the application id.
      *
-     * @return the package name
+     * @return the id
      */
     @NonNull
-    String getPackageName();
+    String getApplicationId();
 
     /**
-     * Returns the tested package name. This can be empty if the test package is self-contained.
+     * Returns the tested application id. This can be empty if the test package is self-contained.
      *
-     * @return the package name or null.
+     * @return the id or null.
      */
     @Nullable
-    String getTestedPackageName();
+    String getTestedApplicationId();
 
     @NonNull
     String getInstrumentationRunner();
@@ -55,7 +56,10 @@ public interface TestData {
      */
     boolean isTestCoverageEnabled();
 
-    int getMinSdkVersion();
+    /**
+     * The min SDK version of the app
+     */
+    ApiVersion getMinSdkVersion();
 
     /**
      * List of supported ABIs. Null means all.

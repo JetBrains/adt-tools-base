@@ -18,8 +18,8 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.internal.test.BaseTest
-import com.android.builder.DefaultBuildType
-import com.android.builder.BuilderConstants
+import com.android.builder.core.DefaultBuildType
+import com.android.builder.core.BuilderConstants
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 
@@ -47,7 +47,7 @@ public class BuildTypeDslTest extends BaseTest {
         assertFalse(type.isRenderscriptDebugBuild())
         assertNotNull(type.getSigningConfig())
         assertTrue(type.getSigningConfig().isSigningReady())
-        assertFalse(type.isZipAlign())
+        assertTrue(type.isZipAlign())
     }
 
     public void testRelease() {
@@ -74,7 +74,7 @@ public class BuildTypeDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        BuildTypeDsl object1 = new BuildTypeDsl("foo", project.fileResolver, project.getLogger())
+        BuildTypeDsl object1 = new BuildTypeDsl("foo", project, project.getLogger())
 
         // change every value from their default.
         object1.setDebuggable(true)
@@ -87,7 +87,7 @@ public class BuildTypeDslTest extends BaseTest {
         object1.setSigningConfig(new SigningConfigDsl("blah"))
         object1.setZipAlign(false)
 
-        BuildTypeDsl object2 = new BuildTypeDsl(object1.name, project.fileResolver, project.getLogger())
+        BuildTypeDsl object2 = new BuildTypeDsl(object1.name, project, project.getLogger())
         object2.initWith(object1)
 
         assertEquals(object1, object2)

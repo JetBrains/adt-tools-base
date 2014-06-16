@@ -27,10 +27,25 @@ import java.util.Collection;
  * the module is an app project or a library project.
  */
 public interface AndroidProject {
-    String BUILD_MODEL_ONLY_SYSTEM_PROPERTY =  "android.build.model.only";
+    //  Injectable properties to use with -P
+    String PROPERTY_BUILD_MODEL_ONLY =  "android.injected.build.model.only";
+    String PROPERTY_INVOKED_FROM_IDE = "android.injected.invoked.from.ide";
 
-    public static final String ARTIFACT_MAIN = "_main_";
-    public static final String ARTIFACT_ANDROID_TEST = "_android_test_";
+    String PROPERTY_SIGNING_STORE_FILE = "android.injected.signing.store.file";
+    String PROPERTY_SIGNING_STORE_PASSWORD = "android.injected.signing.store.password";
+    String PROPERTY_SIGNING_KEY_ALIAS = "android.injected.signing.key.alias";
+    String PROPERTY_SIGNING_KEY_PASSWORD = "android.injected.signing.key.password";
+    String PROPERTY_SIGNING_STORE_TYPE = "android.injected.signing.store.type";
+
+    String PROPERTY_APK_LOCATION = "android.injected.apk.location";
+
+    String ARTIFACT_MAIN = "_main_";
+    String ARTIFACT_ANDROID_TEST = "_android_test_";
+
+    String FD_INTERMEDIATES = "intermediates";
+    String FD_OUTPUTS = "outputs";
+    String FD_GENERATED = "generated";
+
 
     /**
      * Returns the model version. This is a string in the format X.Y.Z
@@ -148,7 +163,7 @@ public interface AndroidProject {
 
     /**
      * Returns the dependencies that were not successfully resolved. The returned list gets
-     * populated only if the system property {@link #BUILD_MODEL_ONLY_SYSTEM_PROPERTY} has been
+     * populated only if the system property {@link #PROPERTY_BUILD_MODEL_ONLY} has been
      * set to {@code true}.
      * <p>
      * Each value of the collection has the format group:name:version, for example:

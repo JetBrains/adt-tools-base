@@ -54,7 +54,6 @@ import lombok.ast.Select;
  */
 public class AlwaysShowActionDetector extends ResourceXmlDetector implements JavaScanner {
 
-
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "AlwaysShowAction", //$NON-NLS-1$

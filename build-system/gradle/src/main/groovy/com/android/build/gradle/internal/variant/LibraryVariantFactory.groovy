@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.internal.variant
+
 import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
@@ -27,22 +28,18 @@ import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.tasks.MergeFileTask
 import com.android.build.gradle.tasks.ExtractAnnotations
 import com.android.build.gradle.tasks.MergeResources
-import com.android.builder.BuilderConstants
-import com.android.builder.DefaultBuildType
-import com.android.builder.VariantConfiguration
+import com.android.builder.core.BuilderConstants
+import com.android.builder.core.DefaultBuildType
+import com.android.builder.core.VariantConfiguration
 import com.android.builder.dependency.LibraryBundle
 import com.android.builder.dependency.LibraryDependency
 import com.android.builder.dependency.ManifestDependency
 import com.android.builder.model.AndroidLibrary
-import com.google.common.collect.Sets
+import com.android.builder.model.MavenCoordinates
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.maven.MavenDeployer
-import org.gradle.api.plugins.MavenPlugin
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Sync
-import org.gradle.api.tasks.Upload
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.tooling.BuildException
@@ -50,6 +47,9 @@ import org.gradle.tooling.BuildException
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP
 import static com.android.SdkConstants.LIBS_FOLDER
 import static com.android.build.gradle.BasePlugin.DIR_BUNDLES
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS
+
 /**
  */
 public class LibraryVariantFactory implements VariantFactory {
@@ -84,11 +84,6 @@ public class LibraryVariantFactory implements VariantFactory {
     }
 
     @Override
-    boolean isVariantPublished() {
-        return true
-    }
-
-    @Override
     boolean isLibrary() {
         return true
     }
@@ -120,7 +115,7 @@ public class LibraryVariantFactory implements VariantFactory {
         // the dependencies. This is what gets packaged in the aar.
         MergeResources packageRes = basePlugin.basicCreateMergeResourcesTask(variantData,
                 "package",
-                "$project.buildDir/$DIR_BUNDLES/${dirName}/res",
+                "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/res",
                 false /*includeDependencies*/,
                 false /*process9Patch*/)
 
@@ -137,7 +132,7 @@ public class LibraryVariantFactory implements VariantFactory {
 
         // Add a task to merge the assets folders
         basePlugin.createMergeAssetsTask(variantData,
-                "$project.buildDir/$DIR_BUNDLES/${dirName}/assets",
+                "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/assets",
                 false /*includeDependencies*/)
 
         // Add a task to create the BuildConfig class
@@ -146,14 +141,15 @@ public class LibraryVariantFactory implements VariantFactory {
         // Add a task to generate resource source files, directing the location
         // of the r.txt file to be directly in the bundle.
         basePlugin.createProcessResTask(variantData,
-                "$project.buildDir/$DIR_BUNDLES/${dirName}",
+                "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}",
                 false /*generateResourcePackage*/,
                 )
 
         // process java resources
         basePlugin.createProcessJavaResTask(variantData)
 
-        basePlugin.createAidlTask(variantData)
+        basePlugin.createAidlTask(variantData, basePlugin.project.file(
+                "$basePlugin.project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/$SdkConstants.FD_AIDL"))
 
         // Add a compile task
         basePlugin.createCompileTask(variantData, null/*testedVariant*/)
@@ -170,17 +166,7 @@ public class LibraryVariantFactory implements VariantFactory {
         packageJniLibs.from(variantConfig.jniLibsList).include("**/*.so")
         packageJniLibs.from(variantData.ndkCompileTask.soFolder).include("**/*.so")
         packageJniLibs.into(project.file(
-                "$project.buildDir/$DIR_BUNDLES/${dirName}/jni"))
-
-        // package the aidl files into the bundle folder
-        // TODO: reenable when we can generate a single AIDL file with all the parcelable.
-//        Sync packageAidl = basePlugin.project.tasks.create(
-//                "package${fullName.capitalize()}Aidl",
-//                Sync)
-//        // packageAidl from 3 sources. the order is important to make sure the override works well.
-//        packageAidl.from(variantConfig.aidlSourceList).include("**/*.aidl")
-//        packageAidl.into(basePlugin.project.file(
-//                "$basePlugin.project.buildDir/$DIR_BUNDLES/${dirName}/$SdkConstants.FD_AIDL"))
+                "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/jni"))
 
         // package the renderscript header files files into the bundle folder
         Sync packageRenderscript = project.tasks.create(
@@ -189,7 +175,7 @@ public class LibraryVariantFactory implements VariantFactory {
         // package from 3 sources. the order is important to make sure the override works well.
         packageRenderscript.from(variantConfig.renderscriptSourceList).include("**/*.rsh")
         packageRenderscript.into(project.file(
-                "$project.buildDir/$DIR_BUNDLES/${dirName}/$SdkConstants.FD_RENDERSCRIPT"))
+                "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/$SdkConstants.FD_RENDERSCRIPT"))
 
         // merge consumer proguard files from different build types and flavors
         MergeFileTask mergeProGuardFileTask = project.tasks.create(
@@ -199,7 +185,7 @@ public class LibraryVariantFactory implements VariantFactory {
             project.files(variantConfig.getConsumerProguardFiles()).files }
         mergeProGuardFileTask.conventionMapping.outputFile = {
             project.file(
-                    "$project.buildDir/$DIR_BUNDLES/${dirName}/$LibraryBundle.FN_PROGUARD_TXT")
+                    "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/$LibraryBundle.FN_PROGUARD_TXT")
         }
 
         // copy lint.jar into the bundle folder
@@ -207,8 +193,8 @@ public class LibraryVariantFactory implements VariantFactory {
                 "copy${fullName.capitalize()}Lint",
                 Copy)
         lintCopy.dependsOn basePlugin.lintCompile
-        lintCopy.from("$project.buildDir/lint/lint.jar")
-        lintCopy.into("$project.buildDir/$DIR_BUNDLES/$dirName")
+        lintCopy.from("$project.buildDir/${FD_INTERMEDIATES}/lint/lint.jar")
+        lintCopy.into("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/$dirName")
 
         Zip bundle = project.tasks.create(
                 "bundle${fullName.capitalize()}",
@@ -224,7 +210,7 @@ public class LibraryVariantFactory implements VariantFactory {
             // hack since bundle can't depend on variantData.obfuscationTask
             mergeProGuardFileTask.dependsOn variantData.obfuscationTask
 
-            bundle.dependsOn packageRes, /*packageAidl,*/ packageRenderscript, mergeProGuardFileTask,
+            bundle.dependsOn packageRes, packageRenderscript, mergeProGuardFileTask,
                     lintCopy, packageJniLibs
             if (extract != null) {
                 bundle.dependsOn(extract)
@@ -241,7 +227,7 @@ public class LibraryVariantFactory implements VariantFactory {
                 jacocoTask.dependsOn variantData.javaCompileTask
                 jacocoTask.conventionMapping.jacocoClasspath = { project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME] }
                 jacocoTask.conventionMapping.inputDir = { variantData.javaCompileTask.destinationDir }
-                jacocoTask.conventionMapping.outputDir = { project.file("${project.buildDir}/coverage-instrumented-classes/${variantConfig.dirName}") }
+                jacocoTask.conventionMapping.outputDir = { project.file("${project.buildDir}/${FD_INTERMEDIATES}/coverage-instrumented-classes/${variantConfig.dirName}") }
 
                 agentTask = basePlugin.getJacocoAgentTask()
             }
@@ -256,7 +242,7 @@ public class LibraryVariantFactory implements VariantFactory {
                 packageLocalJar.from(new File(agentTask.destinationDir, BasePlugin.FILE_JACOCO_AGENT))
             }
             packageLocalJar.into(project.file(
-                    "$project.buildDir/$DIR_BUNDLES/${dirName}/$LIBS_FOLDER"))
+                    "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/$LIBS_FOLDER"))
 
             // jar the classes.
             Jar jar = project.tasks.create("package${fullName.capitalize()}Jar", Jar);
@@ -270,7 +256,7 @@ public class LibraryVariantFactory implements VariantFactory {
             jar.from(variantData.processJavaResourcesTask.destinationDir)
 
             jar.destinationDir = project.file(
-                    "$project.buildDir/$DIR_BUNDLES/${dirName}")
+                    "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}")
             jar.archiveName = "classes.jar"
 
             String packageName = variantConfig.getPackageFromManifest()
@@ -287,7 +273,7 @@ public class LibraryVariantFactory implements VariantFactory {
                 jar.exclude(packageName + "/BuildConfig.class")
             }
 
-            bundle.dependsOn packageRes, jar, /*packageAidl,*/ packageRenderscript, packageLocalJar,
+            bundle.dependsOn packageRes, jar, packageRenderscript, packageLocalJar,
                     mergeProGuardFileTask, lintCopy, packageJniLibs
 
             if (extract != null) {
@@ -298,9 +284,9 @@ public class LibraryVariantFactory implements VariantFactory {
         }
 
         bundle.setDescription("Assembles a bundle containing the library in ${fullName.capitalize()}.");
-        bundle.destinationDir = project.file("$project.buildDir/libs")
+        bundle.destinationDir = project.file("$project.buildDir/${FD_OUTPUTS}/aar")
         bundle.extension = BuilderConstants.EXT_LIB_ARCHIVE
-        bundle.from(project.file("$project.buildDir/$DIR_BUNDLES/${dirName}"))
+        bundle.from(project.file("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}"))
 
         libVariantData.packageLibTask = bundle
         variantData.outputFile = bundle.archivePath
@@ -312,7 +298,8 @@ public class LibraryVariantFactory implements VariantFactory {
         variantData.assembleTask = assembleTask
 
         if (extension.defaultPublishConfig.equals(fullName)) {
-            setupDefaultConfig(project, variantData.variantDependency.packageConfiguration)
+            VariantHelper.setupDefaultConfig(project,
+                    variantData.variantDependency.packageConfiguration)
 
             // add the artifact that will be published
             project.artifacts.add("default", bundle)
@@ -330,7 +317,7 @@ public class LibraryVariantFactory implements VariantFactory {
         // configure the variant to be testable.
         variantConfig.output = new LibraryBundle(
                 bundle.archivePath,
-                project.file("$project.buildDir/$DIR_BUNDLES/${dirName}"),
+                project.file("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}"),
                 variantData.getName()) {
 
             @Override
@@ -357,55 +344,25 @@ public class LibraryVariantFactory implements VariantFactory {
                 return variantConfig.directLibraries
             }
 
+
             @NonNull
             @Override
             List<ManifestDependency> getManifestDependencies() {
                 return variantConfig.directLibraries
             }
-        };
-    }
 
-    private static void setupDefaultConfig(@NonNull Project project, @NonNull Configuration configuration) {
-        // The library artifact is published (inter-project( for the "default" configuration so
-        // we make sure "default" extends from the actual configuration used for building.
-        Configuration defaultConfig = project.configurations["default"]
-        defaultConfig.setExtendsFrom(Collections.singleton(configuration))
-
-        // for the maven publication (for now), we need to manually include all the configuration
-        // object in a special mapping.
-        // It's not possible to put the top level config object as extended from config won't
-        // be included.
-        Set<Configuration> flattenedConfigs = flattenConfigurations(configuration)
-
-        project.plugins.withType(MavenPlugin) {
-            project.tasks.withType(Upload) { task ->
-                task.repositories.withType(MavenDeployer) { repo ->
-                    for (Configuration config : flattenedConfigs) {
-                        repo.pom.scopeMappings.addMapping(300,
-                                project.configurations[config.name],
-                                "compile")
-                    }
-                }
+            @Override
+            @Nullable
+            MavenCoordinates getRequestedCoordinates() {
+                return null
             }
-        }
-    }
 
-    /**
-     * Build a set of configuration containing all the Configuration object that a given
-     * configuration extends from, directly or transitively.
-     *
-     * @param configuration the configuration
-     * @return a set of config.
-     */
-    private static Set<Configuration> flattenConfigurations(@NonNull Configuration configuration) {
-        Set<Configuration> configs = Sets.newHashSet()
-        configs.add(configuration)
-
-        for (Configuration extend : configuration.getExtendsFrom()) {
-            configs.addAll(flattenConfigurations(extend))
-        }
-
-        return configs
+            @Override
+            @Nullable
+            MavenCoordinates getResolvedCoordinates() {
+                return null
+            }
+        };
     }
 
     public Task createExtractAnnotations(
@@ -421,9 +378,9 @@ public class LibraryVariantFactory implements VariantFactory {
         task.group = org.gradle.api.plugins.BasePlugin.BUILD_GROUP
         task.plugin = basePlugin
         task.variant = variantData
-        task.destinationDir = project.file("$project.buildDir/$DIR_BUNDLES/${dirName}")
+        task.destinationDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}")
         task.output = new File(task.destinationDir, FN_ANNOTATIONS_ZIP)
-        task.classDir = project.file("$project.buildDir/classes/${variantData.variantConfiguration.dirName}")
+        task.classDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/classes/${variantData.variantConfiguration.dirName}")
         task.source = variantData.getJavaSources()
         task.encoding = extension.compileOptions.encoding
         task.sourceCompatibility = extension.compileOptions.sourceCompatibility

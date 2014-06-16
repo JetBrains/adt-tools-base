@@ -279,7 +279,7 @@ public class ButtonDetector extends ResourceXmlDetector {
                                         context.report(CASE, child, context.getLocation(child),
                                             String.format(
                                             "The standard Android way to capitalize %1$s " +
-                                            "is \"Cancel\" (tip: use @android:string/ok instead)",
+                                            "is \"Cancel\" (tip: use @android:string/cancel instead)",
                                             label),  null);
                                     }
                                 }

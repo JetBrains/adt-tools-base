@@ -26,10 +26,10 @@ import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
-import com.android.build.gradle.tasks.ProcessManifest;
+import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.builder.DefaultBuildType;
-import com.android.builder.DefaultProductFlavor;
+import com.android.builder.core.DefaultBuildType;
+import com.android.builder.core.DefaultProductFlavor;
 import com.android.builder.model.SourceProvider;
 
 import org.gradle.api.Task;
@@ -126,8 +126,8 @@ abstract class BaseVariantImpl implements BaseVariant {
 
     @Override
     @NonNull
-    public ProcessManifest getProcessManifest() {
-        return getVariantData().processManifestTask;
+    public ManifestProcessorTask getProcessManifest() {
+        return getVariantData().manifestProcessorTask;
     }
 
     @Override

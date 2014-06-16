@@ -18,6 +18,7 @@ package com.android.sdklib;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 
 
 
@@ -33,9 +34,12 @@ public abstract class AndroidTargetHash {
     private static final String PLATFORM_HASH_PREFIX = "android-";
 
     /**
-     * String to compute hash for add-on targets.
-     * Format is vendor:name:apiVersion
-     * */
+     * String to compute hash for add-on targets. <br/>
+     * Format is {@code vendor:name:apiVersion}. <br/>
+     *
+     * <em>Important<em/>: the vendor and name compontents are the display strings, not the
+     * newer id strings.
+     */
     public static final String ADD_ON_FORMAT = "%s:%s:%s"; //$NON-NLS-1$
 
     /**
@@ -83,18 +87,20 @@ public abstract class AndroidTargetHash {
     /**
      * Returns the hash string for a given add-on.
      *
-     * @param addonVendor A non-null
-     * @param addonName
+     * @param addonVendorDisplay A non-null vendor. When using an {@link IdDisplay} source,
+     *                      this parameter should be the {@link IdDisplay#getDisplay()}.
+     * @param addonNameDisplay A non-null add-on name. When using an {@link IdDisplay} source,
+     *                      this parameter should be the {@link IdDisplay#getDisplay()}.
      * @param version A non-null platform version (the addon's base platform version)
      * @return A non-null hash string uniquely representing this add-on target.
      */
     public static String getAddonHashString(
-            @NonNull String addonVendor,
-            @NonNull String addonName,
+            @NonNull String addonVendorDisplay,
+            @NonNull String addonNameDisplay,
             @NonNull AndroidVersion version) {
         return String.format(ADD_ON_FORMAT,
-                addonVendor,
-                addonName,
+                addonVendorDisplay,
+                addonNameDisplay,
                 version.getApiString());
     }
 

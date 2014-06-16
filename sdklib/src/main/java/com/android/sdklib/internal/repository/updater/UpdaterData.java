@@ -34,7 +34,7 @@ import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.archives.ArchiveInstaller;
 import com.android.sdklib.internal.repository.packages.AddonPackage;
 import com.android.sdklib.internal.repository.packages.Package;
-import com.android.sdklib.internal.repository.packages.Package.License;
+import com.android.sdklib.internal.repository.packages.License;
 import com.android.sdklib.internal.repository.packages.PlatformToolPackage;
 import com.android.sdklib.internal.repository.packages.ToolPackage;
 import com.android.sdklib.internal.repository.sources.SdkRepoSource;
@@ -990,15 +990,12 @@ public class UpdaterData implements IUpdaterData {
         nextEntry: for (Map.Entry<String, License> entry : lidToAccept.entrySet()) {
             String lid = entry.getKey();
             License lic = entry.getValue();
-            mSdkLog.info(
-                    "-------------------------------\n" +
-                    "License id: %1$s\n" +
-                    "Used by: \n - %3$s\n" +
-                    "-------------------------------\n" +
-                    "%2$s\n" +
-                    "\n",
-                lid, lic.getLicense(),
-                Joiner.on("\n  - ").skipNulls().join(lidPkgNames.get(lid)));
+            mSdkLog.info("-------------------------------\n");
+            mSdkLog.info("License id: %1$s\n", lid);
+            mSdkLog.info("Used by: \n - %1$s\n",
+                    Joiner.on("\n  - ").skipNulls().join(lidPkgNames.get(lid)));
+            mSdkLog.info("-------------------------------\n\n");
+            mSdkLog.info("%1$s\n", lic.getLicense());
 
             int retries = numRetries;
             tryAgain: while(true) {

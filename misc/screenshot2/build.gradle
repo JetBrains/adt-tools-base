@@ -1,19 +1,22 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
+apply plugin: 'sdk-java-lib'
 
 group = 'com.android.tools'
 archivesBaseName = 'screenshot2'
+version = rootProject.ext.baseVersion
 
 dependencies {
-    compile project(':ddmlib')
+    compile project(':base:ddmlib')
 }
 
-shipping {
-    launcherScripts = ['etc/screenshot2']
-    isShipping = true
+sdk {
+    linux {
+        item('etc/screenshot2') { executable true }
+    }
+    mac {
+        item('etc/screenshot2') { executable true }
+    }
 }
 
-// configure the manifest of the buildDistributionJar task.
-buildDistributionJar.manifest.attributes("Main-Class": "com.android.screenshot.Screenshot")
-
-apply from: '../../baseVersion.gradle'
+// configure the manifest of the sdkJar task.
+sdkJar.manifest.attributes("Main-Class": "com.android.screenshot.Screenshot")

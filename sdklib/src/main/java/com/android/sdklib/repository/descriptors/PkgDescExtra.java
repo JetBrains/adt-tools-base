@@ -18,45 +18,53 @@ package com.android.sdklib.repository.descriptors;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.internal.repository.packages.License;
 import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.sdklib.repository.MajorRevision;
 
 /**
  * Implementation detail of {@link IPkgDescExtra} for extra packages.
  */
 public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
 
-    private final NoPreviewRevision mRevision;
-    private final String mVendorId;
-    private final String mPath;
     private final String[] mOldPaths;
+    private final String mNameDisplay;
 
-    PkgDescExtra(@NonNull  final String vendorId,
-                 @NonNull  final String path,
-                 @Nullable final String[] oldPaths,
-                 @NonNull  final NoPreviewRevision revision) {
-        mVendorId = vendorId;
-        mPath = path;
+    PkgDescExtra(@NonNull PkgType type,
+                 @Nullable License license,
+                 @Nullable String listDisplay,
+                 @Nullable String descriptionShort,
+                 @Nullable String descriptionUrl,
+                 boolean isObsolete,
+                 @Nullable FullRevision fullRevision,
+                 @Nullable MajorRevision majorRevision,
+                 @Nullable AndroidVersion androidVersion,
+                 @Nullable String path,
+                 @Nullable IdDisplay tag,
+                 @Nullable IdDisplay vendor,
+                 @Nullable FullRevision minToolsRev,
+                 @Nullable FullRevision minPlatformToolsRev,
+                 @NonNull  String nameDisplay,
+                 @Nullable final String[] oldPaths) {
+        super(type,
+              license,
+              listDisplay,
+              descriptionShort,
+              descriptionUrl,
+              isObsolete,
+              fullRevision,
+              majorRevision,
+              androidVersion,
+              path,
+              tag,
+              vendor,
+              minToolsRev,
+              minPlatformToolsRev,
+              null,     //customIsUpdateFor
+              null);    //customPath
+        mNameDisplay = nameDisplay;
         mOldPaths = oldPaths != null ? oldPaths : new String[0];
-        mRevision = revision;
-    }
-
-    @NonNull
-    @Override
-    public PkgType getType() {
-        return PkgType.PKG_EXTRAS;
-    }
-
-    @NonNull
-    @Override
-    public FullRevision getFullRevision() {
-        return mRevision;
-    }
-
-    @NonNull
-    @Override
-    public String getPath() {
-        return mPath;
     }
 
     @NonNull
@@ -67,13 +75,8 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
 
     @NonNull
     @Override
-    public String getVendorId() {
-        return mVendorId;
-    }
-
-    @Override
-    public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
-        return isGenericUpdateFor(existingDesc);
+    public String getNameDisplay() {
+        return mNameDisplay;
     }
 
     // ---- Helpers ----
@@ -112,8 +115,8 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
         int lenEpOldPaths = epOldPaths.length;
         for (int indexEp = -1; indexEp < lenEpOldPaths; indexEp++) {
             if (sameVendorAndPath(
-                    lhs.getVendorId(), lhs.getPath(),
-                    rhs.getVendorId(), indexEp < 0 ? rhs.getPath() : epOldPaths[indexEp])) {
+                    lhs.getVendor().getId(), lhs.getPath(),
+                    rhs.getVendor().getId(), indexEp < 0 ? rhs.getPath() : epOldPaths[indexEp])) {
                 return true;
             }
         }
@@ -122,8 +125,8 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
         int lenThisOldPaths = thisOldPaths.length;
         for (int indexThis = -1; indexThis < lenThisOldPaths; indexThis++) {
             if (sameVendorAndPath(
-                    lhs.getVendorId(), indexThis < 0 ? lhs.getPath() : thisOldPaths[indexThis],
-                    rhs.getVendorId(), rhs.getPath())) {
+                 lhs.getVendor().getId(), indexThis < 0 ? lhs.getPath() : thisOldPaths[indexThis],
+                 rhs.getVendor().getId(), rhs.getPath())) {
                 return true;
             }
         }

@@ -40,7 +40,7 @@ public class SdkSysImgConstants extends RepoConstants {
      * The pattern of our sdk-sys-img XML namespace.
      * Matcher's group(1) is the schema version (integer).
      */
-    public static final String NS_PATTERN = NS_BASE + "([1-9][0-9]*)";     //$NON-NLS-1$
+    public static final String NS_PATTERN = NS_BASE + "([0-9]+)";     //$NON-NLS-1$
 
     /**
      * The latest version of the sdk-sys-img XML Schema.
@@ -58,6 +58,9 @@ public class SdkSysImgConstants extends RepoConstants {
     public static final String ATTR_TAG_ID = "tag-id";                          //$NON-NLS-1$
     /** The user-visible display part of a system-image tag id. Optional. */
     public static final String ATTR_TAG_DISPLAY = "tag-display";                //$NON-NLS-1$
+
+    /** An add-on sub-element, indicating this is an add-on system image. */
+    public static final String NODE_ADD_ON = SdkAddonConstants.NODE_ADD_ON;
 
     /**
      * List of possible nodes in a repository XML. Used to populate options automatically

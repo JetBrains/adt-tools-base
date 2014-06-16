@@ -18,14 +18,15 @@ package com.android.build.gradle.internal.dsl
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.annotations.VisibleForTesting
-import com.android.builder.AndroidBuilder
-import com.android.builder.BuilderConstants
-import com.android.builder.DefaultBuildType
+import com.android.builder.core.AndroidBuilder
+import com.android.builder.core.BuilderConstants
+import com.android.builder.core.DefaultBuildType
+import com.android.builder.model.BuildType
 import com.android.builder.model.ClassField
 import com.android.builder.model.NdkConfig
 import com.android.builder.model.SigningConfig
 import org.gradle.api.Action
-import org.gradle.api.internal.file.FileResolver
+import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
 /**
@@ -35,7 +36,7 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
     private static final long serialVersionUID = 1L
 
     @NonNull
-    private final FileResolver fileResolver
+    private final Project project
     @NonNull
     private final Logger logger
 
@@ -43,21 +44,21 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
 
 
     public BuildTypeDsl(@NonNull String name,
-                        @NonNull FileResolver fileResolver,
+                        @NonNull Project project,
                         @NonNull Instantiator instantiator,
                         @NonNull Logger logger) {
         super(name)
-        this.fileResolver = fileResolver
+        this.project = project
         this.logger = logger
         ndkConfig = instantiator.newInstance(NdkConfigDsl.class)
     }
 
     @VisibleForTesting
     BuildTypeDsl(@NonNull String name,
-                 @NonNull FileResolver fileResolver,
+                 @NonNull Project project,
                  @NonNull Logger logger) {
         super(name)
-        this.fileResolver = fileResolver
+        this.project = project
         this.logger = logger
         ndkConfig = null
     }
@@ -71,7 +72,7 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
     public void init(SigningConfig debugSigningConfig) {
         if (BuilderConstants.DEBUG.equals(getName())) {
             setDebuggable(true)
-            setZipAlign(false)
+            setEmbedMicroApp(false)
 
             assert debugSigningConfig != null
             setSigningConfig(debugSigningConfig)
@@ -117,13 +118,13 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
 
     @NonNull
     public BuildTypeDsl proguardFile(Object proguardFile) {
-        proguardFiles.add(fileResolver.resolve(proguardFile));
+        proguardFiles.add(project.file(proguardFile));
         return this;
     }
 
     @NonNull
     public BuildTypeDsl proguardFiles(Object... proguardFileArray) {
-        proguardFiles.addAll(fileResolver.resolveFiles(proguardFileArray).files);
+        proguardFiles.addAll(project.files(proguardFileArray).files);
         return this;
     }
 
@@ -131,14 +132,14 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
     public BuildTypeDsl setProguardFiles(Iterable<?> proguardFileIterable) {
         proguardFiles.clear();
         for (Object proguardFile : proguardFileIterable) {
-            proguardFiles.add(fileResolver.resolve(proguardFile));
+            proguardFiles.add(project.file(proguardFile));
         }
         return this;
     }
 
     @NonNull
     public BuildTypeDsl consumerProguardFiles(Object... proguardFileArray) {
-        consumerProguardFiles.addAll(fileResolver.resolveFiles(proguardFileArray).files);
+        consumerProguardFiles.addAll(project.files(proguardFileArray).files);
         return this;
     }
 
@@ -146,12 +147,41 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
     public BuildTypeDsl setConsumerProguardFiles(Iterable<?> proguardFileIterable) {
         consumerProguardFiles.clear();
         for (Object proguardFile : proguardFileIterable) {
-            consumerProguardFiles.add(fileResolver.resolve(proguardFile));
+            consumerProguardFiles.add(project.file(proguardFile));
         }
         return this;
     }
 
     void ndk(Action<NdkConfigDsl> action) {
         action.execute(ndkConfig)
+    }
+
+    // ---------------
+    // TEMP for compatibility
+    // STOPSHIP Remove in 1.0
+
+    /**
+     * Sets the package name.
+     *
+     * @param packageName the package name
+     * @return the flavor object
+     */
+
+    /** Package name suffix applied to this build type. */
+    @NonNull
+    public BuildType setPackageNameSuffix(@Nullable String packageNameSuffix) {
+        logger.warn("WARNING: packageNameSuffix is deprecated (and will soon stop working); change to \"applicationIdSuffix\" instead");
+        return setApplicationIdSuffix(packageNameSuffix);
+    }
+
+    @NonNull
+    public BuildType packageNameSuffix(@Nullable String packageNameSuffix) {
+        return setPackageNameSuffix(packageNameSuffix);
+    }
+
+    @Nullable
+    public String getPackageNameSuffix() {
+        logger.warn("WARNING: packageNameSuffix is deprecated (and will soon stop working); change to \"applicationIdSuffix\" instead");
+        return getApplicationIdSuffix();
     }
 }

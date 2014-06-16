@@ -49,7 +49,7 @@ public class ResourceMergerTest extends BaseTestCase {
     public void testMergeByCount() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
-        assertEquals(30, merger.size());
+        assertEquals(31, merger.size());
     }
 
     public void testMergedResourcesByName() throws Exception {
@@ -57,7 +57,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         verifyResourceExists(merger,
                 "drawable/icon",
-                "drawable-ldpi/icon",
+                "drawable-ldpi-v4/icon",
                 "drawable/icon2",
                 "drawable/patch",
                 "raw/foo",
@@ -83,6 +83,7 @@ public class ResourceMergerTest extends BaseTestCase {
                 "attr/flagAttr",
                 "declare-styleable/declare_styleable",
                 "dimen/dimen",
+                "dimen-sw600dp-v13/offset",
                 "id/item_id",
                 "integer/integer"
         );
@@ -267,7 +268,7 @@ public class ResourceMergerTest extends BaseTestCase {
                 new MergedResourceWriter(Files.createTempDir(), null /*aaptRunner*/));
 
         ResourceMerger loadedMerger = new ResourceMerger();
-        loadedMerger.loadFromBlob(folder, true /*incrementalState*/);
+        assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
 
         // check that attr/blah is ignoredFromDiskMerge.
         List<ResourceItem> items = loadedMerger.getDataSets().get(0).getDataMap().get("attr/blah");
@@ -337,7 +338,7 @@ public class ResourceMergerTest extends BaseTestCase {
                 new MergedResourceWriter(Files.createTempDir(), null /*aaptRunner*/));
 
         ResourceMerger loadedMerger = new ResourceMerger();
-        loadedMerger.loadFromBlob(folder, true /*incrementalState*/);
+        assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
 
         compareResourceMaps(merger, loadedMerger, true /*full compare*/);
     }
@@ -351,7 +352,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File fakeRoot = getMergedBlobFolder(root);
 
         ResourceMerger resourceMerger = new ResourceMerger();
-        resourceMerger.loadFromBlob(fakeRoot, true /*incrementalState*/);
+        assertTrue(resourceMerger.loadFromBlob(fakeRoot, true /*incrementalState*/));
         checkSourceFolders(resourceMerger);
 
         List<ResourceSet> sets = resourceMerger.getDataSets();
@@ -371,7 +372,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File root = getIncMergeRoot("basicFiles");
         File fakeRoot = getMergedBlobFolder(root);
         ResourceMerger resourceMerger = new ResourceMerger();
-        resourceMerger.loadFromBlob(fakeRoot, true /*incrementalState*/);
+        assertTrue(resourceMerger.loadFromBlob(fakeRoot, true /*incrementalState*/));
         checkSourceFolders(resourceMerger);
 
         List<ResourceSet> sets = resourceMerger.getDataSets();
@@ -455,7 +456,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(newOverlay.isTouched());
 
         // check new alternate: one objects, last one is TOUCHED
-        List<ResourceItem> drawableHdpiNewAlternate = mergedMap.get("drawable-hdpi/new_alternate");
+        List<ResourceItem> drawableHdpiNewAlternate = mergedMap.get("drawable-hdpi-v4/new_alternate");
         assertEquals(1, drawableHdpiNewAlternate.size());
         ResourceItem newAlternate = drawableHdpiNewAlternate.get(0);
         assertEquals(overlayDrawableHdpiNewAlternate, newAlternate.getSource().getFile());
@@ -479,16 +480,16 @@ public class ResourceMergerTest extends BaseTestCase {
                 (int) 0xFF00FF00);
         checkImageColor(new File(resFolder, "drawable" + File.separator + "removed_overlay.png"),
                 (int) 0xFF00FF00);
-        checkImageColor(new File(resFolder, "drawable-hdpi" + File.separator + "new_alternate.png"),
+        checkImageColor(new File(resFolder, "drawable-hdpi-v4" + File.separator + "new_alternate.png"),
                 (int) 0xFF00FF00);
-        assertFalse(new File(resFolder, "drawable-ldpi" + File.separator + "removed.png").isFile());
+        assertFalse(new File(resFolder, "drawable-ldpi-v4" + File.separator + "removed.png").isFile());
     }
 
     public void testUpdateWithBasicValues() throws Exception {
         File root = getIncMergeRoot("basicValues");
         File fakeRoot = getMergedBlobFolder(root);
         ResourceMerger resourceMerger = new ResourceMerger();
-        resourceMerger.loadFromBlob(fakeRoot, true /*incrementalState*/);
+        assertTrue(resourceMerger.loadFromBlob(fakeRoot, true /*incrementalState*/));
         checkSourceFolders(resourceMerger);
 
         List<ResourceSet> sets = resourceMerger.getDataSets();
@@ -605,7 +606,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File root = getIncMergeRoot("basicValues2");
         File fakeRoot = getMergedBlobFolder(root);
         ResourceMerger resourceMerger = new ResourceMerger();
-        resourceMerger.loadFromBlob(fakeRoot, true /*incrementalState*/);
+        assertTrue(resourceMerger.loadFromBlob(fakeRoot, true /*incrementalState*/));
         checkSourceFolders(resourceMerger);
 
         List<ResourceSet> sets = resourceMerger.getDataSets();
@@ -673,7 +674,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File root = getIncMergeRoot("filesVsValues");
         File fakeRoot = getMergedBlobFolder(root);
         ResourceMerger resourceMerger = new ResourceMerger();
-        resourceMerger.loadFromBlob(fakeRoot, true /*incrementalState*/);
+        assertTrue(resourceMerger.loadFromBlob(fakeRoot, true /*incrementalState*/));
         checkSourceFolders(resourceMerger);
 
         List<ResourceSet> sets = resourceMerger.getDataSets();
@@ -797,7 +798,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         // reload it
         ResourceMerger loadedMerger = new ResourceMerger();
-        loadedMerger.loadFromBlob(folder, true /*incrementalState*/);
+        assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
 
         String expected = merger1.toString();
         String actual = loadedMerger.toString();
@@ -895,7 +896,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File fakeBlobRoot = getMergedBlobFolder(root);
 
         ResourceMerger resourceMerger = new ResourceMerger();
-        resourceMerger.loadFromBlob(fakeBlobRoot, true /*incrementalState*/);
+        assertTrue(resourceMerger.loadFromBlob(fakeBlobRoot, true /*incrementalState*/));
         checkSourceFolders(resourceMerger);
 
         List<ResourceSet> sets = resourceMerger.getDataSets();
@@ -947,7 +948,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         // check the removed icon is not present.
         ResourceMerger resourceMerger2 = new ResourceMerger();
-        resourceMerger2.loadFromBlob(outBlobFolder, true /*incrementalState*/);
+        assertTrue(resourceMerger2.loadFromBlob(outBlobFolder, true /*incrementalState*/));
 
         mergedMap = resourceMerger2.getDataMap();
         removedIcon = mergedMap.get("drawable/removed");
@@ -961,8 +962,8 @@ public class ResourceMergerTest extends BaseTestCase {
      *
      * Each set is [ setName, folder1, folder2, ...]
      *
-     * @param data
-     * @return
+     * @param data the data sets
+     * @return the merger
      */
     private static ResourceMerger createMerger(String[][] data) {
         ResourceMerger merger = new ResourceMerger();
@@ -1009,7 +1010,7 @@ public class ResourceMergerTest extends BaseTestCase {
         return folder;
     }
 
-    private File getIncMergeRoot(String name) throws IOException {
+    private static File getIncMergeRoot(String name) throws IOException {
         File root = TestUtils.getCanonicalRoot("resources", "incMergeData");
         return new File(root, name);
     }
@@ -1139,6 +1140,18 @@ public class ResourceMergerTest extends BaseTestCase {
             return;
         }
         fail("Exception not thrown as expected");
+    }
+
+    public void testWriteAndReadBlob() throws Exception {
+        ResourceMerger merger = getResourceMerger();
+
+        File folder = Files.createTempDir();
+        merger.writeBlobTo(folder,
+                new MergedResourceWriter(Files.createTempDir(), null /*aaptRunner*/));
+
+        // new merger to read the blob
+        ResourceMerger loadedMerger = new ResourceMerger();
+        assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
     }
 
     public void testInvalidFileNames() throws Exception {

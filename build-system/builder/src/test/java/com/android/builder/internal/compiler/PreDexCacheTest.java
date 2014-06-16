@@ -22,10 +22,11 @@ import static com.android.SdkConstants.FN_BCC_COMPAT;
 import static com.android.SdkConstants.FN_DX;
 import static com.android.SdkConstants.FN_DX_JAR;
 import static com.android.SdkConstants.FN_RENDERSCRIPT;
+import static com.android.SdkConstants.FN_ZIPALIGN;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.DexOptions;
+import com.android.builder.core.DexOptions;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.sdklib.BuildToolInfo;
@@ -141,6 +142,11 @@ public class PreDexCacheTest extends TestCase {
         @Override
         public String getJavaMaxHeapSize() {
             return null;
+        }
+
+        @Override
+        public int getThreadCount() {
+            return 1;
         }
     }
 
@@ -356,7 +362,8 @@ public class PreDexCacheTest extends TestCase {
                 new File(toolDir, FN_BCC_COMPAT),
                 new File(toolDir, "arm-linux-androideabi-ld"),
                 new File(toolDir, "i686-linux-android-ld"),
-                new File(toolDir, "mipsel-linux-android-ld"));
+                new File(toolDir, "mipsel-linux-android-ld"),
+                new File(toolDir, FN_ZIPALIGN));
     }
 
     private static void deleteFolder(File folder) {

@@ -19,6 +19,8 @@ package com.android.build.gradle;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
+import java.util.Collections;
+
 /**
  * DeviceConnector tests.
  *
@@ -95,7 +97,9 @@ public class DeviceTest extends BuildTest {
     @Override
     protected void runTest() throws Throwable {
         try {
-            runTasksOnProject(projectName, gradleVersion, "clean", "connectedCheck");
+            runTasksOnProject(projectName, gradleVersion,
+                    Collections.<String>emptyList(),
+                    "clean", "connectedCheck");
         } finally {
             // because runTasksOnProject will throw an exception if the gradle side fails, do this
             // in the finally block.

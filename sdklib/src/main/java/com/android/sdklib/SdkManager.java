@@ -133,8 +133,8 @@ public class SdkManager {
      * @return True if at least one directory or source.prop has changed.
      */
     public boolean hasChanged(@Nullable ILogger log) {
-        return mLocalSdk.hasChanged(EnumSet.of(PkgType.PKG_PLATFORMS,
-                                               PkgType.PKG_ADDONS,
+        return mLocalSdk.hasChanged(EnumSet.of(PkgType.PKG_PLATFORM,
+                                               PkgType.PKG_ADDON,
                                                PkgType.PKG_BUILD_TOOLS));
     }
 
@@ -289,7 +289,7 @@ public class SdkManager {
     @NonNull
     public Map<File, String> getExtraSamples() {
 
-        LocalPkgInfo[] pkgsInfos = mLocalSdk.getPkgsInfos(PkgType.PKG_EXTRAS);
+        LocalPkgInfo[] pkgsInfos = mLocalSdk.getPkgsInfos(PkgType.PKG_EXTRA);
         Map<File, String> samples = new HashMap<File, String>();
 
         for (LocalPkgInfo info : pkgsInfos) {
@@ -327,7 +327,7 @@ public class SdkManager {
     @Deprecated
     @NonNull
     public Map<String, Integer> getExtrasVersions() {
-        LocalPkgInfo[] pkgsInfos = mLocalSdk.getPkgsInfos(PkgType.PKG_EXTRAS);
+        LocalPkgInfo[] pkgsInfos = mLocalSdk.getPkgsInfos(PkgType.PKG_EXTRA);
         Map<String, Integer> extraVersions = new TreeMap<String, Integer>();
 
         for (LocalPkgInfo info : pkgsInfos) {
@@ -335,7 +335,7 @@ public class SdkManager {
             if (info instanceof LocalExtraPkgInfo) {
                 LocalExtraPkgInfo ei = (LocalExtraPkgInfo) info;
                 IPkgDesc d = ei.getDesc();
-                String vendor = d.getVendorId();
+                String vendor = d.getVendor().getId();
                 String path   = d.getPath();
                 int majorRev  = d.getFullRevision().getMajor();
 

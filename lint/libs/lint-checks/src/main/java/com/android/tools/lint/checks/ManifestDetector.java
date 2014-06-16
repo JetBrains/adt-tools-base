@@ -44,6 +44,7 @@ import static com.android.xml.AndroidManifest.NODE_METADATA;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.Variant;
@@ -505,14 +506,22 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 ProductFlavor flavor = variant.getMergedFlavor();
                 String gradleValue = null;
                 if (ATTR_MIN_SDK_VERSION.equals(attributeName)) {
-                    int minSdkVersion = flavor.getMinSdkVersion();
-                    if (minSdkVersion >= 1) {
-                        gradleValue = Integer.toString(minSdkVersion);
+                    try {
+                        ApiVersion minSdkVersion = flavor.getMinSdkVersion();
+                        gradleValue = minSdkVersion != null ? minSdkVersion.getApiString() : null;
+                    } catch (Throwable e) {
+                        // TODO: REMOVE ME
+                        // This method was added in the 0.11 model. We'll need to drop support
+                        // for 0.10 shortly but until 0.11 is available this is a stopgap measure
                     }
                 } else if (ATTR_TARGET_SDK_VERSION.equals(attributeName)) {
-                    int targetSdkVersion = flavor.getTargetSdkVersion();
-                    if (targetSdkVersion >= 1) {
-                        gradleValue = Integer.toString(targetSdkVersion);
+                    try {
+                        ApiVersion targetSdkVersion = flavor.getTargetSdkVersion();
+                        gradleValue = targetSdkVersion != null ? targetSdkVersion.getApiString() : null;
+                    } catch (Throwable e) {
+                        // TODO: REMOVE ME
+                        // This method was added in the 0.11 model. We'll need to drop support
+                        // for 0.10 shortly but until 0.11 is available this is a stopgap measure
                     }
                 } else if (ATTR_VERSION_CODE.equals(attributeName)) {
                     int versionCode = flavor.getVersionCode();
@@ -528,6 +537,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
                 if (gradleValue != null) {
                     String manifestValue = attribute.getValue();
+
                     String message = String.format("This %1$s value (%2$s) is not used; it is "
                             + "always overridden by the value specified in the Gradle build "
                             + "script (%3$s)", attributeName,  manifestValue, gradleValue);

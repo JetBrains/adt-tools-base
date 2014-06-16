@@ -31,12 +31,13 @@ repositories {
 </#if>
 
 android {
-    compileSdkVersion ${buildApi}
+    compileSdkVersion <#if buildApiString?matches("^\\d+$")>${buildApiString}<#else>'${buildApiString}'</#if>
     buildToolsVersion "${buildToolsVersion}"
 
     defaultConfig {
-        minSdkVersion ${minApi}
-        targetSdkVersion ${targetApi}
+        applicationId "${packageName}"
+        minSdkVersion <#if minApi?matches("^\\d+$")>${minApi}<#else>'${minApi}'</#if>
+        targetSdkVersion <#if targetApiString?matches("^\\d+$")>${targetApiString}<#else>'${targetApiString}'</#if>
         versionCode 1
         versionName "1.0"
     }
@@ -51,7 +52,7 @@ android {
     buildTypes {
         release {
             runProguard false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 </#if>

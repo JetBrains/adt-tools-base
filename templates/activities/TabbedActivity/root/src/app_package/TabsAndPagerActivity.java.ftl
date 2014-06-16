@@ -19,7 +19,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 <#if applicationPackage??>import ${applicationPackage}.R;</#if>
 
-public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBar','')}Activity<#if features == 'tabs'> implements ActionBar.TabListener</#if> {
+public class ${activityClass} extends ${(appCompat)?string('ActionBar','')}Activity<#if features == 'tabs'> implements ActionBar.TabListener</#if> {
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -27,7 +27,7 @@ public class ${activityClass} extends ${(appCompat?has_content)?string('ActionBa
      * {@link FragmentPagerAdapter} derivative, which will keep every
      * loaded fragment in memory. If this becomes too memory intensive, it
      * may be best to switch to a
-     * {@link android.support.${(appCompat?has_content)?string('v4','v13')}.app.FragmentStatePagerAdapter}.
+     * {@link android.support.${(appCompat)?string('v4','v13')}.app.FragmentStatePagerAdapter}.
      */
     SectionsPagerAdapter mSectionsPagerAdapter;
 

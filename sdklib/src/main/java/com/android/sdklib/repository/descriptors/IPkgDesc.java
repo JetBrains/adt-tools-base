@@ -19,8 +19,12 @@ package com.android.sdklib.repository.descriptors;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.internal.repository.IListDescription;
+import com.android.sdklib.internal.repository.packages.License;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
+
+import java.io.File;
 
 /**
  * {@link IPkgDesc} keeps information on individual SDK packages
@@ -29,12 +33,12 @@ import com.android.sdklib.repository.MajorRevision;
  * Packages have different attributes depending on their type.
  * <p/>
  * To create a new {@link IPkgDesc}, use one of the package-specific constructors
- * provided by {@code PkgDesc.newXxx()}.
+ * provided by {@code PkgDesc.Builder.newXxx()}.
  * <p/>
  * To query packages capabilities, rely on {@link #getType()} and the {@code IPkgDesc.hasXxx()}
  * methods provided by {@link IPkgDesc}.
  */
-public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities {
+public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListDescription {
 
     /**
      * Returns the type of the package.
@@ -42,6 +46,24 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities {
      */
     @NonNull
     public abstract PkgType getType();
+
+    /**
+     * Returns the list-display meta data of this package.
+     * @return The list-display data, if available, or null.
+     */
+    @Nullable
+    public String getListDisplay();
+
+    @Nullable
+    public String getDescriptionShort();
+
+    @Nullable
+    public String getDescriptionUrl();
+
+    @Nullable
+    public License getLicense();
+
+    public boolean isObsolete();
 
     /**
      * Returns the package's {@link FullRevision} or null.
@@ -67,10 +89,10 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities {
     /**
      * Returns the package's path string or null.
      * <p/>
-     * For {@link PkgType#PKG_SYS_IMAGES}, the path is the system-image ABI. <br/>
-     * For {@link PkgType#PKG_PLATFORMS}, the path is the platform hash string. <br/>
-     * For {@link PkgType#PKG_ADDONS}, the path is the platform hash string. <br/>
-     * For {@link PkgType#PKG_EXTRAS}, the path is the extra-path string. <br/>
+     * For {@link PkgType#PKG_SYS_IMAGE}, the path is the system-image ABI. <br/>
+     * For {@link PkgType#PKG_PLATFORM}, the path is the platform hash string. <br/>
+     * For {@link PkgType#PKG_ADDON}, the path is the platform hash string. <br/>
+     * For {@link PkgType#PKG_EXTRA}, the path is the extra-path string. <br/>
      *
      * @return A non-null value if {@link #hasPath()} is true; otherwise a null value.
      */
@@ -87,10 +109,10 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities {
 
     /**
      * Returns the package's vendor-id string or null.
-     * @return A non-null value if {@link #hasVendorId()} is true; otherwise a null value.
+     * @return A non-null value if {@link #hasVendor()} is true; otherwise a null value.
      */
     @Nullable
-    public String getVendorId();
+    public IdDisplay getVendor();
 
     /**
      * Returns the package's {@code min-tools-rev} or null.
@@ -115,5 +137,19 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities {
      */
     public boolean isUpdateFor(@NonNull IPkgDesc existingDesc);
 
+    /**
+     * Returns a stable string id that can be used to reference this package.
+     * @return A stable string id that can be used to reference this package.
+     */
+    @NonNull
+    public String getInstallId();
+
+    /**
+     * Returns the canonical location where such a package would be installed.
+     * @param sdkLocation The root of the SDK.
+     * @return the canonical location where such a package would be installed.
+     */
+    @NonNull
+    public File getCanonicalInstallFolder(@NonNull File sdkLocation);
 }
 
