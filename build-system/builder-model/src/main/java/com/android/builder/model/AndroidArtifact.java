@@ -23,20 +23,17 @@ import java.io.File;
 import java.util.Collection;
 
 /**
- * The information for a generated Android artifact.
+ * An Android Artifact.
+ *
+ * This is the entry point for the output of a {@link Variant}. This can be more than one
+ * output in the case of multi-apk where more than one APKs are generated from the same set
+ * of sources.
+ *
  */
 public interface AndroidArtifact extends BaseArtifact {
 
-    /**
-     * Returns the output file for this artifact. Depending on whether the project is an app
-     * or a library project, this could be an apk or an aar file.
-     *
-     * For test artifact for a library project, this would also be an apk.
-     *
-     * @return the output file.
-     */
     @NonNull
-    File getOutputFile();
+    Collection<AndroidArtifactOutput> getOutputs();
 
     /**
      * Returns whether the output file is signed. This is always false for the main artifact
@@ -71,12 +68,6 @@ public interface AndroidArtifact extends BaseArtifact {
      */
     @NonNull
     String getSourceGenTaskName();
-
-    /**
-     * The generated manifest for this variant's artifact.
-     */
-    @NonNull
-    File getGeneratedManifest();
 
     /**
      * Returns all the source folders that are generated. This is typically folders for the R,
