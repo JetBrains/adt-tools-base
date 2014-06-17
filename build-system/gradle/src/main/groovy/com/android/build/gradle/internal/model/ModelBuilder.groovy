@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.core.VariantConfiguration
 import com.android.builder.model.AndroidArtifact
+import com.android.builder.model.AndroidArtifactOutput
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.ArtifactMetaData
@@ -244,16 +245,25 @@ public class ModelBuilder implements ToolingModelBuilder {
         variantSourceProvider = variantSourceProvider != null ? SourceProviderImpl.cloneProvider(variantSourceProvider) : null
         multiFlavorSourceProvider = multiFlavorSourceProvider != null ? SourceProviderImpl.cloneProvider(multiFlavorSourceProvider) : null
 
+        // create a single output for now
+        AndroidArtifactOutput output = new AndroidArtifactOutputImpl(
+                variantData.outputFile,
+                variantData.assembleTask.name,
+                variantData.manifestProcessorTask.manifestOutputFile,
+                vC.mergedFlavor.versionCode,
+                null, /*densityFilter*/
+                null /*abiFilter*/
+        );
+
         return new AndroidArtifactImpl(
                 name,
+                Collections.singletonList(output),
                 variantData.assembleTask.name,
-                variantData.outputFile,
                 vC.isSigningReady(),
                 signingConfigName,
                 vC.applicationId,
                 variantData.sourceGenTask.name,
                 variantData.javaCompileTask.name,
-                variantData.manifestProcessorTask.manifestOutputFile,
                 getGeneratedSourceFolders(variantData),
                 getGeneratedResourceFolders(variantData),
                 variantData.javaCompileTask.destinationDir,
