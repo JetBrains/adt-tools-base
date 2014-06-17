@@ -42,4 +42,7 @@
 
     <instantiate from="res/values/strings.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
+
+    <instantiate from="test/app_package/ApplicationTest.java.ftl"
+                   to="${testOut}/ApplicationTest.java" />
 </recipe>
