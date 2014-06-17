@@ -89,7 +89,6 @@ import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -470,27 +469,15 @@ public class AndroidBuilder {
     }
 
     /**
-     * Saves the {@link com.android.manifmerger.XmlDocument} to a file.
+     * Saves the {@link com.android.manifmerger.XmlDocument} to a file in UTF-8 encoding.
      * @param xmlDocument xml document to save.
      * @param out file to save to.
      */
     private void save(XmlDocument xmlDocument, File out) {
-        FileWriter os;
         try {
-            os = new FileWriter(out);
+            Files.write(xmlDocument.prettyPrint(), out, Charsets.UTF_8);
         } catch(IOException e) {
             throw new RuntimeException(e);
-        }
-        try {
-            os.write(xmlDocument.prettyPrint());
-        } catch(IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                os.close();
-            } catch (IOException e) {
-                mLogger.error(e, "Cannot close output stream");
-            }
         }
     }
 
