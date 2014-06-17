@@ -42,7 +42,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -70,7 +70,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -116,7 +116,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -153,7 +153,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -190,7 +190,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -255,7 +255,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -356,7 +356,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -382,7 +382,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -409,7 +409,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
         project.apply plugin: 'java'
 
         project.android {
