@@ -5,6 +5,7 @@
     <global id="appCompat" value="${(minApiLevel lt 14 && minApiLevel gte 7)?string('1','')}" />
     <global id="manifestOut" value="${manifestDir}" />
     <global id="srcOut" value="${srcDir}/${slashedPackageName(packageName)}" />
+    <global id="testOut" value="androidTest/${slashedPackageName(packageName)}" />
     <global id="resOut" value="${resDir}" />
     <global id="mavenUrl" value="mavenCentral" />
     <global id="buildToolsVersion" value="18.0.1" />
