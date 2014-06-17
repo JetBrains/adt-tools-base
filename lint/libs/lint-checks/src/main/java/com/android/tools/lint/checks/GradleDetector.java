@@ -59,6 +59,7 @@ import java.util.Map;
  * Checks Gradle files for potential errors
  */
 public class GradleDetector extends Detector implements Detector.GradleScanner {
+
     private static final Implementation IMPLEMENTATION = new Implementation(
             GradleDetector.class,
             Scope.GRADLE_SCOPE);
@@ -75,6 +76,18 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             "what this lint check helps find.",
             Category.CORRECTNESS,
             4,
+            Severity.WARNING,
+            IMPLEMENTATION);
+
+    /** Deprecated Gradle constructs */
+    public static final Issue DEPRECATED = Issue.create(
+            "GradleDeprecated", //$NON-NLS-1$
+            "Deprecated Gradle Construct",
+            "Looks for deprecated Gradle constructs",
+            "This detector looks for deprecated Gradle constructs which currently work but " +
+            "will likely stop working in a future update.",
+            Category.CORRECTNESS,
+            6,
             Severity.WARNING,
             IMPLEMENTATION);
 
@@ -249,6 +262,15 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             2,
             Severity.WARNING,
             IMPLEMENTATION);
+
+    /** The Gradle plugin ID for Android applications */
+    public static final String APP_PLUGIN_ID = "com.android.application";
+    /** The Gradle plugin ID for Android libraries */
+    public static final String LIB_PLUGIN_ID = "com.android.library";
+    /** Previous plugin id for applications */
+    public static final String OLD_APP_PLUGIN_ID = "android";
+    /** Previous plugin id for libraries */
+    public static final String OLD_LIB_PLUGIN_ID = "android-library";
 
     private int mMinSdkVersion;
     private int mCompileSdkVersion;
@@ -520,8 +542,17 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             @NonNull List<String> unnamedArguments,
             @NonNull Object cookie) {
         String plugin = namedArguments.get("plugin");
-        if (statement.equals("apply") && parent == null && "android".equals(plugin) || "android-library".equals(plugin)) {
-           myAndroidPluginCookie = cookie;
+        if (statement.equals("apply") && parent == null) {
+            boolean isOldAppPlugin = OLD_APP_PLUGIN_ID.equals(plugin);
+            if (isOldAppPlugin || OLD_LIB_PLUGIN_ID.equals(plugin)) {
+              myAndroidPluginCookie = cookie;
+              String replaceWith = isOldAppPlugin ? APP_PLUGIN_ID : LIB_PLUGIN_ID;
+              String message = String.format("'%1$s' is deprecated; use '%2$s' instead", plugin,
+                      replaceWith);
+              report(context, cookie, DEPRECATED, message);
+          } else if (APP_PLUGIN_ID.equals(plugin) || LIB_PLUGIN_ID.equals(plugin)) {
+             myAndroidPluginCookie = cookie;
+          }
         }
     }
 
@@ -533,7 +564,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         }
         if (myAndroidBlockCookie != null && !isAndroidProject()) {
             String message = "An `android` block should only appear in build files that correspond to a module and have an " +
-                             "`apply plugin: 'android'` or `apply plugin: 'android-library'` statement.";
+                             "`apply plugin: 'com.android.application'` or `apply plugin: 'com.android.library'` statement.";
             report(context, myAndroidBlockCookie, IMPROPER_PROJECT_LEVEL_STATEMENT, message);
         }
         if (myDependenciesCookie != null && !isAndroidProject()) {
