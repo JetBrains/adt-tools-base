@@ -7,7 +7,7 @@ buildscript {
     }
 }
 
-apply plugin: 'android'
+apply plugin: 'com.android.application'
 
 import com.android.builder.model.ArtifactMetaData
 import com.android.builder.model.SourceProvider
