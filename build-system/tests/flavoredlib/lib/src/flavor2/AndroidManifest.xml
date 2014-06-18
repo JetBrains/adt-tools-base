@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.android.tests.flavorlib.lib.flavor2" >
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <application >
         <activity
-            android:name="MainActivity"
+            android:name=".flavor2.MainActivity"
             android:label="@string/lib_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
