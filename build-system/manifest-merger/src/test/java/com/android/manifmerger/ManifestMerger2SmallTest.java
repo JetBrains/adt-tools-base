@@ -287,7 +287,7 @@ public class ManifestMerger2SmallTest extends TestCase {
             throws ParserConfigurationException, SAXException, IOException,
             ManifestMerger2.MergeFailureException {
         String xml = ""
-                + "<manifest versionCode=\"34\" versionName=\"3.4\"\n"
+                + "<manifest package=\"foo\" versionCode=\"34\" versionName=\"3.4\"\n"
                 + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                 + "    <activity android:name=\".activityOne\" android:label=\"${labelName}\"/>\n"
                 + "</manifest>";
@@ -305,7 +305,7 @@ public class ManifestMerger2SmallTest extends TestCase {
             assertTrue(mergingReport.getMergedDocument().isPresent());
             XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
             Optional<XmlElement> activityOne = xmlDocument
-                    .getByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY, ".activityOne");
+                    .getByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY, "foo.activityOne");
             assertTrue(activityOne.isPresent());
             Optional<XmlAttribute> attribute = activityOne.get()
                     .getAttribute(XmlNode.fromXmlName("android:label"));

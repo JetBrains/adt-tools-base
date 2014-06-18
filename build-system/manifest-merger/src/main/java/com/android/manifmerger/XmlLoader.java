@@ -21,6 +21,7 @@ import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 
 import com.android.annotations.Nullable;
 import com.android.utils.PositionXmlParser;
+import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 
 import org.w3c.dom.Document;
@@ -79,7 +80,8 @@ public final class XmlLoader {
             KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
             String displayName,
             File xmlFile,
-            XmlDocument.Type type)
+            XmlDocument.Type type,
+            Optional<String> mainManifestPackageName)
             throws IOException, SAXException, ParserConfigurationException {
         InputStream inputStream = new BufferedInputStream(new FileInputStream(xmlFile));
 
@@ -91,7 +93,8 @@ public final class XmlLoader {
                 selectors,
                 systemPropertyResolver,
                 domDocument.getDocumentElement(),
-                type)
+                type,
+                mainManifestPackageName)
                 : null;
     }
 
@@ -109,7 +112,10 @@ public final class XmlLoader {
     public static XmlDocument load(
             KeyResolver<String> selectors,
             KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
-            SourceLocation sourceLocation, String xml, XmlDocument.Type type)
+            SourceLocation sourceLocation,
+            String xml,
+            XmlDocument.Type type,
+            Optional<String> mainManifestPackageName)
             throws IOException, SAXException, ParserConfigurationException {
         PositionXmlParser positionXmlParser = new PositionXmlParser();
         Document domDocument = positionXmlParser.parse(xml);
@@ -120,7 +126,8 @@ public final class XmlLoader {
                         selectors,
                         systemPropertyResolver,
                         domDocument.getDocumentElement(),
-                        type)
+                        type,
+                        mainManifestPackageName)
                 : null;
     }
 

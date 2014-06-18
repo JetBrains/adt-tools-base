@@ -80,7 +80,8 @@ public class PreValidator {
             @NonNull MergingReport.Builder mergingReport,
             @NonNull XmlDocument xmlDocument) {
 
-        validateManifestAttribute(mergingReport, xmlDocument.getRootNode());
+        validateManifestAttribute(
+                mergingReport, xmlDocument.getRootNode(), xmlDocument.getFileType());
         return validate(mergingReport, xmlDocument.getRootNode());
     }
 
@@ -171,12 +172,16 @@ public class PreValidator {
     }
 
     private static void validateManifestAttribute(
-            MergingReport.Builder mergingReport, XmlElement manifest) {
+            MergingReport.Builder mergingReport, XmlElement manifest, XmlDocument.Type fileType) {
         Attr attributeNode = manifest.getXml().getAttributeNode(AndroidManifest.ATTRIBUTE_PACKAGE);
-        if (attributeNode == null) {
-            manifest.addMessage(mergingReport, WARNING, String.format(
-                    "Missing 'package' declaration in manifest at %1$s",
-                    manifest.printPosition()));
+        // it's ok for an overlay to not have a package name, it's not ok for a main manifest
+        // and it's a warning for a library.
+        if (attributeNode == null && fileType != XmlDocument.Type.OVERLAY) {
+            manifest.addMessage(mergingReport,
+                    fileType == XmlDocument.Type.MAIN ? ERROR : WARNING,
+                    String.format(
+                        "Missing 'package' declaration in manifest at %1$s",
+                        manifest.printPosition()));
         }
     }
 
