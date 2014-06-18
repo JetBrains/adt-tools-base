@@ -80,19 +80,26 @@ public class XmlDocument {
     private final KeyResolver<String> mSelectors;
     private final KeyBasedValueResolver<SystemProperty> mSystemPropertyResolver;
     private final Type mType;
+    private final Optional<String> mMainManifestPackageName;
 
     public XmlDocument(@NonNull PositionXmlParser positionXmlParser,
             @NonNull XmlLoader.SourceLocation sourceLocation,
             @NonNull KeyResolver<String> selectors,
             @NonNull KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
             @NonNull Element element,
-            @NonNull Type type) {
+            @NonNull Type type,
+            @NonNull Optional<String> mainManifestPackageName) {
         this.mPositionXmlParser = Preconditions.checkNotNull(positionXmlParser);
         this.mSourceLocation = Preconditions.checkNotNull(sourceLocation);
         this.mRootElement = Preconditions.checkNotNull(element);
         this.mSelectors = Preconditions.checkNotNull(selectors);
         this.mSystemPropertyResolver = Preconditions.checkNotNull(systemPropertyResolver);
         this.mType = type;
+        this.mMainManifestPackageName = mainManifestPackageName;
+    }
+
+    public Type getFileType() {
+        return mType;
     }
 
     /**
@@ -141,7 +148,8 @@ public class XmlDocument {
                 mSelectors,
                 mSystemPropertyResolver,
                 mRootElement,
-                mType);
+                mType,
+                mMainManifestPackageName);
     }
 
     /**
@@ -241,9 +249,23 @@ public class XmlDocument {
         return getRootNode().getNodeByTypeAndKey(type, keyValue);
     }
 
+    /**
+     * Package name for this android manifest which will be used to resolve
+     * partial path. In the case of Overlays, this is absent and the main
+     * manifest packageName must be used.
+     * @return the package name to do partial class names resolution.
+     */
     public String getPackageName() {
-        // TODO: allow injection through invocation parameters.
-        return mRootElement.getAttribute("package");
+        return mMainManifestPackageName.or(mRootElement.getAttribute("package"));
+    }
+
+    public Optional<XmlAttribute> getPackage() {
+        Optional<XmlAttribute> packageAttribute =
+                getRootNode().getAttribute(XmlNode.fromXmlName("package"));
+        return packageAttribute.isPresent()
+                ? packageAttribute
+                : getRootNode().getAttribute(XmlNode.fromNSName(
+                        SdkConstants.ANDROID_URI, "android", "package"));
     }
 
     public Document getXml() {

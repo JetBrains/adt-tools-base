@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import com.android.utils.ILogger;
 import com.android.utils.PositionXmlParser;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 
 import junit.framework.TestCase;
@@ -148,7 +149,8 @@ public class MergingReportTest extends TestCase {
                         mKeyResolver,
                         mPropertyResolver,
                         mElement,
-                        XmlDocument.Type.MAIN);
+                        XmlDocument.Type.MAIN,
+                        Optional.<String>absent() /* mainManifestPackageName */);
 
         MergingReport mergingReport = new MergingReport.Builder(mLoggerMock)
                 .setMergedDocument(xmlDocument)

@@ -23,6 +23,7 @@ import com.android.annotations.concurrency.Immutable;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.utils.ILogger;
 import com.android.utils.PositionXmlParser;
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -447,7 +448,8 @@ public class Actions {
                 xmlDocument.getSystemPropertyResolver(),
                 inMemory,
                 xmlDocument.prettyPrint(),
-                XmlDocument.Type.MAIN);
+                XmlDocument.Type.MAIN,
+                Optional.<String>absent() /* mainManifestPackageName */);
 
         ImmutableMultimap.Builder<Integer, Record> mappingBuilder = ImmutableMultimap.builder();
         for (XmlElement xmlElement : loadedWithLineNumbers.getRootNode().getMergeableElements()) {

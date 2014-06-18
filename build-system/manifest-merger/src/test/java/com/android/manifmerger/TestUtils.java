@@ -21,6 +21,7 @@ import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.Optional;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -86,7 +87,8 @@ public class TestUtils {
             String input)  throws IOException, SAXException, ParserConfigurationException {
 
         return XmlLoader.load(
-                NULL_RESOLVER, NO_PROPERTY_RESOLVER, location, input, XmlDocument.Type.MAIN);
+                NULL_RESOLVER, NO_PROPERTY_RESOLVER, location, input, XmlDocument.Type.MAIN,
+                Optional.<String>absent() /* mainManifestPackageName */);
     }
 
     static XmlDocument xmlLibraryFromString(
@@ -94,15 +96,17 @@ public class TestUtils {
             String input)  throws IOException, SAXException, ParserConfigurationException {
 
         return XmlLoader.load(
-                NULL_RESOLVER, NO_PROPERTY_RESOLVER, location, input, XmlDocument.Type.LIBRARY);
+                NULL_RESOLVER, NO_PROPERTY_RESOLVER, location, input, XmlDocument.Type.LIBRARY,
+                Optional.<String>absent()  /* mainManifestPackageName */);
     }
 
     static XmlDocument xmlDocumentFromString(
             XmlLoader.SourceLocation location,
             String input,
-            XmlDocument.Type type)  throws IOException, SAXException, ParserConfigurationException {
+            XmlDocument.Type type,
+            Optional<String> mainManifestPackageName)  throws IOException, SAXException, ParserConfigurationException {
 
-        return XmlLoader.load(NULL_RESOLVER, NO_PROPERTY_RESOLVER, location, input, type);
+        return XmlLoader.load(NULL_RESOLVER, NO_PROPERTY_RESOLVER, location, input, type, mainManifestPackageName);
     }
 
     static XmlDocument xmlDocumentFromString(
@@ -111,7 +115,7 @@ public class TestUtils {
             String input)  throws IOException, SAXException, ParserConfigurationException {
 
         return XmlLoader.load(selectors, NO_PROPERTY_RESOLVER, location, input,
-                XmlDocument.Type.LIBRARY);
+                XmlDocument.Type.LIBRARY, Optional.<String>absent() /* mainManifestPackageName */);
     }
 
 }
