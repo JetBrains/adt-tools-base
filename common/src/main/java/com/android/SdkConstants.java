@@ -86,6 +86,8 @@ public final class SdkConstants {
     public static final String FN_BUILD_GRADLE = "build.gradle";                      //$NON-NLS-1$
     /** An SDK Project's settings.gradle file */
     public static final String FN_SETTINGS_GRADLE = "settings.gradle";                //$NON-NLS-1$
+    /** An SDK Project's gradle.properties file */
+    public static final String FN_GRADLE_PROPERTIES = "gradle.properties";            //$NON-NLS-1$
     /** An SDK Project's gradle daemon executable */
     public static final String FN_GRADLE_UNIX = "gradle";                             //$NON-NLS-1$
     /** An SDK Project's gradle.bat daemon executable (gradle for windows) */
