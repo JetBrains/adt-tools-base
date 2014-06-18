@@ -35,7 +35,7 @@ public class AppPluginDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -60,7 +60,7 @@ public class AppPluginDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion = 15
@@ -82,7 +82,7 @@ public class AppPluginDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion "android-15"
@@ -104,7 +104,7 @@ public class AppPluginDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "multires")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -125,7 +125,7 @@ public class AppPluginDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -157,7 +157,7 @@ public class AppPluginDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -192,7 +192,7 @@ public class AppPluginDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -247,7 +247,7 @@ public class AppPluginDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
