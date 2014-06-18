@@ -80,6 +80,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(GradleDetector.COMPATIBILITY);
         issues.add(GradleDetector.GRADLE_PLUGIN_COMPATIBILITY);
         issues.add(GradleDetector.DEPENDENCY);
+        issues.add(GradleDetector.DEPRECATED);
         issues.add(GradleDetector.GRADLE_GETTER);
         issues.add(GradleDetector.IDE_SUPPORT);
         issues.add(GradleDetector.PATH);
@@ -258,18 +259,18 @@ public class BuiltinIssueRegistry extends IssueRegistry {
             int initialSize = 12;
             if (scope.contains(Scope.RESOURCE_FILE)) {
                 initialSize += 70;
-            }
-            if (scope.contains(Scope.ALL_RESOURCE_FILES)) {
+            } else if (scope.contains(Scope.ALL_RESOURCE_FILES)) {
                 initialSize += 10;
             }
+
             if (scope.contains(Scope.JAVA_FILE)) {
                 initialSize += 35;
-            }
-            if (scope.contains(Scope.CLASS_FILE)) {
+            } else if (scope.contains(Scope.CLASS_FILE)) {
                 initialSize += 15;
-            }
-            if (scope.contains(Scope.MANIFEST)) {
+            } else if (scope.contains(Scope.MANIFEST)) {
                 initialSize += 30;
+            } else if (scope.contains(Scope.GRADLE_FILE)) {
+                initialSize += 5;
             }
             return initialSize;
         }
