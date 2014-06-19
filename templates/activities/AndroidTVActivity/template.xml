@@ -5,7 +5,7 @@
     name="Android TV Activity"
     minApi="7"
     minBuildApi="19"
-    description="Creates a new Android TV activity usng Leanback Support library.">
+    description="Creates a new Android TV activity using Leanback Support library.">
 
     <category value="Activity" />
     <formfactor value="TV" />
