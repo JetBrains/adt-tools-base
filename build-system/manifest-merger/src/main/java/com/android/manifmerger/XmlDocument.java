@@ -389,7 +389,7 @@ public class XmlDocument {
                             "uses-sdk:minSdkVersion %1$s cannot be smaller than version "
                                     + "%2$s declared in library %3$s",
                             getMinSdkVersion(),
-                            lowerPriorityDocument.getMinSdkVersion(),
+                            lowerPriorityDocument.getRawMinSdkVersion(),
                             lowerPriorityDocument.getSourceLocation().print(true)
                     )
             );
