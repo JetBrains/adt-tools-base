@@ -240,7 +240,17 @@ public class XmlElement extends OrphanXmlElement {
         mergingReport.getLogger().info("Merging " + getId()
                 + " with lower " + lowerPriorityNode.printPosition());
 
-        if (getType().getMergeType() != MergeType.MERGE_CHILDREN_ONLY) {
+        // workaround for 0.12 release and overlay treatment of manifest entries. This will
+        // need to be expressed in the model instead.
+        MergeType mergeType = getType().getMergeType();
+        // if the current element is an overlay, we should always merge the <manifest> attributes
+        // otherwise, we do not merge the libraries <manifest> attributes.
+        if (isA(ManifestModel.NodeTypes.MANIFEST)
+                && getDocument().getFileType() == XmlDocument.Type.OVERLAY) {
+            mergeType = MergeType.MERGE;
+        }
+
+        if (mergeType != MergeType.MERGE_CHILDREN_ONLY) {
             // make a copy of all the attributes metadata, it will eliminate elements from this
             // list as it finds them explicitly defined in the lower priority node.
             // At the end of the explicit attributes processing, the remaining elements of this
