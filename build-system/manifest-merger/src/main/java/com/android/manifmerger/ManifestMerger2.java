@@ -736,6 +736,7 @@ public class ManifestMerger2 {
             ImmutableMap<SystemProperty, String> systemProperties = mSystemProperties.build();
             if (systemProperties.containsKey(SystemProperty.PACKAGE)) {
                 mPlaceHolders.put("packageName", systemProperties.get(SystemProperty.PACKAGE));
+                mPlaceHolders.put("applicationId", systemProperties.get(SystemProperty.PACKAGE));
             }
 
             ManifestMerger2 manifestMerger =
