@@ -181,12 +181,23 @@ class EclipseProject implements Comparable<EclipseProject> {
     private void initLibraries(Properties properties) throws IOException {
         mDirectLibraries = new ArrayList<EclipseProject>(4);
 
-        for (int i = 1; i < 1000; i++) {
+        for (int i = 0; i < 1000; i++) {
             String key = String.format(ANDROID_LIBRARY_REFERENCE_FORMAT, i);
             String library = properties.getProperty(key);
             if (library == null || library.isEmpty()) {
                 // No holes in the numbering sequence is allowed
-                break;
+                if (i == 0) {
+                    // Except for i=0; library projects are supposed to start with 1, and
+                    // all the ADT, sdklib and ant code which reads and writes these start with
+                    // 1, but I've encountered several projects in the wild that start with 0;
+                    // presumably from manual edits or because some older version of the tools
+                    // did this.
+                    // Instead of bailing here, try 1 too.
+                    continue;
+                } else {
+                    // After 1, we don't allow any gaps in the sequence
+                    break;
+                }
             }
 
             // Handle importing Windows-relative paths in project.properties on non-Windows,
