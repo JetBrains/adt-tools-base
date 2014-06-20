@@ -12,9 +12,9 @@
     <instantiate from="res/layout/blank_activity.xml.ftl"
             to="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
 
-    <copy from="res/layout/round.xml"
+    <instantiate from="res/layout/round.xml.ftl"
             to="${escapeXmlAttribute(resOut)}/layout/${roundLayout}.xml" />
-    <copy from="res/layout/rect.xml"
+    <instantiate from="res/layout/rect.xml.ftl"
             to="${escapeXmlAttribute(resOut)}/layout/${rectLayout}.xml" />
 
     <instantiate from="src/app_package/BlankActivity.java.ftl"
