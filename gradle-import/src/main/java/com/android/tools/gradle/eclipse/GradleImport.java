@@ -128,7 +128,7 @@ public class GradleImport {
     static {
         String repository = System.getProperty(MAVEN_URL_PROPERTY);
         if (repository == null) {
-            repository = "mavenCentral()";
+            repository = "jcenter()";
         } else {
             repository = "maven { url '" + repository + "' }";
         }
