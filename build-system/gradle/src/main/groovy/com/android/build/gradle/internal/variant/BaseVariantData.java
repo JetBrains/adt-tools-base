@@ -167,11 +167,7 @@ public abstract class BaseVariantData {
     }
 
     public void registerJavaGeneratingTask(@NonNull Task task, @NonNull File... generatedSourceFolders) {
-        if (extraGeneratedSourceFolders == null) {
-            extraGeneratedSourceFolders = Lists.newArrayList();
-        }
-
-        javaCompileTask.dependsOn(task);
+        sourceGenTask.dependsOn(task);
 
         for (File f : generatedSourceFolders) {
             javaCompileTask.source(f);
@@ -181,11 +177,7 @@ public abstract class BaseVariantData {
     }
 
     public void registerJavaGeneratingTask(@NonNull Task task, @NonNull Collection<File> generatedSourceFolders) {
-        if (extraGeneratedSourceFolders == null) {
-            extraGeneratedSourceFolders = Lists.newArrayList();
-        }
-
-        javaCompileTask.dependsOn(task);
+        sourceGenTask.dependsOn(task);
 
         for (File f : generatedSourceFolders) {
             javaCompileTask.source(f);
