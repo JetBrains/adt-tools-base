@@ -14,9 +14,9 @@ buildscript {
 }
 </#if>
 <#if isLibraryProject?? && isLibraryProject>
-apply plugin: 'android-library'
+apply plugin: 'com.android.library'
 <#else>
-apply plugin: 'android'
+apply plugin: 'com.android.application'
 </#if>
 
 <#if !(perModuleRepositories??) || perModuleRepositories>
