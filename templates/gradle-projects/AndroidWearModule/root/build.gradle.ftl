@@ -1,7 +1,7 @@
 <#if !(perModuleRepositories??) || perModuleRepositories>
 buildscript {
     repositories {
-        mavenCentral()
+        jcenter()
 <#if mavenUrl != "mavenCentral">
         maven {
             url '${mavenUrl}'
@@ -20,7 +20,7 @@ apply plugin: 'android'
 </#if>
 
 repositories {
-    mavenCentral()
+    jcenter()
     flatDir {
         dirs 'prebuilt-libs'
     }

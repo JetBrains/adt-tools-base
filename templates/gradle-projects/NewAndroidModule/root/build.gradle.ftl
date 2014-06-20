@@ -1,7 +1,7 @@
 <#if !(perModuleRepositories??) || perModuleRepositories>
 buildscript {
     repositories {
-        mavenCentral()
+        jcenter()
 <#if mavenUrl != "mavenCentral">
         maven {
             url '${mavenUrl}'
@@ -21,7 +21,7 @@ apply plugin: 'com.android.application'
 <#if !(perModuleRepositories??) || perModuleRepositories>
 
 repositories {
-        mavenCentral()
+        jcenter()
 <#if mavenUrl != "mavenCentral">
         maven {
             url '${mavenUrl}'
