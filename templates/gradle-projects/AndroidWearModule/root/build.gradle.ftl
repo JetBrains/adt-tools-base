@@ -19,12 +19,16 @@ apply plugin: 'android-library'
 apply plugin: 'android'
 </#if>
 
+<#if !(perModuleRepositories??) || perModuleRepositories>
 repositories {
     jcenter()
-    flatDir {
-        dirs 'prebuilt-libs'
+<#if mavenUrl != "mavenCentral">
+    maven {
+        url '${mavenUrl}'
     }
+</#if>
 }
+</#if>
 
 android {
     compileSdkVersion <#if buildApiString?matches("^\\d+$")>${buildApiString}<#else>'${buildApiString}'</#if>
@@ -60,6 +64,5 @@ dependencies {
     compile '${dependency}'
     </#list>
     </#if>
-    compile(name:'wearable-support-1.0', ext:'aar')
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }

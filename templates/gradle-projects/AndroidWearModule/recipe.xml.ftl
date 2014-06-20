@@ -4,6 +4,10 @@
     <mkdir at="${escapeXmlAttribute(srcOut)}" />
 </#if>
 
+    <dependency mavenUrl="com.android.support:support-v13:+" />
+    <dependency mavenUrl="com.google.android.support:wearable:+" />
+    <dependency mavenUrl="com.google.android.gms:play-services-wearable:+" />
+
     <mkdir at="${escapeXmlAttribute(projectOut)}/libs" />
 
     <merge from="settings.gradle.ftl"
@@ -29,8 +33,6 @@
             to="${escapeXmlAttribute(resOut)}/drawable-xhdpi" />
     <copy from="res/drawable-xxhdpi"
             to="${escapeXmlAttribute(resOut)}/drawable-xxhdpi" />
-
-    <copy from="prebuilt-libs" to="${escapeXmlAttribute(projectOut)}/prebuilt-libs" />
 
     <instantiate from="res/values/strings.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/strings.xml" />

@@ -19,6 +19,7 @@ apply plugin: 'android-library'
 apply plugin: 'android'
 </#if>
 
+<#if !(perModuleRepositories??) || perModuleRepositories>
 repositories {
         jcenter()
 <#if mavenUrl != "mavenCentral">
@@ -26,10 +27,8 @@ repositories {
             url '${mavenUrl}'
         }
 </#if>
-    flatDir {
-        dirs 'prebuilt-libs'
-    }
 }
+</#if>
 
 android {
     compileSdkVersion <#if buildApiString?matches("^\\d+$")>${buildApiString}<#else>'${buildApiString}'</#if>
