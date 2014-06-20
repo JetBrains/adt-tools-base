@@ -29,7 +29,7 @@ import com.android.annotations.Nullable;
 public enum Abi {
     //          // ABI string                 // Display    // CPU arch
     ARMEABI    (SdkConstants.ABI_ARMEABI,     "ARM",        SdkConstants.CPU_ARCH_ARM),
-    ARMEABI_V7A(SdkConstants.ABI_ARMEABI_V7A, "ARM",        SdkConstants.CPU_ARCH_ARM),
+    ARMEABI_V7A(SdkConstants.ABI_ARMEABI_V7A, "ARM",        SdkConstants.CPU_ARCH_ARM, SdkConstants.CPU_MODEL_CORTEX_A8),
     ARM64_V8A  (SdkConstants.ABI_ARM64_V8A,   "ARM",        SdkConstants.CPU_ARCH_ARM64),
     X86        (SdkConstants.ABI_INTEL_ATOM,  "Intel Atom", SdkConstants.CPU_ARCH_INTEL_ATOM),
     X86_64     (SdkConstants.ABI_INTEL_ATOM64,"Intel Atom", SdkConstants.CPU_ARCH_INTEL_ATOM64),
