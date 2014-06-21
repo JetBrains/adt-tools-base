@@ -4,7 +4,6 @@
     <mkdir at="${escapeXmlAttribute(srcOut)}" />
 </#if>
 
-    <dependency mavenUrl="com.android.support:support-v13:+" />
     <dependency mavenUrl="com.google.android.support:wearable:+" />
     <dependency mavenUrl="com.google.android.gms:play-services-wearable:+" />
 
