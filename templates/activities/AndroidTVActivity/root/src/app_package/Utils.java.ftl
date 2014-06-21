@@ -1,4 +1,4 @@
-package ${packageName}
+package ${packageName};
 
 import android.app.AlertDialog;
 import android.content.Context;

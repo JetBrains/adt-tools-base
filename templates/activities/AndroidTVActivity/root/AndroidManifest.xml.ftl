@@ -17,6 +17,7 @@
             android:allowBackup="false">
 
         <activity android:name="${packageName}.${activityClass}"
+            android:logo="@drawable/app_icon_quantum"
             android:screenOrientation="landscape"
             <#if isNewProject>
             android:label="@string/app_name"
@@ -34,8 +35,11 @@
             </intent-filter>
         </activity>
 
-        <activity android:name="${packageName}.${detailsActivity}"
-            android:exported="true" />
+        <activity
+            android:name="PlayerActivity"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+
+        <activity android:name="${packageName}.${detailsActivity}" />
 
     </application>
 

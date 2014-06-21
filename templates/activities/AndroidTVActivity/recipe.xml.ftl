@@ -42,7 +42,7 @@
     <instantiate from="src/app_package/DetailsActivity.java.ftl"
                   to="${escapeXmlAttribute(srcOut)}/${detailsActivity}.java" />
 
-    <instantiate from="src/app_package/DetailsFragment.java.ftl"
+    <instantiate from="src/app_package/VideoDetailsFragment.java.ftl"
                   to="${escapeXmlAttribute(srcOut)}/${detailsFragment}.java" />
 
     <instantiate from="src/app_package/Movie.java.ftl"
@@ -59,6 +59,12 @@
 
     <instantiate from="src/app_package/DetailsDescriptionPresenter.java.ftl"
                   to="${escapeXmlAttribute(srcOut)}/DetailsDescriptionPresenter.java" />
+
+    <instantiate from="src/app_package/PlayerActivity.java.ftl"
+                  to="${escapeXmlAttribute(srcOut)}/PlayerActivity.java" />
+
+    <instantiate from="src/app_package/Utils.java.ftl"
+                  to="${escapeXmlAttribute(srcOut)}/Utils.java" />
 
     <open file="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
     <open file="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
