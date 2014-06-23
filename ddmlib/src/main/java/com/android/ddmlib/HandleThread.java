@@ -102,7 +102,7 @@ final class HandleThread extends ChunkHandler {
 
         threadId = data.getInt();
         nameLen = data.getInt();
-        name = getString(data, nameLen);
+        name = ByteBufferUtil.getString(data, nameLen);
 
         Log.v("ddm-thread", "THCR: " + threadId + " '" + name + "'");
 
@@ -198,7 +198,7 @@ final class HandleThread extends ChunkHandler {
 
         threadId = data.getInt();
         nameLen = data.getInt();
-        name = getString(data, nameLen);
+        name = ByteBufferUtil.getString(data, nameLen);
 
         Log.v("ddm-thread", "THNM: " + threadId + " '" + name + "'");
 
@@ -234,14 +234,14 @@ final class HandleThread extends ChunkHandler {
             int len, lineNumber;
 
             len = data.getInt();
-            className = getString(data, len);
+            className = ByteBufferUtil.getString(data, len);
             len = data.getInt();
-            methodName = getString(data, len);
+            methodName = ByteBufferUtil.getString(data, len);
             len = data.getInt();
             if (len == 0) {
                 fileName = null;
             } else {
-                fileName = getString(data, len);
+                fileName = ByteBufferUtil.getString(data, len);
             }
             lineNumber = data.getInt();
 

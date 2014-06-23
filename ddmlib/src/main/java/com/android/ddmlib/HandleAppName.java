@@ -76,7 +76,7 @@ final class HandleAppName extends ChunkHandler {
         String appName;
 
         appNameLen = data.getInt();
-        appName = getString(data, appNameLen);
+        appName = ByteBufferUtil.getString(data, appNameLen);
 
         // Newer devices send user id in the APNM packet.
         int userId = -1;

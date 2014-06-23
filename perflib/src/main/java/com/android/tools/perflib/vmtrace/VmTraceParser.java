@@ -18,6 +18,7 @@ package com.android.tools.perflib.vmtrace;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
+import com.android.ddmlib.ByteBufferUtil;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
@@ -30,8 +31,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.Map;
 import java.util.Set;
 
@@ -63,7 +62,7 @@ public class VmTraceParser {
 
     public void parse() throws IOException {
         long headerLength = parseHeader(mTraceFile);
-        ByteBuffer buffer = mapFile(mTraceFile, headerLength);
+        ByteBuffer buffer = ByteBufferUtil.mapFile(mTraceFile, headerLength, ByteOrder.LITTLE_ENDIAN);
         parseData(buffer);
         computeTimingStatistics();
     }
@@ -379,18 +378,6 @@ public class VmTraceParser {
         }
 
         return recordSize;
-    }
-
-    private static ByteBuffer mapFile(@NonNull File f, long offset) throws IOException {
-      FileInputStream dataFile = new FileInputStream(f);
-      try {
-        FileChannel fc = dataFile.getChannel();
-        MappedByteBuffer buffer = fc.map(FileChannel.MapMode.READ_ONLY, offset, f.length() - offset);
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        return buffer;
-      } finally {
-        dataFile.close(); // this *also* closes the associated channel, fc
-      }
     }
 
     private void computeTimingStatistics() {
