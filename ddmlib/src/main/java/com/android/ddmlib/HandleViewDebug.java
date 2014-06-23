@@ -147,7 +147,7 @@ public final class HandleViewDebug extends ChunkHandler {
 
         chunkBuf.putInt(VURT_DUMP_HIERARCHY);
         chunkBuf.putInt(viewRoot.length());
-        putString(chunkBuf, viewRoot);
+        ByteBufferUtil.putString(chunkBuf, viewRoot);
         chunkBuf.putInt(skipChildren ? 1 : 0);
         chunkBuf.putInt(includeProperties ? 1 : 0);
 
@@ -165,7 +165,7 @@ public final class HandleViewDebug extends ChunkHandler {
 
         chunkBuf.putInt(VURT_CAPTURE_LAYERS);
         chunkBuf.putInt(viewRoot.length());
-        putString(chunkBuf, viewRoot);
+        ByteBufferUtil.putString(chunkBuf, viewRoot);
 
         finishChunkPacket(packet, CHUNK_VURT, chunkBuf.position());
         client.sendAndConsume(packet, handler);
@@ -188,10 +188,10 @@ public final class HandleViewDebug extends ChunkHandler {
 
         chunkBuf.putInt(op);
         chunkBuf.putInt(viewRoot.length());
-        putString(chunkBuf, viewRoot);
+        ByteBufferUtil.putString(chunkBuf, viewRoot);
 
         chunkBuf.putInt(view.length());
-        putString(chunkBuf, view);
+        ByteBufferUtil.putString(chunkBuf, view);
 
         if (extra != null) {
             chunkBuf.put(extra);
@@ -258,7 +258,7 @@ public final class HandleViewDebug extends ChunkHandler {
         ByteBuffer b = ByteBuffer.wrap(extra);
 
         b.putInt(method.length());
-        putString(b, method);
+        ByteBufferUtil.putString(b, method);
 
         if (args != null) {
             b.putInt(args.length);
@@ -307,7 +307,7 @@ public final class HandleViewDebug extends ChunkHandler {
         ByteBuffer b = ByteBuffer.wrap(extra);
 
         b.putInt(parameter.length());
-        putString(b, parameter);
+        ByteBufferUtil.putString(b, parameter);
         b.putInt(value);
         sendViewOpPacket(client, VUOP_SET_LAYOUT_PARAMETER, viewRoot, view, extra,
                 sViewOpNullChunkHandler);

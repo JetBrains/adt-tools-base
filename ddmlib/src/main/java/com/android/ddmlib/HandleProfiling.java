@@ -106,7 +106,7 @@ final class HandleProfiling extends ChunkHandler {
         buf.putInt(bufferSize);
         buf.putInt(flags);
         buf.putInt(fileName.length());
-        putString(buf, fileName);
+        ByteBufferUtil.putString(buf, fileName);
 
         finishChunkPacket(packet, CHUNK_MPRS, buf.position());
         Log.d("ddm-prof", "Sending " + name(CHUNK_MPRS) + " '" + fileName
