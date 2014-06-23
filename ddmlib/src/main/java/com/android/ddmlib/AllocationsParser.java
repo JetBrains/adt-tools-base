@@ -79,7 +79,7 @@ public class AllocationsParser {
 
     for (i = 0; i < count; i++) {
       int nameLen = data.getInt();
-      String descriptor = ChunkHandler.getString(data, nameLen);
+      String descriptor = ByteBufferUtil.getString(data, nameLen);
       strings[i] = descriptorToDot(descriptor);
     }
   }

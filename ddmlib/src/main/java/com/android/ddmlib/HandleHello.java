@@ -98,8 +98,8 @@ final class HandleHello extends ChunkHandler {
         vmIdentLen = data.getInt();
         appNameLen = data.getInt();
 
-        vmIdent = getString(data, vmIdentLen);
-        appName = getString(data, appNameLen);
+        vmIdent = ByteBufferUtil.getString(data, vmIdentLen);
+        appName = ByteBufferUtil.getString(data, appNameLen);
 
         // Newer devices send user id in the APNM packet.
         int userId = -1;
@@ -124,7 +124,7 @@ final class HandleHello extends ChunkHandler {
         if (data.hasRemaining()) {
             try {
                 int abiLength = data.getInt();
-                abi = getString(data, abiLength);
+                abi = ByteBufferUtil.getString(data, abiLength);
                 validAbi = true;
             } catch (BufferUnderflowException e) {
                 Log.e("ddm-hello", "Insufficient data in HELO chunk to retrieve ABI.");
@@ -136,7 +136,7 @@ final class HandleHello extends ChunkHandler {
         if (data.hasRemaining()) {
             try {
                 int jvmFlagsLength = data.getInt();
-                jvmFlags = getString(data, jvmFlagsLength);
+                jvmFlags = ByteBufferUtil.getString(data, jvmFlagsLength);
                 hasJvmFlags = true;
             } catch (BufferUnderflowException e) {
                 Log.e("ddm-hello", "Insufficient data in HELO chunk to retrieve JVM flags");
@@ -205,7 +205,7 @@ final class HandleHello extends ChunkHandler {
         featureCount = data.getInt();
         for (i = 0; i < featureCount; i++) {
             int len = data.getInt();
-            String feature = getString(data, len);
+            String feature = ByteBufferUtil.getString(data, len);
             client.getClientData().addFeature(feature);
 
             Log.d("ddm-hello", "Feature: " + feature);
