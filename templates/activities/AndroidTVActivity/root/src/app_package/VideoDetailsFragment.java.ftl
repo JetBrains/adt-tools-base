@@ -69,6 +69,7 @@ public class ${detailsFragment} extends DetailsFragment {
         new DetailRowBuilderTask().execute(selectedMovie);
 
         setOnItemClickedListener(getDefaultItemClickedListener());
+        updateBackground(selectedMovie.getBackgroundImageURI());
 
     }
 
@@ -86,7 +87,6 @@ public class ${detailsFragment} extends DetailsFragment {
                         .centerCrop()
                         .get();
                 row.setImageBitmap(getActivity(), poster);
-                updateBackground(selectedMovie.getBackgroundImageURI());
             } catch (IOException e) {
             }
 
@@ -110,8 +110,15 @@ public class ${detailsFragment} extends DetailsFragment {
             dorPresenter.setOnActionClickedListener(new OnActionClickedListener() {
                 @Override
                 public void onActionClicked(Action action) {
-                    Toast.makeText(getActivity().getApplicationContext(), action.toString(),
-                            Toast.LENGTH_SHORT).show();
+                    if (action.getId() == ACTION_WATCH_TRAILER) {
+                        Intent intent = new Intent(getActivity(), PlayerActivity.class);
+                        intent.putExtra(getResources().getString(R.string.movie), selectedMovie);
+                        intent.putExtra(getResources().getString(R.string.should_start), true);
+                        startActivity(intent);
+                    }
+                    else {
+                        Toast.makeText(getActivity(), action.toString(), Toast.LENGTH_SHORT).show();
+                    }
                 }
             });
 
