@@ -6,7 +6,7 @@ import android.support.wearable.view.WatchViewStub;
 import android.util.Log;
 import android.widget.TextView;
 
-public class ${activityClass}  extends WatchActivity {
+public class ${activityClass} extends Activity {
 
     private TextView mTextView;
 
@@ -19,7 +19,6 @@ public class ${activityClass}  extends WatchActivity {
             @Override
             public void onLayoutInflated(WatchViewStub stub) {
                 mTextView = (TextView) stub.findViewById(R.id.text);
-                Log.d(TAG, "TextView: " + mTextView.getText() + " view=" + mTextView);
             }
         });
     }
