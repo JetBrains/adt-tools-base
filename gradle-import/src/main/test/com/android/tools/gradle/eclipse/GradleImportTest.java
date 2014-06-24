@@ -2964,6 +2964,95 @@ public class GradleImportTest extends TestCase {
         deleteDir(imported);
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testPreviewPlatform() throws Exception {
+        File root = Files.createTempDir();
+        File projectDir = new File(root, "project");
+        projectDir.mkdirs();
+        createProject(projectDir, "Test2", "test.pkg");
+        createDotProject(projectDir, "Test2", true, true);
+
+        // Write out Manifest and project.properties files which point to L as a preview platform
+        Files.write(""
+                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "  package=\"test.pkg\"\n"
+                        + "  android:versionCode=\"1\"\n"
+                        + "  android:versionName=\"1.0\" >\n"
+                        + "\n"
+                        + "  <uses-sdk\n"
+                        + "    android:minSdkVersion=\"L\"\n"
+                        + "    android:targetSdkVersion=\"L\" />\n"
+                        + "\n"
+                        + "  <application\n"
+                        + "    android:icon=\"@android:drawable/sym_def_app_icon\"\n"
+                        + "    android:label=\"My Unit Test Instrumentation Tests\" >\n"
+                        + "    <uses-library android:name=\"android.test.runner\" />\n"
+                        + "  </application>\n"
+                        + "\n"
+                        + "</manifest>",
+                new File(projectDir, FN_ANDROID_MANIFEST_XML), UTF_8);
+
+        Files.write("# blah blah blah\n"
+                        + "target=android-L\n",
+                new File(projectDir, FN_PROJECT_PROPERTIES), UTF_8);
+
+        File imported = checkProject(projectDir, ""
+                        + MSG_HEADER
+                        + MSG_FOLDER_STRUCTURE
+                        + "* AndroidManifest.xml => Test2/src/main/AndroidManifest.xml\n"
+                        + "* res/ => Test2/src/main/res/\n"
+                        + "* src/ => Test2/src/main/java/\n"
+                        + MSG_FOOTER,
+                false /* checkBuild */,
+                new ImportCustomizer() {
+                    @Override
+                    public void customize(GradleImport importer) {
+                        importer.setGradleNameStyle(false);
+                    }
+                });
+
+        //noinspection PointlessBooleanExpression,ConstantConditions
+        assertEquals(""
+                        + (!DECLARE_GLOBAL_REPOSITORIES ?
+                        "buildscript {\n"
+                                + "    repositories {\n"
+                                + "        " + MAVEN_REPOSITORY + "\n"
+                                + "    }\n"
+                                + "    dependencies {\n"
+                                + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
+                                + "    }\n"
+                                + "}\n" : "")
+                        + "apply plugin: 'android'\n"
+                        + (!DECLARE_GLOBAL_REPOSITORIES ?
+                        "\n"
+                                + "repositories {\n"
+                                + "    " + MAVEN_REPOSITORY + "\n"
+                                + "}\n" : "")
+                        + "\n"
+                        + "android {\n"
+                        + "    compileSdkVersion 'android-L'\n"
+                        + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
+                        + "\n"
+                        + "    defaultConfig {\n"
+                        + "        applicationId \"test.pkg\"\n"
+                        + "        minSdkVersion 'L'\n"
+                        + "        targetSdkVersion 'L'\n"
+                        + "    }\n"
+                        + "\n"
+                        + "    buildTypes {\n"
+                        + "        release {\n"
+                        + "            runProguard false\n"
+                        + "            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}\n",
+                Files.toString(new File(imported, "Test2" + separator + "build.gradle"), UTF_8)
+                        .replace(NL, "\n"));
+
+        deleteDir(root);
+        deleteDir(imported);
+    }
+
     @SuppressWarnings({"ResultOfMethodCallIgnored", "SpellCheckingInspection"})
     public void testRiskyPathChars() throws Exception {
         File root = Files.createTempDir();

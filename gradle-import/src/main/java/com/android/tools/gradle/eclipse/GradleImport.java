@@ -42,6 +42,8 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
+import com.android.sdklib.AndroidTargetHash;
+import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
@@ -794,12 +796,19 @@ public class GradleImport {
                 sb.append(NL);
             }
             sb.append("android {").append(NL);
-            String compileSdkVersion = Integer.toString(module.getCompileSdkVersion());
-            int minSdkVersion = module.getMinSdkVersion();
-            int targetSdkVersion = module.getTargetSdkVersion();
-            String minSdkVersionString = Integer.toString(minSdkVersion);
-            String targetSdkVersionString = Integer.toString(targetSdkVersion);
-            sb.append("    compileSdkVersion ").append(compileSdkVersion).append(NL);
+            AndroidVersion compileSdkVersion = module.getCompileSdkVersion();
+            AndroidVersion minSdkVersion = module.getMinSdkVersion();
+            AndroidVersion targetSdkVersion = module.getTargetSdkVersion();
+            String compileSdkVersionString = compileSdkVersion.isPreview()
+                    ? '\'' + AndroidTargetHash.getPlatformHashString(compileSdkVersion) + '\''
+                    : Integer.toString(compileSdkVersion.getApiLevel());
+            String minSdkVersionString = minSdkVersion.isPreview()
+                    ? '\'' + module.getMinSdkVersion().getCodename() + '\''
+                    : Integer.toString(module.getMinSdkVersion().getApiLevel());
+            String targetSdkVersionString = targetSdkVersion.isPreview()
+                    ? '\'' + module.getTargetSdkVersion().getCodename() + '\''
+                    : Integer.toString(module.getTargetSdkVersion().getApiLevel());
+            sb.append("    compileSdkVersion ").append(compileSdkVersionString).append(NL);
             sb.append("    buildToolsVersion \"").append(getBuildToolsVersion()).append("\"")
                     .append(NL);
             sb.append(NL);
@@ -808,10 +817,10 @@ public class GradleImport {
                 sb.append("        applicationId \"").append(module.getPackage()).append('"')
                         .append(NL);
             }
-            if (minSdkVersion >= 1) {
+            if (minSdkVersion.getApiLevel() > 1) {
                 sb.append("        minSdkVersion ").append(minSdkVersionString).append(NL);
             }
-            if (targetSdkVersion > 1 && module.getCompileSdkVersion() > 3) {
+            if (targetSdkVersion.getApiLevel() > 1 && compileSdkVersion.getApiLevel() > 3) {
                 sb.append("        targetSdkVersion ").append(targetSdkVersionString).append(NL);
             }
 

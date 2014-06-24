@@ -46,10 +46,10 @@ import static com.android.xml.AndroidManifest.NODE_USES_SDK;
 import static java.io.File.separator;
 import static java.io.File.separatorChar;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -89,8 +89,8 @@ class EclipseProject implements Comparable<EclipseProject> {
     private boolean mLibrary;
     private boolean mAndroidProject;
     private boolean mNdkProject;
-    private int mMinSdkVersion;
-    private int mTargetSdkVersion;
+    private AndroidVersion mMinSdkVersion;
+    private AndroidVersion mTargetSdkVersion;
     private Document mProjectDoc;
     private Document mManifestDoc;
     private Properties mProjectProperties;
@@ -175,6 +175,15 @@ class EclipseProject implements Comparable<EclipseProject> {
         String target = properties.getProperty("target"); //$NON-NLS-1$
         if (target != null) {
             mVersion = AndroidTargetHash.getPlatformVersion(target);
+
+          // getPlatformVersion does not handle API numbers correctly
+          if (mVersion != null && mVersion.isPreview()) {
+            // Update codename
+            AndroidVersion version = SdkVersionInfo.getVersion(mVersion.getCodename(), null);
+            if (version != null) {
+              mVersion = version;
+            }
+          }
         }
     }
 
@@ -260,12 +269,12 @@ class EclipseProject implements Comparable<EclipseProject> {
                 NODE_USES_SDK);
         if (usesSdks.getLength() > 0) {
             Element usesSdk = (Element) usesSdks.item(0);
-            mMinSdkVersion = getApiVersion(usesSdk, ATTRIBUTE_MIN_SDK_VERSION, 1);
+            mMinSdkVersion = getApiVersion(usesSdk, ATTRIBUTE_MIN_SDK_VERSION, AndroidVersion.DEFAULT);
             mTargetSdkVersion = getApiVersion(usesSdk, ATTRIBUTE_TARGET_SDK_VERSION,
                     mMinSdkVersion);
         } else {
-            mMinSdkVersion = -1;
-            mTargetSdkVersion = -1;
+            mMinSdkVersion = null;
+            mTargetSdkVersion = null;
         }
     }
 
@@ -290,21 +299,19 @@ class EclipseProject implements Comparable<EclipseProject> {
         }
     }
 
-    private static int getApiVersion(Element usesSdk, String attribute, int defaultApiLevel) {
+    @Nullable
+    private static AndroidVersion getApiVersion(Element usesSdk, String attribute,
+            AndroidVersion defaultApiLevel) {
         String valueString = null;
         if (usesSdk.hasAttributeNS(ANDROID_URI, attribute)) {
             valueString = usesSdk.getAttributeNS(ANDROID_URI, attribute);
         }
 
         if (valueString != null) {
-            int apiLevel = -1;
-            try {
-                apiLevel = Integer.valueOf(valueString);
-            } catch (NumberFormatException e) {
-                // TODO: Handle code names?
+            AndroidVersion version = SdkVersionInfo.getVersion(valueString, null);
+            if (version != null) {
+                return version;
             }
-
-            return apiLevel;
         }
 
         return defaultApiLevel;
@@ -521,6 +528,7 @@ class EclipseProject implements Comparable<EclipseProject> {
                     }
                     continue;
                 }
+                //noinspection ConstantConditions
                 assert lib.isFile();
                 if (!endsWithIgnoreCase(lib.getPath(), DOT_JAR)) {
                     continue;
@@ -563,7 +571,6 @@ class EclipseProject implements Comparable<EclipseProject> {
             } catch (IOException e) {
                 return mProjectVariableMap;
             }
-            assert document != null;
             NodeList variables = document.getElementsByTagName("variable");
             for (int i = 0, n = variables.getLength(); i < n; i++) {
                 Element variable = (Element) variables.item(i);
@@ -593,7 +600,6 @@ class EclipseProject implements Comparable<EclipseProject> {
             } catch (IOException e) {
                 return mLinkedResourceMap;
             }
-            assert document != null;
             NodeList links = document.getElementsByTagName("link");
             for (int i = 0, n = links.getLength(); i < n; i++) {
                 Element variable = (Element) links.item(i);
@@ -1043,19 +1049,22 @@ class EclipseProject implements Comparable<EclipseProject> {
         return mName != null ? mName : mDir.getName();
     }
 
-    public int getMinSdkVersion() {
+    @NonNull
+    public AndroidVersion getMinSdkVersion() {
         assert isAndroidProject();
-        return mMinSdkVersion;
+        return mMinSdkVersion != null ? mMinSdkVersion : AndroidVersion.DEFAULT;
     }
 
-    public int getTargetSdkVersion() {
+    @NonNull
+    public AndroidVersion getTargetSdkVersion() {
         assert isAndroidProject();
-        return mTargetSdkVersion;
+        return mTargetSdkVersion != null ? mTargetSdkVersion : getMinSdkVersion();
     }
 
-    public int getCompileSdkVersion() {
+    @NonNull
+    public AndroidVersion getCompileSdkVersion() {
         assert isAndroidProject();
-        return mVersion != null ? mVersion.getApiLevel() : CURRENT_COMPILE_VERSION;
+        return mVersion == null ? new AndroidVersion(CURRENT_COMPILE_VERSION, null) : mVersion;
     }
 
     @NonNull

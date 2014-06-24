@@ -44,6 +44,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
+import com.android.sdklib.AndroidVersion;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
@@ -87,9 +88,12 @@ abstract class ImportModule implements Comparable<ImportModule> {
     protected abstract boolean isAndroidProject();
     protected abstract boolean isJavaLibrary();
     protected abstract boolean isNdkProject();
-    protected abstract int getCompileSdkVersion();
-    protected abstract int getMinSdkVersion();
-    protected abstract int getTargetSdkVersion();
+    @NonNull
+    protected abstract AndroidVersion getCompileSdkVersion();
+    @NonNull
+    protected abstract AndroidVersion getMinSdkVersion();
+    @NonNull
+    protected abstract AndroidVersion getTargetSdkVersion();
     @NonNull public abstract File getDir();
     @NonNull protected abstract String getOriginalName();
     @NonNull protected abstract List<File> getSourcePaths();
