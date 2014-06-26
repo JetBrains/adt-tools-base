@@ -633,7 +633,6 @@ public class LintCliClient extends LintClient {
         return new CliConfiguration(file, mFlags.isFatalOnly());
     }
 
-    @SuppressWarnings("resource") // Eclipse doesn't know about Closeables.closeQuietly
     @Nullable
     String getRevision() {
         File file = findResource("tools" + File.separator +     //$NON-NLS-1$
@@ -652,7 +651,11 @@ public class LintCliClient extends LintClient {
             } catch (IOException e) {
                 // Couldn't find or read the version info: just print out unknown below
             } finally {
-                Closeables.closeQuietly(input);
+                try {
+                    Closeables.close(input, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // cannot happen
+                }
             }
         }
 

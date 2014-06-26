@@ -468,7 +468,11 @@ public class ProjectProperties implements IPropertySource {
                         e.getMessage());
             }
         } finally {
-            Closeables.closeQuietly(is);
+            try {
+                Closeables.close(is, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
         }
 
 
@@ -538,8 +542,16 @@ public class ProjectProperties implements IPropertySource {
                         e.getMessage());
             }
         } finally {
-            Closeables.closeQuietly(reader);
-            Closeables.closeQuietly(propStream);
+            try {
+                Closeables.close(reader, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
+            try {
+                Closeables.close(propStream, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
         }
 
         return null;

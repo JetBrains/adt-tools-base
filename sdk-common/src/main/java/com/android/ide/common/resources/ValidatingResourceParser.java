@@ -65,11 +65,19 @@ public class ValidatingResourceParser {
             throws IOException {
         // No need to validate framework files
         if (mIsFramework) {
-            Closeables.closeQuietly(input);
+            try {
+                Closeables.close(input, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
             return true;
         }
         if (mContext.needsFullAapt()) {
-            Closeables.closeQuietly(input);
+            try {
+                Closeables.close(input, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
             return false;
         }
 
@@ -108,7 +116,11 @@ public class ValidatingResourceParser {
             mContext.addError(error);
             return false;
         } finally {
-            Closeables.closeQuietly(input);
+            try {
+                Closeables.close(input, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
         }
     }
 

@@ -25,6 +25,7 @@ import org.xml.sax.InputSource;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -132,7 +133,11 @@ public class TestReport {
         } catch (Exception e) {
             throw new GradleException(String.format("Could not load test results from '%s'.", file), e);
         } finally {
-            Closeables.closeQuietly(inputStream);
+            try {
+                Closeables.close(inputStream, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
         }
     }
 

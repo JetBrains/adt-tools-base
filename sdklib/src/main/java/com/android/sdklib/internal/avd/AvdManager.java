@@ -1802,7 +1802,11 @@ public class AvdManager {
                         e.getMessage());
             }
         } finally {
-            Closeables.closeQuietly(reader);
+            try {
+                Closeables.close(reader, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen.
+            }
         }
 
         return null;

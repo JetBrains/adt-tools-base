@@ -23,7 +23,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
-import com.google.common.io.Closeables;
+import com.google.common.io.Closer;
 import com.google.common.io.Files;
 
 import java.io.BufferedWriter;
@@ -79,9 +79,9 @@ public class SymbolWriter {
         file.mkdirs();
         file = new File(file, SdkConstants.FN_RESOURCE_CLASS);
 
-        BufferedWriter writer = null;
+        Closer closer = Closer.create();
         try {
-            writer = Files.newWriter(file, Charsets.UTF_8);
+            BufferedWriter writer = closer.register(Files.newWriter(file, Charsets.UTF_8));
 
             writer.write("/* AUTO-GENERATED FILE.  DO NOT MODIFY.\n");
             writer.write(" *\n");
@@ -129,8 +129,10 @@ public class SymbolWriter {
             }
 
             writer.write("}\n");
+        } catch (Throwable e) {
+            throw closer.rethrow(e);
         } finally {
-            Closeables.closeQuietly(writer);
+            closer.close();
         }
     }
 }

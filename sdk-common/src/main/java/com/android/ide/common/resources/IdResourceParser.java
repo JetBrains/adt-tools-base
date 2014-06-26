@@ -107,7 +107,11 @@ public class IdResourceParser {
             mContext.addError(error);
             return false;
         } finally {
-            Closeables.closeQuietly(input);
+            try {
+                Closeables.close(input, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
         }
     }
 

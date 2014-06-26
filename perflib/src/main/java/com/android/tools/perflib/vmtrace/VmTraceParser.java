@@ -136,7 +136,11 @@ public class VmTraceParser {
             }
         } finally {
             if (in != null) {
-                Closeables.closeQuietly(in);
+                try {
+                    Closeables.close(in, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // cannot happen
+                }
             }
         }
 

@@ -22,7 +22,7 @@ import com.android.annotations.Nullable;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.ClassField;
 import com.google.common.collect.Lists;
-import com.google.common.io.Closeables;
+import com.google.common.io.Closer;
 import com.squareup.javawriter.JavaWriter;
 
 import java.io.File;
@@ -96,11 +96,11 @@ public class BuildConfigGenerator {
         }
 
         File buildConfigJava = new File(pkgFolder, BUILD_CONFIG_NAME);
-        FileWriter out = new FileWriter(buildConfigJava);
 
-        JavaWriter writer = new JavaWriter(out);
-
+        Closer closer = Closer.create();
         try {
+            FileWriter out = closer.register(new FileWriter(buildConfigJava));
+            JavaWriter writer = closer.register(new JavaWriter(out));
             Set<Modifier> publicFinal = EnumSet.of(Modifier.PUBLIC, Modifier.FINAL);
             Set<Modifier> publicFinalStatic = EnumSet.of(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC);
 
@@ -131,9 +131,10 @@ public class BuildConfigGenerator {
             }
 
             writer.endType();
+        } catch (Throwable e) {
+            throw closer.rethrow(e);
         } finally {
-            Closeables.closeQuietly(writer);
-            Closeables.closeQuietly(out);
+            closer.close();
         }
     }
 }

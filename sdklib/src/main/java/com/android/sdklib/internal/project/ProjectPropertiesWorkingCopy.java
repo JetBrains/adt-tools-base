@@ -204,9 +204,21 @@ public class ProjectPropertiesWorkingCopy extends ProjectProperties {
                     }
                 }
             } finally {
-                Closeables.closeQuietly(reader);
-                Closeables.closeQuietly(isr);
-                Closeables.closeQuietly(contentStream);
+                try {
+                    Closeables.close(reader, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // cannot happen
+                }
+                try {
+                    Closeables.close(isr, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // cannot happen
+                }
+                try {
+                    Closeables.close(contentStream, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // cannot happen
+                }
             }
 
         } else {

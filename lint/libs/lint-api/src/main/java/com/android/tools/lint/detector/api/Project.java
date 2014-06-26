@@ -214,7 +214,6 @@ public class Project {
             Properties properties = new Properties();
             File propFile = new File(mDir, PROJECT_PROPERTIES);
             if (propFile.exists()) {
-                @SuppressWarnings("resource") // Eclipse doesn't know about Closeables.closeQuietly
                 BufferedInputStream is = new BufferedInputStream(new FileInputStream(propFile));
                 try {
                     properties.load(is);
@@ -291,7 +290,11 @@ public class Project {
                         }
                     }
                 } finally {
-                    Closeables.closeQuietly(is);
+                    try {
+                        Closeables.close(is, true /* swallowIOException */);
+                    } catch (IOException e) {
+                        // cannot happen
+                    }
                 }
             }
         } catch (IOException ioe) {
