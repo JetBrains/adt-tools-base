@@ -854,7 +854,11 @@ public class Extractor {
             error("Aborting: I/O problem during transform: " + e.toString());
         } finally {
             //noinspection deprecation
-            Closeables.closeQuietly(zis);
+            try {
+                Closeables.close(zis, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
         }
     }
 

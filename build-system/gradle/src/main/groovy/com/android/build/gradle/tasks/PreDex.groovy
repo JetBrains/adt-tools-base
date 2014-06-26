@@ -21,6 +21,7 @@ import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DexOptions
 import com.android.ide.common.internal.WaitableExecutor
+import com.google.common.base.Charsets
 import com.google.common.collect.Sets
 import com.google.common.hash.HashCode
 import com.google.common.hash.HashFunction
@@ -134,7 +135,7 @@ public class PreDex extends BaseTask {
         // add a hash of the original file path.
         String input = inputFile.getAbsolutePath();
         HashFunction hashFunction = Hashing.sha1()
-        HashCode hashCode = hashFunction.hashString(input)
+        HashCode hashCode = hashFunction.hashString(input, Charsets.UTF_16LE)
 
         return new File(outFolder, name + "-" + hashCode.toString() + SdkConstants.DOT_JAR)
     }
