@@ -412,7 +412,11 @@ public final class Packager implements IArchiveBuilder {
             mBuilder.cleanUp();
             throw new PackagerException(e, "Failed to add %s", zipFile);
         } finally {
-            Closeables.closeQuietly(fis);
+            try {
+                Closeables.close(fis, true /* swallowIOException */);
+            } catch (IOException e) {
+                // ignore
+            }
         }
     }
 
@@ -454,7 +458,11 @@ public final class Packager implements IArchiveBuilder {
             mBuilder.cleanUp();
             throw new PackagerException(e, "Failed to add %s", jarFile);
         } finally {
-            Closeables.closeQuietly(fis);
+            try {
+                Closeables.close(fis, true /* swallowIOException */);
+            } catch (IOException e) {
+                // ignore.
+            }
         }
     }
 

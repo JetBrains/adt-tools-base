@@ -611,7 +611,11 @@ public class AndroidManifestParser {
             try {
                 parser.parse(new InputSource(is), manifestHandler);
             } finally {
-                Closeables.closeQuietly(is);
+                try {
+                    Closeables.close(is, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // cannot happen
+                }
             }
 
             return data;

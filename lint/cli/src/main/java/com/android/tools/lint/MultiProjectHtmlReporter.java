@@ -21,7 +21,7 @@ import com.android.tools.lint.detector.api.Severity;
 import com.android.utils.SdkUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.io.Closeables;
+import com.google.common.io.Closer;
 
 import java.io.File;
 import java.io.IOException;
@@ -131,9 +131,16 @@ public class MultiProjectHtmlReporter extends HtmlReporter {
                     relative));
         }
 
+        Closer closer = Closer.create();
         // Write overview index?
-        writeOverview(errorCount, warningCount, projects);
-        Closeables.closeQuietly(mWriter);
+        try {
+            closer.register(mWriter);
+            writeOverview(errorCount, warningCount, projects);
+        } catch (Throwable e) {
+            throw closer.rethrow(e);
+        } finally {
+            closer.close();
+        }
 
         if (mDisplayEmpty || errorCount > 0 || warningCount > 0) {
             File index = new File(mDir, INDEX_NAME);
