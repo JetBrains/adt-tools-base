@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarInputStream;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import javax.imageio.ImageIO;
 
@@ -179,10 +180,10 @@ public class ManualBuildTest extends BuildTest {
         runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
                 project,
                 Collections.<String>emptyList(),
-                "clean", "extractDebugAnnotations");
+                "clean", "assembleDebug");
         File file = new File(debugFileOutput, "annotations.zip");
 
-        Map<String,String> map = Maps.newHashMap();
+        Map<String, String> map = Maps.newHashMap();
         //noinspection SpellCheckingInspection
         map.put("com/android/tests/extractannotations/annotations.xml", ""
                 + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -261,6 +262,20 @@ public class ManualBuildTest extends BuildTest {
                 + "</root>");
 
         checkJar(file, map);
+
+        // check the resulting .aar file to ensure annotations.zip inclusion.
+        File archiveFile = new File(project, "build/outputs/aar/extractAnnotations.aar");
+        assertTrue(archiveFile.isFile());
+        ZipFile archive = null;
+        try {
+            archive = new ZipFile(archiveFile);
+            ZipEntry entry = archive.getEntry("annotations.zip");
+            assertNotNull(entry);
+        } finally {
+            if (archive != null) {
+                archive.close();
+            }
+        }
     }
 
     public void test3rdPartyTests() throws Exception {
