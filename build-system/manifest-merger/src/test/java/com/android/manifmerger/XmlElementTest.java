@@ -1548,9 +1548,9 @@ public class XmlElementTest extends TestCase {
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
-        XmlDocument firstLibrary = TestUtils.xmlDocumentFromString(
+        XmlDocument firstLibrary = TestUtils.xmlLibraryFromString(
                 new TestUtils.TestSourceLocation(getClass(), "lowerPriorityOne"), lowerPriorityOne);
-        XmlDocument secondLibrary = TestUtils.xmlDocumentFromString(
+        XmlDocument secondLibrary = TestUtils.xmlLibraryFromString(
                 new TestUtils.TestSourceLocation(getClass(), "lowerPriorityTwo"), lowerPriorityTwo);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
@@ -1602,7 +1602,7 @@ public class XmlElementTest extends TestCase {
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
-        XmlDocument firstLibrary = TestUtils.xmlDocumentFromString(
+        XmlDocument firstLibrary = TestUtils.xmlLibraryFromString(
                 new TestUtils.TestSourceLocation(getClass(), "lowerPriorityOne"), lowerPriorityOne);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
@@ -1676,9 +1676,9 @@ public class XmlElementTest extends TestCase {
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
-        XmlDocument firstLibrary = TestUtils.xmlDocumentFromString(
+        XmlDocument firstLibrary = TestUtils.xmlLibraryFromString(
                 new TestUtils.TestSourceLocation(getClass(), "lowerPriorityOne"), lowerPriorityOne);
-        XmlDocument secondLibrary = TestUtils.xmlDocumentFromString(
+        XmlDocument secondLibrary = TestUtils.xmlLibraryFromString(
                 new TestUtils.TestSourceLocation(getClass(), "lowerPriorityTwo"), lowerPriorityTwo);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
@@ -1758,7 +1758,7 @@ public class XmlElementTest extends TestCase {
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
 
-        XmlDocument firstLibrary = TestUtils.xmlDocumentFromString(
+        XmlDocument firstLibrary = TestUtils.xmlLibraryFromString(
                 new TestUtils.TestSourceLocation(getClass(), "lowerPriorityOne"), lowerPriorityOne);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
