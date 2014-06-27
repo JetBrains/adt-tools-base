@@ -3,7 +3,7 @@ buildscript {
         maven { url '../../../../../out/repo' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.12.0'
+        classpath 'com.android.tools.build:gradle:0.12.1'
     }
 }
 
