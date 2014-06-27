@@ -243,10 +243,11 @@ public class XmlElement extends OrphanXmlElement {
         // workaround for 0.12 release and overlay treatment of manifest entries. This will
         // need to be expressed in the model instead.
         MergeType mergeType = getType().getMergeType();
-        // if the current element is an overlay, we should always merge the <manifest> attributes
-        // otherwise, we do not merge the libraries <manifest> attributes.
+        // if element we are merging in is not a library (an overlay or an application),  we should
+        // always merge the <manifest> attributes otherwise, we do not merge the libraries
+        // <manifest> attributes.
         if (isA(ManifestModel.NodeTypes.MANIFEST)
-                && getDocument().getFileType() == XmlDocument.Type.OVERLAY) {
+                && lowerPriorityNode.getDocument().getFileType() != XmlDocument.Type.LIBRARY) {
             mergeType = MergeType.MERGE;
         }
 
