@@ -121,7 +121,7 @@ public class AllocationsParserTest extends TestCase {
     assertEquals(lineNumber, elem.getLineNumber());
   }
 
-  private static ByteBuffer putAllocationInfo(String[] classNames, String[] methodNames, String[] fileNames, int[][] entries,
+  public static ByteBuffer putAllocationInfo(String[] classNames, String[] methodNames, String[] fileNames, int[][] entries,
                                                 short[][][] stackFrames) throws IOException {
     byte msgHdrLen = 15, entryHdrLen = 9, stackFrameLen = 8;
 
