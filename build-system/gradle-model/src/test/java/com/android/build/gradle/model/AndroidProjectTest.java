@@ -1030,6 +1030,30 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("jar dep count", 1, javaLibraries.size());
     }
 
+    public void testLocalJarInLib() throws Exception {
+        Map<String, ProjectData> map = getModelForMultiProject("localJars");
+
+        ProjectData libModelData = map.get(":baseLibrary");
+        assertNotNull("Module app null-check", libModelData);
+        AndroidProject model = libModelData.model;
+
+        Collection<Variant> variants = model.getVariants();
+
+        Variant releaseVariant = getVariant(variants, "release");
+        assertNotNull(releaseVariant);
+
+        Dependencies dependencies = releaseVariant.getMainArtifact().getDependencies();
+        assertNotNull(dependencies);
+
+        Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries();
+        assertNotNull(javaLibraries);
+
+        //  com.google.guava:guava:11.0.2
+        //  \--- com.google.code.findbugs:jsr305:1.3.9
+        //  + the local jar
+        assertEquals(3, javaLibraries.size());
+    }
+
     /**
      * Returns the SDK folder as built from the Android source tree.
      * @return the SDK
