@@ -21,11 +21,13 @@ import static com.android.SdkConstants.ANDROID_THEME_PREFIX;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_CLASS;
 import static com.android.SdkConstants.ATTR_ID;
+import static com.android.SdkConstants.ATTR_LABEL_FOR;
 import static com.android.SdkConstants.ATTR_LAYOUT_HEIGHT;
 import static com.android.SdkConstants.ATTR_LAYOUT_WIDTH;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_TARGET_API;
+import static com.android.SdkConstants.ATTR_TEXT_IS_SELECTABLE;
 import static com.android.SdkConstants.CLASS_CONSTRUCTOR;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
 import static com.android.SdkConstants.PREFIX_ANDROID;
@@ -45,9 +47,9 @@ import static com.android.tools.lint.detector.api.Location.SearchDirection.NEARE
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.SdkVersionInfo;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.SdkVersionInfo;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.detector.api.Category;
@@ -341,6 +343,7 @@ public class ApiDetector extends ResourceXmlDetector
                 int minSdk = getMinSdk(context);
                 if (attributeApiLevel > minSdk && attributeApiLevel > context.getFolderVersion()
                         && attributeApiLevel > getLocalMinSdk(attribute.getOwnerElement())
+                        && !isBenignUnusedAttribute(name)
                         // No need to warn for example that
                         //  "layout_alignParentStart will only be used in API level 17 and higher"
                         // since we have a dedicated RTL lint rule dealing with those attributes
@@ -437,6 +440,18 @@ public class ApiDetector extends ResourceXmlDetector
                 context.report(UNSUPPORTED, attribute, location, message, null);
             }
         }
+    }
+
+    /**
+     * Is the given attribute a "benign" unused attribute, one we probably don't need to
+     * flag to the user as not applicable on all versions? These are typically attributes
+     * which add some nice platform behavior when available, but that are not critical
+     * and developers would not typically need to be aware of to try to implement workarounds
+     * on older platforms.
+     */
+    public static boolean isBenignUnusedAttribute(@NonNull String name) {
+        return ATTR_LABEL_FOR.equals(name) || ATTR_TEXT_IS_SELECTABLE.equals(name);
+
     }
 
     private static String getFieldName(String styleName) {
