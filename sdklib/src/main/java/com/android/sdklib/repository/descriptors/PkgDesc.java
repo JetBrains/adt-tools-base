@@ -270,7 +270,7 @@ public class PkgDesc implements IPkgDesc {
             break;
 
         case PKG_PLATFORM:
-            sb.append("android-").append(getAndroidVersion().getApiString());
+            sb.append(AndroidTargetHash.PLATFORM_HASH_PREFIX).append(getAndroidVersion().getApiString());
             break;
 
         case PKG_ADDON:
@@ -337,12 +337,12 @@ public class PkgDesc implements IPkgDesc {
         case PKG_PLATFORM:
         case PKG_SAMPLE:
         case PKG_SOURCE:
-            f = FileOp.append(f, "android-" + sanitize(getAndroidVersion().getApiString()));
+            f = FileOp.append(f, AndroidTargetHash.PLATFORM_HASH_PREFIX + sanitize(getAndroidVersion().getApiString()));
             break;
 
         case PKG_SYS_IMAGE:
             f = FileOp.append(f,
-                    "android-" + sanitize(getAndroidVersion().getApiString()),
+                    AndroidTargetHash.PLATFORM_HASH_PREFIX + sanitize(getAndroidVersion().getApiString()),
                     sanitize(SystemImage.DEFAULT_TAG.equals(getTag()) ? "android" : getTag().getId()),
                     sanitize(getPath()));   // path==abi
             break;
@@ -1140,6 +1140,14 @@ public class PkgDesc implements IPkgDesc {
 
     @NonNull
     private static String sanitize(@NonNull String str) {
+        if (str.startsWith(AndroidTargetHash.PLATFORM_HASH_PREFIX)) {
+            // This block is necessary when installing android-L. Currently installation fails because this method converts it to
+            // "android-l" (lowercase "L".)
+            String platform = str.substring(AndroidTargetHash.PLATFORM_HASH_PREFIX.length());
+            if (!platform.isEmpty() && !Character.isDigit(platform.charAt(0))) {
+                return str;
+            }
+        }
         str = str.toLowerCase(Locale.US).replaceAll("[^a-z0-9_.-]+", "_").replaceAll("_+", "_");
         return str;
     }

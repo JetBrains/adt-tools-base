@@ -31,7 +31,7 @@ public abstract class AndroidTargetHash {
      * Prefix used to build hash strings for platform targets
      * @see SdkManager#getTargetFromHashString(String)
      */
-    private static final String PLATFORM_HASH_PREFIX = "android-";
+    public static final String PLATFORM_HASH_PREFIX = "android-";
 
     /**
      * String to compute hash for add-on targets. <br/>
