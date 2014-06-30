@@ -26,6 +26,7 @@ import static com.android.SdkConstants.ATTR_LAYOUT_WIDTH;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_TARGET_API;
+import static com.android.SdkConstants.CLASS_CONSTRUCTOR;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
 import static com.android.SdkConstants.PREFIX_ANDROID;
 import static com.android.SdkConstants.R_CLASS;
@@ -77,6 +78,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.IntInsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
@@ -133,6 +135,7 @@ import lombok.ast.VariableReference;
  */
 public class ApiDetector extends ResourceXmlDetector
         implements Detector.ClassScanner, Detector.JavaScanner {
+
     /**
      * Whether we flag variable, field, parameter and return type declarations of a type
      * not yet available. It appears Dalvik is very forgiving and doesn't try to preload
@@ -273,6 +276,7 @@ public class ApiDetector extends ResourceXmlDetector
     private static final String TARGET_API_VMSIG = '/' + TARGET_API + ';';
     private static final String SWITCH_TABLE_PREFIX = "$SWITCH_TABLE$";  //$NON-NLS-1$
     private static final String ORDINAL_METHOD = "ordinal"; //$NON-NLS-1$
+    public static final String ENUM_SWITCH_PREFIX = "$SwitchMap$";  //$NON-NLS-1$
 
     protected ApiLookup mApiDatabase;
     private boolean mWarnedMissingDb;
@@ -811,6 +815,11 @@ public class ApiDetector extends ResourceXmlDetector
                                     api, minSdk);
                             continue;
                         }
+
+                        if (isSkippedEnumSwitch(context, classNode, method, node, owner, api)) {
+                            continue;
+                        }
+
                         String fqcn = ClassContext.getFqcn(owner) + '#' + name;
                         if (mPendingFields != null) {
                             mPendingFields.remove(fqcn);
@@ -1033,6 +1042,74 @@ public class ApiDetector extends ResourceXmlDetector
                 }
             }
         }
+    }
+
+    private static boolean isEnumSwitchInitializer(ClassNode classNode) {
+        @SuppressWarnings("rawtypes") // ASM API
+        List fieldList = classNode.fields;
+        for (Object f : fieldList) {
+            FieldNode field = (FieldNode) f;
+            if (field.name.startsWith(ENUM_SWITCH_PREFIX)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static MethodNode findEnumSwitchUsage(ClassNode classNode, String owner) {
+        String target = ENUM_SWITCH_PREFIX + owner.replace('/', '$');
+        @SuppressWarnings("rawtypes") // ASM API
+        List methodList = classNode.methods;
+        for (Object f : methodList) {
+            MethodNode method = (MethodNode) f;
+            InsnList nodes = method.instructions;
+            for (int i = 0, n = nodes.size(); i < n; i++) {
+                AbstractInsnNode instruction = nodes.get(i);
+                if (instruction.getOpcode() == Opcodes.GETSTATIC) {
+                    FieldInsnNode field = (FieldInsnNode) instruction;
+                    if (field.name.equals(target)) {
+                        return method;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean isSkippedEnumSwitch(ClassContext context, ClassNode classNode,
+            MethodNode method, FieldInsnNode node, String owner, int api) {
+        // Enum-style switches are handled in a different way: it generates
+        // an innerclass where the class initializer creates a mapping from
+        // the ordinals to the corresponding values.
+        // Here we need to check to see if the call site which *used* the
+        // table switch had a suppress node on it (or up that node's parent
+        // chain
+        AbstractInsnNode next = LintUtils.getNextInstruction(node);
+        if (next != null && next.getOpcode() == Opcodes.INVOKEVIRTUAL
+                && CLASS_CONSTRUCTOR.equals(method.name)
+                && ORDINAL_METHOD.equals(((MethodInsnNode) next).name)
+                && classNode.outerClass != null
+                && isEnumSwitchInitializer(classNode)) {
+            LintDriver driver = context.getDriver();
+            ClassNode outer = driver.getOuterClassNode(classNode);
+            if (outer != null) {
+                MethodNode switchUser = findEnumSwitchUsage(outer, owner);
+                if (switchUser != null) {
+                    // Is the API check suppressed at the call site?
+                    if (driver.isSuppressed(UNSUPPORTED, outer, switchUser,
+                            null)) {
+                        return true;
+                    }
+                    // Is there a @TargetAPI annotation on the method or
+                    // class referencing this switch map class?
+                    if (getLocalMinSdk(switchUser.invisibleAnnotations) >= api
+                            || getLocalMinSdk(outer.invisibleAnnotations) >= api) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     /**
