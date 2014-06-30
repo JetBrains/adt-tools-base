@@ -837,7 +837,7 @@ public class GradleImportTest extends TestCase {
                     + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                     + "    }\n"
                     + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                     "\n"
                     + "repositories {\n"
@@ -880,7 +880,7 @@ public class GradleImportTest extends TestCase {
                     + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                     + "    }\n"
                     + "}\n" : "")
-                + "apply plugin: 'android-library'\n"
+                + "apply plugin: 'com.android.library'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                     "\n"
                     + "repositories {\n"
@@ -1064,7 +1064,7 @@ public class GradleImportTest extends TestCase {
                     + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                     + "    }\n"
                     + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                     "\n"
                     + "repositories {\n"
@@ -1169,7 +1169,7 @@ public class GradleImportTest extends TestCase {
                     + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                     + "    }\n"
                     + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                     "\n"
                     + "repositories {\n"
@@ -1317,7 +1317,7 @@ public class GradleImportTest extends TestCase {
                 + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                 + "    }\n"
                 + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                 "\n"
                 + "repositories {\n"
@@ -1528,7 +1528,7 @@ public class GradleImportTest extends TestCase {
                         + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                         + "    }\n"
                         + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                 "\n"
                         + "repositories {\n"
@@ -1727,7 +1727,7 @@ public class GradleImportTest extends TestCase {
                     + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                     + "    }\n"
                     + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                     "\n"
                     + "repositories {\n"
@@ -2232,7 +2232,7 @@ public class GradleImportTest extends TestCase {
                     + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                     + "    }\n"
                     + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                     "\n"
                     + "repositories {\n"
@@ -2274,7 +2274,7 @@ public class GradleImportTest extends TestCase {
                     + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                     + "    }\n"
                     + "}\n" : "")
-                + "apply plugin: 'android-library'\n"
+                + "apply plugin: 'com.android.library'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                     "\n"
                     + "repositories {\n"
@@ -2933,7 +2933,7 @@ public class GradleImportTest extends TestCase {
                 + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                 + "    }\n"
                 + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                 "\n"
                 + "repositories {\n"
@@ -3022,7 +3022,7 @@ public class GradleImportTest extends TestCase {
                                 + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                                 + "    }\n"
                                 + "}\n" : "")
-                        + "apply plugin: 'android'\n"
+                        + "apply plugin: 'com.android.application'\n"
                         + (!DECLARE_GLOBAL_REPOSITORIES ?
                         "\n"
                                 + "repositories {\n"
