@@ -372,7 +372,7 @@ public class Context {
             return false;
         }
 
-        if (startOffset == -1) {
+        if (startOffset <= 0) {
             return false;
         }
 
@@ -386,10 +386,6 @@ public class Context {
         // Scan backwards to the previous line and see if it contains the marker
         int lineStart = contents.lastIndexOf('\n', startOffset) + 1;
         if (lineStart <= 1) {
-            return false;
-        }
-        int prevLineStart = contents.lastIndexOf('\n', lineStart - 2) + 1;
-        if (prevLineStart == 0) {
             return false;
         }
         int index = findPrefixOnPreviousLine(contents, lineStart, prefix);
