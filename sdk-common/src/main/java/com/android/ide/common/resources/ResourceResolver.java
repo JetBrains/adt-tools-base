@@ -558,6 +558,12 @@ public class ResourceResolver extends RenderResources {
         return null;
     }
 
+    @Override
+    @Nullable
+    public StyleResourceValue getParent(@NonNull StyleResourceValue style) {
+        return mStyleInheritanceMap.get(style);
+    }
+
     /**
      * Searches for and returns the {@link StyleResourceValue} from a given name.
      * <p/>The format of the name can be:

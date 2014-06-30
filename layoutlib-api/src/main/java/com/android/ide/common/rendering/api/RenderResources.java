@@ -275,4 +275,14 @@ public class RenderResources {
     public ResourceValue resolveResValue(ResourceValue value) {
         return null;
     }
+
+    /**
+     * Returns the parent style of the given style, if any
+     * @param style the style to look up
+     * @return the parent style, or null
+     */
+    public StyleResourceValue getParent(StyleResourceValue style) {
+        return null;
+    }
+
 }
