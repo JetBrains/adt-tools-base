@@ -851,7 +851,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         if (GradleCoordinate.COMPARE_PLUS_HIGHER.compare(dependency, latestPlugin) < 0) {
             String message = "You must use a newer version of the Android Gradle plugin. The "
                     + "minimum supported version is " + SdkConstants.GRADLE_PLUGIN_MINIMUM_VERSION +
-                    " and the recommended version is " + SdkConstants.GRADLE_PLUGIN_LATEST_VERSION;
+                    " and the recommended version is " + SdkConstants.GRADLE_PLUGIN_RECOMMENDED_VERSION;
             report(context, cookie, GRADLE_PLUGIN_COMPATIBILITY, message);
             return true;
         }
