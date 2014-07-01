@@ -52,6 +52,9 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "06_inject_attributes_with_specific_prefix.xml",
             "07_no_package_provided.xml",
             "08_no_library_package_provided.xml",
+            "09_overlay_package_provided.xml",
+            "09b_overlay_package_different.xml",
+            "09c_overlay_package_not_provided.xml",
             "10_activity_merge",
             "11_activity_dup",
             "12_alias_dup",
@@ -143,6 +146,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
         ManifestMerger2.Invoker invoker = ManifestMerger2.newMerger(testFiles.getMain(),
                 stdLogger, ManifestMerger2.MergeType.APPLICATION)
                 .addLibraryManifests(testFiles.getLibs())
+                .addFlavorAndBuildTypeManifests(testFiles.getOverlayFiles())
                 .withFeatures(ManifestMerger2.Invoker.Feature.KEEP_INTERMEDIARY_STAGES);
 
         if (!Strings.isNullOrEmpty(testFiles.getPackageOverride())) {
