@@ -22,6 +22,8 @@ import com.android.build.gradle.api.AndroidSourceDirectorySet
 import com.google.common.collect.Sets
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.tasks.util.PatternFilterable
+import org.gradle.api.tasks.util.PatternSet
 
 /**
  * Extension for android-ndk plugin.
@@ -46,11 +48,17 @@ public class NdkExtension {
 
     private boolean renderscriptNdkMode;
 
+    private PatternSet cFilePattern;
+
+    private PatternSet cppFilePattern;
+
     private NamedDomainObjectContainer<AndroidSourceDirectorySet> sourceSetsContainer
 
     public NdkExtension(
             @Nullable NamedDomainObjectContainer<AndroidSourceDirectorySet> sourceSetsContainer) {
         this.sourceSetsContainer = sourceSetsContainer
+        cFilePattern = new PatternSet()
+        cppFilePattern = new PatternSet()
     }
 
     public String getModuleName() {
@@ -178,5 +186,29 @@ public class NdkExtension {
 
     NamedDomainObjectContainer<AndroidSourceDirectorySet> getSourceSets() {
         sourceSetsContainer
+    }
+
+    public void cFilePattern(Action<PatternFilterable> action) {
+        action.execute(cFilePattern);
+    }
+
+    public PatternFilterable getCFilePattern() {
+        return cFilePattern;
+    }
+
+    public void setCFilePattern(PatternFilterable pattern) {
+        cFilePattern.copyFrom(pattern);
+    }
+
+    public void cppFilePattern(Action<PatternFilterable> action) {
+        action.execute(cppFilePattern);
+    }
+
+    public PatternFilterable getCppFilePattern() {
+        return cppFilePattern;
+    }
+
+    public void setCppFilePattern(PatternFilterable pattern) {
+        cppFilePattern.copyFrom(pattern);
     }
 }

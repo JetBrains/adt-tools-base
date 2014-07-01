@@ -58,6 +58,15 @@ public class NdkExtensionConventionAction implements Action<ProjectInternal> {
                             : DEFAULT_CLANG_VERSION);
         }
 
+        if (extension.getCFilePattern().getIncludes().isEmpty()) {
+            extension.getCFilePattern().include("**/*.c");
+        }
+
+        if (extension.getCppFilePattern().getIncludes().isEmpty()) {
+            extension.getCppFilePattern().include("**/*.cpp");
+            extension.getCppFilePattern().include("**/*.cc");
+        }
+
         // Define default source set.  Currently do not support configuration of sourceSets for
         // a BuildType or Flavor.
         extension.getSourceSets().maybeCreate(BuilderConstants.MAIN);
@@ -66,7 +75,6 @@ public class NdkExtensionConventionAction implements Action<ProjectInternal> {
             if (sourceSet.getSrcDirs().isEmpty()) {
                 sourceSet.srcDir("src/" + sourceSet.getName() + "/jni");
             }
-
         }
     }
 }

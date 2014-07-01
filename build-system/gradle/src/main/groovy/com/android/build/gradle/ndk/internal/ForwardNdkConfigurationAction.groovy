@@ -20,6 +20,8 @@ import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryPlugin
+import com.android.build.gradle.api.AndroidSourceDirectorySet
+import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.ndk.NdkExtension
 import com.android.build.gradle.ndk.NdkPlugin
 import com.android.builder.model.BuildType
@@ -28,7 +30,7 @@ import org.gradle.api.Action
 import org.gradle.api.Project
 
 /**
- * Configure NDK plugin base on configurations of the Android plugin if it is applied.
+ * Configure NDK extension base on configurations of the Android plugin if it is applied.
  */
 public class ForwardNdkConfigurationAction implements Action<Project> {
 
@@ -41,11 +43,11 @@ public class ForwardNdkConfigurationAction implements Action<Project> {
             return;
         }
 
-        NdkExtension extension = project.getPlugins().getPlugin(NdkPlugin.class).getNdkExtension();
+        NdkExtension ndkExtension = project.getPlugins().getPlugin(NdkPlugin.class).getNdkExtension();
         BaseExtension androidExtension = androidPlugin.getExtension();
-        if (extension.getCompileSdkVersion() == null) {
+        if (ndkExtension.getCompileSdkVersion() == null) {
             // Retrieve compileSdkVersion from Android plugin if it is not set for the NDK plugin.
-            extension.setCompileSdkVersion(androidExtension.getCompileSdkVersion());
+            ndkExtension.setCompileSdkVersion(androidExtension.getCompileSdkVersion());
         }
 
         // Set build types and product flavors.
@@ -57,11 +59,22 @@ public class ForwardNdkConfigurationAction implements Action<Project> {
             }
         }
         androidExtension.getProductFlavors().all { ProductFlavor flavor ->
+            // TODO: Read BaseVariantData from VariantManager to support flavorDimension.
             project.model {
                 flavors {
                     maybeCreate(flavor.name)
                 }
             }
+        }
+
+        // Create source sets.
+        androidExtension.sourceSets.all { AndroidSourceSet androidSourceSet ->
+            AndroidSourceDirectorySet ndkSourceSet =
+                    ndkExtension.sourceSets.maybeCreate(androidSourceSet.name)
+            AndroidSourceDirectorySet jni = androidSourceSet.getJni()
+            ndkSourceSet.srcDirs jni.getSrcDirs()
+            ndkSourceSet.include jni.getIncludes()
+            ndkSourceSet.exclude jni.getExcludes()
         }
     }
 }
