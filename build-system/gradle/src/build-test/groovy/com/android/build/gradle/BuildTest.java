@@ -18,7 +18,6 @@ package com.android.build.gradle;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.test.BaseTest;
-import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.Collection;
@@ -32,7 +31,7 @@ import java.util.List;
  * Android Source tree under out/host/<platform>/sdk/... (result of 'make sdk')
  */
 abstract class BuildTest extends BaseTest {
-    private static final Collection<String> IGNORED_GRADLE_VERSIONS = Lists.newArrayList("1.10", "1.11");
+    private static final Collection<String> IGNORED_GRADLE_VERSIONS = Collections.emptyList();
 
     protected File testDir;
     protected File sdkDir;
