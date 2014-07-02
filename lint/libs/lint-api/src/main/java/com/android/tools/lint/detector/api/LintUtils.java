@@ -38,12 +38,12 @@ import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.resources.ResourceUrl;
-import com.android.sdklib.SdkVersionInfo;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.repository.FullRevision;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.utils.PositionXmlParser;
@@ -67,9 +67,13 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import lombok.ast.ImportDeclaration;
 
@@ -1073,5 +1077,89 @@ public class LintUtils {
         }
 
         return false;
+    }
+
+    /**
+     * Looks for a certain string within a larger string, which should immediately follow
+     * the given prefix and immediately precede the given suffix.
+     *
+     * @param string the full string to search
+     * @param prefix the optional prefix to follow
+     * @param suffix the optional suffix to precede
+     * @return the corresponding substring, if present
+     */
+    @Nullable
+    public static String findSubstring(@NonNull String string, @Nullable String prefix,
+            @Nullable String suffix) {
+        int start = 0;
+        if (prefix != null) {
+            start = string.indexOf(prefix);
+            if (start == -1) {
+                return null;
+            }
+            start += prefix.length();
+        }
+
+        if (suffix != null) {
+            int end = string.indexOf(suffix, start);
+            if (end == -1) {
+                return null;
+            }
+            return string.substring(start, end);
+        }
+
+        return string.substring(start);
+    }
+
+    /**
+     * Splits up the given message coming from a given string format (where the string
+     * format follows the very specific convention of having only strings formatted exactly
+     * with the format %n$s where n is between 1 and 9 inclusive, and each formatting parameter
+     * appears exactly once, and in increasing order.
+     *
+     * @param format the format string responsible for creating the error message
+     * @param errorMessage an error message formatted with the format string
+     * @return the specific values inserted into the format
+     */
+    @NonNull
+    public static List<String> getFormattedParameters(
+            @NonNull String format,
+            @NonNull String errorMessage) {
+        StringBuilder pattern = new StringBuilder(format.length());
+        int parameter = 1;
+        for (int i = 0, n = format.length(); i < n; i++) {
+            char c = format.charAt(i);
+            if (c == '%') {
+                // Only support formats of the form %n$s where n is 1 <= n <=9
+                assert i < format.length() - 4 : format;
+                assert format.charAt(i + 1) == ('0' + parameter) : format;
+                assert Character.isDigit(format.charAt(i + 1)) : format;
+                assert format.charAt(i + 2) == '$' : format;
+                assert format.charAt(i + 3) == 's' : format;
+                parameter++;
+                i += 3;
+                pattern.append("(.*)");
+            } else {
+                pattern.append(c);
+            }
+        }
+        try {
+            Pattern compile = Pattern.compile(pattern.toString());
+            Matcher matcher = compile.matcher(errorMessage);
+            if (matcher.find()) {
+                int groupCount = matcher.groupCount();
+                List<String> parameters = Lists.newArrayListWithExpectedSize(groupCount);
+                for (int i = 1; i <= groupCount; i++) {
+                    parameters.add(matcher.group(i));
+                }
+
+                return parameters;
+            }
+
+        } catch (PatternSyntaxException pse) {
+            // Internal error: string format is not valid. Should be caught by unit tests
+            // as a failure to return the formatted parameters.
+        }
+        return Collections.emptyList();
     }
 }

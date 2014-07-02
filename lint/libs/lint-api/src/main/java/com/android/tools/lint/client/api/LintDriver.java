@@ -1065,8 +1065,7 @@ public class LintDriver {
             checkProGuard(project, main);
         }
 
-        if (project == main && mScope.contains(Scope.PROPERTY_FILE) &&
-                project.isAndroidProject()) {
+        if (project == main && mScope.contains(Scope.PROPERTY_FILE)) {
             checkProperties(project, main);
         }
     }

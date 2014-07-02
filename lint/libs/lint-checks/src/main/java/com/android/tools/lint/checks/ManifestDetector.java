@@ -474,7 +474,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
         Attr codeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_VERSION_CODE);
         if (codeNode != null && codeNode.getValue().startsWith(PREFIX_RESOURCE_REF)
                 && context.isEnabled(ILLEGAL_REFERENCE)) {
-            context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
+            context.report(ILLEGAL_REFERENCE, element, context.getLocation(codeNode),
                     "The android:versionCode cannot be a resource url, it must be "
                             + "a literal integer", null);
         } else if (codeNode == null && context.isEnabled(SET_VERSION)
@@ -664,7 +664,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 Attr codeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION);
                 if (codeNode != null && codeNode.getValue().startsWith(PREFIX_RESOURCE_REF)
                         && context.isEnabled(ILLEGAL_REFERENCE)) {
-                    context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
+                    context.report(ILLEGAL_REFERENCE, element, context.getLocation(codeNode),
                             "The android:minSdkVersion cannot be a resource url, it must be "
                                     + "a literal integer (or string if a preview codename)", null);
                 }
@@ -686,19 +686,24 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             } else {
                 checkOverride(context, element, ATTR_TARGET_SDK_VERSION);
 
-                if (context.isEnabled(TARGET_NEWER)){
-                    String target = element.getAttributeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION);
-                    try {
-                        int api = Integer.parseInt(target);
-                        if (api < context.getClient().getHighestKnownApiLevel()) {
-                            context.report(TARGET_NEWER, element, context.getLocation(element),
-                                    "Not targeting the latest versions of Android; compatibility " +
-                                            "modes apply. Consider testing and updating this version. " +
-                                            "Consult the android.os.Build.VERSION_CODES javadoc for details.",
-                                    null);
+                if (context.isEnabled(TARGET_NEWER)) {
+                    Attr targetSdkVersionNode = element.getAttributeNodeNS(ANDROID_URI,
+                            ATTR_TARGET_SDK_VERSION);
+                    if (targetSdkVersionNode != null) {
+                        String target = targetSdkVersionNode.getValue();
+                        try {
+                            int api = Integer.parseInt(target);
+                            if (api < context.getClient().getHighestKnownApiLevel()) {
+                                context.report(TARGET_NEWER, element,
+                                  context.getLocation(targetSdkVersionNode),
+                                  "Not targeting the latest versions of Android; compatibility " +
+                                  "modes apply. Consider testing and updating this version. " +
+                                  "Consult the android.os.Build.VERSION_CODES javadoc for details.",
+                                  null);
+                            }
+                        } catch (NumberFormatException nufe) {
+                            // Ignore: AAPT will enforce this.
                         }
-                    } catch (NumberFormatException nufe) {
-                        // Ignore: AAPT will enforce this.
                     }
                 }
             }
@@ -706,7 +711,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             Attr nameNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION);
             if (nameNode != null && nameNode.getValue().startsWith(PREFIX_RESOURCE_REF)
                     && context.isEnabled(ILLEGAL_REFERENCE)) {
-                context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
+                context.report(ILLEGAL_REFERENCE, element, context.getLocation(nameNode),
                         "The android:targetSdkVersion cannot be a resource url, it must be "
                                 + "a literal integer (or string if a preview codename)", null);
             }

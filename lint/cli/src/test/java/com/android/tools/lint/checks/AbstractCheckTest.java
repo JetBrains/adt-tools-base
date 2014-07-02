@@ -184,6 +184,15 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         return result;
     }
 
+    protected void checkReportedError(
+            @NonNull Context context,
+            @NonNull Issue issue,
+            @NonNull Severity severity,
+            @Nullable Location location,
+            @NonNull String message,
+            @Nullable Object data) {
+    }
+
     protected TestLintClient createClient() {
         return new TestLintClient();
     }
@@ -426,6 +435,8 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             if (ignoreSystemErrors() && (issue == IssueRegistry.LINT_ERROR)) {
                 return;
             }
+
+            checkReportedError(context, issue, severity, location, message, data);
 
             if (severity == Severity.FATAL) {
                 // Treat fatal errors like errors in the golden files.

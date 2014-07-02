@@ -19,11 +19,13 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.DOT_PROPERTIES;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -78,14 +80,11 @@ public class PropertyFileDetector extends Detector {
             if (line.startsWith("#") || line.startsWith(" ")) {
                 continue;
             }
-            if (line.indexOf('\\') == -1) {
+            if (line.indexOf('\\') == -1 && line.indexOf(':') == -1) {
                 continue;
             }
             int valueStart = line.indexOf('=') + 1;
             if (valueStart == 0) {
-                continue;
-            }
-            if (line.indexOf('\\') == -1) {
                 continue;
             }
             checkLine(context, contents, line, offset, valueStart);
@@ -95,7 +94,6 @@ public class PropertyFileDetector extends Detector {
     private static void checkLine(@NonNull Context context, @NonNull String contents,
             @NonNull String line, int offset, int valueStart) {
         boolean escaped = false;
-        int hadUnescapedColon = -1;
         boolean hadNonPathEscape = false;
         StringBuilder path = new StringBuilder();
         for (int i = valueStart; i < line.length(); i++) {
@@ -110,8 +108,6 @@ public class PropertyFileDetector extends Detector {
                     if (c != ':') {
                         hadNonPathEscape = true;
                     }
-                } else if (c == ':' && hadUnescapedColon == -1) {
-                    hadUnescapedColon = i;
                 }
                 escaped = false;
                 path.append(c);
@@ -119,25 +115,28 @@ public class PropertyFileDetector extends Detector {
         }
         String pathString = path.toString();
         String key = line.substring(0, valueStart);
-        if ((hadNonPathEscape || hadUnescapedColon != -1) &&
-                key.endsWith(".dir=") || new File(pathString).exists()) {
-            if (hadNonPathEscape) {
-                String escapedPath = pathString.replace("\\", "\\\\");
-                String message = "Windows file separators (\\) must be escaped (\\\\); use "
-                        + escapedPath;
-                int startOffset = offset + valueStart;
-                int endOffset = offset + line.length();
-                Location location = Location.create(context.file, contents, startOffset,
-                        endOffset);
-                context.report(ISSUE, location, message, null);
-            }
-            if (hadUnescapedColon != -1) {
-                String message = "Colon (:) must be escaped in .property files";
-                int startOffset = offset + hadUnescapedColon;
-                Location location = Location.create(context.file, contents, startOffset,
-                        startOffset + 1);
-                context.report(ISSUE, location, message, null);
-            }
+        if (hadNonPathEscape && key.endsWith(".dir=") || new File(pathString).exists()) {
+            String escapedPath = pathString.replace("\\", "\\\\");
+            // NOTE: Keep in sync with {@link #getSuggestedEscape} below
+            String message = "Windows file separators (\\) must be escaped (\\\\); use "
+                    + escapedPath;
+            int startOffset = offset + valueStart;
+            int endOffset = offset + line.length();
+            Location location = Location.create(context.file, contents, startOffset,
+                    endOffset);
+            context.report(ISSUE, location, message, null);
         }
+    }
+
+    /**
+     * Returns the escaped string value suggested by the error message which should have
+     * been computed by this lint detector.
+     *
+     * @param message the error message created by this lint detector
+     * @return the suggested escaped value
+     */
+    @Nullable
+    public static String getSuggestedEscape(@NonNull String message) {
+        return LintUtils.findSubstring(message, "; use ", null);
     }
 }
