@@ -297,7 +297,7 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
                                     returnValueIgnored = true;
                                 }
                             }
-                            if (returnValueIgnored) {
+                            if (returnValueIgnored && isCommit) {
                                 String message = "Consider using apply() instead; commit writes "
                                         + "its data to persistent storage immediately, whereas "
                                         + "apply will handle it in the background";

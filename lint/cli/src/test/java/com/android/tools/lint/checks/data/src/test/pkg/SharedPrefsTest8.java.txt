@@ -47,4 +47,10 @@ public class SharedPrefsTest8 extends Activity {
 
     public void foo(boolean x) {
     }
+
+    public void noWarning() {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.apply();
+    }
 }
