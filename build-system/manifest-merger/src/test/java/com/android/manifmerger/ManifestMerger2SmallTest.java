@@ -344,6 +344,33 @@ public class ManifestMerger2SmallTest extends TestCase {
         }
     }
 
+    public void testNoApplicationIdValueProvided()
+            throws IOException, ManifestMerger2.MergeFailureException {
+        String xml = ""
+                + "<manifest package=\"foo\" versionCode=\"34\" versionName=\"3.4\"\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity android:name=\"${applicationId}.activityOne\"/>\n"
+                + "</manifest>";
+
+        MockLog mockLog = new MockLog();
+        File inputFile = inputAsFile("testPlaceholderSubstitution", xml);
+        try {
+            MergingReport mergingReport = ManifestMerger2
+                    .newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                    .merge();
+
+            assertTrue(mergingReport.getResult().isSuccess());
+            assertTrue(mergingReport.getMergedDocument().isPresent());
+            XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+            assertEquals("foo", xmlDocument.getPackageName());
+            Optional<XmlElement> activityOne = xmlDocument
+                    .getByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY, "foo.activityOne");
+            assertTrue(activityOne.isPresent());
+        } finally {
+            inputFile.delete();
+        }
+    }
+
     /**
      * Utility method to save a {@link String} XML into a file.
      */
