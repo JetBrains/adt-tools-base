@@ -54,6 +54,8 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS
  */
 public class LibraryVariantFactory implements VariantFactory {
 
+    private static final String ANNOTATIONS = "annotations"
+
     @NonNull
     private final BasePlugin basePlugin
     @NonNull
@@ -287,6 +289,7 @@ public class LibraryVariantFactory implements VariantFactory {
         bundle.destinationDir = project.file("$project.buildDir/${FD_OUTPUTS}/aar")
         bundle.extension = BuilderConstants.EXT_LIB_ARCHIVE
         bundle.from(project.file("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}"))
+        bundle.from(project.file("$project.buildDir/${FD_INTERMEDIATES}/$ANNOTATIONS/${dirName}"))
 
         libVariantData.packageLibTask = bundle
         variantData.outputFile = bundle.archivePath
@@ -378,7 +381,7 @@ public class LibraryVariantFactory implements VariantFactory {
         task.group = org.gradle.api.plugins.BasePlugin.BUILD_GROUP
         task.plugin = basePlugin
         task.variant = variantData
-        task.destinationDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}")
+        task.destinationDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/$ANNOTATIONS/${dirName}")
         task.output = new File(task.destinationDir, FN_ANNOTATIONS_ZIP)
         task.classDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/classes/${variantData.variantConfiguration.dirName}")
         task.source = variantData.getJavaSources()

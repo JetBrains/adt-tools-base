@@ -175,7 +175,7 @@ public class ManualBuildTest extends BuildTest {
 
     public void testAnnotations() throws Exception {
         File project = new File(testDir, "extractAnnotations");
-        File debugFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/bundles/debug");
+        File debugFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/annotations/debug");
 
         runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
                 project,
