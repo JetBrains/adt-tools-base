@@ -132,7 +132,8 @@ public class GradleImport {
         if (repository == null) {
             repository = "jcenter()";
         } else {
-            repository = "maven { url '" + repository + "' }";
+            repository = "jcenter();" + NL + "        " +
+                         "maven { url '" + repository + "' }";
         }
         MAVEN_REPOSITORY = repository;
     }
@@ -782,10 +783,10 @@ public class GradleImport {
             }
 
             if (module.isApp()) {
-                sb.append("apply plugin: 'android'").append(NL);
+                sb.append("apply plugin: 'com.android.application'").append(NL);
             } else {
                 assert module.isAndroidLibrary();
-                sb.append("apply plugin: 'android-library'").append(NL);
+                sb.append("apply plugin: 'com.android.library'").append(NL);
             }
             sb.append(NL);
             //noinspection PointlessBooleanExpression,ConstantConditions
