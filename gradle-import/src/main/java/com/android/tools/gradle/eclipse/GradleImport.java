@@ -29,8 +29,8 @@ import static com.android.SdkConstants.FN_GRADLE_WRAPPER_UNIX;
 import static com.android.SdkConstants.FN_GRADLE_WRAPPER_WIN;
 import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.SdkConstants.FN_SETTINGS_GRADLE;
-import static com.android.SdkConstants.GRADLE_PLUGIN_LATEST_VERSION;
 import static com.android.SdkConstants.GRADLE_PLUGIN_NAME;
+import static com.android.SdkConstants.GRADLE_PLUGIN_RECOMMENDED_VERSION;
 import static com.android.sdklib.internal.project.ProjectProperties.PROPERTY_NDK;
 import static com.android.sdklib.internal.project.ProjectProperties.PROPERTY_SDK;
 import static com.android.xml.AndroidManifest.NODE_INSTRUMENTATION;
@@ -122,7 +122,7 @@ public class GradleImport {
     public static final int CURRENT_COMPILE_VERSION = 19;
     public static final String CURRENT_BUILD_TOOLS_VERSION = SdkConstants.MIN_BUILD_TOOLS_VERSION;
     public static final String ANDROID_GRADLE_PLUGIN =
-            GRADLE_PLUGIN_NAME + GRADLE_PLUGIN_LATEST_VERSION;
+            GRADLE_PLUGIN_NAME + GRADLE_PLUGIN_RECOMMENDED_VERSION;
     public static final String MAVEN_URL_PROPERTY = "android.mavenRepoUrl";
     private static final String WORKSPACE_PROPERTY = "android.eclipseWorkspace";
 
