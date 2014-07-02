@@ -52,7 +52,7 @@ public class ManifestMerger2 {
     private final File mManifestFile;
 
     @NonNull
-    private final KeyBasedValueResolver<String> mPlaceHolderValueResolver;
+    private final Map<String, String> mPlaceHolderValues;
 
     @NonNull
     private final KeyBasedValueResolver<SystemProperty> mSystemPropertyResolver;
@@ -69,11 +69,11 @@ public class ManifestMerger2 {
             @NonNull ImmutableList<Pair<String, File>> libraryFiles,
             @NonNull ImmutableList<File> flavorsAndBuildTypeFiles,
             @NonNull ImmutableList<Invoker.Feature> optionalFeatures,
-            @NonNull KeyBasedValueResolver<String> placeHolderValueResolver,
+            @NonNull Map<String, String> placeHolderValues,
             @NonNull KeyBasedValueResolver<SystemProperty> systemPropertiesResolver,
             @NonNull MergeType mergeType) {
         this.mSystemPropertyResolver = systemPropertiesResolver;
-        this.mPlaceHolderValueResolver = placeHolderValueResolver;
+        this.mPlaceHolderValues = placeHolderValues;
         this.mManifestFile = mainManifestFile;
         this.mLogger = logger;
         this.mLibraryFiles = libraryFiles;
@@ -119,6 +119,16 @@ public class ManifestMerger2 {
                             "Main AndroidManifest.xml at %1$s manifest:package attribute is not declared",
                             loadedMainManifestInfo.getXmlDocument().getSourceLocation().print(true)));
             return mergingReportBuilder.build();
+        }
+
+        // check for placeholders presence.
+        Map<String, String> finalPlaceHolderValues = mPlaceHolderValues;
+        if (!mPlaceHolderValues.containsKey("applicationId")) {
+            finalPlaceHolderValues =
+                    ImmutableMap.<String, String>builder().putAll(mPlaceHolderValues)
+                            .put("packageName", mainPackageAttribute.get().getValue())
+                            .put("applicationId", mainPackageAttribute.get().getValue())
+                            .build();
         }
 
         // invariant : xmlDocumentOptional holds the higher priority document and we try to
@@ -212,10 +222,12 @@ public class ManifestMerger2 {
         }
 
         // do placeholder substitution
+        KeyBasedValueResolver<String> placeHolderValueResolver =
+                new MapBasedKeyBasedValueResolver<String>(finalPlaceHolderValues);
         PlaceholderHandler placeholderHandler = new PlaceholderHandler();
         placeholderHandler.visit(
                 xmlDocumentOptional.get(),
-                mPlaceHolderValueResolver,
+                placeHolderValueResolver,
                 mergingReportBuilder);
         if (mergingReportBuilder.hasErrors()) {
             return mergingReportBuilder.build();
@@ -746,9 +758,8 @@ public class ManifestMerger2 {
                             mLibraryFilesBuilder.build(),
                             mFlavorsAndBuildTypeFiles.build(),
                             mFeaturesBuilder.build(),
-                            new MapBasedKeyBasedValueResolver<String>(mPlaceHolders.build()),
-                            new MapBasedKeyBasedValueResolver<SystemProperty>(
-                                    systemProperties),
+                            mPlaceHolders.build(),
+                            new MapBasedKeyBasedValueResolver<SystemProperty>(systemProperties),
                             mMergeType);
             return manifestMerger.merge();
         }
