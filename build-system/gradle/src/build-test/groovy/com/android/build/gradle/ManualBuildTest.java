@@ -57,7 +57,7 @@ public class ManualBuildTest extends BuildTest {
     private static final int BLUE = 0xFF0000FF;
 
     public void testOverlay1Content() throws Exception {
-        File project = buildProject("overlay1", BasePlugin.GRADLE_MIN_VERSION);
+        File project = buildProject("overlay1", BasePlugin.GRADLE_TEST_VERSION);
         File drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/debug/drawable");
 
         checkImageColor(drawableOutput, "no_overlay.png", GREEN);
@@ -65,7 +65,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testOverlay2Content() throws Exception {
-        File project = buildProject("overlay2", BasePlugin.GRADLE_MIN_VERSION);
+        File project = buildProject("overlay2", BasePlugin.GRADLE_TEST_VERSION);
         File drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/one/debug/drawable");
 
         checkImageColor(drawableOutput, "no_overlay.png", GREEN);
@@ -76,7 +76,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testOverlay3Content() throws Exception {
-        File project = buildProject("overlay3", BasePlugin.GRADLE_MIN_VERSION);
+        File project = buildProject("overlay3", BasePlugin.GRADLE_TEST_VERSION);
         File drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/freebeta/debug/drawable");
 
         checkImageColor(drawableOutput, "no_overlay.png", GREEN);
@@ -112,19 +112,19 @@ public class ManualBuildTest extends BuildTest {
         File repo = new File(testDir, "repo");
 
         try {
-            runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
+            runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
                     new File(repo, "util"),
                     Collections.<String>emptyList(),
                     "clean", "uploadArchives");
-            runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
+            runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
                     new File(repo, "baseLibrary"),
                     Collections.<String>emptyList(),
                     "clean", "uploadArchives");
-            runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
+            runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
                     new File(repo, "library"),
                     Collections.<String>emptyList(),
                     "clean", "uploadArchives");
-            runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
+            runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
                     new File(repo, "app"),
                     Collections.<String>emptyList(),
                     "clean", "assemble");
@@ -139,7 +139,7 @@ public class ManualBuildTest extends BuildTest {
         File project = new File(testDir, "libsTest");
         File fileOutput = new File(project, "libapp/build/" + FD_INTERMEDIATES + "/bundles/release/AndroidManifest.xml");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
                 project,
                 Collections.<String>emptyList(),
                 "clean", "build");
@@ -151,7 +151,7 @@ public class ManualBuildTest extends BuildTest {
         File project = new File(testDir, "libProguard");
         File fileOutput = new File(project, "build/" + FD_OUTPUTS + "/proguard/release");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
                 project,
                 Collections.<String>emptyList(),
                 "clean", "build");
@@ -165,7 +165,7 @@ public class ManualBuildTest extends BuildTest {
         File debugFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/bundles/debug");
         File releaseFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/bundles/release");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
                 project,
                 Collections.<String>emptyList(),
                 "clean", "build");
@@ -177,7 +177,7 @@ public class ManualBuildTest extends BuildTest {
         File project = new File(testDir, "extractAnnotations");
         File debugFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/annotations/debug");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
                 project,
                 Collections.<String>emptyList(),
                 "clean", "assembleDebug");
@@ -282,7 +282,7 @@ public class ManualBuildTest extends BuildTest {
         // custom because we want to run deviceCheck even without devices, since we use
         // a fake DeviceProvider that doesn't use a device, but only record the calls made
         // to the DeviceProvider and the DeviceConnector.
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
                 new File(testDir, "3rdPartyTests"),
                 Collections.<String>emptyList(),
                 "clean", "deviceCheck");
@@ -291,7 +291,7 @@ public class ManualBuildTest extends BuildTest {
     public void testEmbedded() throws Exception {
         File project = new File(testDir, "embedded");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
                 project,
                 Collections.<String>emptyList(),
                 "clean", ":main:assembleRelease");
@@ -312,7 +312,7 @@ public class ManualBuildTest extends BuildTest {
         args.add("-P" + PROPERTY_SIGNING_KEY_ALIAS + "=AndroidDebugKey");
         args.add("-P" + PROPERTY_SIGNING_KEY_PASSWORD + "=android");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_MIN_VERSION,
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
                 project,
                 args,
                 "clean", ":assembleRelease");

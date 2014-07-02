@@ -3,9 +3,7 @@
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/android/tools/external/lombok/lombok-ast/0.2.2/lombok-ast-0.2.2.jar!/" />
     </CLASSES>
-    <JAVADOC>
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/android/tools/external/lombok/lombok-ast/0.2.2/lombok-ast-0.2.2-javadoc.jar!/" />
-    </JAVADOC>
+    <JAVADOC />
     <SOURCES>
       <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/android/tools/external/lombok/lombok-ast/0.2.2/lombok-ast-0.2.2-sources.jar!/src/main" />
       <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/android/tools/external/lombok/lombok-ast/0.2.2/lombok-ast-0.2.2-sources.jar!/src/printer" />
