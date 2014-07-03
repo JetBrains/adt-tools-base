@@ -393,7 +393,7 @@ public class FileOp implements IFileOp {
             fos = newFileOutputStream(file);
             props.store(fos, comments);
         } finally {
-            Closeables.closeQuietly(fos);
+            Closeables.close(fos, true);
         }
     }
 
