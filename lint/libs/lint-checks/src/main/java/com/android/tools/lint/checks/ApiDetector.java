@@ -45,7 +45,7 @@ import static com.android.tools.lint.detector.api.Location.SearchDirection.NEARE
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.sdk.SdkVersionInfo;
+import com.android.sdklib.SdkVersionInfo;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.lint.client.api.IssueRegistry;

@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.ide.common.sdk;
+package com.android.sdklib;
 
-import static com.android.ide.common.sdk.SdkVersionInfo.HIGHEST_KNOWN_API;
-import static com.android.ide.common.sdk.SdkVersionInfo.camelCaseToUnderlines;
-import static com.android.ide.common.sdk.SdkVersionInfo.getApiByBuildCode;
-import static com.android.ide.common.sdk.SdkVersionInfo.getApiByPreviewName;
-import static com.android.ide.common.sdk.SdkVersionInfo.getBuildCode;
-import static com.android.ide.common.sdk.SdkVersionInfo.getCodeName;
-import static com.android.ide.common.sdk.SdkVersionInfo.getVersion;
-import static com.android.ide.common.sdk.SdkVersionInfo.underlinesToCamelCase;
+import static com.android.sdklib.SdkVersionInfo.HIGHEST_KNOWN_API;
+import static com.android.sdklib.SdkVersionInfo.camelCaseToUnderlines;
+import static com.android.sdklib.SdkVersionInfo.getApiByBuildCode;
+import static com.android.sdklib.SdkVersionInfo.getApiByPreviewName;
+import static com.android.sdklib.SdkVersionInfo.getBuildCode;
+import static com.android.sdklib.SdkVersionInfo.getCodeName;
+import static com.android.sdklib.SdkVersionInfo.getVersion;
+import static com.android.sdklib.SdkVersionInfo.underlinesToCamelCase;
+
+import com.android.sdklib.SdkVersionInfo;
 
 import junit.framework.TestCase;
 

@@ -29,7 +29,6 @@ import static com.android.SdkConstants.ID_PREFIX;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
 import static com.android.SdkConstants.UTF_8;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
@@ -39,7 +38,7 @@ import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.resources.ResourceUrl;
-import com.android.ide.common.sdk.SdkVersionInfo;
+import com.android.sdklib.SdkVersionInfo;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
@@ -1034,7 +1033,7 @@ public class LintUtils {
      * @param api     the api version to convert
      * @param targets if known, the installed targets (used to resolve platform codenames, only
      *                needed to resolve platforms newer than the tools since {@link
-     *                com.android.ide.common.sdk.SdkVersionInfo} knows the rest)
+     *                com.android.sdklib.SdkVersionInfo} knows the rest)
      * @return the corresponding version
      */
     @NonNull
