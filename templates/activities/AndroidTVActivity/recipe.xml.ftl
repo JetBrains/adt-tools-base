@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <recipe>
 
-    <dependency mavenUrl="com.android.support:appcompat-v7:+"/>
+    <dependency mavenUrl="com.android.support:appcompat-v7:${targetApi}.+"/>
     <dependency mavenUrl="com.squareup.picasso:picasso:2.3.2"/>
 
     <merge from="AndroidManifest.xml.ftl"

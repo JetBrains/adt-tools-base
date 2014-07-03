@@ -275,4 +275,20 @@ public class GradleCoordinateTest extends BaseTestCase {
         assertTrue(COMPARE_PLUS_LOWER.compare(a, b) == 0);
         assertTrue(COMPARE_PLUS_LOWER.compare(b, a) == 0);
     }
+
+    public void testParseVersionOnly() {
+        String revision = "15.32.64";
+        GradleCoordinate a = GradleCoordinate.parseVersionOnly(revision);
+        assertEquals(revision, a.getFullRevision());
+        String revisionB = "16.12.0-rc1";
+        GradleCoordinate b = GradleCoordinate.parseVersionOnly(revisionB);
+        assertEquals(revisionB, b.getFullRevision());
+        assertTrue(b.isPreview());
+    }
+
+    public void testIsPreview_ignoresFalsePositives() {
+      String revisionB = "16.12.0-march";
+      GradleCoordinate b = GradleCoordinate.parseVersionOnly(revisionB);
+      assertFalse(b.isPreview());
+    }
 }

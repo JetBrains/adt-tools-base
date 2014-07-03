@@ -2,7 +2,7 @@
 <recipe>
 
 
-    <#if appCompat?has_content><dependency mavenUrl="com.android.support:appcompat-v7:19.+"/></#if>
+    <#if appCompat?has_content><dependency mavenUrl="com.android.support:appcompat-v7:${targetApi}.+"/></#if>
 
 <#if !createActivity>
     <mkdir at="${escapeXmlAttribute(srcOut)}" />

@@ -41,12 +41,13 @@ public class FullRevision implements Comparable<FullRevision> {
 
     private static final Pattern FULL_REVISION_PATTERN =
         //                   1=major       2=minor       3=micro              4=preview
-        Pattern.compile("\\s*([0-9]+)(?:\\.([0-9]+)(?:\\.([0-9]+))?)?\\s*(?:rc([0-9]+))?\\s*");
+        Pattern.compile("\\s*([0-9]+)(?:\\.([0-9]+)(?:\\.([0-9]+))?)?([\\s-]*)?(?:rc([0-9]+))?\\s*");
 
     private final int mMajor;
     private final int mMinor;
     private final int mMicro;
     private final int mPreview;
+    private final String mPreviewSeparator;
 
     public FullRevision(int major) {
         this(major, IMPLICIT_MINOR_REV, IMPLICIT_MICRO_REV);
@@ -57,10 +58,15 @@ public class FullRevision implements Comparable<FullRevision> {
     }
 
     public FullRevision(int major, int minor, int micro, int preview) {
+      this(major, minor, micro, preview, " ");
+    }
+
+    public FullRevision(int major, int minor, int micro, int preview, String previewSeparator) {
         mMajor = major;
         mMinor = minor;
         mMicro = micro;
         mPreview = preview;
+        mPreviewSeparator = previewSeparator;
     }
 
     public int getMajor() {
@@ -123,6 +129,7 @@ public class FullRevision implements Comparable<FullRevision> {
                 int minor = IMPLICIT_MINOR_REV;
                 int micro = IMPLICIT_MICRO_REV;
                 int preview = NOT_A_PREVIEW;
+                String previewSeparator = " ";
 
                 String s = m.group(2);
                 if (s != null) {
@@ -142,17 +149,18 @@ public class FullRevision implements Comparable<FullRevision> {
                     }
                 }
 
-                s = m.group(4);
+                s = m.group(5); // Group 4 is the preview separator
                 if (s != null) {
                     if (!supportPreview) {
                         error = " -- Preview number not supported";   //$NON-NLS-1$
                     } else {
                         preview = Integer.parseInt(s);
+                        previewSeparator = m.group(4);
                     }
                 }
 
                 if (error == null) {
-                    return new FullRevision(major, minor, micro, preview);
+                    return new FullRevision(major, minor, micro, preview, previewSeparator);
                 }
             }
         } catch (Throwable t) {
@@ -182,7 +190,7 @@ public class FullRevision implements Comparable<FullRevision> {
           .append('.').append(mMicro);
 
         if (mPreview != NOT_A_PREVIEW) {
-            sb.append(" rc").append(mPreview);
+            sb.append(mPreviewSeparator).append("rc").append(mPreview);
         }
 
         return sb.toString();
@@ -205,7 +213,7 @@ public class FullRevision implements Comparable<FullRevision> {
             sb.append('.').append(mMicro);
         }
         if (mPreview != NOT_A_PREVIEW) {
-            sb.append(" rc").append(mPreview);
+            sb.append(mPreviewSeparator).append("rc").append(mPreview);
         }
 
         return sb.toString();
