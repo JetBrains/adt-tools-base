@@ -85,12 +85,14 @@ public class PlaceholderHandlerTest extends TestCase {
                 new TestUtils.TestSourceLocation(getClass(), "testPlaceholders#xml"), xml);
 
         PlaceholderHandler handler = new PlaceholderHandler();
-        handler.visit(refDocument, new KeyBasedValueResolver<String>() {
-            @Override
-            public String getValue(@NonNull String key) {
-                return "newValue";
-            }
-        }, mBuilder);
+        handler.visit(
+                ManifestMerger2.MergeType.APPLICATION,
+                refDocument, new KeyBasedValueResolver<String>() {
+                    @Override
+                    public String getValue(@NonNull String key) {
+                        return "newValue";
+                    }
+                }, mBuilder);
 
         Optional<XmlElement> activityOne = refDocument.getRootNode()
                 .getNodeByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY, ".activityOne");
@@ -135,10 +137,30 @@ public class PlaceholderHandlerTest extends TestCase {
                 new TestUtils.TestSourceLocation(getClass(), "testPlaceholders#xml"), xml);
 
         PlaceholderHandler handler = new PlaceholderHandler();
-        handler.visit(refDocument, nullResolver, mBuilder);
+        handler.visit(ManifestMerger2.MergeType.APPLICATION, refDocument, nullResolver, mBuilder);
         // verify the error was recorded.
         verify(mBuilder).addMessage(
                 any(XmlLoader.SourceLocation.class), anyInt(), anyInt(),
                 eq(MergingReport.Record.Severity.ERROR), anyString());
+    }
+
+    public void testPlaceHolder_notProvided_inLibrary()
+            throws ParserConfigurationException, SAXException, IOException {
+        String xml = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity android:name=\"activityOne\"\n"
+                + "         android:attr1=\"${landscapePH}\"/>\n"
+                + "</manifest>";
+
+        XmlDocument refDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(getClass(), "testPlaceholders#xml"), xml);
+
+        PlaceholderHandler handler = new PlaceholderHandler();
+        handler.visit(ManifestMerger2.MergeType.LIBRARY, refDocument, nullResolver, mBuilder);
+        // verify the error was recorded.
+        verify(mBuilder).addMessage(
+                any(XmlLoader.SourceLocation.class), anyInt(), anyInt(),
+                eq(MergingReport.Record.Severity.INFO), anyString());
     }
 }

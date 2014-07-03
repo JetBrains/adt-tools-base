@@ -29,7 +29,7 @@ public class PlaceholderHandler {
     // regular expression to recognize placeholders like ${name}, potentially surrounded by a
     // prefix and suffix string. this will split in 3 groups, the prefix, the placeholder name, and
     // the suffix.
-    private final Pattern mPattern = Pattern.compile("([^\\$]*)\\$\\{([^\\}]*)\\}(.*)");
+    private static final Pattern PATTERN = Pattern.compile("([^\\$]*)\\$\\{([^\\}]*)\\}(.*)");
 
     /**
      * Interface to provide a value for a placeholder key.
@@ -45,6 +45,13 @@ public class PlaceholderHandler {
     }
 
     /**
+     * Returns true if the passed string is a placeholder value, false otherwise.
+     */
+    public static boolean isPlaceHolder(@NonNull String string) {
+        return PATTERN.matcher(string).matches();
+    }
+
+    /**
      * Visits a document's entire tree and check each attribute for a placeholder existence.
      * If one is found, delegate to the provided {@link KeyBasedValueResolver} to provide a value
      * for the placeholder.
@@ -55,24 +62,34 @@ public class PlaceholderHandler {
      * @param valueProvider the placeholder value provider.
      * @param mergingReportBuilder to report errors and log actions.
      */
-    public void visit(@NonNull XmlDocument xmlDocument,
+    public void visit(
+            @NonNull ManifestMerger2.MergeType mergeType,
+            @NonNull XmlDocument xmlDocument,
             @NonNull KeyBasedValueResolver<String> valueProvider,
             @NonNull MergingReport.Builder mergingReportBuilder) {
 
-        visit(xmlDocument.getRootNode(), valueProvider, mergingReportBuilder);
+        visit(mergeType, xmlDocument.getRootNode(), valueProvider, mergingReportBuilder);
     }
 
-    private void visit(XmlElement xmlElement,
-            KeyBasedValueResolver<String> valueProvider,
-            MergingReport.Builder mergingReportBuilder) {
+    private void visit(
+            @NonNull ManifestMerger2.MergeType mergeType,
+            @NonNull XmlElement xmlElement,
+            @NonNull KeyBasedValueResolver<String> valueProvider,
+            @NonNull MergingReport.Builder mergingReportBuilder) {
 
         for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
 
-            Matcher matcher = mPattern.matcher(xmlAttribute.getValue());
+            Matcher matcher = PATTERN.matcher(xmlAttribute.getValue());
             if (matcher.matches()) {
                 String placeholderValue = valueProvider.getValue(matcher.group(2));
                 if (placeholderValue == null) {
-                    xmlAttribute.addMessage(mergingReportBuilder, MergingReport.Record.Severity.ERROR,
+                    // if this is a library, ignore the failure
+                    MergingReport.Record.Severity severity =
+                            mergeType == ManifestMerger2.MergeType.LIBRARY
+                        ? MergingReport.Record.Severity.INFO
+                        : MergingReport.Record.Severity.ERROR;
+
+                    xmlAttribute.addMessage(mergingReportBuilder, severity,
                             String.format(
                                     "Attribute %1$s at %2$s requires a placeholder substitution"
                                             + " but no value for <%3$s> is provided.",
@@ -94,7 +111,7 @@ public class PlaceholderHandler {
             }
         }
         for (XmlElement childElement : xmlElement.getMergeableElements()) {
-            visit(childElement, valueProvider, mergingReportBuilder);
+            visit(mergeType, childElement, valueProvider, mergingReportBuilder);
         }
     }
 }
