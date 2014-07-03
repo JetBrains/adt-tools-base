@@ -130,7 +130,7 @@ public class SymbolWriter {
 
             writer.write("}\n");
         } finally {
-            Closeables.closeQuietly(writer);
+            Closeables.close(writer, true);
         }
     }
 }
