@@ -826,9 +826,9 @@ public class UpdaterData implements IUpdaterData {
                 if (a != null) {
                     Package p = a.getParentPackage();
                     if (p != null) {
-                        String id = p.installId();
-                        if (id != null && id.length() > 0 && !installIdMap.containsKey(id)) {
-                            installIdMap.put(id, p);
+                        String iid = p.installId().toLowerCase(Locale.US);
+                        if (iid != null && iid.length() > 0 && !installIdMap.containsKey(iid)) {
+                            installIdMap.put(iid, p);
                         }
                     }
                 }
@@ -844,21 +844,24 @@ public class UpdaterData implements IUpdaterData {
             SparseIntArray userFilteredIndices = new SparseIntArray();
             Set<String> userFilteredInstallIds = new HashSet<String>();
 
-            for (String type : pkgFilter) {
-                if (installIdMap.containsKey(type)) {
-                    userFilteredInstallIds.add(type);
+            for (String iid : pkgFilter) {
+                // The install-id is not case-sensitive.
+                iid = iid.toLowerCase(Locale.US);
 
-                } else if (type.replaceAll("[0-9]+", "").length() == 0) {//$NON-NLS-1$ //$NON-NLS-2$
+                if (installIdMap.containsKey(iid)) {
+                    userFilteredInstallIds.add(iid);
+
+                } else if (iid.replaceAll("[0-9]+", "").length() == 0) {//$NON-NLS-1$ //$NON-NLS-2$
                     // An all-digit number is a package index requested by the user.
-                    int index = Integer.parseInt(type);
+                    int index = Integer.parseInt(iid);
                     userFilteredIndices.put(index, index);
 
-                } else if (pkgMap.containsKey(type)) {
-                    userFilteredClasses.add(pkgMap.get(type));
+                } else if (pkgMap.containsKey(iid)) {
+                    userFilteredClasses.add(pkgMap.get(iid));
 
                 } else {
                     // This should not happen unless there's a mismatch in the package map.
-                    mSdkLog.error(null, "Ignoring unknown package filter '%1$s'", type);
+                    mSdkLog.error(null, "Ignoring unknown package filter '%1$s'", iid);
                 }
             }
 
@@ -879,7 +882,7 @@ public class UpdaterData implements IUpdaterData {
                 if (a != null) {
                     Package p = a.getParentPackage();
                     if (p != null) {
-                        if (userFilteredInstallIds.contains(p.installId()) ||
+                        if (userFilteredInstallIds.contains(p.installId().toLowerCase(Locale.US)) ||
                                 userFilteredClasses.contains(p.getClass()) ||
                                 userFilteredIndices.get(index) > 0) {
                             keep = true;
