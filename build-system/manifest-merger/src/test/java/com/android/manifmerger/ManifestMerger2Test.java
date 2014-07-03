@@ -53,6 +53,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "07_no_package_provided.xml",
             "08_no_library_package_provided.xml",
             "09_overlay_package_provided.xml",
+            "08b_library_injection.xml",
             "09b_overlay_package_different.xml",
             "09c_overlay_package_not_provided.xml",
             "10_activity_merge",
