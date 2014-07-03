@@ -162,6 +162,11 @@ public class ResourceResolverTest extends TestCase {
         StyleResourceValue theme = resolver.getTheme("Theme", true);
         assertNotNull(theme);
 
+        // getParent
+        StyleResourceValue parent = resolver.getParent(myTheme);
+        assertNotNull(parent);
+        assertEquals("Theme.Light", parent.getName());
+
         // themeIsParentOf
         assertTrue(resolver.themeIsParentOf(themeLight, myTheme));
         assertFalse(resolver.themeIsParentOf(myTheme, themeLight));
