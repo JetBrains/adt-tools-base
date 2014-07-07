@@ -17,6 +17,7 @@
 package com.android.ddmlib;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 import java.util.Comparator;
 import java.util.Locale;
@@ -32,7 +33,7 @@ public class AllocationInfo implements IStackTraceInfo {
     private final StackTraceElement[] mStackTrace;
 
     public enum SortMode {
-        NUMBER, SIZE, CLASS, THREAD, IN_CLASS, IN_METHOD
+        NUMBER, SIZE, CLASS, THREAD, ALLOCATION_SITE, IN_CLASS, IN_METHOD
     }
 
     public static final class AllocationSorter implements Comparator<AllocationInfo> {
@@ -91,6 +92,11 @@ public class AllocationInfo implements IStackTraceInfo {
                     String method1 = o1.getFirstTraceMethodName();
                     String method2 = o2.getFirstTraceMethodName();
                     diff = compareOptionalString(method1, method2);
+                    break;
+                case ALLOCATION_SITE:
+                    String desc1 = o1.getAllocationSite();
+                    String desc2 = o2.getAllocationSite();
+                    diff = compareOptionalString(desc1, desc2);
                     break;
             }
 
@@ -178,6 +184,14 @@ public class AllocationInfo implements IStackTraceInfo {
         return otherAlloc.mAllocationSize - mAllocationSize;
     }
 
+    @Nullable
+    public String getAllocationSite() {
+      if (mStackTrace.length > 0) {
+        return mStackTrace[0].toString();
+      }
+      return null;
+    }
+
     public String getFirstTraceClassName() {
         if (mStackTrace.length > 0) {
             return mStackTrace[0].getClassName();
@@ -199,6 +213,8 @@ public class AllocationInfo implements IStackTraceInfo {
      * the given locale) this allocation info.
      */
     public boolean filter(String filter, boolean fullTrace, Locale locale) {
+        filter = filter.toLowerCase(locale);
+
         if (mAllocatedClass.toLowerCase(locale).contains(filter)) {
             return true;
         }
@@ -208,12 +224,8 @@ public class AllocationInfo implements IStackTraceInfo {
             final int length = fullTrace ? mStackTrace.length : 1;
 
             for (int i = 0 ; i < length ; i++) {
-                if (mStackTrace[i].getClassName().toLowerCase(locale).contains(filter)) {
-                    return true;
-                }
-
-                if (mStackTrace[i].getMethodName().toLowerCase(locale).contains(filter)) {
-                    return true;
+                if (mStackTrace[i].toString().toLowerCase(locale).contains(filter)) {
+                  return true;
                 }
             }
         }
