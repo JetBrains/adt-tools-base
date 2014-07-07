@@ -48,9 +48,15 @@ public class AndroidTargetHashTest extends TestCase {
 
     public void testGetPlatformVersion() {
         assertNull(AndroidTargetHash.getPlatformVersion("blah-5"));
+        assertNull(AndroidTargetHash.getPlatformVersion("5-blah"));
         assertNull(AndroidTargetHash.getPlatformVersion("android-"));
 
         AndroidVersion version = AndroidTargetHash.getPlatformVersion("android-5");
+        assertNotNull(version);
+        assertEquals(5, version.getApiLevel());
+        assertNull(version.getCodename());
+
+        version = AndroidTargetHash.getPlatformVersion("5");
         assertNotNull(version);
         assertEquals(5, version.getApiLevel());
         assertNull(version.getCodename());
