@@ -475,8 +475,7 @@ public class LocaleManager {
          sLanguageToCountry.put("ks", "IN"); //$NON-NLS-1$ //$NON-NLS-2$
          sLanguageNames.put("ks", "Kashmiri"); //$NON-NLS-1$
 
-         // "ku": Kurdish -> Turkey, Iran, Iraq, Syria, Armenia, Azerbaijan
-         sLanguageToCountry.put("ku", "TR"); //$NON-NLS-1$ //$NON-NLS-2$
+         // "ku": Kurdish -> Maps to multiple ISO 3166 codes
          sLanguageNames.put("ku", "Kurdish"); //$NON-NLS-1$
 
          // "kv": Komi -> Russia
