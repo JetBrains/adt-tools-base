@@ -32,7 +32,7 @@ import static com.android.SdkConstants.RES_FOLDER;
 import static com.android.SdkConstants.SUPPORT_LIB_ARTIFACT;
 import static com.android.SdkConstants.TAG_USES_SDK;
 import static com.android.SdkConstants.VALUE_TRUE;
-import static com.android.ide.common.sdk.SdkVersionInfo.HIGHEST_KNOWN_API;
+import static com.android.sdklib.SdkVersionInfo.HIGHEST_KNOWN_API;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -40,7 +40,7 @@ import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Variant;
-import com.android.ide.common.sdk.SdkVersionInfo;
+import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.client.api.CircularDependencyException;

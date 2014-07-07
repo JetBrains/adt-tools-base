@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.ide.common.sdk;
+package com.android.sdklib;
 
 import com.android.annotations.Nullable;
-import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.IAndroidTarget;
 
 import java.util.Locale;
 

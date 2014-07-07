@@ -24,7 +24,7 @@ import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.TestException;
 import com.android.ddmlib.IDevice;
 import com.android.ide.common.internal.WaitableExecutor;
-import com.android.ide.common.sdk.SdkVersionInfo;
+import com.android.sdklib.SdkVersionInfo;
 import com.android.utils.ILogger;
 
 import java.io.File;
