@@ -207,9 +207,15 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
         }
 
         String name = attribute.getValue();
+        // AAPT will flatten the namespace, turning dots, dashes and colons into _
+        String originalName = name;
+        name = name.replace('.', '_').replace('-', '_').replace(':', '_');
+
         if (names.contains(name)) {
-            String message = String.format("%1$s has already been defined in this folder",
-                    name);
+            String message = String.format("%1$s has already been defined in this folder", name);
+            if (!name.equals(originalName)) {
+                message += " (" + name + " is equivalent to " + originalName + ")";
+            }
             Location location = context.getLocation(attribute);
             List<Pair<String, Handle>> list = mLocations.get(type);
             for (Pair<String, Handle> pair : list) {
