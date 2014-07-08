@@ -239,7 +239,7 @@ public interface BaseVariant {
     /**
      * Adds to the variant a task that generates Java source code.
      *
-     * This will make the compileJava task depend on this task and add the
+     * This will make the generate[Variant]Sources task depend on this task and add the
      * new source folders as compilation inputs.
      *
      * The new source folders are also added to the model.
@@ -252,7 +252,7 @@ public interface BaseVariant {
     /**
      * Adds to the variant a task that generates Java source code.
      *
-     * This will make the compileJava task depend on this task and add the
+     * This will make the generate[Variant]Sources task depend on this task and add the
      * new source folders as compilation inputs.
      *
      * The new source folders are also added to the model.
