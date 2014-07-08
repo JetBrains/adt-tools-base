@@ -25,6 +25,7 @@ import static com.android.SdkConstants.RES_FOLDER;
 import static com.android.SdkConstants.SRC_FOLDER;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.res2.AbstractResourceRepository;
@@ -382,7 +383,19 @@ public abstract class LintClient {
         // This is not an accurate test; specific LintClient implementations (e.g.
         // IDEs or a gradle-integration of lint) have more context and can perform a more accurate
         // check
-        return new File(project.getDir(), "build.gradle").exists();
+        if (new File(project.getDir(), SdkConstants.FN_BUILD_GRADLE).exists()) {
+            return true;
+        }
+
+        File parent = project.getDir().getParentFile();
+        if (parent != null && parent.getName().equals(SdkConstants.FD_SOURCES)) {
+            File root = parent.getParentFile();
+            if (root != null && new File(root, SdkConstants.FN_BUILD_GRADLE).exists()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

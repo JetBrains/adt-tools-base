@@ -30,6 +30,7 @@ import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
+import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -37,6 +38,7 @@ import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.Severity;
 import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
 
@@ -149,6 +151,31 @@ public class Main {
                     }
                 }
                 return project;
+            }
+
+            @Override
+            public Configuration getConfiguration(@NonNull Project project) {
+                if (project.isGradleProject()) {
+                    // Don't report any issues when analyzing a Gradle project from the
+                    // non-Gradle runner; they are likely to be false, and will hide the real
+                    // problem reported above
+                   return new CliConfiguration(getConfiguration(), project, true) {
+                       @NonNull
+                       @Override
+                       public Severity getSeverity(@NonNull Issue issue) {
+                           return issue == IssueRegistry.LINT_ERROR
+                                   ? Severity.FATAL : Severity.IGNORE;
+                       }
+
+                       @Override
+                       public boolean isIgnored(@NonNull Context context, @NonNull Issue issue,
+                               @Nullable Location location, @NonNull String message,
+                               @Nullable Object data) {
+                           return issue != IssueRegistry.LINT_ERROR;
+                       }
+                   };
+                }
+                return super.getConfiguration(project);
             }
         };
 
