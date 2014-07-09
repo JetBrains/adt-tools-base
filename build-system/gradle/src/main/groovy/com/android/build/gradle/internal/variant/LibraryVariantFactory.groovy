@@ -36,6 +36,7 @@ import com.android.builder.dependency.LibraryDependency
 import com.android.builder.dependency.ManifestDependency
 import com.android.builder.model.AndroidLibrary
 import com.android.builder.model.MavenCoordinates
+import com.android.build.gradle.ndk.NdkPlugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.Copy
@@ -156,17 +157,25 @@ public class LibraryVariantFactory implements VariantFactory {
         // Add a compile task
         basePlugin.createCompileTask(variantData, null/*testedVariant*/)
 
-        // Add NDK tasks
-        basePlugin.createNdkTasks(variantData);
-
         // package the prebuilt native libs into the bundle folder
         Sync packageJniLibs = project.tasks.create(
                 "package${fullName.capitalize()}JniLibs",
                 Sync)
-        packageJniLibs.dependsOn variantData.ndkCompileTask
-        // package from 3 sources.
+
+        // Add dependencies on NDK tasks if NDK plugin is applied.
+        if (extension.getUseNewNativePlugin()) {
+            NdkPlugin ndkPlugin = project.plugins.getPlugin(NdkPlugin.class)
+            packageJniLibs.dependsOn(ndkPlugin.getNdkTasks(variantConfig))
+            packageJniLibs.from(ndkPlugin.getOutputDirectory(variantConfig)).include("**/*.so")
+        } else {
+            // Add NDK tasks
+            basePlugin.createNdkTasks(variantData);
+            packageJniLibs.dependsOn variantData.ndkCompileTask
+            packageJniLibs.from(variantData.ndkCompileTask.soFolder).include("**/*.so")
+        }
+
+        // package from 2 sources.
         packageJniLibs.from(variantConfig.jniLibsList).include("**/*.so")
-        packageJniLibs.from(variantData.ndkCompileTask.soFolder).include("**/*.so")
         packageJniLibs.into(project.file(
                 "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/jni"))
 
