@@ -285,4 +285,28 @@ public class RenderResources {
         return null;
     }
 
+    /**
+     * Returns the style matching the given name. The name should not contain any namespace prefix.
+     * @param styleName Name of the style. For example, "Widget.ListView.DropDown".
+     * @return the {link StyleResourceValue} for the style, or null if not found.
+     */
+    public StyleResourceValue getStyle(String styleName, boolean isFramework) {
+         return null;
+     }
+
+    /**
+     * Returns the name of the resources as written in the XML. This undos the flattening of some
+     * characters to '_' as done by aapt.
+     * <p/>
+     * The method is not guaranteed to be implemented on the IDE side. In such a case, the method
+     * will return null.
+     * @param type the type of the resource
+     * @param name the name of the resource that may have been obtained from the R class.
+     * @param isFramework whether the resource is a framework resource.
+     *
+     * @return the name as written in the XML or null if not implemented for the resource type.
+     */
+    public String getXmlName(ResourceType type, String name, boolean isFramework) {
+        return null;
+    }
 }
