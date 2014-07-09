@@ -24,6 +24,7 @@ import static com.android.SdkConstants.ATTR_ID;
 import static com.android.SdkConstants.ATTR_LAYOUT_HEIGHT;
 import static com.android.SdkConstants.ATTR_LAYOUT_WIDTH;
 import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_TARGET_API;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
 import static com.android.SdkConstants.PREFIX_ANDROID;
@@ -40,7 +41,6 @@ import static com.android.tools.lint.detector.api.Location.SearchDirection.BACKW
 import static com.android.tools.lint.detector.api.Location.SearchDirection.FORWARD;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.NEAREST;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.sdk.SdkVersionInfo;
@@ -145,6 +145,7 @@ public class ApiDetector extends ResourceXmlDetector
     private static final boolean AOSP_BUILD = System.getenv("ANDROID_BUILD_TOP") != null; //$NON-NLS-1$
 
     /** Accessing an unsupported API */
+    @SuppressWarnings("unchecked")
     public static final Issue UNSUPPORTED = Issue.create(
             "NewApi", //$NON-NLS-1$
             "Calling new methods on older versions",
@@ -370,7 +371,12 @@ public class ApiDetector extends ResourceXmlDetector
             && TAG_STYLE.equals(attribute.getOwnerElement().getParentNode().getNodeName())) {
             owner = "android/R$attr"; //$NON-NLS-1$
             name = value.substring(PREFIX_ANDROID.length());
-            prefix = PREFIX_ANDROID;
+            prefix = null;
+        } else if (value.startsWith(PREFIX_ANDROID) && ATTR_PARENT.equals(attribute.getName())
+                && TAG_STYLE.equals(attribute.getOwnerElement().getTagName())) {
+            owner = "android/R$style"; //$NON-NLS-1$
+            name = getFieldName(value.substring(PREFIX_ANDROID.length()));
+            prefix = null;
         } else {
             return;
         }
@@ -381,10 +387,7 @@ public class ApiDetector extends ResourceXmlDetector
             if (index != -1) {
                 owner = "android/R$"    //$NON-NLS-1$
                         + value.substring(prefix.length(), index);
-                name = value.substring(index + 1);
-                if (name.indexOf('.') != -1) {
-                    name = name.replace('.', '_');
-                }
+                name = getFieldName(value.substring(index + 1));
             } else if (value.startsWith(ANDROID_THEME_PREFIX)) {
                 owner = "android/R$attr";  //$NON-NLS-1$
                 name = value.substring(ANDROID_THEME_PREFIX.length());
@@ -429,6 +432,10 @@ public class ApiDetector extends ResourceXmlDetector
         }
     }
 
+    private static String getFieldName(String styleName) {
+        return styleName.replace('.', '_').replace('-', '_').replace(':', '_');
+    }
+
     @Override
     public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
         if (mApiDatabase == null) {
@@ -448,7 +455,7 @@ public class ApiDetector extends ResourceXmlDetector
                 Node textNode = childNodes.item(i);
                 if (textNode.getNodeType() == Node.TEXT_NODE) {
                     String text = textNode.getNodeValue();
-                    if (text.indexOf(ANDROID_PREFIX) != -1) {
+                    if (text.contains(ANDROID_PREFIX)) {
                         text = text.trim();
                         // Convert @android:type/foo into android/R$type and "foo"
                         int index = text.indexOf('/', ANDROID_PREFIX.length());
@@ -473,7 +480,7 @@ public class ApiDetector extends ResourceXmlDetector
                     }
                 }
             }
-        } else if (folderType == ResourceFolderType.LAYOUT) {
+        } else {
             if (VIEW_TAG.equals(tag)) {
                 tag = element.getAttribute(ATTR_CLASS);
                 if (tag == null || tag.isEmpty()) {
@@ -482,8 +489,7 @@ public class ApiDetector extends ResourceXmlDetector
             }
 
             // Check widgets to make sure they're available in this version of the SDK.
-            if (tag.indexOf('.') != -1 ||
-                    folderType != ResourceFolderType.LAYOUT) {
+            if (tag.indexOf('.') != -1) {
                 // Custom views aren't in the index
                 return;
             }

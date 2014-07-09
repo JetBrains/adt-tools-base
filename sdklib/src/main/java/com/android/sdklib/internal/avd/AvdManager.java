@@ -912,12 +912,25 @@ public class AvdManager {
             // - values provided by the user
             // - values provided by the skin
             // - values provided by the target (add-on only).
+            // - values provided by the sys img
             // In order to follow this priority, we'll add the lowest priority values first and then
             // override by higher priority values.
             // In the case of a platform with override values from the user, the skin value might
             // already be there, but it's ok.
 
             HashMap<String, String> finalHardwareValues = new HashMap<String, String>();
+
+            FileWrapper sysImgHardwareFile = new FileWrapper(systemImage.getLocation(),
+                    AvdManager.HARDWARE_INI);
+            if (sysImgHardwareFile.isFile()) {
+                Map<String, String> targetHardwareConfig = ProjectProperties.parsePropertyFile(
+                        sysImgHardwareFile, log);
+
+                if (targetHardwareConfig != null) {
+                    finalHardwareValues.putAll(targetHardwareConfig);
+                    values.putAll(targetHardwareConfig);
+                }
+            }
 
             FileWrapper targetHardwareFile = new FileWrapper(target.getLocation(),
                     AvdManager.HARDWARE_INI);
@@ -1789,7 +1802,11 @@ public class AvdManager {
                         e.getMessage());
             }
         } finally {
-            Closeables.closeQuietly(reader);
+            try {
+                Closeables.close(reader, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen.
+            }
         }
 
         return null;

@@ -95,27 +95,88 @@ public class ManifestMerger2 {
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
 
         SelectorResolver selectors = new SelectorResolver();
+        // load all the libraries xml files up front to have a list of all possible node:selector
+        // values.
+        List<LoadedManifestInfo> loadedLibraryDocuments = loadLibraries(selectors);
+
+        // load the main manifest file to do some checking along the way.
+        LoadedManifestInfo loadedMainManifestInfo = load(
+                new ManifestInfo(
+                        mManifestFile.getName(),
+                        mManifestFile,
+                        XmlDocument.Type.MAIN,
+                        Optional.<String>absent() /* mainManifestPackageName */),
+                selectors);
+
+        // first do we have a package declaration in the main manifest ?
+        Optional<XmlAttribute> mainPackageAttribute =
+                loadedMainManifestInfo.getXmlDocument().getPackage();
+        if (!mainPackageAttribute.isPresent()) {
+            mergingReportBuilder.addMessage(
+                    loadedMainManifestInfo.getXmlDocument().getSourceLocation(), 0, 0,
+                    MergingReport.Record.Severity.ERROR,
+                    String.format(
+                            "Main AndroidManifest.xml at %1$s manifest:package attribute is not declared",
+                            loadedMainManifestInfo.getXmlDocument().getSourceLocation().print(true)));
+            return mergingReportBuilder.build();
+        }
+
         // invariant : xmlDocumentOptional holds the higher priority document and we try to
         // merge in lower priority documents.
         Optional<XmlDocument> xmlDocumentOptional = Optional.absent();
         for (File inputFile : mFlavorsAndBuildTypeFiles) {
             mLogger.info("Merging flavors and build manifest %s \n", inputFile.getPath());
-            xmlDocumentOptional = merge(xmlDocumentOptional,
-                    load(new ManifestInfo(null, inputFile, XmlDocument.Type.OVERLAY), selectors),
-                    mergingReportBuilder);
+            LoadedManifestInfo overlayDocument = load(
+                    new ManifestInfo(null, inputFile, XmlDocument.Type.OVERLAY,
+                            Optional.of(mainPackageAttribute.get().getValue())), selectors);
+
+            // check package declaration.
+            Optional<XmlAttribute> packageAttribute =
+                    overlayDocument.getXmlDocument().getPackage();
+            // if both files declare a package name, it should be the same.
+            if (mainPackageAttribute.isPresent() && packageAttribute.isPresent()
+                    && !mainPackageAttribute.get().getValue().equals(
+                    packageAttribute.get().getValue())) {
+                // no suggestion for library since this is actually forbidden to change the
+                // the package name per flavor.
+                String message = mMergeType == MergeType.APPLICATION
+                        ? String.format(
+                                "Overlay manifest:package attribute declared at %1$s value=(%2$s)\n"
+                                        + "\thas a different value=(%3$s) "
+                                        + "declared in main manifest at %4$s \n"
+                                        + "\tSuggestion : remove the overlay declaration at %5$s "
+                                        + "\tand place it in the build.gradle:\n"
+                                        + "\t\tflavorName {\n"
+                                        + "\t\t\tapplicationId = \"%2$s\"\n"
+                                        + "\t\t}",
+                                packageAttribute.get().printPosition(),
+                                packageAttribute.get().getValue(),
+                                mainPackageAttribute.get().getValue(),
+                                mainPackageAttribute.get().printPosition(),
+                                packageAttribute.get().getSourceLocation().print(true))
+                        : String.format(
+                                "Overlay manifest:package attribute declared at %1$s value=(%2$s)\n"
+                                        + "\thas a different value=(%3$s) "
+                                        + "declared in main manifest at %4$s",
+                                packageAttribute.get().printPosition(),
+                                packageAttribute.get().getValue(),
+                                mainPackageAttribute.get().getValue(),
+                                mainPackageAttribute.get().printPosition());
+                mergingReportBuilder.addMessage(
+                        overlayDocument.getXmlDocument().getSourceLocation(), 0, 0,
+                        MergingReport.Record.Severity.ERROR,
+                        message);
+                return mergingReportBuilder.build();
+            }
+
+            xmlDocumentOptional = merge(xmlDocumentOptional, overlayDocument, mergingReportBuilder);
 
             if (!xmlDocumentOptional.isPresent()) {
                 return mergingReportBuilder.build();
             }
         }
-        // load all the libraries xml files up front to have a list of all possible node:selector
-        // values.
-        List<LoadedManifestInfo> loadedLibraryDocuments = loadLibraries(selectors);
 
         mLogger.info("Merging main manifest %s\n", mManifestFile.getPath());
-        LoadedManifestInfo loadedMainManifestInfo = load(
-                new ManifestInfo(mManifestFile.getName(), mManifestFile, XmlDocument.Type.MAIN),
-                selectors);
         xmlDocumentOptional =
                 merge(xmlDocumentOptional, loadedMainManifestInfo, mergingReportBuilder);
 
@@ -200,7 +261,8 @@ public class ManifestMerger2 {
                     mSystemPropertyResolver,
                     lowerPriorityManifest.mName,
                     lowerPriorityManifest.mLocation,
-                    lowerPriorityManifest.getType());
+                    lowerPriorityManifest.getType(),
+                    lowerPriorityManifest.getMainManifestPackageName());
         } catch (Exception e) {
             throw new MergeFailureException(e);
         }
@@ -248,13 +310,14 @@ public class ManifestMerger2 {
         for (Pair<String, File> libraryFile : mLibraryFiles) {
             mLogger.info("Loading library manifest " + libraryFile.getSecond().getPath());
             ManifestInfo manifestInfo = new ManifestInfo(libraryFile.getFirst(), libraryFile.getSecond(),
-                    XmlDocument.Type.LIBRARY);
+                    XmlDocument.Type.LIBRARY, Optional.<String>absent());
             XmlDocument libraryDocument;
             try {
                 libraryDocument = XmlLoader.load(selectors,
                         mSystemPropertyResolver,
                         manifestInfo.mName, manifestInfo.mLocation,
-                        XmlDocument.Type.LIBRARY);
+                        XmlDocument.Type.LIBRARY,
+                        Optional.<String>absent()  /* mainManifestPackageName */);
             } catch (Exception e) {
                 throw new MergeFailureException(e);
             }
@@ -673,6 +736,7 @@ public class ManifestMerger2 {
             ImmutableMap<SystemProperty, String> systemProperties = mSystemProperties.build();
             if (systemProperties.containsKey(SystemProperty.PACKAGE)) {
                 mPlaceHolders.put("packageName", systemProperties.get(SystemProperty.PACKAGE));
+                mPlaceHolders.put("applicationId", systemProperties.get(SystemProperty.PACKAGE));
             }
 
             ManifestMerger2 manifestMerger =
@@ -715,15 +779,21 @@ public class ManifestMerger2 {
 
     private static class ManifestInfo {
 
-        private ManifestInfo(String name, File location, XmlDocument.Type type) {
+        private ManifestInfo(
+                String name,
+                File location,
+                XmlDocument.Type type,
+                Optional<String> mainManifestPackageName) {
             mName = name;
             mLocation = location;
             mType = type;
+            mMainManifestPackageName = mainManifestPackageName;
         }
 
         private final String mName;
         private final File mLocation;
         private final XmlDocument.Type mType;
+        private final Optional<String> mMainManifestPackageName;
 
         File getLocation() {
             return mLocation;
@@ -732,6 +802,10 @@ public class ManifestMerger2 {
         XmlDocument.Type getType() {
             return mType;
         }
+
+        Optional<String> getMainManifestPackageName() {
+            return mMainManifestPackageName;
+        }
     }
 
     private static class LoadedManifestInfo extends ManifestInfo {
@@ -739,7 +813,10 @@ public class ManifestMerger2 {
         private final XmlDocument mXmlDocument;
 
         private LoadedManifestInfo(ManifestInfo manifestInfo ,XmlDocument xmlDocument) {
-            super(manifestInfo.mName, manifestInfo.mLocation, manifestInfo.mType);
+            super(manifestInfo.mName,
+                    manifestInfo.mLocation,
+                    manifestInfo.mType,
+                    manifestInfo.getMainManifestPackageName());
             mXmlDocument = xmlDocument;
         }
 

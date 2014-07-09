@@ -287,7 +287,7 @@ public class ManifestMerger2SmallTest extends TestCase {
             throws ParserConfigurationException, SAXException, IOException,
             ManifestMerger2.MergeFailureException {
         String xml = ""
-                + "<manifest versionCode=\"34\" versionName=\"3.4\"\n"
+                + "<manifest package=\"foo\" versionCode=\"34\" versionName=\"3.4\"\n"
                 + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                 + "    <activity android:name=\".activityOne\" android:label=\"${labelName}\"/>\n"
                 + "</manifest>";
@@ -305,12 +305,40 @@ public class ManifestMerger2SmallTest extends TestCase {
             assertTrue(mergingReport.getMergedDocument().isPresent());
             XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
             Optional<XmlElement> activityOne = xmlDocument
-                    .getByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY, ".activityOne");
+                    .getByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY, "foo.activityOne");
             assertTrue(activityOne.isPresent());
             Optional<XmlAttribute> attribute = activityOne.get()
                     .getAttribute(XmlNode.fromXmlName("android:label"));
             assertTrue(attribute.isPresent());
             assertEquals("injectedLabelName", attribute.get().getValue());
+        } finally {
+            inputFile.delete();
+        }
+    }
+
+    public void testApplicationIdSubstitution()
+            throws ManifestMerger2.MergeFailureException, IOException {
+        String xml = ""
+                + "<manifest package=\"foo\" versionCode=\"34\" versionName=\"3.4\"\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity android:name=\"${applicationId}.activityOne\"/>\n"
+                + "</manifest>";
+
+        MockLog mockLog = new MockLog();
+        File inputFile = inputAsFile("testPlaceholderSubstitution", xml);
+        try {
+            MergingReport mergingReport = ManifestMerger2
+                    .newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                    .setOverride(ManifestMerger2.SystemProperty.PACKAGE, "bar")
+                    .merge();
+
+            assertTrue(mergingReport.getResult().isSuccess());
+            assertTrue(mergingReport.getMergedDocument().isPresent());
+            XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+            assertEquals("bar", xmlDocument.getPackageName());
+            Optional<XmlElement> activityOne = xmlDocument
+                    .getByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY, "bar.activityOne");
+            assertTrue(activityOne.isPresent());
         } finally {
             inputFile.delete();
         }

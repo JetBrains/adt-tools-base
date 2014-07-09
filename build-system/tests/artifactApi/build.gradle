@@ -3,11 +3,11 @@ buildscript {
         maven { url '../../../../../out/repo' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.11.1'
+        classpath 'com.android.tools.build:gradle:0.12.2'
     }
 }
 
-apply plugin: 'android'
+apply plugin: 'com.android.application'
 
 import com.android.builder.model.ArtifactMetaData
 import com.android.builder.model.SourceProvider

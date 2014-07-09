@@ -31,6 +31,7 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.io.Closeables;
+import com.google.common.io.Closer;
 
 import org.gradle.api.Project;
 
@@ -191,7 +192,11 @@ public class SdkHandler {
             } catch (IOException e) {
                 throw new RuntimeException("Unable to read ${localProperties}", e);
             } finally {
-                Closeables.closeQuietly(reader);
+                try {
+                    Closeables.close(reader, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // ignore.
+                }
             }
         }
 

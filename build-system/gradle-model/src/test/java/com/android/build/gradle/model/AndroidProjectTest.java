@@ -24,6 +24,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.StringHelper;
 import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidArtifactOutput;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
@@ -62,7 +63,7 @@ import java.util.Map;
 
 public class AndroidProjectTest extends TestCase {
 
-    private static final String MODEL_VERSION = "0.11.1";
+    private static final String MODEL_VERSION = "0.12.2";
 
     private static final Map<String, ProjectData> sProjectModelMap = Maps.newHashMap();
 
@@ -374,6 +375,15 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Debug sourceGenTask", "generateDebugSources", debugMainInfo.getSourceGenTaskName());
         assertEquals("Debug javaCompileTask", "compileDebugJava", debugMainInfo.getJavaCompileTaskName());
 
+        Collection<AndroidArtifactOutput> debugMainOutputs = debugMainInfo.getOutputs();
+        assertNotNull("Debug main output null-check", debugMainOutputs);
+        assertEquals("Debug main output size", 1, debugMainOutputs.size());
+        AndroidArtifactOutput debugMainOutput = debugMainOutputs.iterator().next();
+        assertNotNull(debugMainOutput);
+        assertNotNull(debugMainOutput.getOutputFile());
+        assertNotNull(debugMainOutput.getAssembleTaskName());
+        assertNotNull(debugMainOutput.getGeneratedManifest());
+
         // this variant is tested.
         Collection<AndroidArtifact> debugExtraAndroidArtifacts = debugVariant.getExtraAndroidArtifacts();
         AndroidArtifact debugTestInfo = getAndroidArtifact(debugExtraAndroidArtifacts,
@@ -381,11 +391,19 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull("Test info null-check", debugTestInfo);
         assertEquals("Test package name", "com.android.tests.basic.debug.test",
                 debugTestInfo.getApplicationId());
-        assertNotNull("Test output file null-check", debugTestInfo.getOutputFile());
         assertTrue("Test signed check", debugTestInfo.isSigned());
         assertEquals("Test signingConfig name", "myConfig", debugTestInfo.getSigningConfigName());
         assertEquals("Test sourceGenTask", "generateDebugTestSources", debugTestInfo.getSourceGenTaskName());
         assertEquals("Test javaCompileTask", "compileDebugTestJava", debugTestInfo.getJavaCompileTaskName());
+
+        Collection<AndroidArtifactOutput> debugTestOutputs = debugTestInfo.getOutputs();
+        assertNotNull("Debug test output null-check", debugTestOutputs);
+        assertEquals("Debug test output size", 1, debugTestOutputs.size());
+        AndroidArtifactOutput debugTestOutput = debugTestOutputs.iterator().next();
+        assertNotNull(debugTestOutput);
+        assertNotNull(debugTestOutput.getOutputFile());
+        assertNotNull(debugTestOutput.getAssembleTaskName());
+        assertNotNull(debugTestOutput.getGeneratedManifest());
 
         // release variant, not tested.
         Variant releaseVariant = getVariant(variants, "release");
@@ -399,6 +417,16 @@ public class AndroidProjectTest extends TestCase {
         assertNull("Release signingConfig name", relMainInfo.getSigningConfigName());
         assertEquals("Release sourceGenTask", "generateReleaseSources", relMainInfo.getSourceGenTaskName());
         assertEquals("Release javaCompileTask", "compileReleaseJava", relMainInfo.getJavaCompileTaskName());
+
+        Collection<AndroidArtifactOutput> relMainOutputs = relMainInfo.getOutputs();
+        assertNotNull("Rel Main output null-check", relMainOutputs);
+        assertEquals("Rel Main output size", 1, relMainOutputs.size());
+        AndroidArtifactOutput relMainOutput = relMainOutputs.iterator().next();
+        assertNotNull(relMainOutput);
+        assertNotNull(relMainOutput.getOutputFile());
+        assertNotNull(relMainOutput.getAssembleTaskName());
+        assertNotNull(relMainOutput.getGeneratedManifest());
+
 
         Collection<AndroidArtifact> releaseExtraAndroidArtifacts = releaseVariant.getExtraAndroidArtifacts();
         AndroidArtifact relTestInfo = getAndroidArtifact(releaseExtraAndroidArtifacts, ARTIFACT_ANDROID_TEST);
@@ -501,9 +529,11 @@ public class AndroidProjectTest extends TestCase {
                     "Null-check on mainArtifactInfo for " + variant.getDisplayName(),
                     mainInfo);
 
+            AndroidArtifactOutput output = mainInfo.getOutputs().iterator().next();
+
             assertEquals("Output file for " + variant.getName(),
                     new File(buildDir, variant.getName() + ".apk"),
-                    mainInfo.getOutputFile());
+                    output.getOutputFile());
         }
     }
 
@@ -1000,6 +1030,30 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("jar dep count", 1, javaLibraries.size());
     }
 
+    public void testLocalJarInLib() throws Exception {
+        Map<String, ProjectData> map = getModelForMultiProject("localJars");
+
+        ProjectData libModelData = map.get(":baseLibrary");
+        assertNotNull("Module app null-check", libModelData);
+        AndroidProject model = libModelData.model;
+
+        Collection<Variant> variants = model.getVariants();
+
+        Variant releaseVariant = getVariant(variants, "release");
+        assertNotNull(releaseVariant);
+
+        Dependencies dependencies = releaseVariant.getMainArtifact().getDependencies();
+        assertNotNull(dependencies);
+
+        Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries();
+        assertNotNull(javaLibraries);
+
+        //  com.google.guava:guava:11.0.2
+        //  \--- com.google.code.findbugs:jsr305:1.3.9
+        //  + the local jar
+        assertEquals(3, javaLibraries.size());
+    }
+
     /**
      * Returns the SDK folder as built from the Android source tree.
      * @return the SDK
@@ -1348,12 +1402,17 @@ public class AndroidProjectTest extends TestCase {
             String variantName = variant.getName();
             File build = new File(projectDir,  "build");
             File apk = new File(build, "outputs/apk/" + outputFileName);
-            assertEquals(variantName + " output", apk, artifact.getOutputFile());
 
             Collection<File> sourceFolders = artifact.getGeneratedSourceFolders();
             assertEquals("Gen src Folder count", 4, sourceFolders.size());
 
-            File manifest = artifact.getGeneratedManifest();
+            Collection<AndroidArtifactOutput> outputs = artifact.getOutputs();
+            assertNotNull(outputs);
+            assertEquals(1, outputs.size());
+            AndroidArtifactOutput output = outputs.iterator().next();
+
+            assertEquals(variantName + " output", apk, output.getOutputFile());
+            File manifest = output.getGeneratedManifest();
             assertNotNull(manifest);
         }
     }

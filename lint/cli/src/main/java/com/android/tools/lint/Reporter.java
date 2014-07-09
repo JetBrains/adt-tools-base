@@ -28,7 +28,7 @@ import com.android.annotations.Nullable;
 import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.io.ByteStreams;
-import com.google.common.io.Closeables;
+import com.google.common.io.Closer;
 import com.google.common.io.Files;
 
 import java.io.File;
@@ -250,7 +250,7 @@ public abstract class Reporter {
 
     /** Returns a URL to a local copy of the given resource, or null. There is
      * no filename conflict resolution. */
-    protected String addLocalResources(URL url) {
+    protected String addLocalResources(URL url) throws IOException {
         // Attempt to make local copy
         File resourceDir = computeResourceDir();
         if (resourceDir != null) {
@@ -259,14 +259,15 @@ public abstract class Reporter {
             mNameToFile.put(base, new File(url.toExternalForm()));
 
             File target = new File(resourceDir, base);
+            Closer closer = Closer.create();
             try {
-                FileOutputStream output = new FileOutputStream(target);
-                InputStream input = url.openStream();
+                FileOutputStream output = closer.register(new FileOutputStream(target));
+                InputStream input = closer.register(url.openStream());
                 ByteStreams.copy(input, output);
-                Closeables.closeQuietly(output);
-                Closeables.closeQuietly(input);
-            } catch (IOException e) {
-                return null;
+            } catch (Throwable e) {
+                closer.rethrow(e);
+            } finally {
+                closer.close();
             }
             return resourceDir.getName() + '/' + encodeUrl(base);
         }

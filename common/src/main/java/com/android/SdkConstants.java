@@ -86,6 +86,8 @@ public final class SdkConstants {
     public static final String FN_BUILD_GRADLE = "build.gradle";                      //$NON-NLS-1$
     /** An SDK Project's settings.gradle file */
     public static final String FN_SETTINGS_GRADLE = "settings.gradle";                //$NON-NLS-1$
+    /** An SDK Project's gradle.properties file */
+    public static final String FN_GRADLE_PROPERTIES = "gradle.properties";            //$NON-NLS-1$
     /** An SDK Project's gradle daemon executable */
     public static final String FN_GRADLE_UNIX = "gradle";                             //$NON-NLS-1$
     /** An SDK Project's gradle.bat daemon executable (gradle for windows) */
@@ -1337,8 +1339,9 @@ public final class SdkConstants {
     public static final String GRADLE_PLUGIN_NAME = "com.android.tools.build:gradle:";
     public static final String GRADLE_MINIMUM_VERSION = "1.10";
     public static final String GRADLE_LATEST_VERSION = "1.12";
-    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "0.11.0";
-    public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.11.+";
+    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "0.12.0";
+    public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.12.+";
+    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "0.12.1";
     public static final String MIN_BUILD_TOOLS_VERSION = "19.1.0";
     public static final String SUPPORT_LIB_ARTIFACT = "com.android.support:support-v4";
     public static final String APPCOMPAT_LIB_ARTIFACT = "com.android.support:appcompat-v7";

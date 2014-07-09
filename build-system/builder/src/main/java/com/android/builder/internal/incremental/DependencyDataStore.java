@@ -22,7 +22,7 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.google.common.io.Closeables;
+import com.google.common.io.Closer;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -109,9 +109,10 @@ public class DependencyDataStore {
      * @throws IOException
      */
     public void saveTo(@NonNull File file) throws IOException {
-        FileOutputStream fos = new FileOutputStream(file);
 
+        Closer closer = Closer.create();
         try {
+            FileOutputStream fos = closer.register(new FileOutputStream(file));
             fos.write(TAG_HEADER);
             writeInt(fos, CURRENT_VERSION);
 
@@ -135,8 +136,10 @@ public class DependencyDataStore {
                 }
 
             }
+        } catch (Throwable e) {
+            throw closer.rethrow(e);
         } finally {
-            Closeables.closeQuietly(fos);
+            closer.close();
         }
     }
 
@@ -155,7 +158,8 @@ public class DependencyDataStore {
     public Multimap<String, DependencyData> loadFrom(@NonNull File file) throws IOException {
         Multimap<String, DependencyData> inputMap = ArrayListMultimap.create();
 
-        FileInputStream fis = new FileInputStream(file);
+        Closer closer = Closer.create();
+        FileInputStream fis = closer.register(new FileInputStream(file));
 
         //  reusable buffer
         ReusableBuffer buffers = new ReusableBuffer();
@@ -210,8 +214,10 @@ public class DependencyDataStore {
             }
 
             return inputMap;
+        } catch (Throwable e) {
+            throw closer.rethrow(e);
         } finally {
-            Closeables.closeQuietly(fis);
+            closer.close();
         }
     }
 

@@ -96,7 +96,8 @@ public class XmlAttribute extends XmlNode {
     @Override
     public NodeKey getId() {
         // (Id of the parent element)@(my name)
-        return new NodeKey(mOwnerElement.getId() + "@" + mXml.getLocalName());
+        String myName = mXml.getNamespaceURI() == null ? mXml.getName() : mXml.getLocalName();
+        return new NodeKey(mOwnerElement.getId() + "@" + myName);
     }
 
     @NonNull
@@ -179,7 +180,9 @@ public class XmlAttribute extends XmlNode {
             AttributeOperationType operationType) {
 
         // handles tools: attribute separately.
-        if (getXml().getNamespaceURI().equals(SdkConstants.TOOLS_URI)) {
+
+        if (getXml().getNamespaceURI() != null
+                && getXml().getNamespaceURI().equals(SdkConstants.TOOLS_URI)) {
             handleBothToolsAttributePresent(higherPriority);
             return;
         }
@@ -337,7 +340,7 @@ public class XmlAttribute extends XmlNode {
                         : "(unknown)",
                 printPosition(),
                 getValue(),
-                mXml.getLocalName(),
+                mXml.getName(),
                 getOwnerElement().getType().toXmlName(),
                 higherPriority.getOwnerElement().printPosition(true)
         );

@@ -16,6 +16,8 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
+
 import java.util.Comparator;
 import java.util.Locale;
 
@@ -29,7 +31,7 @@ public class AllocationInfo implements IStackTraceInfo {
     private final short mThreadId;
     private final StackTraceElement[] mStackTrace;
 
-    public static enum SortMode {
+    public enum SortMode {
         NUMBER, SIZE, CLASS, THREAD, IN_CLASS, IN_METHOD
     }
 
@@ -41,7 +43,7 @@ public class AllocationInfo implements IStackTraceInfo {
         public AllocationSorter() {
         }
 
-        public void setSortMode(SortMode mode) {
+        public void setSortMode(@NonNull SortMode mode) {
             if (mSortMode == mode) {
                 mDescending = !mDescending;
             } else {
@@ -49,6 +51,12 @@ public class AllocationInfo implements IStackTraceInfo {
             }
         }
 
+        public void setSortMode(@NonNull SortMode mode, boolean descending) {
+          mSortMode = mode;
+          mDescending = descending;
+        }
+
+        @NonNull
         public SortMode getSortMode() {
             return mSortMode;
         }
@@ -99,7 +107,7 @@ public class AllocationInfo implements IStackTraceInfo {
         }
 
         /** compares two strings that could be null */
-        private int compareOptionalString(String str1, String str2) {
+        private static int compareOptionalString(String str1, String str2) {
             if (str1 != null) {
                 if (str2 == null) {
                     return -1;

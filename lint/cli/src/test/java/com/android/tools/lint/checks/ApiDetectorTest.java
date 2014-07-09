@@ -204,6 +204,18 @@ public class ApiDetectorTest extends AbstractCheckTest {
                     ));
     }
 
+    public void testThemeVersion() throws Exception {
+        assertEquals(""
+                + "res/values/themes3.xml:3: Error: android:Theme.Holo.Light.DarkActionBar requires API level 14 (current min is 4) [NewApi]\n"
+                + "    <style name=\"AppTheme\" parent=\"android:Theme.Holo.Light.DarkActionBar\">\n"
+                + "                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "res/values/themes3.xml"
+                ));
+    }
+
     public void testApi1() throws Exception {
         assertEquals(
             "src/foo/bar/ApiCallTest.java:20: Error: Call requires API level 11 (current min is 1): android.app.Activity#getActionBar [NewApi]\n" +

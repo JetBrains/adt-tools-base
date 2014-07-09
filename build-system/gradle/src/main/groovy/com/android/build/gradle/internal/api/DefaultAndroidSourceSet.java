@@ -24,8 +24,6 @@ import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.builder.model.SourceProvider;
 
 import org.gradle.api.Project;
-import org.gradle.api.file.SourceDirectorySet;
-import org.gradle.api.internal.file.DefaultSourceDirectorySet;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.util.ConfigureUtil;
 import org.gradle.util.GUtil;
@@ -45,7 +43,6 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
     private final boolean isLibrary;
 
     private final AndroidSourceDirectorySet javaSource;
-    private final AndroidSourceDirectorySet allJavaSource;
     private final AndroidSourceDirectorySet javaResources;
     private final AndroidSourceFile manifest;
     private final AndroidSourceDirectorySet assets;
@@ -55,7 +52,6 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
     private final AndroidSourceDirectorySet jni;
     private final AndroidSourceDirectorySet jniLibs;
     private final String displayName;
-    private final AndroidSourceDirectorySet allSource;
 
     public DefaultAndroidSourceSet(@NonNull String name,
             Project project, boolean isLibrary) {
@@ -68,17 +64,9 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
         javaSource = new DefaultAndroidSourceDirectorySet(javaSrcDisplayName, project);
         javaSource.getFilter().include("**/*.java");
 
-        allJavaSource = new DefaultAndroidSourceDirectorySet(javaSrcDisplayName, project);
-        allJavaSource.getFilter().include("**/*.java");
-        allJavaSource.srcDirs(javaSource);
-
         String javaResourcesDisplayName = String.format("%s Java resources", displayName);
         javaResources = new DefaultAndroidSourceDirectorySet(javaResourcesDisplayName, project);
         javaResources.getFilter().exclude("**/*.java");
-
-        String allSourceDisplayName = String.format("%s source", displayName);
-        allSource = new DefaultAndroidSourceDirectorySet(allSourceDisplayName, project);
-        allSource.srcDirs(javaResources, javaSource);
 
         String manifestDisplayName = String.format("%s manifest", displayName);
         manifest = new DefaultAndroidSourceFile(manifestDisplayName, project);

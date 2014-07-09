@@ -16,6 +16,7 @@
 
 package com.android.ant;
 
+import com.google.common.base.Charsets;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -174,7 +175,7 @@ public class DexExecTask extends SingleDependencyTask {
 
         // add a hash of the original file path
         HashFunction hashFunction = Hashing.md5();
-        HashCode hashCode = hashFunction.hashString(inputFile.getAbsolutePath());
+        HashCode hashCode = hashFunction.hashString(inputFile.getAbsolutePath(), Charsets.UTF_16LE);
 
         return name + "-" + hashCode.toString() + ".jar";
     }

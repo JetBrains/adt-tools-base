@@ -915,7 +915,8 @@ public class XmlDocumentTest extends TestCase {
         XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
                 new TestUtils.TestSourceLocation(getClass(), "overlay"),
                 overlay,
-                XmlDocument.Type.OVERLAY);
+                XmlDocument.Type.OVERLAY,
+                Optional.of("com.example.lib3"));
         XmlDocument libraryDocument = TestUtils.xmlLibraryFromString(
                 new TestUtils.TestSourceLocation(getClass(), "main"), main);
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);

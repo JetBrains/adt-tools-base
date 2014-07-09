@@ -18,7 +18,7 @@ package com.android.sdklib.io;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.google.common.io.Closeables;
+import com.google.common.io.Closer;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -368,32 +368,35 @@ public class FileOp implements IFileOp {
 
     @Override
     @NonNull
-    @SuppressWarnings("deprecation") // Eclipse doesn't understand Closeables.closeQuietly
     public Properties loadProperties(@NonNull File file) {
         Properties props = new Properties();
-        FileInputStream fis = null;
+        Closer closer = Closer.create();
         try {
-            fis = new FileInputStream(file);
+            FileInputStream fis = closer.register(new FileInputStream(file));
             props.load(fis);
         } catch (IOException ignore) {
         } finally {
-            Closeables.closeQuietly(fis);
+            try {
+                closer.close();
+            } catch (IOException e) {
+            }
         }
         return props;
     }
 
     @Override
-    @SuppressWarnings("deprecation") // Eclipse doesn't understand Closeables.closeQuietly
     public void saveProperties(
             @NonNull File file,
             @NonNull Properties props,
             @NonNull String comments) throws IOException {
-        OutputStream fos = null;
+        Closer closer = Closer.create();
         try {
-            fos = newFileOutputStream(file);
+            OutputStream fos = closer.register(newFileOutputStream(file));
             props.store(fos, comments);
+        } catch (Throwable e) {
+            throw closer.rethrow(e);
         } finally {
-            Closeables.close(fos, true);
+            closer.close();
         }
     }
 

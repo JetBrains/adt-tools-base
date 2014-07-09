@@ -50,6 +50,8 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "05_inject_package.xml",
             "05_inject_package_placeholder.xml",
             "06_inject_attributes_with_specific_prefix.xml",
+            "07_no_package_provided.xml",
+            "08_no_library_package_provided.xml",
             "10_activity_merge",
             "11_activity_dup",
             "12_alias_dup",
@@ -92,7 +94,6 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "77_app_metadata_conflict",
             "78_removeAll",
             "79_custom_node.xml",
-
     };
 
     @Override

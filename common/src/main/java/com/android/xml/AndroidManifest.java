@@ -27,6 +27,7 @@ import com.google.common.io.Closeables;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import javax.xml.xpath.XPath;
@@ -219,7 +220,11 @@ public final class AndroidManifest {
                 }
             }
         } finally {
-            Closeables.closeQuietly(is);
+            try {
+                Closeables.close(is, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
         }
 
         return false;
@@ -405,7 +410,11 @@ public final class AndroidManifest {
             is = file.getContents();
             return xpath.evaluate(xPath, new InputSource(is));
         } finally {
-            Closeables.closeQuietly(is);
+            try {
+                Closeables.close(is, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
         }
     }
 }
