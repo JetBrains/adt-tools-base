@@ -17,17 +17,26 @@
 package com.android.tools.perflib.heap;
 
 public class Types {
-    private static int mIdSize = 4;
 
-    public static final int OBJECT     =   2;
-    public static final int BOOLEAN    =   4;
-    public static final int CHAR       =   5;
-    public static final int FLOAT      =   6;
-    public static final int DOUBLE     =   7;
-    public static final int BYTE       =   8;
-    public static final int SHORT      =   9;
-    public static final int INT        =   10;
-    public static final int LONG       =   11;
+    public static final int OBJECT = 2;
+
+    public static final int BOOLEAN = 4;
+
+    public static final int CHAR = 5;
+
+    public static final int FLOAT = 6;
+
+    public static final int DOUBLE = 7;
+
+    public static final int BYTE = 8;
+
+    public static final int SHORT = 9;
+
+    public static final int INT = 10;
+
+    public static final int LONG = 11;
+
+    private static int mIdSize = 4;
 
     public static final void setIdSize(int size) {
         mIdSize = size;
@@ -35,26 +44,45 @@ public class Types {
 
     public static final int getTypeSize(int type) {
         switch (type) {
-            case '[':      return mIdSize; //  array object
-            case 'L':      return mIdSize; //  object
-            case 'Z':      return 1;       //  boolean
-            case 'C':      return 2;       //  char
-            case 'F':      return 4;       //  float
-            case 'D':      return 8;       //  double
-            case 'B':      return 1;       //  byte
-            case 'S':      return 2;       //  short
-            case 'I':      return 4;       //  int
-            case 'J':      return 8;       //  long
+            case '[':
+                return mIdSize; //  array object
+            case 'L':
+                return mIdSize; //  object
+            case 'Z':
+                return 1;       //  boolean
+            case 'C':
+                return 2;       //  char
+            case 'F':
+                return 4;       //  float
+            case 'D':
+                return 8;       //  double
+            case 'B':
+                return 1;       //  byte
+            case 'S':
+                return 2;       //  short
+            case 'I':
+                return 4;       //  int
+            case 'J':
+                return 8;       //  long
 
-            case OBJECT:   return mIdSize;
-            case BOOLEAN:  return 1;
-            case CHAR:     return 2;
-            case FLOAT:    return 4;
-            case DOUBLE:   return 8;
-            case BYTE:     return 1;
-            case SHORT:    return 2;
-            case INT:      return 4;
-            case LONG:     return 8;
+            case OBJECT:
+                return mIdSize;
+            case BOOLEAN:
+                return 1;
+            case CHAR:
+                return 2;
+            case FLOAT:
+                return 4;
+            case DOUBLE:
+                return 8;
+            case BYTE:
+                return 1;
+            case SHORT:
+                return 2;
+            case INT:
+                return 4;
+            case LONG:
+                return 8;
         }
 
         throw new IllegalArgumentException("Illegal type signature: " + type);
@@ -62,26 +90,45 @@ public class Types {
 
     public static final String getTypeName(int type) {
         switch (type) {
-            case '[':      return "array";
-            case 'L':      return "object";
-            case 'Z':      return "boolean";
-            case 'C':      return "char";
-            case 'F':      return "float";
-            case 'D':      return "double";
-            case 'B':      return "byte";
-            case 'S':      return "short";
-            case 'I':      return "int";
-            case 'J':      return "long";
+            case '[':
+                return "array";
+            case 'L':
+                return "object";
+            case 'Z':
+                return "boolean";
+            case 'C':
+                return "char";
+            case 'F':
+                return "float";
+            case 'D':
+                return "double";
+            case 'B':
+                return "byte";
+            case 'S':
+                return "short";
+            case 'I':
+                return "int";
+            case 'J':
+                return "long";
 
-            case OBJECT:   return "object";
-            case BOOLEAN:  return "boolean";
-            case CHAR:     return "char";
-            case FLOAT:    return "float";
-            case DOUBLE:   return "double";
-            case BYTE:     return "byte";
-            case SHORT:    return "short";
-            case INT:      return "int";
-            case LONG:     return "long";
+            case OBJECT:
+                return "object";
+            case BOOLEAN:
+                return "boolean";
+            case CHAR:
+                return "char";
+            case FLOAT:
+                return "float";
+            case DOUBLE:
+                return "double";
+            case BYTE:
+                return "byte";
+            case SHORT:
+                return "short";
+            case INT:
+                return "int";
+            case LONG:
+                return "long";
         }
 
         throw new IllegalArgumentException("Illegal type signature: " + type);

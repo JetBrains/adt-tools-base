@@ -70,12 +70,12 @@ public class Queries {
     public static Map<String, Set<ClassObj>> classes(State state,
             String[] excludedPrefixes) {
         TreeMap<String, Set<ClassObj>> result =
-        new TreeMap<String, Set<ClassObj>>();
+                new TreeMap<String, Set<ClassObj>>();
 
         Set<ClassObj> classes = new TreeSet<ClassObj>();
 
         //  Build a set of all classes across all heaps
-        for (Heap heap: state.mHeaps.values()) {
+        for (Heap heap : state.mHeaps.values()) {
             classes.addAll(heap.mClassesById.values());
         }
 
@@ -98,7 +98,7 @@ public class Queries {
         }
 
         //  Now that we have a final list of classes, group them by package
-        for (ClassObj theClass: classes) {
+        for (ClassObj theClass : classes) {
             String packageName = DEFAULT_PACKAGE;
             int lastDot = theClass.mClassName.lastIndexOf('.');
 
@@ -132,18 +132,18 @@ public class Queries {
      * Return an array of instances of the given class.  This does not include
      * instances of subclasses.
      */
-     public static Instance[] instancesOf(State state, String baseClassName) {
-         ClassObj theClass = state.findClass(baseClassName);
+    public static Instance[] instancesOf(State state, String baseClassName) {
+        ClassObj theClass = state.findClass(baseClassName);
 
-         if (theClass == null) {
-             throw new IllegalArgumentException("Class not found: "
-                + baseClassName);
-         }
+        if (theClass == null) {
+            throw new IllegalArgumentException("Class not found: "
+                    + baseClassName);
+        }
 
-         Instance[] instances = new Instance[theClass.mInstances.size()];
+        Instance[] instances = new Instance[theClass.mInstances.size()];
 
-         return theClass.mInstances.toArray(instances);
-     }
+        return theClass.mInstances.toArray(instances);
+    }
 
     /*
      * Return an array of instances of the given class.  This includes
@@ -154,7 +154,7 @@ public class Queries {
 
         if (theClass == null) {
             throw new IllegalArgumentException("Class not found: "
-                + baseClassName);
+                    + baseClassName);
         }
 
         ArrayList<ClassObj> classList = new ArrayList<ClassObj>();
@@ -164,7 +164,7 @@ public class Queries {
 
         ArrayList<Instance> instanceList = new ArrayList<Instance>();
 
-        for (ClassObj someClass: classList) {
+        for (ClassObj someClass : classList) {
             instanceList.addAll(someClass.mInstances);
         }
 
@@ -178,7 +178,7 @@ public class Queries {
     private static ArrayList<ClassObj> traverseSubclasses(ClassObj base) {
         ArrayList<ClassObj> result = new ArrayList<ClassObj>();
 
-        for (ClassObj subclass: base.mSubclasses) {
+        for (ClassObj subclass : base.mSubclasses) {
             result.add(subclass);
             result.addAll(traverseSubclasses(subclass));
         }
@@ -199,7 +199,7 @@ public class Queries {
     public static Collection<RootObj> getRoots(State state) {
         HashSet<RootObj> result = new HashSet<RootObj>();
 
-        for (Heap heap: state.mHeaps.values()) {
+        for (Heap heap : state.mHeaps.values()) {
             result.addAll(heap.mRoots);
         }
 
@@ -209,14 +209,14 @@ public class Queries {
     public static final Instance[] newInstances(State older, State newer) {
         ArrayList<Instance> resultList = new ArrayList<Instance>();
 
-        for (Heap newHeap: newer.mHeaps.values()) {
+        for (Heap newHeap : newer.mHeaps.values()) {
             Heap oldHeap = older.getHeap(newHeap.mName);
 
             if (oldHeap == null) {
                 continue;
             }
 
-            for (Instance instance: newHeap.mInstances.values()) {
+            for (Instance instance : newHeap.mInstances.values()) {
                 Instance oldInstance = oldHeap.getInstance(instance.mId);
 
                 /*

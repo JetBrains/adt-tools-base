@@ -17,7 +17,9 @@
 package com.android.tools.perflib.heap;
 
 public class ThreadObj {
+
     long mId;
+
     int mStackTrace;
 
     public ThreadObj(long id, int stackTrace) {

@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public abstract class Instance {
+
     long mId;
 
     //  Id of the ClassObj of which this object is an instance
@@ -34,10 +35,6 @@ public abstract class Instance {
 
     //  The size of this object
     int mSize;
-
-    public interface Filter {
-        public boolean accept(Instance instance);
-    }
 
     //  List of all objects that hold a live reference to this object
     private ArrayList<Instance> mParents;
@@ -61,10 +58,6 @@ public abstract class Instance {
      */
     public abstract void visit(Set<Instance> resultSet, Filter filter);
 
-    public void setSize(int size) {
-        mSize = size;
-    }
-
     public final int getCompositeSize() {
         HashSet<Instance> set = new HashSet<Instance>();
 
@@ -72,7 +65,7 @@ public abstract class Instance {
 
         int size = 0;
 
-        for (Instance instance: set) {
+        for (Instance instance : set) {
             size += instance.getSize();
         }
 
@@ -82,6 +75,10 @@ public abstract class Instance {
     //  Returns the instrinsic size of a given object
     public int getSize() {
         return mSize;
+    }
+
+    public void setSize(int size) {
+        mSize = size;
     }
 
     public abstract String getTypeName();
@@ -113,5 +110,10 @@ public abstract class Instance {
      */
     public String describeReferenceTo(long id) {
         return "No reference to 0x" + Long.toHexString(id);
+    }
+
+    public interface Filter {
+
+        public boolean accept(Instance instance);
     }
 }

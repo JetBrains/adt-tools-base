@@ -16,7 +16,6 @@
 
 package com.android.tools.perflib.heap;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /*
@@ -27,7 +26,9 @@ import java.util.HashMap;
  * is being referenced.
  */
 public class State {
+
     HashMap<Integer, Heap> mHeaps;
+
     Heap mCurrentHeap;
 
     public State() {
@@ -58,7 +59,7 @@ public class State {
     }
 
     public Heap getHeap(String name) {
-        for (Heap heap: mHeaps.values()) {
+        for (Heap heap : mHeaps.values()) {
             if (heap.mName.equals(name)) {
                 return heap;
             }
@@ -109,7 +110,7 @@ public class State {
     }
 
     public final Instance findReference(long id) {
-        for (Heap heap: mHeaps.values()) {
+        for (Heap heap : mHeaps.values()) {
             Instance instance = heap.getInstance(id);
 
             if (instance != null) {
@@ -122,7 +123,7 @@ public class State {
     }
 
     public final ClassObj findClass(long id) {
-        for (Heap heap: mHeaps.values()) {
+        for (Heap heap : mHeaps.values()) {
             ClassObj theClass = heap.getClass(id);
 
             if (theClass != null) {
@@ -134,7 +135,7 @@ public class State {
     }
 
     public final ClassObj findClass(String name) {
-        for (Heap heap: mHeaps.values()) {
+        for (Heap heap : mHeaps.values()) {
             ClassObj theClass = heap.getClass(name);
 
             if (theClass != null) {
@@ -146,31 +147,31 @@ public class State {
     }
 
     public final void dumpInstanceCounts() {
-        for (Heap heap: mHeaps.values()) {
+        for (Heap heap : mHeaps.values()) {
             System.out.println(
-                "+------------------ instance counts for heap: " + heap.mName);
+                    "+------------------ instance counts for heap: " + heap.mName);
             heap.dumpInstanceCounts();
         }
     }
 
     public final void dumpSizes() {
-        for (Heap heap: mHeaps.values()) {
+        for (Heap heap : mHeaps.values()) {
             System.out.println(
-                "+------------------ sizes for heap: " + heap.mName);
+                    "+------------------ sizes for heap: " + heap.mName);
             heap.dumpSizes();
         }
     }
 
     public final void dumpSubclasses() {
-        for (Heap heap: mHeaps.values()) {
+        for (Heap heap : mHeaps.values()) {
             System.out.println(
-                "+------------------ subclasses for heap: " + heap.mName);
+                    "+------------------ subclasses for heap: " + heap.mName);
             heap.dumpSubclasses();
         }
     }
 
     public final void resolveReferences() {
-        for (Heap heap: mHeaps.values()) {
+        for (Heap heap : mHeaps.values()) {
             heap.resolveInstanceRefs(this);
             heap.resolveClassStatics(this);
             heap.resolveRoots(this);

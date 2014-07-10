@@ -22,8 +22,8 @@ import java.io.FileInputStream;
 import java.util.Map;
 import java.util.Set;
 
-public class Main
-{
+public class Main {
+
     public static void main(String argv[]) {
         FileInputStream fis;
         BufferedInputStream bis;
@@ -48,20 +48,20 @@ public class Main
     }
 
     private static void testClassesQuery(State state) {
-        String[] x = new String[] {
-            "char[",
-            "javax.",
-            "org.xml.sax"
+        String[] x = new String[]{
+                "char[",
+                "javax.",
+                "org.xml.sax"
         };
 
         Map<String, Set<ClassObj>> someClasses = Queries.classes(state, x);
 
-        for (String thePackage: someClasses.keySet()) {
+        for (String thePackage : someClasses.keySet()) {
             System.out.println("------------------- " + thePackage);
 
             Set<ClassObj> classes = someClasses.get(thePackage);
 
-            for (ClassObj theClass: classes) {
+            for (ClassObj theClass : classes) {
                 System.out.println("     " + theClass.mClassName);
             }
         }
@@ -70,12 +70,12 @@ public class Main
     private static void testAllClassesQuery(State state) {
         Map<String, Set<ClassObj>> allClasses = Queries.allClasses(state);
 
-        for (String thePackage: allClasses.keySet()) {
+        for (String thePackage : allClasses.keySet()) {
             System.out.println("------------------- " + thePackage);
 
             Set<ClassObj> classes = allClasses.get(thePackage);
 
-            for (ClassObj theClass: classes) {
+            for (ClassObj theClass : classes) {
                 System.out.println("     " + theClass.mClassName);
             }
         }
@@ -89,9 +89,9 @@ public class Main
 
     private static void testFindAllInstancesOf(State state) {
         Instance[] instances = Queries.allInstancesOf(state,
-            "android.graphics.drawable.Drawable");
+                "android.graphics.drawable.Drawable");
 
         System.out.println("There are " + instances.length
-            + " instances of Drawables and its subclasses.");
+                + " instances of Drawables and its subclasses.");
     }
 }

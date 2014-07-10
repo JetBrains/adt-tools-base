@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.Set;
 
 public class ClassInstance extends Instance {
+
     private byte[] mFieldValues;
 
     public ClassInstance(long id, StackTrace stack, long classId) {
@@ -59,23 +60,23 @@ public class ClassInstance extends Instance {
                 int type = types[i];
                 int size = Types.getTypeSize(type);
 
-                    if (type == Types.OBJECT) {
-                        long id;
+                if (type == Types.OBJECT) {
+                    long id;
 
-                        if (size == 4) {
-                            id = dis.readInt();
-                        } else {
-                            id = dis.readLong();
-                        }
-
-                        Instance instance = state.findReference(id);
-
-                        if (instance != null) {
-                            instance.addParent(this);
-                        }
+                    if (size == 4) {
+                        id = dis.readInt();
                     } else {
-                        dis.skipBytes(size);
+                        id = dis.readLong();
                     }
+
+                    Instance instance = state.findReference(id);
+
+                    if (instance != null) {
+                        instance.addParent(this);
+                    }
+                } else {
+                    dis.skipBytes(size);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
