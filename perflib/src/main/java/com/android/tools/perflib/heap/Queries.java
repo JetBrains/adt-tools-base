@@ -136,8 +136,7 @@ public class Queries {
         ClassObj theClass = state.findClass(baseClassName);
 
         if (theClass == null) {
-            throw new IllegalArgumentException("Class not found: "
-                    + baseClassName);
+            throw new IllegalArgumentException("Class not found: " + baseClassName);
         }
 
         Instance[] instances = new Instance[theClass.mInstances.size()];
@@ -153,8 +152,7 @@ public class Queries {
         ClassObj theClass = state.findClass(baseClassName);
 
         if (theClass == null) {
-            throw new IllegalArgumentException("Class not found: "
-                    + baseClassName);
+            throw new IllegalArgumentException("Class not found: " + baseClassName);
         }
 
         ArrayList<ClassObj> classList = new ArrayList<ClassObj>();
@@ -225,8 +223,7 @@ public class Queries {
                  * a newly allocated object and we should report it in the
                  * results.
                  */
-                if ((oldInstance == null)
-                        || (instance.mClassId != oldInstance.mClassId)) {
+                if (oldInstance == null || (instance.getClassObj() != oldInstance.getClassObj())) {
                     resultList.add(instance);
                 }
             }

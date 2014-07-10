@@ -55,9 +55,7 @@ public class RootObj extends Instance {
         if (mType == RootType.SYSTEM_CLASS) {
             theClass = state.findClass(mId);
         } else {
-            Instance instance = state.findReference(mId);
-
-            theClass = state.findClass(instance.mClassId);
+            theClass = state.findReference(mId).getClassObj();
         }
 
         if (theClass == null) {
@@ -97,11 +95,6 @@ public class RootObj extends Instance {
         } else {
             resultSet.add(this);
         }
-    }
-
-    @Override
-    public final void resolveReferences(State state) {
-        //  Nothing to do here
     }
 
     @Override

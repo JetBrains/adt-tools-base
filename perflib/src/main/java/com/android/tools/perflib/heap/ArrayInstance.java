@@ -16,67 +16,27 @@
 
 package com.android.tools.perflib.heap;
 
-
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.util.Set;
 
 public class ArrayInstance extends Instance {
 
-    private int mType;
+    private Type mType;
 
-    private int mNumEntries;
+    private Value[] mValues;
 
-    private byte[] mData;
-
-    public ArrayInstance(long id, StackTrace stack, int type, int numEntries,
-            byte[] data) {
+    public ArrayInstance(long id, StackTrace stack, Type type) {
         mId = id;
         mStack = stack;
         mType = type;
-        mNumEntries = numEntries;
-        mData = data;
     }
 
-    public final void resolveReferences(State state) {
-        if (mType != Types.OBJECT) {
-            return;
-        }
-
-        /*
-         * mData holds a stream of object instance ids
-         * Spin through them all and list ourselves as a reference holder.
-         */
-        int idSize = Types.getTypeSize(mType);
-        final int N = mNumEntries;
-
-        ByteArrayInputStream bais = new ByteArrayInputStream(mData);
-        DataInputStream dis = new DataInputStream(bais);
-
-        for (int i = 0; i < N; i++) {
-            long id;
-
-            try {
-                if (idSize == 4) {
-                    id = dis.readInt();
-                } else {
-                    id = dis.readLong();
-                }
-
-                Instance instance = state.findReference(id);
-
-                if (instance != null) {
-                    instance.addParent(this);
-                }
-            } catch (java.io.IOException e) {
-                e.printStackTrace();
-            }
-        }
+    public void setValues(Value[] values) {
+        mValues = values;
     }
 
     @Override
     public final int getSize() {
-        return mData.length;
+        return mValues.length * mType.getSize();
     }
 
     @Override
@@ -86,107 +46,27 @@ public class ArrayInstance extends Instance {
             return;
         }
 
-        if (null != filter) {
-            if (filter.accept(this)) {
-                resultSet.add(this);
-            }
-        } else {
+        if (filter == null || filter.accept(this)) {
             resultSet.add(this);
         }
 
-        if (mType != Types.OBJECT) {
+        if (mType != Type.OBJECT) {
             return;
         }
 
-        /*
-         * mData holds a stream of object instance ids
-         * Spin through them all and visit them
-         */
-        int idSize = Types.getTypeSize(mType);
-        final int N = mNumEntries;
-
-        ByteArrayInputStream bais = new ByteArrayInputStream(mData);
-        DataInputStream dis = new DataInputStream(bais);
-        State state = mHeap.mState;
-
-        for (int i = 0; i < N; i++) {
-            long id;
-
-            try {
-                if (idSize == 4) {
-                    id = dis.readInt();
-                } else {
-                    id = dis.readLong();
-                }
-
-                Instance instance = state.findReference(id);
-
-                if (instance != null) {
-                    instance.visit(resultSet, filter);
-                }
-            } catch (java.io.IOException e) {
-                e.printStackTrace();
+        for (Value value : mValues) {
+            if (value.getValue() instanceof Instance) {
+                ((Instance)value.getValue()).visit(resultSet, filter);
             }
         }
     }
 
     @Override
     public final String getTypeName() {
-        return Types.getTypeName(mType) + "[" + mNumEntries + "]";
+        return mType.name() + "[" + mValues.length + "]";
     }
 
     public final String toString() {
         return String.format("%s@0x08x", getTypeName(), mId);
-    }
-
-    @Override
-    public String describeReferenceTo(long referent) {
-        //  If this isn't an object array then we can't refer to an object
-        if (mType != Types.OBJECT) {
-            return super.describeReferenceTo(referent);
-        }
-
-        int idSize = Types.getTypeSize(mType);
-        final int N = mNumEntries;
-        int numRefs = 0;
-        StringBuilder result = new StringBuilder("Elements [");
-        ByteArrayInputStream bais = new ByteArrayInputStream(mData);
-        DataInputStream dis = new DataInputStream(bais);
-
-        /*
-         * Spin through all the objects and build up a string describing
-         * all of the array elements that refer to the target object.
-         */
-        for (int i = 0; i < N; i++) {
-            long id;
-
-            try {
-                if (idSize == 4) {
-                    id = dis.readInt();
-                } else {
-                    id = dis.readLong();
-                }
-
-                if (id == referent) {
-                    numRefs++;
-
-                    if (numRefs > 1) {
-                        result.append(", ");
-                    }
-
-                    result.append(i);
-                }
-            } catch (java.io.IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        if (numRefs == 0) {
-            return super.describeReferenceTo(referent);
-        }
-
-        result.append("]");
-
-        return result.toString();
     }
 }
