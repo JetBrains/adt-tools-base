@@ -119,8 +119,6 @@ public class HprofParser {
 
     State mState;
 
-    byte[] mFieldBuffer = new byte[8];
-
     /*
      * These are only needed while parsing so are not kept as part of the
      * heap data.
@@ -149,7 +147,7 @@ public class HprofParser {
 
                 while (true) {
                     int tag = in.readUnsignedByte();
-                    int timestamp = in.readInt();
+                    in.readInt(); // Ignored: timestamp
                     int length = in.readInt();
 
                     switch (tag) {
@@ -246,9 +244,9 @@ public class HprofParser {
 
     private void loadClass() throws IOException {
         DataInputStream in = mInput;
-        int serial = in.readInt();
+        in.readInt();  // Ignored: Class serial number.
         long id = readId();
-        int stackTrace = in.readInt();              //  unused
+        in.readInt(); // Ignored: Stack trace serial number.
         String name = mStrings.get(readId());
 
         mClassNames.put(id, name);
@@ -479,11 +477,11 @@ public class HprofParser {
         int stackSerialNumber = in.readInt();
         StackTrace stack = mState.getStackTrace(stackSerialNumber);
         final long superClassId = readId();
-        long classLoaderId = readId();
-        long signersId = readId();
-        long protectionDomainId = readId();
-        long reserved1 = readId();
-        long reserved2 = readId();
+        readId(); // Ignored: class loader ID.
+        readId(); // Ignored: Signeres ID.
+        readId(); // Ignored: Protection domain ID.
+        readId(); // RESERVED.
+        readId(); // RESERVED.
         int instanceSize = in.readInt();
 
         final ClassObj theClass = new ClassObj(id, stack, mClassNames.get(id));
@@ -532,14 +530,15 @@ public class HprofParser {
         theClass.setHeap(mState.mCurrentHeap);
 
         mState.addClass(id, theClass);
-
-        mPost.add(new PostOperation(ResolvePriority.CLASSES, new Callable() {
-            @Override
-            public Object call() throws Exception {
-                theClass.setSuperClass(mState.findClass(superClassId));
-                return null;
-            }
-        }));
+        if (superClassId > 0) {
+            mPost.add(new PostOperation(ResolvePriority.CLASSES, new Callable() {
+                @Override
+                public Object call() throws Exception {
+                    theClass.setSuperClass(mState.findClass(superClassId));
+                    return null;
+                }
+            }));
+        }
 
         return bytesRead;
     }

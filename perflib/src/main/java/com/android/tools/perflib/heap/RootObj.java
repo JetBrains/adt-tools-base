@@ -97,11 +97,6 @@ public class RootObj extends Instance {
         }
     }
 
-    @Override
-    public final String getTypeName() {
-        return "root " + mType.getName();
-    }
-
     public final String toString() {
         return String.format("%s@0x08x", mType.getName(), mId);
     }
