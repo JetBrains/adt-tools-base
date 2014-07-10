@@ -25,7 +25,7 @@ public abstract class Instance {
     long mId;
 
     //  Id of the ClassObj of which this object is an instance
-    long mClassId;
+    ClassObj mClass;
 
     //  The stack in which this object was allocated
     StackTrace mStack;
@@ -37,18 +37,7 @@ public abstract class Instance {
     int mSize;
 
     //  List of all objects that hold a live reference to this object
-    private ArrayList<Instance> mParents;
-
-    /*
-     * After the whole HPROF file is read and parsed this method will be
-     * called on all heap objects so that they can resolve their internal
-     * object references.
-     *
-     * The super-State is passed in because some object references (such
-     * as interned Strings and static class fields) may need to be searched
-     * for in a heap other than the one this Instance is in.
-     */
-    public abstract void resolveReferences(State state);
+    private ArrayList<Instance> mReferences;
 
     /*
      * Some operations require gathering all the objects in a given section
@@ -57,6 +46,16 @@ public abstract class Instance {
      * set.
      */
     public abstract void visit(Set<Instance> resultSet, Filter filter);
+
+    public ClassObj getClassObj() {
+        return mClass;
+    }
+
+    public void setClass(ClassObj aClass) {
+        assert mClass == null;
+        mClass = aClass;
+        aClass.addInstance(this);
+    }
 
     public final int getCompositeSize() {
         HashSet<Instance> set = new HashSet<Instance>();
@@ -88,28 +87,20 @@ public abstract class Instance {
     }
 
     //  Add to the list of objects that have a hard reference to this Instance
-    public void addParent(Instance parent) {
-        if (mParents == null) {
-            mParents = new ArrayList<Instance>();
+    public void addReference(Instance reference) {
+        if (mReferences == null) {
+            mReferences = new ArrayList<Instance>();
         }
 
-        mParents.add(parent);
+        mReferences.add(reference);
     }
 
-    public ArrayList<Instance> getParents() {
-        if (mParents == null) {
-            mParents = new ArrayList<Instance>();
+    public ArrayList<Instance> getReferences() {
+        if (mReferences == null) {
+            mReferences = new ArrayList<Instance>();
         }
 
-        return mParents;
-    }
-
-    /*
-     * If this object has a reference to the object identified by id, return
-     * a String describing the reference in detail.
-     */
-    public String describeReferenceTo(long id) {
-        return "No reference to 0x" + Long.toHexString(id);
+        return mReferences;
     }
 
     public interface Filter {

@@ -16,11 +16,15 @@
 
 package com.android.tools.perflib.heap;
 
-import java.io.ByteArrayOutputStream;
+import com.google.common.primitives.UnsignedInts;
+
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.PriorityQueue;
+import java.util.concurrent.Callable;
 
 public class HprofParser {
 
@@ -107,6 +111,8 @@ public class HprofParser {
 
     private static final int ROOT_PRIMITIVE_ARRAY_NODATA = 0xc3;
 
+    private final PriorityQueue<PostOperation> mPost = new PriorityQueue<PostOperation>();
+
     DataInputStream mInput;
 
     int mIdSize;
@@ -132,58 +138,63 @@ public class HprofParser {
         mState = state;
 
         try {
-            String s = readNullTerminatedString();
-            DataInputStream in = mInput;
+            try {
+                String s = readNullTerminatedString();
+                DataInputStream in = mInput;
 
-            mIdSize = in.readInt();
-            Types.setIdSize(mIdSize);
+                mIdSize = in.readInt();
+                Type.setIdSize(mIdSize);
 
-            in.readLong();  //  Timestamp, ignored for now
+                in.readLong();  //  Timestamp, ignored for now
 
-            while (true) {
-                int tag = in.readUnsignedByte();
-                int timestamp = in.readInt();
-                int length = in.readInt();
+                while (true) {
+                    int tag = in.readUnsignedByte();
+                    int timestamp = in.readInt();
+                    int length = in.readInt();
 
-                switch (tag) {
-                    case STRING_IN_UTF8:
-                        loadString(length - 4);
-                        break;
+                    switch (tag) {
+                        case STRING_IN_UTF8:
+                            loadString(length - 4);
+                            break;
 
-                    case LOAD_CLASS:
-                        loadClass();
-                        break;
+                        case LOAD_CLASS:
+                            loadClass();
+                            break;
 
-                    case STACK_FRAME:
-                        loadStackFrame();
-                        break;
+                        case STACK_FRAME:
+                            loadStackFrame();
+                            break;
 
-                    case STACK_TRACE:
-                        loadStackTrace();
-                        break;
+                        case STACK_TRACE:
+                            loadStackTrace();
+                            break;
 
-                    case HEAP_DUMP:
-                        loadHeapDump(length);
-                        mState.setToDefaultHeap();
-                        break;
+                        case HEAP_DUMP:
+                            loadHeapDump(length);
+                            mState.setToDefaultHeap();
+                            break;
 
-                    case HEAP_DUMP_SEGMENT:
-                        loadHeapDump(length);
-                        mState.setToDefaultHeap();
-                        break;
+                        case HEAP_DUMP_SEGMENT:
+                            loadHeapDump(length);
+                            mState.setToDefaultHeap();
+                            break;
 
-                    default:
-                        skipFully(length);
+                        default:
+                            skipFully(length);
+                    }
+
                 }
-
+            } catch (EOFException eof) {
+                //  this is fine
             }
-        } catch (EOFException eof) {
-            //  this is fine
+            PostOperation post = mPost.poll();
+            while (post != null) {
+                post.mCall.call();
+                post = mPost.poll();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        mState.resolveReferences();
 
         return state;
     }
@@ -200,22 +211,25 @@ public class HprofParser {
     }
 
     private long readId() throws IOException {
+        return readId(mInput);
+    }
+
+    private long readId(DataInputStream stream) throws IOException {
         switch (mIdSize) {
             case 1:
-                return mInput.readUnsignedByte();
+                return stream.readUnsignedByte();
             case 2:
-                return mInput.readUnsignedShort();
+                return stream.readUnsignedShort();
             case 4:
-                return ((long) mInput.readInt()) & 0x00000000ffffffffL;
+                return UnsignedInts.toLong(stream.readInt());
             case 8:
-                return mInput.readLong();
+                return stream.readLong();
         }
 
         throw new IllegalArgumentException("ID Length must be 1, 2, 4, or 8");
     }
 
     private String readUTF8(int length) throws IOException {
-        assert length >= 0;
         byte[] b = new byte[length];
 
         mInput.read(b);
@@ -264,8 +278,7 @@ public class HprofParser {
             frames[i] = mState.getStackFrame(readId());
         }
 
-        StackTrace trace = new StackTrace(serialNumber, threadSerialNumber,
-                frames);
+        StackTrace trace = new StackTrace(serialNumber, threadSerialNumber, frames);
 
         mState.addStackTrace(trace);
     }
@@ -390,10 +403,8 @@ public class HprofParser {
         int threadSerialNumber = mInput.readInt();
         int stackFrameNumber = mInput.readInt();
         ThreadObj thread = mState.getThread(threadSerialNumber);
-        StackTrace trace = mState.getStackTraceAtDepth(thread.mStackTrace,
-                stackFrameNumber);
-        RootObj root = new RootObj(RootType.NATIVE_LOCAL, id,
-                threadSerialNumber, trace);
+        StackTrace trace = mState.getStackTraceAtDepth(thread.mStackTrace, stackFrameNumber);
+        RootObj root = new RootObj(RootType.NATIVE_LOCAL, id, threadSerialNumber, trace);
 
         root.setHeap(mState.mCurrentHeap);
         mState.addRoot(root);
@@ -406,10 +417,8 @@ public class HprofParser {
         int threadSerialNumber = mInput.readInt();
         int stackFrameNumber = mInput.readInt();
         ThreadObj thread = mState.getThread(threadSerialNumber);
-        StackTrace trace = mState.getStackTraceAtDepth(thread.mStackTrace,
-                stackFrameNumber);
-        RootObj root = new RootObj(RootType.JAVA_LOCAL, id, threadSerialNumber,
-                trace);
+        StackTrace trace = mState.getStackTraceAtDepth(thread.mStackTrace, stackFrameNumber);
+        RootObj root = new RootObj(RootType.JAVA_LOCAL, id, threadSerialNumber, trace);
 
         root.setHeap(mState.mCurrentHeap);
         mState.addRoot(root);
@@ -422,8 +431,7 @@ public class HprofParser {
         int threadSerialNumber = mInput.readInt();
         ThreadObj thread = mState.getThread(threadSerialNumber);
         StackTrace trace = mState.getStackTrace(thread.mStackTrace);
-        RootObj root = new RootObj(RootType.NATIVE_STACK, id,
-                threadSerialNumber, trace);
+        RootObj root = new RootObj(RootType.NATIVE_STACK, id, threadSerialNumber, trace);
 
         root.setHeap(mState.mCurrentHeap);
         mState.addRoot(root);
@@ -446,8 +454,7 @@ public class HprofParser {
         int threadSerialNumber = mInput.readInt();
         ThreadObj thread = mState.getThread(threadSerialNumber);
         StackTrace stack = mState.getStackTrace(thread.mStackTrace);
-        RootObj root = new RootObj(RootType.THREAD_BLOCK, id,
-                threadSerialNumber, stack);
+        RootObj root = new RootObj(RootType.THREAD_BLOCK, id, threadSerialNumber, stack);
 
         root.setHeap(mState.mCurrentHeap);
         mState.addRoot(root);
@@ -467,12 +474,11 @@ public class HprofParser {
     }
 
     private int loadClassDump() throws IOException {
-        int bytesRead = 0;
         DataInputStream in = mInput;
-        long id = readId();
+        final long id = readId();
         int stackSerialNumber = in.readInt();
         StackTrace stack = mState.getStackTrace(stackSerialNumber);
-        long superClassId = readId();
+        final long superClassId = readId();
         long classLoaderId = readId();
         long signersId = readId();
         long protectionDomainId = readId();
@@ -480,7 +486,9 @@ public class HprofParser {
         long reserved2 = readId();
         int instanceSize = in.readInt();
 
-        bytesRead = (7 * mIdSize) + 4 + 4;
+        final ClassObj theClass = new ClassObj(id, stack, mClassNames.get(id));
+
+        int bytesRead = (7 * mIdSize) + 4 + 4;
 
         //  Skip over the constant pool
         int numEntries = in.readUnsignedShort();
@@ -495,68 +503,125 @@ public class HprofParser {
         numEntries = in.readUnsignedShort();
         bytesRead += 2;
 
-        String[] staticFieldNames = new String[numEntries];
-        int[] staticFieldTypes = new int[numEntries];
-        ByteArrayOutputStream staticFieldValues = new ByteArrayOutputStream();
-        byte[] buffer = mFieldBuffer;
-
         for (int i = 0; i < numEntries; i++) {
-            staticFieldNames[i] = mStrings.get(readId());
-
-            int fieldType = in.readByte();
-            int fieldSize = Types.getTypeSize(fieldType);
-            staticFieldTypes[i] = fieldType;
-
-            in.readFully(buffer, 0, fieldSize);
-            staticFieldValues.write(buffer, 0, fieldSize);
-
-            bytesRead += mIdSize + 1 + fieldSize;
+            String name = mStrings.get(readId());
+            Type type = Type.getType(in.readByte());
+            Value value = readValue(theClass, type);
+            theClass.addStaticField(type, name, value);
+            bytesRead += mIdSize + 1 + type.getSize();
         }
 
         //  Instance fields
         numEntries = in.readUnsignedShort();
         bytesRead += 2;
 
-        String[] names = new String[numEntries];
-        int[] types = new int[numEntries];
+        Field[] fields = new Field[numEntries];
 
         for (int i = 0; i < numEntries; i++) {
-            long fieldName = readId();
-            int type = in.readUnsignedByte();
+            String name = mStrings.get(readId());
+            Type type = Type.getType(in.readUnsignedByte());
 
-            names[i] = mStrings.get(fieldName);
-            types[i] = type;
+            fields[i] = new Field(type, name);
 
             bytesRead += mIdSize + 1;
         }
 
-        ClassObj theClass = new ClassObj(id, stack, mClassNames.get(id));
-
-        theClass.setStaticFieldNames(staticFieldNames);
-        theClass.setStaticFieldTypes(staticFieldTypes);
-        theClass.setStaticFieldValues(staticFieldValues.toByteArray());
-
-        theClass.setSuperclassId(superClassId);
-        theClass.setFieldNames(names);
-        theClass.setFieldTypes(types);
+        theClass.setFields(fields);
         theClass.setSize(instanceSize);
 
         theClass.setHeap(mState.mCurrentHeap);
 
         mState.addClass(id, theClass);
 
+        mPost.add(new PostOperation(ResolvePriority.CLASSES, new Callable() {
+            @Override
+            public Object call() throws Exception {
+                theClass.setSuperClass(mState.findClass(superClassId));
+                return null;
+            }
+        }));
+
         return bytesRead;
+    }
+
+    private Value readValue(Instance instance, Type type) throws IOException {
+        return readValue(mInput, instance, type);
+    }
+
+    private Value readValue(DataInputStream stream, Instance instance, Type type)
+            throws IOException {
+        final Value value = new Value(instance);
+        switch (type) {
+            case OBJECT:
+                final long id = readId(stream);
+                mPost.add(new PostOperation(ResolvePriority.INSTANCES, new Callable() {
+                    @Override
+                    public Object call() throws Exception {
+                        value.setValue(mState.findReference(id));
+                        return null;
+                    }
+                }));
+                break;
+            case BOOLEAN:
+                value.setValue(stream.readBoolean());
+                break;
+            case CHAR:
+                value.setValue(stream.readChar());
+                break;
+            case FLOAT:
+                value.setValue(stream.readFloat());
+                break;
+            case DOUBLE:
+                value.setValue(stream.readDouble());
+                break;
+            case BYTE:
+                value.setValue(stream.readByte());
+                break;
+            case SHORT:
+                value.setValue(stream.readShort());
+                break;
+            case INT:
+                value.setValue(stream.readInt());
+                break;
+            case LONG:
+                value.setValue(stream.readLong());
+                break;
+        }
+        return value;
     }
 
     private int loadInstanceDump() throws IOException {
         long id = readId();
         int stackId = mInput.readInt();
         StackTrace stack = mState.getStackTrace(stackId);
-        long classId = readId();
+        final long classId = readId();
         int remaining = mInput.readInt();
-        ClassInstance instance = new ClassInstance(id, stack, classId);
+        final ClassInstance instance = new ClassInstance(id, stack);
+        final byte[] data = new byte[remaining];
+        mInput.readFully(data);
+        mPost.add(new PostOperation(ResolvePriority.CLASSES, new Callable() {
+            @Override
+            public Void call() throws Exception {
+                instance.setClass(mState.findClass(classId));
+                return null;
+            }
+        }));
 
-        instance.loadFieldData(mInput, remaining);
+        mPost.add(new PostOperation(ResolvePriority.VALUES, new Callable() {
+            @Override
+            public Void call() throws Exception {
+                DataInputStream stream = new DataInputStream(new ByteArrayInputStream(data));
+                ClassObj clazz = instance.getClassObj();
+                while (clazz != null) {
+                    for (Field field : clazz.getFields()) {
+                        instance.addField(field, readValue(stream, instance, field.getType()));
+                    }
+                    clazz = clazz.getSuperClassObj();
+                }
+                return null;
+            }
+        }));
+
         instance.setHeap(mState.mCurrentHeap);
         mState.addInstance(id, instance);
 
@@ -564,21 +629,31 @@ public class HprofParser {
     }
 
     private int loadObjectArrayDump() throws IOException {
-        long id = readId();
+        final long id = readId();
         int stackId = mInput.readInt();
         StackTrace stack = mState.getStackTrace(stackId);
         int numElements = mInput.readInt();
-        long classId = readId();
+        final long classId = readId();
         int totalBytes = numElements * mIdSize;
-        byte[] data = new byte[totalBytes];
+        Value[] values = new Value[numElements];
         String className = mClassNames.get(classId);
 
-        mInput.readFully(data);
+        final ArrayInstance array = new ArrayInstance(id, stack, Type.OBJECT);
 
-        ArrayInstance array = new ArrayInstance(id, stack, Types.OBJECT,
-                numElements, data);
+        for (int i = 0; i < numElements; i++) {
+            values[i] = readValue(array, Type.OBJECT);
+        }
 
-        array.mClassId = classId;
+        array.setValues(values);
+
+        mPost.add(new PostOperation(ResolvePriority.CLASSES, new Callable() {
+            @Override
+            public Object call() throws Exception {
+                array.setClass(mState.findClass(classId));
+                return null;
+            }
+        }));
+
         array.setHeap(mState.mCurrentHeap);
         mState.addInstance(id, array);
 
@@ -590,15 +665,17 @@ public class HprofParser {
         int stackId = mInput.readInt();
         StackTrace stack = mState.getStackTrace(stackId);
         int numElements = mInput.readInt();
-        int type = mInput.readUnsignedByte();
-        int size = Types.getTypeSize(type);
+        Type type = Type.getType(mInput.readUnsignedByte());
+        int size = type.getSize();
         int totalBytes = numElements * size;
-        byte[] data = new byte[totalBytes];
+        Value[] values = new Value[totalBytes];
 
-        mInput.readFully(data);
+        ArrayInstance array = new ArrayInstance(id, stack, type);
+        for (int i = 0; i < numElements; i++) {
+            values[i] = readValue(array, type);
+        }
 
-        ArrayInstance array = new ArrayInstance(id, stack, type, numElements,
-                data);
+        array.setValues(values);
 
         array.setHeap(mState.mCurrentHeap);
         mState.addInstance(id, array);
@@ -611,10 +688,8 @@ public class HprofParser {
         int threadSerialNumber = mInput.readInt();
         int stackDepth = mInput.readInt();
         ThreadObj thread = mState.getThread(threadSerialNumber);
-        StackTrace trace = mState.getStackTraceAtDepth(thread.mStackTrace,
-                stackDepth);
-        RootObj root = new RootObj(RootType.NATIVE_MONITOR, id,
-                threadSerialNumber, trace);
+        StackTrace trace = mState.getStackTraceAtDepth(thread.mStackTrace, stackDepth);
+        RootObj root = new RootObj(RootType.NATIVE_MONITOR, id, threadSerialNumber, trace);
 
         root.setHeap(mState.mCurrentHeap);
         mState.addRoot(root);
@@ -623,8 +698,8 @@ public class HprofParser {
     }
 
     private int skipValue() throws IOException {
-        int type = mInput.readUnsignedByte();
-        int size = Types.getTypeSize(type);
+        Type type = Type.getType(mInput.readUnsignedByte());
+        int size = type.getSize();
 
         skipFully(size);
 
@@ -642,6 +717,32 @@ public class HprofParser {
             long skipped = mInput.skip(numBytes);
 
             numBytes -= skipped;
+        }
+    }
+
+    /**
+     * The priorities to resolve references after the main pass.
+     */
+    static enum ResolvePriority {
+        CLASSES,
+        VALUES,
+        INSTANCES
+    }
+
+    static class PostOperation implements Comparable<PostOperation> {
+
+        ResolvePriority mPriority;
+
+        Callable mCall;
+
+        PostOperation(ResolvePriority priority, Callable call) {
+            mPriority = priority;
+            mCall = call;
+        }
+
+        @Override
+        public int compareTo(PostOperation other) {
+            return mPriority.compareTo(other.mPriority);
         }
     }
 }

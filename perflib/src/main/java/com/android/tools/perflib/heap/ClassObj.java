@@ -16,27 +16,21 @@
 
 package com.android.tools.perflib.heap;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     String mClassName;
 
-    long mSuperclassId;
+    ClassObj mSuperClass;
 
-    String[] mFieldNames;
+    Field[] mFields;
 
-    int[] mFieldTypes;
-
-    String[] mStaticFieldNames;
-
-    int[] mStaticFieldTypes;
-
-    byte[] mStaticFieldValues;
+    Map<Field, Value> mStaticFields = new HashMap<Field, Value>();
 
     ArrayList<Instance> mInstances = new ArrayList<Instance>();
 
@@ -48,72 +42,6 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         mId = id;
         mStack = stack;
         mClassName = className;
-    }
-
-    @Override
-    public final void resolveReferences(State state) {
-        ByteArrayInputStream bais =
-                new ByteArrayInputStream(mStaticFieldValues);
-        DataInputStream dis = new DataInputStream(bais);
-        int[] types = mStaticFieldTypes;
-        final int N = types.length;
-
-        /*
-         * Spin through the list of static fields, find all object references,
-         * and list ourselves as a reference holder.  Also add them to
-         * the list of root objects.
-         */
-        try {
-            for (int i = 0; i < N; i++) {
-                int type = types[i];
-                int size = Types.getTypeSize(type);
-
-                if (type == Types.OBJECT) {
-                    long id;
-
-                    if (size == 4) {
-                        id = dis.readInt();
-                    } else {
-                        id = dis.readLong();
-                    }
-
-                    RootObj root = new RootObj(RootType.JAVA_STATIC, id);
-
-                    if (id == 0) {
-                        root.mComment = String.format(
-                                "Static field %s:%s null",
-                                mClassName,
-                                mStaticFieldNames[i]);
-                    } else {
-                        Instance instance = state.findReference(id);
-
-                        instance.addParent(this);
-
-                        root.mComment = String.format(
-                                "Static field %s:%s %s [%s] 0x%08x",
-                                mClassName,
-                                mStaticFieldNames[i],
-                                instance.getTypeName(),
-                                instance.mHeap.mName,
-                                id);
-                    }
-
-                    mHeap.addRoot(root);
-                } else {
-                    dis.skipBytes(size);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-        //  Lastly, add ourself as a subclass of our superclass
-        if (mSuperclassId != 0) {
-            ClassObj superclass = state.findClass(mSuperclassId);
-
-            superclass.addSubclass(this);
-        }
     }
 
     public final void addSubclass(ClassObj subclass) {
@@ -134,44 +62,30 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         mInstances.add(instance);
     }
 
-    public final void setSuperclassId(long id) {
-        mSuperclassId = id;
+    public final void setSuperClass(ClassObj superClass) {
+        mSuperClass = superClass;
     }
 
-    public final void setFieldNames(String[] names) {
-        mFieldNames = names;
+    public Field[] getFields() {
+        return mFields;
     }
 
-    public final void setFieldTypes(int[] types) {
-        mFieldTypes = types;
-    }
-
-    public final void setStaticFieldNames(String[] names) {
-        mStaticFieldNames = names;
-    }
-
-    public final void setStaticFieldTypes(int[] types) {
-        mStaticFieldTypes = types;
-    }
-
-    public final void setStaticFieldValues(byte[] values) {
-        mStaticFieldValues = values;
+    public void setFields(Field[] fields) {
+        mFields = fields;
     }
 
     public final void dump() {
         System.out.println("+----------  ClassObj dump for: " + mClassName);
 
         System.out.println("+-----  Static fields");
-
-        for (int i = 0; i < mStaticFieldNames.length; i++) {
-            System.out.println(mStaticFieldNames[i] + ": "
-                    + mStaticFieldTypes[i]);
+        for (Field field : mStaticFields.keySet()) {
+            System.out.println(field.getName() + ": " + field.getType() + " = "
+                    + mStaticFields.get(field));
         }
 
         System.out.println("+-----  Instance fields");
-
-        for (int i = 0; i < mFieldNames.length; i++) {
-            System.out.println(mFieldNames[i] + ": " + mFieldTypes[i]);
+        for (Field field : mFields) {
+            System.out.println(field.getName() + ": " + field.getType());
         }
     }
 
@@ -186,53 +100,18 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
             return;
         }
 
-        if (filter != null) {
-            if (filter.accept(this)) {
-                resultSet.add(this);
-            }
-        } else {
+        if (filter == null || filter.accept(this)) {
             resultSet.add(this);
         }
 
-        ByteArrayInputStream bais =
-                new ByteArrayInputStream(mStaticFieldValues);
-        DataInputStream dis = new DataInputStream(bais);
-        int[] types = mStaticFieldTypes;
-        final int N = types.length;
-        State state = mHeap.mState;
-
-        /*
-         * Spin through the list of static fields, find all object references,
-         * and visit them.
-         */
-        try {
-            for (int i = 0; i < N; i++) {
-                int type = types[i];
-                int size = Types.getTypeSize(type);
-
-                if (type == Types.OBJECT) {
-                    long id;
-
-                    if (size == 4) {
-                        id = dis.readInt();
-                    } else {
-                        id = dis.readLong();
-                    }
-
-                    Instance instance = state.findReference(id);
-
-                    if (instance != null) {
-                        instance.visit(resultSet, filter);
-                    }
-                } else {
-                    dis.skipBytes(size);
-                }
+        for (Value value : mStaticFields.values()) {
+            if (value.getValue() instanceof Instance) {
+                ((Instance) value.getValue()).visit(resultSet, filter);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
+    @Override
     public final int compareTo(ClassObj o) {
         return mClassName.compareTo(o.mClassName);
     }
@@ -243,5 +122,14 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         }
 
         return 0 == compareTo((ClassObj) o);
+    }
+
+    public void addStaticField(Type type, String name, Value value) {
+        // TODO: Do we need to add a root for this objects?
+        mStaticFields.put(new Field(type, name), value);
+    }
+
+    public ClassObj getSuperClassObj() {
+        return mSuperClass;
     }
 }

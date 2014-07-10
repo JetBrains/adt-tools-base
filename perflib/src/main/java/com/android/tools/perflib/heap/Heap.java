@@ -146,42 +146,4 @@ public class Heap {
             }
         }
     }
-
-    /*
-     * Spin through all of the class instances and link them to their
-     * parent class definition objects.  Then have each instance resolve
-     * its own internal object references.
-     */
-    public final void resolveInstanceRefs(State state) {
-        for (Instance instance : mInstances.values()) {
-            ClassObj theClass = mClassesById.get(instance.mClassId);
-
-            if (theClass == null) {
-                continue;
-            }
-
-            String name = theClass.mClassName;
-            String superclassName = "none";
-            ClassObj superClass = mClassesById.get(theClass.mSuperclassId);
-
-            if (superClass != null) {
-                superclassName = superClass.mClassName;
-            }
-
-            theClass.addInstance(instance);
-            instance.resolveReferences(state);
-        }
-    }
-
-    public final void resolveClassStatics(State state) {
-        for (ClassObj theClass : mClassesById.values()) {
-            theClass.resolveReferences(state);
-        }
-    }
-
-    public final void resolveRoots(State state) {
-        for (RootObj root : mRoots) {
-            root.resolveReferences(state);
-        }
-    }
 }
