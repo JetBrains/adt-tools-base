@@ -19,8 +19,11 @@ package com.android.tools.perflib.heap;
 import java.util.Set;
 
 public class RootObj extends Instance {
+
     RootType mType = RootType.UNKNOWN;
+
     int mIndex;
+
     int mThread;
 
     /*
@@ -28,6 +31,7 @@ public class RootObj extends Instance {
      * fields of class objects
      */
     long mParent;
+
     String mComment;
 
     public RootObj(RootType type) {

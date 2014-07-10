@@ -17,13 +17,16 @@
 package com.android.tools.perflib.heap;
 
 
-        import java.io.ByteArrayInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.util.Set;
 
 public class ArrayInstance extends Instance {
+
     private int mType;
+
     private int mNumEntries;
+
     private byte[] mData;
 
     public ArrayInstance(long id, StackTrace stack, int type, int numEntries,

@@ -23,17 +23,23 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class ClassObj extends Instance implements Comparable<ClassObj> {
+
     String mClassName;
+
     long mSuperclassId;
 
     String[] mFieldNames;
+
     int[] mFieldTypes;
 
     String[] mStaticFieldNames;
+
     int[] mStaticFieldTypes;
+
     byte[] mStaticFieldValues;
 
     ArrayList<Instance> mInstances = new ArrayList<Instance>();
+
     Set<ClassObj> mSubclasses = new HashSet<ClassObj>();
 
     int mSize;
@@ -47,7 +53,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     @Override
     public final void resolveReferences(State state) {
         ByteArrayInputStream bais =
-            new ByteArrayInputStream(mStaticFieldValues);
+                new ByteArrayInputStream(mStaticFieldValues);
         DataInputStream dis = new DataInputStream(bais);
         int[] types = mStaticFieldTypes;
         final int N = types.length;
@@ -75,7 +81,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
                     if (id == 0) {
                         root.mComment = String.format(
-                            "Static field %s:%s null",
+                                "Static field %s:%s null",
                                 mClassName,
                                 mStaticFieldNames[i]);
                     } else {
@@ -84,7 +90,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
                         instance.addParent(this);
 
                         root.mComment = String.format(
-                            "Static field %s:%s %s [%s] 0x%08x",
+                                "Static field %s:%s %s [%s] 0x%08x",
                                 mClassName,
                                 mStaticFieldNames[i],
                                 instance.getTypeName(),
@@ -115,7 +121,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     }
 
     public final void dumpSubclasses() {
-        for (ClassObj subclass: mSubclasses) {
+        for (ClassObj subclass : mSubclasses) {
             System.out.println("     " + subclass.mClassName);
         }
     }
@@ -159,7 +165,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
         for (int i = 0; i < mStaticFieldNames.length; i++) {
             System.out.println(mStaticFieldNames[i] + ": "
-                + mStaticFieldTypes[i]);
+                    + mStaticFieldTypes[i]);
         }
 
         System.out.println("+-----  Instance fields");
@@ -189,7 +195,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         }
 
         ByteArrayInputStream bais =
-            new ByteArrayInputStream(mStaticFieldValues);
+                new ByteArrayInputStream(mStaticFieldValues);
         DataInputStream dis = new DataInputStream(bais);
         int[] types = mStaticFieldTypes;
         final int N = types.length;
@@ -232,7 +238,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     }
 
     public final boolean equals(Object o) {
-        if (! (o instanceof ClassObj)) {
+        if (!(o instanceof ClassObj)) {
             return false;
         }
 

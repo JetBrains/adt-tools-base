@@ -17,8 +17,11 @@
 package com.android.tools.perflib.heap;
 
 public class StackTrace {
+
     int mSerialNumber;
+
     int mThreadSerialNumber;
+
     StackFrame[] mFrames;
 
     /*
@@ -28,6 +31,7 @@ public class StackTrace {
      * list of stack frame ids.
      */
     StackTrace mParent = null;
+
     int mOffset = 0;
 
     private StackTrace() {

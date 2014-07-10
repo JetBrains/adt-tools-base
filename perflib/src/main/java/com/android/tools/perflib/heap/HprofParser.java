@@ -18,69 +18,99 @@ package com.android.tools.perflib.heap;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.InputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.HashMap;
 
-public class HprofParser
-{
-    private static final int STRING_IN_UTF8             =   0x01;
-    private static final int LOAD_CLASS                 =   0x02;
-    private static final int UNLOAD_CLASS               =   0x03;   //  unused
-    private static final int STACK_FRAME                =   0x04;
-    private static final int STACK_TRACE                =   0x05;
-    private static final int ALLOC_SITES                =   0x06;   //  unused
-    private static final int HEAP_SUMMARY               =   0x07;
-    private static final int START_THREAD               =   0x0a;   //  unused
-    private static final int END_THREAD                 =   0x0b;   //  unused
-    private static final int HEAP_DUMP                  =   0x0c;
-    private static final int HEAP_DUMP_SEGMENT          =   0x1c;
-    private static final int HEAP_DUMP_END              =   0x2c;
-    private static final int CPU_SAMPLES                =   0x0d;   //  unused
-    private static final int CONTROL_SETTINGS           =   0x0e;   //  unused
+public class HprofParser {
 
-    private static final int ROOT_UNKNOWN               =   0xff;
-    private static final int ROOT_JNI_GLOBAL            =   0x01;
-    private static final int ROOT_JNI_LOCAL             =   0x02;
-    private static final int ROOT_JAVA_FRAME            =   0x03;
-    private static final int ROOT_NATIVE_STACK          =   0x04;
-    private static final int ROOT_STICKY_CLASS          =   0x05;
-    private static final int ROOT_THREAD_BLOCK          =   0x06;
-    private static final int ROOT_MONITOR_USED          =   0x07;
-    private static final int ROOT_THREAD_OBJECT         =   0x08;
-    private static final int ROOT_CLASS_DUMP            =   0x20;
-    private static final int ROOT_INSTANCE_DUMP         =   0x21;
-    private static final int ROOT_OBJECT_ARRAY_DUMP     =   0x22;
-    private static final int ROOT_PRIMITIVE_ARRAY_DUMP  =   0x23;
+    private static final int STRING_IN_UTF8 = 0x01;
+
+    private static final int LOAD_CLASS = 0x02;
+
+    private static final int UNLOAD_CLASS = 0x03;   //  unused
+
+    private static final int STACK_FRAME = 0x04;
+
+    private static final int STACK_TRACE = 0x05;
+
+    private static final int ALLOC_SITES = 0x06;   //  unused
+
+    private static final int HEAP_SUMMARY = 0x07;
+
+    private static final int START_THREAD = 0x0a;   //  unused
+
+    private static final int END_THREAD = 0x0b;   //  unused
+
+    private static final int HEAP_DUMP = 0x0c;
+
+    private static final int HEAP_DUMP_SEGMENT = 0x1c;
+
+    private static final int HEAP_DUMP_END = 0x2c;
+
+    private static final int CPU_SAMPLES = 0x0d;   //  unused
+
+    private static final int CONTROL_SETTINGS = 0x0e;   //  unused
+
+    private static final int ROOT_UNKNOWN = 0xff;
+
+    private static final int ROOT_JNI_GLOBAL = 0x01;
+
+    private static final int ROOT_JNI_LOCAL = 0x02;
+
+    private static final int ROOT_JAVA_FRAME = 0x03;
+
+    private static final int ROOT_NATIVE_STACK = 0x04;
+
+    private static final int ROOT_STICKY_CLASS = 0x05;
+
+    private static final int ROOT_THREAD_BLOCK = 0x06;
+
+    private static final int ROOT_MONITOR_USED = 0x07;
+
+    private static final int ROOT_THREAD_OBJECT = 0x08;
+
+    private static final int ROOT_CLASS_DUMP = 0x20;
+
+    private static final int ROOT_INSTANCE_DUMP = 0x21;
+
+    private static final int ROOT_OBJECT_ARRAY_DUMP = 0x22;
+
+    private static final int ROOT_PRIMITIVE_ARRAY_DUMP = 0x23;
 
     /**
      * Android format addition
      *
-     * Specifies information about which heap certain objects came from.
-     * When a sub-tag of this type appears in a HPROF_HEAP_DUMP or
-     * HPROF_HEAP_DUMP_SEGMENT record, entries that follow it will be
-     * associated with the specified heap.  The HEAP_DUMP_INFO data is reset
-     * at the end of the HEAP_DUMP[_SEGMENT].  Multiple HEAP_DUMP_INFO entries
-     * may appear in a single HEAP_DUMP[_SEGMENT].
+     * Specifies information about which heap certain objects came from. When a sub-tag of this type
+     * appears in a HPROF_HEAP_DUMP or HPROF_HEAP_DUMP_SEGMENT record, entries that follow it will
+     * be associated with the specified heap.  The HEAP_DUMP_INFO data is reset at the end of the
+     * HEAP_DUMP[_SEGMENT].  Multiple HEAP_DUMP_INFO entries may appear in a single
+     * HEAP_DUMP[_SEGMENT].
      *
-     * Format:
-     *     u1: Tag value (0xFE)
-     *     u4: heap ID
-     *     ID: heap name string ID
+     * Format: u1: Tag value (0xFE) u4: heap ID ID: heap name string ID
      */
-    private static final int ROOT_HEAP_DUMP_INFO        =   0xfe;
-    private static final int ROOT_INTERNED_STRING       =   0x89;
-    private static final int ROOT_FINALIZING            =   0x8a;
-    private static final int ROOT_DEBUGGER              =   0x8b;
-    private static final int ROOT_REFERENCE_CLEANUP     =   0x8c;
-    private static final int ROOT_VM_INTERNAL           =   0x8d;
-    private static final int ROOT_JNI_MONITOR           =   0x8e;
-    private static final int ROOT_UNREACHABLE           =   0x90;
-    private static final int ROOT_PRIMITIVE_ARRAY_NODATA=   0xc3;
+    private static final int ROOT_HEAP_DUMP_INFO = 0xfe;
+
+    private static final int ROOT_INTERNED_STRING = 0x89;
+
+    private static final int ROOT_FINALIZING = 0x8a;
+
+    private static final int ROOT_DEBUGGER = 0x8b;
+
+    private static final int ROOT_REFERENCE_CLEANUP = 0x8c;
+
+    private static final int ROOT_VM_INTERNAL = 0x8d;
+
+    private static final int ROOT_JNI_MONITOR = 0x8e;
+
+    private static final int ROOT_UNREACHABLE = 0x90;
+
+    private static final int ROOT_PRIMITIVE_ARRAY_NODATA = 0xc3;
 
     DataInputStream mInput;
+
     int mIdSize;
+
     State mState;
 
     byte[] mFieldBuffer = new byte[8];
@@ -90,6 +120,7 @@ public class HprofParser
      * heap data.
      */
     HashMap<Long, String> mStrings = new HashMap<Long, String>();
+
     HashMap<Long, String> mClassNames = new HashMap<Long, String>();
 
     public HprofParser(DataInputStream in) {
@@ -101,7 +132,7 @@ public class HprofParser
         mState = state;
 
         try {
-            String  s = readNullTerminatedString();
+            String s = readNullTerminatedString();
             DataInputStream in = mInput;
 
             mIdSize = in.readInt();
@@ -170,10 +201,14 @@ public class HprofParser
 
     private long readId() throws IOException {
         switch (mIdSize) {
-            case 1: return mInput.readUnsignedByte();
-            case 2: return mInput.readUnsignedShort();
-            case 4: return ((long) mInput.readInt()) & 0x00000000ffffffffL;
-            case 8: return mInput.readLong();
+            case 1:
+                return mInput.readUnsignedByte();
+            case 2:
+                return mInput.readUnsignedShort();
+            case 4:
+                return ((long) mInput.readInt()) & 0x00000000ffffffffL;
+            case 8:
+                return mInput.readLong();
         }
 
         throw new IllegalArgumentException("ID Length must be 1, 2, 4, or 8");
@@ -214,7 +249,7 @@ public class HprofParser
         int lineNumber = mInput.readInt();
 
         StackFrame frame = new StackFrame(id, methodName, methodSignature,
-            sourceFile, serial, lineNumber);
+                sourceFile, serial, lineNumber);
 
         mState.addStackFrame(frame);
     }
@@ -230,7 +265,7 @@ public class HprofParser
         }
 
         StackTrace trace = new StackTrace(serialNumber, threadSerialNumber,
-            frames);
+                frames);
 
         mState.addStackTrace(trace);
     }
@@ -302,7 +337,7 @@ public class HprofParser
                     length -= loadPrimitiveArrayDump();
 
                     throw new IllegalArgumentException(
-                        "Don't know how to load a nodata array");
+                            "Don't know how to load a nodata array");
 
                 case ROOT_HEAP_DUMP_INFO:
                     int heapId = mInput.readInt();
@@ -343,9 +378,9 @@ public class HprofParser
 
                 default:
                     throw new IllegalArgumentException(
-                        "loadHeapDump loop with unknown tag " + tag
-                        + " with " + mInput.available()
-                        + " bytes possibly remaining");
+                            "loadHeapDump loop with unknown tag " + tag
+                                    + " with " + mInput.available()
+                                    + " bytes possibly remaining");
             }
         }
     }
@@ -356,9 +391,9 @@ public class HprofParser
         int stackFrameNumber = mInput.readInt();
         ThreadObj thread = mState.getThread(threadSerialNumber);
         StackTrace trace = mState.getStackTraceAtDepth(thread.mStackTrace,
-            stackFrameNumber);
+                stackFrameNumber);
         RootObj root = new RootObj(RootType.NATIVE_LOCAL, id,
-            threadSerialNumber, trace);
+                threadSerialNumber, trace);
 
         root.setHeap(mState.mCurrentHeap);
         mState.addRoot(root);
@@ -372,9 +407,9 @@ public class HprofParser
         int stackFrameNumber = mInput.readInt();
         ThreadObj thread = mState.getThread(threadSerialNumber);
         StackTrace trace = mState.getStackTraceAtDepth(thread.mStackTrace,
-            stackFrameNumber);
+                stackFrameNumber);
         RootObj root = new RootObj(RootType.JAVA_LOCAL, id, threadSerialNumber,
-            trace);
+                trace);
 
         root.setHeap(mState.mCurrentHeap);
         mState.addRoot(root);
@@ -388,7 +423,7 @@ public class HprofParser
         ThreadObj thread = mState.getThread(threadSerialNumber);
         StackTrace trace = mState.getStackTrace(thread.mStackTrace);
         RootObj root = new RootObj(RootType.NATIVE_STACK, id,
-            threadSerialNumber, trace);
+                threadSerialNumber, trace);
 
         root.setHeap(mState.mCurrentHeap);
         mState.addRoot(root);
@@ -412,7 +447,7 @@ public class HprofParser
         ThreadObj thread = mState.getThread(threadSerialNumber);
         StackTrace stack = mState.getStackTrace(thread.mStackTrace);
         RootObj root = new RootObj(RootType.THREAD_BLOCK, id,
-            threadSerialNumber, stack);
+                threadSerialNumber, stack);
 
         root.setHeap(mState.mCurrentHeap);
         mState.addRoot(root);
@@ -541,7 +576,7 @@ public class HprofParser
         mInput.readFully(data);
 
         ArrayInstance array = new ArrayInstance(id, stack, Types.OBJECT,
-            numElements, data);
+                numElements, data);
 
         array.mClassId = classId;
         array.setHeap(mState.mCurrentHeap);
@@ -563,7 +598,7 @@ public class HprofParser
         mInput.readFully(data);
 
         ArrayInstance array = new ArrayInstance(id, stack, type, numElements,
-            data);
+                data);
 
         array.setHeap(mState.mCurrentHeap);
         mState.addInstance(id, array);
@@ -577,9 +612,9 @@ public class HprofParser
         int stackDepth = mInput.readInt();
         ThreadObj thread = mState.getThread(threadSerialNumber);
         StackTrace trace = mState.getStackTraceAtDepth(thread.mStackTrace,
-            stackDepth);
+                stackDepth);
         RootObj root = new RootObj(RootType.NATIVE_MONITOR, id,
-            threadSerialNumber, trace);
+                threadSerialNumber, trace);
 
         root.setHeap(mState.mCurrentHeap);
         mState.addRoot(root);
