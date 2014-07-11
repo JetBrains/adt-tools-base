@@ -61,12 +61,7 @@ public class ArrayInstance extends Instance {
         }
     }
 
-    @Override
-    public final String getTypeName() {
-        return mType.name() + "[" + mValues.length + "]";
-    }
-
     public final String toString() {
-        return String.format("%s@0x08x", getTypeName(), mId);
+        return String.format("%s[%d]@0x08x", mType.name(), mValues.length, mId);
     }
 }

@@ -80,8 +80,6 @@ public abstract class Instance {
         mSize = size;
     }
 
-    public abstract String getTypeName();
-
     public void setHeap(Heap heap) {
         mHeap = heap;
     }

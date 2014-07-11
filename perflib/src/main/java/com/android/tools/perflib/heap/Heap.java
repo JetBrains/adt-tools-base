@@ -17,6 +17,7 @@
 package com.android.tools.perflib.heap;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 
 public class Heap {
@@ -145,5 +146,9 @@ public class Heap {
                         + ", composite " + size);
             }
         }
+    }
+
+    public Collection<ClassObj> getClasses() {
+        return mClassesByName.values();
     }
 }

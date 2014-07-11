@@ -36,7 +36,7 @@ public class ClassInstance extends Instance {
 
     @Override
     public final int getSize() {
-        return mClass.getClassObj().getSize();
+        return mClass.getSize();
     }
 
     @Override
@@ -56,12 +56,7 @@ public class ClassInstance extends Instance {
         }
     }
 
-    @Override
-    public final String getTypeName() {
-        return getClassObj().mClassName;
-    }
-
     public final String toString() {
-        return String.format("%s@0x%08x", getTypeName(), mId);
+        return String.format("%s@0x%08x", getClassObj().getClassName(), mId);
     }
 }

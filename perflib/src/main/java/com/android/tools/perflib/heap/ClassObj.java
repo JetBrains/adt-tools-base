@@ -36,8 +36,6 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     Set<ClassObj> mSubclasses = new HashSet<ClassObj>();
 
-    int mSize;
-
     public ClassObj(long id, StackTrace stack, String className) {
         mId = id;
         mStack = stack;
@@ -46,6 +44,10 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     public final void addSubclass(ClassObj subclass) {
         mSubclasses.add(subclass);
+    }
+
+    public final Set<ClassObj> getSubclasses() {
+        return mSubclasses;
     }
 
     public final void dumpSubclasses() {
@@ -64,6 +66,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     public final void setSuperClass(ClassObj superClass) {
         mSuperClass = superClass;
+        superClass.addSubclass(this);
     }
 
     public Field[] getFields() {
@@ -87,11 +90,13 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         for (Field field : mFields) {
             System.out.println(field.getName() + ": " + field.getType());
         }
+        if (mSuperClass != null) {
+            mSuperClass.dump();
+        }
     }
 
-    @Override
-    public final String getTypeName() {
-        return "class " + mClassName;
+    public final String getClassName() {
+        return mClassName;
     }
 
     @Override
