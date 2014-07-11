@@ -17,6 +17,7 @@
 package com.android.tools.perflib.heap;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -134,7 +135,15 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         mStaticFields.put(new Field(type, name), value);
     }
 
+    public Value getStaticField(Type type, String name) {
+        return mStaticFields.get(new Field(type, name));
+    }
+
     public ClassObj getSuperClassObj() {
         return mSuperClass;
+    }
+
+    public Collection<Instance> getInstances() {
+        return mInstances;
     }
 }
