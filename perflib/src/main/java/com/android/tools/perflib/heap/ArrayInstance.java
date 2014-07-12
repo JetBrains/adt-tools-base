@@ -34,6 +34,10 @@ public class ArrayInstance extends Instance {
         mValues = values;
     }
 
+    public Value[] getValues() {
+        return mValues;
+    }
+
     @Override
     public final int getSize() {
         return mValues.length * mType.getSize();
@@ -62,6 +66,6 @@ public class ArrayInstance extends Instance {
     }
 
     public final String toString() {
-        return String.format("%s[%d]@0x08x", mType.name(), mValues.length, mId);
+        return String.format("%s[%d]@0x%08x", mType.name(), mValues.length, mId);
     }
 }

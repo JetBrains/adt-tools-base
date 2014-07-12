@@ -666,8 +666,7 @@ public class HprofParser {
         int numElements = mInput.readInt();
         Type type = Type.getType(mInput.readUnsignedByte());
         int size = type.getSize();
-        int totalBytes = numElements * size;
-        Value[] values = new Value[totalBytes];
+        Value[] values = new Value[numElements];
 
         ArrayInstance array = new ArrayInstance(id, stack, type);
         for (int i = 0; i < numElements; i++) {
@@ -679,7 +678,7 @@ public class HprofParser {
         array.setHeap(mState.mCurrentHeap);
         mState.addInstance(id, array);
 
-        return mIdSize + 4 + 4 + 1 + totalBytes;
+        return mIdSize + 4 + 4 + 1 + numElements * size;
     }
 
     private int loadJniMonitor() throws IOException {

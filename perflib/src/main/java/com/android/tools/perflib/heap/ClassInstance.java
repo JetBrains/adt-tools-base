@@ -34,6 +34,10 @@ public class ClassInstance extends Instance {
         mValues.put(field, value);
     }
 
+    public Value getField(Type type, String name) {
+        return mValues.get(new Field(type, name));
+    }
+
     @Override
     public final int getSize() {
         return mClass.getSize();
