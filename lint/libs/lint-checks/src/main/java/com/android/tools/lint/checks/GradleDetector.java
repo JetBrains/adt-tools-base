@@ -447,7 +447,9 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 }
             } else {
                 String dependency = getStringLiteralValue(value);
-                if (dependency != null) {
+                // If the dependency is a GString (i.e. it uses Groovy variable substitution,
+                // with a $variable_name syntax) then don't try to parse it.
+                if (dependency != null && !dependency.contains("$")) {
                     GradleCoordinate gc = GradleCoordinate.parseCoordinateString(dependency);
                     if (gc != null) {
                         if (gc.acceptsGreaterRevisions()) {
