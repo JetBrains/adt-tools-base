@@ -18,8 +18,11 @@ package com.android.ddmlib;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.collect.Lists;
 
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -213,23 +216,29 @@ public class AllocationInfo implements IStackTraceInfo {
      * the given locale) this allocation info.
      */
     public boolean filter(String filter, boolean fullTrace, Locale locale) {
-        filter = filter.toLowerCase(locale);
+        return allocatedClassMatches(filter, locale) || !getMatchingStackFrames(filter, fullTrace, locale).isEmpty();
+    }
 
-        if (mAllocatedClass.toLowerCase(locale).contains(filter)) {
-            return true;
+    public boolean allocatedClassMatches(@NonNull String pattern, @NonNull Locale locale) {
+      return mAllocatedClass.toLowerCase(locale).contains(pattern.toLowerCase(locale));
+    }
+
+    @NonNull
+    public List<String> getMatchingStackFrames(@NonNull String filter, boolean fullTrace, @NonNull Locale locale) {
+      filter = filter.toLowerCase(locale);
+      // check the top of the stack trace always
+      if (mStackTrace.length > 0) {
+        final int length = fullTrace ? mStackTrace.length : 1;
+        List<String> matchingFrames = Lists.newArrayListWithExpectedSize(length);
+        for (int i = 0; i < length; ++i) {
+          String frameString = mStackTrace[i].toString();
+          if (frameString.toLowerCase(locale).contains(filter)) {
+            matchingFrames.add(frameString);
+          }
         }
-
-        if (mStackTrace.length > 0) {
-            // check the top of the stack trace always
-            final int length = fullTrace ? mStackTrace.length : 1;
-
-            for (int i = 0 ; i < length ; i++) {
-                if (mStackTrace[i].toString().toLowerCase(locale).contains(filter)) {
-                  return true;
-                }
-            }
-        }
-
-        return false;
+        return matchingFrames;
+      } else {
+        return Collections.emptyList();
+      }
     }
 }
