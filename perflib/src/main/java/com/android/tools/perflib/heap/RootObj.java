@@ -16,6 +16,8 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.annotations.Nullable;
+
 import java.util.Set;
 
 public class RootObj extends Instance {
@@ -67,37 +69,28 @@ public class RootObj extends Instance {
 
     @Override
     public final int getSize() {
-        Instance instance = null;
-
-        if (mType == RootType.SYSTEM_CLASS) {
-            instance = mHeap.mState.findClass(mId);
-        } else {
-            instance = mHeap.mState.findReference(mId);
-        }
-
-        if (instance == null) {
-            return 0;
-        }
-
-        return instance.getSize();
+        Instance instance = getReferredInstance();
+        return instance != null ? instance.getSize() : 0;
     }
 
     @Override
-    public final void visit(Set<Instance> resultSet, Filter filter) {
-        if (resultSet.contains(this)) {
-            return;
-        }
-
-        if (filter != null) {
-            if (filter.accept(this)) {
-                resultSet.add(this);
-            }
-        } else {
-            resultSet.add(this);
+    public final void accept(Visitor visitor) {
+        Instance instance = getReferredInstance();
+        if (instance != null) {
+            instance.accept(visitor);
         }
     }
 
     public final String toString() {
         return String.format("%s@0x08x", mType.getName(), mId);
+    }
+
+    @Nullable
+    public Instance getReferredInstance() {
+        if (mType == RootType.SYSTEM_CLASS) {
+            return mHeap.mState.findClass(mId);
+        } else {
+            return mHeap.mState.findReference(mId);
+        }
     }
 }

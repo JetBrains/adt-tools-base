@@ -16,8 +16,6 @@
 
 package com.android.tools.perflib.heap;
 
-import java.util.Set;
-
 public class ArrayInstance extends Instance {
 
     private Type mType;
@@ -44,24 +42,18 @@ public class ArrayInstance extends Instance {
     }
 
     @Override
-    public final void visit(Set<Instance> resultSet, Filter filter) {
-        //  If we're in the set then we and our children have been visited
-        if (resultSet.contains(this)) {
-            return;
-        }
-
-        if (filter == null || filter.accept(this)) {
-            resultSet.add(this);
-        }
-
+    public final void accept(Visitor visitor) {
         if (mType != Type.OBJECT) {
             return;
         }
 
-        for (Value value : mValues) {
-            if (value.getValue() instanceof Instance) {
-                ((Instance)value.getValue()).visit(resultSet, filter);
+        if (visitor.visitEnter(this)) {
+            for (Value value : mValues) {
+                if (value.getValue() instanceof Instance) {
+                    ((Instance) value.getValue()).accept(visitor);
+                }
             }
+            visitor.visitLeave(this);
         }
     }
 

@@ -16,6 +16,8 @@
 
 package com.android.tools.perflib.heap;
 
+import com.google.common.collect.Sets;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -39,13 +41,7 @@ public abstract class Instance {
     //  List of all objects that hold a live reference to this object
     private ArrayList<Instance> mReferences;
 
-    /*
-     * Some operations require gathering all the objects in a given section
-     * of the object graph.  If non-null, the filter is applied to each
-     * node in the graph to determine if it should be added to the result
-     * set.
-     */
-    public abstract void visit(Set<Instance> resultSet, Filter filter);
+    public abstract void accept(Visitor visitor);
 
     public ClassObj getClassObj() {
         return mClass;
@@ -58,16 +54,13 @@ public abstract class Instance {
     }
 
     public final int getCompositeSize() {
-        HashSet<Instance> set = new HashSet<Instance>();
-
-        visit(set, null);
+        CollectingVisitor visitor = new CollectingVisitor();
+        this.accept(visitor);
 
         int size = 0;
-
-        for (Instance instance : set) {
+        for (Instance instance : visitor.getVisited()) {
             size += instance.getSize();
         }
-
         return size;
     }
 
@@ -101,8 +94,23 @@ public abstract class Instance {
         return mReferences;
     }
 
-    public interface Filter {
 
-        public boolean accept(Instance instance);
-    }
+    public static class CollectingVisitor implements Visitor {
+
+        private final Set<Instance> mVisited = Sets.newHashSet();
+
+        @Override
+        public boolean visitEnter(Instance instance) {
+            //  If we're in the set then we and our children have been visited
+            return mVisited.add(instance);
+        }
+
+        @Override
+        public void visitLeave(Instance instance) {
+        }
+
+        public Set<Instance> getVisited() {
+            return mVisited;
+        }
+      }
 }

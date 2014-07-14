@@ -19,7 +19,6 @@ package com.android.tools.perflib.heap;
 import com.google.common.collect.Maps;
 
 import java.util.Map;
-import java.util.Set;
 
 public class ClassInstance extends Instance {
 
@@ -44,19 +43,14 @@ public class ClassInstance extends Instance {
     }
 
     @Override
-    public final void visit(Set<Instance> resultSet, Filter filter) {
-        if (resultSet.contains(this)) {
-            return;
-        }
-
-        if (filter == null || filter.accept(this)) {
-            resultSet.add(this);
-        }
-
-        for (Value value : mValues.values()) {
-            if (value.getValue() instanceof Instance) {
-                ((Instance)value.getValue()).visit(resultSet, filter);
+    public final void accept(Visitor visitor) {
+        if (visitor.visitEnter(this)) {
+            for (Value value : mValues.values()) {
+                if (value.getValue() instanceof Instance) {
+                    ((Instance) value.getValue()).accept(visitor);
+                }
             }
+            visitor.visitLeave(this);
         }
     }
 
