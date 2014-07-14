@@ -130,7 +130,6 @@ public class ApplicationVariantFactory implements VariantFactory {
         int count = file.size();
         if (count == 1) {
             if (variantData.getVariantConfiguration().getBuildType().isEmbedMicroApp()) {
-                basePlugin.createCopyMicroApkTask(variantData, config);
                 basePlugin.createGenerateMicroApkDataTask(variantData, config);
             }
         } else if (count > 1) {

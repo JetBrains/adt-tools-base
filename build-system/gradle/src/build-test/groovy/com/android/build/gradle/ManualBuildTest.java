@@ -16,6 +16,10 @@
 
 package com.android.build.gradle;
 
+import static com.android.SdkConstants.DOT_ANDROID_PACKAGE;
+import static com.android.SdkConstants.FD_RES;
+import static com.android.SdkConstants.FD_RES_RAW;
+import static com.android.builder.core.BuilderConstants.ANDROID_WEAR_MICRO_APK;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_ALIAS;
@@ -298,8 +302,8 @@ public class ManualBuildTest extends BuildTest {
 
         File mainApk = new File(project, "main/build/" + FD_OUTPUTS + "/apk/main-release-unsigned.apk");
 
-        checkJar(mainApk, Collections.<String,
-                String>singletonMap("assets/embedded-release-unsigned.apk", null));
+        checkJar(mainApk, Collections.<String, String>singletonMap(
+                FD_RES + '/' + FD_RES_RAW + '/' + ANDROID_WEAR_MICRO_APK + DOT_ANDROID_PACKAGE, null));
     }
 
     public void testBasicWithSigningOverride() throws Exception {

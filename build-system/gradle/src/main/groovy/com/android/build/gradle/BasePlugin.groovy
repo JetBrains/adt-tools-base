@@ -554,6 +554,10 @@ public abstract class BasePlugin {
         processManifestTask.plugin = this
 
         processManifestTask.dependsOn variantData.prepareDependenciesTask
+        if (variantData.generateApkDataTask != null) {
+            processManifestTask.dependsOn variantData.generateApkDataTask
+        }
+
         processManifestTask.variantConfiguration = config
         processManifestTask.conventionMapping.libraries = {
             List<ManifestDependencyImpl> manifests = getManifestDependencies(config.directLibraries)
@@ -1133,32 +1137,10 @@ public abstract class BasePlugin {
             compileTask.options.bootClasspath = androidBuilder.getBootClasspath().join(File.pathSeparator)
         }
     }
-
-    public void createCopyMicroApkTask(@NonNull BaseVariantData variantData,
-                                       @NonNull Configuration config) {
-        Copy copyTask = project.tasks.create("copy${variantData.variantConfiguration.fullName.capitalize()}MicroApk",
-                Copy)
-        variantData.copyApkTask = copyTask
-
-        File outDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/${FD_GENERATED}/assets/microapk/${variantData.variantConfiguration.dirName}")
-
-        copyTask.from { config.getFiles() }
-        copyTask.into { outDir }
-
-        // make sure the destination folder is empty first
-        copyTask.doFirst {
-            outDir.deleteDir()
-            outDir.mkdirs()
-        }
-
-        copyTask.dependsOn config
-        variantData.assetGenTask.dependsOn copyTask
-    }
-
     public void createGenerateMicroApkDataTask(@NonNull BaseVariantData variantData,
                                                @NonNull Configuration config) {
         GenerateApkDataTask task = project.tasks.create(
-                "generate${variantData.variantConfiguration.fullName.capitalize()}ApkData",
+                "handle${variantData.variantConfiguration.fullName.capitalize()}MicroApk",
                 GenerateApkDataTask)
 
         variantData.generateApkDataTask = task
@@ -1179,6 +1161,8 @@ public abstract class BasePlugin {
         }
 
         task.dependsOn config
+
+        // the merge res task will need to run after this one.
         variantData.resourceGenTask.dependsOn task
     }
 

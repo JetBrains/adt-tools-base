@@ -1165,7 +1165,8 @@ public class AndroidBuilder {
 
     public void generateApkData(@NonNull File apkFile,
                                 @NonNull File outResFolder,
-                                @NonNull String mainPkgName)
+                                @NonNull String mainPkgName,
+                                @NonNull String resName)
             throws InterruptedException, LoggedErrorException, IOException {
 
         // need to run aapt to get apk information
@@ -1228,7 +1229,7 @@ public class AndroidBuilder {
                 "    <versionCode>%2$s</versionCode>\n" +
                 "    <versionName>%3$s</versionName>\n" +
                 "    <path>%4$s</path>\n" +
-                "</wearableApp>", pkgName, versionCode, versionName, apkFile.getName());
+                "</wearableApp>", pkgName, versionCode, versionName, resName);
 
         // xml folder
         File resXmlFile = new File(outResFolder, FD_RES_XML);
