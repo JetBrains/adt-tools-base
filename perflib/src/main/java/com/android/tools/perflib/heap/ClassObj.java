@@ -101,19 +101,14 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     }
 
     @Override
-    public final void visit(Set<Instance> resultSet, Filter filter) {
-        if (resultSet.contains(this)) {
-            return;
-        }
-
-        if (filter == null || filter.accept(this)) {
-            resultSet.add(this);
-        }
-
-        for (Value value : mStaticFields.values()) {
-            if (value.getValue() instanceof Instance) {
-                ((Instance) value.getValue()).visit(resultSet, filter);
+    public final void accept(Visitor visitor) {
+        if (visitor.visitEnter(this)) {
+            for (Value value : mStaticFields.values()) {
+                if (value.getValue() instanceof Instance) {
+                    ((Instance) value.getValue()).accept(visitor);
+                }
             }
+            visitor.visitLeave(this);
         }
     }
 

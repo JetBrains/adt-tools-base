@@ -151,4 +151,8 @@ public class Heap {
     public Collection<ClassObj> getClasses() {
         return mClassesByName.values();
     }
+
+    public Iterable<RootObj> getRoots() {
+        return mRoots;
+    }
 }
