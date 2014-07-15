@@ -253,11 +253,20 @@ public class ManifestDetectorTest extends AbstractCheckTest {
         assertEquals(
                 "No warnings.",
                 lintProject(
-                        "AndroidManifest.xml",
                         "apicheck/minsdk1.xml=>AndroidManifest.xml",
                         "res/values/strings.xml"));
     }
 
+    public void testAllowBackupOk3() throws Exception {
+        // Not flagged in library projects
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals(
+                "No warnings.",
+                lintProject(
+                        "AndroidManifest.xml",
+                        "multiproject/library.properties=>project.properties",
+                        "res/values/strings.xml"));
+    }
 
     public void testAllowIgnore() throws Exception {
         mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);

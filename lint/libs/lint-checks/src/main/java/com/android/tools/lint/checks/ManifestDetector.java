@@ -440,6 +440,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     @Override
     public void afterCheckProject(@NonNull Context context) {
         if (!mSeenAllowBackup && context.isEnabled(ALLOW_BACKUP)
+                && !context.getProject().isLibrary()
                 && context.getMainProject().getMinSdk() >= 4) {
             Location location = getMainApplicationTagLocation(context);
             context.report(ALLOW_BACKUP, location,
