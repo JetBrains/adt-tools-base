@@ -19,55 +19,56 @@ package com.android.tools.perflib.heap.analysis;
 import com.android.tools.perflib.heap.ClassInstance;
 import com.android.tools.perflib.heap.ClassObj;
 import com.android.tools.perflib.heap.Field;
-import com.android.tools.perflib.heap.Heap;
 import com.android.tools.perflib.heap.RootObj;
 import com.android.tools.perflib.heap.RootType;
-import com.android.tools.perflib.heap.State;
+import com.android.tools.perflib.heap.Snapshot;
 import com.android.tools.perflib.heap.Type;
 import com.android.tools.perflib.heap.Value;
 
 /**
- * Utility for creating Heap objects to be used in tests.
+ * Utility for creating Snapshot objects to be used in tests.
  *
- * As the main concern here is graph connectivity, the Heap contains only ClassInstance objects
- * with id in [1..numNodes], each instance pointing to a unique ClassObj. The class ids range in
- * [101..100+numNodes] and their size is set to match the id of their object instance.
+ * As the main concern here is graph connectivity, we only initialize the app heap, creating
+ * ClassInstance objects with id in [1..numNodes], each instance pointing to a unique ClassObj.
+ * The class ids range in [101..100+numNodes] and their size is set to match the id of their object
+ * instance. The default heap holds the roots.
  */
-public class HeapBuilder {
+public class SnapshotBuilder {
 
-    private final Heap mHeap;
+    private final Snapshot mSnapshot;
 
     private final ClassInstance[] mNodes;
 
-    public HeapBuilder(int numNodes) {
-        mHeap = new State().setToDefaultHeap();
+    public SnapshotBuilder(int numNodes) {
+        mSnapshot = new Snapshot();
+        mSnapshot.setHeapTo(13, "testHeap");
+
         mNodes = new ClassInstance[numNodes + 1];
         for (int i = 1; i <= numNodes; i++) {
             ClassObj clazz = new ClassObj(100 + i, null, "Class" + i);
             clazz.setSize(i);
 
             mNodes[i] = new ClassInstance(i, null);
-            mNodes[i].setHeap(mHeap);
             mNodes[i].setClass(clazz);
-            mHeap.addInstance(i, mNodes[i]);
+            mSnapshot.addInstance(i, mNodes[i]);
         }
     }
 
-    public HeapBuilder addReference(int nodeFrom, int nodeTo) {
+    public SnapshotBuilder addReference(int nodeFrom, int nodeTo) {
         Value link = new Value(mNodes[nodeFrom]);
         link.setValue(mNodes[nodeTo]);
         mNodes[nodeFrom].addField(new Field(Type.OBJECT, "f" + nodeTo), link);
         return this;
     }
 
-    public HeapBuilder addRoot(int node) {
+    public SnapshotBuilder addRoot(int node) {
         RootObj root = new RootObj(RootType.JAVA_LOCAL, node);
-        root.setHeap(mHeap);
-        mHeap.addRoot(root);
+        mSnapshot.setToDefaultHeap();
+        mSnapshot.addRoot(root);
         return this;
     }
 
-    public Heap getHeap() {
-        return mHeap;
+    public Snapshot getSnapshot() {
+        return mSnapshot;
     }
 }

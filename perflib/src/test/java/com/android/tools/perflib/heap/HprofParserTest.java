@@ -27,7 +27,7 @@ import java.util.Collection;
 
 public class HprofParserTest extends TestCase {
 
-    State mState;
+    Snapshot mSnapshot;
 
     @Override
     protected void setUp() throws Exception {
@@ -39,14 +39,14 @@ public class HprofParserTest extends TestCase {
         BufferedInputStream bis = new BufferedInputStream(fis);
         DataInputStream dis = new DataInputStream(bis);
         try {
-            mState = (new HprofParser(dis)).parse();
+            mSnapshot = (new HprofParser(dis)).parse();
         } finally {
             Closeables.close(dis, false);
         }
     }
 
     public void testHierarchy() {
-        ClassObj application = mState.findClass("android.app.Application");
+        ClassObj application = mSnapshot.findClass("android.app.Application");
         assertNotNull(application);
 
         ClassObj contextWrapper = application.getSuperClassObj();
@@ -73,7 +73,7 @@ public class HprofParserTest extends TestCase {
      * strings and primitive values.
      */
     public void testObjectConstruction() {
-        ClassObj clazz = mState.findClass("java.lang.Thread$State");
+        ClassObj clazz = mSnapshot.findClass("java.lang.Thread$State");
         assertNotNull(clazz);
 
         Object object = clazz.getStaticField(Type.OBJECT, "$VALUES").getValue();

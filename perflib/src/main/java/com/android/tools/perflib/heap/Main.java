@@ -34,27 +34,27 @@ public class Main {
             bis = new BufferedInputStream(fis);
             dis = new DataInputStream(bis);
 
-            State state = (new HprofParser(dis)).parse();
+            Snapshot snapshot = (new HprofParser(dis)).parse();
 
             dis.close();
 
-            testClassesQuery(state);
-            testAllClassesQuery(state);
-            testFindInstancesOf(state);
-            testFindAllInstancesOf(state);
+            testClassesQuery(snapshot);
+            testAllClassesQuery(snapshot);
+            testFindInstancesOf(snapshot);
+            testFindAllInstancesOf(snapshot);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private static void testClassesQuery(State state) {
+    private static void testClassesQuery(Snapshot snapshot) {
         String[] x = new String[]{
                 "char[",
                 "javax.",
                 "org.xml.sax"
         };
 
-        Map<String, Set<ClassObj>> someClasses = Queries.classes(state, x);
+        Map<String, Set<ClassObj>> someClasses = Queries.classes(snapshot, x);
 
         for (String thePackage : someClasses.keySet()) {
             System.out.println("------------------- " + thePackage);
@@ -67,8 +67,8 @@ public class Main {
         }
     }
 
-    private static void testAllClassesQuery(State state) {
-        Map<String, Set<ClassObj>> allClasses = Queries.allClasses(state);
+    private static void testAllClassesQuery(Snapshot snapshot) {
+        Map<String, Set<ClassObj>> allClasses = Queries.allClasses(snapshot);
 
         for (String thePackage : allClasses.keySet()) {
             System.out.println("------------------- " + thePackage);
@@ -81,14 +81,14 @@ public class Main {
         }
     }
 
-    private static void testFindInstancesOf(State state) {
-        Instance[] instances = Queries.instancesOf(state, "java.lang.String");
+    private static void testFindInstancesOf(Snapshot snapshot) {
+        Instance[] instances = Queries.instancesOf(snapshot, "java.lang.String");
 
         System.out.println("There are " + instances.length + " Strings.");
     }
 
-    private static void testFindAllInstancesOf(State state) {
-        Instance[] instances = Queries.allInstancesOf(state,
+    private static void testFindAllInstancesOf(Snapshot snapshot) {
+        Instance[] instances = Queries.allInstancesOf(snapshot,
                 "android.graphics.drawable.Drawable");
 
         System.out.println("There are " + instances.length

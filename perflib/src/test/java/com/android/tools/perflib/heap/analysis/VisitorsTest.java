@@ -22,7 +22,7 @@ import com.android.tools.perflib.heap.ClassObj;
 import com.android.tools.perflib.heap.Heap;
 import com.android.tools.perflib.heap.RootObj;
 import com.android.tools.perflib.heap.RootType;
-import com.android.tools.perflib.heap.State;
+import com.android.tools.perflib.heap.Snapshot;
 import com.android.tools.perflib.heap.Type;
 import com.android.tools.perflib.heap.Value;
 
@@ -37,26 +37,24 @@ public class VisitorsTest extends TestCase {
 
     private final ClassObj mDummyClass = new ClassObj(0, null, "dummy");
 
-    private Heap mHeap;
+    private Snapshot mSnapshot;
 
     @Override
     public void setUp() throws Exception {
-        mHeap = new State().setToDefaultHeap();
-        mDummyClass.setHeap(mHeap);
+        mSnapshot = new Snapshot();
+        mSnapshot.setHeapTo(13, "testHeap");
         mDummyClass.setSize(20);
-        mHeap.addClass(0, mDummyClass);
+        mSnapshot.addClass(0, mDummyClass);
     }
 
     public void testSimpleStaticFieldsGraph() {
         ClassInstance object1 = new ClassInstance(1, null);
-        object1.setHeap(mHeap);
         object1.setClass(mDummyClass);
-        mHeap.addInstance(1, object1);
+        mSnapshot.addInstance(1, object1);
 
         ClassInstance object2 = new ClassInstance(2, null);
         object2.setClass(mDummyClass);
-        object2.setHeap(mHeap);
-        mHeap.addInstance(2, object2);
+        mSnapshot.addInstance(2, object2);
 
         ClassObj clazz = new ClassObj(13, null, "FooBar");
         Value value1 = new Value(clazz);
@@ -66,12 +64,11 @@ public class VisitorsTest extends TestCase {
         value2.setValue(object2);
         clazz.addStaticField(Type.OBJECT, "bar", value2);
         clazz.setSize(10);
-        clazz.setHeap(mHeap);
-        mHeap.addClass(13, clazz);
+        mSnapshot.addClass(13, clazz);
 
+        mSnapshot.setToDefaultHeap();
         RootObj root = new RootObj(RootType.SYSTEM_CLASS, 13);
-        root.setHeap(mHeap);
-        mHeap.addRoot(root);
+        mSnapshot.addRoot(root);
 
         // Size of root is 2 x sizeof(mDummyClass) + sizeof(clazz)
         assertEquals(50, root.getCompositeSize());
@@ -79,51 +76,49 @@ public class VisitorsTest extends TestCase {
 
     public void testSimpleArray() {
         ClassInstance object = new ClassInstance(1, null);
-        object.setHeap(mHeap);
         object.setClass(mDummyClass);
-        mHeap.addInstance(1, object);
+        mSnapshot.addInstance(1, object);
 
         ArrayInstance array = new ArrayInstance(2, null, Type.OBJECT);
         Value value = new Value(array);
         value.setValue(object);
         array.setValues(new Value[] {value, value, value});
-        array.setHeap(mHeap);
-        mHeap.addInstance(2, array);
+        mSnapshot.addInstance(2, array);
 
+        mSnapshot.setToDefaultHeap();
         RootObj root = new RootObj(RootType.JAVA_LOCAL, 2);
-        root.setHeap(mHeap);
-        mHeap.addRoot(root);
+        mSnapshot.addRoot(root);
 
         // Size of root is sizeof(object) + 3 x sizeof(pointer to object)
         assertEquals(32, root.getCompositeSize());
     }
 
     public void testBasicDiamond() {
-        Heap heap = new HeapBuilder(4)
+        Snapshot snapshot = new SnapshotBuilder(4)
                 .addReference(1, 2)
                 .addReference(1, 3)
                 .addReference(2, 4)
                 .addReference(3, 4)
                 .addRoot(1)
-                .getHeap();
+                .getSnapshot();
 
-        assertEquals(10, heap.getInstance(1).getCompositeSize());
-        assertEquals(6, heap.getInstance(2).getCompositeSize());
-        assertEquals(7, heap.getInstance(3).getCompositeSize());
-        assertEquals(4, heap.getInstance(4).getCompositeSize());
+        assertEquals(10, snapshot.findReference(1).getCompositeSize());
+        assertEquals(6, snapshot.findReference(2).getCompositeSize());
+        assertEquals(7, snapshot.findReference(3).getCompositeSize());
+        assertEquals(4, snapshot.findReference(4).getCompositeSize());
     }
 
     public void testBasicCycle() {
-        Heap heap = new HeapBuilder(3)
+        Snapshot snapshot = new SnapshotBuilder(3)
                 .addReference(1, 2)
                 .addReference(2, 3)
                 .addReference(3, 1)
                 .addRoot(1)
-                .getHeap();
+                .getSnapshot();
 
         // The composite size is a sum over all nodes participating in the cycle.
-        assertEquals(6, heap.getInstance(1).getCompositeSize());
-        assertEquals(6, heap.getInstance(2).getCompositeSize());
-        assertEquals(6, heap.getInstance(3).getCompositeSize());
+        assertEquals(6, snapshot.findReference(1).getCompositeSize());
+        assertEquals(6, snapshot.findReference(2).getCompositeSize());
+        assertEquals(6, snapshot.findReference(3).getCompositeSize());
     }
 }

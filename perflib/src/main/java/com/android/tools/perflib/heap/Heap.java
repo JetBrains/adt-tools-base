@@ -44,8 +44,8 @@ public class Heap {
     //  List of instances of above class definitions
     HashMap<Long, Instance> mInstances = new HashMap<Long, Instance>();
 
-    //  The super-state that this heap is part of
-    State mState;
+    //  The snapshot that this heap is part of
+    Snapshot mSnapshot;
 
     public Heap(String name) {
         mName = name;
@@ -152,7 +152,4 @@ public class Heap {
         return mClassesByName.values();
     }
 
-    public Iterable<RootObj> getRoots() {
-        return mRoots;
-    }
 }

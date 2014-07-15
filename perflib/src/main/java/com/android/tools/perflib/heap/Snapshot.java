@@ -20,25 +20,30 @@ import java.util.Collection;
 import java.util.HashMap;
 
 /*
- * State is a snapshot of all of the heaps, and related meta-data, for
- * the runtime at a given instant.
+ * A snapshot of all of the heaps, and related meta-data, for the runtime at a given instant.
  *
- * During parsing of the HPROF file HEAP_DUMP_INFO chunks change which heap
- * is being referenced.
+ * There are three possible heaps: default, app and zygote. GC roots are always reported in the
+ * default heap, and they are simply references to objects living in the zygote or the app heap.
+ * During parsing of the HPROF file HEAP_DUMP_INFO chunks change which heap is being referenced.
  */
-public class State {
+public class Snapshot {
+
+    //  Special root object used in dominator computation for objects reachable via multiple roots.
+    public static final Instance SENTINEL_ROOT = new RootObj(RootType.UNKNOWN);
+
+    private static final int DEFAULT_HEAP_ID = 0;
 
     HashMap<Integer, Heap> mHeaps;
 
     Heap mCurrentHeap;
 
-    public State() {
+    public Snapshot() {
         mHeaps = new HashMap<Integer, Heap>();
         setToDefaultHeap();
     }
 
     public Heap setToDefaultHeap() {
-        return setHeapTo(0, "default");
+        return setHeapTo(DEFAULT_HEAP_ID, "default");
     }
 
     public Heap setHeapTo(int id, String name) {
@@ -46,7 +51,7 @@ public class State {
 
         if (heap == null) {
             heap = new Heap(name);
-            heap.mState = this;
+            heap.mSnapshot = this;
             mHeaps.put(id, heap);
         }
 
@@ -73,6 +78,11 @@ public class State {
         return null;
     }
 
+    public Iterable<RootObj> getGCRoots() {
+        // Roots are always in the default heap.
+        return mHeaps.get(DEFAULT_HEAP_ID).mRoots;
+    }
+
     public final void addStackFrame(StackFrame theFrame) {
         mCurrentHeap.addStackFrame(theFrame);
     }
@@ -96,6 +106,7 @@ public class State {
 
     public final void addRoot(RootObj root) {
         mCurrentHeap.addRoot(root);
+        root.setHeap(mCurrentHeap);
     }
 
     public final void addThread(ThreadObj thread, int serialNumber) {
@@ -108,10 +119,12 @@ public class State {
 
     public final void addInstance(long id, Instance instance) {
         mCurrentHeap.addInstance(id, instance);
+        instance.setHeap(mCurrentHeap);
     }
 
     public final void addClass(long id, ClassObj theClass) {
         mCurrentHeap.addClass(id, theClass);
+        theClass.setHeap(mCurrentHeap);
     }
 
     public final Instance findReference(long id) {
