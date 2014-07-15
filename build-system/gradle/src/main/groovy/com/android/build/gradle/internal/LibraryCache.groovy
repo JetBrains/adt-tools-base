@@ -72,14 +72,10 @@ public class LibraryCache {
         if (newItem) {
             try {
                 project.logger.debug("$taskName: ERASE ${folderOut.getPath()}")
-                folderOut.deleteDir()
-                folderOut.mkdirs()
+
+                unzipAar(bundle, folderOut, project)
 
                 project.logger.debug("$taskName: UNZIP ${bundle.getPath()} -> ${folderOut.getPath()}")
-                project.copy {
-                    from project.zipTree(bundle)
-                    into folderOut
-                }
             } finally {
                 latch.countDown()
             }
@@ -87,4 +83,15 @@ public class LibraryCache {
             latch.await()
         }
     }
+
+    public static void unzipAar(File bundle, File folderOut, Project project) {
+        folderOut.deleteDir()
+        folderOut.mkdirs()
+
+        project.copy {
+            from project.zipTree(bundle)
+            into folderOut
+        }
+    }
+
 }
