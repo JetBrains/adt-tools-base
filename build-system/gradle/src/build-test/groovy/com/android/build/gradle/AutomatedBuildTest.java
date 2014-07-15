@@ -64,6 +64,7 @@ public class AutomatedBuildTest extends BuildTest {
             "multires",
             "ndkSanAngeles",
             "ndkSanAngeles2",
+            "ndkStandaloneSo",
             "ndkJniLib",
             "ndkJniLib2",
             "ndkPrebuilts",
@@ -85,8 +86,9 @@ public class AutomatedBuildTest extends BuildTest {
     };
 
     private static final List<String> ndkPluginTests = ImmutableList.of(
-            "ndkSanAngeles2",
             "ndkJniLib2",
+            "ndkSanAngeles2",
+            "ndkStandaloneSo",
             "ndkVariants"
     );
 
