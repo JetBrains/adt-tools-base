@@ -2582,8 +2582,8 @@ public abstract class BasePlugin {
                         path += "/$artifact.classifier"
                         name += ":$artifact.classifier"
                     }
-                    def explodedDir = project.file(
-                            "$project.rootProject.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
+                    //def explodedDir = project.file("$project.rootProject.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
+                    def explodedDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
                     LibraryDependencyImpl adep = new LibraryDependencyImpl(
                             artifact.file, explodedDir, nestedBundles, name, artifact.classifier)
                     bundlesForThisModule << adep
