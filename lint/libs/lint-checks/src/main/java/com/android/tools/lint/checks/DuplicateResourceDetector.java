@@ -281,4 +281,12 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
 
         return true;
     }
+
+    /**
+     * Returns the resource type expected for a {@link #TYPE_MISMATCH} error reported by
+     * this lint detector. Intended for IDE quickfix implementations.
+     */
+    public static String getExpectedType(@NonNull String errorMessage) {
+        return LintUtils.findSubstring(errorMessage, "value of type @", "/");
+    }
 }

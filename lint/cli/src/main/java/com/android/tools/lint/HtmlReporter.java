@@ -344,16 +344,23 @@ public class HtmlReporter extends Reporter {
             throws IOException {
         mWriter.write("<div class=\"metadata\">");               //$NON-NLS-1$
 
-        if (mClient.getRegistry() instanceof BuiltinIssueRegistry &&
-                ((BuiltinIssueRegistry) mClient.getRegistry()).hasAutoFix("adt", issue)) { //$NON-NLS-1$
-            mWriter.write("Note: This issue has an associated quickfix operation in Eclipse/ADT");
-            if (mFixUrl != null) {
-                mWriter.write("&nbsp;<img alt=\"Fix\" border=\"0\" align=\"top\" src=\""); //$NON-NLS-1$
-                mWriter.write(mFixUrl);
-                mWriter.write("\" />\n");                            //$NON-NLS-1$
-            }
+        if (mClient.getRegistry() instanceof BuiltinIssueRegistry) {
+            boolean adtHasFix = QuickfixHandler.ADT.hasAutoFix(issue);
+            boolean studioHasFix = QuickfixHandler.STUDIO.hasAutoFix(issue);
+            if (adtHasFix || studioHasFix) {
+                String adt = "Eclipse/ADT";
+                String studio = "Android Studio/IntelliJ";
+                String tools = adtHasFix && studioHasFix
+                        ? (adt + " & " + studio) : studioHasFix ? studio : adt;
+                mWriter.write("Note: This issue has an associated quickfix operation in " + tools);
+                if (mFixUrl != null) {
+                    mWriter.write("&nbsp;<img alt=\"Fix\" border=\"0\" align=\"top\" src=\""); //$NON-NLS-1$
+                    mWriter.write(mFixUrl);
+                    mWriter.write("\" />\n");                            //$NON-NLS-1$
+                }
 
-            mWriter.write("<br>\n");
+                mWriter.write("<br>\n");
+            }
         }
 
         if (disabledBy != null) {

@@ -18,13 +18,13 @@ package com.android.tools.lint.client.api;
 
 import com.android.tools.lint.client.api.LintDriver.ClassEntry;
 
+import junit.framework.TestCase;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 @SuppressWarnings("javadoc")
 public class LintDriverTest extends TestCase {

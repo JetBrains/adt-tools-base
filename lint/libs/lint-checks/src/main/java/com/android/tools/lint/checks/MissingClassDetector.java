@@ -36,6 +36,7 @@ import static com.android.resources.ResourceFolderType.VALUES;
 import static com.android.resources.ResourceFolderType.XML;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
@@ -275,21 +276,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
         }
 
         if (signature.indexOf('$') != -1) {
-            if (pkg != null && className.indexOf('$') == -1 && className.indexOf('.', 1) > 0) {
-                boolean haveUpperCase = false;
-                for (int i = 0, n = pkg.length(); i < n; i++) {
-                    if (Character.isUpperCase(pkg.charAt(i))) {
-                        haveUpperCase = true;
-                        break;
-                    }
-                }
-                if (!haveUpperCase) {
-                    String message = "Use '$' instead of '.' for inner classes " +
-                            "(or use only lowercase letters in package names)";
-                    Location location = context.getLocation(classNameNode);
-                    context.report(INNERCLASS, element, location, message, null);
-                }
-            }
+            checkInnerClass(context, element, pkg, classNameNode, className);
 
             // The internal name contains a $ which means it's an inner class.
             // The conversion from fqcn to internal name is a bit ambiguous:
@@ -318,6 +305,27 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                         mCustomViews.add(signature);
                     }
                 }
+            }
+        }
+    }
+
+    private static void checkInnerClass(XmlContext context, Element element, String pkg,
+            Node classNameNode, String className) {
+        if (pkg != null && className.indexOf('$') == -1 && className.indexOf('.', 1) > 0) {
+            boolean haveUpperCase = false;
+            for (int i = 0, n = pkg.length(); i < n; i++) {
+                if (Character.isUpperCase(pkg.charAt(i))) {
+                    haveUpperCase = true;
+                    break;
+                }
+            }
+            if (!haveUpperCase) {
+                String fixed = className.charAt(0) + className.substring(1).replace('.','$');
+                String message = "Use '$' instead of '.' for inner classes " +
+                        "(or use only lowercase letters in package names); replace \"" +
+                        className + "\" with \"" + fixed + "\"";
+                Location location = context.getLocation(classNameNode);
+                context.report(INNERCLASS, element, location, message, null);
             }
         }
     }
@@ -478,5 +486,42 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             curr = curr.substring(0, index) + '$' + curr.substring(index + 1);
             mReferencedClasses.remove(curr);
         }
+    }
+
+    /**
+     * Given an error message produced by this lint detector for the given issue type,
+     * returns the old value to be replaced in the source code.
+     * <p>
+     * Intended for IDE quickfix implementations.
+     *
+     * @param issue the corresponding issue
+     * @param errorMessage the error message associated with the error
+     * @return the corresponding old value, or null if not recognized
+     */
+    @Nullable
+    public static String getOldValue(@NonNull Issue issue, @NonNull String errorMessage) {
+        if (issue == INNERCLASS) {
+            return LintUtils.findSubstring(errorMessage, " replace \"", "\"");
+        }
+
+        return null;
+    }
+
+    /**
+     * Given an error message produced by this lint detector for the given issue type,
+     * returns the new value to be put into the source code.
+     * <p>
+     * Intended for IDE quickfix implementations.
+     *
+     * @param issue the corresponding issue
+     * @param errorMessage the error message associated with the error
+     * @return the corresponding new value, or null if not recognized
+     */
+    @Nullable
+    public static String getNewValue(@NonNull Issue issue, @NonNull String errorMessage) {
+        if (issue == INNERCLASS) {
+            return LintUtils.findSubstring(errorMessage, " with \"", "\"");
+        }
+        return null;
     }
 }

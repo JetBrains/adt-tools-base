@@ -18,6 +18,8 @@ package com.android.tools.lint.detector.api;
 
 import static com.android.tools.lint.detector.api.LintUtils.computeResourceName;
 import static com.android.tools.lint.detector.api.LintUtils.convertVersion;
+import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
+import static com.android.tools.lint.detector.api.LintUtils.getFormattedParameters;
 import static com.android.tools.lint.detector.api.LintUtils.getLocaleAndRegion;
 import static com.android.tools.lint.detector.api.LintUtils.isImported;
 import static com.android.tools.lint.detector.api.LintUtils.splitPath;
@@ -29,7 +31,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
-import com.android.builder.model.ProductFlavor;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.EcjParser;
@@ -470,6 +471,19 @@ public class LintUtilsTest extends TestCase {
             fail("Not needed in this test");
             return "<invalid>";
         }
+    }
+
+    public void testFindSubstring() {
+       assertEquals("foo", findSubstring("foo", null, null));
+       assertEquals("foo", findSubstring("foo  ", null, "  "));
+       assertEquals("foo", findSubstring("  foo", "  ", null));
+       assertEquals("foo", findSubstring("[foo]", "[", "]"));
+    }
+
+    public void testGetFormattedParameters() {
+        assertEquals(Arrays.asList("foo","bar"),
+                getFormattedParameters("Prefix %1$s Divider %2$s Suffix",
+                        "Prefix foo Divider bar Suffix"));
     }
 
     private static class TestContext extends JavaContext {

@@ -21,6 +21,7 @@ import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -230,8 +231,8 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                         && node.astTypeReference().astParts().size() == 1
                         && node.astArguments().size() == 1) {
                     String argument = node.astArguments().first().toString();
-                    mContext.report(USE_VALUE_OF, node, mContext.getLocation(node),
-                            String.format("Use %1$s.valueOf(%2$s) instead", typeName, argument),
+                    mContext.report(USE_VALUE_OF, node, mContext.getLocation(node), getUseValueOfErrorMessage(
+                            typeName, argument),
                             null);
                 }
             }
@@ -553,6 +554,24 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                 }
             }
         }
+    }
+
+    private static String getUseValueOfErrorMessage(String typeName, String argument) {
+        // Keep in sync with {@link #getReplacedType} below
+        return String.format("Use %1$s.valueOf(%2$s) instead", typeName, argument);
+    }
+
+    /**
+     * For an error message for an {@link #USE_VALUE_OF} issue reported by this detector,
+     * returns the type being replaced. Intended to use for IDE quickfix implementations.
+     */
+    @Nullable
+    public static String getReplacedType(@NonNull String message) {
+        int index = message.indexOf('.');
+        if (index != -1 && message.startsWith("Use ")) {
+            return message.substring(4, index);
+        }
+        return null;
     }
 
     /** Visitor which records variable names assigned into */

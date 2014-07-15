@@ -16,7 +16,13 @@
 
 package com.android.tools.lint.checks;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Severity;
 
 @SuppressWarnings("javadoc")
 public class WrongCaseDetectorTest extends AbstractCheckTest {
@@ -42,5 +48,23 @@ public class WrongCaseDetectorTest extends AbstractCheckTest {
                 + "4 errors, 0 warnings\n",
 
                 lintProject("res/layout/case.xml"));
+    }
+
+    public void testGetOldValue() {
+        assertEquals("Merge", WrongCaseDetector.getOldValue(
+                "Invalid tag <Merge>; should be <merge>"));
+    }
+
+    public void testGetNewValue() {
+        assertEquals("merge", WrongCaseDetector.getNewValue(
+                "Invalid tag <Merge>; should be <merge>"));
+    }
+
+    @Override
+    protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message,
+            @Nullable Object data) {
+        assertNotNull(message, WrongCaseDetector.getOldValue(message));
+        assertNotNull(message, WrongCaseDetector.getNewValue(message));
     }
 }

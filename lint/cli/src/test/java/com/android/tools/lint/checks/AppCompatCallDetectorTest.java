@@ -16,7 +16,13 @@
 
 package com.android.tools.lint.checks;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Severity;
 
 public class AppCompatCallDetectorTest extends AbstractCheckTest {
     public void testArguments() throws Exception {
@@ -58,6 +64,30 @@ public class AppCompatCallDetectorTest extends AbstractCheckTest {
                     "appcompat/ActionBarActivity.java.txt=>src/android/support/v7/app/ActionBarActivity.java",
                     "appcompat/ActionMode.java.txt=>src/android/support/v7/view/ActionMode.java"
             ));
+    }
+
+    public void testGetOldCall() throws Exception {
+        assertEquals("setProgressBarVisibility", AppCompatCallDetector.getOldCall(
+            "Should use setSupportProgressBarVisibility instead of setProgressBarVisibility name"));
+        assertEquals("getActionBar", AppCompatCallDetector.getOldCall(
+                "Should use getSupportActionBar instead of getActionBar name"));
+        assertNull(AppCompatCallDetector.getOldCall("No match"));
+    }
+
+    public void testGetNewCall() throws Exception {
+        assertEquals("setSupportProgressBarVisibility", AppCompatCallDetector.getNewCall(
+                "Should use setSupportProgressBarVisibility instead of setProgressBarVisibility name"));
+        assertEquals("getSupportActionBar", AppCompatCallDetector.getNewCall(
+                "Should use getSupportActionBar instead of getActionBar name"));
+        assertNull(AppCompatCallDetector.getNewCall("No match"));
+    }
+
+    @Override
+    protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message,
+            @Nullable Object data) {
+        assertNotNull(message, AppCompatCallDetector.getOldCall(message));
+        assertNotNull(message, AppCompatCallDetector.getNewCall(message));
     }
 
     @Override

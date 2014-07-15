@@ -17,10 +17,12 @@
 package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LayoutDetector;
+import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
@@ -81,5 +83,33 @@ public class WrongCaseDetector extends LayoutDetector {
         String correct = Character.toLowerCase(tag.charAt(0)) + tag.substring(1);
         context.report(WRONG_CASE, element, context.getLocation(element),
                 String.format("Invalid tag <%1$s>; should be <%2$s>", tag, correct), null);
+    }
+
+    /**
+     * Given an error message produced by this lint detector for the given issue type,
+     * returns the old value to be replaced in the source code.
+     * <p>
+     * Intended for IDE quickfix implementations.
+     *
+     * @param errorMessage the error message associated with the error
+     * @return the corresponding old value, or null if not recognized
+     */
+    @Nullable
+    public static String getOldValue(@NonNull String errorMessage) {
+        return LintUtils.findSubstring(errorMessage, " tag <", ">");
+    }
+
+    /**
+     * Given an error message produced by this lint detector for the given issue type,
+     * returns the new value to be put into the source code.
+     * <p>
+     * Intended for IDE quickfix implementations.
+     *
+     * @param errorMessage the error message associated with the error
+     * @return the corresponding new value, or null if not recognized
+     */
+    @Nullable
+    public static String getNewValue(@NonNull String errorMessage) {
+        return LintUtils.findSubstring(errorMessage, " should be <", ">");
     }
 }

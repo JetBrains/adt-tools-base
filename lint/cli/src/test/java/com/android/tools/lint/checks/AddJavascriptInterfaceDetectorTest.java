@@ -27,14 +27,15 @@ public class AddJavascriptInterfaceDetectorTest extends AbstractCheckTest {
     }
 
     public void test() throws Exception {
-        assertEquals(
-            "src/test/pkg/AddJavascriptInterfaceTest.java:16: Warning: WebView.addJavascriptInterface should not be called [AddJavascriptInterface]\n"
-                + "            webView.addJavascriptInterface(object, string);\n"
-                + "                    ~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/AddJavascriptInterfaceTest.java:23: Warning: WebView.addJavascriptInterface should not be called [AddJavascriptInterface]\n"
-                + "            webView.addJavascriptInterface(object, string);\n"
-                + "                    ~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "0 errors, 2 warnings\n",
+        assertEquals(""
+            + "src/test/pkg/AddJavascriptInterfaceTest.java:16: Warning: WebView.addJavascriptInterface should not be called with minSdkVersion < 17 for security reasons: JavaScript can use reflection to manipulate application [AddJavascriptInterface]\n"
+            + "            webView.addJavascriptInterface(object, string);\n"
+            + "                    ~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "src/test/pkg/AddJavascriptInterfaceTest.java:23: Warning: WebView.addJavascriptInterface should not be called with minSdkVersion < 17 for security reasons: JavaScript can use reflection to manipulate application [AddJavascriptInterface]\n"
+            + "            webView.addJavascriptInterface(object, string);\n"
+            + "                    ~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "0 errors, 2 warnings\n",
+
             lintProject(
                 "bytecode/.classpath=>.classpath",
                 "bytecode/AndroidManifest.xml=>AndroidManifest.xml",

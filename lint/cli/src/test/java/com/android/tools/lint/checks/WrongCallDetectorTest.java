@@ -16,7 +16,13 @@
 
 package com.android.tools.lint.checks;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Severity;
 
 @SuppressWarnings("javadoc")
 public class WrongCallDetectorTest extends AbstractCheckTest {
@@ -54,5 +60,23 @@ public class WrongCallDetectorTest extends AbstractCheckTest {
                     "bytecode/LayoutTest.java.txt=>src/test/pkg/LayoutTest.java",
                     "bytecode/LayoutTest.class.data=>bin/classes/test/pkg/LayoutTest.class"
             ));
+    }
+
+    public void testGetOldValue() {
+        assertEquals("onLayout", WrongCallDetector.getOldValue(
+                "Suspicious method call; should probably call \"layout\" rather than \"onLayout\""));
+    }
+
+    public void testGetNewValue() {
+        assertEquals("layout", WrongCallDetector.getNewValue(
+                "Suspicious method call; should probably call \"layout\" rather than \"onLayout\""));
+    }
+
+    @Override
+    protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message,
+            @Nullable Object data) {
+        assertNotNull(message, WrongCallDetector.getOldValue(message));
+        assertNotNull(message, WrongCallDetector.getNewValue(message));
     }
 }
