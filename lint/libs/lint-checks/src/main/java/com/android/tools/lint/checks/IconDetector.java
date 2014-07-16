@@ -31,6 +31,7 @@ import static com.android.SdkConstants.DRAWABLE_LDPI;
 import static com.android.SdkConstants.DRAWABLE_MDPI;
 import static com.android.SdkConstants.DRAWABLE_PREFIX;
 import static com.android.SdkConstants.DRAWABLE_XHDPI;
+import static com.android.SdkConstants.DRAWABLE_XXHDPI;
 import static com.android.SdkConstants.MENU_TYPE;
 import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.R_DRAWABLE_PREFIX;
@@ -124,12 +125,13 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
 
     /** Pattern for the expected density folders to be found in the project */
     private static final Pattern DENSITY_PATTERN = Pattern.compile(
-            "^drawable-(nodpi|xhdpi|hdpi|mdpi"            //$NON-NLS-1$
+            "^drawable-(nodpi|xxhdpi|xhdpi|hdpi|mdpi"     //$NON-NLS-1$
                 + (INCLUDE_LDPI ? "|ldpi" : "") + ")$");  //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
     private static final String[] REQUIRED_DENSITIES = INCLUDE_LDPI
-            ? new String[] { DRAWABLE_LDPI, DRAWABLE_MDPI, DRAWABLE_HDPI, DRAWABLE_XHDPI }
-            : new String[] { DRAWABLE_MDPI, DRAWABLE_HDPI, DRAWABLE_XHDPI };
+            ? new String[] {
+                DRAWABLE_LDPI, DRAWABLE_MDPI, DRAWABLE_HDPI, DRAWABLE_XHDPI, DRAWABLE_XXHDPI }
+            : new String[] { DRAWABLE_MDPI, DRAWABLE_HDPI, DRAWABLE_XHDPI, DRAWABLE_XXHDPI };
 
     private static final String[] DENSITY_QUALIFIERS =
         new String[] {
@@ -228,7 +230,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             "Missing density folder",
             "Ensures that all the density folders are present",
             "Icons will look best if a custom version is provided for each of the " +
-            "major screen density classes (low, medium, high, extra high). " +
+            "major screen density classes (low, medium, high, extra-high, extra-extra-high). " +
             "This lint check identifies folders which are missing, such as `drawable-hdpi`." +
             "\n" +
             "Low density is not really used much anymore, so this check ignores " +
@@ -894,7 +896,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         // should also define -hdpi and -xhdpi.
         if (context.isEnabled(ICON_MISSING_FOLDER)) {
             List<String> missing = new ArrayList<String>();
-            // TODO: If it's a launcher icon, also insist on xxhdpi!
+            // TODO: If it's a launcher icon, also insist on xxxhdpi!
             for (String density : REQUIRED_DENSITIES) {
                 if (!definedDensities.contains(density)) {
                     missing.add(density);
@@ -1657,6 +1659,8 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             return 1.5f;
         } else if (folderName.contains("-xhdpi")) {    //$NON-NLS-1$
             return 2.0f;
+        } else if (folderName.contains("-xxhdpi")) {   //$NON-NLS-1$
+            return 3.0f;
         } else if (folderName.contains("-ldpi")) {     //$NON-NLS-1$
             return 0.75f;
         } else {
@@ -1689,6 +1693,9 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         } else if (folderName.startsWith(DRAWABLE_XHDPI)) {
             width = mdpiWidth * 2;
             height = mdpiHeight * 2;
+        } else if (folderName.startsWith(DRAWABLE_XXHDPI)) {
+            width = mdpiWidth * 3;
+            height = mdpiWidth * 3;
         } else if (folderName.startsWith(DRAWABLE_LDPI)) {
             width = Math.round(mdpiWidth * 3f / 4);
             height = Math.round(mdpiHeight * 3f / 4);
