@@ -19,7 +19,6 @@ package com.android.tools.perflib.heap;
 import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Set;
 
 public abstract class Instance {
@@ -39,7 +38,7 @@ public abstract class Instance {
     int mSize;
 
     //  List of all objects that hold a live reference to this object
-    private ArrayList<Instance> mReferences;
+    private final ArrayList<Instance> mReferences = new ArrayList<Instance>();
 
     public abstract void accept(Visitor visitor);
 
@@ -79,18 +78,10 @@ public abstract class Instance {
 
     //  Add to the list of objects that have a hard reference to this Instance
     public void addReference(Instance reference) {
-        if (mReferences == null) {
-            mReferences = new ArrayList<Instance>();
-        }
-
         mReferences.add(reference);
     }
 
     public ArrayList<Instance> getReferences() {
-        if (mReferences == null) {
-            mReferences = new ArrayList<Instance>();
-        }
-
         return mReferences;
     }
 

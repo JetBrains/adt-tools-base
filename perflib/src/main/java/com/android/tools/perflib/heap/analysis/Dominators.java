@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.perflib.heap.Heap;
 import com.android.tools.perflib.heap.Instance;
 import com.android.tools.perflib.heap.RootObj;
+import com.android.tools.perflib.heap.Snapshot;
 import com.android.tools.perflib.heap.Visitor;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -46,18 +47,25 @@ import java.util.Set;
 public class Dominators {
 
     @NonNull
-    public static Map<Instance, Instance> getDominatorMap(@NonNull Heap heap) {
+    public static Map<Instance, Instance> getDominatorMap(@NonNull Snapshot snapshot) {
         Map<Instance, Instance> mDominatorMap = Maps.newHashMap();
 
-        // Only instances reachable from the roots will participate in dominator computation.
+        // Only instances reachable from the GC roots will participate in dominator computation.
+        // We will omit from the analysis any other nodes which could be considered roots, i.e. with
+        // no incoming references, if they are not GC roots.
+
         // Start with a topological sort because we want to process a node after all its parents.
         Map<Instance, Integer> topSort =
-                TopologicalSortVisitor.getTopologicalSort(heap.getRoots());
-        Set<Instance> roots = Sets.newHashSet();
-        for (RootObj root : heap.getRoots()) {
-            if (root.getReferredInstance() != null) {
-                Instance ref = root.getReferredInstance();
-                mDominatorMap.put(ref, ref);
+                TopologicalSortVisitor.getTopologicalSort(snapshot.getGCRoots());
+
+        // We add the special sentinel node as the single root of the object graph, to ensure the
+        // dominator algorithm terminates when having to choose between two GC roots.
+        topSort.put(Snapshot.SENTINEL_ROOT, 0);
+        Set<Instance> roots = Sets.newHashSet(Snapshot.SENTINEL_ROOT);
+        for (RootObj root : snapshot.getGCRoots()) {
+            Instance ref = root.getReferredInstance();
+            if (ref != null) {
+                mDominatorMap.put(ref, Snapshot.SENTINEL_ROOT);
                 roots.add(ref);
             }
         }
@@ -73,22 +81,23 @@ public class Dominators {
                     Instance dominator = null;
 
                     for (Instance predecessor : node.getReferences()) {
+                        if (mDominatorMap.get(predecessor) == null) {
+                            // If we don't have a dominator/approximation for predecessor, skip it
+                            continue;
+                        }
                         if (dominator == null) {
                             dominator = predecessor;
                         } else {
-                            // If we don't have a dominator/approximation for predecessor, skip it
-                            if (mDominatorMap.get(predecessor) != null) {
-                                Instance fingerA = dominator;
-                                Instance fingerB = predecessor;
-                                while (!fingerA.equals(fingerB)) {
-                                    if (topSort.get(fingerA) < topSort.get(fingerB)) {
-                                        fingerB = mDominatorMap.get(fingerB);
-                                    } else {
-                                        fingerA = mDominatorMap.get(fingerA);
-                                    }
+                            Instance fingerA = dominator;
+                            Instance fingerB = predecessor;
+                            while (!fingerA.equals(fingerB)) {
+                                if (topSort.get(fingerA) < topSort.get(fingerB)) {
+                                    fingerB = mDominatorMap.get(fingerB);
+                                } else {
+                                    fingerA = mDominatorMap.get(fingerA);
                                 }
-                                dominator = fingerA;
                             }
+                            dominator = fingerA;
                         }
                     }
 
@@ -106,6 +115,7 @@ public class Dominators {
     private static class TopologicalSortVisitor implements Visitor {
 
         private final Set<Instance> mVisited = Sets.newHashSet();
+
         private final List<Instance> mPostorder = Lists.newArrayList();
 
         @Override

@@ -18,8 +18,6 @@ package com.android.tools.perflib.heap;
 
 import com.android.annotations.Nullable;
 
-import java.util.Set;
-
 public class RootObj extends Instance {
 
     RootType mType = RootType.UNKNOWN;
@@ -51,13 +49,13 @@ public class RootObj extends Instance {
         mStack = stack;
     }
 
-    public final String getClassName(State state) {
+    public final String getClassName(Snapshot snapshot) {
         ClassObj theClass;
 
         if (mType == RootType.SYSTEM_CLASS) {
-            theClass = state.findClass(mId);
+            theClass = snapshot.findClass(mId);
         } else {
-            theClass = state.findReference(mId).getClassObj();
+            theClass = snapshot.findReference(mId).getClassObj();
         }
 
         if (theClass == null) {
@@ -88,9 +86,9 @@ public class RootObj extends Instance {
     @Nullable
     public Instance getReferredInstance() {
         if (mType == RootType.SYSTEM_CLASS) {
-            return mHeap.mState.findClass(mId);
+            return mHeap.mSnapshot.findClass(mId);
         } else {
-            return mHeap.mState.findReference(mId);
+            return mHeap.mSnapshot.findReference(mId);
         }
     }
 }
