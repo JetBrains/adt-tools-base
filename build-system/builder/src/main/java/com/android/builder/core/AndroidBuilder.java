@@ -1228,7 +1228,7 @@ public class AndroidBuilder {
                 "<wearableApp package=\"%1$s\">\n" +
                 "    <versionCode>%2$s</versionCode>\n" +
                 "    <versionName>%3$s</versionName>\n" +
-                "    <path>%4$s</path>\n" +
+                "    <rawPathResId>%4$s</rawPathResId>\n" +
                 "</wearableApp>", pkgName, versionCode, versionName, resName);
 
         // xml folder
