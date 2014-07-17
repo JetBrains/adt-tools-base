@@ -30,6 +30,7 @@ import java.io.File;
  */
 public class ApkVariantOutputData extends BaseVariantOutputData {
 
+    @NonNull
     private final ApkVariantData variantData;
 
     public PackageApplication packageApplicationTask;
@@ -37,10 +38,12 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
 
     public DefaultTask installTask;
 
+    private int versionCodeOverride = -1;
+
     private String densityFilter;
     private String abiFilter;
 
-    public ApkVariantOutputData(ApkVariantData apkVariantData) {
+    public ApkVariantOutputData(@NonNull ApkVariantData apkVariantData) {
         variantData = apkVariantData;
     }
 
@@ -78,5 +81,21 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
         assembleTask.dependsOn(zipAlignTask);
 
         return zipAlignTask;
+    }
+
+    public int getVersionCode() {
+        if (versionCodeOverride > 0) {
+            return versionCodeOverride;
+        }
+
+        return variantData.getVariantConfiguration().getMergedFlavor().getVersionCode();
+    }
+
+    public void setVersionCodeOverride(int versionCodeOverride) {
+        this.versionCodeOverride = versionCodeOverride;
+    }
+
+    public int getVersionCodeOverride() {
+        return versionCodeOverride;
     }
 }

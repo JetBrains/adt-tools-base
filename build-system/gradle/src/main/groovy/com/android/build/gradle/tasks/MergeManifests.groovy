@@ -16,6 +16,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
+import com.android.build.gradle.internal.variant.ApkVariantOutputData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.VariantConfiguration
 import com.android.manifmerger.ManifestMerger2
@@ -48,11 +49,11 @@ public class MergeManifests extends ManifestProcessorTask {
 
     @Input
     int getVersionCode() {
-        if (variantOutputData!= null && variantOutputData.versionCodeOverride > 0) {
-            variantOutputData.versionCodeOverride
+        if (variantOutputData!= null) {
+            variantOutputData.versionCode
         }
 
-        variantConfiguration.getVersionCode();
+        variantConfiguration.versionCode;
     }
 
     @Input @Optional
@@ -78,7 +79,7 @@ public class MergeManifests extends ManifestProcessorTask {
     }
 
     VariantConfiguration variantConfiguration
-    BaseVariantOutputData variantOutputData
+    ApkVariantOutputData variantOutputData
     List<ManifestDependencyImpl> libraries
 
     /**
