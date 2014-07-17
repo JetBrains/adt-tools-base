@@ -52,12 +52,15 @@ class ToolchainConfigurationAction implements Action<Project> {
             platforms {
                 "$SdkConstants.ABI_INTEL_ATOM" {
                     architecture SdkConstants.CPU_ARCH_INTEL_ATOM
+                    operatingSystem "linux"
                 }
                 "$SdkConstants.ABI_ARMEABI" {
                     architecture SdkConstants.CPU_ARCH_ARM
+                    operatingSystem "linux"
                 }
                 "$SdkConstants.ABI_ARMEABI_V7A" {
                     architecture SdkConstants.CPU_ARCH_ARM
+                    operatingSystem "linux"
                 }
                 "$SdkConstants.ABI_MIPS" {
                     // Gradle currently do not support mips architecture, but it is safe to set it
@@ -66,6 +69,7 @@ class ToolchainConfigurationAction implements Action<Project> {
                     // This means if architecture is not set, the x86 toolchain will be chosen by
                     // gradle as it will be created first
                     architecture "ppc"
+                    operatingSystem "linux"
                 }
             }
         }
