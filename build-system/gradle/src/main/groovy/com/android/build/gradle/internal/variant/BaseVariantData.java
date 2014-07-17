@@ -30,8 +30,6 @@ import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
-import com.android.build.gradle.tasks.ProcessAndroidResources;
-import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.SourceProvider;
@@ -46,12 +44,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import groovy.lang.Closure;
-
 /**
  * Base data about a variant.
  */
-public abstract class BaseVariantData {
+public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
     private final VariantConfiguration variantConfiguration;
     private VariantDependencies variantDependency;
@@ -63,12 +59,10 @@ public abstract class BaseVariantData {
     public Task assetGenTask;
     public CheckManifest checkManifestTask;
 
-    public ManifestProcessorTask manifestProcessorTask;
     public RenderscriptCompile renderscriptCompileTask;
     public AidlCompile aidlCompileTask;
     public MergeResources mergeResourcesTask;
     public MergeAssets mergeAssetsTask;
-    public ProcessAndroidResources processResourcesTask;
     public GenerateBuildConfig generateBuildConfigTask;
     public GenerateResValues generateResValuesTask;
     public Copy copyApkTask;
@@ -79,16 +73,36 @@ public abstract class BaseVariantData {
     public Copy processJavaResourcesTask;
     public NdkCompile ndkCompileTask;
 
-    private Object outputFile;
+    // Task to assemble the variant and all its output.
+    public Task assembleVariantTask;
+
     private Object[] javaSources;
 
-    public Task assembleTask;
-
     private List<File> extraGeneratedSourceFolders;
+
+    private final List<T> outputs = Lists.newArrayListWithExpectedSize(4);
 
     public BaseVariantData(@NonNull VariantConfiguration variantConfiguration) {
         this.variantConfiguration = variantConfiguration;
         variantConfiguration.checkSourceProviders();
+
+        // create a first default output
+        createOutput();
+    }
+
+    @NonNull
+    protected abstract T doCreateOutput();
+
+    @NonNull
+    public T createOutput() {
+        T data = doCreateOutput();
+        outputs.add(data);
+        return data;
+    }
+
+    @NonNull
+    public List<T> getOutputs() {
+        return outputs;
     }
 
     @NonNull
@@ -121,22 +135,6 @@ public abstract class BaseVariantData {
     @NonNull
     protected String getCapitalizedFlavorName() {
         return StringHelper.capitalize(variantConfiguration.getFlavorName());
-    }
-
-    public void setOutputFile(Object file) {
-        outputFile = file;
-    }
-
-    public File getOutputFile() {
-        if (outputFile instanceof File) {
-            return (File) outputFile;
-        } else if (outputFile instanceof Closure) {
-            Closure c = (Closure) outputFile;
-            return (File) c.call();
-        }
-
-        assert false;
-        return null;
     }
 
     @VisibleForTesting
@@ -203,7 +201,12 @@ public abstract class BaseVariantData {
             }
 
             // then all the generated src folders.
-            sourceList.add(processResourcesTask.getSourceOutputDir());
+
+            // for the R class, we always use the first output since it's the only one that
+            // generates the R class.
+            sourceList.add(outputs.get(0).processResourcesTask.getSourceOutputDir());
+
+            // for the other, there's no duplicate so no issue.
             sourceList.add(generateBuildConfigTask.getSourceOutputDir());
             sourceList.add(aidlCompileTask.getSourceOutputDir());
             if (!variantConfiguration.getMergedFlavor().getRenderscriptNdkMode()) {

@@ -301,13 +301,17 @@ public class LibraryVariantFactory implements VariantFactory {
         bundle.from(project.file("$project.buildDir/${FD_INTERMEDIATES}/$ANNOTATIONS/${dirName}"))
 
         libVariantData.packageLibTask = bundle
-        variantData.outputFile = bundle.archivePath
+
+        // get the single output for now, though that may always be the case for a library.
+        LibVariantOutputData variantOutputData = libVariantData.outputs.get(0)
+
+        variantOutputData.outputFile = bundle.archivePath
 
         if (assembleTask == null) {
             assembleTask = basePlugin.createAssembleTask(variantData)
         }
         assembleTask.dependsOn bundle
-        variantData.assembleTask = assembleTask
+        variantData.assembleVariantTask = variantOutputData.assembleTask = assembleTask
 
         if (extension.defaultPublishConfig.equals(fullName)) {
             VariantHelper.setupDefaultConfig(project,
@@ -316,7 +320,7 @@ public class LibraryVariantFactory implements VariantFactory {
             // add the artifact that will be published
             project.artifacts.add("default", bundle)
 
-            basePlugin.assembleDefault.dependsOn variantData.assembleTask
+            basePlugin.assembleDefault.dependsOn variantData.assembleVariantTask
         }
 
         // also publish the artifact with its full config name

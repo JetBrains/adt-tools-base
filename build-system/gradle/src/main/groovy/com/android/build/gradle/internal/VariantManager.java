@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.internal;
 
-import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.core.BuilderConstants.ANDROID_TEST;
+import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.core.BuilderConstants.LINT;
 import static com.android.builder.core.BuilderConstants.UI_TEST;
 
@@ -35,6 +35,7 @@ import com.android.build.gradle.internal.dsl.BuildTypeDsl;
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl;
 import com.android.build.gradle.internal.dsl.SigningConfigDsl;
 import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
@@ -436,7 +437,9 @@ public class VariantManager {
                 variantProviders.add(basePlugin.getDefaultConfigData().getMainProvider());
 
                 // create the variant and get its internal storage object.
-                BaseVariantData variantData = variantFactory.createVariantData(variantConfig);
+                BaseVariantData<?> variantData = variantFactory.createVariantData(variantConfig);
+                // get its single output (for now)
+                BaseVariantOutputData variantOutputData = variantData.getOutputs().get(0);
 
                 NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer = extension
                         .getSourceSetsContainer();
@@ -475,15 +478,15 @@ public class VariantManager {
 
                 // setup the task dependencies
                 // build type
-                buildTypeData.getAssembleTask().dependsOn(variantData.assembleTask);
+                buildTypeData.getAssembleTask().dependsOn(variantOutputData.assembleTask);
                 // each flavor
                 for (ProductFlavorData data : flavorDataList) {
-                    data.getAssembleTask().dependsOn(variantData.assembleTask);
+                    data.getAssembleTask().dependsOn(variantOutputData.assembleTask);
                 }
 
                 // flavor combo
                 if (assembleTask != null) {
-                    assembleTask.dependsOn(variantData.assembleTask);
+                    assembleTask.dependsOn(variantOutputData.assembleTask);
                 }
             }
         }

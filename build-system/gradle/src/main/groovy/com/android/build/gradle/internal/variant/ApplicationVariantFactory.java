@@ -102,7 +102,7 @@ public class ApplicationVariantFactory implements VariantFactory {
         // Add a task to create the BuildConfig class
         basePlugin.createBuildConfigTask(variantData);
 
-        // Add a task to generate resource source files
+        // Add a task to process the Android Resources and generate source files
         basePlugin.createProcessResTask(variantData, true /*generateResourcePackage*/);
 
         // Add a task to process the java resources
