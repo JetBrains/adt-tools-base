@@ -16,15 +16,21 @@
 
 package com.android.build.gradle.internal.variant;
 
+import com.android.annotations.NonNull;
+import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ZipAlign;
 
 import org.gradle.api.DefaultTask;
 
+import java.io.File;
+
 /**
  * Base output data for a variant that generates an APK file.
  */
 public class ApkVariantOutputData extends BaseVariantOutputData {
+
+    private final ApkVariantData variantData;
 
     public PackageApplication packageApplicationTask;
     public ZipAlign zipAlignTask;
@@ -34,4 +40,43 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
     private String densityFilter;
     private String abiFilter;
 
+    public ApkVariantOutputData(ApkVariantData apkVariantData) {
+        variantData = apkVariantData;
+    }
+
+    @Override
+    public void setOutputFile(@NonNull File file) {
+        if (zipAlignTask != null) {
+            zipAlignTask.setOutputFile(file);
+        } else {
+            packageApplicationTask.setOutputFile(file);
+        }
+    }
+
+    @NonNull
+    @Override
+    public File getOutputFile() {
+        if (zipAlignTask != null) {
+            return zipAlignTask.getOutputFile();
+        }
+
+        return packageApplicationTask.getOutputFile();
+    }
+
+    @NonNull
+    public ZipAlign createZipAlignTask(@NonNull String taskName, @NonNull File inputFile,
+            @NonNull File outputFile) {
+        //noinspection VariableNotUsedInsideIf
+        if (zipAlignTask != null) {
+            throw new RuntimeException(String.format(
+                    "ZipAlign task for variant '%s' already exists.", variantData.getName()));
+        }
+
+        zipAlignTask = variantData.basePlugin.createZipAlignTask(taskName, inputFile, outputFile);
+
+        // setup dependencies
+        assembleTask.dependsOn(zipAlignTask);
+
+        return zipAlignTask;
+    }
 }

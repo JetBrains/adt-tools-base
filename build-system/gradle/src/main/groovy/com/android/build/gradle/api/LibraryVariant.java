@@ -32,9 +32,13 @@ public interface LibraryVariant extends BaseVariant {
     @Nullable
     TestVariant getTestVariant();
 
+    // ---- Deprecated, will be removed in 1.0
+    //STOPSHIP
+
     /**
-     * Returns the Library AAR packaging task.
+     * @deprecated use version on the variant's outputs.
      */
     @Nullable
+    @Deprecated
     Zip getPackageLibrary();
 }

@@ -1943,8 +1943,6 @@ public abstract class BasePlugin {
             createLintVitalTask(variantData)
         }
 
-        variantOutputData.outputFile = { outputFileTask.outputFile }
-
         if (publishApk) {
             String fullName = variantData.variantConfiguration.fullName
 

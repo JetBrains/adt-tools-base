@@ -34,6 +34,7 @@ import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.BuildTypeDsl;
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl;
 import com.android.build.gradle.internal.dsl.SigningConfigDsl;
+import com.android.build.gradle.internal.variant.ApplicationVariantFactory;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.TestVariantData;
@@ -269,7 +270,7 @@ public class VariantManager {
                     "Test Build Type '%1$s' does not exist.", extension.getTestBuildType()));
         }
 
-        BaseVariantData testedVariantData = null;
+        BaseVariantData<?> testedVariantData = null;
 
         ProductFlavorData defaultConfigData = basePlugin.getDefaultConfigData();
 
@@ -296,7 +297,7 @@ public class VariantManager {
                         signingOverride);
 
                 // create the variant and get its internal storage object.
-                BaseVariantData variantData = variantFactory.createVariantData(variantConfig);
+                BaseVariantData<?> variantData = variantFactory.createVariantData(variantConfig);
                 // create its dependencies. They'll be resolved below.
                 VariantDependencies variantDep = VariantDependencies.compute(
                         project, variantConfig.getFullName(),
@@ -330,7 +331,8 @@ public class VariantManager {
                     signingOverride);
 
             // create the internal storage for this test variant.
-            TestVariantData testVariantData = new TestVariantData(testVariantConfig, (TestedVariantData) testedVariantData);
+            TestVariantData testVariantData = new TestVariantData(
+                    basePlugin, testVariantConfig, (TestedVariantData) testedVariantData);
             // link the testVariant to the tested variant in the other direction
             ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
 
@@ -527,7 +529,8 @@ public class VariantManager {
             testVariantProviders.add(basePlugin.getDefaultConfigData().getTestProvider());
 
             // create the internal storage for this variant.
-            TestVariantData testVariantData = new TestVariantData(testVariantConfig, (TestedVariantData) testedVariantData);
+            TestVariantData testVariantData = new TestVariantData(
+                    basePlugin, testVariantConfig, (TestedVariantData) testedVariantData);
             localVariantDataList.add(testVariantData);
             // link the testVariant to the tested variant in the other direction
             ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
@@ -549,7 +552,7 @@ public class VariantManager {
 
             basePlugin.getVariantDataList().add(testVariantData);
             basePlugin.createTestApkTasks(testVariantData,
-                    (BaseVariantData) testVariantData.getTestedVariantData());
+                    (BaseVariantData<?>) testVariantData.getTestedVariantData());
         }
     }
 
@@ -603,6 +606,9 @@ public class VariantManager {
         TestVariantImpl testVariant = null;
         if (testVariantData != null) {
             testVariant = basePlugin.getInstantiator().newInstance(TestVariantImpl.class, testVariantData, basePlugin);
+
+            // add the test output.
+            ApplicationVariantFactory.createApkOutputApiObjects(basePlugin, testVariantData, testVariant);
         }
 
         if (testVariant != null) {

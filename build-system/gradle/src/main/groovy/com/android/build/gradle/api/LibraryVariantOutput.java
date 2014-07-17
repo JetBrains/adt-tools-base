@@ -14,30 +14,20 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.variant;
+package com.android.build.gradle.api;
 
-import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 import org.gradle.api.tasks.bundling.Zip;
 
-import java.io.File;
-
 /**
- * Output Data about a variant that produce a Library bundle (.aar)
+ * A variant output for library variants.
  */
-public class LibVariantOutputData extends BaseVariantOutputData {
+public interface LibraryVariantOutput {
 
-    public Zip packageLibTask;
-
-    @Override
-    public void setOutputFile(@NonNull File file) {
-        packageLibTask.setDestinationDir(file.getParentFile());
-        packageLibTask.setArchiveName(file.getName());
-    }
-
-    @NonNull
-    @Override
-    public File getOutputFile() {
-        return packageLibTask.getArchivePath();
-    }
+    /**
+     * Returns the Library AAR packaging task.
+     */
+    @Nullable
+    Zip getPackageLibrary();
 }

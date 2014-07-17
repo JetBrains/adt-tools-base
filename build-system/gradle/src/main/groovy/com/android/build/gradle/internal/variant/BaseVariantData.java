@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.StringHelper;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
@@ -49,7 +50,11 @@ import java.util.List;
  */
 public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
+    @NonNull
+    protected final BasePlugin basePlugin;
+    @NonNull
     private final VariantConfiguration variantConfiguration;
+
     private VariantDependencies variantDependency;
 
     public Task preBuildTask;
@@ -82,7 +87,10 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
     private final List<T> outputs = Lists.newArrayListWithExpectedSize(4);
 
-    public BaseVariantData(@NonNull VariantConfiguration variantConfiguration) {
+    public BaseVariantData(
+            @NonNull BasePlugin basePlugin,
+            @NonNull VariantConfiguration variantConfiguration) {
+        this.basePlugin = basePlugin;
         this.variantConfiguration = variantConfiguration;
         variantConfiguration.checkSourceProviders();
 

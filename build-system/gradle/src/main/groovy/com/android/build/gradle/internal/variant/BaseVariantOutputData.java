@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.variant;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 
@@ -30,27 +31,13 @@ import groovy.lang.Closure;
  */
 public abstract class BaseVariantOutputData {
 
-    private Object outputFile;
-
     public ManifestProcessorTask manifestProcessorTask;
     public ProcessAndroidResources processResourcesTask;
     public Task assembleTask;
 
     public int versionCodeOverride;
 
-    public void setOutputFile(Object file) {
-        outputFile = file;
-    }
-
-    public File getOutputFile() {
-        if (outputFile instanceof File) {
-            return (File) outputFile;
-        } else if (outputFile instanceof Closure) {
-            Closure c = (Closure) outputFile;
-            return (File) c.call();
-        }
-
-        assert false;
-        return null;
-    }
+    public abstract void setOutputFile(@NonNull File file);
+    @NonNull
+    public abstract File getOutputFile();
 }

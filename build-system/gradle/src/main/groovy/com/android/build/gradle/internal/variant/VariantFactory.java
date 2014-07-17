@@ -35,7 +35,7 @@ public interface VariantFactory {
     BaseVariantData createVariantData(@NonNull VariantConfiguration variantConfiguration);
 
     @NonNull
-    BaseVariant createVariantApi(@NonNull BaseVariantData variantData);
+    BaseVariant createVariantApi(@NonNull BaseVariantData<? extends BaseVariantOutputData> variantData);
 
     @NonNull
     VariantConfiguration.Type getVariantConfigurationType();
