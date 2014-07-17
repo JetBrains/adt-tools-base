@@ -16,7 +16,6 @@
 
 package com.android.build.gradle
 
-import com.android.build.gradle.internal.test.PluginHolder
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory
 import com.android.build.gradle.internal.variant.VariantFactory
 import org.gradle.api.Plugin
@@ -30,8 +29,6 @@ import javax.inject.Inject
  * Gradle plugin class for 'application' projects.
  */
 class AppPlugin extends BasePlugin implements Plugin<Project> {
-    static PluginHolder pluginHolder;
-
     @Inject
     public AppPlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
         super(instantiator, registry)
@@ -45,11 +42,6 @@ class AppPlugin extends BasePlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         super.apply(project)
-
-        // This is for testing.
-        if (pluginHolder != null) {
-            pluginHolder.plugin = this;
-        }
 
         // create the config to link a wear apk.
         project.configurations.create(ApplicationVariantFactory.CONFIG_WEAR_APP)
