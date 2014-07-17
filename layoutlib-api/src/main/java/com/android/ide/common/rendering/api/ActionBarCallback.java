@@ -29,6 +29,15 @@ public class ActionBarCallback {
     public static final int NAVIGATION_MODE_LIST = 1;
     public static final int NAVIGATION_MODE_TABS = 2;
 
+    // The protected constants must not be used on the LayoutLib side without incrementing
+    // the LayoutLib API version number.
+    protected static final String ATTR_MENU = "menu";                  //$NON-NLS-1$
+    protected static final String ATTR_NAV_MODE = "actionBarNavMode";  //$NON-NLS-1$
+
+    // The attribute values for ATTR_NAV_MODE.
+    protected static final String VALUE_NAV_MODE_TABS = "tabs";        //$NON-NLS-1$
+    protected static final String VALUE_NAV_MODE_LIST = "list";        //$NON-NLS-1$
+
     /**
      * Types of navigation for home button.
      */
