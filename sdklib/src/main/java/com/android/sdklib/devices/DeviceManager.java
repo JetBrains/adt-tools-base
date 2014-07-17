@@ -309,7 +309,11 @@ public class DeviceManager {
             } catch (Exception e) {
                 mLog.error(e, null, "Could not load nexus devices");
             } finally {
-                Closeables.closeQuietly(stream);
+                try {
+                    Closeables.close(stream, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // Cannot happen
+                }
             }
 
             stream = null;
@@ -319,7 +323,11 @@ public class DeviceManager {
             } catch (Exception e) {
                 mLog.error(e, null, "Could not load wear devices");
             } finally {
-                Closeables.closeQuietly(stream);
+                try {
+                    Closeables.close(stream, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // Cannot happen
+                }
             }
 
             stream = null;
@@ -329,7 +337,11 @@ public class DeviceManager {
             } catch (Exception e) {
                 mLog.error(e, null, "Could not load tv devices");
             } finally {
-                Closeables.closeQuietly(stream);
+                try {
+                    Closeables.close(stream, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // Cannot happen
+                }
             }
 
             if (mOsSdkPath != null) {
