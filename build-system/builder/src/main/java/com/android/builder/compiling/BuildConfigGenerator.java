@@ -43,11 +43,15 @@ public class BuildConfigGenerator {
 
     public static final String BUILD_CONFIG_NAME = "BuildConfig.java";
 
+    private static final Set<Modifier> PUBLIC_FINAL = EnumSet.of(Modifier.PUBLIC, Modifier.FINAL);
+    private static final Set<Modifier> PUBLIC_STATIC_FINAL =
+            EnumSet.of(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL);
+
     private final File mGenFolder;
     private final String mBuildConfigPackageName;
 
     private final List<ClassField> mFields = Lists.newArrayList();
-    private List<Object> mItems = Lists.newArrayList();
+    private final List<Object> mItems = Lists.newArrayList();
 
     /**
      * Creates a generator
@@ -101,30 +105,18 @@ public class BuildConfigGenerator {
         try {
             FileWriter out = closer.register(new FileWriter(buildConfigJava));
             JavaWriter writer = closer.register(new JavaWriter(out));
-            Set<Modifier> publicFinal = EnumSet.of(Modifier.PUBLIC, Modifier.FINAL);
-            Set<Modifier> publicFinalStatic = EnumSet.of(Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC);
 
             writer.emitJavadoc("Automatically generated file. DO NOT MODIFY")
                     .emitPackage(mBuildConfigPackageName)
-                    .beginType("BuildConfig", "class", publicFinal);
+                    .beginType("BuildConfig", "class", PUBLIC_FINAL);
 
             for (ClassField field : mFields) {
-                writer.emitField(
-                        field.getType(),
-                        field.getName(),
-                        publicFinalStatic,
-                        field.getValue());
+                emitClassField(writer, field);
             }
 
             for (Object item : mItems) {
                 if (item instanceof ClassField) {
-                    ClassField field = (ClassField)item;
-                    writer.emitField(
-                            field.getType(),
-                            field.getName(),
-                            publicFinalStatic,
-                            field.getValue());
-
+                    emitClassField(writer, (ClassField) item);
                 } else if (item instanceof String) {
                     writer.emitSingleLineComment((String) item);
                 }
@@ -136,5 +128,20 @@ public class BuildConfigGenerator {
         } finally {
             closer.close();
         }
+    }
+
+    private static void emitClassField(JavaWriter writer, ClassField field) throws IOException {
+        String documentation = field.getDocumentation();
+        if (!documentation.isEmpty()) {
+            writer.emitJavadoc(documentation);
+        }
+        for (String annotation : field.getAnnotations()) {
+            writer.emitAnnotation(annotation);
+        }
+        writer.emitField(
+                field.getType(),
+                field.getName(),
+                PUBLIC_STATIC_FINAL,
+                field.getValue());
     }
 }
