@@ -74,7 +74,7 @@ public class AssetSet extends DataSet<AssetItem, AssetFile> {
         // the directory is excluded from packaging.
         File parent = file.getParentFile();
         while (parent != null && !parent.equals(sourceFolder)) {
-            if (!PackagingUtils.checkFolderForPackaging(parent.getName())) {
+            if (isIgnored(parent)) {
                 return false;
             }
             parent = parent.getParentFile();
@@ -94,12 +94,10 @@ public class AssetSet extends DataSet<AssetItem, AssetFile> {
         File[] files = folder.listFiles();
         if (files != null && files.length > 0) {
             for (File file : files) {
-                if (file.isFile()) {
-                    if (checkFileForAndroidRes(file)) {
+                if (!isIgnored(file)) {
+                    if (file.isFile()) {
                         handleNewFile(sourceFolder, file, logger);
-                    }
-                } else if (file.isDirectory()) {
-                    if (PackagingUtils.checkFolderForPackaging(file.getName())) {
+                    } else if (file.isDirectory()) {
                         readFiles(sourceFolder, file, logger);
                     }
                 }

@@ -21,7 +21,6 @@ import static com.android.ide.common.res2.ResourceFile.ATTR_QUALIFIER;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.packaging.PackagingUtils;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceConstants;
@@ -128,9 +127,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         File[] folders = sourceFolder.listFiles();
         if (folders != null) {
             for (File folder : folders) {
-                // TODO: use the aapt ignore pattern value.
-                if (folder.isDirectory() &&
-                        PackagingUtils.checkFolderForPackaging(folder.getName())) {
+                if (folder.isDirectory() && !isIgnored(folder)) {
                     FolderData folderData = getFolderData(folder);
                     if (folderData != null) {
                         parseFolder(sourceFolder, folder, folderData, logger);
@@ -149,7 +146,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         File resFolder = file.getParentFile();
         // valid files are right under a resource folder under the source folder
         return resFolder.getParentFile().equals(sourceFolder) &&
-                PackagingUtils.checkFolderForPackaging(resFolder.getName()) &&
+                !isIgnored(resFolder) &&
                 ResourceFolderType.getFolderType(resFolder.getName()) != null;
     }
 
@@ -246,7 +243,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         File[] files = folder.listFiles();
         if (files != null && files.length > 0) {
             for (File file : files) {
-                if (!file.isFile() || !checkFileForAndroidRes(file)) {
+                if (!file.isFile() || isIgnored(file)) {
                     continue;
                 }
 
