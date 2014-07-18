@@ -30,6 +30,9 @@ import java.util.List;
 
 /**
  * implementation of the {@link TestVariant} interface around an {@link TestVariantData} object.
+ *
+ * This is a wrapper around the internal data model, in order to control what is accessible
+ * through the external API.
  */
 public class TestVariantImpl extends ApkVariantImpl implements TestVariant {
 

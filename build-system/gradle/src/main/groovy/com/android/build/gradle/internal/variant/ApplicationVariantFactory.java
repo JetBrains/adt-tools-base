@@ -20,13 +20,18 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.BaseVariant;
+import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.api.ApkVariantImpl;
+import com.android.build.gradle.internal.api.ApkVariantOutputImpl;
 import com.android.build.gradle.internal.api.ApplicationVariantImpl;
 import com.android.builder.core.VariantConfiguration;
+import com.google.common.collect.Lists;
 
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 
 import java.io.File;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -46,13 +51,39 @@ public class ApplicationVariantFactory implements VariantFactory {
     @Override
     @NonNull
     public BaseVariantData createVariantData(@NonNull VariantConfiguration variantConfiguration) {
-        return new ApplicationVariantData(variantConfiguration);
+        return new ApplicationVariantData(basePlugin, variantConfiguration);
     }
 
     @Override
     @NonNull
-    public BaseVariant createVariantApi(@NonNull BaseVariantData variantData) {
-        return basePlugin.getInstantiator().newInstance(ApplicationVariantImpl.class, variantData, basePlugin);
+    public BaseVariant createVariantApi(@NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
+        // create the base variant object.
+        ApplicationVariantImpl variant = basePlugin.getInstantiator().newInstance(
+                ApplicationVariantImpl.class, variantData, basePlugin);
+
+        // now create the output objects
+        createApkOutputApiObjects(basePlugin, variantData, variant);
+
+        return variant;
+    }
+
+    public static void createApkOutputApiObjects(
+            @NonNull BasePlugin basePlugin,
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @NonNull ApkVariantImpl variant) {
+        List<? extends BaseVariantOutputData> outputList = variantData.getOutputs();
+        List<BaseVariantOutput> apiOutputList = Lists.newArrayListWithCapacity(outputList.size());
+
+        for (BaseVariantOutputData variantOutputData : outputList) {
+            ApkVariantOutputData apkOutput = (ApkVariantOutputData) variantOutputData;
+
+            ApkVariantOutputImpl output = basePlugin.getInstantiator().newInstance(
+                    ApkVariantOutputImpl.class, apkOutput);
+
+            apiOutputList.add(output);
+        }
+
+        variant.addOutputs(apiOutputList);
     }
 
     @NonNull

@@ -33,7 +33,6 @@ import java.util.Collection;
  */
 public interface ApkVariant extends BaseVariant {
 
-
     /**
      * Return the app versionCode. Even the value is not found, then 1 is returned as this
      * is the implicit value that the platform would use.
@@ -65,21 +64,6 @@ public interface ApkVariant extends BaseVariant {
     Dex getDex();
 
     /**
-     * Returns the APK packaging task.
-     */
-    @Nullable
-    PackageApplication getPackageApplication();
-
-    /**
-     * Returns the Zip align task.
-     */
-    @Nullable
-    ZipAlign getZipAlign();
-
-    @NonNull
-    ZipAlign createZipAlignTask(@NonNull String taskName, @NonNull File inputFile, @NonNull File outputFile);
-
-    /**
      * Returns the list of jar files that are on the compile classpath. This does not include
      * the runtime.
      */
@@ -93,19 +77,42 @@ public interface ApkVariant extends BaseVariant {
     Collection<File> getApkLibraries();
 
     /**
-     * Returns the installation task.
-     *
-     * Even for variant for regular project, this can be null if the app cannot be signed.
-     */
-    @Nullable
-    DefaultTask getInstall();
-
-    /**
-     * Returns the uinstallation task.
+     * Returns the uninstallation task.
      *
      * For non-library project this is always true even if the APK is not created because
      * signing isn't setup.
      */
     @Nullable
     DefaultTask getUninstall();
+
+    // ---- Deprecated, will be removed in 1.0
+    //STOPSHIP
+
+    /**
+     * @deprecated use version on the variant's outputs.
+     */
+    @Nullable
+    @Deprecated
+    PackageApplication getPackageApplication();
+
+    /**
+     * @deprecated use version on the variant's outputs.
+     */
+    @Nullable
+    @Deprecated
+    ZipAlign getZipAlign();
+
+    /**
+     * @deprecated use version on the variant's outputs.
+     */
+    @NonNull
+    @Deprecated
+    ZipAlign createZipAlignTask(@NonNull String taskName, @NonNull File inputFile, @NonNull File outputFile);
+
+    /**
+     * @deprecated use version on the variant's outputs.
+     */
+    @Nullable
+    @Deprecated
+    DefaultTask getInstall();
 }

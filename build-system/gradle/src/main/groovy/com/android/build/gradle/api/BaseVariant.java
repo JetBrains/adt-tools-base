@@ -114,17 +114,6 @@ public interface BaseVariant {
     List<SourceProvider> getSourceSets();
 
     /**
-     * Returns the output file for this build variants. Depending on the configuration, this could
-     * be an apk (regular and test project) or a bundled library (library project).
-     *
-     * If it's an apk, it could be signed, or not; zip-aligned, or not.
-     */
-    @NonNull
-    File getOutputFile();
-
-    void setOutputFile(@NonNull File outputFile);
-
-    /**
      * Returns the package name of the variant.
      */
     @NonNull
@@ -141,12 +130,6 @@ public interface BaseVariant {
      */
     @NonNull
     Task getCheckManifest();
-
-    /**
-     * Returns the Manifest processing task.
-     */
-    @NonNull
-    ManifestProcessorTask getProcessManifest();
 
     /**
      * Returns the AIDL compilation task.
@@ -171,12 +154,6 @@ public interface BaseVariant {
      */
     @Nullable
     MergeAssets getMergeAssets();
-
-    /**
-     * Returns the Android Resources processing task.
-     */
-    @NonNull
-    ProcessAndroidResources getProcessResources();
 
     /**
      * Returns the BuildConfig generation task.
@@ -209,7 +186,7 @@ public interface BaseVariant {
     Copy getProcessJavaResources();
 
     /**
-     * Returns the assemble task.
+     * Returns the assemble task for all this variant's output
      */
     @Nullable
     Task getAssemble();
@@ -261,4 +238,34 @@ public interface BaseVariant {
      * @param sourceFolders the source folders where the generated source code is.
      */
     void registerJavaGeneratingTask(@NonNull Task task, @NonNull Collection<File> sourceFolders);
+
+    // ---- Deprecated, will be removed in 1.0
+    //STOPSHIP
+
+    /**
+     * @deprecated use version on the variant's outputs.
+     */
+    @NonNull
+    @Deprecated
+    File getOutputFile();
+
+    /**
+     * @deprecated use version on the variant's outputs.
+     */
+    @Deprecated
+    void setOutputFile(@NonNull File outputFile);
+
+    /**
+     * @deprecated use version on the variant's outputs.
+     */
+    @NonNull
+    @Deprecated
+    ProcessAndroidResources getProcessResources();
+
+    /**
+     * @deprecated use version on the variant's outputs.
+     */
+    @NonNull
+    @Deprecated
+    ManifestProcessorTask getProcessManifest();
 }

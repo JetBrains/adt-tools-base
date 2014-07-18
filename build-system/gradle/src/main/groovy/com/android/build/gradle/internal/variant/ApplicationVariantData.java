@@ -17,6 +17,7 @@ package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.BasePlugin;
 import com.android.builder.core.VariantConfiguration;
 
 /**
@@ -27,8 +28,10 @@ public class ApplicationVariantData extends ApkVariantData implements TestedVari
     @Nullable
     private TestVariantData testVariantData = null;
 
-    public ApplicationVariantData(@NonNull VariantConfiguration config) {
-        super(config);
+    public ApplicationVariantData(
+            @NonNull BasePlugin basePlugin,
+            @NonNull VariantConfiguration config) {
+        super(basePlugin, config);
     }
 
     @Override

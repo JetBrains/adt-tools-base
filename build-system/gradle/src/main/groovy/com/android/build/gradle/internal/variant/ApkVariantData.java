@@ -16,6 +16,7 @@
 package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.tasks.Dex;
 import com.android.builder.core.VariantConfiguration;
 
@@ -29,14 +30,16 @@ public abstract class ApkVariantData extends BaseVariantData<ApkVariantOutputDat
     public Dex dexTask;
     public DefaultTask uninstallTask;
 
-    protected ApkVariantData(@NonNull VariantConfiguration config) {
-        super(config);
+    protected ApkVariantData(
+            @NonNull BasePlugin basePlugin,
+            @NonNull VariantConfiguration config) {
+        super(basePlugin, config);
     }
 
     @Override
     @NonNull
     protected ApkVariantOutputData doCreateOutput() {
-        return new ApkVariantOutputData();
+        return new ApkVariantOutputData(this);
     }
 
     @Override

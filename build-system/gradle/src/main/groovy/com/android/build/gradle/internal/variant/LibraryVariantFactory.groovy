@@ -22,7 +22,10 @@ import com.android.annotations.Nullable
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.api.BaseVariant
+import com.android.build.gradle.api.BaseVariantOutput
+import com.android.build.gradle.internal.api.ApkVariantOutputImpl
 import com.android.build.gradle.internal.api.LibraryVariantImpl
+import com.android.build.gradle.internal.api.LibraryVariantOutputImpl
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask
 import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.tasks.MergeFileTask
@@ -37,6 +40,7 @@ import com.android.builder.dependency.ManifestDependency
 import com.android.builder.model.AndroidLibrary
 import com.android.builder.model.MavenCoordinates
 import com.android.build.gradle.ndk.NdkPlugin
+import com.google.common.collect.Lists
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.Copy
@@ -71,13 +75,30 @@ public class LibraryVariantFactory implements VariantFactory {
     @Override
     @NonNull
     public BaseVariantData createVariantData(@NonNull VariantConfiguration variantConfiguration) {
-        return new LibraryVariantData(variantConfiguration)
+        return new LibraryVariantData(basePlugin, variantConfiguration)
     }
 
     @Override
     @NonNull
-    public BaseVariant createVariantApi(@NonNull BaseVariantData variantData) {
-        return basePlugin.getInstantiator().newInstance(LibraryVariantImpl.class, variantData)
+    public BaseVariant createVariantApi(@NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
+        LibraryVariantImpl variant = basePlugin.getInstantiator().newInstance(LibraryVariantImpl.class, variantData, basePlugin)
+
+        // now create the output objects
+        List<? extends BaseVariantOutputData> outputList = variantData.getOutputs();
+        List<BaseVariantOutput> apiOutputList = Lists.newArrayListWithCapacity(outputList.size());
+
+        for (BaseVariantOutputData variantOutputData : outputList) {
+            LibVariantOutputData libOutput = (LibVariantOutputData) variantOutputData;
+
+            LibraryVariantOutputImpl output = basePlugin.getInstantiator().newInstance(
+                    LibraryVariantOutputImpl.class, libOutput);
+
+            apiOutputList.add(output);
+        }
+
+        variant.addOutputs(apiOutputList);
+
+        return variant
     }
 
     @NonNull
@@ -300,12 +321,9 @@ public class LibraryVariantFactory implements VariantFactory {
         bundle.from(project.file("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}"))
         bundle.from(project.file("$project.buildDir/${FD_INTERMEDIATES}/$ANNOTATIONS/${dirName}"))
 
-        libVariantData.packageLibTask = bundle
-
         // get the single output for now, though that may always be the case for a library.
         LibVariantOutputData variantOutputData = libVariantData.outputs.get(0)
-
-        variantOutputData.outputFile = bundle.archivePath
+        variantOutputData.packageLibTask = bundle
 
         if (assembleTask == null) {
             assembleTask = basePlugin.createAssembleTask(variantData)
