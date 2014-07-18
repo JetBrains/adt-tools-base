@@ -384,6 +384,22 @@ public class RtlDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testTextAlignment() throws Exception {
+        mEnabled = Collections.singleton(RtlDetector.COMPAT);
+        assertEquals(""
+                + "res/layout/spinner.xml:49: Error: Inconsistent alignment specification between textAlignment and gravity attributes: was end, expected start [RtlCompat]\n"
+                + "            android:textAlignment=\"textStart\"/> <!-- ERROR -->\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/layout/spinner.xml:46: Incompatible direction here\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "rtl/project-api17.properties=>project.properties",
+                        "rtl/minsdk5targetsdk17.xml=>AndroidManifest.xml",
+                        "rtl/spinner.xml=>res/layout/spinner.xml"
+                ));
+    }
+
     public void testConvertBetweenAttributes() {
         assertEquals("alignParentStart", convertOldToNew("alignParentLeft"));
         assertEquals("alignParentEnd", convertOldToNew("alignParentRight"));
