@@ -56,6 +56,7 @@ import static com.android.SdkConstants.GRAVITY_VALUE_START;
 import static com.android.SdkConstants.TAG_APPLICATION;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -326,6 +327,17 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         }
     }
 
+    @Nullable
+    static String getTextAlignmentToGravity(String attribute) {
+        if (attribute.endsWith(START)) { // textStart, viewStart, ...
+            return GRAVITY_VALUE_START;
+        } else if (attribute.endsWith(END)) { // textEnd, viewEnd, ...
+            return GRAVITY_VALUE_END;
+        } else {
+            return null; // inherit, others
+        }
+    }
+
     @Override
     public Collection<String> getApplicableAttributes() {
         int size = ATTRIBUTES.length + 4;
@@ -397,33 +409,42 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
 
             Element element = attribute.getOwnerElement();
             final String gravity;
+            final Attr gravityNode;
             if (element.hasAttributeNS(ANDROID_URI, ATTR_GRAVITY)) {
-                gravity = element.getAttributeNS(ANDROID_URI, ATTR_GRAVITY);
+                gravityNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_GRAVITY);
+                gravity = gravityNode.getValue();
             } else if (element.hasAttributeNS(ANDROID_URI, ATTR_LAYOUT_GRAVITY)) {
-                gravity = element.getAttributeNS(ANDROID_URI, ATTR_LAYOUT_GRAVITY);
+                gravityNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_LAYOUT_GRAVITY);
+                gravity = gravityNode.getValue();
             } else if (project.getMinSdk() < RTL_API) {
                 int folderVersion = context.getFolderVersion();
-                if (folderVersion >= RTL_API) {
-                    return;
-                }
-                String message = String.format(
-                        "To support older versions than API 17 (project specifies %1$d) "
-                                + "you must *also* specify gravity or layout_gravity=\"%2$s\"",
-                        project.getMinSdk(), value);
-                if (context.isEnabled(COMPAT)) {
-                    context.report(COMPAT, attribute, context.getLocation(attribute), message,
-                            null);
+                if (folderVersion < RTL_API && context.isEnabled(COMPAT)) {
+                    String expectedGravity = getTextAlignmentToGravity(value);
+                    if (expectedGravity != null) {
+                        String message = String.format(
+                                "To support older versions than API 17 (project specifies %1$d) "
+                                    + "you must *also* specify gravity or layout_gravity=\"%2$s\"",
+                                project.getMinSdk(), expectedGravity);
+                        context.report(COMPAT, attribute, context.getLocation(attribute), message,
+                                null);
+                    }
                 }
                 return;
             } else {
                 return;
             }
 
-            if (!value.equals(gravity) && context.isEnabled(COMPAT)) {
-                // TODO: Only compare horizontal alignment attributes?
-                String message = "Inconsistent alignment specification between "
-                        + "textAlignment and gravity attributes";
-                context.report(COMPAT, attribute, context.getLocation(attribute), message, null);
+            String expectedGravity = getTextAlignmentToGravity(value);
+            if (expectedGravity != null && !gravity.contains(expectedGravity)
+                    && context.isEnabled(COMPAT)) {
+                String message = String.format("Inconsistent alignment specification between "
+                                + "textAlignment and gravity attributes: was %1$s, expected %2$s",
+                        gravity, expectedGravity);
+                Location location = context.getLocation(attribute);
+                context.report(COMPAT, attribute, location, message, null);
+                Location secondary = context.getLocation(gravityNode);
+                secondary.setMessage("Incompatible direction here");
+                location.setSecondary(secondary);
             }
             return;
         }
