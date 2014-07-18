@@ -73,4 +73,19 @@ public class ApkVariantOutputImpl extends BaseVariantOutputImpl implements ApkVa
     public DefaultTask getInstall() {
         return variantOutputData.installTask;
     }
+
+    @Override
+    public void setVersionCodeOverride(int versionCodeOverride) {
+        variantOutputData.setVersionCodeOverride(versionCodeOverride);
+    }
+
+    @Override
+    public int getVersionCodeOverride() {
+        return variantOutputData.getVersionCodeOverride();
+    }
+
+    @Override
+    public int getVersionCode() {
+        return variantOutputData.getVersionCode();
+    }
 }

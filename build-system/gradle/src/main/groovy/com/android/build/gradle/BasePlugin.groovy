@@ -557,7 +557,8 @@ public abstract class BasePlugin {
                 MergeManifests)
 
         // use single output for now.
-        variantData.outputs.get(0).manifestProcessorTask = processManifestTask
+        BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
+        variantOutputData.manifestProcessorTask = processManifestTask
 
         processManifestTask.plugin = this
 
@@ -567,6 +568,10 @@ public abstract class BasePlugin {
         }
 
         processManifestTask.variantConfiguration = config
+        if (variantOutputData instanceof ApkVariantOutputData) {
+            processManifestTask.variantOutputData = variantOutputData as ApkVariantOutputData
+        }
+
         processManifestTask.conventionMapping.libraries = {
             List<ManifestDependencyImpl> manifests = getManifestDependencies(config.directLibraries)
 

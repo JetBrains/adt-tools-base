@@ -23,6 +23,7 @@ import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.dsl.LintOptionsImpl
+import com.android.build.gradle.internal.variant.ApkVariantOutputData
 import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
@@ -251,11 +252,15 @@ public class ModelBuilder implements ToolingModelBuilder {
         List<AndroidArtifactOutput> outputs = Lists.newArrayListWithCapacity(variantOutputs.size())
 
         for (BaseVariantOutputData variantOutputData : variantOutputs) {
+            int versionCode = (variantOutputData instanceof ApkVariantOutputData) ?
+                    ((ApkVariantOutputData) variantOutputData).versionCode :
+                    vC.mergedFlavor.versionCode
+
             AndroidArtifactOutput output = new AndroidArtifactOutputImpl(
                     variantOutputData.outputFile,
                     variantOutputData.assembleTask.name,
                     variantOutputData.manifestProcessorTask.manifestOutputFile,
-                    vC.mergedFlavor.versionCode,
+                    versionCode,
                     null, /*densityFilter*/
                     null /*abiFilter*/
             );

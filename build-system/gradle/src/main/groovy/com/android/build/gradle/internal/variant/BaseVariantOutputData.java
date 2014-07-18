@@ -35,8 +35,6 @@ public abstract class BaseVariantOutputData {
     public ProcessAndroidResources processResourcesTask;
     public Task assembleTask;
 
-    public int versionCodeOverride;
-
     public abstract void setOutputFile(@NonNull File file);
     @NonNull
     public abstract File getOutputFile();

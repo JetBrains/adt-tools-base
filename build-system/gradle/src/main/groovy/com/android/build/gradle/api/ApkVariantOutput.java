@@ -52,4 +52,34 @@ public interface ApkVariantOutput extends BaseVariantOutput {
      */
     @Nullable
     DefaultTask getInstall();
+
+    /**
+     * Sets the version code override. This version code will only affect this output.
+     *
+     * If the value is -1, then the output will use the version code defined in the main
+     * merged flavors for this variant.
+     *
+     * @param versionCodeOverride the version code override.
+     */
+    void setVersionCodeOverride(int versionCodeOverride);
+
+    /**
+     * Returns the version code override.
+     *
+     * If the value is -1, then the output will use the version code defined in the main
+     * merged flavors for this variant.
+     *
+     * @return the version code override.
+     */
+    int getVersionCodeOverride();
+
+    /**
+     * Returns the version code for this output.
+     *
+     * This is convenient method that returns the final version code whether it's coming
+     * from the override set in the output or from the variant's merged flavor.
+     *
+     * @return the version code.
+     */
+    int getVersionCode();
 }

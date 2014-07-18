@@ -36,6 +36,8 @@ public interface ApkVariant extends BaseVariant {
     /**
      * Return the app versionCode. Even the value is not found, then 1 is returned as this
      * is the implicit value that the platform would use.
+     *
+     * If not output define its own variant override then this is used for all outputs.
      */
     int getVersionCode();
 

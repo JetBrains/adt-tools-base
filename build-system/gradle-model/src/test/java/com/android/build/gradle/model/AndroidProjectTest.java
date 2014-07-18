@@ -383,6 +383,7 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull(debugMainOutput.getOutputFile());
         assertNotNull(debugMainOutput.getAssembleTaskName());
         assertNotNull(debugMainOutput.getGeneratedManifest());
+        assertEquals(12, debugMainOutput.versionCode());
 
         // this variant is tested.
         Collection<AndroidArtifact> debugExtraAndroidArtifacts = debugVariant.getExtraAndroidArtifacts();
@@ -426,6 +427,7 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull(relMainOutput.getOutputFile());
         assertNotNull(relMainOutput.getAssembleTaskName());
         assertNotNull(relMainOutput.getGeneratedManifest());
+        assertEquals(13, relMainOutput.versionCode());
 
 
         Collection<AndroidArtifact> releaseExtraAndroidArtifacts = releaseVariant.getExtraAndroidArtifacts();
