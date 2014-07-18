@@ -31,6 +31,7 @@ import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.build.gradle.internal.dsl.ProductFlavorDsl
 import com.android.build.gradle.internal.test.TestOptions
 import com.android.build.gradle.ndk.NdkExtension
+import com.android.build.gradle.internal.dsl.Splits
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
 import com.android.builder.core.DefaultProductFlavor
@@ -67,6 +68,7 @@ public abstract class BaseExtension {
     final CompileOptions compileOptions
     final PackagingOptionsImpl packagingOptions
     final JacocoExtension jacoco
+    final Splits splits
 
     final NamedDomainObjectContainer<DefaultProductFlavor> productFlavors
     final NamedDomainObjectContainer<DefaultBuildType> buildTypes
@@ -111,16 +113,17 @@ public abstract class BaseExtension {
         this.productFlavors = productFlavors
         this.signingConfigs = signingConfigs
 
-        defaultConfig = instantiator.newInstance(ProductFlavorDsl.class, BuilderConstants.MAIN,
+        defaultConfig = instantiator.newInstance(ProductFlavorDsl, BuilderConstants.MAIN,
                 project, instantiator, project.getLogger())
 
-        aaptOptions = instantiator.newInstance(AaptOptionsImpl.class)
-        dexOptions = instantiator.newInstance(DexOptionsImpl.class)
-        lintOptions = instantiator.newInstance(LintOptionsImpl.class)
-        testOptions = instantiator.newInstance(TestOptions.class)
-        compileOptions = instantiator.newInstance(CompileOptions.class)
-        packagingOptions = instantiator.newInstance(PackagingOptionsImpl.class)
-        jacoco = instantiator.newInstance(JacocoExtension.class)
+        aaptOptions = instantiator.newInstance(AaptOptionsImpl)
+        dexOptions = instantiator.newInstance(DexOptionsImpl)
+        lintOptions = instantiator.newInstance(LintOptionsImpl)
+        testOptions = instantiator.newInstance(TestOptions)
+        compileOptions = instantiator.newInstance(CompileOptions)
+        packagingOptions = instantiator.newInstance(PackagingOptionsImpl)
+        jacoco = instantiator.newInstance(JacocoExtension)
+        splits = instantiator.newInstance(Splits, instantiator)
 
         sourceSetsContainer = project.container(AndroidSourceSet,
                 new AndroidSourceSetFactory(instantiator, project, isLibrary))
@@ -259,6 +262,10 @@ public abstract class BaseExtension {
     void jacoco(Action<JacocoExtension> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(jacoco)
+    }
+    void splits(Action<Splits> action) {
+        plugin.checkTasksAlreadyCreated()
+        action.execute(splits)
     }
 
     void deviceProvider(DeviceProvider deviceProvider) {

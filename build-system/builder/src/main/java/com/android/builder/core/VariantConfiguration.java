@@ -257,6 +257,31 @@ public class VariantConfiguration implements TestData {
     }
 
     /**
+     * Returns a full name that includes the given splits name.
+     * @param splitName the split name
+     * @return a unique name made up of the variant and split names.
+     */
+    @NonNull
+    public String computeFullNameWithSplits(@NonNull String splitName) {
+        StringBuilder sb = new StringBuilder();
+        String flavorName = getFlavorName();
+        if (!flavorName.isEmpty()) {
+            sb.append(flavorName);
+            sb.append(StringHelper.capitalize(splitName));
+        } else {
+            sb.append(splitName);
+        }
+
+        sb.append(StringHelper.capitalize(mBuildType.getName()));
+
+        if (mType == Type.TEST) {
+            sb.append("Test");
+        }
+
+        return sb.toString();
+    }
+
+    /**
      * Returns the flavor name of the variant, including all flavors in camel case (starting
      * with a lower case). If the variant has no flavor, then an empty string is returned.
      *
@@ -312,6 +337,31 @@ public class VariantConfiguration implements TestData {
     }
 
     /**
+     * Returns a base name that includes the given splits name.
+     * @param splitName the split name
+     * @return a unique name made up of the variant and split names.
+     */
+    @NonNull
+    public String computeBaseNameWithSplits(@NonNull String splitName) {
+        StringBuilder sb = new StringBuilder();
+
+        if (!mFlavorConfigs.isEmpty()) {
+            for (ProductFlavor pf : mFlavorConfigs) {
+                sb.append(pf.getName()).append('-');
+            }
+        }
+
+        sb.append(splitName).append('-');
+        sb.append(mBuildType.getName());
+
+        if (mType == Type.TEST) {
+            sb.append('-').append("test");
+        }
+
+        return sb.toString();
+    }
+
+    /**
      * Returns a unique directory name (can include multiple folders) for the variant,
      * based on build type, flavor and test.
      * This always uses forward slashes ('/') as separator on all platform.
@@ -343,6 +393,36 @@ public class VariantConfiguration implements TestData {
         }
 
         return mDirName;
+    }
+
+    /**
+     * Returns a unique directory name (can include multiple folders) for the variant,
+     * based on build type, flavor and test, and splits.
+     * This always uses forward slashes ('/') as separator on all platform.
+     *
+     * @return the directory name for the variant
+     */
+    @NonNull
+    public String computeDirNameWithSplits(@NonNull String splitName) {
+        StringBuilder sb = new StringBuilder();
+
+        if (mType == Type.TEST) {
+            sb.append("test/");
+        }
+
+        if (!mFlavorConfigs.isEmpty()) {
+            for (DefaultProductFlavor flavor : mFlavorConfigs) {
+                sb.append(flavor.getName());
+            }
+
+            sb.append('/').append(splitName);
+        } else {
+            sb.append(splitName);
+        }
+
+        sb.append('/').append(mBuildType.getName());
+
+        return sb.toString();
     }
 
     /**

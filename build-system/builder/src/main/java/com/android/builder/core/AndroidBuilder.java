@@ -948,7 +948,7 @@ public class AndroidBuilder {
             @NonNull  File manifestFile,
             @NonNull  File resFolder,
             @Nullable File assetsDir,
-            @NonNull  List<? extends SymbolFileProvider> libraries,
+            @Nullable  List<? extends SymbolFileProvider> libraries,
             @Nullable String packageForR,
             @Nullable String sourceOutputDir,
             @Nullable String symbolOutputDir,
@@ -963,13 +963,15 @@ public class AndroidBuilder {
 
         checkNotNull(manifestFile, "manifestFile cannot be null.");
         checkNotNull(resFolder, "resFolder cannot be null.");
-        checkNotNull(libraries, "libraries cannot be null.");
         checkNotNull(options, "options cannot be null.");
         // if both output types are empty, then there's nothing to do and this is an error
         checkArgument(sourceOutputDir != null || resPackageOutput != null,
                 "No output provided for aapt task");
         checkState(mTargetInfo != null,
                 "Cannot call processResources() before setTargetInfo() is called.");
+        if (symbolOutputDir != null || sourceOutputDir != null) {
+            checkNotNull(libraries, "libraries cannot be null if symbolOutputDir or sourceOutputDir is non-null");
+        }
 
         BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
         IAndroidTarget target = mTargetInfo.getTarget();
@@ -1084,7 +1086,7 @@ public class AndroidBuilder {
 
         // now if the project has libraries, R needs to be created for each libraries,
         // but only if the current project is not a library.
-        if (type != VariantConfiguration.Type.LIBRARY && !libraries.isEmpty()) {
+        if (sourceOutputDir != null && type != VariantConfiguration.Type.LIBRARY && !libraries.isEmpty()) {
             SymbolLoader fullSymbolValues = null;
 
             // First pass processing the libraries, collecting them by packageName,

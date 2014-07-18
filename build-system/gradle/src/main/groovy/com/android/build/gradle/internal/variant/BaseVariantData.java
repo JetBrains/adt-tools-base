@@ -93,17 +93,14 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         this.basePlugin = basePlugin;
         this.variantConfiguration = variantConfiguration;
         variantConfiguration.checkSourceProviders();
-
-        // create a first default output
-        createOutput();
     }
 
     @NonNull
-    protected abstract T doCreateOutput();
+    protected abstract T doCreateOutput(@Nullable String densityFilter, @Nullable String abiFilter);
 
     @NonNull
-    public T createOutput() {
-        T data = doCreateOutput();
+    public T createOutput(@Nullable String densityFilter, @Nullable String abiFilter) {
+        T data = doCreateOutput(densityFilter, abiFilter);
         outputs.add(data);
         return data;
     }
@@ -111,6 +108,17 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     @NonNull
     public List<T> getOutputs() {
         return outputs;
+    }
+
+    @NonNull
+    public BaseVariantOutputData getNoFilterOutputData() {
+        for (BaseVariantOutputData output : outputs) {
+            if (output.getAbiFilter() == null && output.getDensityFilter() == null) {
+                return output;
+            }
+        }
+
+        throw new RuntimeException("Failed to find no filter output Data");
     }
 
     @NonNull
@@ -210,9 +218,9 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
             // then all the generated src folders.
 
-            // for the R class, we always use the first output since it's the only one that
+            // for the R class, we always use the output that has no filters since it's the only one that
             // generates the R class.
-            sourceList.add(outputs.get(0).processResourcesTask.getSourceOutputDir());
+            sourceList.add(getNoFilterOutputData().processResourcesTask.getSourceOutputDir());
 
             // for the other, there's no duplicate so no issue.
             sourceList.add(generateBuildConfigTask.getSourceOutputDir());

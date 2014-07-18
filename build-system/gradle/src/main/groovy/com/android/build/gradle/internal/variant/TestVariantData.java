@@ -39,6 +39,9 @@ public class TestVariantData extends ApkVariantData {
             @NonNull TestedVariantData testedVariantData) {
         super(basePlugin, config);
         this.testedVariantData = testedVariantData;
+
+        // create default output
+        createOutput(null, null);
     }
 
     @NonNull
