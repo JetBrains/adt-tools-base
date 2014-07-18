@@ -44,7 +44,7 @@ import java.util.List;
 abstract class BaseVariantImpl implements BaseVariant {
 
     @NonNull
-    protected abstract BaseVariantData getVariantData();
+    protected abstract BaseVariantData<?> getVariantData();
 
     @Override
     @NonNull
@@ -103,7 +103,8 @@ abstract class BaseVariantImpl implements BaseVariant {
     @Override
     @NonNull
     public File getOutputFile() {
-        return getVariantData().getOutputFile();
+        // use single output for now
+        return getVariantData().getOutputs().get(0).getOutputFile();
     }
 
     @Override
@@ -127,7 +128,8 @@ abstract class BaseVariantImpl implements BaseVariant {
     @Override
     @NonNull
     public ManifestProcessorTask getProcessManifest() {
-        return getVariantData().manifestProcessorTask;
+        // use single output for now
+        return getVariantData().getOutputs().get(0).manifestProcessorTask;
     }
 
     @Override
@@ -155,7 +157,8 @@ abstract class BaseVariantImpl implements BaseVariant {
     @Override
     @NonNull
     public ProcessAndroidResources getProcessResources() {
-        return getVariantData().processResourcesTask;
+        // use single output for now
+        return getVariantData().getOutputs().get(0).processResourcesTask;
     }
 
     @Override
@@ -190,7 +193,8 @@ abstract class BaseVariantImpl implements BaseVariant {
     @Override
     @Nullable
     public Task getAssemble() {
-        return getVariantData().assembleTask;
+        // use single output for now
+        return getVariantData().getOutputs().get(0).assembleTask;
     }
 
     @Override

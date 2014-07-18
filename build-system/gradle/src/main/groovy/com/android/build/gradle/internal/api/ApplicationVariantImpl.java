@@ -45,7 +45,7 @@ public class ApplicationVariantImpl extends ApkVariantImpl implements Applicatio
 
     @Override
     @NonNull
-    protected BaseVariantData getVariantData() {
+    protected BaseVariantData<?> getVariantData() {
         return variantData;
     }
 

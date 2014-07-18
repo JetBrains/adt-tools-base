@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.ApkVariant;
 import com.android.build.gradle.internal.variant.ApkVariantData;
+import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ZipAlign;
@@ -56,15 +57,17 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
 
     @Override
     public void setOutputFile(@NonNull File outputFile) {
-        ApkVariantData variantData = getApkVariantData();
-        if (variantData.zipAlignTask != null) {
-            variantData.zipAlignTask.setOutputFile(outputFile);
+        // get single output for now.
+        ApkVariantOutputData variantOutputData = getApkVariantData().getOutputs().get(0);
+
+        if (variantOutputData.zipAlignTask != null) {
+            variantOutputData.zipAlignTask.setOutputFile(outputFile);
         } else {
-            variantData.packageApplicationTask.setOutputFile(outputFile);
+            variantOutputData.packageApplicationTask.setOutputFile(outputFile);
         }
 
         // also set it on the variant Data so that the values are in sync
-        variantData.setOutputFile(outputFile);
+        variantOutputData.setOutputFile(outputFile);
     }
 
     @Override
@@ -74,17 +77,26 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
 
     @Override
     public PackageApplication getPackageApplication() {
-        return getApkVariantData().packageApplicationTask;
+        // get single output for now.
+        ApkVariantOutputData variantOutputData = getApkVariantData().getOutputs().get(0);
+
+        return variantOutputData.packageApplicationTask;
     }
 
     @Override
     public ZipAlign getZipAlign() {
-        return getApkVariantData().zipAlignTask;
+        // get single output for now.
+        ApkVariantOutputData variantOutputData = getApkVariantData().getOutputs().get(0);
+
+        return variantOutputData.zipAlignTask;
     }
 
     @Override
     public DefaultTask getInstall() {
-        return getApkVariantData().installTask;
+        // get single output for now.
+        ApkVariantOutputData variantOutputData = getApkVariantData().getOutputs().get(0);
+
+        return variantOutputData.installTask;
     }
 
     @Override
@@ -108,10 +120,11 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
             @NonNull String taskName,
             @NonNull File inputFile,
             @NonNull File outputFile) {
-        ApkVariantData variantData = getApkVariantData();
+        // get single output for now.
+        ApkVariantOutputData variantOutputData = getApkVariantData().getOutputs().get(0);
 
         //noinspection VariableNotUsedInsideIf
-        if (variantData.zipAlignTask != null) {
+        if (variantOutputData.zipAlignTask != null) {
             throw new RuntimeException(String.format(
                     "ZipAlign task for variant '%s' already exists.", getName()));
         }
@@ -119,11 +132,11 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
         ZipAlign task = plugin.createZipAlignTask(taskName, inputFile, outputFile);
 
         // update variant data
-        variantData.setOutputFile(outputFile);
-        variantData.zipAlignTask = task;
+        variantOutputData.setOutputFile(outputFile);
+        variantOutputData.zipAlignTask = task;
 
         // setup dependencies
-        variantData.assembleTask.dependsOn(task);
+        variantOutputData.assembleTask.dependsOn(task);
 
         return task;
     }

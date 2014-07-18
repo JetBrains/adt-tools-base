@@ -43,7 +43,7 @@ public class LibraryVariantImpl extends BaseVariantImpl implements LibraryVarian
 
     @Override
     @NonNull
-    protected BaseVariantData getVariantData() {
+    protected BaseVariantData<?> getVariantData() {
         return variantData;
     }
 

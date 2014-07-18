@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle
+
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.api.AndroidSourceSet
@@ -63,13 +64,16 @@ import com.android.build.gradle.internal.tasks.UninstallTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.variant.ApkVariantData
+import com.android.build.gradle.internal.variant.ApkVariantOutputData
 import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.build.gradle.internal.variant.BaseVariantData
+import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.build.gradle.internal.variant.DefaultSourceProviderContainer
 import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.TestedVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
+import com.android.build.gradle.ndk.NdkPlugin
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.Dex
 import com.android.build.gradle.tasks.GenerateBuildConfig
@@ -115,7 +119,6 @@ import com.android.builder.testing.api.TestServer
 import com.android.ide.common.internal.ExecutorSingleton
 import com.android.sdklib.SdkVersionInfo
 import com.android.utils.ILogger
-import com.android.build.gradle.ndk.NdkPlugin
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.ListMultimap
 import com.google.common.collect.Lists
@@ -169,8 +172,8 @@ import static com.android.builder.core.VariantConfiguration.Type.TEST
 import static com.android.builder.model.AndroidProject.FD_GENERATED
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
-import static com.android.builder.model.AndroidProject.PROPERTY_BUILD_MODEL_ONLY
 import static com.android.builder.model.AndroidProject.PROPERTY_APK_LOCATION
+import static com.android.builder.model.AndroidProject.PROPERTY_BUILD_MODEL_ONLY
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_ALIAS
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASSWORD
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE
@@ -178,6 +181,7 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PA
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_TYPE
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN
 import static java.io.File.separator
+
 /**
  * Base class for all Android plugins
  */
@@ -203,7 +207,7 @@ public abstract class BasePlugin {
     private BaseExtension extension
     private VariantManager variantManager
 
-    final List<BaseVariantData> variantDataList = []
+    final List<BaseVariantData<? extends BaseVariantOutputData>> variantDataList = []
     final Map<LibraryDependencyImpl, PrepareLibraryTask> prepareTaskMap = [:]
     final Map<SigningConfig, ValidateSigningTask> validateSigningTaskMap = [:]
 
@@ -539,8 +543,9 @@ public abstract class BasePlugin {
         }
     }
 
-    public void createMergeManifestsTask(BaseVariantData variantData,
-                                          String manifestOutDir) {
+    public void createMergeManifestsTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @NonNull String manifestOutDir) {
         if (extension.getUseOldManifestMerger()) {
             createOldProcessManifestTask(variantData, manifestOutDir);
             return;
@@ -550,7 +555,10 @@ public abstract class BasePlugin {
         def processManifestTask = project.tasks.create(
                 "process${variantData.variantConfiguration.fullName.capitalize()}Manifest",
                 MergeManifests)
-        variantData.manifestProcessorTask = processManifestTask
+
+        // use single output for now.
+        variantData.outputs.get(0).manifestProcessorTask = processManifestTask
+
         processManifestTask.plugin = this
 
         processManifestTask.dependsOn variantData.prepareDependenciesTask
@@ -596,17 +604,22 @@ public abstract class BasePlugin {
         }
     }
 
-    public void createProcessManifestTask(BaseVariantData variantData, String manifestOutDir) {
+    public void createProcessManifestTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @NonNull String manifestOutDir) {
         if (extension.getUseOldManifestMerger()) {
             createOldProcessManifestTask(variantData, manifestOutDir);
             return;
         }
         VariantConfiguration config = variantData.variantConfiguration
 
+        // get single output for now.
+        BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
+
         def processManifest = project.tasks.create(
                 "process${variantData.variantConfiguration.fullName.capitalize()}Manifest",
                 ProcessManifest)
-        variantData.manifestProcessorTask = processManifest
+        variantOutputData.manifestProcessorTask = processManifest
         processManifest.plugin = this
 
         processManifest.dependsOn variantData.prepareDependenciesTask
@@ -636,14 +649,18 @@ public abstract class BasePlugin {
         }
     }
 
-    public void createOldProcessManifestTask(BaseVariantData variantData,
-            String manifestOurDir) {
+    public void createOldProcessManifestTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @NonNull String manifestOurDir) {
         VariantConfiguration config = variantData.variantConfiguration
+
+        // get single output for now.
+        BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
 
         def processManifestTask = project.tasks.create(
                 "merge${variantData.variantConfiguration.fullName.capitalize()}Manifests",
                 ProcessAppManifest)
-        variantData.manifestProcessorTask = processManifestTask
+        variantOutputData.manifestProcessorTask = processManifestTask
         processManifestTask.dependsOn variantData.prepareDependenciesTask
         if (config.type != TEST) {
             processManifestTask.dependsOn variantData.checkManifestTask
@@ -692,8 +709,9 @@ public abstract class BasePlugin {
         }
     }
 
-    protected void createProcessTestManifestTask(BaseVariantData variantData,
-                                                 String manifestOurDir) {
+    protected void createProcessTestManifestTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @NonNull String manifestOurDir) {
         def processTestManifestTask;
         if (extension.getUseOldManifestMerger()) {
             processTestManifestTask = project.tasks.create(
@@ -705,7 +723,10 @@ public abstract class BasePlugin {
                     ProcessTestManifest2)
         }
 
-        variantData.manifestProcessorTask = processTestManifestTask
+        // get single output for now.
+        BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
+
+        variantOutputData.manifestProcessorTask = processTestManifestTask
         processTestManifestTask.dependsOn variantData.prepareDependenciesTask
 
         processTestManifestTask.plugin = this
@@ -750,15 +771,20 @@ public abstract class BasePlugin {
         }
     }
 
-    public void createRenderscriptTask(BaseVariantData variantData) {
+    public void createRenderscriptTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         VariantConfiguration config = variantData.variantConfiguration
+
+        // get single output for now.
+        BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
+
 
         def renderscriptTask = project.tasks.create(
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Renderscript",
                 RenderscriptCompile)
         variantData.renderscriptCompileTask = renderscriptTask
         if (config.type == TEST) {
-            renderscriptTask.dependsOn variantData.manifestProcessorTask
+            renderscriptTask.dependsOn variantOutputData.manifestProcessorTask
         } else {
             renderscriptTask.dependsOn variantData.checkManifestTask
         }
@@ -813,8 +839,9 @@ public abstract class BasePlugin {
         renderscriptTask.conventionMapping.ndkConfig = { config.ndkConfig }
     }
 
-    public void createMergeResourcesTask(@NonNull BaseVariantData variantData,
-                                            final boolean process9Patch) {
+    public void createMergeResourcesTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            final boolean process9Patch) {
         MergeResources mergeResourcesTask = basicCreateMergeResourcesTask(
                 variantData,
                 "merge",
@@ -825,7 +852,7 @@ public abstract class BasePlugin {
     }
 
     public MergeResources basicCreateMergeResourcesTask(
-            @NonNull BaseVariantData variantData,
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull String taskNamePrefix,
             @NonNull String outputLocation,
             final boolean includeDependencies,
@@ -858,9 +885,10 @@ public abstract class BasePlugin {
         return mergeResourcesTask
     }
 
-    public void createMergeAssetsTask(@NonNull BaseVariantData variantData,
-                                      @Nullable String outputLocation,
-                                      final boolean includeDependencies) {
+    public void createMergeAssetsTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @Nullable String outputLocation,
+            final boolean includeDependencies) {
         if (outputLocation == null) {
             outputLocation = "$project.buildDir/${FD_INTERMEDIATES}/assets/${variantData.variantConfiguration.dirName}"
         }
@@ -887,10 +915,12 @@ public abstract class BasePlugin {
         mergeAssetsTask.conventionMapping.outputDir = { project.file(outputLocation) }
     }
 
-    public void createBuildConfigTask(BaseVariantData variantData) {
+    public void createBuildConfigTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         def generateBuildConfigTask = project.tasks.create(
                 "generate${variantData.variantConfiguration.fullName.capitalize()}BuildConfig",
                 GenerateBuildConfig)
+
         variantData.generateBuildConfigTask = generateBuildConfigTask
 
         VariantConfiguration variantConfiguration = variantData.variantConfiguration
@@ -899,7 +929,11 @@ public abstract class BasePlugin {
         if (variantConfiguration.type == TEST) {
             // in case of a test project, the manifest is generated so we need to depend
             // on its creation.
-            generateBuildConfigTask.dependsOn variantData.manifestProcessorTask
+
+            // For test apps there should be a single output, so we get it.
+            BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
+
+            generateBuildConfigTask.dependsOn variantOutputData.manifestProcessorTask
         } else {
             generateBuildConfigTask.dependsOn variantData.checkManifestTask
         }
@@ -947,7 +981,8 @@ public abstract class BasePlugin {
         }
     }
 
-    public void createGenerateResValuesTask(BaseVariantData variantData) {
+    public void createGenerateResValuesTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         GenerateResValues generateResValuesTask = project.tasks.create(
                 "generate${variantData.variantConfiguration.fullName.capitalize()}ResValues",
                 GenerateResValues)
@@ -968,7 +1003,7 @@ public abstract class BasePlugin {
     }
 
     public void createProcessResTask(
-            @NonNull BaseVariantData variantData,
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             boolean generateResourcePackage) {
         createProcessResTask(variantData,
                 "$project.buildDir/${FD_INTERMEDIATES}/symbols/${variantData.variantConfiguration.dirName}",
@@ -976,16 +1011,20 @@ public abstract class BasePlugin {
     }
 
     public void createProcessResTask(
-            @NonNull BaseVariantData variantData,
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull final String symbolLocation,
             boolean generateResourcePackage) {
         ProcessAndroidResources processResources = project.tasks.create(
                 "process${variantData.variantConfiguration.fullName.capitalize()}Resources",
                 ProcessAndroidResources)
-        variantData.processResourcesTask = processResources
+
+        // using single output for now.
+        BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
+
+        variantOutputData.processResourcesTask = processResources
 
         variantData.sourceGenTask.dependsOn processResources
-        processResources.dependsOn variantData.manifestProcessorTask, variantData.mergeResourcesTask, variantData.mergeAssetsTask
+        processResources.dependsOn variantOutputData.manifestProcessorTask, variantData.mergeResourcesTask, variantData.mergeAssetsTask
 
         processResources.plugin = this
         processResources.enforceUniquePackageName = extension.getEnforceUniquePackageName()
@@ -993,7 +1032,7 @@ public abstract class BasePlugin {
         VariantConfiguration variantConfiguration = variantData.variantConfiguration
 
         processResources.conventionMapping.manifestFile = {
-            variantData.manifestProcessorTask.manifestOutputFile
+            variantOutputData.manifestProcessorTask.manifestOutputFile
         }
 
         processResources.conventionMapping.resDir = {
@@ -1036,7 +1075,8 @@ public abstract class BasePlugin {
         processResources.conventionMapping.resourceConfigs = { variantConfiguration.mergedFlavor.resourceConfigurations }
     }
 
-    public void createProcessJavaResTask(BaseVariantData variantData) {
+    public void createProcessJavaResTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         VariantConfiguration variantConfiguration = variantData.variantConfiguration
 
         Copy processResources = project.tasks.create(
@@ -1062,7 +1102,9 @@ public abstract class BasePlugin {
         }
     }
 
-    public void createAidlTask(@NonNull BaseVariantData variantData, @Nullable File parcelableDir) {
+    public void createAidlTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @Nullable File parcelableDir) {
         VariantConfiguration variantConfiguration = variantData.variantConfiguration
 
         def compileTask = project.tasks.create(
@@ -1086,8 +1128,9 @@ public abstract class BasePlugin {
         compileTask.aidlParcelableDir = parcelableDir
     }
 
-    public void createCompileTask(BaseVariantData variantData,
-                                     BaseVariantData testedVariantData) {
+    public void createCompileTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> testedVariantData) {
         def compileTask = project.tasks.create(
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Java",
                 JavaCompile)
@@ -1137,8 +1180,9 @@ public abstract class BasePlugin {
             compileTask.options.bootClasspath = androidBuilder.getBootClasspath().join(File.pathSeparator)
         }
     }
-    public void createGenerateMicroApkDataTask(@NonNull BaseVariantData variantData,
-                                               @NonNull Configuration config) {
+    public void createGenerateMicroApkDataTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @NonNull Configuration config) {
         GenerateApkDataTask task = project.tasks.create(
                 "handle${variantData.variantConfiguration.fullName.capitalize()}MicroApk",
                 GenerateApkDataTask)
@@ -1166,7 +1210,8 @@ public abstract class BasePlugin {
         variantData.resourceGenTask.dependsOn task
     }
 
-    public void createNdkTasks(@NonNull BaseVariantData variantData) {
+    public void createNdkTasks(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         NdkCompile ndkCompile = project.tasks.create(
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Ndk",
                 NdkCompile)
@@ -1219,8 +1264,14 @@ public abstract class BasePlugin {
      * @param testedVariant the tested variant
      * @param configDependencies the list of config dependencies
      */
-    public void createTestApkTasks(@NonNull TestVariantData variantData,
-                                   @NonNull BaseVariantData testedVariantData) {
+    public void createTestApkTasks(
+            @NonNull TestVariantData variantData,
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> testedVariantData) {
+
+        // get single output for now (though this may always be the case for tests).
+        BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
+        BaseVariantOutputData testedVariantOutputData = testedVariantData.outputs.get(0)
+
         createAnchorTasks(variantData)
 
         // Add a task to process the manifest
@@ -1240,9 +1291,9 @@ public abstract class BasePlugin {
 
         if (testedVariantData.variantConfiguration.type == VariantConfiguration.Type.LIBRARY) {
             // in this case the tested library must be fully built before test can be built!
-            if (testedVariantData.assembleTask != null) {
-                variantData.manifestProcessorTask.dependsOn testedVariantData.assembleTask
-                variantData.mergeResourcesTask.dependsOn testedVariantData.assembleTask
+            if (testedVariantOutputData.assembleTask != null) {
+                variantOutputData.manifestProcessorTask.dependsOn testedVariantOutputData.assembleTask
+                variantData.mergeResourcesTask.dependsOn testedVariantOutputData.assembleTask
             }
         }
 
@@ -1268,7 +1319,7 @@ public abstract class BasePlugin {
         addPackageTasks(variantData, null, false /*publishApk*/)
 
         if (assembleTest != null) {
-            assembleTest.dependsOn variantData.assembleTask
+            assembleTest.dependsOn variantOutputData.assembleTask
         }
     }
 
@@ -1289,7 +1340,8 @@ public abstract class BasePlugin {
     }
 
     /** Is the given variant relevant for lint? */
-    private static boolean isLintVariant(@NonNull BaseVariantData baseVariantData) {
+    private static boolean isLintVariant(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> baseVariantData) {
         // Only create lint targets for variants like debug and release, not debugTest
         VariantConfiguration config = baseVariantData.variantConfiguration
         return config.getType() != TEST;
@@ -1307,7 +1359,7 @@ public abstract class BasePlugin {
 
         int count = variantDataList.size()
         for (int i = 0 ; i < count ; i++) {
-            final BaseVariantData baseVariantData = variantDataList.get(i)
+            final BaseVariantData<? extends BaseVariantOutputData> baseVariantData = variantDataList.get(i)
             if (!isLintVariant(baseVariantData)) {
                 continue;
             }
@@ -1344,7 +1396,7 @@ public abstract class BasePlugin {
             lintReleaseCheck.setFatalOnly(true)
             lintReleaseCheck.description = "Runs lint on just the fatal issues in the " +
                     capitalizedVariantName + " build"
-            variantData.assembleTask.dependsOn lintReleaseCheck
+            variantData.assembleVariantTask.dependsOn lintReleaseCheck
             lintVital = lintReleaseCheck
         }
     }
@@ -1416,12 +1468,16 @@ public abstract class BasePlugin {
         // gets broken.
         int count = variantDataList.size();
         for (int i = 0 ; i < count ; i++) {
-            final BaseVariantData baseVariantData = variantDataList.get(i);
+            final BaseVariantData<? extends BaseVariantOutputData> baseVariantData = variantDataList.get(i);
             if (baseVariantData instanceof TestedVariantData) {
                 final TestVariantData testVariantData = ((TestedVariantData) baseVariantData).testVariantData
                 if (testVariantData == null) {
                     continue
                 }
+
+                // get single output for now
+                BaseVariantOutputData variantOutputData = baseVariantData.outputs.get(0)
+                BaseVariantOutputData testVariantOutputData = testVariantData.outputs.get(0)
 
                 // create the check tasks for this test
 
@@ -1506,13 +1562,13 @@ public abstract class BasePlugin {
 
                     serverTask.description = "Uploads APKs for Build '${baseVariantData.variantConfiguration.fullName}' to Test Server '${testServer.name.capitalize()}'."
                     serverTask.group = JavaBasePlugin.VERIFICATION_GROUP
-                    serverTask.dependsOn testVariantData.assembleTask, baseVariantData.assembleTask
+                    serverTask.dependsOn testVariantOutputData.assembleTask, variantOutputData.assembleTask
 
                     serverTask.testServer = testServer
 
-                    serverTask.conventionMapping.testApk = { testVariantData.outputFile }
+                    serverTask.conventionMapping.testApk = { testVariantOutputData.outputFile }
                     if (!(baseVariantData instanceof LibraryVariantData)) {
-                        serverTask.conventionMapping.testedApk = { baseVariantData.outputFile }
+                        serverTask.conventionMapping.testedApk = { variantOutputData.outputFile }
                     }
 
                     serverTask.conventionMapping.variantName = { baseVariantData.variantConfiguration.fullName }
@@ -1550,23 +1606,27 @@ public abstract class BasePlugin {
             @NonNull String description,
             @NonNull Class<? extends DeviceProviderInstrumentTestTask> taskClass,
             @NonNull TestVariantData variantData,
-            @NonNull BaseVariantData testedVariantData,
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> testedVariantData,
             @NonNull DeviceProvider deviceProvider,
             @NonNull String subFolder) {
+
+        // get single output for now
+        BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
+        BaseVariantOutputData testedVariantOutputData = testedVariantData.outputs.get(0)
 
         def testTask = project.tasks.create(taskName, taskClass)
         testTask.description = description
         testTask.group = JavaBasePlugin.VERIFICATION_GROUP
-        testTask.dependsOn testedVariantData.assembleTask, variantData.assembleTask
+        testTask.dependsOn testedVariantOutputData.assembleTask, variantOutputData.assembleTask
 
         testTask.plugin = this
         testTask.variant = variantData
         testTask.flavorName = variantData.variantConfiguration.flavorName.capitalize()
         testTask.deviceProvider = deviceProvider
 
-        testTask.conventionMapping.testApp = { variantData.outputFile }
+        testTask.conventionMapping.testApp = { variantOutputData.outputFile }
         if (testedVariantData.variantConfiguration.type != VariantConfiguration.Type.LIBRARY) {
-            testTask.conventionMapping.testedApp = { testedVariantData.outputFile }
+            testTask.conventionMapping.testedApp = { testedVariantOutputData.outputFile }
         }
 
         testTask.conventionMapping.resultsDir = {
@@ -1619,6 +1679,9 @@ public abstract class BasePlugin {
                                 boolean publishApk) {
         VariantConfiguration variantConfig = variantData.variantConfiguration
 
+        // Get single output for now.
+        ApkVariantOutputData variantOutputData = variantData.outputs.get(0)
+
         boolean runProguard = variantConfig.buildType.runProguard &&
                 (variantConfig.type != TEST ||
                         (variantConfig.type == TEST &&
@@ -1641,7 +1704,7 @@ public abstract class BasePlugin {
 
         if (runProguard) {
             // first proguard task.
-            BaseVariantData testedVariantData = variantData instanceof TestVariantData ? variantData.testedVariantData : null as BaseVariantData
+            BaseVariantData<? extends BaseVariantOutputData> testedVariantData = variantData instanceof TestVariantData ? variantData.testedVariantData : null as BaseVariantData
             File outFile = createProguardTasks(variantData, testedVariantData)
 
             // then dexing task
@@ -1736,8 +1799,8 @@ public abstract class BasePlugin {
         PackageApplication packageApp = project.tasks.create(
                 "package${variantData.variantConfiguration.fullName.capitalize()}",
                 PackageApplication)
-        variantData.packageApplicationTask = packageApp
-        packageApp.dependsOn variantData.processResourcesTask, dexTask, variantData.processJavaResourcesTask
+        variantOutputData.packageApplicationTask = packageApp
+        packageApp.dependsOn variantOutputData.processResourcesTask, dexTask, variantData.processJavaResourcesTask
 
         // Add dependencies on NDK tasks if NDK plugin is applied.
         if (extension.getUseNewNativePlugin()) {
@@ -1750,7 +1813,7 @@ public abstract class BasePlugin {
         packageApp.plugin = this
 
         packageApp.conventionMapping.resourceFile = {
-            variantData.processResourcesTask.packageOutputFile
+            variantOutputData.processResourcesTask.packageOutputFile
         }
         packageApp.conventionMapping.dexFolder = { dexTask.outputFolder }
         packageApp.conventionMapping.packagedJars = { androidBuilder.getPackagedJars(variantConfig) }
@@ -1833,7 +1896,7 @@ public abstract class BasePlugin {
                 def zipAlignTask = project.tasks.create(
                         "zipalign${variantData.variantConfiguration.fullName.capitalize()}",
                         ZipAlign)
-                variantData.zipAlignTask = zipAlignTask
+                variantOutputData.zipAlignTask = zipAlignTask
 
                 zipAlignTask.dependsOn packageApp
                 zipAlignTask.conventionMapping.inputFile = { packageApp.outputFile }
@@ -1865,7 +1928,7 @@ public abstract class BasePlugin {
             installTask.conventionMapping.packageFile = { outputFileTask.outputFile }
             installTask.conventionMapping.adbExe = { androidBuilder.sdkInfo?.adb }
 
-            variantData.installTask = installTask
+            variantOutputData.installTask = installTask
         }
 
         // Add an assemble task
@@ -1873,12 +1936,14 @@ public abstract class BasePlugin {
             assembleTask = createAssembleTask(variantData)
         }
         assembleTask.dependsOn appTask
-        variantData.assembleTask = assembleTask
+        // set the assemble task on the output and the variant since we have a single output for now.
+        variantData.assembleVariantTask = variantOutputData.assembleTask = assembleTask
+
         if (extension.lintOptions.checkReleaseBuilds) {
             createLintVitalTask(variantData)
         }
 
-        variantData.outputFile = { outputFileTask.outputFile }
+        variantOutputData.outputFile = { outputFileTask.outputFile }
 
         if (publishApk) {
             String fullName = variantData.variantConfiguration.fullName
@@ -1915,7 +1980,8 @@ public abstract class BasePlugin {
         uninstallAll.dependsOn uninstallTask
     }
 
-    public Task createAssembleTask(BaseVariantData variantData) {
+    public Task createAssembleTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         Task assembleTask = project.tasks.
                 create("assemble${variantData.variantConfiguration.fullName.capitalize()}")
         assembleTask.description = "Assembles the " + variantData.description
@@ -1974,9 +2040,13 @@ public abstract class BasePlugin {
      * @return outFile file outputted by proguard
      */
     @NonNull
-    public File createProguardTasks(@NonNull BaseVariantData variantData,
-                                    @Nullable BaseVariantData testedVariantData) {
+    public File createProguardTasks(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @Nullable BaseVariantData<? extends BaseVariantOutputData> testedVariantData) {
         VariantConfiguration variantConfig = variantData.variantConfiguration
+
+        // use single output for now.
+        BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
 
         def proguardTask = project.tasks.create(
                 "proguard${variantData.variantConfiguration.fullName.capitalize()}",
@@ -2003,6 +2073,9 @@ public abstract class BasePlugin {
         // --- Proguard Config ---
 
         if (testedVariantData != null) {
+            // use single output for now.
+            BaseVariantOutputData testedVariantOutputData = testedVariantData.outputs.get(0)
+
             // don't remove any code in tested app
             proguardTask.dontshrink()
             proguardTask.keepnames("class * extends junit.framework.TestCase")
@@ -2015,7 +2088,7 @@ public abstract class BasePlugin {
 
             // for tested app, we only care about their aapt config since the base
             // configs are the same files anyway.
-            proguardTask.configuration(testedVariantData.processResourcesTask.proguardOutputFile)
+            proguardTask.configuration(testedVariantOutputData.processResourcesTask.proguardOutputFile)
         }
 
         // all the config files coming from build type, product flavors.
@@ -2025,7 +2098,7 @@ public abstract class BasePlugin {
         }
 
         // also the config file output by aapt
-        proguardTask.configuration(variantData.processResourcesTask.proguardOutputFile)
+        proguardTask.configuration(variantOutputData.processResourcesTask.proguardOutputFile)
 
         // --- InJars / LibraryJars ---
 
@@ -2142,7 +2215,8 @@ public abstract class BasePlugin {
         signingReportTask.setGroup("Android")
     }
 
-    public void createAnchorTasks(@NonNull BaseVariantData variantData) {
+    public void createAnchorTasks(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         variantData.preBuildTask = project.tasks.create(
                 "pre${variantData.variantConfiguration.fullName.capitalize()}Build")
         variantData.preBuildTask.dependsOn mainPreBuild
@@ -2176,7 +2250,8 @@ public abstract class BasePlugin {
                 "generate${variantData.variantConfiguration.fullName.capitalize()}Assets")
     }
 
-    public void createCheckManifestTask(@NonNull BaseVariantData variantData) {
+    public void createCheckManifestTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         String name = variantData.variantConfiguration.fullName
         variantData.checkManifestTask = project.tasks.create(
                 "check${name.capitalize()}Manifest",
@@ -2313,7 +2388,7 @@ public abstract class BasePlugin {
     //----------------------------------------------------------------------------------------------
 
     private void addDependencyToPrepareTask(
-            @NonNull BaseVariantData variantData,
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull PrepareDependenciesTask prepareDependenciesTask,
             @NonNull LibraryDependencyImpl lib) {
         PrepareLibraryTask prepareLibTask = prepareTaskMap.get(lib)
