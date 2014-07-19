@@ -43,6 +43,7 @@ import com.android.builder.model.Variant;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import junit.framework.TestCase;
 
@@ -60,6 +61,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class AndroidProjectTest extends TestCase {
 
@@ -468,6 +470,43 @@ public class AndroidProjectTest extends TestCase {
                 .setStoreFile(new File(projectData.projectDir, "debug.keystore"))
                 .test();
     }
+
+    public void testDensityOutputs() throws Exception {
+        // Load the custom model for the project
+        ProjectData projectData = getModelForProject("densitySplit");
+
+        AndroidProject model = projectData.model;
+
+        Collection<Variant> variants = model.getVariants();
+        assertEquals("Variant Count", 2 , variants.size());
+
+        // get the main artifact of the debug artifact
+        Variant debugVariant = getVariant(variants, "debug");
+        assertNotNull("debug Variant null-check", debugVariant);
+        AndroidArtifact debugMainArficat = debugVariant.getMainArtifact();
+        assertNotNull("Debug main info null-check", debugMainArficat);
+
+        // get the outputs.
+        Collection<AndroidArtifactOutput> debugOutputs = debugMainArficat.getOutputs();
+        assertNotNull(debugOutputs);
+        assertEquals(5, debugOutputs.size());
+        Set<String> expected = Sets.newHashSet("mdpi", "hdpi", "xhdpi", "xxhdpi");
+        boolean foundNull = false;
+        for (AndroidArtifactOutput output : debugOutputs) {
+            String densityFilter = output.densityFilter();
+            if (densityFilter == null) {
+                assertFalse("Check already found null", foundNull);
+                foundNull = true;
+            } else {
+                assertTrue("Checking presence of output with filter=" + densityFilter,
+                        expected.contains(densityFilter));
+                expected.remove(output.densityFilter());
+            }
+        }
+
+        assertTrue(expected.isEmpty());
+    }
+
 
     public void testMigrated() throws Exception {
         // Load the custom model for the project

@@ -261,8 +261,8 @@ public class ModelBuilder implements ToolingModelBuilder {
                     variantOutputData.assembleTask.name,
                     variantOutputData.manifestProcessorTask.manifestOutputFile,
                     versionCode,
-                    null, /*densityFilter*/
-                    null /*abiFilter*/
+                    variantOutputData.densityFilter,
+                    variantOutputData.abiFilter
             );
 
             outputs.add(output)
