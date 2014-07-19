@@ -477,6 +477,19 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                         "multiproject/library.properties=>build.gradle")); // dummy; only name counts
     }
 
+    public void testManifestPackagePlaceholder() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.GRADLE_OVERRIDES);
+        assertEquals(""
+                + "AndroidManifest.xml:3: Warning: Cannot use placeholder for the package in the manifest; set applicationId in build.gradle instead [GradleOverrides]\n"
+                + "    package=\"${packageName}\" >\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "gradle_override_placeholder.xml=>AndroidManifest.xml",
+                        "multiproject/library.properties=>build.gradle")); // dummy; only name counts
+    }
+
     // Custom project which locates all manifest files in the project rather than just
     // being hardcoded to the root level
     private static class MyProject extends Project {
@@ -535,14 +548,15 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                         @Override
                         public Variant getCurrentVariant() {
                             ProductFlavor flavor = createNiceMock(ProductFlavor.class);
-                            if (getName().equals("ManifestDetectorTest_testGradleOverridesOk")) {
+                            if (getName().equals("ManifestDetectorTest_testGradleOverridesOk") ||
+                                    getName().equals(
+                                        "ManifestDetectorTest_testManifestPackagePlaceholder")) {
                                 expect(flavor.getMinSdkVersion()).andReturn(null).anyTimes();
                                 expect(flavor.getTargetSdkVersion()).andReturn(null).anyTimes();
                                 expect(flavor.getVersionCode()).andReturn(-1).anyTimes();
                                 expect(flavor.getVersionName()).andReturn(null).anyTimes();
                             } else {
-                                assertEquals(getName(),
-                                        "ManifestDetectorTest_testGradleOverrides");
+                                assertEquals(getName(), "ManifestDetectorTest_testGradleOverrides");
 
                                 ApiVersion apiMock = createNiceMock(ApiVersion.class);
                                 expect(apiMock.getApiLevel()).andReturn(5);

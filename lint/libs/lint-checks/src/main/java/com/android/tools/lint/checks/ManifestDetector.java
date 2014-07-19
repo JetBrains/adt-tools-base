@@ -22,6 +22,7 @@ import static com.android.SdkConstants.ATTR_ALLOW_BACKUP;
 import static com.android.SdkConstants.ATTR_ICON;
 import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_VERSION_CODE;
 import static com.android.SdkConstants.ATTR_VERSION_NAME;
@@ -496,6 +497,17 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
         checkOverride(context, element, ATTR_VERSION_CODE);
         checkOverride(context, element, ATTR_VERSION_NAME);
+
+        Attr pkgNode = element.getAttributeNode(ATTR_PACKAGE);
+        if (pkgNode != null) {
+            String pkg = pkgNode.getValue();
+            if (pkg.contains("${") && context.getMainProject().isGradleProject()) {
+                context.report(GRADLE_OVERRIDES, pkgNode, context.getLocation(pkgNode),
+                        "Cannot use placeholder for the package in the manifest; "
+                                + "set applicationId in build.gradle instead",
+                        null);
+            }
+        }
     }
 
     private static void checkOverride(XmlContext context, Element element, String attributeName) {
