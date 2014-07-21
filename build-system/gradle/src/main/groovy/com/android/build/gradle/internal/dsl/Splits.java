@@ -58,8 +58,15 @@ public class Splits {
         action.execute(abi);
     }
 
+    /**
+     * Returns the list of Density filters used for multi-apk.
+     *
+     * null value is allowed, indicating the need to generate an apk with all densities.
+     *
+     * @return a set of filters.
+     */
     @NonNull
-    public Set<String> getDensityList() {
+    public Set<String> getDensityFilters() {
         Density[] values = Density.values();
         Set<String> fullList = Sets.newHashSetWithExpectedSize(values.length - 1);
         for (Density value : values) {
@@ -68,11 +75,18 @@ public class Splits {
             }
         }
 
-        return density.computeList(fullList);
+        return density.getApplicableFilters(fullList);
     }
 
+    /**
+     * Returns the list of ABI filters used for multi-apk.
+     *
+     * null value is allowed, indicating the need to generate an apk with all abis.
+     *
+     * @return a set of filters.
+     */
     @NonNull
-    public Set<String> getAbiList() {
-        return abi.computeList(ABI_LIST);
+    public Set<String> getAbiFilters() {
+        return abi.getApplicableFilters(ABI_LIST);
     }
 }

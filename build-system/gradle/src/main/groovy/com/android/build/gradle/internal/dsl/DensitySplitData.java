@@ -37,8 +37,8 @@ public class DensitySplitData extends SplitData {
 
     @NonNull
     @Override
-    public Set<String> computeList(@NonNull Set<String> fullList) {
-        Set<String> list = super.computeList(fullList);
+    public Set<String> getApplicableFilters(@NonNull Set<String> allFilters) {
+        Set<String> list = super.getApplicableFilters(allFilters);
 
         // if splitting enabled, then add an entry with no filter for universal
         if (isEnable()) {

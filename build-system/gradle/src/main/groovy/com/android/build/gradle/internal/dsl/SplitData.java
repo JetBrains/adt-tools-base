@@ -68,15 +68,24 @@ public class SplitData {
         include.addAll(Arrays.asList(includes));
     }
 
+    /**
+     * Returns a list of all applicable filters for this dimension.
+     *
+     * The list can return null, indicating that the no-filter option must also be used.
+     *
+     * @param allFilters the available filters, excluding the no-filter option.
+     *
+     * @return the filters to use.
+     */
     @NonNull
-    public Set<String> computeList(@NonNull Set<String> fullList) {
+    public Set<String> getApplicableFilters(@NonNull Set<String> allFilters) {
         if (!enable) {
             return Collections.singleton(null);
         }
 
         Set<String> results = reset ?
-                Sets.<String>newHashSetWithExpectedSize(fullList.size() + 1) :
-                Sets.newHashSet(fullList);
+                Sets.<String>newHashSetWithExpectedSize(allFilters.size() + 1) :
+                Sets.newHashSet(allFilters);
 
         if (exclude != null) {
             results.removeAll(exclude);
@@ -85,7 +94,7 @@ public class SplitData {
         if (include != null) {
             // we need to make sure we only include stuff that's from the full list.
             for (String inc : include) {
-                if (fullList.contains(inc)) {
+                if (allFilters.contains(inc)) {
                     results.add(inc);
                 }
             }
