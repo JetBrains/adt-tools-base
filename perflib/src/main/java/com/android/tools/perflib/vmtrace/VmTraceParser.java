@@ -23,18 +23,12 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
 import com.google.common.primitives.UnsignedInts;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 public class VmTraceParser {
     private static final int TRACE_MAGIC = 0x574f4c53; // 'SLOW'
@@ -138,7 +132,10 @@ public class VmTraceParser {
             }
         } finally {
             if (in != null) {
-                Closeables.closeQuietly(in);
+              try {
+                Closeables.close(in, true);
+              } catch (IOException ignored) {
+              }
             }
         }
 

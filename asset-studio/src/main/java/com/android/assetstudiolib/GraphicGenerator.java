@@ -21,28 +21,19 @@ import com.android.utils.SdkUtils;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.JarURLConnection;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.ProtectionDomain;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
-import javax.imageio.ImageIO;
 
 /**
  * The base Generator class.
@@ -214,7 +205,10 @@ public abstract class GraphicGenerator {
         try {
             return ImageIO.read(is);
         } finally {
-            Closeables.closeQuietly(is);
+          try {
+            Closeables.close(is, true);
+          } catch (IOException ignored) {
+          }
         }
     }
 
@@ -233,7 +227,10 @@ public abstract class GraphicGenerator {
         try {
             return ImageIO.read(is);
         } finally {
-            Closeables.closeQuietly(is);
+          try {
+            Closeables.close(is, true);
+          } catch (IOException ignored) {
+          }
         }
     }
 
@@ -252,7 +249,10 @@ public abstract class GraphicGenerator {
         try {
             return ImageIO.read(is);
         } finally {
-            Closeables.closeQuietly(is);
+          try {
+            Closeables.close(is, true);
+          } catch (IOException ignored) {
+          }
         }
     }
 

@@ -26,7 +26,9 @@ import com.google.common.io.Closeables;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.logging.Level;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
@@ -218,7 +220,10 @@ public final class AndroidManifest {
                 }
             }
         } finally {
-            Closeables.closeQuietly(is);
+          try {
+            Closeables.close(is, true);
+          } catch (IOException ignored) {
+          }
         }
 
         return false;
@@ -396,7 +401,10 @@ public final class AndroidManifest {
             is = file.getContents();
             return xpath.evaluate(xPath, new InputSource(is));
         } finally {
-            Closeables.closeQuietly(is);
+          try {
+            Closeables.close(is, true);
+          } catch (IOException ignored) {
+          }
         }
     }
 }

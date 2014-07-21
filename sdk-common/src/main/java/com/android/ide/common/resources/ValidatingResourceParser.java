@@ -19,7 +19,6 @@ package com.android.ide.common.resources;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.google.common.io.Closeables;
-
 import org.kxml2.io.KXmlParser;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -65,12 +64,18 @@ public class ValidatingResourceParser {
             throws IOException {
         // No need to validate framework files
         if (mIsFramework) {
-            Closeables.closeQuietly(input);
-            return true;
+          try {
+            Closeables.close(input, true);
+          } catch (IOException ignored) {
+          }
+          return true;
         }
         if (mContext.needsFullAapt()) {
-            Closeables.closeQuietly(input);
-            return false;
+          try {
+            Closeables.close(input, true);
+          } catch (IOException ignored) {
+          }
+          return false;
         }
 
         KXmlParser parser = new KXmlParser();
@@ -108,7 +113,10 @@ public class ValidatingResourceParser {
             mContext.addError(error);
             return false;
         } finally {
-            Closeables.closeQuietly(input);
+          try {
+            Closeables.close(input, true);
+          } catch (IOException ignored) {
+          }
         }
     }
 

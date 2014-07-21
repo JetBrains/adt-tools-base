@@ -20,13 +20,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.google.common.io.Closeables;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -377,7 +371,10 @@ public class FileOp implements IFileOp {
             props.load(fis);
         } catch (IOException ignore) {
         } finally {
-            Closeables.closeQuietly(fis);
+          try {
+            Closeables.close(fis, true);
+          } catch (IOException ignored) {
+          }
         }
         return props;
     }
@@ -393,7 +390,10 @@ public class FileOp implements IFileOp {
             fos = newFileOutputStream(file);
             props.store(fos, comments);
         } finally {
-            Closeables.closeQuietly(fos);
+          try {
+            Closeables.close(fos, true);
+          } catch (IOException ignored) {
+          }
         }
     }
 

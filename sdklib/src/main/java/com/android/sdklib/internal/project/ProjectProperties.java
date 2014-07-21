@@ -26,19 +26,9 @@ import com.android.io.StreamException;
 import com.android.utils.ILogger;
 import com.google.common.io.Closeables;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -468,7 +458,10 @@ public class ProjectProperties implements IPropertySource {
                         e.getMessage());
             }
         } finally {
-            Closeables.closeQuietly(is);
+          try {
+            Closeables.close(is, true);
+          } catch (IOException ignored) {
+          }
         }
 
 
@@ -538,8 +531,14 @@ public class ProjectProperties implements IPropertySource {
                         e.getMessage());
             }
         } finally {
-            Closeables.closeQuietly(reader);
-            Closeables.closeQuietly(propStream);
+          try {
+            Closeables.close(reader, true);
+          } catch (IOException ignored) {
+          }
+          try {
+            Closeables.close(propStream, true);
+          } catch (IOException ignored) {
+          }
         }
 
         return null;

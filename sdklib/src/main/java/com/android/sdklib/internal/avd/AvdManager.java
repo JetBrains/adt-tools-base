@@ -48,16 +48,7 @@ import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.io.Closeables;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,6 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -1789,7 +1781,10 @@ public class AvdManager {
                         e.getMessage());
             }
         } finally {
-            Closeables.closeQuietly(reader);
+          try {
+            Closeables.close(reader, true);
+          } catch (IOException ignored) {
+          }
         }
 
         return null;

@@ -108,9 +108,18 @@ public class GrabProcessOutput {
                 } catch (IOException e) {
                     // do nothing.
                 } finally {
-                    Closeables.closeQuietly(is);
-                    Closeables.closeQuietly(isr);
-                    Closeables.closeQuietly(errReader);
+                  try {
+                    Closeables.close(is, true);
+                  } catch (IOException ignored) {
+                  }
+                  try {
+                    Closeables.close(isr, true);
+                  } catch (IOException ignored) {
+                  }
+                  try {
+                    Closeables.close(errReader, true);
+                  } catch (IOException ignored) {
+                  }
                 }
             }
         };
@@ -135,9 +144,18 @@ public class GrabProcessOutput {
                 } catch (IOException e) {
                     // do nothing.
                 } finally {
-                    Closeables.closeQuietly(is);
-                    Closeables.closeQuietly(isr);
-                    Closeables.closeQuietly(outReader);
+                  try {
+                    Closeables.close(is, true);
+                  } catch (IOException ignored) {
+                  }
+                  try {
+                    Closeables.close(isr, true);
+                  } catch (IOException ignored) {
+                  }
+                  try {
+                    Closeables.close(outReader, true);
+                  } catch (IOException ignored) {
+                  }
                 }
             }
         };

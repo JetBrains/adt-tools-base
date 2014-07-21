@@ -92,6 +92,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -1557,7 +1558,10 @@ public class LintDriver {
                 } catch (IOException e) {
                     mClient.log(e, "Could not read jar file contents from %1$s", jarFile);
                 } finally {
-                    Closeables.closeQuietly(zis);
+                  try {
+                    Closeables.close(zis, true);
+                  } catch (IOException ignored) {
+                  }
                 }
 
                 continue;

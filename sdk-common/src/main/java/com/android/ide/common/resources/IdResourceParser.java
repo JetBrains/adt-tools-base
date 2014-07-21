@@ -22,7 +22,6 @@ import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.ValueResourceParser.IValueResourceRepository;
 import com.android.resources.ResourceType;
 import com.google.common.io.Closeables;
-
 import org.kxml2.io.KXmlParser;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -107,7 +106,10 @@ public class IdResourceParser {
             mContext.addError(error);
             return false;
         } finally {
-            Closeables.closeQuietly(input);
+          try {
+            Closeables.close(input, true);
+          } catch (IOException ignored) {
+          }
         }
     }
 

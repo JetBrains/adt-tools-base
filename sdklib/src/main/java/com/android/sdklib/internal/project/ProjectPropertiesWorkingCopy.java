@@ -23,13 +23,7 @@ import com.android.io.IAbstractFolder;
 import com.android.io.StreamException;
 import com.google.common.io.Closeables;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -204,9 +198,18 @@ public class ProjectPropertiesWorkingCopy extends ProjectProperties {
                     }
                 }
             } finally {
-                Closeables.closeQuietly(reader);
-                Closeables.closeQuietly(isr);
-                Closeables.closeQuietly(contentStream);
+              try {
+                Closeables.close(reader, true);
+              } catch (IOException ignored) {
+              }
+              try {
+                Closeables.close(isr, true);
+              } catch (IOException ignored) {
+              }
+              try {
+                Closeables.close(contentStream, true);
+              } catch (IOException ignored) {
+              }
             }
 
         } else {

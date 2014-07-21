@@ -16,50 +16,27 @@
 
 package com.android.tools.lint.client.api;
 
-import static com.android.SdkConstants.CURRENT_PLATFORM;
-import static com.android.SdkConstants.PLATFORM_WINDOWS;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.detector.api.Context;
-import com.android.tools.lint.detector.api.Issue;
-import com.android.tools.lint.detector.api.Location;
-import com.android.tools.lint.detector.api.Project;
-import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.*;
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.io.Closeables;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXParseException;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.*;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
+import static com.android.SdkConstants.CURRENT_PLATFORM;
+import static com.android.SdkConstants.PLATFORM_WINDOWS;
 
 /**
  * Default implementation of a {@link Configuration} which reads and writes
@@ -367,7 +344,10 @@ public class DefaultConfiguration extends Configuration {
         } catch (Exception e) {
             mClient.log(e, null);
         } finally {
-            Closeables.closeQuietly(input);
+          try {
+            Closeables.close(input, true);
+          } catch (IOException ignored) {
+          }
         }
     }
 
