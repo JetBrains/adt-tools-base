@@ -16,6 +16,7 @@
 
 package com.android.tools.perflib.heap.analysis;
 
+import com.android.tools.perflib.heap.ClassObj;
 import com.android.tools.perflib.heap.HprofParser;
 import com.android.tools.perflib.heap.Instance;
 import com.android.tools.perflib.heap.Snapshot;
@@ -71,21 +72,23 @@ public class DominatorsTest extends TestCase {
     }
 
     public void testMultipleRoots() {
-        mSnapshot = new SnapshotBuilder(5)
+        mSnapshot = new SnapshotBuilder(6)
                 .addReference(1, 3)
                 .addReference(2, 4)
                 .addReference(3, 5)
                 .addReference(4, 5)
+                .addReference(5, 6)
                 .addRoot(1)
                 .addRoot(2)
                 .getSnapshot();
 
         mDominators = Dominators.getDominatorMap(mSnapshot);
-        assertEquals(5, mDominators.size());
+        assertEquals(6, mDominators.size());
         assertDominates(1, 3);
         assertDominates(2, 4);
         // Node 5 is reachable via both roots, neither of which can be the sole dominator.
         assertEquals(mSnapshot.SENTINEL_ROOT, mDominators.get(mSnapshot.findReference(5)));
+        assertDominates(5, 6);
     }
 
     public void testSampleHprof() throws Exception {
@@ -93,7 +96,7 @@ public class DominatorsTest extends TestCase {
                 ClassLoader.getSystemResourceAsStream("dialer.android-hprof"));
         try {
             Snapshot snapshot = (new HprofParser(dis)).parse();
-            Map<Instance, Instance> dominators = Dominators.getDominatorMap(snapshot);
+            Map<Instance, Instance> dominators = snapshot.computeDominatorMap();
 
             // TODO: Double-check this data
             assertEquals(29598, dominators.size());
@@ -101,6 +104,17 @@ public class DominatorsTest extends TestCase {
             // An object reachable via two GC roots, a JNI global and a Thread.
             Instance instance = snapshot.findReference(0xB0EDFFA0L);
             assertEquals(Snapshot.SENTINEL_ROOT, dominators.get(instance));
+
+            snapshot.computeRetainedSizes();
+            // The largest object in our sample hprof belongs to the zygote
+            ClassObj htmlParser = snapshot.findClass("android.text.Html$HtmlParser");
+            assertEquals(116468, htmlParser.getRetainedSize(snapshot.getHeap("zygote")));
+            assertEquals(0, htmlParser.getRetainedSize(snapshot.getHeap("app")));
+
+            // One of the bigger objects in the app heap
+            ClassObj activityThread = snapshot.findClass("android.app.ActivityThread");
+            assertEquals(237, activityThread.getRetainedSize(snapshot.getHeap("zygote")));
+            assertEquals(576, activityThread.getRetainedSize(snapshot.getHeap("app")));
         } finally {
             Closeables.close(dis, false);
         }

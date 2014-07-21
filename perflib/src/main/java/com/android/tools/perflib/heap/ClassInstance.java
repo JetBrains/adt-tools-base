@@ -39,7 +39,7 @@ public class ClassInstance extends Instance {
 
     @Override
     public final int getSize() {
-        return mClass.getSize();
+        return mClass.getInstanceSize();
     }
 
     @Override

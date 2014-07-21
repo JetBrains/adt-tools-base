@@ -31,6 +31,8 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     Field[] mFields;
 
+    private int mInstanceSize;
+
     Map<Field, Value> mStaticFields = new HashMap<Field, Value>();
 
     ArrayList<Instance> mInstances = new ArrayList<Instance>();
@@ -76,6 +78,14 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     public void setFields(Field[] fields) {
         mFields = fields;
+    }
+
+    public void setInstanceSize(int size) {
+        mInstanceSize = size;
+    }
+
+    public int getInstanceSize() {
+        return mInstanceSize;
     }
 
     public final void dump() {

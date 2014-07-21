@@ -46,7 +46,7 @@ public class SnapshotBuilder {
         mNodes = new ClassInstance[numNodes + 1];
         for (int i = 1; i <= numNodes; i++) {
             ClassObj clazz = new ClassObj(100 + i, null, "Class" + i);
-            clazz.setSize(i);
+            clazz.setInstanceSize(i);
 
             mNodes[i] = new ClassInstance(i, null);
             mNodes[i].setClass(clazz);

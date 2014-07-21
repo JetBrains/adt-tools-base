@@ -111,6 +111,9 @@ public class HprofParser {
 
     private static final int ROOT_PRIMITIVE_ARRAY_NODATA = 0xc3;
 
+    private static final String JAVA_LANG_CLASS = "java.lang.Class";
+
+
     private final PriorityQueue<PostOperation> mPost = new PriorityQueue<PostOperation>();
 
     DataInputStream mInput;
@@ -520,7 +523,7 @@ public class HprofParser {
         }
 
         theClass.setFields(fields);
-        theClass.setSize(instanceSize);
+        theClass.setInstanceSize(instanceSize);
 
         mSnapshot.addClass(id, theClass);
         if (superClassId > 0) {
@@ -532,6 +535,19 @@ public class HprofParser {
                 }
             }));
         }
+        mPost.add(new PostOperation(ResolvePriority.CLASSES, new Callable() {
+            @Override
+            public Object call() throws Exception {
+                // We under-approximate the size of the class by including the size of Class.class
+                // and the size of static fields, and omitting padding, vtable and imtable sizes.
+                int classSize = mSnapshot.findClass(JAVA_LANG_CLASS).getInstanceSize();
+                for (Field f : theClass.mStaticFields.keySet()) {
+                    classSize += f.getType().getSize();
+                }
+                theClass.setSize(classSize);
+                return null;
+            }
+        }));
 
         return bytesRead;
     }

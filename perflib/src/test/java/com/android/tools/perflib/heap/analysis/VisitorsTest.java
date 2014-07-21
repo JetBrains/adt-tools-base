@@ -43,7 +43,7 @@ public class VisitorsTest extends TestCase {
     public void setUp() throws Exception {
         mSnapshot = new Snapshot();
         mSnapshot.setHeapTo(13, "testHeap");
-        mDummyClass.setSize(20);
+        mDummyClass.setInstanceSize(20);
         mSnapshot.addClass(0, mDummyClass);
     }
 

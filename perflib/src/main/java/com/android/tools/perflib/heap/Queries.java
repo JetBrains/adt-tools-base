@@ -214,7 +214,7 @@ public class Queries {
                 continue;
             }
 
-            for (Instance instance : newHeap.mInstances.values()) {
+            for (Instance instance : newHeap.getInstances()) {
                 Instance oldInstance = oldHeap.getInstance(instance.mId);
 
                 /*
