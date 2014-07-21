@@ -1,0 +1,28 @@
+buildscript {
+  repositories {
+    maven { url '../../../../../out/repo' }
+  }
+  dependencies {
+    classpath 'com.android.tools.build:gradle:0.12.2'
+  }
+}
+
+apply plugin: 'com.android.application'
+
+android {
+  compileSdkVersion 19
+  buildToolsVersion '19.1.0'
+
+  defaultConfig {
+    versionCode 12
+    minSdkVersion 16
+    targetSdkVersion 20
+  }
+
+  splits {
+    density {
+      enable true
+      exclude "ldpi", "tvdpi", "xxxhdpi"
+    }
+  }
+}

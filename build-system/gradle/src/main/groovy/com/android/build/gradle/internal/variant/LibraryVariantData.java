@@ -19,7 +19,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
 import com.android.builder.core.VariantConfiguration;
-import org.gradle.api.tasks.bundling.Zip;
 
 /**
  * Data about a variant that produce a Library bundle (.aar)
@@ -33,12 +32,17 @@ public class LibraryVariantData extends BaseVariantData<LibVariantOutputData> im
             @NonNull BasePlugin basePlugin,
             @NonNull VariantConfiguration config) {
         super(basePlugin, config);
+
+        // create default output
+        createOutput(null, null);
     }
 
     @NonNull
     @Override
-    protected LibVariantOutputData doCreateOutput() {
-        return new LibVariantOutputData();
+    protected LibVariantOutputData doCreateOutput(
+            @Nullable String densityFilter,
+            @Nullable String abiFilter) {
+        return new LibVariantOutputData(densityFilter, abiFilter, this);
     }
 
     @Override

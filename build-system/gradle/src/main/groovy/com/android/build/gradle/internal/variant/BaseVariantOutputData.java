@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 
@@ -24,18 +25,72 @@ import org.gradle.api.Task;
 
 import java.io.File;
 
-import groovy.lang.Closure;
-
 /**
  * Base output data about a variant.
  */
 public abstract class BaseVariantOutputData {
 
+    private static final String UNIVERSAL = "universal";
+
+    @NonNull
+    protected final BaseVariantData<?> variantData;
+
+    @Nullable
+    private final String densityFilter;
+    @Nullable
+    private final String abiFilter;
+
     public ManifestProcessorTask manifestProcessorTask;
     public ProcessAndroidResources processResourcesTask;
     public Task assembleTask;
 
+    public BaseVariantOutputData(
+            @Nullable String densityFilter,
+            @Nullable String abiFilter,
+            @NonNull BaseVariantData<?> variantData) {
+        this.densityFilter = densityFilter;
+        this.abiFilter = abiFilter;
+        this.variantData = variantData;
+    }
+
+    @Nullable
+    public String getDensityFilter() {
+        return densityFilter;
+    }
+
+    @Nullable
+    public String getAbiFilter() {
+        return abiFilter;
+    }
+
     public abstract void setOutputFile(@NonNull File file);
     @NonNull
     public abstract File getOutputFile();
+
+    @NonNull
+    public String getFullName() {
+        if (densityFilter == null) {
+            return variantData.getVariantConfiguration().computeFullNameWithSplits(UNIVERSAL);
+        }
+
+        return variantData.getVariantConfiguration().computeFullNameWithSplits(densityFilter);
+    }
+
+    @NonNull
+    public String getBaseName() {
+        if (densityFilter == null) {
+            return variantData.getVariantConfiguration().computeBaseNameWithSplits(UNIVERSAL);
+        }
+
+        return variantData.getVariantConfiguration().computeBaseNameWithSplits(densityFilter);
+    }
+
+    @NonNull
+    public String getDirName() {
+        if (densityFilter == null) {
+            return variantData.getVariantConfiguration().computeDirNameWithSplits(UNIVERSAL);
+        }
+
+        return variantData.getVariantConfiguration().computeDirNameWithSplits(densityFilter);
+    }
 }

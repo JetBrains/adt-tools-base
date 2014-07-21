@@ -23,7 +23,6 @@ import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.BaseVariantOutput
-import com.android.build.gradle.internal.api.ApkVariantOutputImpl
 import com.android.build.gradle.internal.api.LibraryVariantImpl
 import com.android.build.gradle.internal.api.LibraryVariantOutputImpl
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask
@@ -57,7 +56,7 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 
 /**
  */
-public class LibraryVariantFactory implements VariantFactory {
+public class LibraryVariantFactory implements VariantFactory<LibraryVariantData> {
 
     private static final String ANNOTATIONS = "annotations"
 
@@ -74,7 +73,10 @@ public class LibraryVariantFactory implements VariantFactory {
 
     @Override
     @NonNull
-    public BaseVariantData createVariantData(@NonNull VariantConfiguration variantConfiguration) {
+    public LibraryVariantData createVariantData(
+            @NonNull VariantConfiguration variantConfiguration,
+            @NonNull Set<String> densities,
+            @NonNull Set<String> abis) {
         return new LibraryVariantData(basePlugin, variantConfiguration)
     }
 
@@ -113,7 +115,9 @@ public class LibraryVariantFactory implements VariantFactory {
     }
 
     @Override
-    public void createTasks(@NonNull BaseVariantData variantData, @Nullable Task assembleTask) {
+    public void createTasks(
+            @NonNull BaseVariantData<?> variantData,
+            @Nullable Task assembleTask) {
         LibraryVariantData libVariantData = variantData as LibraryVariantData
         VariantConfiguration variantConfig = variantData.variantConfiguration
         DefaultBuildType buildType = variantConfig.buildType
@@ -130,7 +134,7 @@ public class LibraryVariantFactory implements VariantFactory {
         basePlugin.createGenerateResValuesTask(variantData)
 
         // Add a task to process the manifest(s)
-        basePlugin.createProcessManifestTask(variantData, DIR_BUNDLES)
+        basePlugin.createMergeLibManifestsTask(variantData, DIR_BUNDLES)
 
         // Add a task to compile renderscript files.
         basePlugin.createRenderscriptTask(variantData)

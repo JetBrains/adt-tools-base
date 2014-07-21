@@ -36,7 +36,7 @@ import java.util.Set;
 
 /**
  */
-public class ApplicationVariantFactory implements VariantFactory {
+public class ApplicationVariantFactory implements VariantFactory<ApplicationVariantData> {
 
     public static final String CONFIG_WEAR_APP = "wearApp";
 
@@ -50,8 +50,20 @@ public class ApplicationVariantFactory implements VariantFactory {
 
     @Override
     @NonNull
-    public BaseVariantData createVariantData(@NonNull VariantConfiguration variantConfiguration) {
-        return new ApplicationVariantData(basePlugin, variantConfiguration);
+    public ApplicationVariantData createVariantData(
+            @NonNull VariantConfiguration variantConfiguration,
+            @NonNull Set<String> densities,
+            @NonNull Set<String> abis) {
+        ApplicationVariantData variant = new ApplicationVariantData(basePlugin, variantConfiguration);
+
+        // create its outputs
+        for (String density : densities) {
+            for (String abi : abis) {
+                variant.createOutput(density, abi);
+            }
+        }
+
+        return variant;
     }
 
     @Override
@@ -104,7 +116,7 @@ public class ApplicationVariantFactory implements VariantFactory {
      */
     @Override
     public void createTasks(
-            @NonNull BaseVariantData variantData,
+            @NonNull BaseVariantData<?> variantData,
             @Nullable Task assembleTask) {
 
         assert variantData instanceof ApplicationVariantData;
@@ -116,7 +128,7 @@ public class ApplicationVariantFactory implements VariantFactory {
         handleMicroApp(variantData);
 
         // Add a task to process the manifest(s)
-        basePlugin.createMergeManifestsTask(variantData, "manifests");
+        basePlugin.createMergeAppManifestsTask(variantData, "manifests");
 
         // Add a task to create the res values
         basePlugin.createGenerateResValuesTask(variantData);
@@ -142,7 +154,7 @@ public class ApplicationVariantFactory implements VariantFactory {
         basePlugin.createAidlTask(variantData, null /*parcelableDir*/);
 
         // Add a compile task
-        basePlugin.createCompileTask(variantData, null/*testedVariant*/);
+        basePlugin.createCompileTask(variantData, null /*testedVariant*/);
 
         // Add NDK tasks
         if (!basePlugin.getExtension().getUseNewNativePlugin()) {
@@ -152,7 +164,7 @@ public class ApplicationVariantFactory implements VariantFactory {
         basePlugin.addPackageTasks(appVariantData, assembleTask, true /*publishApk*/);
     }
 
-    private void handleMicroApp(@NonNull BaseVariantData variantData) {
+    private void handleMicroApp(@NonNull BaseVariantData<?> variantData) {
 
         Configuration config = basePlugin.getProject().getConfigurations().findByName(
                 CONFIG_WEAR_APP);

@@ -23,16 +23,21 @@ import com.android.builder.core.VariantConfiguration;
 
 import org.gradle.api.Task;
 
+import java.util.List;
+import java.util.Set;
+
 /**
  * Interface for Variant Factory.
  *
  * While VariantManager is the general variant management, implementation of this interface
  * provides variant type (app, lib) specific implementation.
  */
-public interface VariantFactory {
+public interface VariantFactory<T extends BaseVariantData<? extends BaseVariantOutputData>> {
 
     @NonNull
-    BaseVariantData createVariantData(@NonNull VariantConfiguration variantConfiguration);
+    T createVariantData(@NonNull VariantConfiguration variantConfiguration,
+            @NonNull Set<String> densities,
+            @NonNull Set<String> abis);
 
     @NonNull
     BaseVariant createVariantApi(@NonNull BaseVariantData<? extends BaseVariantOutputData> variantData);
@@ -48,6 +53,6 @@ public interface VariantFactory {
      * @param assembleTask an optional assembleTask to be used. If null, a new one is created.
      */
     void createTasks(
-            @NonNull BaseVariantData variantData,
+            @NonNull BaseVariantData<?> variantData,
             @Nullable Task assembleTask);
 }

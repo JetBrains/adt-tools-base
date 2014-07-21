@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ZipAlign;
@@ -30,9 +31,6 @@ import java.io.File;
  */
 public class ApkVariantOutputData extends BaseVariantOutputData {
 
-    @NonNull
-    private final ApkVariantData variantData;
-
     public PackageApplication packageApplicationTask;
     public ZipAlign zipAlignTask;
 
@@ -40,11 +38,11 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
 
     private int versionCodeOverride = -1;
 
-    private String densityFilter;
-    private String abiFilter;
-
-    public ApkVariantOutputData(@NonNull ApkVariantData apkVariantData) {
-        variantData = apkVariantData;
+    public ApkVariantOutputData(
+            @Nullable String densityFilter,
+            @Nullable String abiFilter,
+            @NonNull BaseVariantData variantData) {
+        super(densityFilter, abiFilter, variantData);
     }
 
     @Override

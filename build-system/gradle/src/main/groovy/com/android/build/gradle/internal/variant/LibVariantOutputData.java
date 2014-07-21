@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 import org.gradle.api.tasks.bundling.Zip;
 
@@ -28,6 +29,13 @@ import java.io.File;
 public class LibVariantOutputData extends BaseVariantOutputData {
 
     public Zip packageLibTask;
+
+    LibVariantOutputData(
+            @Nullable String densityFilter,
+            @Nullable String abiFilter,
+            @NonNull BaseVariantData variantData) {
+        super(densityFilter, abiFilter, variantData);
+    }
 
     @Override
     public void setOutputFile(@NonNull File file) {

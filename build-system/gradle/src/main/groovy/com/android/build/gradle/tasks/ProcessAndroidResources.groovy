@@ -56,7 +56,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     // ----- PRIVATE TASK API -----
 
-    @Nested
+    @Nested @Optional
     List<SymbolFileProviderImpl> libraries
 
     @Input @Optional
