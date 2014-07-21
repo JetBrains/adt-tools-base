@@ -117,6 +117,7 @@ import com.android.builder.testing.ConnectedDeviceProvider
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
 import com.android.ide.common.internal.ExecutorSingleton
+import com.android.resources.Density
 import com.android.sdklib.SdkVersionInfo
 import com.android.utils.ILogger
 import com.google.common.collect.ArrayListMultimap
@@ -1128,6 +1129,8 @@ public abstract class BasePlugin {
                 List<String> resConfigs = Lists.newArrayListWithCapacity(list.size() + 1)
                 resConfigs.addAll(list)
                 resConfigs.add(variantOutputData.densityFilter)
+                // when adding a density filter, also always add the nodpi option.
+                resConfigs.add(Density.NODPI.resourceValue)
 
                 return resConfigs
             }

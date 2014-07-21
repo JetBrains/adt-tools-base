@@ -168,8 +168,8 @@ public class VariantManager {
         // Add a compile lint task
         basePlugin.createLintCompileTask();
 
-        Set<String> densities = basePlugin.getExtension().getSplits().getDensityList();
-        Set<String> abis = basePlugin.getExtension().getSplits().getAbiList();
+        Set<String> densities = basePlugin.getExtension().getSplits().getDensityFilters();
+        Set<String> abis = basePlugin.getExtension().getSplits().getAbiFilters();
 
         if (productFlavors.isEmpty()) {
             createTasksForDefaultBuild(densities, abis, signingOverride);
