@@ -576,6 +576,10 @@ public final class AaptExecTask extends SingleDependencyTask {
             }
         }
 
+        // never compress apks.
+        task.createArg().setValue("-0");
+        task.createArg().setValue("apk");
+
         if (compressNothing == false) {
             for (NoCompress nc : mNoCompressList) {
                 task.createArg().setValue("-0");
