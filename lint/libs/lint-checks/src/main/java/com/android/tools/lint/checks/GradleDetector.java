@@ -149,7 +149,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             Category.CORRECTNESS,
             4,
             Severity.WARNING,
-            IMPLEMENTATION).setEnabledByDefault(false);
+            IMPLEMENTATION);
 
     /** Accidentally calling a getter instead of your own methods */
     public static final Issue GRADLE_GETTER = Issue.create(
