@@ -60,4 +60,15 @@ public interface BaseVariantOutput {
     @Nullable
     Task getAssemble();
 
+    /**
+     * Returns the density filter for this output. Can be null.
+     */
+    @Nullable
+    String getDensityFilter();
+
+    /**
+     * Returns the abi filter for this output. Can be null.
+     */
+    @Nullable
+    String getAbiFilter();
 }

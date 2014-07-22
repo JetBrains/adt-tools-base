@@ -67,4 +67,16 @@ public abstract class BaseVariantOutputImpl implements BaseVariantOutput {
     public Task getAssemble() {
         return getVariantOutputData().assembleTask;
     }
+
+    @Nullable
+    @Override
+    public String getDensityFilter() {
+        return getVariantOutputData().getDensityFilter();
+    }
+
+    @Nullable
+    @Override
+    public String getAbiFilter() {
+        return getVariantOutputData().getAbiFilter();
+    }
 }

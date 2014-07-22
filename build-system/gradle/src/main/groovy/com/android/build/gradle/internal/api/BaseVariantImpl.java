@@ -97,6 +97,12 @@ abstract class BaseVariantImpl implements BaseVariant {
         return getVariantData().getVariantConfiguration().getFlavorName();
     }
 
+    @NonNull
+    @Override
+    public List<BaseVariantOutput> getOutputs() {
+        return outputs;
+    }
+
     @Override
     @NonNull
     public DefaultBuildType getBuildType() {
@@ -123,8 +129,8 @@ abstract class BaseVariantImpl implements BaseVariant {
 
     @Override
     @NonNull
-    public String getPackageName() {
-        return getVariantData().getPackageName();
+    public String getApplicationId() {
+        return getVariantData().getApplicationId();
     }
 
     @Override
@@ -218,6 +224,14 @@ abstract class BaseVariantImpl implements BaseVariant {
 
     // ---- Deprecated, will be removed in 1.0
     //STOPSHIP
+
+    @Override
+    @NonNull
+    public String getPackageName() {
+        // deprecation warning.
+        plugin.displayDeprecationWarning("variant.getPackageName() is deprecated. Use getApplicationId() instead");
+        return getApplicationId();
+    }
 
 
     @Override

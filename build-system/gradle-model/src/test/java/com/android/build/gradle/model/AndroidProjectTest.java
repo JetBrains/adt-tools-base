@@ -43,7 +43,6 @@ import com.android.builder.model.Variant;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 import junit.framework.TestCase;
 
@@ -61,7 +60,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 public class AndroidProjectTest extends TestCase {
 
@@ -490,20 +488,27 @@ public class AndroidProjectTest extends TestCase {
         Collection<AndroidArtifactOutput> debugOutputs = debugMainArficat.getOutputs();
         assertNotNull(debugOutputs);
         assertEquals(5, debugOutputs.size());
-        Set<String> expected = Sets.newHashSet("mdpi", "hdpi", "xhdpi", "xxhdpi");
-        boolean foundNull = false;
+
+        // build a map of expected outputs and their versionCode
+        Map<String, Integer> expected = Maps.newHashMapWithExpectedSize(5);
+        expected.put(null, 112);
+        expected.put("mdpi", 212);
+        expected.put("hdpi", 312);
+        expected.put("xhdpi", 412);
+        expected.put("xxhdpi", 512);
+
         for (AndroidArtifactOutput output : debugOutputs) {
             String densityFilter = output.densityFilter();
-            if (densityFilter == null) {
-                assertFalse("Check already found null", foundNull);
-                foundNull = true;
-            } else {
-                assertTrue("Checking presence of output with filter=" + densityFilter,
-                        expected.contains(densityFilter));
-                expected.remove(output.densityFilter());
-            }
+            Integer value = expected.get(densityFilter);
+            // this checks we're not getting an unexpected output.
+            assertNotNull("Check Valid output: " + (densityFilter == null ? "universal" : densityFilter),
+                    value);
+
+            assertEquals(value.intValue(), output.versionCode());
+            expected.remove(densityFilter);
         }
 
+        // this checks we didn't miss any expected output.
         assertTrue(expected.isEmpty());
     }
 
