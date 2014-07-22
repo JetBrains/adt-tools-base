@@ -139,7 +139,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public abstract String getDescription();
 
     @NonNull
-    public String getPackageName() {
+    public String getApplicationId() {
         return variantConfiguration.getApplicationId();
     }
 

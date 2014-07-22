@@ -84,6 +84,13 @@ public interface BaseVariant {
     String getFlavorName();
 
     /**
+     * Returns the variant outputs. There should always be at least one output.
+     * @return a non-null list of variants.
+     */
+    @NonNull
+    List<BaseVariantOutput> getOutputs();
+
+    /**
      * Returns the {@link com.android.builder.core.DefaultBuildType} for this build variant.
      */
     @NonNull
@@ -114,10 +121,10 @@ public interface BaseVariant {
     List<SourceProvider> getSourceSets();
 
     /**
-     * Returns the package name of the variant.
+     * Returns the applicationId of the variant.
      */
     @NonNull
-    String getPackageName();
+    String getApplicationId();
 
     /**
      * Returns the pre-build anchor task
@@ -241,6 +248,13 @@ public interface BaseVariant {
 
     // ---- Deprecated, will be removed in 1.0
     //STOPSHIP
+
+    /**
+     * @deprecated Use getApplicationId()
+     */
+    @NonNull
+    @Deprecated
+    String getPackageName();
 
     /**
      * @deprecated use version on the variant's outputs.
