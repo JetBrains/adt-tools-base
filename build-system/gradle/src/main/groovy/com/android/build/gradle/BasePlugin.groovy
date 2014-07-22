@@ -1926,9 +1926,9 @@ public abstract class BasePlugin {
             }
             packageApp.conventionMapping.abiFilters = {
                 if (variantOutputData.abiFilter != null) {
-                    ImmutableSet.of(variantOutputData.abiFilter)
+                    return ImmutableSet.of(variantOutputData.abiFilter)
                 }
-                config.supportedAbis
+                return config.supportedAbis
             }
             packageApp.conventionMapping.jniDebugBuild = { config.buildType.jniDebugBuild }
 

@@ -27,6 +27,10 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASS
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE;
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD;
 
+import com.android.annotations.Nullable;
+import com.android.ide.common.internal.CommandLineRunner;
+import com.android.ide.common.internal.LoggedErrorException;
+import com.android.utils.StdLogger;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -43,6 +47,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarInputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -303,7 +309,109 @@ public class ManualBuildTest extends BuildTest {
         File mainApk = new File(project, "main/build/" + FD_OUTPUTS + "/apk/main-release-unsigned.apk");
 
         checkJar(mainApk, Collections.<String, String>singletonMap(
-                FD_RES + '/' + FD_RES_RAW + '/' + ANDROID_WEAR_MICRO_APK + DOT_ANDROID_PACKAGE, null));
+                FD_RES + '/' + FD_RES_RAW + '/' + ANDROID_WEAR_MICRO_APK + DOT_ANDROID_PACKAGE,
+                null));
+    }
+
+    public void testDensitySplits() throws Exception {
+        File project = new File(testDir, "densitySplit");
+
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+                project,
+                Collections.<String>emptyList(),
+                "clean", "assembleDebug");
+
+        Map<String, Integer> expected = Maps.newHashMapWithExpectedSize(5);
+        expected.put("universal", 112);
+        expected.put("mdpi", 212);
+        expected.put("hdpi", 312);
+        expected.put("xhdpi", 412);
+        expected.put("xxhdpi", 512);
+
+        checkVersionCode(project, null, expected, "densitySplit");
+    }
+
+    public void testAbiSplits() throws Exception {
+        File project = new File(testDir, "ndkJniLib");
+
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+                project,
+                Collections.<String>emptyList(),
+                "clean", "app:assembleDebug");
+
+        Map<String, Integer> expected = Maps.newHashMapWithExpectedSize(5);
+        expected.put("gingerbread-universal",        1000123);
+        expected.put("gingerbread-armeabi-v7a",      1100123);
+        expected.put("gingerbread-mips",             1200123);
+        expected.put("gingerbread-x86",              1300123);
+        expected.put("icecreamSandwich-universal",   2000123);
+        expected.put("icecreamSandwich-armeabi-v7a", 2100123);
+        expected.put("icecreamSandwich-mips",        2200123);
+        expected.put("icecreamSandwich-x86",         2300123);
+
+        checkVersionCode(project, "app/", expected, "app");
+    }
+
+    private void checkVersionCode(
+            File project,
+            String outRoot,
+            Map<String, Integer> expected,
+            String baseName)
+            throws IOException, InterruptedException, LoggedErrorException {
+        File aapt = new File(sdkDir, "build-tools/20.0.0/aapt");
+
+        assertTrue("Test requires build-tools 20.0.0", aapt.isFile());
+
+        String[] command = new String[4];
+        command[0] = aapt.getPath();
+        command[1] = "dump";
+        command[2] = "badging";
+
+        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
+
+        for (Map.Entry<String, Integer> entry : expected.entrySet()) {
+            String path = "build/" + FD_OUTPUTS + "/apk/" + baseName + "-" + entry.getKey() + "-debug.apk";
+            if (outRoot != null) {
+                path = outRoot + path;
+            }
+
+            File apk = new File(project, path);
+
+            command[3] = apk.getPath();
+
+            final List<String> aaptOutput = Lists.newArrayList();
+
+            commandLineRunner.runCmdLine(command, new CommandLineRunner.CommandLineOutput() {
+                @Override
+                public void out(@Nullable String line) {
+                    if (line != null) {
+                        aaptOutput.add(line);
+                    }
+                }
+                @Override
+                public void err(@Nullable String line) {
+                    super.err(line);
+
+                }
+            }, null /*env vars*/);
+
+            Pattern p = Pattern.compile("^package: name='(.+)' versionCode='([0-9]*)' versionName='(.*)'$");
+
+            String versionCode = null;
+
+            for (String line : aaptOutput) {
+                Matcher m = p.matcher(line);
+                if (m.matches()) {
+                    versionCode = m.group(2);
+                    break;
+                }
+            }
+
+            assertNotNull("Unable to determine version code", versionCode);
+
+            assertEquals("Unexpected version code for split: " + entry.getKey(),
+                    entry.getValue().intValue(), Integer.parseInt(versionCode));
+        }
     }
 
     public void testBasicWithSigningOverride() throws Exception {

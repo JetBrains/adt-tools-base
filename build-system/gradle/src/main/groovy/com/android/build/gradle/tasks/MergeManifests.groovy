@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 package com.android.build.gradle.tasks
-
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
 import com.android.build.gradle.internal.variant.ApkVariantOutputData
-import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.VariantConfiguration
 import com.android.manifmerger.ManifestMerger2
 import com.google.common.collect.Lists
@@ -25,7 +23,6 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
-
 /**
  * A task that processes the manifest
  */
@@ -50,15 +47,15 @@ public class MergeManifests extends ManifestProcessorTask {
     @Input
     int getVersionCode() {
         if (variantOutputData!= null) {
-            variantOutputData.versionCode
+            return variantOutputData.versionCode
         }
 
-        variantConfiguration.versionCode;
+        return variantConfiguration.versionCode;
     }
 
     @Input @Optional
     String getVersionName() {
-        variantConfiguration.getVersionName();
+        return variantConfiguration.getVersionName();
     }
 
     @Input @Optional
