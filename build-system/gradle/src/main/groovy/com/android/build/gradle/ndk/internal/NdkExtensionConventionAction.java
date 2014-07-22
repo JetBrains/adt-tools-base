@@ -21,7 +21,9 @@ public class NdkExtensionConventionAction implements Action<ProjectInternal> {
 
     private static final String DEFAULT_GCC_VERSION = "4.6";
 
-    private static final String DEFAULT_CLANG_VERSION = "3.3";
+    private static final String DEFAULT_GCC_L_VERSION = "4.9";  // Default for r10 is 4.9.
+
+    private static final String DEFAULT_CLANG_VERSION = "3.4";
 
     @Override
     public void execute(ProjectInternal project) {
@@ -54,7 +56,10 @@ public class NdkExtensionConventionAction implements Action<ProjectInternal> {
         if (extension.getToolchainVersion() == null) {
             // Supports gcc and clang.
             extension.setToolchainVersion(
-                    extension.getToolchain().equals("gcc") ? DEFAULT_GCC_VERSION
+                    extension.getToolchain().equals("gcc")
+                            ? (extension.getCompileSdkVersion().equals("android-L")
+                                    ? DEFAULT_GCC_L_VERSION
+                                    : DEFAULT_GCC_VERSION)
                             : DEFAULT_CLANG_VERSION);
         }
 

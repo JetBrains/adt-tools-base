@@ -34,9 +34,12 @@ class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
 
     private static final def TARGET_TRIPLE = [
             (SdkConstants.ABI_INTEL_ATOM) : "i686-none-linux-android",
-            (SdkConstants.ABI_ARMEABI_V7A) : "armv7-none-linux-android",
+            (SdkConstants.ABI_INTEL_ATOM64) : "x86_64-none-linux-android",
             (SdkConstants.ABI_ARMEABI) : "armv5-none-linux-android",
+            (SdkConstants.ABI_ARMEABI_V7A) : "armv7-none-linux-android",
+            (SdkConstants.ABI_ARM64_V8A) : "aarch64-none-linux-android",
             (SdkConstants.ABI_MIPS) : "mipsel-none-linux-android",
+            (SdkConstants.ABI_MIPS64) : "mips64el-none-linux-android",
     ]
 
     private static final def RELEASE_CFLAGS = [
@@ -53,7 +56,7 @@ class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
                     "-Os",
                     "-DNDEBUG",
                     "-fomit-frame-pointer",
-                    "-fno-strict-aliasing",
+                    "-fstrict-aliasing",
             ],
             (SdkConstants.ABI_ARMEABI_V7A) : [
                     "-fpic",
@@ -68,7 +71,18 @@ class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
                     "-Os",
                     "-DNDEBUG",
                     "-fomit-frame-pointer",
-                    "-fno-strict-aliasing",
+                    "-fstrict-aliasing",
+            ],
+            (SdkConstants.ABI_ARM64_V8A) : [
+                    "-fpic",
+                    "-ffunction-sections",
+                    "-funwind-tables",
+                    "-fstack-protector",
+                    "-no-canonical-prefixes",
+                    "-O2",
+                    "-DNDEBUG",
+                    "-fomit-frame-pointer",
+                    "-fstrict-aliasing",
             ],
             (SdkConstants.ABI_INTEL_ATOM) : [
                     "-ffunction-sections",
@@ -81,7 +95,31 @@ class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
                     "-fomit-frame-pointer",
                     "-fstrict-aliasing",
             ],
+            (SdkConstants.ABI_INTEL_ATOM64) : [
+                    "-ffunction-sections",
+                    "-funwind-tables",
+                    "-fstack-protector",
+                    "-fPIC",
+                    "-no-canonical-prefixes",
+                    "-O2",
+                    "-DNDEBUG",
+                    "-fomit-frame-pointer",
+                    "-fstrict-aliasing",
+            ],
             (SdkConstants.ABI_MIPS) : [
+                    "-fpic",
+                    "-fno-strict-aliasing",
+                    "-finline-functions",
+                    "-ffunction-sections",
+                    "-funwind-tables",
+                    "-fmessage-length=0",
+                    "-no-canonical-prefixes",
+                    "-O2",
+                    "-g",
+                    "-DNDEBUG",
+                    "-fomit-frame-pointer",
+            ],
+            (SdkConstants.ABI_MIPS64) : [
                     "-fpic",
                     "-fno-strict-aliasing",
                     "-finline-functions",
@@ -109,16 +147,33 @@ class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
                     "-marm",
                     "-fno-strict-aliasing",
             ],
+            (SdkConstants.ABI_ARM64_V8A) : [
+                    "-O0",
+                    "-UNDEBUG",
+                    "-fno-omit-frame-pointer",
+                    "-fno-strict-aliasing",
+            ],
             (SdkConstants.ABI_INTEL_ATOM) : [
                     "-O0",
                     "-UNDEBUG",
-                    "-fomit-frame-pointer",
+                    "-fno-omit-frame-pointer",
+                    "-fno-strict-aliasing",
+            ],
+            (SdkConstants.ABI_INTEL_ATOM64) : [
+                    "-O0",
+                    "-UNDEBUG",
+                    "-fno-omit-frame-pointer",
                     "-fno-strict-aliasing",
             ],
             (SdkConstants.ABI_MIPS) : [
                     "-O0",
                     "-UNDEBUG",
-                    "-fomit-frame-pointer",
+                    "-fno-omit-frame-pointer",
+            ],
+            (SdkConstants.ABI_MIPS64) : [
+                    "-O0",
+                    "-UNDEBUG",
+                    "-fno-omit-frame-pointer",
             ]
     ]
 
@@ -148,9 +203,12 @@ class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
     }
 
     private Iterable<String> getTargetFlags() {
+        // For compiled version 19 or below, use GCC 4.8.
+        String gccVersion = ndkBuilder.supports64Bits() ? "4.9" : "4.8"
+
         [
                 "-gcc-toolchain",
-                ndkBuilder.getToolchainPath("gcc", "4.8", platform.name),
+                ndkBuilder.getToolchainPath("gcc", gccVersion, platform.name),
                 "-target",
                 TARGET_TRIPLE[platform.name]
         ]

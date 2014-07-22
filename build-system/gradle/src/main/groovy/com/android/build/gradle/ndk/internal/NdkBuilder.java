@@ -45,23 +45,13 @@ import java.util.Properties;
 public class NdkBuilder {
 
     // Map of ABI to toolchain platform string.
-    private static final Map<String, String> PLATFORM_STRING = ImmutableMap.of(
-            SdkConstants.ABI_INTEL_ATOM, "x86",
-            SdkConstants.ABI_ARMEABI_V7A, "arm-linux-androideabi",
-            SdkConstants.ABI_ARMEABI, "arm-linux-androideabi",
-            SdkConstants.ABI_MIPS, "mipsel-linux-android");
+    private static final Map<String, String> PLATFORM_STRING;
 
     // Map of ABI to target architecture
-    private static final Map<String, String> ARCHITECTURE_STRING = ImmutableMap.of(
-            SdkConstants.ABI_INTEL_ATOM, SdkConstants.CPU_ARCH_INTEL_ATOM,
-            SdkConstants.ABI_ARMEABI_V7A, SdkConstants.CPU_ARCH_ARM,
-            SdkConstants.ABI_ARMEABI, SdkConstants.CPU_ARCH_ARM,
-            SdkConstants.ABI_MIPS, SdkConstants.CPU_ARCH_MIPS);
+    private static final Map<String, String> ARCHITECTURE_STRING;
 
     // Map of toolchain names to the subdirectory name containing the toolchain.
-    private static final Map<String, String> TOOLCHAIN_STRING = ImmutableMap.of(
-            "gcc", "",
-            "clang", "clang");
+    private static final Map<String, String> TOOLCHAIN_STRING;
 
     private NdkExtension ndkExtension;
 
@@ -69,6 +59,33 @@ public class NdkBuilder {
 
     private File ndkDirectory;
 
+    static {
+        // Initialize static maps.
+        PLATFORM_STRING = ImmutableMap.<String, String>builder()
+                .put(SdkConstants.ABI_INTEL_ATOM, "x86")
+                .put(SdkConstants.ABI_INTEL_ATOM64, "x86_64")
+                .put(SdkConstants.ABI_ARMEABI_V7A, "arm-linux-androideabi")
+                .put(SdkConstants.ABI_ARMEABI, "arm-linux-androideabi")
+                .put(SdkConstants.ABI_ARM64_V8A, "aarch64-linux-android")
+                .put(SdkConstants.ABI_MIPS, "mipsel-linux-android")
+                .put(SdkConstants.ABI_MIPS64, "mips64el-linux-android")
+                .build();
+
+        ARCHITECTURE_STRING = ImmutableMap.<String, String>builder()
+                .put(SdkConstants.ABI_INTEL_ATOM, SdkConstants.CPU_ARCH_INTEL_ATOM)
+                .put(SdkConstants.ABI_INTEL_ATOM64, SdkConstants.CPU_ARCH_INTEL_ATOM64)
+                .put(SdkConstants.ABI_ARMEABI_V7A, SdkConstants.CPU_ARCH_ARM)
+                .put(SdkConstants.ABI_ARMEABI, SdkConstants.CPU_ARCH_ARM)
+                .put(SdkConstants.ABI_ARM64_V8A, SdkConstants.CPU_ARCH_ARM64)
+                .put(SdkConstants.ABI_MIPS, SdkConstants.CPU_ARCH_MIPS)
+                .put(SdkConstants.ABI_MIPS64, SdkConstants.CPU_ARCH_MIPS64)
+                .build();
+
+        TOOLCHAIN_STRING = ImmutableMap.<String, String>builder()
+                .put("gcc", "")
+                .put("clang", "clang")
+                .build();
+    }
 
     public NdkBuilder(Project project, NdkExtension ndkExtension) {
         this.project = project;
@@ -78,6 +95,9 @@ public class NdkBuilder {
 
     /**
      * Toolchain name used by the NDK.
+     *
+     * This is the name of the folder containing the toolchain under $ANDROID_NDK_HOME/toolchain.
+     * e.g. for gcc targetting arm64_v8a, this method returns "aarch64-linux-android-4.9".
      */
     private static String getToolchainName(
             String toolchain,
@@ -89,6 +109,9 @@ public class NdkBuilder {
 
     /**
      * Determine the location of the NDK directory.
+     *
+     * The NDK directory can be set in the local.properties file or using the ANDROID_NDK_HOME
+     * environment variable.
      */
     private static File findNdkDirectory(Project project) {
         File rootDir = project.getRootDir();
@@ -145,9 +168,9 @@ public class NdkBuilder {
     /**
      * Return the path containing the prebuilt toolchain.
      *
-     * @param toolchain Name of the toolchain ["gcc", "clang"].
+     * @param toolchain        Name of the toolchain ["gcc", "clang"].
      * @param toolchainVersion Version of the toolchain.
-     * @param platform Target platform supported by the NDK.
+     * @param platform         Target platform supported by the NDK.
      * @return Directory containing the prebuilt toolchain.
      */
 
@@ -195,9 +218,26 @@ public class NdkBuilder {
                         platform.getName());
     }
 
+    /**
+     * Return the directory containing prebuilt binaries such as gdbserver.
+     */
     public File getPrebuiltDirectory(Platform platform) {
         return new File(
                 ndkDirectory, "prebuilt/android-" + ARCHITECTURE_STRING.get(platform.getName()));
+    }
+
+    /**
+     * Return true if compiledSdkVersion supports 64 bits ABI.
+     */
+    public Boolean supports64Bits() {
+        String targetString = getNdkExtension().getCompileSdkVersion().replace("android-", "");
+        try {
+            return Integer.parseInt(targetString) >= 20;
+        } catch (NumberFormatException ignored) {
+            // "android-L" supports 64-bits.
+            return true;
+        }
+
     }
 
 }
