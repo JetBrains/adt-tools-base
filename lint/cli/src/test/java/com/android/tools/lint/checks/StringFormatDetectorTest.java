@@ -288,8 +288,8 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                 "        String output1 = String.format(hello, target);\n" +
                 "                                              ~~~~~~\n" +
                 "    res/values-es/formatstrings.xml: Conflicting argument declaration here\n" +
-                "res/values-es/formatstrings.xml: Error: Inconsistent formatting types for argument #1 in format string hello ('%1$d'): Found both 's' and 'd' (in values/formatstrings.xml) [StringFormatMatches]\n" +
-                "    res/values/formatstrings.xml: Conflicting argument type here\n" +
+                "res/values/formatstrings.xml: Error: Inconsistent formatting types for argument #1 in format string hello ('%1$s'): Found both 'd' and 's' (in values-es/formatstrings.xml) [StringFormatMatches]\n" +
+                "    res/values-es/formatstrings.xml: Conflicting argument type here\n" +
                 "res/values/formatstrings.xml: Warning: Inconsistent number of arguments in formatting string hello2; found both 3 and 2 [StringFormatCount]\n" +
                 "    res/values-es/formatstrings.xml: Conflicting number of arguments here\n" +
                 "9 errors, 1 warnings\n",
