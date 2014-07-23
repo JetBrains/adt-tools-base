@@ -1521,9 +1521,12 @@ public class AndroidBuilder {
             command.add("--no-strict");
         }
 
+        /**
+         * This seems to trigger some error in dx, so disable for now.
         if (dexOptions.getThreadCount() > 1) {
             command.add("--num-threads=" + dexOptions.getThreadCount());
         }
+         */
 
         if (additionalParameters != null) {
             for (String arg : additionalParameters) {
