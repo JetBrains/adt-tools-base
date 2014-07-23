@@ -36,7 +36,6 @@ import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl;
 import com.android.build.gradle.internal.dsl.SigningConfigDsl;
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory;
 import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
@@ -461,8 +460,6 @@ public class VariantManager {
                 // create the variant and get its internal storage object.
                 BaseVariantData<?> variantData = variantFactory.createVariantData(variantConfig,
                         densities, abis);
-                // get its single output (for now)
-                BaseVariantOutputData variantOutputData = variantData.getOutputs().get(0);
 
                 NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer = extension
                         .getSourceSetsContainer();
@@ -501,15 +498,15 @@ public class VariantManager {
 
                 // setup the task dependencies
                 // build type
-                buildTypeData.getAssembleTask().dependsOn(variantOutputData.assembleTask);
+                buildTypeData.getAssembleTask().dependsOn(variantData.assembleVariantTask);
                 // each flavor
                 for (ProductFlavorData data : flavorDataList) {
-                    data.getAssembleTask().dependsOn(variantOutputData.assembleTask);
+                    data.getAssembleTask().dependsOn(variantData.assembleVariantTask);
                 }
 
                 // flavor combo
                 if (assembleTask != null) {
-                    assembleTask.dependsOn(variantOutputData.assembleTask);
+                    assembleTask.dependsOn(variantData.assembleVariantTask);
                 }
             }
         }

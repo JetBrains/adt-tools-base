@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.StringHelper;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 
@@ -69,28 +70,37 @@ public abstract class BaseVariantOutputData {
 
     @NonNull
     public String getFullName() {
-        if (densityFilter == null) {
-            return variantData.getVariantConfiguration().computeFullNameWithSplits(UNIVERSAL);
-        }
-
-        return variantData.getVariantConfiguration().computeFullNameWithSplits(densityFilter);
+        return variantData.getVariantConfiguration().computeFullNameWithSplits(getFilterName());
     }
 
     @NonNull
     public String getBaseName() {
-        if (densityFilter == null) {
-            return variantData.getVariantConfiguration().computeBaseNameWithSplits(UNIVERSAL);
-        }
-
-        return variantData.getVariantConfiguration().computeBaseNameWithSplits(densityFilter);
+        return variantData.getVariantConfiguration().computeBaseNameWithSplits(getFilterName());
     }
 
     @NonNull
     public String getDirName() {
-        if (densityFilter == null) {
-            return variantData.getVariantConfiguration().computeDirNameWithSplits(UNIVERSAL);
+        return variantData.getVariantConfiguration().computeDirNameWithSplits(densityFilter, abiFilter);
+    }
+
+    @NonNull
+    private String getFilterName() {
+        if (densityFilter == null && abiFilter == null) {
+            return UNIVERSAL;
         }
 
-        return variantData.getVariantConfiguration().computeDirNameWithSplits(densityFilter);
+        StringBuilder sb = new StringBuilder();
+        if (densityFilter != null) {
+            sb.append(densityFilter);
+        }
+        if (abiFilter != null) {
+            if (sb.length() > 0) {
+                sb.append(StringHelper.capitalize(abiFilter));
+            } else {
+                sb.append(abiFilter);
+            }
+        }
+
+        return sb.toString();
     }
 }

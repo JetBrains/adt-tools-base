@@ -403,7 +403,7 @@ public class VariantConfiguration implements TestData {
      * @return the directory name for the variant
      */
     @NonNull
-    public String computeDirNameWithSplits(@NonNull String splitName) {
+    public String computeDirNameWithSplits(@NonNull String... splitNames) {
         StringBuilder sb = new StringBuilder();
 
         if (mType == Type.TEST) {
@@ -415,12 +415,16 @@ public class VariantConfiguration implements TestData {
                 sb.append(flavor.getName());
             }
 
-            sb.append('/').append(splitName);
-        } else {
-            sb.append(splitName);
+            sb.append('/');
         }
 
-        sb.append('/').append(mBuildType.getName());
+        for (String splitName : splitNames) {
+            if (splitName != null) {
+                sb.append(splitName).append('/');
+            }
+        }
+
+        sb.append(mBuildType.getName());
 
         return sb.toString();
     }
