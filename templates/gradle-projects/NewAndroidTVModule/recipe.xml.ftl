@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <recipe>
-    <dependency mavenUrl="com.android.support:recyclerview-v7:+" />
-    <dependency mavenUrl="com.android.support:leanback-v17:+" />
+    <dependency mavenUrl="com.android.support:recyclerview-v7:${targetApi}.+" />
+    <dependency mavenUrl="com.android.support:leanback-v17:${targetApi}.+" />
     <mkdir at="${escapeXmlAttribute(srcOut)}" />
 
     <mkdir at="${escapeXmlAttribute(projectOut)}/libs" />
