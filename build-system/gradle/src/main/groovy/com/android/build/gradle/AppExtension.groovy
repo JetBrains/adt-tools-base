@@ -31,7 +31,7 @@ public class AppExtension extends BaseExtension {
     private final DefaultDomainObjectSet<ApplicationVariant> applicationVariantList =
         new DefaultDomainObjectSet<ApplicationVariant>(ApplicationVariant.class)
 
-    AppExtension(AppPlugin plugin, ProjectInternal project, Instantiator instantiator,
+    AppExtension(BasePlugin plugin, ProjectInternal project, Instantiator instantiator,
                  NamedDomainObjectContainer<DefaultBuildType> buildTypes,
                  NamedDomainObjectContainer<DefaultProductFlavor> productFlavors,
                  NamedDomainObjectContainer<SigningConfig> signingConfigs,
