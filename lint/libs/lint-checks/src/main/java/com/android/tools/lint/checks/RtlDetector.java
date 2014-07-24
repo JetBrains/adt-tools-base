@@ -547,7 +547,8 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             String message = String.format(
                     "To support older versions than API 17 (project specifies %1$d) "
                             + "you should *also* add %2$s:%3$s=\"%4$s\"",
-                    project.getMinSdk(), attribute.getPrefix(), old, value);
+                    project.getMinSdk(), attribute.getPrefix(), old,
+                    convertNewToOld(value));
             context.report(COMPAT, attribute, context.getLocation(attribute), message, null);
         }
     }
