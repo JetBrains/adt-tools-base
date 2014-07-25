@@ -128,7 +128,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         "`left` bitmask. Therefore, you can use `gravity=\"start\"` rather than " +
         "`gravity=\"left|start\"`.)",
 
-        Category.RTL, 5, Severity.WARNING, IMPLEMENTATION).setEnabledByDefault(false);
+        Category.RTL, 5, Severity.WARNING, IMPLEMENTATION);
 
     public static final Issue COMPAT = Issue.create(
         "RtlCompat", //$NON-NLS-1$
@@ -140,18 +140,18 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         "gravity or layout_gravity attribute, since older platforms will ignore the " +
         "`textAlignment` attribute.",
 
-        Category.RTL, 6, Severity.ERROR, IMPLEMENTATION).setEnabledByDefault(false);
+        Category.RTL, 6, Severity.ERROR, IMPLEMENTATION);
 
     public static final Issue SYMMETRY = Issue.create(
-            "RtlSymmetry", //$NON-NLS-1$
-            "Padding and margin symmetry",
-            "Ensures that specifying padding on one side is matched by padding on the other",
+        "RtlSymmetry", //$NON-NLS-1$
+        "Padding and margin symmetry",
+        "Ensures that specifying padding on one side is matched by padding on the other",
 
-            "If you specify padding or margin on the left side of a layout, you should " +
-            "probably also specify padding on the right side (and vice versa) for " +
-            "right-to-left layout symmetry.",
+        "If you specify padding or margin on the left side of a layout, you should " +
+        "probably also specify padding on the right side (and vice versa) for " +
+        "right-to-left layout symmetry.",
 
-            Category.RTL, 6, Severity.ERROR, IMPLEMENTATION).setEnabledByDefault(false);
+        Category.RTL, 6, Severity.ERROR, IMPLEMENTATION);
 
 
     public static final Issue ENABLED = Issue.create(
@@ -165,7 +165,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         "If you have started adding RTL attributes, but have not yet finished the " +
         "migration, you can set the attribute to false to satisfy this lint check.",
 
-        Category.RTL, 3, Severity.WARNING, IMPLEMENTATION).setEnabledByDefault(false);
+        Category.RTL, 3, Severity.WARNING, IMPLEMENTATION);
 
     /* TODO:
     public static final Issue FIELD = Issue.create(
@@ -490,8 +490,9 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                     && !element.hasAttributeNS(ANDROID_URI,
                     isOldAttribute(opposite) ? convertOldToNew(opposite)
                             : convertNewToOld(opposite)) && context.isEnabled(SYMMETRY)) {
-                String message = "When you define %1$s you should probably also define %2$s for "
-                        + "right-to-left symmetry";
+                String message = String.format(
+                        "When you define %1$s you should probably also define %2$s for "
+                        + "right-to-left symmetry", name, opposite);
                 context.report(SYMMETRY, attribute, context.getLocation(attribute),
                         message, null);
             }
