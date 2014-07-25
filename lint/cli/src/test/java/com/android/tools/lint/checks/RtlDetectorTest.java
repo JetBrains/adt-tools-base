@@ -384,6 +384,25 @@ public class RtlDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testCompatAttributeValueConversion() throws Exception {
+        // Ensure that when the RTL value contains a direction, we produce the
+        // compatibility version of it for the compatibility attribute, e.g. if the
+        // attribute for paddingEnd is ?listPreferredItemPaddingEnd, when we suggest
+        // also setting paddingRight we suggest ?listPreferredItemPaddingRight
+        mEnabled = Collections.singleton(RtlDetector.COMPAT);
+        assertEquals(""
+                + "res/layout/symmetry.xml:8: Error: To support older versions than API 17 (project specifies 5) you should *also* add android:paddingRight=\"?android:listPreferredItemPaddingRight\" [RtlCompat]\n"
+                + "        android:paddingEnd=\"?android:listPreferredItemPaddingEnd\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "rtl/project-api17.properties=>project.properties",
+                        "rtl/minsdk5targetsdk17.xml=>AndroidManifest.xml",
+                        "rtl/symmetry.xml=>res/layout/symmetry.xml"
+                ));
+    }
+
     public void testTextAlignment() throws Exception {
         mEnabled = Collections.singleton(RtlDetector.COMPAT);
         assertEquals(""
