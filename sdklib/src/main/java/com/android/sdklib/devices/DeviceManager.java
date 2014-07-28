@@ -676,6 +676,8 @@ public class DeviceManager {
             mLog.error(e, "Error parsing %1$s", deviceXml.getAbsolutePath());
         } catch (IOException e) {
             mLog.error(e, "Error reading %1$s", deviceXml.getAbsolutePath());
+        } catch (AssertionError e) {
+            mLog.error(e, "Error parsing %1$s", deviceXml.getAbsolutePath());
         } catch (IllegalStateException e) {
             // The device builders can throw IllegalStateExceptions if
             // build gets called before everything is properly setup
