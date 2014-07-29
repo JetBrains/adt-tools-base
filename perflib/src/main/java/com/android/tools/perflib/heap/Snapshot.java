@@ -16,8 +16,12 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.tools.perflib.heap.analysis.Dominators;
+import com.google.common.collect.Iterables;
+
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 
 /*
  * A snapshot of all of the heaps, and related meta-data, for the runtime at a given instant.
@@ -36,6 +40,8 @@ public class Snapshot {
     HashMap<Integer, Heap> mHeaps;
 
     Heap mCurrentHeap;
+
+    private Map<Instance, Instance> mDominatorMap;
 
     public Snapshot() {
         mHeaps = new HashMap<Integer, Heap>();
@@ -162,6 +168,34 @@ public class Snapshot {
         }
 
         return null;
+    }
+
+    public Map<Instance, Instance> computeDominatorMap() {
+        if (mDominatorMap == null) {
+            mDominatorMap = Dominators.getDominatorMap(this);
+        }
+        return mDominatorMap;
+    }
+
+    /**
+     * Kicks off the computation of dominators and retained sizes.
+     */
+    public void computeRetainedSizes() {
+        // Initialize retained sizes for all classes and objects, including unreachable ones.
+        for (Heap heap : mHeaps.values()) {
+            for (Instance instance : Iterables.concat(heap.getClasses(), heap.getInstances())) {
+                instance.setRetainedSize(instance.mHeap, instance.getSize());
+            }
+        }
+        computeDominatorMap();
+        for (Instance node : mDominatorMap.keySet()) {
+            // Add the size of the current node to the retained size of every dominator up to the
+            // root, in the same heap.
+            for (Instance dom = mDominatorMap.get(node); dom != SENTINEL_ROOT;
+                    dom = mDominatorMap.get(dom)) {
+                dom.setRetainedSize(node.mHeap, dom.getRetainedSize(node.mHeap) + node.getSize());
+            }
+        }
     }
 
     public final void dumpInstanceCounts() {

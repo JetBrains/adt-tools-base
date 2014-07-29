@@ -16,9 +16,11 @@
 
 package com.android.tools.perflib.heap;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Set;
 
 public abstract class Instance {
@@ -36,6 +38,11 @@ public abstract class Instance {
 
     //  The size of this object
     int mSize;
+
+    //  The retained size of this object, indexed by heap (app, zygote, default).
+    //  Intuitively, this represents the amount of memory that could be reclaimed in each heap if
+    //  the instance were removed.
+    private final Map<Heap, Long> mRetainedSizes = Maps.newHashMap();
 
     //  List of all objects that hold a live reference to this object
     private final ArrayList<Instance> mReferences = new ArrayList<Instance>();
@@ -74,6 +81,15 @@ public abstract class Instance {
 
     public void setHeap(Heap heap) {
         mHeap = heap;
+    }
+
+    public void setRetainedSize(Heap heap, long size) {
+        mRetainedSizes.put(heap, size);
+    }
+
+    public long getRetainedSize(Heap heap) {
+        Long result = mRetainedSizes.get(heap);
+        return result == null ? 0L : result;
     }
 
     //  Add to the list of objects that have a hard reference to this Instance
