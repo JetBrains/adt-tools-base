@@ -250,9 +250,6 @@ abstract class ImportModule implements Comparable<ImportModule> {
         return mReplaceWithDependencies;
     }
 
-    public void setModuleName(String name) {
-        mModuleName = name;
-    }
 
     public String getModuleName() {
         if (mModuleName == null) {
@@ -318,15 +315,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
     }
 
     public String getModuleReference() {
-        String moduleName = getModuleName();
-        File file = new File(moduleName);
-        StringBuilder builder = new StringBuilder(moduleName.length() + 1);
-        while (file != null) {
-            builder.insert(0, file.getName());
-            builder.insert(0, ':');
-            file = file.getParentFile();
-        }
-        return builder.toString();
+        return ':' + getModuleName();
     }
 
     protected File getJarOutputRelativePath(File jar) {
