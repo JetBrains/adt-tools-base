@@ -325,6 +325,22 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                         "src/test/pkg/SharedPrefsTest6.java.txt=>src/test/pkg/SharedPrefsTest6.java"));
     }
 
+    public void testIncrementalNonMatch() throws Exception {
+        // Regression test for scenario where the below source files would crash during
+        // a string format check with
+        //   java.lang.IllegalStateException: No match found
+        //       at java.util.regex.Matcher.group(Matcher.java:468)
+        //       at com.android.tools.lint.checks.StringFormatDetector.checkStringFormatCall(StringFormatDetector.java:1028)
+        // ...
+        assertEquals("No warnings.",
+
+                lintProjectIncrementally(
+                        "src/test/pkg/StringFormatActivity3.java",
+                        "res/values/formatstrings11.xml",
+                        "res/values/formatstrings11.xml=>res/values-de/formatstrings11de.xml",
+                        "src/test/pkg/StringFormatActivity3.java.txt=>src/test/pkg/StringFormatActivity3.java"));
+    }
+
     public void testXliff() throws Exception {
         assertEquals(
                 "No warnings.",

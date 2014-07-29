@@ -1024,14 +1024,15 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                                         Matcher matcher = FORMAT.matcher(value);
                                         if (!matcher.find(j)) {
                                             isFormattingString = false;
-                                        }
-                                        String conversion = matcher.group(6);
-                                        int conversionClass = getConversionClass(
-                                                conversion.charAt(0));
-                                        if (conversionClass == CONVERSION_CLASS_UNKNOWN
-                                                || matcher.group(5) != null) {
-                                            // Some date format etc - don't process
-                                            return;
+                                        } else {
+                                            String conversion = matcher.group(6);
+                                            int conversionClass = getConversionClass(
+                                                    conversion.charAt(0));
+                                            if (conversionClass == CONVERSION_CLASS_UNKNOWN
+                                                    || matcher.group(5) != null) {
+                                                // Some date format etc - don't process
+                                                return;
+                                            }
                                         }
                                         j++; // Don't process second % in a %%
                                     }
