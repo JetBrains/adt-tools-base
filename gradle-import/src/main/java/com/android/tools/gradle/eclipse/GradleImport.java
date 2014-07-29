@@ -55,12 +55,8 @@ import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
-import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.base.Objects;
+import com.google.common.collect.*;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import com.google.common.primitives.Bytes;
@@ -76,12 +72,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * Importer which can generate Android Gradle projects.
@@ -177,10 +168,10 @@ public class GradleImport {
     private final List<String> mErrors = Lists.newArrayList();
     private Map<String, File> mPathMap = Maps.newTreeMap();
     /**
-     * Set of modules user chose to import. Can be <code>null</code> when all
-     * modules will be imported
+     * Map of modules user chose to import with their new names. Can be
+     * <code>null</code> when all modules will be imported
      */
-    private Set<String> mSelectedModules;
+    private Map<File, String> mSelectedModules;
 
     public GradleImport() {
         String workspace = System.getProperty(WORKSPACE_PROPERTY);
@@ -632,12 +623,18 @@ public class GradleImport {
         if (mSelectedModules == null) {
             return mRootModules;
         } else {
-            return Iterables.filter(mRootModules, new Predicate<ImportModule>() {
-                @Override
-                public boolean apply(ImportModule input) {
-                return mSelectedModules.contains(input.getModuleName());
+            ImmutableSet.Builder<ImportModule> builder = ImmutableSet.builder();
+            for (ImportModule module : mRootModules) {
+                File dir = module.getDir();
+                if (mSelectedModules.containsKey(dir)) {
+                    String name = mSelectedModules.get(dir);
+                    if (name != null) {
+                        module.setModuleName(name);
+                    }
+                    builder.add(module);
                 }
-            });
+            }
+            return builder.build();
         }
     }
 
@@ -1127,8 +1124,36 @@ public class GradleImport {
         return modules;
     }
 
+    @Deprecated
     public void setModulesToImport(Map<String, File> modules) {
-        mSelectedModules = ImmutableSet.copyOf(modules.keySet());
+        mSelectedModules = Maps.newHashMap();
+        for (File module : modules.values()) {
+            mSelectedModules.put(module, null);
+        }
+    }
+
+    public void setImportModuleNames(Map<File, String> moduleLocationToName) {
+        mSelectedModules = ImmutableMap.copyOf(moduleLocationToName);
+    }
+
+    public Set<String> getProjectDependencies(String projectName) {
+        ImportModule module = null;
+        for (ImportModule m : mModules) {
+            if (Objects.equal(m.getModuleName(), projectName)) {
+                module = m;
+                break;
+            }
+        }
+        if (module == null) {
+            return ImmutableSet.of();
+        }
+        else {
+            ImmutableSet.Builder<String> deps = ImmutableSet.builder();
+            for (ImportModule importModule : module.getAllDependencies()) {
+                deps.add(importModule.getModuleName());
+            }
+            return deps.build();
+        }
     }
 
     private static class ImportException extends RuntimeException {
