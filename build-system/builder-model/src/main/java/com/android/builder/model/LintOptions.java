@@ -62,7 +62,7 @@ import java.util.Set;
  *          lintConfig file("default-lint.xml")
  *          // if true, generate a text report of issues (false by default)
  *          textReport true
- *          // location to write the output; can be a file or 'stdout'
+ *          // location to write the output; can be a file or 'stdout' or 'stderr'
  *          //textOutput 'stdout'
  *          textOutput file("lint-results.txt")
  *          // if true, generate an XML report for use by for example Jenkins
