@@ -27,6 +27,13 @@
         help="Other examples are 'Person', 'Book', etc." />
 
     <parameter
+        id="className"
+        type="string"
+        constraints="nonempty|class|unique"
+        suggest="${extractLetters(objectKind)}Fragment"
+        name="Fragment class name" />
+
+    <parameter
         id="includeFactory"
         name="Include fragment factory methods?"
         type="boolean"
@@ -38,6 +45,31 @@
         name="Switch to grid view on large screens?"
         type="boolean"
         default="true" />
+
+    <parameter
+        id="fragment_layout"
+        type="string"
+        constraints="layout|nonempty|unique"
+        suggest="fragment_${extractLetters(objectKind?lower_case)}"
+        name="Fragment alias name"
+        visibility="switchGrid" />
+
+    <parameter
+        id="fragment_layout_grid"
+        type="string"
+        constraints="layout|nonempty|unique"
+        suggest="fragment_${extractLetters(objectKind?lower_case)}_grid"
+        name="Grid layout file name"
+        visibility="switchGrid" />
+
+    <parameter
+        id="fragment_layout_list"
+        type="string"
+        constraints="layout|nonempty|unique"
+        suggest="fragment_${extractLetters(objectKind?lower_case)}_list"
+        name="List layout file name"
+        visibility="switchGrid" />
+
 
     <!-- 128x128 thumbnails relative to template.xml -->
     <thumbs>
