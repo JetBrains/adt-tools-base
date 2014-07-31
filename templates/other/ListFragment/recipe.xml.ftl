@@ -11,10 +11,10 @@
            to="${escapeXmlAttribute(resOut)}/values-sw600dp/refs.xml" />
 
     <instantiate from="res/layout/fragment_grid.xml"
-                 to="${escapeXmlAttribute(resOut)}/layout/${fragment_layout}_grid.xml" />
+                 to="${escapeXmlAttribute(resOut)}/layout/${fragment_layout_grid}.xml" />
 
     <instantiate from="res/layout/fragment_list.xml"
-                 to="${escapeXmlAttribute(resOut)}/layout/${fragment_layout}_list.xml" />
+                 to="${escapeXmlAttribute(resOut)}/layout/${fragment_layout_list}.xml" />
 </#if>
 
     <instantiate from="src/app_package/ListFragment.java.ftl"
