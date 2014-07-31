@@ -61,4 +61,13 @@ public interface BaseConfig {
      */
     @NonNull
     Collection<File> getConsumerProguardFiles();
+
+    /**
+     * Returns the map of key value pairs for placeholder substitution in the android manifest file.
+     *
+     * This map will be used by the manifest merger.
+     * @return the map of key value pairs.
+     */
+    @NonNull
+    Map<String, String> getManifestPlaceholders();
 }

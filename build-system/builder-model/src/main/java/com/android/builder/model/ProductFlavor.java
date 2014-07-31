@@ -161,12 +161,4 @@ public interface ProductFlavor extends BaseConfig {
     @NonNull
     Collection<String> getResourceConfigurations();
 
-    /**
-     * Returns the map of key value pairs for placeholder substitution in the android manifest file.
-     *
-     * This map will be used by the manifest merger.
-     * @return the map of key value pairs.
-     */
-    @NonNull
-    Map<String, String> getManifestPlaceholders();
 }
