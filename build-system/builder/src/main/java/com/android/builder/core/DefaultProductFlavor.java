@@ -291,25 +291,6 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return mResourceConfiguration;
     }
 
-    @NonNull
-    public Map<String, String> getManifestPlaceholders() {
-        if (mManifestPlaceholders == null) {
-            mManifestPlaceholders = Maps.newHashMap();
-        }
-        return mManifestPlaceholders;
-    }
-
-    public void addManifestPlaceHolders(@NonNull Map<String, String> manifestPlaceholders) {
-        if (mManifestPlaceholders == null) {
-            mManifestPlaceholders = Maps.newHashMap();
-        }
-        mManifestPlaceholders.putAll(manifestPlaceholders);
-    }
-
-    public void setManifestPlaceholders(Map<String, String> manifestPlaceholders) {
-        this.mManifestPlaceholders = manifestPlaceholders;
-    }
-
     /**
      * Merges the flavor on top of a base platform and returns a new object with the result.
      * @param base the flavor to merge on top of

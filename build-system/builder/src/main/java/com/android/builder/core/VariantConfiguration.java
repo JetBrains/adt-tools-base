@@ -1695,4 +1695,17 @@ public class VariantConfiguration implements TestData {
     public boolean isTestCoverageEnabled() {
         return mBuildType.isTestCoverageEnabled();
     }
+
+    /**
+     * Returns the merged manifest placeholders. All product flavors are merged first, then build
+     * type specific placeholders are added and potentially overrides product flavors values.
+     * @return the merged manifest placeholders for a build variant.
+     */
+    @NonNull
+    public Map<String, String> getManifestPlaceholders() {
+        Map<String, String> mergedFlavorsPlaceholders = mMergedFlavor.getManifestPlaceholders();
+        // so far, blindly override the build type placeholders
+        mergedFlavorsPlaceholders.putAll(mBuildType.getManifestPlaceholders());
+        return mergedFlavorsPlaceholders;
+    }
 }
