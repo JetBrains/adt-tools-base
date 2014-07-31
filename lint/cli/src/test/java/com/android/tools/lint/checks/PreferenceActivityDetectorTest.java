@@ -96,4 +96,27 @@ public class PreferenceActivityDetectorTest extends AbstractCheckTest {
                 "export_preference_activity_no_export.xml=>AndroidManifest.xml"
             ));
     }
+
+    public void testWarningWhenTargetSDK19ButNoIsValidFragmentOverridden() throws Exception {
+        assertEquals(
+                "AndroidManifest.xml:30: Warning: PreferenceActivity subclass test.pkg.PreferenceActivitySubclass should not be exported [ExportedPreferenceActivity]\n"
+                        + "        <activity\n"
+                        + "        ^\n"
+                        + "0 errors, 1 warnings\n",
+                lintProject(
+                        "android/PreferenceActivity.java.txt=>src/android/app/PreferenceActivity.java",
+                        "src/test/pkg/PreferenceActivitySubclass.java.txt=>src/test/pkg/PreferenceActivitySubclass.java",
+                        "export_preference_activity_subclass_target_sdk_19.xml=>AndroidManifest.xml"
+                ));
+    }
+
+    public void testNoWarningWhenTargetSDK19AndIsValidFragmentOverridden() throws Exception {
+        assertEquals(
+                "No warnings.",
+                lintProject(
+                        "android/PreferenceActivity.java.txt=>src/android/app/PreferenceActivity.java",
+                        "src/test/pkg/PreferenceActivitySubclassOverridesIsValidFragment.java.txt=>src/test/pkg/PreferenceActivitySubclass.java",
+                        "export_preference_activity_subclass_target_sdk_19.xml=>AndroidManifest.xml"
+                ));
+    }
 }
