@@ -434,6 +434,17 @@ public class Client {
     }
 
     /**
+     * Fires a single heap update.
+     */
+    public void updateHeapInfo() {
+        try {
+            HandleHeap.sendHPIF(this, HandleHeap.HPIF_WHEN_NOW);
+        } catch (IOException ioe) {
+            // ignore it here; client will clean up shortly
+        }
+    }
+
+    /**
      * Returns whether the heap update is enabled.
      * @see #setHeapUpdateEnabled(boolean)
      */
