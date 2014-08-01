@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -172,10 +173,24 @@ public class PositionXmlParser {
      * @param data the XML data to be decoded into a string
      * @return a string corresponding to the XML data
      */
-    public static String getXmlString(byte[] data) {
+    @NonNull
+    public static String getXmlString(@NonNull byte[] data) {
+        return getXmlString(data, UTF_8);
+    }
+
+    /**
+     * Returns the String corresponding to the given byte array of XML data
+     * (with unknown encoding). This method attempts to guess the encoding based
+     * on the XML prologue.
+     * @param data the XML data to be decoded into a string
+     * @param defaultCharset the default charset to use if not specified by an encoding prologue
+     *                       attribute or a byte order mark
+     * @return a string corresponding to the XML data
+     */
+    @NonNull
+    public static String getXmlString(@NonNull byte[] data, @NonNull String defaultCharset) {
         int offset = 0;
 
-        String defaultCharset = UTF_8;
         String charset = null;
         // Look for the byte order mark, to see if we need to remove bytes from
         // the input stream (and to determine whether files are big endian or little endian) etc
@@ -269,7 +284,7 @@ public class PositionXmlParser {
 
         // No prologue on the first line, and no byte order mark: Assume UTF-8/16
         if (charset == null) {
-            charset = seenOddZero ? UTF_16LE : seenEvenZero ? UTF_16 : UTF_8;
+            charset = seenOddZero ? UTF_16LE : seenEvenZero ? UTF_16 : defaultCharset;
         }
 
         String xml = null;

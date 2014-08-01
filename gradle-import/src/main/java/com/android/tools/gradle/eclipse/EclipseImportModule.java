@@ -24,6 +24,7 @@ import com.android.tools.lint.client.api.DefaultConfiguration;
 import com.google.common.collect.Lists;
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.util.List;
 
 /** An imported module from Eclipse */
@@ -140,6 +141,16 @@ class EclipseImportModule extends ImportModule {
         }
 
         return mAllDependencies;
+    }
+
+    @Override
+    protected Charset getProjectEncoding(@NonNull File file) {
+        return mProject.getProjectEncoding();
+    }
+
+    @Override
+    protected Charset getFileEncoding(@NonNull File file) {
+        return mProject.getFileEncoding(file);
     }
 
     @NonNull

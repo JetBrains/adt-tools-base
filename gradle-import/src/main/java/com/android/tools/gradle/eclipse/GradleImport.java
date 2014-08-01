@@ -20,6 +20,15 @@ import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PACKAGE;
+import static com.android.SdkConstants.DOT_AIDL;
+import static com.android.SdkConstants.DOT_FS;
+import static com.android.SdkConstants.DOT_GRADLE;
+import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.DOT_PROPERTIES;
+import static com.android.SdkConstants.DOT_RS;
+import static com.android.SdkConstants.DOT_RSH;
+import static com.android.SdkConstants.DOT_TXT;
+import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.FD_EXTRAS;
 import static com.android.SdkConstants.FD_GRADLE;
 import static com.android.SdkConstants.FD_RES;
@@ -41,6 +50,7 @@ import static java.io.File.separatorChar;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.repository.GradleCoordinate;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
@@ -51,6 +61,7 @@ import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.sdklib.repository.local.LocalPkgInfo;
 import com.android.sdklib.repository.local.LocalSdk;
 import com.android.utils.ILogger;
+import com.android.utils.PositionXmlParser;
 import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
 import com.android.utils.XmlUtils;
@@ -76,6 +87,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -449,6 +462,39 @@ public class GradleImport {
         return null;
     }
 
+    private boolean mDefaultEncodingInitialized;
+    private Charset mDefaultEncoding;
+
+    @Nullable
+    private Charset getEncodingFromWorkspaceSetting() {
+        if (mWorkspaceLocation != null && !mDefaultEncodingInitialized) {
+            mDefaultEncodingInitialized = true;
+            File settings = getEncodingSettingsFile();
+            if (settings.exists()) {
+                Properties properties = null;
+                try {
+                    properties = getProperties(settings);
+                    if (properties != null) {
+                        String encodingName = properties.getProperty("encoding");
+                        if (encodingName != null) {
+                            try {
+                                mDefaultEncoding = Charset.forName(encodingName);
+                            } catch (UnsupportedCharsetException uce) {
+                                reportWarning((ImportModule) null, settings,
+                                        "Unknown charset " + encodingName);
+                            }
+
+                        }
+                    }
+                } catch (IOException e) {
+                    // ignore properties
+                }
+            }
+        }
+
+        return mDefaultEncoding;
+    }
+
     @Nullable
     private File getDirFromWorkspaceSetting(@NonNull File settings, @NonNull String property) {
         //noinspection VariableNotUsedInsideIf
@@ -710,16 +756,17 @@ public class GradleImport {
     private void exportGradleWrapper(@NonNull File destDir) throws IOException {
         if (mGradleWrapperLocation != null && mGradleWrapperLocation.exists()) {
             File gradlewDest = new File(destDir, FN_GRADLE_WRAPPER_UNIX);
-            copyDir(new File(mGradleWrapperLocation, FN_GRADLE_WRAPPER_UNIX), gradlewDest, null);
+            copyDir(new File(mGradleWrapperLocation, FN_GRADLE_WRAPPER_UNIX), gradlewDest,
+                    null, false, null);
             boolean madeExecutable = gradlewDest.setExecutable(true);
             if (!madeExecutable) {
                 reportWarning((ImportModule) null, gradlewDest,
                         "Could not make gradle wrapper script executable");
             }
             copyDir(new File(mGradleWrapperLocation, FN_GRADLE_WRAPPER_WIN),
-                    new File(destDir, FN_GRADLE_WRAPPER_WIN), null);
+                    new File(destDir, FN_GRADLE_WRAPPER_WIN), null, false, null);
             copyDir(new File(mGradleWrapperLocation, FD_GRADLE), new File(destDir, FD_GRADLE),
-                    null);
+                    null, false, null);
         }
     }
 
@@ -1301,6 +1348,10 @@ public class GradleImport {
         return new File(getRuntimeSettingsDir(), "org.eclipse.core.resources.prefs");
     }
 
+    private File getEncodingSettingsFile() {
+        return getPathSettingsFile();
+    }
+
     private File getNdkSettingsFile() {
         return new File(getRuntimeSettingsDir(), "com.android.ide.eclipse.ndk.prefs");
     }
@@ -1380,7 +1431,7 @@ public class GradleImport {
         return mPathMap;
     }
 
-    /** Interface used by the {@link #copyDir(java.io.File, java.io.File, CopyHandler)} handler */
+    /** Interface used by the {@link #copyDir} handler */
     public interface CopyHandler {
         /**
          * Optionally handle the given file; returns true if the file has been
@@ -1393,8 +1444,17 @@ public class GradleImport {
      * Handles copying the given source into the given destination, whether the source
      * is a file or directory. An optional handler can be used to perform special handling,
      * such as skipping files or changing the destination.
+     *
+     * @param source the source file/directory to copy
+     * @param dest the destination for that file
+     * @param handler an optional copy handler
+     * @param updateEncoding if false, do not try to rewrite encodings to UTF-8
+     * @param sourceModule if non null, a corresponding module this source file belongs to
+     *                      (used to look up the default encoding if applicable)
      */
-    public void copyDir(@NonNull File source, @NonNull File dest, @Nullable CopyHandler handler)
+    public void copyDir(@NonNull File source, @NonNull File dest,
+            @Nullable CopyHandler handler, boolean updateEncoding,
+            @Nullable ImportModule sourceModule)
             throws IOException {
         if (handler != null && handler.handle(source, dest)) {
             return;
@@ -1411,9 +1471,14 @@ public class GradleImport {
             File[] files = source.listFiles();
             if (files != null) {
                 for (File child : files) {
-                    copyDir(child, new File(dest, child.getName()), handler);
+                    copyDir(child, new File(dest, child.getName()), handler, updateEncoding,
+                            sourceModule);
                 }
             }
+        } else if (updateEncoding && isTextFile(source)
+                // Property files have their own special encoding; don't touch these
+                && !source.getPath().endsWith(DOT_PROPERTIES)) {
+            copyTextFile(sourceModule, source, dest);
         } else {
             Files.copy(source, dest);
         }
@@ -1429,6 +1494,88 @@ public class GradleImport {
         String name = file.getName();
         return name.equals(".svn") || name.equals(".git") || name.equals(".hg")
                 || name.equals(".DS_Store") || name.endsWith("~") && name.length() > 1;
+    }
+
+    public void copyTextFile(@Nullable ImportModule module, @NonNull File source,
+            @NonNull File dest) throws IOException {
+        assert isTextFile(source) : source;
+
+        Charset encoding = null;
+
+        // A specific encoding configured for a given file always wins:
+        if (module != null) {
+            encoding = module.getFileEncoding(source);
+            if (encoding != null) {
+                copyTextFileWithEncoding(source, dest, encoding);
+                return;
+            }
+
+            encoding = module.getProjectEncoding(source);
+        }
+
+        if (encoding == null) {
+            encoding = getEncodingFromWorkspaceSetting();
+        }
+
+        // For XML files we can sometimes read the encoding right out of the XML prologue
+        if (SdkUtils.endsWithIgnoreCase(source.getPath(), DOT_XML)) {
+            String defaultCharset = encoding != null ? encoding.name() : SdkConstants.UTF_8;
+            String xml = PositionXmlParser.getXmlString(Files.toByteArray(source),
+                    defaultCharset);
+            // Replace prologue if it specifies the encoding
+            if (xml.startsWith("<?xml")) {
+                int prologueEnd = xml.indexOf("?>");
+                if (prologueEnd != -1) {
+                    xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                            xml.substring(prologueEnd + 2);
+                }
+            }
+
+            Files.write(xml, dest, Charsets.UTF_8);
+        } else if (encoding != null) {
+            copyTextFileWithEncoding(source, dest, encoding);
+        } else {
+            Files.copy(source, dest);
+        }
+    }
+
+    /** Copies the file with the given source encoding to a UTF-8 text file */
+    private static void copyTextFileWithEncoding(@NonNull File source, @NonNull File dest,
+            @NonNull Charset sourceEncoding) throws IOException {
+        if (!Charsets.UTF_8.equals(sourceEncoding)) {
+            String text = Files.toString(source, sourceEncoding);
+            Files.write(text, dest, Charsets.UTF_8);
+        } else {
+            // Already using the right encoding
+            Files.copy(source, dest);
+        }
+    }
+
+    /**
+     * Returns true if this file is believed to be a source file (so it should be encoded
+     * as a UTF-8 file in the imported project
+     *
+     * @param file the file to check
+     * @return true if it is known to be a source file
+     */
+    @VisibleForTesting
+    static boolean isTextFile(@NonNull File file) {
+        String name = file.getName();
+        return name.endsWith(DOT_JAVA)
+                || name.endsWith(DOT_XML)
+                || name.endsWith(DOT_AIDL)
+                || name.endsWith(DOT_FS)
+                || name.endsWith(DOT_RS)
+                || name.endsWith(DOT_RSH)
+                || name.endsWith(DOT_RSH)
+                || name.endsWith(DOT_TXT)
+                || name.endsWith(DOT_GRADLE)
+                || name.endsWith(DOT_PROPERTIES)
+                || name.endsWith(".cfg")
+                || name.endsWith(".pro")
+                || name.endsWith(".h")
+                || name.endsWith(".c")
+                || name.endsWith(".cpp");
     }
 
     /** Computes the relative path for the given file inside another directory */

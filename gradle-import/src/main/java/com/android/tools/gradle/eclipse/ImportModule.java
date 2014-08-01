@@ -21,8 +21,10 @@ import static com.android.SdkConstants.BIN_FOLDER;
 import static com.android.SdkConstants.DOT_AIDL;
 import static com.android.SdkConstants.DOT_FS;
 import static com.android.SdkConstants.DOT_JAR;
+import static com.android.SdkConstants.DOT_JAVA;
 import static com.android.SdkConstants.DOT_RS;
 import static com.android.SdkConstants.DOT_RSH;
+import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.FD_AIDL;
 import static com.android.SdkConstants.FD_ASSETS;
 import static com.android.SdkConstants.FD_JAVA;
@@ -45,12 +47,14 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
 import com.android.sdklib.AndroidVersion;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -116,6 +120,8 @@ abstract class ImportModule implements Comparable<ImportModule> {
     @Nullable protected abstract File getNativeSources();
     @Nullable protected abstract String getNativeModuleName();
     @Nullable protected abstract File getInstrumentationDir();
+    @Nullable protected abstract Charset getFileEncoding(@NonNull File file);
+    @Nullable protected abstract Charset getProjectEncoding(@NonNull File file);
 
     public void initialize() {
         initDependencies();
@@ -362,7 +368,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
             File srcManifest = getManifestFile();
             if (srcManifest != null && srcManifest.exists()) {
                 File destManifest = new File(main, ANDROID_MANIFEST_XML);
-                Files.copy(srcManifest, destManifest);
+                mImporter.copyTextFile(this, srcManifest, destManifest);
                 summary.reportMoved(this, srcManifest, destManifest);
                 recordCopiedFile(copied, srcManifest);
             }
@@ -370,7 +376,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
             if (srcRes != null && srcRes.exists()) {
                 File destRes = new File(main, FD_RES);
                 mImporter.mkdirs(destRes);
-                mImporter.copyDir(srcRes, destRes, null);
+                mImporter.copyDir(srcRes, destRes, null, true, this);
                 summary.reportMoved(this, srcRes, destRes);
                 recordCopiedFile(copied, srcRes);
             }
@@ -378,7 +384,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
             if (srcAssets != null && srcAssets.exists()) {
                 File destAssets = new File(main, FD_ASSETS);
                 mImporter.mkdirs(destAssets);
-                mImporter.copyDir(srcAssets, destAssets, null);
+                mImporter.copyDir(srcAssets, destAssets, null, false, null);
                 summary.reportMoved(this, srcAssets, destAssets);
                 recordCopiedFile(copied, srcAssets);
             }
@@ -386,7 +392,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
             File lintXml = getLintXml();
             if (lintXml != null) {
                 File destLintXml = new File(destDir, lintXml.getName());
-                Files.copy(lintXml, destLintXml);
+                mImporter.copyTextFile(this, lintXml, destLintXml);
                 summary.reportMoved(this, lintXml, destLintXml);
                 recordCopiedFile(copied, lintXml);
             }
@@ -421,7 +427,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
                         if (relative != null) {
                             File destAidl = new File(aidlDir, relative.getPath());
                             mImporter.mkdirs(destAidl.getParentFile());
-                            Files.copy(source, destAidl);
+                            mImporter.copyTextFile(ImportModule.this, source, destAidl);
                             mImporter.getSummary().reportMoved(ImportModule.this, source,
                                     destAidl);
                             return true;
@@ -434,13 +440,13 @@ abstract class ImportModule implements Comparable<ImportModule> {
                         File destRs = new File(main, FD_RENDERSCRIPT + separator +
                                 source.getName());
                         mImporter.mkdirs(destRs.getParentFile());
-                        Files.copy(source, destRs);
+                        mImporter.copyTextFile(ImportModule.this, source, destRs);
                         mImporter.getSummary().reportMoved(ImportModule.this, source, destRs);
                         return true;
                     }
                     return false;
                 }
-            });
+            }, true, this);
             summary.reportMoved(this, srcJava, destJava);
             recordCopiedFile(copied, srcJava);
         }
@@ -474,7 +480,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
             File srcJni = resolveFile(jni);
             File destJni = new File(destDir, FD_SOURCES + separator + FD_MAIN + separator
                     + "jni");
-            mImporter.copyDir(srcJni, destJni, null);
+            mImporter.copyDir(srcJni, destJni, null, true, this);
             summary.reportMoved(this, srcJni, destJni);
             recordCopiedFile(copied, srcJni);
         }
@@ -493,7 +499,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
             if (srcRes.isDirectory()) {
                 File destRes = new File(test, FD_RES);
                 mImporter.mkdirs(destRes);
-                mImporter.copyDir(srcRes, destRes, null);
+                mImporter.copyDir(srcRes, destRes, null, true, this);
                 summary.reportMoved(this, srcRes, destRes);
                 recordCopiedFile(copied, srcRes);
             }
@@ -502,7 +508,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
             if (srcJava.isDirectory()) {
                 File destRes = new File(test, FD_JAVA);
                 mImporter.mkdirs(destRes);
-                mImporter.copyDir(srcJava, destRes, null);
+                mImporter.copyDir(srcJava, destRes, null, true, this);
                 summary.reportMoved(this, srcJava, destRes);
                 recordCopiedFile(copied, srcJava);
             }
@@ -526,7 +532,7 @@ abstract class ImportModule implements Comparable<ImportModule> {
             for (File srcProguard : getLocalProguardFiles()) {
                 File destProguard = new File(destDir, srcProguard.getName());
                 if (!destProguard.exists()) {
-                    Files.copy(srcProguard, destProguard);
+                    mImporter.copyTextFile(this, srcProguard, destProguard);
                     summary.reportMoved(this, srcProguard, destProguard);
                     recordCopiedFile(copied, srcProguard);
                 } else {
