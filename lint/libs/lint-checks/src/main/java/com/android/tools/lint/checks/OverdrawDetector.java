@@ -280,7 +280,7 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
                 return;
             }
 
-            if (background.equals(TRANSPARENT_COLOR)) {
+            if (background.equals(TRANSPARENT_COLOR) || background.equals(NULL_RESOURCE)) {
                 return;
             }
 
