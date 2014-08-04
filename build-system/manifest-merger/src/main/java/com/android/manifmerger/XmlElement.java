@@ -722,6 +722,7 @@ public class XmlElement extends OrphanXmlElement {
             List<Node> otherElementChildren,
             XmlElement childNode) {
 
+        Optional<String> message = Optional.absent();
         for (Node potentialNode : otherElementChildren) {
             if (potentialNode.getNodeType() == Node.ELEMENT_NODE) {
                 XmlElement otherChildNode = new XmlElement((Element) potentialNode, mDocument);
@@ -730,7 +731,8 @@ public class XmlElement extends OrphanXmlElement {
                     if (childNode.getType().getNodeKeyResolver().getKeyAttributesNames()
                             .isEmpty()) {
                         // no key... try all the other elements, if we find one equal, we are done.
-                        if (!childNode.compareTo(otherChildNode).isPresent()) {
+                        message = childNode.compareTo(otherChildNode);
+                        if (!message.isPresent()) {
                             return Optional.absent();
                         }
                     } else {
@@ -749,9 +751,11 @@ public class XmlElement extends OrphanXmlElement {
                 }
             }
         }
-        return Optional.of(String.format("Child %1$s not found in document %2$s",
-                childNode.getId(),
-                otherElement.printPosition()));
+        return message.isPresent()
+                ? message
+                : Optional.of(String.format("Child %1$s not found in document %2$s",
+                        childNode.getId(),
+                        otherElement.printPosition()));
     }
 
     private static List<Node> filterUninterestingNodes(NodeList nodeList) {

@@ -153,8 +153,8 @@ public class ManifestMerger2 {
                         ? String.format(
                                 "Overlay manifest:package attribute declared at %1$s value=(%2$s)\n"
                                         + "\thas a different value=(%3$s) "
-                                        + "declared in main manifest at %4$s \n"
-                                        + "\tSuggestion : remove the overlay declaration at %5$s "
+                                        + "declared in main manifest at %4$s\n"
+                                        + "\tSuggestion: remove the overlay declaration at %5$s "
                                         + "\tand place it in the build.gradle:\n"
                                         + "\t\tflavorName {\n"
                                         + "\t\t\tapplicationId = \"%2$s\"\n"
