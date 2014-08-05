@@ -236,36 +236,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             Severity.ERROR,
             IMPLEMENTATION);
 
-    /** A statement appearing at the root of the top-level build file that shouldn't be there */
-    public static final Issue IMPROPER_PROJECT_LEVEL_STATEMENT = Issue.create(
-            "ImproperProjectLevelStatement", //$NON-NLS-1$
-            "Improper project-level build file statement",
-            "Looks for statements that likely don't belong in a project-level build file",
-
-            "The top-level build file in a multi-module project is generally used to configure project-wide " +
-            "build parameters and often does not describe a corresponding top-level module. In build files " +
-            "without a module, it is an error to use build file constructs that require a module; doing so can " +
-            "lead to unpredictable error messages.",
-
-            Category.CORRECTNESS,
-            2,
-            Severity.WARNING,
-            IMPLEMENTATION);
-
-    /** A statement appearing within the wrong scope of a build file */
-    public static final Issue MISPLACED_STATEMENT = Issue.create(
-            "MisplacedStatement", //$NON-NLS-1$
-            "Misplaced statement",
-            "Looks for build file statements that belong elsewhere in the build file",
-
-            "Most build file directives only make sense in certain contexts in the build file. If you put a " +
-            "statement in the wrong place, you can get errors or unexpected behavior.",
-
-            Category.CORRECTNESS,
-            2,
-            Severity.WARNING,
-            IMPLEMENTATION);
-
     /** The Gradle plugin ID for Android applications */
     public static final String APP_PLUGIN_ID = "com.android.application";
     /** The Gradle plugin ID for Android libraries */
@@ -278,10 +248,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     private int mMinSdkVersion;
     private int mCompileSdkVersion;
     private int mTargetSdkVersion;
-    private Object myAndroidPluginCookie;
-    private Object myDependenciesCookie;
-    private Object myRepositoriesCookie;
-    private Object myAndroidBlockCookie;
 
     @Override
     public boolean appliesTo(@NonNull Context context, @NonNull File file) {
@@ -468,10 +434,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                     }
                 }
             }
-            if ((!property.equals("classpath")) && "buildscript".equals(parentParent)) {
-                String message = "Only `classpath` dependencies should appear in the `buildscript` dependencies block";
-                report(context, statementCookie, IMPROPER_PROJECT_LEVEL_STATEMENT, message);
-            }
         } else if (property.equals("packageNameSuffix")) {
             if (isModelOlderThan011(context)) {
                 return;
@@ -598,30 +560,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         return true;
     }
 
-    protected void checkBlock(
-            @NonNull Context context,
-            @NonNull String block,
-            @Nullable String parent,
-            @NonNull Object cookie) {
-        if ("android".equals(block) && parent == null) {
-            myAndroidBlockCookie = cookie;
-        } else if ("dependencies".equals(block)) {
-            if (parent == null) {
-                myDependenciesCookie = cookie;
-            } else if (!parent.equals("buildscript") && !parent.equals("allprojects") && !parent.equals("subprojects")) {
-                String message = "A `dependencies` block doesn't belong here.";
-                report(context, cookie, MISPLACED_STATEMENT, message);
-            }
-        } else if ("repositories".equals(block)) {
-            if (parent == null) {
-                myRepositoriesCookie = cookie;
-            } else if (!parent.equals("buildscript") && !parent.equals("allprojects") && !parent.equals("subprojects")) {
-                String message = "A `repositories` block doesn't belong here.";
-                report(context, cookie, MISPLACED_STATEMENT, message);
-            }
-        }
-    }
-
     protected void checkMethodCall(
             @NonNull Context context,
             @NonNull String statement,
@@ -634,42 +572,12 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         if (statement.equals("apply") && parent == null) {
             boolean isOldAppPlugin = OLD_APP_PLUGIN_ID.equals(plugin);
             if (isOldAppPlugin || OLD_LIB_PLUGIN_ID.equals(plugin)) {
-              myAndroidPluginCookie = cookie;
               String replaceWith = isOldAppPlugin ? APP_PLUGIN_ID : LIB_PLUGIN_ID;
               String message = String.format("'%1$s' is deprecated; use '%2$s' instead", plugin,
                       replaceWith);
               report(context, cookie, DEPRECATED, message);
-          } else if (APP_PLUGIN_ID.equals(plugin) || LIB_PLUGIN_ID.equals(plugin)) {
-             myAndroidPluginCookie = cookie;
           }
         }
-    }
-
-    @Override
-    public void afterCheckFile(@NonNull Context context) {
-        if (myAndroidPluginCookie != null && !isAndroidProject()) {
-            String message = "The `apply plugin` statement should only be used if there is a corresponding module for this build file.";
-            report(context, myAndroidPluginCookie, IMPROPER_PROJECT_LEVEL_STATEMENT, message);
-        }
-        if (myAndroidBlockCookie != null && !isAndroidProject()) {
-            String message = "An `android` block should only appear in build files that correspond to a module and have an " +
-                             "`apply plugin: 'com.android.application'` or `apply plugin: 'com.android.library'` statement.";
-            report(context, myAndroidBlockCookie, IMPROPER_PROJECT_LEVEL_STATEMENT, message);
-        }
-        if (myDependenciesCookie != null && !isAndroidProject()) {
-            String message = "A top-level `dependencies` block should only appear in build files that correspond to a module.";
-            report(context, myDependenciesCookie, IMPROPER_PROJECT_LEVEL_STATEMENT, message);
-            super.afterCheckFile(context);
-        }
-        if (myRepositoriesCookie != null && !isAndroidProject()) {
-            String message = "A top-level `repositories` block should only appear in build files that correspond to a module.";
-            report(context, myRepositoriesCookie, IMPROPER_PROJECT_LEVEL_STATEMENT, message);
-            super.afterCheckFile(context);
-        }
-    }
-
-    private boolean isAndroidProject() {
-        return myAndroidBlockCookie != null && myAndroidPluginCookie  != null;
     }
 
     @Nullable
