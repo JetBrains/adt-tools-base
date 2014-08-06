@@ -721,7 +721,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
         // Network check for really up to date libraries? Only done in batch mode
         if (context.getScope().size() > 1 && context.isEnabled(REMOTE_VERSION)) {
-            FullRevision latest = getLatestVersion(context, dependency);
+            FullRevision latest = getLatestVersion(context, dependency, dependency.isPreview());
             if (latest != null && isOlderThan(dependency, latest.getMajor(), latest.getMinor(),
                     latest.getMicro())) {
                 version = latest;
@@ -750,7 +750,12 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
     /** TODO: Cache these results somewhere! */
     private static FullRevision getLatestVersion(@NonNull Context context,
-            @NonNull GradleCoordinate dependency) {
+            @NonNull GradleCoordinate dependency, boolean allowPreview) {
+        return getLatestVersion(context, dependency, true, allowPreview);
+    }
+
+    private static FullRevision getLatestVersion(@NonNull Context context,
+            @NonNull GradleCoordinate dependency, boolean firstRowOnly, boolean allowPreview) {
         StringBuilder query = new StringBuilder();
         String encoding = UTF_8.name();
         try {
@@ -761,7 +766,11 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         } catch (UnsupportedEncodingException ee) {
             return null;
         }
-        query.append("%22&core=gav&rows=1&wt=json");
+        query.append("%22&core=gav");
+        if (firstRowOnly) {
+            query.append("&rows=1");
+        }
+        query.append("&wt=json");
 
         String response = readUrlData(context, dependency, query.toString());
         if (response == null) {
@@ -801,17 +810,30 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         //    }
 
         // Look for version info:  This is just a cheap skim of the above JSON results
+        boolean foundPreview = false;
         int index = response.indexOf("\"response\"");   //$NON-NLS-1$
-        if (index != -1) {
+        while (index != -1) {
             index = response.indexOf("\"v\":", index);  //$NON-NLS-1$
             if (index != -1) {
                 index += 4;
                 int start = response.indexOf('"', index) + 1;
                 int end = response.indexOf('"', start + 1);
                 if (end > start && start >= 0) {
-                    return parseRevisionSilently(response.substring(start, end));
+                    FullRevision revision = parseRevisionSilently(response.substring(start, end));
+                    if (revision != null) {
+                        foundPreview = revision.isPreview();
+                        if (allowPreview || !foundPreview) {
+                            return revision;
+                        }
+                    }
                 }
             }
+        }
+
+        if (!allowPreview && foundPreview && firstRowOnly) {
+            // Recurse: search more than the first row this time to see if we can find a
+            // non-preview version
+            return getLatestVersion(context, dependency, false, false);
         }
 
         return null;
