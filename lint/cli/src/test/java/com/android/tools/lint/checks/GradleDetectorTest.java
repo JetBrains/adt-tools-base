@@ -120,7 +120,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
     }
 
     public void test() throws Exception {
-        mEnabled = null;
+        mEnabled = Sets.newHashSet(COMPATIBILITY, DEPRECATED, DEPENDENCY, PLUS);
         assertEquals(""
             + "build.gradle:25: Error: This support library should not use a lower version (13) than the targetSdkVersion (17) [GradleCompatible]\n"
             + "    compile 'com.android.support:appcompat-v7:13.0.0'\n"
@@ -131,15 +131,15 @@ public class GradleDetectorTest extends AbstractCheckTest {
             + "build.gradle:5: Warning: Old buildToolsVersion 19.0.0; recommended version is 19.1.0 or later [GradleDependency]\n"
             + "    buildToolsVersion \"19.0.0\"\n"
             + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "build.gradle:24: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 17.0.0 [GradleDependency]\n"
+            + "    freeCompile 'com.google.guava:guava:11.0.2'\n"
+            + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
             + "build.gradle:25: Warning: A newer version of com.android.support:appcompat-v7 than 13.0.0 is available: 20.0.0 [GradleDependency]\n"
             + "    compile 'com.android.support:appcompat-v7:13.0.0'\n"
             + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
             + "build.gradle:23: Warning: Avoid using + in version numbers; can lead to unpredictable and unrepeatable builds (com.android.support:appcompat-v7:+) [GradleDynamicVersion]\n"
             + "    compile 'com.android.support:appcompat-v7:+'\n"
             + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-            + "build.gradle:24: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 17.0.0 [NewerVersionAvailable]\n"
-            + "    freeCompile 'com.google.guava:guava:11.0.2'\n"
-            + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
             + "1 errors, 5 warnings\n",
 
             lintProject("gradle/Dependencies.gradle=>build.gradle"));
