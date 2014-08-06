@@ -246,7 +246,7 @@ public class ManifestMerger2 {
         }
 
         // only remove tools annotations if we are packaging an application.
-        if (mMergeType == MergeType.APPLICATION) {
+        if (mOptionalFeatures.contains(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)) {
             finalMergedDocument =
                     ToolsInstructionsCleaner.cleanToolsReferences(finalMergedDocument, mLogger);
         }
@@ -680,7 +680,12 @@ public class ManifestMerger2 {
              * Perform a sweep after all merging activities to remove all fully qualified class
              * names and replace them with the equivalent short version.
              */
-            EXTRACT_FQCNS
+            EXTRACT_FQCNS,
+
+            /**
+             * Perform a sweep after all merging activities to remove all tools: decorations.
+             */
+            REMOVE_TOOLS_DECLARATIONS
         }
 
         private final ImmutableList.Builder<Pair<String, File>> mLibraryFilesBuilder =

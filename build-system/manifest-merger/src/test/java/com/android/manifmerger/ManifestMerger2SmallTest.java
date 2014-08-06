@@ -105,7 +105,9 @@ public class ManifestMerger2SmallTest extends TestCase {
 
         try {
             MergingReport mergingReport = ManifestMerger2.newMerger(tmpFile, mockLog,
-                    ManifestMerger2.MergeType.APPLICATION).merge();
+                    ManifestMerger2.MergeType.APPLICATION)
+                    .withFeatures(ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)
+                    .merge();
             assertEquals(MergingReport.Result.WARNING, mergingReport.getResult());
             // ensure tools annotation removal.
             XmlDocument mergedDocument = mergingReport.getMergedDocument().get();
@@ -143,7 +145,8 @@ public class ManifestMerger2SmallTest extends TestCase {
 
         try {
             MergingReport mergingReport = ManifestMerger2.newMerger(tmpFile, mockLog,
-                    ManifestMerger2.MergeType.LIBRARY).merge();
+                    ManifestMerger2.MergeType.LIBRARY)
+                    .merge();
             assertEquals(MergingReport.Result.WARNING, mergingReport.getResult());
             // ensure tools annotation removal.
             XmlDocument mergedDocument = mergingReport.getMergedDocument().get();

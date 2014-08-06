@@ -405,6 +405,10 @@ public class AndroidBuilder {
                             manifestOverlays.toArray(new File[manifestOverlays.size()]))
                     .addLibraryManifests(collectLibraries(libraries));
 
+            if (mergeType == ManifestMerger2.MergeType.APPLICATION) {
+                manifestMergerInvoker.withFeatures(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS);
+            }
+
             setInjectableValues(manifestMergerInvoker,
                     packageOverride, versionCode, versionName, minSdkVersion, targetSdkVersion);
 
@@ -767,6 +771,7 @@ public class AndroidBuilder {
 
                 MergingReport mergingReport = ManifestMerger2.newMerger(
                         generatedTestManifest, mLogger, ManifestMerger2.MergeType.APPLICATION)
+                        .withFeatures(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)
                         .setOverride(SystemProperty.PACKAGE, testApplicationId)
                         .addLibraryManifests(collectLibraries(libraries))
                         .merge();
