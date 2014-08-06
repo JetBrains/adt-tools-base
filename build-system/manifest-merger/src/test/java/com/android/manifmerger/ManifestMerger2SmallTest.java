@@ -371,6 +371,90 @@ public class ManifestMerger2SmallTest extends TestCase {
         }
     }
 
+    public void testNoFqcnsExtraction()
+            throws ParserConfigurationException, SAXException, IOException,
+            ManifestMerger2.MergeFailureException {
+        String xml = ""
+                + "<manifest\n"
+                + "    package=\"com.foo.example\""
+                + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity t:name=\"activityOne\"/>\n"
+                + "    <activity t:name=\"com.foo.bar.example.activityTwo\"/>\n"
+                + "    <activity t:name=\"com.foo.example.activityThree\"/>\n"
+                + "    <application t:name=\".applicationOne\" "
+                + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
+                + "</manifest>";
+
+        File inputFile = inputAsFile("testFcqnsExtraction", xml);
+
+        MockLog mockLog = new MockLog();
+        MergingReport mergingReport = ManifestMerger2
+                .newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                .merge();
+
+        assertTrue(mergingReport.getResult().isSuccess());
+        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+        assertEquals("com.foo.example.activityOne",
+                xmlDocument.getXml().getElementsByTagName("activity").item(0).getAttributes()
+                        .item(0).getNodeValue());
+        assertEquals("com.foo.bar.example.activityTwo",
+                xmlDocument.getXml().getElementsByTagName("activity").item(1).getAttributes()
+                        .item(0).getNodeValue());
+        assertEquals("com.foo.example.activityThree",
+                xmlDocument.getXml().getElementsByTagName("activity").item(2).getAttributes()
+                        .item(0).getNodeValue());
+        assertEquals("com.foo.example.applicationOne",
+                xmlDocument.getXml().getElementsByTagName("application").item(0).getAttributes()
+                        .getNamedItemNS("http://schemas.android.com/apk/res/android", "name")
+                        .getNodeValue());
+        assertEquals("com.foo.example.myBackupAgent",
+                xmlDocument.getXml().getElementsByTagName("application").item(0).getAttributes()
+                        .getNamedItemNS("http://schemas.android.com/apk/res/android", "backupAgent")
+                        .getNodeValue());    }
+
+    public void testFqcnsExtraction()
+            throws ParserConfigurationException, SAXException, IOException,
+            ManifestMerger2.MergeFailureException {
+        String xml = ""
+                + "<manifest\n"
+                + "    package=\"com.foo.example\""
+                + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity t:name=\"activityOne\"/>\n"
+                + "    <activity t:name=\"com.foo.bar.example.activityTwo\"/>\n"
+                + "    <activity t:name=\"com.foo.example.activityThree\"/>\n"
+                + "    <application t:name=\".applicationOne\" "
+                + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
+                + "</manifest>";
+
+        File inputFile = inputAsFile("testFcqnsExtraction", xml);
+
+        MockLog mockLog = new MockLog();
+        MergingReport mergingReport = ManifestMerger2
+                .newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                .withFeatures(ManifestMerger2.Invoker.Feature.EXTRACT_FQCNS)
+                .merge();
+
+        assertTrue(mergingReport.getResult().isSuccess());
+        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+        assertEquals(".activityOne",
+                xmlDocument.getXml().getElementsByTagName("activity").item(0).getAttributes()
+                        .item(0).getNodeValue());
+        assertEquals("com.foo.bar.example.activityTwo",
+                xmlDocument.getXml().getElementsByTagName("activity").item(1).getAttributes()
+                        .item(0).getNodeValue());
+        assertEquals(".activityThree",
+                xmlDocument.getXml().getElementsByTagName("activity").item(2).getAttributes()
+                        .item(0).getNodeValue());
+        assertEquals(".applicationOne",
+                xmlDocument.getXml().getElementsByTagName("application").item(0).getAttributes()
+                        .getNamedItemNS("http://schemas.android.com/apk/res/android", "name")
+                        .getNodeValue());
+        assertEquals(".myBackupAgent",
+                xmlDocument.getXml().getElementsByTagName("application").item(0).getAttributes()
+                        .getNamedItemNS("http://schemas.android.com/apk/res/android", "backupAgent")
+                        .getNodeValue());
+    }
+
     /**
      * Utility method to save a {@link String} XML into a file.
      */

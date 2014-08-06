@@ -251,6 +251,10 @@ public class ManifestMerger2 {
                     ToolsInstructionsCleaner.cleanToolsReferences(finalMergedDocument, mLogger);
         }
 
+        if (mOptionalFeatures.contains(Invoker.Feature.EXTRACT_FQCNS)) {
+            extractFcqns(finalMergedDocument);
+        }
+
         if (finalMergedDocument != null) {
             mergingReportBuilder.setMergedDocument(finalMergedDocument);
         }
@@ -261,6 +265,36 @@ public class ManifestMerger2 {
         stdLogger.verbose(build.getMergedDocument().get().prettyPrint());
 
         return build;
+    }
+
+    /**
+     * shorten all fully qualified class name that belong to the same package as the manifest's
+     * package attribute value.
+     * @param finalMergedDocument the AndroidManifest.xml document.
+     */
+    private void extractFcqns(XmlDocument finalMergedDocument) {
+        extractFcqns(finalMergedDocument.getPackageName(), finalMergedDocument.getRootNode());
+    }
+
+    /**
+     * shorten recursively all attributes that are package dependent of the passed nodes and all
+     * its child nodes.
+     * @param packageName the manifest package name.
+     * @param xmlElement the xml element to process recursively.
+     */
+    private void extractFcqns(String packageName, XmlElement xmlElement) {
+        for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
+            if (xmlAttribute.getModel() !=null && xmlAttribute.getModel().isPackageDependent()) {
+                String value = xmlAttribute.getValue();
+                if (value != null && value.startsWith(packageName) &&
+                        value.charAt(packageName.length()) == '.') {
+                    xmlAttribute.getXml().setValue(value.substring(packageName.length()));
+                }
+            }
+        }
+        for (XmlElement child : xmlElement.getMergeableElements()) {
+            extractFcqns(packageName, child);
+        }
     }
 
     // merge the optionally existing xmlDocument with a lower priority xml file.
@@ -640,7 +674,13 @@ public class ManifestMerger2 {
              * When logging file names, use {@link java.io.File#getName()} rather than
              * {@link java.io.File#getPath()}
              */
-            PRINT_SIMPLE_FILENAMES
+            PRINT_SIMPLE_FILENAMES,
+
+            /**
+             * Perform a sweep after all merging activities to remove all fully qualified class
+             * names and replace them with the equivalent short version.
+             */
+            EXTRACT_FQCNS
         }
 
         private final ImmutableList.Builder<Pair<String, File>> mLibraryFilesBuilder =
