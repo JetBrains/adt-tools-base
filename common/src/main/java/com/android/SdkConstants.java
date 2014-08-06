@@ -1152,6 +1152,7 @@ public final class SdkConstants {
     public static final String R_ID_PREFIX = "R.id.";                    //$NON-NLS-1$
     public static final String R_LAYOUT_RESOURCE_PREFIX = "R.layout.";   //$NON-NLS-1$
     public static final String R_DRAWABLE_PREFIX = "R.drawable.";        //$NON-NLS-1$
+    public static final String R_STYLEABLE_PREFIX = "R.styleable.";      //$NON-NLS-1$
     public static final String R_ATTR_PREFIX = "R.attr.";                //$NON-NLS-1$
 
     // Attributes related to tools
