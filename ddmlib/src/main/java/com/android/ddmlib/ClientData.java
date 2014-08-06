@@ -101,27 +101,6 @@ public class ClientData {
     }
 
     /**
-     * Name of the value representing the max size of the heap, in the {@link Map} returned by
-     * {@link #getVmHeapInfo(int)}
-     */
-    public static final String HEAP_MAX_SIZE_BYTES = "maxSizeInBytes"; //$NON-NLS-1$
-    /**
-     * Name of the value representing the size of the heap, in the {@link Map} returned by
-     * {@link #getVmHeapInfo(int)}
-     */
-    public static final String HEAP_SIZE_BYTES = "sizeInBytes"; //$NON-NLS-1$
-    /**
-     * Name of the value representing the number of allocated bytes of the heap, in the
-     * {@link Map} returned by {@link #getVmHeapInfo(int)}
-     */
-    public static final String HEAP_BYTES_ALLOCATED = "bytesAllocated"; //$NON-NLS-1$
-    /**
-     * Name of the value representing the number of objects in the heap, in the {@link Map}
-     * returned by {@link #getVmHeapInfo(int)}
-     */
-    public static final String HEAP_OBJECTS_ALLOCATED = "objectsAllocated"; //$NON-NLS-1$
-
-    /**
      * String for feature enabling starting/stopping method profiling
      * @see #hasFeature(String)
      */
@@ -205,9 +184,7 @@ public class ClientData {
     /** Native Heap data */
     private final HeapData mNativeHeapData = new HeapData();
 
-    private HashMap<Integer, HashMap<String, Long>> mHeapInfoMap =
-            new HashMap<Integer, HashMap<String, Long>>();
-
+    private HashMap<Integer, HeapInfo> mHeapInfoMap = new HashMap<Integer, HeapInfo>();
 
     /** library map info. Stored here since the backtrace data
      * is computed on a need to display basis.
@@ -323,6 +300,29 @@ public class ClientData {
 
         public Map<Integer, ArrayList<HeapSegmentElement>> getProcessedHeapMap() {
             return mProcessedHeapMap;
+        }
+    }
+
+    public static class HeapInfo {
+        public long maxSizeInBytes;
+        public long sizeInBytes;
+        public long bytesAllocated;
+        public long objectsAllocated;
+        public long timeStamp;
+        public byte reason;
+
+        public HeapInfo(long maxSizeInBytes,
+                        long sizeInBytes,
+                        long bytesAllocated,
+                        long objectsAllocated,
+                        long timeStamp,
+                        byte reason) {
+            this.maxSizeInBytes = maxSizeInBytes;
+            this.sizeInBytes = sizeInBytes;
+            this.bytesAllocated = bytesAllocated;
+            this.objectsAllocated = objectsAllocated;
+            this.timeStamp = timeStamp;
+            this.reason = reason;
         }
     }
 
@@ -565,22 +565,22 @@ public class ClientData {
 
     /**
      * Sets the current heap info values for the specified heap.
-     *
-     * @param heapId The heap whose info to update
+     *  @param heapId The heap whose info to update
      * @param sizeInBytes The size of the heap, in bytes
      * @param bytesAllocated The number of bytes currently allocated in the heap
      * @param objectsAllocated The number of objects currently allocated in
-     *                         the heap
+     * @param timeStamp
+     * @param reason
      */
-    // TODO: keep track of timestamp, reason
-    synchronized void setHeapInfo(int heapId, long maxSizeInBytes,
-            long sizeInBytes, long bytesAllocated, long objectsAllocated) {
-        HashMap<String, Long> heapInfo = new HashMap<String, Long>();
-        heapInfo.put(HEAP_MAX_SIZE_BYTES, maxSizeInBytes);
-        heapInfo.put(HEAP_SIZE_BYTES, sizeInBytes);
-        heapInfo.put(HEAP_BYTES_ALLOCATED, bytesAllocated);
-        heapInfo.put(HEAP_OBJECTS_ALLOCATED, objectsAllocated);
-        mHeapInfoMap.put(heapId, heapInfo);
+    synchronized void setHeapInfo(int heapId,
+                                  long maxSizeInBytes,
+                                  long sizeInBytes,
+                                  long bytesAllocated,
+                                  long objectsAllocated,
+                                  long timeStamp,
+                                  byte reason) {
+        mHeapInfoMap.put(heapId, new HeapInfo(maxSizeInBytes, sizeInBytes, bytesAllocated,
+                objectsAllocated, timeStamp, reason));
     }
 
     /**
@@ -615,7 +615,7 @@ public class ClientData {
      * @return a map containing the info values for the specified heap.
      *         Returns <code>null</code> if the heap ID is unknown.
      */
-    public synchronized Map<String, Long> getVmHeapInfo(int heapId) {
+    public synchronized HeapInfo getVmHeapInfo(int heapId) {
         return mHeapInfoMap.get(heapId);
     }
 
