@@ -1,5 +1,6 @@
 local.properties
 .idea
+gradle/build
 tests/*/build
 tests/api/*/build
 tests/applibtest/*/build

@@ -10,6 +10,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/test/groovy" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/device-test/groovy" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/build-test/groovy" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/src/integ-test/groovy" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/../../../../out/host/gradle/tools/base/gradle" />
       <excludeFolder url="file://$MODULE_DIR$/.gradle" />
     </content>
