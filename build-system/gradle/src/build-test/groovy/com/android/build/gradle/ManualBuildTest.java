@@ -288,6 +288,29 @@ public class ManualBuildTest extends BuildTest {
         }
     }
 
+    public void testRsEnabledAnnotations() throws IOException {
+        File project = new File(testDir, "extractRsEnabledAnnotations");
+
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+                project,
+                Collections.<String>emptyList(),
+                "clean", "assembleDebug");
+
+        // check the resulting .aar file to ensure annotations.zip inclusion.
+        File archiveFile = new File(project, "build/outputs/aar/extractRsEnabledAnnotations.aar");
+        assertTrue(archiveFile.isFile());
+        ZipFile archive = null;
+        try {
+            archive = new ZipFile(archiveFile);
+            ZipEntry entry = archive.getEntry("annotations.zip");
+            assertNotNull(entry);
+        } finally {
+            if (archive != null) {
+                archive.close();
+            }
+        }
+    }
+
     public void test3rdPartyTests() throws Exception {
         // custom because we want to run deviceCheck even without devices, since we use
         // a fake DeviceProvider that doesn't use a device, but only record the calls made

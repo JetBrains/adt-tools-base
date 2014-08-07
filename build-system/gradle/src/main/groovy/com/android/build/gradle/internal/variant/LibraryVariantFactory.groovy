@@ -422,7 +422,9 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
         task.source = variantData.getJavaSources()
         task.encoding = extension.compileOptions.encoding
         task.sourceCompatibility = extension.compileOptions.sourceCompatibility
-        task.classpath = project.files(basePlugin.getAndroidBuilder().getCompileClasspath(config))
+        task.conventionMapping.classpath =  {
+            project.files(basePlugin.getAndroidBuilder().getCompileClasspath(config))
+        }
         task.dependsOn variantData.javaCompileTask
 
         // Setup the boot classpath just before the task actually runs since this will
