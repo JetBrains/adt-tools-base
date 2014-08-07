@@ -20,7 +20,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.io.ByteStreams;
 
 import org.gradle.reporting.ReportRenderer;
-import org.gradle.reporting.TextReportRenderer;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
