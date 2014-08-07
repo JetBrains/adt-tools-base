@@ -608,10 +608,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             return fileValidity;
         }
 
-        // get the first dataset to check on the file if it's part of a IGNORED_FILE.
-        // This is mostly a work-around for the fact that the method is on data sets.
-        S tempDataSet = mDataSets.get(0);
-        if (!tempDataSet.checkFileForAndroidRes(file)) {
+        if (DataSet.isIgnored(file)) {
             fileValidity.status = FileValidity.FileStatus.IGNORED_FILE;
             return fileValidity;
         }
