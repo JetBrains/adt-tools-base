@@ -63,6 +63,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ColorUsageDetector.ISSUE);
         issues.add(CommentDetector.EASTER_EGG);
         issues.add(CommentDetector.STOP_SHIP);
+        issues.add(CustomViewDetector.ISSUE);
         issues.add(CutPasteDetector.ISSUE);
         issues.add(DeprecationDetector.ISSUE);
         issues.add(DetectMissingPrefix.MISSING_NAMESPACE);

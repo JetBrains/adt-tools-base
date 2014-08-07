@@ -29,6 +29,7 @@ import java.io.File;
 import lombok.ast.ClassDeclaration;
 import lombok.ast.ConstructorDeclaration;
 import lombok.ast.MethodDeclaration;
+import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
 import lombok.ast.Position;
 
@@ -153,7 +154,7 @@ public class JavaContext extends Context {
     }
 
     @Nullable
-    public static ClassDeclaration findSurroundingClass(Node scope) {
+    public static ClassDeclaration findSurroundingClass(@Nullable Node scope) {
         while (scope != null) {
             Class<? extends Node> type = scope.getClass();
             // The Lombok AST uses a flat hierarchy of node type implementation classes
@@ -200,5 +201,27 @@ public class JavaContext extends Context {
     @Nullable
     public TypeDescriptor getType(@NonNull Node node) {
         return mParser.getType(this, node);
+    }
+
+    /**
+     * Returns true if the given method invocation node corresponds to a call on a
+     * {@code android.content.Context}
+     *
+     * @param node the method call node
+     * @return true iff the method call is on a class extending context
+     */
+    public boolean isContextMethod(@NonNull MethodInvocation node) {
+        // Method name used in many other contexts where it doesn't have the
+        // same semantics; only use this one if we can resolve types
+        // and we're certain this is the Context method
+        ResolvedNode resolved = resolve(node);
+        if (resolved instanceof JavaParser.ResolvedMethod) {
+            JavaParser.ResolvedMethod method = (JavaParser.ResolvedMethod) resolved;
+            JavaParser.ResolvedClass containingClass = method.getContainingClass();
+            if (containingClass.isSubclassOf("android.content.Context", false)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

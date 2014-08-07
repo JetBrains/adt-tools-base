@@ -16,10 +16,6 @@
 
 package com.android.tools.lint.checks;
 
-import static com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import static com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
@@ -71,10 +67,8 @@ public class CheckPermissionDetector extends Detector implements Detector.JavaSc
             @NonNull MethodInvocation node) {
         if (node.getParent() instanceof ExpressionStatement) {
             String check = node.astName().astValue();
-            if (CHECK_PERMISSION.equals(check)) {
-                if (!ensureContextMethod(context, node)) {
-                    return;
-                }
+            if (CHECK_PERMISSION.equals(check) && !context.isContextMethod(node)) {
+                return;
             }
             assert check.startsWith("check") : check;
             String enforce = "enforce" + check.substring("check".length());
@@ -83,23 +77,6 @@ public class CheckPermissionDetector extends Detector implements Detector.JavaSc
                             "The result of %1$s is not used; did you mean to call %2$s?",
                             check, enforce), null);
         }
-    }
-
-    private static boolean ensureContextMethod(
-            @NonNull JavaContext context,
-            @NonNull MethodInvocation node) {
-        // Method name used in many other contexts where it doesn't have the
-        // same semantics; only use this one if we can resolve types
-        // and we're certain this is the Context method
-        ResolvedNode resolved = context.resolve(node);
-        if (resolved instanceof ResolvedMethod) {
-            ResolvedMethod method = (ResolvedMethod) resolved;
-            ResolvedClass containingClass = method.getContainingClass();
-            if (containingClass.isSubclassOf("android.content.Context", false)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @Override
