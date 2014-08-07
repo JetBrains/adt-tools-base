@@ -226,6 +226,7 @@ public class ManifestMerger2 {
                 new MapBasedKeyBasedValueResolver<String>(finalPlaceHolderValues);
         PlaceholderHandler placeholderHandler = new PlaceholderHandler();
         placeholderHandler.visit(
+                mMergeType,
                 xmlDocumentOptional.get(),
                 placeHolderValueResolver,
                 mergingReportBuilder);

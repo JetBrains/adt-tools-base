@@ -52,6 +52,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "06_inject_attributes_with_specific_prefix.xml",
             "07_no_package_provided.xml",
             "08_no_library_package_provided.xml",
+            "08b_library_injection.xml",
             "10_activity_merge",
             "11_activity_dup",
             "12_alias_dup",
