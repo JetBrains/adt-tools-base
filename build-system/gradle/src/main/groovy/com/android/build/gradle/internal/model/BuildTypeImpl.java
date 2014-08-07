@@ -25,6 +25,7 @@ import com.android.builder.model.NdkConfig;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -46,6 +47,7 @@ class BuildTypeImpl implements BuildType, Serializable {
     private boolean runProguard;
     private boolean zipAlign;
     private boolean embedMicroApp;
+    private Map<String, String> mManifestPlaceholders;
 
     @NonNull
     static BuildTypeImpl cloneBuildType(BuildType buildType) {
@@ -61,6 +63,7 @@ class BuildTypeImpl implements BuildType, Serializable {
         clonedBuildType.runProguard = buildType.isRunProguard();
         clonedBuildType.zipAlign = buildType.isZipAlign();
         clonedBuildType.embedMicroApp = buildType.isEmbedMicroApp();
+        clonedBuildType.mManifestPlaceholders = buildType.getManifestPlaceholders();
 
         return clonedBuildType;
     }
@@ -154,5 +157,11 @@ class BuildTypeImpl implements BuildType, Serializable {
     @Override
     public boolean isEmbedMicroApp() {
         return embedMicroApp;
+    }
+
+    @Override
+    @NonNull
+    public Map<String, String> getManifestPlaceholders() {
+        return mManifestPlaceholders;
     }
 }
