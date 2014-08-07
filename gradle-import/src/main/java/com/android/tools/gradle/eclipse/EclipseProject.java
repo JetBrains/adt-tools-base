@@ -68,9 +68,12 @@ import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -113,6 +116,8 @@ class EclipseProject implements Comparable<EclipseProject> {
     private Map<String,String> mProjectVariableMap;
     private Map<String,String> mLinkedResourceMap;
     private File mInstrumentationDir;
+    private Map<File, Charset> mFileCharsets;
+    private Charset mDefaultCharset;
 
     private EclipseProject(
             @NonNull GradleImport importer,
@@ -144,6 +149,7 @@ class EclipseProject implements Comparable<EclipseProject> {
 
         initClassPathEntries();
         initJni();
+        initEncoding();
     }
 
     @NonNull
@@ -355,6 +361,62 @@ class EclipseProject implements Comparable<EclipseProject> {
                 }
             }
         }
+    }
+
+    private void initEncoding() throws IOException {
+        File propertyFile = new File(mDir, ".settings" + separator +
+                "org.eclipse.core.resources.prefs");
+        if (propertyFile.exists()) {
+            Properties properties = GradleImport.getProperties(propertyFile);
+            if (properties != null) {
+                Enumeration<?> enumeration = properties.propertyNames();
+                String prefix = "encoding/";
+                while (enumeration.hasMoreElements()) {
+                    Object next = enumeration.nextElement();
+                    if (next instanceof String) {
+                        String key = (String) next;
+                        if (key.startsWith(prefix)) {
+                            String path = key.substring(prefix.length());
+                            Object value = properties.get(key);
+                            if (value instanceof String) {
+                                String encoding = (String)value;
+                                if (!encoding.isEmpty()) {
+                                    try {
+                                        Charset charset = Charset.forName(encoding);
+                                        if ("<project>".equals(path)) {
+                                            mDefaultCharset = charset;
+                                        } else {
+                                            if (mFileCharsets == null) {
+                                                mFileCharsets = Maps.newHashMap();
+                                            }
+                                            File file = resolveVariableExpression(path);
+                                            if (file != null) {
+                                                mFileCharsets.put(file, charset);
+                                            } else {
+                                                mFileCharsets.put(new File(path), charset);
+                                            }
+                                        }
+                                    } catch (UnsupportedCharsetException uce) {
+                                        mImporter.reportWarning(this, propertyFile,
+                                                "Unknown charset " + encoding);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Nullable
+    Charset getProjectEncoding() {
+        return mDefaultCharset;
+    }
+
+    @Nullable
+    Charset getFileEncoding(@NonNull File file) {
+        return mFileCharsets != null ? mFileCharsets.get(file) : null;
     }
 
     private void initInstrumentation() throws IOException {

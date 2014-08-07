@@ -71,6 +71,8 @@ import junit.framework.TestCase;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -3110,6 +3112,192 @@ public class GradleImportTest extends TestCase {
                 assertEquals(new File(sdkPath), importer.getSdkLocation());
             }
         }
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testEncoding() throws Exception {
+        // Checks that we properly convert source files from other encodings to UTF-8.
+        // The following scenarios are tested:
+        //  - For files that have a specific encoding associated with that file, use it
+        //  - For XML files that specify an encoding in the prologue, use it
+        //  - For files that have a specific encoding specified by a BOM, use it
+        //  - For files that are in a project where there is a project-specific encoding, use it
+        //  - For all other files, use the default encoding specified in the workspace
+
+        File root = Files.createTempDir();
+        File app = createLibrary(root, "test.lib2.pkg", false);
+
+        // Write some source files where encoding matters
+        // The Project App will have a default project encoding of MacRoman
+        // The workspace will have a default encoding of windows1252
+        // Some individual files will specify a file encoding of iso-8859-1
+
+        Charset macRoman;
+        Charset windows1252;
+        Charset utf32;
+        Charset iso8859 = Charsets.ISO_8859_1;
+        try {
+            macRoman = Charset.forName("MacRoman");
+            windows1252 = Charset.forName("windows-1252");
+            utf32 = Charset.forName("UTF_32");
+        } catch (UnsupportedCharsetException uce) {
+            System.err.println("This test machine does not have all the charsets we need: "
+                    + uce.getCharsetName() + ": skipping test");
+            return;
+        }
+
+        String java = ""
+                + "package test.pkg;\n"
+                + "\n"
+                + "public class Text {\n"
+                + "\tpublic static final String TEXT_1 = \"This is plain\";\n"
+                + "\tpublic static final String TEXT_2 = \"\u00e6\u00d8\u00e5\";\n"
+                + "\tpublic static final String TEXT_3 = \"10\u00a3\";\n"
+                + "}\n";
+        String xml = ""
+                + "<?xml version=\"1.0\" encoding=\"" + windows1252.name() + "\"?>\n"
+                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    android:layout_width=\"match_parent\"\n"
+                + "    android:layout_height=\"match_parent\"\n"
+                + "    android:orientation=\"vertical\" >\n"
+                + "<!-- \u00a3 -->\n"
+                + "</LinearLayout>";
+
+        File appFile = new File(root, "App/src/test/pkg/Text.java".replace('/', separatorChar));
+        File lib1File = new File(root, "Lib1/src/test/pkg/Text.java".replace('/', separatorChar));
+        File lib2File = new File(root, "Lib2/src/test/pkg/Text.java".replace('/', separatorChar));
+        File xmlFile = new File(root, "App/res/layout/foo.xml".replace('/', separatorChar));
+
+        appFile.getParentFile().mkdirs();
+        lib1File.getParentFile().mkdirs();
+        lib2File.getParentFile().mkdirs();
+        xmlFile.getParentFile().mkdirs();
+
+        Files.write(java, appFile, iso8859);
+        Files.write(java, lib1File, macRoman);
+        Files.write(java, lib2File, windows1252);
+        Files.write(xml, xmlFile, windows1252);
+
+        assertEquals(java, Files.toString(appFile, iso8859));
+        assertEquals(java, Files.toString(lib1File, macRoman));
+        assertEquals(java, Files.toString(lib2File, windows1252));
+        assertEquals(xml, Files.toString(xmlFile, windows1252));
+
+        // Make sure that these contents don't happen to be the same regardless of encoding
+        assertFalse(java.equals(Files.toString(appFile, UTF_8)));
+        assertFalse(java.equals(Files.toString(lib1File, UTF_8)));
+        assertFalse(java.equals(Files.toString(lib2File, UTF_8)));
+        assertFalse(xml.equals(Files.toString(xmlFile, UTF_8)));
+
+        // Write App project specific encoding, and file specific encoding
+        File file = new File(root, "App" + separator + ".settings" + separator
+                + "org.eclipse.core.resources.prefs");
+        file.getParentFile().mkdirs();
+        Files.write(""
+                + "eclipse.preferences.version=1\n"
+                + "encoding//src/test/pkg/Text.java=" + iso8859.name() + "\n"
+                + "encoding/<project>=" + macRoman.name(), file, Charsets.US_ASCII);
+
+        // Write Lib1 project specific encoding
+        file = new File(root, "Lib1" + separator + ".settings" + separator
+                + "org.eclipse.core.resources.prefs");
+        file.getParentFile().mkdirs();
+        Files.write(""
+                + "eclipse.preferences.version=1\n"
+                + "encoding/<project>=" + macRoman.name(), file, Charsets.US_ASCII);
+
+        // Write workspace default encoding, used for the Lib2 file
+        final File workspace = new File(root, "workspace");
+        workspace.mkdirs();
+        File metadata = new File(workspace, ".metadata");
+        metadata.mkdirs();
+        new File(metadata, "version.ini").createNewFile();
+        assertTrue(GradleImport.isEclipseWorkspaceDir(workspace));
+        File resourceFile = new File(workspace, (".metadata/.plugins/org.eclipse.core.runtime/"
+                + ".settings/org.eclipse.core.resources.prefs").replace('/', separatorChar));
+        resourceFile.getParentFile().mkdirs();
+        Files.write(""
+                + "eclipse.preferences.version=1\n"
+                + "encoding=" + windows1252.name() + "\n"
+                + "version=1", resourceFile, Charsets.US_ASCII);
+
+        File imported = checkProject(app, ""
+                        + MSG_HEADER
+                        + MSG_MANIFEST
+                        + MSG_UNHANDLED
+                        + "From App:\n"
+                        + "* .gitignore\n"
+                        + "From JavaLib:\n"
+                        + "* .gitignore\n"
+                        + MSG_FOLDER_STRUCTURE
+                        + "In JavaLib:\n"
+                        + "* src/ => javaLib/src/main/java/\n"
+                        + "In Lib1:\n"
+                        + "* AndroidManifest.xml => lib1/src/main/AndroidManifest.xml\n"
+                        + "* src/ => lib1/src/main/java/\n"
+                        + "In Lib2:\n"
+                        + "* AndroidManifest.xml => lib2/src/main/AndroidManifest.xml\n"
+                        + "* src/ => lib2/src/main/java/\n"
+                        + "In App:\n"
+                        + "* AndroidManifest.xml => app/src/main/AndroidManifest.xml\n"
+                        + "* res/ => app/src/main/res/\n"
+                        + "* src/ => app/src/main/java/\n"
+                        + MSG_FOOTER,
+              false /* checkBuild */, new ImportCustomizer() {
+                    @Override
+                    public void customize(GradleImport importer) {
+                        importer.setEclipseWorkspace(workspace);
+                    }
+                });
+
+        // Read back text files *as UTF-8* and make sure it's correct
+        File newAppFile = new File(imported, "app/src/main/java/test/pkg/Text.java".replace('/',
+                separatorChar));
+        File newLib1File = new File(imported, "lib1/src/main/java/test/pkg/Text.java".replace('/',
+                separatorChar));
+        File newLib2File = new File(imported, "lib2/src/main/java/test/pkg/Text.java".replace('/',
+                separatorChar));
+        File newXmlFile = new File(imported, "app/src/main/res/layout/foo.xml".replace('/',
+                separatorChar));
+        assertTrue(newAppFile.exists());
+        assertTrue(newLib1File.exists());
+        assertTrue(newLib2File.exists());
+        assertTrue(newXmlFile.exists());
+
+        assertEquals(java, Files.toString(newAppFile, UTF_8));
+        assertEquals(java, Files.toString(newLib1File, UTF_8));
+        assertEquals(java, Files.toString(newLib2File, UTF_8));
+        assertFalse(xml.equals(Files.toString(newXmlFile, UTF_8))); // references old encoding
+        assertEquals(xml.replace(windows1252.name(), "utf-8"), Files.toString(newXmlFile, UTF_8));
+
+        deleteDir(root);
+        deleteDir(imported);
+    }
+
+    public void testIsTextFile() {
+        assertTrue(GradleImport.isTextFile(new File("foo.java")));
+        assertTrue(GradleImport.isTextFile(new File("foo.xml")));
+        assertTrue(GradleImport.isTextFile(new File("parent" + separator + "foo.xml")));
+        assertTrue(GradleImport.isTextFile(new File("parent" + separator + "foo.h")));
+        assertTrue(GradleImport.isTextFile(new File("parent" + separator + "foo.c")));
+        assertTrue(GradleImport.isTextFile(new File("parent" + separator + "foo.cpp")));
+        assertTrue(GradleImport.isTextFile(new File("parent" + separator + "foo.properties")));
+        assertTrue(GradleImport.isTextFile(new File("parent" + separator + "foo.aidl")));
+        assertTrue(GradleImport.isTextFile(new File("parent" + separator + "foo.rs")));
+        assertTrue(GradleImport.isTextFile(new File("parent" + separator + "foo.fs")));
+        assertTrue(GradleImport.isTextFile(new File("parent" + separator + "foo.rsh")));
+        assertTrue(GradleImport.isTextFile(new File("parent" + separator + "README.txt")));
+        assertTrue(GradleImport.isTextFile(new File("parent" + separator + "build.gradle")));
+        assertTrue(GradleImport.isTextFile(new File("parent" + separator + "proguard.cfg")));
+        assertTrue(GradleImport.isTextFile(new File("parent" + separator + "optimize.pro")));
+
+        assertFalse(GradleImport.isTextFile(new File("parent" + separator + "Foo.class")));
+        assertFalse(GradleImport.isTextFile(new File("parent" + separator + "foo.jar")));
+        assertFalse(GradleImport.isTextFile(new File("parent" + separator + "foo.png")));
+        assertFalse(GradleImport.isTextFile(new File("parent" + separator + "foo.9.png")));
+        assertFalse(GradleImport.isTextFile(new File("parent" + separator + "foo.jpg")));
+        assertFalse(GradleImport.isTextFile(new File("parent" + separator + "foo.so")));
+        assertFalse(GradleImport.isTextFile(new File("parent" + separator + "foo.dll")));
     }
 
     // --- Unit test infrastructure from this point on ----
