@@ -6,6 +6,6 @@ android {
 }
 
 dependencies {
-    compile 'joda-time:joda-time:2.1'
-    compile 'com.squareup.dagger:dagger:1.2.0'
+    compile 'com.google.guava:guava:11.0.2'
+    compile 'com.google.guava:guava:16.0-rc1'
 }
