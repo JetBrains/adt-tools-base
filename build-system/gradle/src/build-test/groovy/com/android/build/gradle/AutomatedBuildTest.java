@@ -16,8 +16,12 @@
 
 package com.android.build.gradle;
 
+import com.google.common.collect.ImmutableList;
+
 import junit.framework.Test;
 import junit.framework.TestSuite;
+
+import java.util.List;
 
 /**
  * Automated tests building a set of projects using a set of gradle versions.
@@ -79,6 +83,11 @@ public class AutomatedBuildTest extends BuildTest {
             /*"autorepo"*/
     };
 
+    private static final List<String> ndkPluginTests = ImmutableList.of(
+            "ndkSanAngeles2",
+            "ndkJniLib2"
+    );
+
     private static final String[] sReportProjects = new String[] {
             "basic", "flavorlib"
     };
@@ -93,6 +102,14 @@ public class AutomatedBuildTest extends BuildTest {
             }
             // first the project we build on all available versions of Gradle
             for (String projectName : sBuiltProjects) {
+                // Disable NDK plugin tests on non-Linux platforms due to Gradle incorrectly
+                // setting arguments based on current OS instead of target OS.
+                if (!System.getProperty("os.name").equals("Linux") &&
+                        ndkPluginTests.contains(projectName)) {
+                    // TODO: Remove this when Gradle is fix.
+                    continue;
+                }
+
                 String testName = "build_" + projectName + "_" + gradleVersion;
 
                 AutomatedBuildTest test = (AutomatedBuildTest) TestSuite.createTest(

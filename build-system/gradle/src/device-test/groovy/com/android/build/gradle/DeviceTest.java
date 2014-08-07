@@ -16,10 +16,13 @@
 
 package com.android.build.gradle;
 
+import com.google.common.collect.ImmutableList;
+
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
 import java.util.Collections;
+import java.util.List;
 
 /**
  * DeviceConnector tests.
@@ -69,6 +72,10 @@ public class DeviceTest extends BuildTest {
             "sameNamedLibs"
     };
 
+    private static final List<String> ndkPluginTests = ImmutableList.of(
+            "ndkJniLib2"
+    );
+
     public static Test suite() {
         TestSuite suite = new TestSuite();
         suite.setName("DeviceTest");
@@ -79,6 +86,14 @@ public class DeviceTest extends BuildTest {
             }
             // first the project we build on all available versions of Gradle
             for (String projectName : sBuiltProjects) {
+                // Disable NDK plugin tests on non-Linux platforms due to Gradle incorrectly
+                // setting arguments based on current OS instead of target OS.
+                if (!System.getProperty("os.name").equals("Linux") &&
+                        ndkPluginTests.contains(projectName)) {
+                    // TODO: Remove this when Gradle is fix.
+                    continue;
+                }
+
                 String testName = "check_" + projectName + "_" + gradleVersion;
 
                 DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
