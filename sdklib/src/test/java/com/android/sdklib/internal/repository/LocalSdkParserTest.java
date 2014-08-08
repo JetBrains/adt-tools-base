@@ -300,8 +300,8 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
                 "[Android SDK Build-tools, revision 18.3.4 rc5, " +
                 "Android SDK Build-tools, revision 3.0.1, " +
                 "Android SDK Build-tools, revision 3, " +
-                "Broken Build-Tools Package, revision 5.0.1, " +
                 "Broken Build-Tools Package, revision 5.0.2, " +
+                "Broken Build-Tools Package, revision 5.0.1, " +
                 "Platform Tools, revision 17.1.2, Tools, revision 1.0.1]",
                 Arrays.toString(sort(mParser.parseSdk(mSdkMan.getLocation(),
                         mSdkMan,
