@@ -148,6 +148,30 @@ public class GradleCoordinate {
         }
     }
 
+    /**
+     * Like NumberComponent, but used for numeric strings that have leading zeroes which
+     * we must preserve
+     */
+    public static class PaddedNumberComponent extends NumberComponent {
+        private final String mString;
+
+        public PaddedNumberComponent(int number, String string) {
+            super(number);
+            mString = string;
+        }
+
+        @Override
+        public String toString() {
+            return mString;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof PaddedNumberComponent
+                    && ((PaddedNumberComponent) o).mString.equals(mString);
+        }
+    }
+
     public static class StringComponent extends RevisionComponent {
         private final String mString;
 
@@ -398,7 +422,7 @@ public class GradleCoordinate {
                 buffer.append(c);
             }
         }
-        if (buffer.length() > 0 || components.size() == 0) {
+        if (buffer.length() > 0 || components.isEmpty()) {
             flushBuffer(components, buffer, true);
         }
         return components;
@@ -410,14 +434,20 @@ public class GradleCoordinate {
         if (buffer.length() == 0) {
             newComponent = new NumberComponent(0);
         } else {
+            String string = buffer.toString();
             try {
-                newComponent = new NumberComponent(Integer.parseInt(buffer.toString()));
-            } catch(NumberFormatException e) {
-                newComponent = new StringComponent(buffer.toString());
+                int number = Integer.parseInt(string);
+                if (string.length() > 1 && string.charAt(0) == '0') {
+                    newComponent = new PaddedNumberComponent(number, string);
+                } else {
+                    newComponent = new NumberComponent(number);
+                }
+            } catch (NumberFormatException e) {
+                newComponent = new StringComponent(string);
             }
         }
         buffer.setLength(0);
-        if (components.size() > 0 &&
+        if (!components.isEmpty() &&
                 components.get(components.size() - 1) instanceof ListComponent) {
             ListComponent component = (ListComponent) components.get(components.size() - 1);
             if (!component.mClosed) {

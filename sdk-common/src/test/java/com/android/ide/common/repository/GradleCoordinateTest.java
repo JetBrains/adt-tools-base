@@ -291,4 +291,38 @@ public class GradleCoordinateTest extends BaseTestCase {
       GradleCoordinate b = GradleCoordinate.parseVersionOnly(revisionB);
       assertFalse(b.isPreview());
     }
+
+    public void testLeadingZeroes() {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=74612
+        // The Gradle dependency
+        //   compile 'com.google.android.gms:play-services:5.2.08'
+        // is not the same as
+        //   compile 'com.google.android.gms:play-services:5.2.8'
+        // So we have to keep string representations around
+
+        GradleCoordinate v5_0_89 = GradleCoordinate.parseCoordinateString(
+                "com.google.android.gms:play-services:5.0.89");
+        assertNotNull(v5_0_89);
+        assertEquals("com.google.android.gms:play-services:5.0.89", v5_0_89.toString());
+        assertEquals("5.0.89", v5_0_89.getFullRevision());
+
+        GradleCoordinate v5_2_08 = GradleCoordinate.parseCoordinateString(
+                "com.google.android.gms:play-services:5.2.08");
+        assertNotNull(v5_2_08);
+        assertEquals("5.2.08", v5_2_08.getFullRevision());
+
+        assertEquals("com.google.android.gms:play-services:5.2.08", v5_2_08.toString());
+
+        // Same artifact: 5.2.08 == 5.2.8
+        //noinspection ConstantConditions
+        assertFalse(v5_2_08.equals(GradleCoordinate.parseCoordinateString(
+                "com.google.android.gms:play-services:5.2.8")));
+
+        assertEquals(
+                GradleCoordinate.parseCoordinateString(
+                        "com.google.android.gms:play-services:5.2.08"),
+                GradleCoordinate.parseCoordinateString(
+                        "com.google.android.gms:play-services:5.2.08"));
+
+    }
 }
