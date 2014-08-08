@@ -82,17 +82,20 @@ public class WebViewDetector extends LayoutDetector {
             Attr width = parent.getAttributeNodeNS(ANDROID_URI, ATTR_LAYOUT_WIDTH);
             Attr height = parent.getAttributeNodeNS(ANDROID_URI, ATTR_LAYOUT_HEIGHT);
             Attr attr = null;
-            if (width != null && VALUE_WRAP_CONTENT.equals(height.getValue())) {
+            if (width != null && VALUE_WRAP_CONTENT.equals(width.getValue())) {
                 attr = width;
             }
             if (height != null && VALUE_WRAP_CONTENT.equals(height.getValue())) {
                 attr = height;
             }
             if (attr != null) {
-                String message = "Placing a <WebView> in a parent element that uses a "
-                        + "wrap_content size can lead to subtle bugs; use match_parent";
+                String message = String.format("Placing a <WebView> in a parent element that "
+                        + "uses a wrap_content %1$s can lead to subtle bugs; use match_parent "
+                        + "instead", attr.getLocalName());
                 Location location = context.getLocation(element);
-                location.setSecondary(context.getLocation(attr));
+                Location secondary = context.getLocation(attr);
+                secondary.setMessage("wrap_content here may not work well with WebView below");
+                location.setSecondary(secondary);
                 context.report(ISSUE, element, location, message, null);
             }
         }
