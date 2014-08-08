@@ -25,13 +25,31 @@ public class WebViewDetectorTest extends AbstractCheckTest {
         return new WebViewDetector();
     }
 
-    public void test() throws Exception {
-        assertEquals("res/layout/webview.xml:19: Error: Placing a <WebView> in a parent element that uses a wrap_content size can lead to subtle bugs; use match_parent [WebViewLayout]\n"
+    public void testMatchParentWidth() throws Exception {
+        assertEquals("res/layout/webview.xml:19: Error: Placing a <WebView> in a parent element that uses a wrap_content layout_height can lead to subtle bugs; use match_parent instead [WebViewLayout]\n"
                 + "        <WebView\n"
                 + "        ^\n"
-                + "    res/layout/webview.xml:16: <No location-specific message\n"
+                + "    res/layout/webview.xml:16: wrap_content here may not work well with WebView below\n"
                 + "1 errors, 0 warnings\n",
 
                 lintFiles("res/layout/webview.xml"));
+    }
+
+    public void testMatchParentHeight() throws Exception {
+        assertEquals(""
+                + "res/layout/webview2.xml:20: Error: Placing a <WebView> in a parent element that uses a wrap_content layout_width can lead to subtle bugs; use match_parent instead [WebViewLayout]\n"
+                + "        <WebView\n"
+                + "        ^\n"
+                + "    res/layout/webview2.xml:16: wrap_content here may not work well with WebView below\n"
+                + "1 errors, 0 warnings\n",
+
+                lintFiles("res/layout/webview2.xml"));
+    }
+    public void testMissingLayoutHeight() throws Exception {
+        // Regression test for
+        //   https://code.google.com/p/android/issues/detail?id=74646
+        assertEquals("No warnings.",
+
+                lintFiles("res/layout/webview3.xml"));
     }
 }
