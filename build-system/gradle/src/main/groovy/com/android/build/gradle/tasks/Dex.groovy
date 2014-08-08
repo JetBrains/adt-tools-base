@@ -53,6 +53,8 @@ public class Dex extends BaseTask {
     @Input
     boolean multiDex = false
 
+    File tmpFolder
+
     /**
      * Actual entry point for the action.
      * Calls out to the doTaskAction as needed.
@@ -96,10 +98,12 @@ public class Dex extends BaseTask {
 
     private void doTaskAction(boolean incremental) {
         File outFolder = getOutputFolder()
-
         if (!incremental) {
             emptyFolder(outFolder)
         }
+
+        File tmpFolder = getTmpFolder()
+        tmpFolder.mkdirs()
 
         getBuilder().convertByteCode(
                 getInputFiles(),
@@ -108,6 +112,7 @@ public class Dex extends BaseTask {
                 getMultiDex(),
                 getDexOptions(),
                 getAdditionalParameters(),
+                tmpFolder,
                 incremental)
     }
 }

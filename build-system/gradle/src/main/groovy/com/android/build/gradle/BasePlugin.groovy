@@ -1854,6 +1854,8 @@ public abstract class BasePlugin {
             config.isMultiDexEnabled()
         }
 
+        dexTask.tmpFolder = project.file("$project.buildDir/${FD_INTERMEDIATES}/tmp/dex/${config.dirName}")
+
         JacocoInstrumentTask jacocoTask = null
         Copy agentTask = null
         File jacocoAgentJar = null
