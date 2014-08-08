@@ -19,6 +19,7 @@ package com.android.ide.common.res2;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.FD_RES_DRAWABLE;
 import static com.android.SdkConstants.FD_RES_LAYOUT;
+import static com.android.SdkConstants.TAG_ATTR;
 
 import com.android.SdkConstants;
 import com.android.resources.ResourceFolderType;
@@ -27,6 +28,7 @@ import com.android.testutils.TestUtils;
 import com.android.utils.SdkUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
@@ -954,6 +956,82 @@ public class ResourceMergerTest extends BaseTestCase {
         removedIcon = mergedMap.get("drawable/removed");
         assertTrue(removedIcon.isEmpty());
     }
+
+    public void testMergedDeclareStyleable() throws Exception {
+        File root = TestUtils.getRoot("resources", "declareStyleable");
+
+        // load both base and overlay set
+        File baseRoot = new File(root, "base");
+        ResourceSet baseSet = new ResourceSet("main");
+        baseSet.addSource(baseRoot);
+        RecordingLogger logger = new RecordingLogger();
+        baseSet.loadFromFiles(logger);
+        checkLogger(logger);
+
+        File overlayRoot = new File(root, "overlay");
+        ResourceSet overlaySet = new ResourceSet("overlay");
+        overlaySet.addSource(overlayRoot);
+        logger = new RecordingLogger();
+        overlaySet.loadFromFiles(logger);
+        checkLogger(logger);
+
+        // create a merger
+        ResourceMerger resourceMerger = new ResourceMerger();
+        resourceMerger.addDataSet(baseSet);
+        resourceMerger.addDataSet(overlaySet);
+
+        // write the merge result.
+        File folder = Files.createTempDir();
+        folder.deleteOnExit();
+
+        MergedResourceWriter writer = new MergedResourceWriter(folder, null /*aaptRunner*/);
+        resourceMerger.mergeData(writer, false /*doCleanUp*/);
+
+        // load the result as a set.
+        ResourceSet mergedSet = new ResourceSet("merged");
+        mergedSet.addSource(folder);
+        logger = new RecordingLogger();
+        mergedSet.loadFromFiles(logger);
+        checkLogger(logger);
+
+        ListMultimap<String, ResourceItem> map = mergedSet.getDataMap();
+        assertEquals(4, map.size());
+
+        List<ResourceItem> items = map.get("declare-styleable/foo");
+        assertNotNull(items);
+        assertEquals(1, items.size());
+
+        ResourceItem item = items.get(0);
+        assertNotNull(item);
+
+        // now we need to look at the item's value (which is the XML).
+        // We're looking for 3 attributes.
+        List<String> expectedAttrs = Lists.newArrayList("bar", "bar1", "boo");
+        Node rootNode = item.getValue();
+        assertNotNull(rootNode);
+        NodeList sourceNodes = rootNode.getChildNodes();
+        for (int i = 0, n = sourceNodes.getLength(); i < n; i++) {
+            Node sourceNode = sourceNodes.item(i);
+
+            if (sourceNode.getNodeType() != Node.ELEMENT_NODE ||
+                    !TAG_ATTR.equals(sourceNode.getLocalName())) {
+                continue;
+            }
+
+            Attr attr = (Attr) sourceNode.getAttributes().getNamedItem(ATTR_NAME);
+            if (attr == null) {
+                continue;
+            }
+
+            String attrName = attr.getValue();
+
+            assertTrue("Check expected " + attrName, expectedAttrs.contains(attrName));
+            expectedAttrs.remove(attrName);
+        }
+
+        assertTrue("Check emptiness of " + expectedAttrs.toString(), expectedAttrs.isEmpty());
+    }
+
 
     /**
      * Creates a fake merge with given sets.
