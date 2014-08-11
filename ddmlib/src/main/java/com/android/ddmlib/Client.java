@@ -86,7 +86,8 @@ public class Client {
     // User interface state.  Changing the value causes a message to be
     // sent to the client.
     private boolean mThreadUpdateEnabled;
-    private boolean mHeapUpdateEnabled;
+    private boolean mHeapInfoUpdateEnabled;
+    private boolean mHeapSegmentUpdateEnabled;
 
     /*
      * Read/write buffers.  We can get large quantities of data from the
@@ -139,7 +140,8 @@ public class Client {
         mClientData = new ClientData(pid);
 
         mThreadUpdateEnabled = DdmPreferences.getInitialThreadUpdate();
-        mHeapUpdateEnabled = DdmPreferences.getInitialHeapUpdate();
+        mHeapInfoUpdateEnabled = DdmPreferences.getInitialHeapUpdate();
+        mHeapSegmentUpdateEnabled = DdmPreferences.getInitialHeapUpdate();
     }
 
     /**
@@ -417,12 +419,28 @@ public class Client {
      * @param enabled the enable flag
      */
     public void setHeapUpdateEnabled(boolean enabled) {
-        mHeapUpdateEnabled = enabled;
+        setHeapInfoUpdateEnabled(enabled);
+        setHeapSegmentUpdateEnabled(enabled);
+    }
+
+    public void setHeapInfoUpdateEnabled(boolean enabled) {
+        mHeapInfoUpdateEnabled = enabled;
 
         try {
             HandleHeap.sendHPIF(this,
                     enabled ? HandleHeap.HPIF_WHEN_EVERY_GC : HandleHeap.HPIF_WHEN_NEVER);
 
+        } catch (IOException ioe) {
+            // ignore it here; client will clean up shortly
+        }
+
+        update(CHANGE_HEAP_MODE);
+    }
+
+    public void setHeapSegmentUpdateEnabled(boolean enabled) {
+        mHeapSegmentUpdateEnabled = enabled;
+
+        try {
             HandleHeap.sendHPSG(this,
                     enabled ? HandleHeap.WHEN_GC : HandleHeap.WHEN_DISABLE,
                     HandleHeap.WHAT_MERGE);
@@ -431,6 +449,10 @@ public class Client {
         }
 
         update(CHANGE_HEAP_MODE);
+    }
+
+    void initializeHeapUpdateStatus() throws IOException {
+        setHeapInfoUpdateEnabled(mHeapInfoUpdateEnabled);
     }
 
     /**
@@ -445,11 +467,11 @@ public class Client {
     }
 
     /**
-     * Returns whether the heap update is enabled.
+     * Returns whether any heap update is enabled.
      * @see #setHeapUpdateEnabled(boolean)
      */
     public boolean isHeapUpdateEnabled() {
-        return mHeapUpdateEnabled;
+        return mHeapInfoUpdateEnabled || mHeapSegmentUpdateEnabled;
     }
 
     /**

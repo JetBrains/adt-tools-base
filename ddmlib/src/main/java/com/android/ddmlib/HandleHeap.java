@@ -73,10 +73,7 @@ final class HandleHeap extends ChunkHandler {
      */
     @Override
     public void clientReady(Client client) throws IOException {
-        if (client.isHeapUpdateEnabled()) {
-            //sendHPSG(client, WHEN_GC, WHAT_MERGE);
-            sendHPIF(client, HPIF_WHEN_EVERY_GC);
-        }
+        client.initializeHeapUpdateStatus();
     }
 
     /**
