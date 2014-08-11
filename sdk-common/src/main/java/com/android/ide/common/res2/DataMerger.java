@@ -62,14 +62,28 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     private static final String ATTR_VERSION = "version";
     private static final String MERGE_BLOB_VERSION = "2";
 
+    @NonNull
+    protected final DocumentBuilderFactory mFactory;
+
     /**
      * All the DataSets.
      */
     private final List<S> mDataSets = Lists.newArrayList();
 
-    public DataMerger() { }
+    public DataMerger() {
+        mFactory = DocumentBuilderFactory.newInstance();
+        mFactory.setNamespaceAware(true);
+        mFactory.setValidating(false);
+        mFactory.setIgnoringComments(true);
+    }
 
     protected abstract S createFromXml(Node node);
+
+    protected abstract boolean needsCustomHandling(@NonNull String dataItemKey);
+    protected abstract void customHandle(
+            @NonNull String dataItemKey,
+            @NonNull List<I> items,
+            @NonNull MergeConsumer<I> consumer) throws MergingException;
 
     /**
      * adds a new {@link DataSet} and overlays it on top of the existing DataSet.
@@ -152,7 +166,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     public void mergeData(@NonNull MergeConsumer<I> consumer, boolean doCleanUp)
             throws MergingException {
 
-        consumer.start();
+        consumer.start(mFactory);
 
         try {
             // get all the items keys.
@@ -167,6 +181,23 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
 
             // loop on all the data items.
             for (String dataItemKey : dataItemKeys) {
+                if (needsCustomHandling(dataItemKey)) {
+                    // get all the available items
+                    List<I> items = Lists.newArrayListWithExpectedSize(mDataSets.size());
+                    for (int i = mDataSets.size() - 1 ; i >= 0 ; i--) {
+                        S dataSet = mDataSets.get(i);
+
+                        // look for the resource key in the set
+                        ListMultimap<String, I> itemMap = dataSet.getDataMap();
+
+                        List<I> setItems = itemMap.get(dataItemKey);
+                        items.addAll(setItems);
+                    }
+
+                    customHandle(dataItemKey, items, consumer);
+                    continue;
+                }
+
                 // for each items, look in the data sets, starting from the end of the list.
 
                 I previouslyWritten = null;
@@ -272,14 +303,10 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     public void writeBlobTo(@NonNull File blobRootFolder, @NonNull MergeConsumer<I> consumer)
             throws MergingException {
         // write "compact" blob
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        factory.setValidating(false);
-        factory.setIgnoringComments(true);
         DocumentBuilder builder;
 
         try {
-            builder = factory.newDocumentBuilder();
+            builder = mFactory.newDocumentBuilder();
             Document document = builder.newDocument();
 
             Node rootNode = document.createElement(NODE_MERGER);

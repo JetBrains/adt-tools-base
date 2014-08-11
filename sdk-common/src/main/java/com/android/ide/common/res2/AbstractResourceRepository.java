@@ -43,6 +43,8 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+
 public abstract class AbstractResourceRepository {
 
     private final boolean mFramework;
@@ -50,7 +52,8 @@ public abstract class AbstractResourceRepository {
     private class RepositoryMerger implements MergeConsumer<ResourceItem> {
 
         @Override
-        public void start() throws ConsumerException {
+        public void start(@NonNull DocumentBuilderFactory factory)
+                throws ConsumerException {
         }
 
         @Override

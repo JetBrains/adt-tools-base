@@ -62,6 +62,8 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     @Nullable
     private final PngCruncher mCruncher;
 
+    private DocumentBuilderFactory mFactory;
+
     private boolean mInsertSourceMarkers = true;
 
     /**
@@ -100,10 +102,11 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     }
 
     @Override
-    public void start() throws ConsumerException {
-        super.start();
+    public void start(@NonNull DocumentBuilderFactory factory) throws ConsumerException {
+        super.start(factory);
         mValuesResMap = ArrayListMultimap.create();
         mQualifierWithDeletedValues = Sets.newHashSet();
+        mFactory = factory;
     }
 
     @Override
@@ -112,6 +115,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
         mValuesResMap = null;
         mQualifierWithDeletedValues = null;
+        mFactory = null;
     }
 
     @Override
@@ -263,13 +267,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                 try {
                     createDir(valuesFolder);
 
-                    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-                    factory.setNamespaceAware(true);
-                    factory.setValidating(false);
-                    factory.setIgnoringComments(true);
-                    DocumentBuilder builder;
-
-                    builder = factory.newDocumentBuilder();
+                    DocumentBuilder builder = mFactory.newDocumentBuilder();
                     Document document = builder.newDocument();
 
                     Node rootNode = document.createElement(TAG_RESOURCES);
