@@ -449,7 +449,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
         return true;
     }
 
-    protected void addItem(I item, String key) {
+    protected void addItem(@NonNull I item, @Nullable String key) {
         if (key == null) {
             key = item.getKey();
         }
@@ -457,7 +457,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
         mItems.put(key, item);
     }
 
-    protected F getDataFile(File file) {
+    protected F getDataFile(@NonNull File file) {
         return mDataFileMap.get(file);
     }
 
@@ -482,7 +482,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      * @param file the file to check
      * @return true if it is a valid file, false if it should be ignored.
      */
-    protected boolean checkFileForAndroidRes(File file) {
+    protected boolean checkFileForAndroidRes(@NonNull File file) {
         return !isIgnored(file);
     }
 

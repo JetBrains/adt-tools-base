@@ -70,13 +70,55 @@ public class NodeUtilsTest extends TestCase {
 
         Node child1a = document.createElement("child1");
         Node child1b = document.createElement("child2");
-        node1.appendChild(child1a).appendChild(child1b);
+        node1.appendChild(child1a);
+        node1.appendChild(child1b);
 
         Node child2a = document.createElement("child1");
         Node child2b = document.createElement("child2");
-        node2.appendChild(child2a).appendChild(child2b);
+        node2.appendChild(child2a);
+        node2.appendChild(child2b);
 
-        assertTrue(NodeUtils.compareElementNode(node1, node2));
+        assertTrue(NodeUtils.compareElementNode(node1, node2, true));
+    }
+
+    public void testNodesWithChildrenNodesInWrongOrder() throws Exception {
+        Document document = createDocument();
+
+        // create two nodes
+        Node node1 = document.createElement("some-node");
+        Node node2 = document.createElement("some-node");
+
+        Node child1a = document.createElement("child1");
+        Node child1b = document.createElement("child2");
+        node1.appendChild(child1a);
+        node1.appendChild(child1b);
+
+        Node child2a = document.createElement("child2");
+        Node child2b = document.createElement("child1");
+        node2.appendChild(child2a);
+        node2.appendChild(child2b);
+
+        assertFalse(NodeUtils.compareElementNode(node1, node2, true));
+    }
+
+    public void testNodesWithChildrenNodesInOtherOrder() throws Exception {
+        Document document = createDocument();
+
+        // create two nodes
+        Node node1 = document.createElement("some-node");
+        Node node2 = document.createElement("some-node");
+
+        Node child1a = document.createElement("child1");
+        Node child1b = document.createElement("child2");
+        node1.appendChild(child1a);
+        node1.appendChild(child1b);
+
+        Node child2a = document.createElement("child2");
+        Node child2b = document.createElement("child1");
+        node2.appendChild(child2a);
+        node2.appendChild(child2b);
+
+        assertTrue(NodeUtils.compareElementNode(node1, node2, false));
     }
 
     public void testAdoptNode() throws Exception {
@@ -105,7 +147,39 @@ public class NodeUtilsTest extends TestCase {
         rootNode = document2.createElement("root");
         document2.appendChild(rootNode);
 
-        assertTrue(NodeUtils.compareElementNode(node, NodeUtils.adoptNode(document2, node)));
+        assertTrue(NodeUtils.compareElementNode(node, NodeUtils.adoptNode(document2, node), true));
+    }
+
+    public void testDuplicateNode() throws Exception {
+        Document document = createDocument();
+        Node rootNode = document.createElement("root");
+        document.appendChild(rootNode);
+
+        // create a single s
+        Node node = document.createElement("some-node");
+
+        // add some children
+        Node child1 = document.createElement("child1");
+        Node child2 = document.createElement("child2");
+        node.appendChild(child1).appendChild(child2);
+        Node cdata = document.createCDATASection("some <random> text");
+        child2.appendChild(cdata);
+
+        // add some attributes
+        NodeUtils.addAttribute(document, node, null, "foo", "bar");
+        NodeUtils.addAttribute(document, node, "http://some.uri", "foo2", "bar2");
+        NodeUtils.addAttribute(document, child1, "http://some.other.uri", "blah", "test");
+        NodeUtils.addAttribute(document, child2, "http://another.uri", "blah", "test");
+
+        // create the other document to receive the adopted node. It must have a root node.
+        Document document2 = createDocument();
+        rootNode = document2.createElement("root");
+        document2.appendChild(rootNode);
+
+        assertTrue(NodeUtils.compareElementNode(
+                node,
+                NodeUtils.duplicateNode(document2, node),
+                false));
     }
 
     private static Document createDocument() throws ParserConfigurationException {

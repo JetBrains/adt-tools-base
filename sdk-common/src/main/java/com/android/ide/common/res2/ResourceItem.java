@@ -82,7 +82,7 @@ public class ResourceItem extends DataItem<ResourceFile>
      * @param type  the type of the resource
      * @param value an optional Node that represents the resource value.
      */
-    public ResourceItem(@NonNull String name, @NonNull ResourceType type, Node value) {
+    public ResourceItem(@NonNull String name, @NonNull ResourceType type, @Nullable Node value) {
         super(name);
         mType = type;
         mValue = value;
@@ -119,6 +119,30 @@ public class ResourceItem extends DataItem<ResourceFile>
     }
 
     /**
+     * Returns the resource item qualifiers.
+     * @return the qualifiers
+     */
+    @NonNull
+    public String getQualifiers() {
+        ResourceFile resourceFile = getSource();
+        if (resourceFile == null) {
+            throw new RuntimeException("Cannot call getQualifier on " + toString());
+        }
+
+        return resourceFile.getQualifiers();
+    }
+
+    @NonNull
+    public DataFile.FileType getSourceType() {
+        ResourceFile resourceFile = getSource();
+        if (resourceFile == null) {
+            throw new RuntimeException("Cannot call getSourceType on " + toString());
+        }
+
+        return resourceFile.getType();
+    }
+
+    /**
      * Sets the value of the resource and set its state to TOUCHED.
      *
      * @param from the resource to copy the value from.
@@ -132,7 +156,7 @@ public class ResourceItem extends DataItem<ResourceFile>
     public FolderConfiguration getConfiguration() {
         assert getSource() != null : this;
 
-        String qualifier = getSource().getQualifiers();
+        String qualifier = getQualifiers();
         if (qualifier.isEmpty()) {
             return new FolderConfiguration();
         }
@@ -156,22 +180,12 @@ public class ResourceItem extends DataItem<ResourceFile>
             throw new IllegalStateException(
                     "ResourceItem.getKey called on object with no ResourceFile: " + this);
         }
-        String qualifiers = getSource().getQualifiers();
+        String qualifiers = getQualifiers();
         if (!qualifiers.isEmpty()) {
             return mType.getName() + "-" + qualifiers + "/" + getName();
         }
 
         return mType.getName() + "/" + getName();
-    }
-
-    @Override
-    void addExtraAttributes(Document document, Node node, String namespaceUri) {
-        NodeUtils.addAttribute(document, node, null, ATTR_TYPE, mType.getName());
-    }
-
-    @Override
-    Node getAdoptedNode(Document document) {
-        return NodeUtils.adoptNode(document, mValue);
     }
 
     @Override
@@ -205,7 +219,7 @@ public class ResourceItem extends DataItem<ResourceFile>
     // instead. This is a temporary fix to make rendering work properly again.
     @Nullable
     private Density getFolderDensity() {
-        String qualifiers = getSource().getQualifiers();
+        String qualifiers = getQualifiers();
         if (!qualifiers.isEmpty() && qualifiers.contains("dpi")) {
             Iterable<String> segments = Splitter.on('-').split(qualifiers);
             FolderConfiguration config = FolderConfiguration.getConfigFromQualifiers(segments);
@@ -242,7 +256,7 @@ public class ResourceItem extends DataItem<ResourceFile>
      */
     public boolean compareValueWith(ResourceItem resource) {
         if (mValue != null && resource.mValue != null) {
-            return NodeUtils.compareElementNode(mValue, resource.mValue);
+            return NodeUtils.compareElementNode(mValue, resource.mValue, true);
         }
 
         return mValue == resource.mValue;
@@ -641,4 +655,19 @@ public class ResourceItem extends DataItem<ResourceFile>
     public boolean getIgnoredFromDiskMerge() {
         return mIgnoredFromDiskMerge;
     }
+
+    // Used for the blob writing.
+    // TODO: move this to ResourceMerger/Set.
+
+    @Override
+    void addExtraAttributes(Document document, Node node, String namespaceUri) {
+        NodeUtils.addAttribute(document, node, null, ATTR_TYPE, mType.getName());
+    }
+
+    @Override
+    Node getAdoptedNode(Document document) {
+        return NodeUtils.adoptNode(document, mValue);
+    }
+
+
 }

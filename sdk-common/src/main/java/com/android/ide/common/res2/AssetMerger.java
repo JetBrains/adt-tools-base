@@ -35,12 +35,12 @@ public class AssetMerger extends DataMerger<AssetItem, AssetFile, AssetSet> {
     }
 
     @Override
-    protected boolean needsCustomHandling(@NonNull String dataItemKey) {
+    protected boolean requiresMerge(@NonNull String dataItemKey) {
         return false;
     }
 
     @Override
-    protected void customHandle(
+    protected void mergeItems(
             @NonNull String dataItemKey,
             @NonNull List<AssetItem> items,
             @NonNull MergeConsumer<AssetItem> consumer) {

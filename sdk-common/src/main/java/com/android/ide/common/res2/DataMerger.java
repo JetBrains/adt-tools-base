@@ -56,11 +56,13 @@ import javax.xml.parsers.ParserConfigurationException;
 abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extends DataSet<I,F>> implements DataMap<I> {
 
     static final String FN_MERGER_XML = "merger.xml";
-    private static final String NODE_MERGER = "merger";
-    private static final String NODE_DATA_SET = "dataSet";
+    static final String NODE_MERGER = "merger";
+    static final String NODE_DATA_SET = "dataSet";
+    static final String NODE_MERGED_ITEMS = "mergedItems";
+    static final String NODE_CONFIGURATION = "configuration";
 
-    private static final String ATTR_VERSION = "version";
-    private static final String MERGE_BLOB_VERSION = "2";
+    static final String ATTR_VERSION = "version";
+    static final String MERGE_BLOB_VERSION = "3";
 
     @NonNull
     protected final DocumentBuilderFactory mFactory;
@@ -79,8 +81,8 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
 
     protected abstract S createFromXml(Node node);
 
-    protected abstract boolean needsCustomHandling(@NonNull String dataItemKey);
-    protected abstract void customHandle(
+    protected abstract boolean requiresMerge(@NonNull String dataItemKey);
+    protected abstract void mergeItems(
             @NonNull String dataItemKey,
             @NonNull List<I> items,
             @NonNull MergeConsumer<I> consumer) throws MergingException;
@@ -181,7 +183,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
 
             // loop on all the data items.
             for (String dataItemKey : dataItemKeys) {
-                if (needsCustomHandling(dataItemKey)) {
+                if (requiresMerge(dataItemKey)) {
                     // get all the available items
                     List<I> items = Lists.newArrayListWithExpectedSize(mDataSets.size());
                     for (int i = mDataSets.size() - 1 ; i >= 0 ; i--) {
@@ -194,7 +196,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                         items.addAll(setItems);
                     }
 
-                    customHandle(dataItemKey, items, consumer);
+                    mergeItems(dataItemKey, items, consumer);
                     continue;
                 }
 
@@ -322,6 +324,9 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                 dataSet.appendToXml(dataSetNode, document, consumer);
             }
 
+            // write merged items
+            writeMergedItems(document, rootNode);
+
             String content = XmlPrettyPrinter.prettyPrint(document, true);
 
             try {
@@ -391,14 +396,20 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             for (int i = 0, n = nodes.getLength(); i < n; i++) {
                 Node node = nodes.item(i);
 
-                if (node.getNodeType() != Node.ELEMENT_NODE ||
-                        !NODE_DATA_SET.equals(node.getLocalName())) {
+                if (node.getNodeType() != Node.ELEMENT_NODE) {
                     continue;
                 }
 
-                S dataSet = createFromXml(node);
-                if (dataSet != null) {
-                    mDataSets.add(dataSet);
+                if (NODE_DATA_SET.equals(node.getLocalName())) {
+                    S dataSet = createFromXml(node);
+                    if (dataSet != null) {
+                        mDataSets.add(dataSet);
+                    }
+                } else if (incrementalState && NODE_MERGED_ITEMS.equals(node.getLocalName())) {
+                    // only load the merged item in incremental state.
+                    // In non incremental state, they will be recreated by the touched
+                    // items anyway.
+                    loadMergedItems(node);
                 }
             }
 
@@ -425,6 +436,14 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
         } catch (SAXException e) {
             throw new MergingException(e).setFile(file);
         }
+    }
+
+    protected void loadMergedItems(@NonNull Node mergedItemsNode) {
+        // do nothing by default.
+    }
+
+    protected void writeMergedItems(Document document, Node rootNode) {
+        // do nothing by default.
     }
 
     public void cleanBlob(@NonNull File blobRootFolder) {
@@ -661,7 +680,6 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             throw new IOException("Failed to create directory: " + folder);
         }
     }
-
 
     @Override
     public String toString() {

@@ -16,6 +16,7 @@
 
 package com.android.ide.common.res2;
 
+import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ListMultimap;
 import com.google.common.io.Files;
@@ -87,20 +88,44 @@ public abstract class BaseTestCase extends TestCase {
     /**
      * Returns a folder containing a merger blob data for the given test data folder.
      *
+     * The folder is expected to contain a blob file.
+     *
      * This is to work around the fact that the merger blob data contains full path, but we don't
      * know where this project is located on the drive. This rewrites the blob to contain the
      * actual folder.
      * (The blobs written in the test data contains placeholders for the path root and path
      * separators)
      *
-     * @param folder the folder containing the merge blob
+     * @param folder the folder to use as the root folder when recreating paths.
+     *
      * @return a new file that contains the merge blob
      * @throws java.io.IOException
      */
-    protected static File getMergedBlobFolder(File folder) throws IOException {
+    protected static File getMergedBlobFolder(@NonNull File folder) throws IOException {
         File originalMerger = new File(folder, DataMerger.FN_MERGER_XML);
+        return getMergedBlobFolder(folder, originalMerger);
+    }
 
-        String content = Files.toString(originalMerger, Charsets.UTF_8);
+    /**
+     * Returns a folder containing a merger blob data for the given test data folder, and the given
+     * merger file.
+     *
+     * This is to work around the fact that the merger blob data contains full path, but we don't
+     * know where this project is located on the drive. This rewrites the blob to contain the
+     * actual folder.
+     * (The blobs written in the test data contains placeholders for the path root and path
+     * separators)
+     *
+     * @param folder the folder to use as the root folder when recreating paths.
+     * @param mergerFile the merger file.
+     *
+     * @return a new file that contains the merge blob
+     * @throws java.io.IOException
+     */
+    protected static File getMergedBlobFolder(@NonNull File folder, @NonNull File mergerFile)
+            throws IOException {
+
+        String content = Files.toString(mergerFile, Charsets.UTF_8);
 
         // search and replace $TOP$ with the root and $SEP$ with the platform separator.
         content = content.replaceAll(
@@ -114,7 +139,7 @@ public abstract class BaseTestCase extends TestCase {
     }
 
     /**
-     * Post {@link #getMergedBlobFolder(java.io.File)} check. After the DataMerger is created
+     * Post {@link #getMergedBlobFolder(java.io.File, java.io.File)} check. After the DataMerger is created
      * from the file generated, this checks that the file replacement works and all the files are
      * where they are supposed to be.
      *
