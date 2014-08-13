@@ -16,11 +16,16 @@
 
 package com.android.build.gradle.ndk.internal
 
+import com.android.build.gradle.api.AndroidSourceDirectorySet
 import com.android.build.gradle.ndk.NdkExtension
 import com.android.builder.core.BuilderConstants
 import com.android.builder.model.AndroidProject
 import org.gradle.api.Action
 import org.gradle.api.Project
+import org.gradle.language.base.FunctionalSourceSet
+import org.gradle.language.base.LanguageSourceSet
+import org.gradle.language.c.CSourceSet
+import org.gradle.language.cpp.CppSourceSet
 import org.gradle.nativebinaries.internal.ProjectSharedLibraryBinary
 import org.gradle.nativebinaries.language.c.tasks.CCompile
 import org.gradle.nativebinaries.language.cpp.tasks.CppCompile
@@ -52,29 +57,36 @@ class NdkConfigurationAction implements Action<Project> {
 
     void configureProperties(Project project) {
 
-        project.sources.getByName(ndkExtension.getModuleName()) {
-            c {
-                source {
-                    setSrcDirs(
-                            ndkExtension.getSourceSets().getByName(BuilderConstants.MAIN)
-                                    .getSrcDirs())
-                    include "**/*.c"
-                }
+        FunctionalSourceSet projectSourceSet =
+                project.sources.getByName(ndkExtension.getModuleName())
+
+        ndkExtension.getSourceSets().all { AndroidSourceDirectorySet sourceSet ->
+            projectSourceSet.maybeCreate("${sourceSet.name}C", CSourceSet).source.with {
+                setSrcDirs(sourceSet.srcDirs)
+                // TODO: Configure the filter properly.
+                include ndkExtension.getCFilePattern().getIncludes()
+                exclude ndkExtension.getCFilePattern().getExcludes()
             }
-            cpp {
-                source {
-                    setSrcDirs(
-                            ndkExtension.getSourceSets().getByName(BuilderConstants.MAIN)
-                                    .getSrcDirs())
-                    include "**/*.cpp"
-                    include "**/*.cc"
-                }
+            projectSourceSet.maybeCreate("${sourceSet.name}Cpp", CppSourceSet).source.with {
+                setSrcDirs(sourceSet.srcDirs)
+                include ndkExtension.getCppFilePattern().getIncludes()
+                exclude ndkExtension.getCppFilePattern().getExcludes()
             }
         }
-
         project.libraries.getByName(ndkExtension.getModuleName()) {
             binaries.withType(ProjectSharedLibraryBinary.class) {
                     ProjectSharedLibraryBinary binary ->
+                source projectSourceSet.getByName("mainC")
+                source projectSourceSet.getByName("mainCpp")
+
+                // TODO: Support flavorDimension.
+                if (!flavor.name.equals("default")) {
+                    source projectSourceSet.getByName("${flavor.name}C")
+                    source projectSourceSet.getByName("${flavor.name}Cpp")
+                }
+                source projectSourceSet.getByName("${buildType.name}C")
+                source projectSourceSet.getByName("${buildType.name}Cpp")
+
                 cCompiler.define "ANDROID"
                 cppCompiler.define "ANDROID"
                 cCompiler.define "ANDROID_NDK"

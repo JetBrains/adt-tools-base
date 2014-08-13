@@ -68,6 +68,7 @@ public class AutomatedBuildTest extends BuildTest {
             "ndkJniLib2",
             "ndkPrebuilts",
             "ndkLibPrebuilts",
+            "ndkVariants",
             "noPreDex",
             "overlay1",
             "overlay2",
@@ -85,7 +86,8 @@ public class AutomatedBuildTest extends BuildTest {
 
     private static final List<String> ndkPluginTests = ImmutableList.of(
             "ndkSanAngeles2",
-            "ndkJniLib2"
+            "ndkJniLib2",
+            "ndkVariants"
     );
 
     private static final String[] sReportProjects = new String[] {
