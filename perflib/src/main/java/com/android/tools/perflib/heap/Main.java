@@ -16,32 +16,29 @@
 
 package com.android.tools.perflib.heap;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
+import com.android.tools.perflib.heap.io.HprofBuffer;
+import com.android.tools.perflib.heap.io.MemoryMappedFileBuffer;
+
+import java.io.File;
 import java.util.Map;
 import java.util.Set;
 
 public class Main {
 
     public static void main(String argv[]) {
-        FileInputStream fis;
-        BufferedInputStream bis;
-        DataInputStream dis;
-
         try {
-            fis = new FileInputStream(argv[0]);
-            bis = new BufferedInputStream(fis);
-            dis = new DataInputStream(bis);
-
-            Snapshot snapshot = (new HprofParser(dis)).parse();
-
-            dis.close();
+            long start = System.nanoTime();
+            HprofBuffer buffer = new MemoryMappedFileBuffer(new File(argv[0]));
+            Snapshot snapshot = (new HprofParser(buffer)).parse();
 
             testClassesQuery(snapshot);
             testAllClassesQuery(snapshot);
             testFindInstancesOf(snapshot);
             testFindAllInstancesOf(snapshot);
+
+            System.out.println("Memory stats: free=" + Runtime.getRuntime().freeMemory()
+                    + " / total=" + Runtime.getRuntime().totalMemory());
+            System.out.println("Time: " + (System.nanoTime() - start) / 1000000 + "ms");
         } catch (Exception e) {
             e.printStackTrace();
         }

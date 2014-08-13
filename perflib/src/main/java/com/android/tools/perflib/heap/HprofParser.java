@@ -16,11 +16,13 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.annotations.NonNull;
+import com.android.tools.perflib.heap.io.HprofBuffer;
+import com.google.common.primitives.UnsignedBytes;
 import com.google.common.primitives.UnsignedInts;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.EOFException;
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.PriorityQueue;
@@ -116,7 +118,7 @@ public class HprofParser {
 
     private final PriorityQueue<PostOperation> mPost = new PriorityQueue<PostOperation>();
 
-    DataInputStream mInput;
+    HprofBuffer mInput;
 
     int mIdSize;
 
@@ -130,8 +132,8 @@ public class HprofParser {
 
     HashMap<Long, String> mClassNames = new HashMap<Long, String>();
 
-    public HprofParser(DataInputStream in) {
-        mInput = in;
+    public HprofParser(@NonNull HprofBuffer buffer) {
+        mInput = buffer;
     }
 
     public final Snapshot parse() {
@@ -140,22 +142,22 @@ public class HprofParser {
 
         try {
             try {
-                String s = readNullTerminatedString();
-                DataInputStream in = mInput;
+                String s = readNullTerminatedString();  // Version, ignored for now.
 
-                mIdSize = in.readInt();
+                mIdSize = mInput.readInt();
                 Type.setIdSize(mIdSize);
 
-                in.readLong();  //  Timestamp, ignored for now
+                mInput.readLong();  // Timestamp, ignored for now.
 
-                while (true) {
-                    int tag = in.readUnsignedByte();
-                    in.readInt(); // Ignored: timestamp
-                    int length = in.readInt();
+                while (mInput.hasRemaining()) {
+                    int tag = readUnsignedByte();
+                    mInput.readInt(); // Ignored: timestamp
+                    long length = readUnsignedInt();
 
                     switch (tag) {
                         case STRING_IN_UTF8:
-                            loadString(length - 4);
+                            // String length is limited by Int.MAX_VALUE anyway.
+                            loadString((int) length - mIdSize);
                             break;
 
                         case LOAD_CLASS:
@@ -202,29 +204,23 @@ public class HprofParser {
 
     private String readNullTerminatedString() throws IOException {
         StringBuilder s = new StringBuilder();
-        DataInputStream in = mInput;
-
-        for (int c = in.read(); c != 0; c = in.read()) {
+        for (byte c = mInput.readByte(); c != 0; c = mInput.readByte()) {
             s.append((char) c);
         }
-
         return s.toString();
     }
 
     private long readId() throws IOException {
-        return readId(mInput);
-    }
-
-    private long readId(DataInputStream stream) throws IOException {
+        // As long as we don't interpret IDs, reading signed values here is fine.
         switch (mIdSize) {
             case 1:
-                return stream.readUnsignedByte();
+                return mInput.readByte();
             case 2:
-                return stream.readUnsignedShort();
+                return mInput.readShort();
             case 4:
-                return UnsignedInts.toLong(stream.readInt());
+                return mInput.readInt();
             case 8:
-                return stream.readLong();
+                return mInput.readLong();
         }
 
         throw new IllegalArgumentException("ID Length must be 1, 2, 4, or 8");
@@ -238,6 +234,18 @@ public class HprofParser {
         return new String(b, "utf-8");
     }
 
+    private int readUnsignedByte() throws IOException {
+        return UnsignedBytes.toInt(mInput.readByte());
+    }
+
+    private int readUnsignedShort() throws IOException {
+        return mInput.readShort() & 0xffff;
+    }
+
+    private long readUnsignedInt() throws IOException {
+        return UnsignedInts.toLong(mInput.readInt());
+    }
+
     private void loadString(int length) throws IOException {
         long id = readId();
         String string = readUTF8(length);
@@ -246,10 +254,9 @@ public class HprofParser {
     }
 
     private void loadClass() throws IOException {
-        DataInputStream in = mInput;
-        in.readInt();  // Ignored: Class serial number.
+        mInput.readInt();  // Ignored: Class serial number.
         long id = readId();
-        in.readInt(); // Ignored: Stack trace serial number.
+        mInput.readInt(); // Ignored: Stack trace serial number.
         String name = mStrings.get(readId());
 
         mClassNames.put(id, name);
@@ -284,11 +291,9 @@ public class HprofParser {
         mSnapshot.addStackTrace(trace);
     }
 
-    private void loadHeapDump(int length) throws IOException {
-        DataInputStream in = mInput;
-
+    private void loadHeapDump(long length) throws IOException {
         while (length > 0) {
-            int tag = in.readUnsignedByte();
+            int tag = readUnsignedByte();
             length--;
 
             switch (tag) {
@@ -393,7 +398,7 @@ public class HprofParser {
                 default:
                     throw new IllegalArgumentException(
                             "loadHeapDump loop with unknown tag " + tag
-                                    + " with " + mInput.available()
+                                    + " with " + mInput.remaining()
                                     + " bytes possibly remaining");
             }
         }
@@ -470,9 +475,8 @@ public class HprofParser {
     }
 
     private int loadClassDump() throws IOException {
-        DataInputStream in = mInput;
         final long id = readId();
-        int stackSerialNumber = in.readInt();
+        int stackSerialNumber = mInput.readInt();
         StackTrace stack = mSnapshot.getStackTrace(stackSerialNumber);
         final long superClassId = readId();
         readId(); // Ignored: class loader ID.
@@ -480,42 +484,42 @@ public class HprofParser {
         readId(); // Ignored: Protection domain ID.
         readId(); // RESERVED.
         readId(); // RESERVED.
-        int instanceSize = in.readInt();
+        int instanceSize = mInput.readInt();
 
         final ClassObj theClass = new ClassObj(id, stack, mClassNames.get(id));
 
         int bytesRead = (7 * mIdSize) + 4 + 4;
 
         //  Skip over the constant pool
-        int numEntries = in.readUnsignedShort();
+        int numEntries = readUnsignedShort();
         bytesRead += 2;
 
         for (int i = 0; i < numEntries; i++) {
-            in.readUnsignedShort();
+            readUnsignedShort();
             bytesRead += 2 + skipValue();
         }
 
         //  Static fields
-        numEntries = in.readUnsignedShort();
+        numEntries = readUnsignedShort();
         bytesRead += 2;
 
         for (int i = 0; i < numEntries; i++) {
             String name = mStrings.get(readId());
-            Type type = Type.getType(in.readByte());
+            Type type = Type.getType(mInput.readByte());
             Value value = readValue(theClass, type);
             theClass.addStaticField(type, name, value);
             bytesRead += mIdSize + 1 + type.getSize();
         }
 
         //  Instance fields
-        numEntries = in.readUnsignedShort();
+        numEntries = readUnsignedShort();
         bytesRead += 2;
 
         Field[] fields = new Field[numEntries];
 
         for (int i = 0; i < numEntries; i++) {
             String name = mStrings.get(readId());
-            Type type = Type.getType(in.readUnsignedByte());
+            Type type = Type.getType(readUnsignedByte());
 
             fields[i] = new Field(type, name);
 
@@ -526,7 +530,7 @@ public class HprofParser {
         theClass.setInstanceSize(instanceSize);
 
         mSnapshot.addClass(id, theClass);
-        if (superClassId > 0) {
+        if (superClassId != 0) {
             mPost.add(new PostOperation(ResolvePriority.CLASSES, new Callable() {
                 @Override
                 public Object call() throws Exception {
@@ -553,15 +557,10 @@ public class HprofParser {
     }
 
     private Value readValue(Instance instance, Type type) throws IOException {
-        return readValue(mInput, instance, type);
-    }
-
-    private Value readValue(DataInputStream stream, Instance instance, Type type)
-            throws IOException {
         final Value value = new Value(instance);
         switch (type) {
             case OBJECT:
-                final long id = readId(stream);
+                final long id = readId();
                 mPost.add(new PostOperation(ResolvePriority.INSTANCES, new Callable() {
                     @Override
                     public Object call() throws Exception {
@@ -571,28 +570,28 @@ public class HprofParser {
                 }));
                 break;
             case BOOLEAN:
-                value.setValue(stream.readBoolean());
+                value.setValue(mInput.readByte() != 0);
                 break;
             case CHAR:
-                value.setValue(stream.readChar());
+                value.setValue(mInput.readChar());
                 break;
             case FLOAT:
-                value.setValue(stream.readFloat());
+                value.setValue(mInput.readFloat());
                 break;
             case DOUBLE:
-                value.setValue(stream.readDouble());
+                value.setValue(mInput.readDouble());
                 break;
             case BYTE:
-                value.setValue(stream.readByte());
+                value.setValue(mInput.readByte());
                 break;
             case SHORT:
-                value.setValue(stream.readShort());
+                value.setValue(mInput.readShort());
                 break;
             case INT:
-                value.setValue(stream.readInt());
+                value.setValue(mInput.readInt());
                 break;
             case LONG:
-                value.setValue(stream.readLong());
+                value.setValue(mInput.readLong());
                 break;
         }
         return value;
@@ -605,8 +604,10 @@ public class HprofParser {
         final long classId = readId();
         int remaining = mInput.readInt();
         final ClassInstance instance = new ClassInstance(id, stack);
-        final byte[] data = new byte[remaining];
-        mInput.readFully(data);
+
+        final long position = mInput.position();
+        skipFully(remaining);
+
         mPost.add(new PostOperation(ResolvePriority.CLASSES, new Callable() {
             @Override
             public Void call() throws Exception {
@@ -618,11 +619,11 @@ public class HprofParser {
         mPost.add(new PostOperation(ResolvePriority.VALUES, new Callable() {
             @Override
             public Void call() throws Exception {
-                DataInputStream stream = new DataInputStream(new ByteArrayInputStream(data));
                 ClassObj clazz = instance.getClassObj();
+                mInput.setPosition(position);
                 while (clazz != null) {
                     for (Field field : clazz.getFields()) {
-                        instance.addField(field, readValue(stream, instance, field.getType()));
+                        instance.addField(field, readValue(instance, field.getType()));
                     }
                     clazz = clazz.getSuperClassObj();
                 }
@@ -643,7 +644,6 @@ public class HprofParser {
         final long classId = readId();
         int totalBytes = numElements * mIdSize;
         Value[] values = new Value[numElements];
-        String className = mClassNames.get(classId);
 
         final ArrayInstance array = new ArrayInstance(id, stack, Type.OBJECT);
 
@@ -671,7 +671,7 @@ public class HprofParser {
         int stackId = mInput.readInt();
         StackTrace stack = mSnapshot.getStackTrace(stackId);
         int numElements = mInput.readInt();
-        Type type = Type.getType(mInput.readUnsignedByte());
+        Type type = Type.getType(readUnsignedByte());
         int size = type.getSize();
         Value[] values = new Value[numElements];
 
@@ -701,7 +701,7 @@ public class HprofParser {
     }
 
     private int skipValue() throws IOException {
-        Type type = Type.getType(mInput.readUnsignedByte());
+        Type type = Type.getType(readUnsignedByte());
         int size = type.getSize();
 
         skipFully(size);
@@ -709,18 +709,8 @@ public class HprofParser {
         return size + 1;
     }
 
-    /*
-     * BufferedInputStream will not skip(int) the entire requested number
-     * of bytes if it extends past the current buffer boundary.  So, this
-     * routine is needed to actually skip over the requested number of bytes
-     * using as many iterations as needed.
-     */
     private void skipFully(long numBytes) throws IOException {
-        while (numBytes > 0) {
-            long skipped = mInput.skip(numBytes);
-
-            numBytes -= skipped;
-        }
+        mInput.setPosition(mInput.position() + numBytes);
     }
 
     /**
