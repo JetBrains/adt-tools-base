@@ -178,6 +178,8 @@ class NdkPlugin implements Plugin<Project> {
                     binaries.withType(ProjectStaticLibraryBinary.class)*.getBuildTask()
             nonExecutableTask.dependsOn lifecycleTasks
             lifecycleTasks*.group = null
+            lifecycleTasks*.enabled = false
+            lifecycleTasks*.setDependsOn([])
         }
     }
 }

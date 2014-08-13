@@ -28,14 +28,30 @@ import org.gradle.nativebinaries.toolchain.Gcc
  */
 class ToolchainConfigurationAction implements Action<Project> {
 
+    private static final String[] ABI32 = [
+            SdkConstants.ABI_INTEL_ATOM,
+            SdkConstants.ABI_ARMEABI_V7A,
+            SdkConstants.ABI_ARMEABI,
+            SdkConstants.ABI_MIPS]
+
+    private static final String[] ALL_ABI = [
+            SdkConstants.ABI_INTEL_ATOM,
+            SdkConstants.ABI_INTEL_ATOM64,
+            SdkConstants.ABI_ARMEABI_V7A,
+            SdkConstants.ABI_ARMEABI,
+            SdkConstants.ABI_ARM64_V8A,
+            SdkConstants.ABI_MIPS,
+            SdkConstants.ABI_MIPS64]
+
     private static final GCC_PREFIX = [
             (SdkConstants.ABI_INTEL_ATOM) : "i686-linux-android",
+            (SdkConstants.ABI_INTEL_ATOM64) : "x86_64-linux-android",
             (SdkConstants.ABI_ARMEABI_V7A) : "arm-linux-androideabi",
             (SdkConstants.ABI_ARMEABI) : "arm-linux-androideabi",
-            (SdkConstants.ABI_MIPS) : "mipsel-linux-android"
+            (SdkConstants.ABI_ARM64_V8A) : "aarch64-linux-android",
+            (SdkConstants.ABI_MIPS) : "mipsel-linux-android",
+            (SdkConstants.ABI_MIPS64) : "mips64el-linux-android"
     ]
-
-    private Project project
 
     private NdkBuilder ndkBuilder
 
@@ -47,47 +63,29 @@ class ToolchainConfigurationAction implements Action<Project> {
     }
 
     public void execute(Project project) {
-        // Configure all platforms.  Currently missing support for mips.
+        String[] abiList = ndkBuilder.supports64Bits() ? ALL_ABI : ABI32;
         project.model {
             platforms {
-                "$SdkConstants.ABI_INTEL_ATOM" {
-                    architecture SdkConstants.CPU_ARCH_INTEL_ATOM
-                    operatingSystem "linux"
-                }
-                "$SdkConstants.ABI_ARMEABI" {
-                    architecture SdkConstants.CPU_ARCH_ARM
-                    operatingSystem "linux"
-                }
-                "$SdkConstants.ABI_ARMEABI_V7A" {
-                    architecture SdkConstants.CPU_ARCH_ARM
-                    operatingSystem "linux"
-                }
-                "$SdkConstants.ABI_MIPS" {
-                    // Gradle currently do not support mips architecture, but it is safe to set it
-                    // to another architecture that is otherwise unused.
-                    // The default Gcc and Clang toolchains support platforms without architecture.
-                    // This means if architecture is not set, the x86 toolchain will be chosen by
-                    // gradle as it will be created first
-                    architecture "ppc"
-                    operatingSystem "linux"
+                for (String abi: abiList) {
+                    "$abi" {
+                        // All we care is the name of the platform.  It doesn't matter what the
+                        // architecture is, but it must be set to non-x86 so that it does not match
+                        // the default supported platform.
+                        architecture "ppc"
+                        operatingSystem "linux"
+                    }
                 }
             }
         }
 
-        // Create toolchain for each architecture.  Toolchain for x86 must be created first,
-        // otherwise gradle may not choose the correct toolchain for a target platform.  This is
-        // because gradle always choose the first toolchain supporting a platform and there is no
-        // way to remove x86 support in GCC or Clang toolchain.
-        for (String platform : [
-                SdkConstants.ABI_INTEL_ATOM,
-                SdkConstants.ABI_ARMEABI_V7A,
-                SdkConstants.ABI_ARMEABI,
-                SdkConstants.ABI_MIPS]) {
+        for (String abi: abiList) {
+
+            // Create toolchain for each ABI.
             configureToolchain(
                     project,
                     ndkExtension.getToolchain(),
                     ndkExtension.getToolchainVersion(),
-                    platform)
+                    abi)
         }
     }
 
