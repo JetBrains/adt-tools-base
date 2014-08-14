@@ -16,13 +16,11 @@
 
 package com.android.tools.perflib.heap;
 
-import com.google.common.io.Closeables;
+import com.android.tools.perflib.heap.io.MemoryMappedFileBuffer;
 
 import junit.framework.TestCase;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
+import java.io.File;
 import java.util.Collection;
 
 public class HprofParserTest extends TestCase {
@@ -33,16 +31,8 @@ public class HprofParserTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
 
-        String file = getClass().getResource("/dialer.android-hprof").getFile();
-
-        FileInputStream fis = new FileInputStream(file);
-        BufferedInputStream bis = new BufferedInputStream(fis);
-        DataInputStream dis = new DataInputStream(bis);
-        try {
-            mSnapshot = (new HprofParser(dis)).parse();
-        } finally {
-            Closeables.close(dis, false);
-        }
+        File file = new File(getClass().getResource("/dialer.android-hprof").getFile());
+        mSnapshot = (new HprofParser(new MemoryMappedFileBuffer(file))).parse();
     }
 
     public void testHierarchy() {

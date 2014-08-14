@@ -20,16 +20,17 @@ import com.android.tools.perflib.heap.ClassObj;
 import com.android.tools.perflib.heap.HprofParser;
 import com.android.tools.perflib.heap.Instance;
 import com.android.tools.perflib.heap.Snapshot;
-import com.google.common.io.Closeables;
+import com.android.tools.perflib.heap.io.MemoryMappedFileBuffer;
 
 import junit.framework.TestCase;
 
-import java.io.DataInputStream;
+import java.io.File;
 import java.util.Map;
 
 public class DominatorsTest extends TestCase {
 
     private Snapshot mSnapshot;
+
     private Map<Instance, Instance> mDominators;
 
     public void testSimpleGraph() {
@@ -92,35 +93,32 @@ public class DominatorsTest extends TestCase {
     }
 
     public void testSampleHprof() throws Exception {
-        DataInputStream dis = new DataInputStream(
-                ClassLoader.getSystemResourceAsStream("dialer.android-hprof"));
-        try {
-            Snapshot snapshot = (new HprofParser(dis)).parse();
-            Map<Instance, Instance> dominators = snapshot.computeDominatorMap();
+        File file = new File(ClassLoader.getSystemResource("dialer.android-hprof").getFile());
+        Snapshot snapshot = (new HprofParser(new MemoryMappedFileBuffer(file))).parse();
+        Map<Instance, Instance> dominators = snapshot.computeDominatorMap();
 
-            // TODO: Double-check this data
-            assertEquals(29598, dominators.size());
+        // TODO: Double-check this data
+        assertEquals(29598, dominators.size());
 
-            // An object reachable via two GC roots, a JNI global and a Thread.
-            Instance instance = snapshot.findReference(0xB0EDFFA0L);
-            assertEquals(Snapshot.SENTINEL_ROOT, dominators.get(instance));
+        // An object reachable via two GC roots, a JNI global and a Thread.
+        Instance instance = snapshot.findReference(0xB0EDFFA0);
+        assertEquals(Snapshot.SENTINEL_ROOT, dominators.get(instance));
 
-            snapshot.computeRetainedSizes();
-            // The largest object in our sample hprof belongs to the zygote
-            ClassObj htmlParser = snapshot.findClass("android.text.Html$HtmlParser");
-            assertEquals(116468, htmlParser.getRetainedSize(snapshot.getHeap("zygote")));
-            assertEquals(0, htmlParser.getRetainedSize(snapshot.getHeap("app")));
+        snapshot.computeRetainedSizes();
+        // The largest object in our sample hprof belongs to the zygote
+        ClassObj htmlParser = snapshot.findClass("android.text.Html$HtmlParser");
+        assertEquals(116468, htmlParser.getRetainedSize(snapshot.getHeap("zygote")));
+        assertEquals(0, htmlParser.getRetainedSize(snapshot.getHeap("app")));
 
-            // One of the bigger objects in the app heap
-            ClassObj activityThread = snapshot.findClass("android.app.ActivityThread");
-            assertEquals(237, activityThread.getRetainedSize(snapshot.getHeap("zygote")));
-            assertEquals(576, activityThread.getRetainedSize(snapshot.getHeap("app")));
-        } finally {
-            Closeables.close(dis, false);
-        }
+        // One of the bigger objects in the app heap
+        ClassObj activityThread = snapshot.findClass("android.app.ActivityThread");
+        assertEquals(237, activityThread.getRetainedSize(snapshot.getHeap("zygote")));
+        assertEquals(576, activityThread.getRetainedSize(snapshot.getHeap("app")));
     }
 
-    /** Asserts that nodeA dominates nodeB in mHeap. */
+    /**
+     * Asserts that nodeA dominates nodeB in mHeap.
+     */
     private void assertDominates(int nodeA, int nodeB) {
         assertEquals(mSnapshot.findReference(nodeA),
                 mDominators.get(mSnapshot.findReference(nodeB)));

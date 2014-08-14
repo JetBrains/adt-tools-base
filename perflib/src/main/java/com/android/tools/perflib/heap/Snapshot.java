@@ -84,7 +84,7 @@ public class Snapshot {
         return null;
     }
 
-    public Iterable<RootObj> getGCRoots() {
+    public Collection<RootObj> getGCRoots() {
         // Roots are always in the default heap.
         return mHeaps.get(DEFAULT_HEAP_ID).mRoots;
     }
