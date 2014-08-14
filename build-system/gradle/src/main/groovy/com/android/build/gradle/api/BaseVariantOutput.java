@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
+import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.Task;
 
@@ -41,6 +42,9 @@ public interface BaseVariantOutput {
     File getOutputFile();
 
     void setOutputFile(@NonNull File outputFile);
+
+    @NonNull
+    ImmutableList<ApkOutput> getOutputFiles();
 
     /**
      * Returns the Android Resources processing task.

@@ -51,6 +51,21 @@ import java.util.List;
  */
 public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
+    public enum SplitHandlingPolicy {
+        /**
+         * Any release before L will create fake splits where each split will be the entire
+         * application with the split specific resources.
+         */
+        PRE_21_POLICY,
+
+        /**
+         * Android L and after, the splits are pure splits where splits only contain resources
+         * specific to the split characteristics.
+         */
+        RELEASE_21_AND_AFTER_POLICY
+    }
+
+
     @NonNull
     protected final BasePlugin basePlugin;
     @NonNull
@@ -94,12 +109,28 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
     private final List<T> outputs = Lists.newArrayListWithExpectedSize(4);
 
+    private SplitHandlingPolicy mSplitHandlingPolicy;
+
+
     public BaseVariantData(
             @NonNull BasePlugin basePlugin,
             @NonNull VariantConfiguration variantConfiguration) {
         this.basePlugin = basePlugin;
         this.variantConfiguration = variantConfiguration;
+
+        // eventually, this will require a more open ended comparison.
+        mSplitHandlingPolicy =
+                variantConfiguration.getMinSdkVersion() != null
+                        && variantConfiguration.getMinSdkVersion().getApiString().equals("L")
+                    ? SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY
+                    : SplitHandlingPolicy.PRE_21_POLICY;
+
         variantConfiguration.checkSourceProviders();
+    }
+
+
+    public SplitHandlingPolicy getSplitHandlingPolicy() {
+        return mSplitHandlingPolicy;
     }
 
     @NonNull

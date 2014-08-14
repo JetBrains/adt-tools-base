@@ -38,6 +38,9 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
     DeviceProvider deviceProvider
     TestVariantData testVariantData
 
+    File[] splitApks;
+    File adbExec;
+
     boolean ignoreFailures
     boolean testFailed
 

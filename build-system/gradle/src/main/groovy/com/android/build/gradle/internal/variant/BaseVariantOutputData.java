@@ -19,9 +19,12 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.SplitOutput;
+import com.android.build.gradle.api.ApkOutput;
 import com.android.build.gradle.internal.StringHelper;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
+import com.android.build.gradle.tasks.PackageSplitRes;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
+import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.Task;
 
@@ -46,6 +49,7 @@ public abstract class BaseVariantOutputData implements SplitOutput {
 
     public ManifestProcessorTask manifestProcessorTask;
     public ProcessAndroidResources processResourcesTask;
+    public PackageSplitRes packageSplitResourcesTask;
     public Task assembleTask;
 
     public BaseVariantOutputData(
@@ -72,6 +76,11 @@ public abstract class BaseVariantOutputData implements SplitOutput {
     public abstract void setOutputFile(@NonNull File file);
 
     @NonNull
+    public abstract File getOutputFile();
+
+    public abstract ImmutableList<ApkOutput> getOutputFiles();
+
+    @NonNull
     public String getFullName() {
         if (!multiOutput) {
             return variantData.getVariantConfiguration().getFullName();
@@ -92,7 +101,8 @@ public abstract class BaseVariantOutputData implements SplitOutput {
         if (!multiOutput) {
             return variantData.getVariantConfiguration().getDirName();
         }
-        return variantData.getVariantConfiguration().computeDirNameWithSplits(densityFilter, abiFilter);
+        return variantData.getVariantConfiguration().computeDirNameWithSplits(densityFilter,
+                abiFilter);
     }
 
     @NonNull
