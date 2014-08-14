@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<d:devices xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xmlns:d="http://schemas.android.com/sdk/devices/1">
+<d:devices xmlns:d="http://schemas.android.com/sdk/devices/1">
     <d:device>
         <d:name>Android Wear Square</d:name>
         <d:id>wear_square</d:id>
@@ -179,7 +178,7 @@
         <d:tag-id>android-wear</d:tag-id>
         <d:boot-props>
             <d:boot-prop>
-                <d:prop-name>ro.display.circular</d:prop-name>
+                <d:prop-name>ro.emulator.circular</d:prop-name>
                 <d:prop-value>true</d:prop-value>
             </d:boot-prop>
         </d:boot-props>

@@ -26,6 +26,7 @@ import com.android.sdklib.mock.MockLog;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class DeviceManagerTest extends SdkManagerTestCase {
@@ -53,7 +54,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
     }
 
     /** Returns a list of just the devices' display names, for unit test comparisons. */
-    private static List<String> listDisplayNames(List<Device> devices) {
+    private static List<String> listDisplayNames(Collection<Device> devices) {
         if (devices == null) return null;
         List<String> names = new ArrayList<String>();
         for (Device d : devices) {
