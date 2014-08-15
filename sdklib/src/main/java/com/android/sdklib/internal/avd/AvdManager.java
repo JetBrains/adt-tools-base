@@ -61,6 +61,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -2000,7 +2001,7 @@ public class AvdManager {
         Map<String, String> properties = new HashMap<String, String>(avd.getProperties());
 
         DeviceManager devMan = DeviceManager.createInstance(myLocalSdk.getLocation(), log);
-        List<Device>  devices = devMan.getDevices(DeviceManager.ALL_DEVICES);
+        Collection<Device> devices = devMan.getDevices(DeviceManager.ALL_DEVICES);
         String name = properties.get(AvdManager.AVD_INI_DEVICE_NAME);
         String manufacturer = properties.get(AvdManager.AVD_INI_DEVICE_MANUFACTURER);
 
