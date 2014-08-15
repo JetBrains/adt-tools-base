@@ -36,6 +36,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
@@ -190,14 +191,30 @@ public class NdkBuilder {
             throw new InvalidUserDataException("Unrecognized toolchain: " + toolchain);
         }
 
-        // This should detect the host architecture to determine the path of the prebuilt toolchain
-        // instead of assuming there is only one folder in prebuilt directory.
-        File[] toolchainFolder = prebuiltFolder.listFiles();
-        if (toolchainFolder == null || toolchainFolder.length != 1) {
+        String osName = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
+        String hostOs;
+        if (osName.contains("windows")) {
+            hostOs = "windows";
+        } else if (osName.contains("mac")) {
+            hostOs = "darwin";
+        } else {
+            hostOs = "linux";
+        }
+
+        // Use 64-bit toolchain if available.
+        File toolchainPath = new File(prebuiltFolder, hostOs + "-x86_64");
+        if (toolchainPath.isDirectory()) {
+            return toolchainPath;
+        }
+
+        // Fallback to 32-bit if we can't find the 64-bit toolchain.
+        toolchainPath = new File(prebuiltFolder, hostOs);
+        if (toolchainPath.isDirectory()) {
+            return toolchainPath;
+        } else {
             throw new InvalidUserDataException("Unable to find toolchain prebuilt folder in: "
                     + prebuiltFolder);
         }
-        return toolchainFolder[0];
     }
 
     /**
