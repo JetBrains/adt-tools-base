@@ -424,6 +424,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                 }
             }
 
+            Collections.sort(skinList);
             return skinList;
         }
 

@@ -726,7 +726,7 @@ public class LocalSdkTest extends TestCase {
                 mFOp.getAgnosticAbsPath(t2.getPath(IAndroidTarget.SOURCES)));
     }
 
-    public final void testLocalSdkTest_getPkgInfo_Addons() {
+    public final void testLocalSdkTest_getPkgInfo_Addon_NoSysImg() {
         // check empty
         assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON)));
 
@@ -782,6 +782,344 @@ public class LocalSdkTest extends TestCase {
         assertSame(t, ((LocalAddonPkgInfo) pi).getAndroidTarget());
         assertNotNull(t);
 
+        assertEquals(
+                "[]",
+                 sanitizePath(Arrays.toString(t.getSystemImages())));
+    }
+
+    public final void testLocalSdkTest_getPkgInfo_Addon_SysImgInLegacyFolder() {
+        // "Legacy sys-img" means there's only one sys-img of armeabi type directly
+        // in the folder addons/addon-name/images. This case is only supported for
+        // backward compatibility and we default to it when there's an images/ folder
+        // in the addon and that folder doesn't contain per-ABI subfolders and instead
+        // contains at least one .img file.
+
+
+        // check empty
+        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON)));
+
+        // setup fake files
+        mLS.clearLocalPkg(PkgType.PKG_ALL);
+        recordPlatform18(mFOp);
+        mFOp.recordExistingFolder("/sdk/add-ons");
+        mFOp.recordExistingFolder("/sdk/add-ons/addon-vendor_name-2");
+        mFOp.recordExistingFolder("/sdk/add-ons/addon-vendor_name-2/images");
+        mFOp.recordExistingFolder("/sdk/add-ons/addon-vendor_name-2/skins");
+        mFOp.recordExistingFolder("/sdk/add-ons/addon-vendor_name-2/skins/skin_one");
+        mFOp.recordExistingFolder("/sdk/add-ons/addon-vendor_name-2/skins/skin_two");
+        mFOp.recordExistingFile("/sdk/add-ons/addon-vendor_name-2/source.properties",
+                "Pkg.Revision=2\n" +
+                "Addon.VendorId=vendor\n" +
+                "Addon.VendorDisplay=Some Vendor\n" +
+                "Addon.NameId=name\n" +
+                "Addon.NameDisplay=Some Name\n" +
+                "AndroidVersion.ApiLevel=18\n" +
+                "Pkg.LicenseRef=android-sdk-license\n" +
+                "Archive.Os=ANY\n" +
+                "Archive.Arch=ANY\n");
+        mFOp.recordExistingFile("/sdk/add-ons/addon-vendor_name-2/manifest.ini",
+                "revision=2\n" +
+                "name=Some Name\n" +
+                "name-id=name\n" +
+                "vendor=Some Vendor\n" +
+                "vendor-id=vendor\n" +
+                "api=18\n" +
+                "libraries=com.foo.lib1;com.blah.lib2\n" +
+                "com.foo.lib1=foo.jar;API for Foo\n" +
+                "com.blah.lib2=blah.jar;API for Blah\n");
+        mFOp.recordExistingFile("/sdk/add-ons/addon-vendor_name-2/images/system.img",
+                "placeholder\n");
+        mFOp.recordExistingFile("/sdk/add-ons/addon-vendor_name-2/skins/skin_one/layout",
+                "parts {\n" +
+                "}\n");
+        mFOp.recordExistingFile("/sdk/add-ons/addon-vendor_name-2/skins/skin_two/layout",
+                "parts {\n" +
+                "}\n");
+
+        assertEquals(
+                "[<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 MajorRev=2>>]",
+                Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON)));
+        assertEquals(
+                "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>, " +
+                 "<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 MajorRev=2>>]",
+                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ALL)));
+
+        LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_ADDON, "Some Vendor:Some Name:18");
+        assertNotNull(pi);
+        assertTrue(pi instanceof LocalAddonPkgInfo);
+        assertSame(mLS, pi.getLocalSdk());
+        assertEquals(null, pi.getLoadError());
+        assertEquals(new AndroidVersion(18, null), pi.getDesc().getAndroidVersion());
+        assertEquals(new MajorRevision(2), pi.getDesc().getMajorRevision());
+        assertEquals("Some Vendor:Some Name:18", pi.getDesc().getPath());
+        assertEquals("Some Name, Android 18, rev 2", pi.getListDescription());
+        assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
+
+        Package pkg = pi.getPackage();
+        assertNotNull(pkg);
+
+        IAndroidTarget t = mLS.getTargetFromHashString("Some Vendor:Some Name:18");
+        assertSame(t, ((LocalAddonPkgInfo) pi).getAndroidTarget());
+        assertNotNull(t);
+
+        assertEquals(
+                "[SystemImage tag=default, ABI=armeabi, location in legacy folder='/sdk/add-ons/addon-vendor_name-2/images']",
+                 sanitizePath(Arrays.toString(t.getSystemImages())));
+
+        assertEquals(
+                "[/sdk/add-ons/addon-vendor_name-2/skins/skin_one, " +
+                 "/sdk/add-ons/addon-vendor_name-2/skins/skin_two]",
+                sanitizePath(Arrays.toString(t.getSkins())));
+    }
+
+    public final void testLocalSdkTest_getPkgInfo_Addon_SysImgInSubfolder() {
+        // "sys-img in subfolder" means there is an addons/addon-name/images/ folder
+        // which in turns contains any number of folders named after the system-image ABI.
+
+        // check empty
+        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON)));
+
+        // setup fake files
+        mLS.clearLocalPkg(PkgType.PKG_ALL);
+        recordPlatform18(mFOp);
+        mFOp.recordExistingFolder("/sdk/add-ons");
+        mFOp.recordExistingFolder("/sdk/add-ons/addon-vendor_name-2");
+        mFOp.recordExistingFolder("/sdk/add-ons/addon-vendor_name-2/images");
+        mFOp.recordExistingFolder("/sdk/add-ons/addon-vendor_name-2/images/armeabi-v7a");
+        mFOp.recordExistingFolder("/sdk/add-ons/addon-vendor_name-2/images/x86");
+        mFOp.recordExistingFolder("/sdk/add-ons/addon-vendor_name-2/skins");
+        mFOp.recordExistingFolder("/sdk/add-ons/addon-vendor_name-2/skins/skin_one");
+        mFOp.recordExistingFolder("/sdk/add-ons/addon-vendor_name-2/skins/skin_two");
+        mFOp.recordExistingFile("/sdk/add-ons/addon-vendor_name-2/source.properties",
+                "Pkg.Revision=2\n" +
+                "Addon.VendorId=vendor\n" +
+                "Addon.VendorDisplay=Some Vendor\n" +
+                "Addon.NameId=name\n" +
+                "Addon.NameDisplay=Some Name\n" +
+                "AndroidVersion.ApiLevel=18\n" +
+                "Pkg.LicenseRef=android-sdk-license\n" +
+                "Archive.Os=ANY\n" +
+                "Archive.Arch=ANY\n");
+        mFOp.recordExistingFile("/sdk/add-ons/addon-vendor_name-2/manifest.ini",
+                "revision=2\n" +
+                "name=Some Name\n" +
+                "name-id=name\n" +
+                "vendor=Some Vendor\n" +
+                "vendor-id=vendor\n" +
+                "api=18\n" +
+                "libraries=com.foo.lib1;com.blah.lib2\n" +
+                "com.foo.lib1=foo.jar;API for Foo\n" +
+                "com.blah.lib2=blah.jar;API for Blah\n");
+        mFOp.recordExistingFile("/sdk/add-ons/addon-vendor_name-2/images/armeabi-v7a/build.prop",
+                "ro.build.id=a18\n" +
+                "ro.build.display.id=addon_armeabi-v7a-18\n" +
+                "ro.build.version.sdk=18\n" +
+                "ro.build.version.codename=REL\n" +
+                "ro.product.brand=generic_armeabi-v7a\n" +
+                "ro.product.name=google_sdk_armeabi-v7a\n" +
+                "ro.product.device=generic_armeabi-v7a\n" +
+                "ro.product.board=\n" +
+                "ro.product.cpu.abi=armeabi-v7a\n" +
+                "ro.product.manufacturer=unknown\n" +
+                "ro.product.locale.language=en\n" +
+                "ro.product.locale.region=US\n" +
+                "ro.build.product=generic_armeabi-v7a\n");
+        mFOp.recordExistingFile("/sdk/add-ons/addon-vendor_name-2/images/x86/build.prop",
+                "ro.build.id=a18\n" +
+                "ro.build.display.id=addon_x86-18\n" +
+                "ro.build.version.sdk=18\n" +
+                "ro.build.version.codename=REL\n" +
+                "ro.product.brand=generic_x86\n" +
+                "ro.product.name=google_sdk_x86\n" +
+                "ro.product.device=generic_x86\n" +
+                "ro.product.board=\n" +
+                "ro.product.cpu.abi=x86\n" +
+                "ro.product.manufacturer=unknown\n" +
+                "ro.product.locale.language=en\n" +
+                "ro.product.locale.region=US\n" +
+                "ro.build.product=generic_x86\n");
+        mFOp.recordExistingFile("/sdk/add-ons/addon-vendor_name-2/skins/skin_one/layout",
+                "parts {\n" +
+                "}\n");
+        mFOp.recordExistingFile("/sdk/add-ons/addon-vendor_name-2/skins/skin_two/layout",
+                "parts {\n" +
+                "}\n");
+
+        assertEquals(
+                "[<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 MajorRev=2>>]",
+                Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON)));
+        assertEquals(
+                "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>, " +
+                 "<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 MajorRev=2>>]",
+                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ALL)));
+
+        LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_ADDON, "Some Vendor:Some Name:18");
+        assertNotNull(pi);
+        assertTrue(pi instanceof LocalAddonPkgInfo);
+        assertSame(mLS, pi.getLocalSdk());
+        assertEquals(null, pi.getLoadError());
+        assertEquals(new AndroidVersion(18, null), pi.getDesc().getAndroidVersion());
+        assertEquals(new MajorRevision(2), pi.getDesc().getMajorRevision());
+        assertEquals("Some Vendor:Some Name:18", pi.getDesc().getPath());
+        assertEquals("Some Name, Android 18, rev 2", pi.getListDescription());
+        assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
+
+        Package pkg = pi.getPackage();
+        assertNotNull(pkg);
+
+        IAndroidTarget t = mLS.getTargetFromHashString("Some Vendor:Some Name:18");
+        assertSame(t, ((LocalAddonPkgInfo) pi).getAndroidTarget());
+        assertNotNull(t);
+
+        assertEquals(
+                "[SystemImage tag=default, ABI=armeabi-v7a, location in images subfolder='/sdk/add-ons/addon-vendor_name-2/images/armeabi-v7a', " +
+                 "SystemImage tag=default, ABI=x86, location in images subfolder='/sdk/add-ons/addon-vendor_name-2/images/x86']",
+                 sanitizePath(Arrays.toString(t.getSystemImages())));
+
+        assertEquals(
+                "[/sdk/add-ons/addon-vendor_name-2/skins/skin_one, " +
+                 "/sdk/add-ons/addon-vendor_name-2/skins/skin_two]",
+                sanitizePath(Arrays.toString(t.getSkins())));
+    }
+
+    public final void testLocalSdkTest_getPkgInfo_Addon_SysImgFolder() {
+        // sys-img stored separately in the SDK/system-images/addon-id-name/abi/ folder.
+
+        // check empty
+        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON)));
+
+        // setup fake files
+        mLS.clearLocalPkg(PkgType.PKG_ALL);
+        recordPlatform18(mFOp);
+        mFOp.recordExistingFolder("/sdk/add-ons");
+        mFOp.recordExistingFolder("/sdk/add-ons/addon-vendor_name-2");
+        mFOp.recordExistingFolder("/sdk/system-images");
+        mFOp.recordExistingFolder("/sdk/system-images/addon-vendor_name-2");
+        mFOp.recordExistingFolder("/sdk/system-images/addon-vendor_name-2/armeabi-v7a");
+        mFOp.recordExistingFolder("/sdk/system-images/addon-vendor_name-2/x86");
+        mFOp.recordExistingFolder("/sdk/system-images/addon-vendor_name-2/armeabi-v7a/skins");
+        mFOp.recordExistingFolder("/sdk/system-images/addon-vendor_name-2/armeabi-v7a/skins/skin_one");
+        mFOp.recordExistingFolder("/sdk/system-images/addon-vendor_name-2/x86/skins");
+        mFOp.recordExistingFolder("/sdk/system-images/addon-vendor_name-2/x86/skins/skin_two");
+        mFOp.recordExistingFile  ("/sdk/add-ons/addon-vendor_name-2/source.properties",
+                "Pkg.Revision=2\n" +
+                "Addon.VendorId=vendor\n" +
+                "Addon.VendorDisplay=Some Vendor\n" +
+                "Addon.NameId=name\n" +
+                "Addon.NameDisplay=Some Name\n" +
+                "AndroidVersion.ApiLevel=18\n" +
+                "Pkg.LicenseRef=android-sdk-license\n" +
+                "Archive.Os=ANY\n" +
+                "Archive.Arch=ANY\n");
+        mFOp.recordExistingFile("/sdk/add-ons/addon-vendor_name-2/manifest.ini",
+                "revision=2\n" +
+                "name=Some Name\n" +
+                "name-id=name\n" +
+                "vendor=Some Vendor\n" +
+                "vendor-id=vendor\n" +
+                "api=18\n" +
+                "libraries=com.foo.lib1;com.blah.lib2\n" +
+                "com.foo.lib1=foo.jar;API for Foo\n" +
+                "com.blah.lib2=blah.jar;API for Blah\n");
+        mFOp.recordExistingFile("/sdk/system-images/addon-vendor_name-2/armeabi-v7a/source.properties",
+                "Pkg.Revision=1\n" +
+                "Addon.VendorId=vendor\n" +
+                "Addon.VendorDisplay=Some Vendor\n" +
+                "SystemImage.TagId=name\n" +
+                "SystemImage.TagDisplay=Some Name\n" +
+                "SystemImage.Abi=armeabi-v7a\n" +
+                "AndroidVersion.ApiLevel=18\n" +
+                "Pkg.LicenseRef=android-sdk-license\n" +
+                "Archive.Os=ANY\n" +
+                "Archive.Arch=ANY\n");
+        mFOp.recordExistingFile("/sdk/system-images/addon-vendor_name-2/armeabi-v7a/build.prop",
+                "ro.build.id=a18\n" +
+                "ro.build.display.id=addon_armeabi-v7a-18\n" +
+                "ro.build.version.sdk=18\n" +
+                "ro.build.version.codename=REL\n" +
+                "ro.product.brand=generic_armeabi-v7a\n" +
+                "ro.product.name=google_sdk_armeabi-v7a\n" +
+                "ro.product.device=generic_armeabi-v7a\n" +
+                "ro.product.board=\n" +
+                "ro.product.cpu.abi=armeabi-v7a\n" +
+                "ro.product.manufacturer=unknown\n" +
+                "ro.product.locale.language=en\n" +
+                "ro.product.locale.region=US\n" +
+                "ro.build.product=generic_armeabi-v7a\n");
+        mFOp.recordExistingFile("/sdk/system-images/addon-vendor_name-2/x86/source.properties",
+                "Pkg.Revision=1\n" +
+                "Addon.VendorId=vendor\n" +
+                "Addon.VendorDisplay=Some Vendor\n" +
+                "SystemImage.TagId=name\n" +
+                "SystemImage.TagDisplay=Some Name\n" +
+                "SystemImage.Abi=x86\n" +
+                "AndroidVersion.ApiLevel=18\n" +
+                "Pkg.LicenseRef=android-sdk-license\n" +
+                "Archive.Os=ANY\n" +
+                "Archive.Arch=ANY\n");
+        mFOp.recordExistingFile("/sdk/system-images/addon-vendor_name-2/x86/build.prop",
+                "ro.build.id=a18\n" +
+                "ro.build.display.id=addon_x86-18\n" +
+                "ro.build.version.sdk=18\n" +
+                "ro.build.version.codename=REL\n" +
+                "ro.product.brand=generic_x86\n" +
+                "ro.product.name=google_sdk_x86\n" +
+                "ro.product.device=generic_x86\n" +
+                "ro.product.board=\n" +
+                "ro.product.cpu.abi=x86\n" +
+                "ro.product.manufacturer=unknown\n" +
+                "ro.product.locale.language=en\n" +
+                "ro.product.locale.region=US\n" +
+                "ro.build.product=generic_x86\n");
+        mFOp.recordExistingFile("/sdk/system-images/addon-vendor_name-2/armeabi-v7a/skins/skin_one/layout",
+                "parts {\n" +
+                "}\n");
+        mFOp.recordExistingFile("/sdk/system-images/addon-vendor_name-2/x86/skins/skin_two/layout",
+                "parts {\n" +
+                "}\n");
+
+        assertEquals(
+                "[<LocalAddonSysImgPkgInfo <PkgDesc Type=addon_sys_image Android=API 18 Vendor=vendor [Some Vendor] Tag=name [Some Name] Path=armeabi-v7a MajorRev=1>>, " +
+                 "<LocalAddonSysImgPkgInfo <PkgDesc Type=addon_sys_image Android=API 18 Vendor=vendor [Some Vendor] Tag=name [Some Name] Path=x86 MajorRev=1>>]",
+                Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON_SYS_IMAGE)));
+        assertEquals(
+                "[<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 MajorRev=2>>]",
+                Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON)));
+        assertEquals(
+                "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>, " +
+                 "<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 MajorRev=2>>, " +
+                 "<LocalAddonSysImgPkgInfo <PkgDesc Type=addon_sys_image Android=API 18 Vendor=vendor [Some Vendor] Tag=name [Some Name] Path=armeabi-v7a MajorRev=1>>, " +
+                 "<LocalAddonSysImgPkgInfo <PkgDesc Type=addon_sys_image Android=API 18 Vendor=vendor [Some Vendor] Tag=name [Some Name] Path=x86 MajorRev=1>>]",
+                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ALL)));
+
+        LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_ADDON, "Some Vendor:Some Name:18");
+        assertNotNull(pi);
+        assertTrue(pi instanceof LocalAddonPkgInfo);
+        assertSame(mLS, pi.getLocalSdk());
+        assertEquals(null, pi.getLoadError());
+        assertEquals(new AndroidVersion(18, null), pi.getDesc().getAndroidVersion());
+        assertEquals(new MajorRevision(2), pi.getDesc().getMajorRevision());
+        assertEquals("Some Vendor:Some Name:18", pi.getDesc().getPath());
+        assertEquals("Some Name, Android 18, rev 2", pi.getListDescription());
+        assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
+
+        Package pkg = pi.getPackage();
+        assertNotNull(pkg);
+
+        IAndroidTarget t = mLS.getTargetFromHashString("Some Vendor:Some Name:18");
+        assertSame(t, ((LocalAddonPkgInfo) pi).getAndroidTarget());
+        assertNotNull(t);
+
+        assertEquals(
+                "[SystemImage addon-vendor=vendor, tag=name, ABI=armeabi-v7a, location in system image='/sdk/system-images/addon-vendor_name-2/armeabi-v7a', " +
+                 "SystemImage addon-vendor=vendor, tag=name, ABI=x86, location in system image='/sdk/system-images/addon-vendor_name-2/x86']",
+                 sanitizePath(Arrays.toString(t.getSystemImages())));
+
+        assertEquals(
+                "[/sdk/system-images/addon-vendor_name-2/armeabi-v7a/skins/skin_one, " +
+                 "/sdk/system-images/addon-vendor_name-2/x86/skins/skin_two]",
+                sanitizePath(Arrays.toString(t.getSkins())));
+
     }
 
     //-----
@@ -789,9 +1127,9 @@ public class LocalSdkTest extends TestCase {
     private void recordPlatform18(MockFileOp fop) {
         fop.recordExistingFolder("/sdk/platforms");
         fop.recordExistingFolder("/sdk/platforms/android-18");
-        fop.recordExistingFile("/sdk/platforms/android-18/android.jar");
-        fop.recordExistingFile("/sdk/platforms/android-18/framework.aidl");
-        fop.recordExistingFile("/sdk/platforms/android-18/source.properties",
+        fop.recordExistingFile  ("/sdk/platforms/android-18/android.jar");
+        fop.recordExistingFile  ("/sdk/platforms/android-18/framework.aidl");
+        fop.recordExistingFile  ("/sdk/platforms/android-18/source.properties",
                 "Pkg.Revision=1\n" +
                 "Platform.Version=4.3\n" +
                 "AndroidVersion.ApiLevel=18\n" +
