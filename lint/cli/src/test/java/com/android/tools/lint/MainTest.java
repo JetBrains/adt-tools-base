@@ -143,7 +143,7 @@ public class MainTest extends AbstractCheckTest {
         "application (according to its minimum SDK attribute in the manifest).\n" +
         "\n" +
         "If you really want to use this API and don't need to support older devices\n" +
-        "just set the minSdkVersion in your AndroidManifest.xml file.\n" +
+        "just set the minSdkVersion in your build.gradle or AndroidManifest.xml files.\n" +
         "If your code is deliberately accessing newer APIs, and you have ensured (e.g.\n" +
         "with conditional execution) that this code will only ever be called on a\n" +
         "supported platform, then you can annotate your class or method with the\n" +
