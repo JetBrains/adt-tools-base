@@ -45,6 +45,7 @@
             </d:networking>
             <d:sensors>
                 LightSensor
+                GPS
             </d:sensors>
             <d:mic>true</d:mic>
             <d:keyboard>qwerty</d:keyboard>
@@ -63,7 +64,7 @@
             <d:power-type>plugged-in</d:power-type>
         </d:hardware>
         <d:software>
-            <d:api-level>19-</d:api-level>
+            <d:api-level>20-</d:api-level>
             <d:live-wallpaper-support>true</d:live-wallpaper-support>
             <d:bluetooth-profiles/>
             <d:gl-version>2.0</d:gl-version>
@@ -114,6 +115,7 @@
             </d:networking>
             <d:sensors>
                 LightSensor
+                GPS
             </d:sensors>
             <d:mic>true</d:mic>
             <d:keyboard>qwerty</d:keyboard>
@@ -132,7 +134,7 @@
             <d:power-type>plugged-in</d:power-type>
         </d:hardware>
         <d:software>
-            <d:api-level>19-</d:api-level>
+            <d:api-level>20-</d:api-level>
             <d:live-wallpaper-support>true</d:live-wallpaper-support>
             <d:bluetooth-profiles/>
             <d:gl-version>2.0</d:gl-version>
