@@ -29,7 +29,6 @@ import static com.android.SdkConstants.DOT_RS;
 import static com.android.SdkConstants.DOT_RSH;
 import static com.android.SdkConstants.DOT_TXT;
 import static com.android.SdkConstants.DOT_XML;
-import static com.android.SdkConstants.FD_EXTRAS;
 import static com.android.SdkConstants.FD_GRADLE;
 import static com.android.SdkConstants.FD_RES;
 import static com.android.SdkConstants.FD_SOURCES;
@@ -52,13 +51,11 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.repository.GradleCoordinate;
+import com.android.ide.common.repository.SdkMavenRepository;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.repository.descriptors.IPkgDesc;
-import com.android.sdklib.repository.descriptors.PkgType;
-import com.android.sdklib.repository.local.LocalPkgInfo;
 import com.android.sdklib.repository.local.LocalSdk;
 import com.android.utils.ILogger;
 import com.android.utils.PositionXmlParser;
@@ -1606,28 +1603,16 @@ public class GradleImport {
         return mHandledJars.contains(file.getName());
     }
 
-    private boolean haveLocalRepository(String vendor) {
+    private boolean haveLocalRepository(@NonNull SdkMavenRepository repository) {
         SdkManager sdkManager = getSdkManager();
         if (sdkManager != null) {
             LocalSdk localSdk = sdkManager.getLocalSdk();
-            LocalPkgInfo[] infos = localSdk.getPkgsInfos(PkgType.PKG_EXTRA);
-            for (LocalPkgInfo info : infos) {
-                IPkgDesc d = info.getDesc();
-                //noinspection ConstantConditions,ConstantConditions
-                if (d.hasVendor() && vendor.equals(d.getVendor().getId()) &&
-                        d.hasPath() && "m2repository".equals(d.getPath())) {
-                      return true;
-                }
+            if (repository.isInstalled(localSdk)) {
+                return true;
             }
         }
 
-        if (mSdkLocation != null) {
-            File repository = new File(mSdkLocation,
-                    FD_EXTRAS + separator + vendor + separator + "m2repository");
-            return repository.exists();
-        }
-
-        return false;
+        return repository.isInstalled(mSdkLocation);
     }
 
     public boolean needSupportRepository() {
@@ -1651,10 +1636,10 @@ public class GradleImport {
     }
 
     public boolean isMissingSupportRepository() {
-        return !haveLocalRepository("android");
+        return !haveLocalRepository(SdkMavenRepository.ANDROID);
     }
 
     public boolean isMissingGoogleRepository() {
-        return !haveLocalRepository("google");
+        return !haveLocalRepository(SdkMavenRepository.GOOGLE);
     }
 }
