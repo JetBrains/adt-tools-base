@@ -1236,8 +1236,11 @@ public class ResourceMergerTest extends BaseTestCase {
         resourceMerger.mergeData(consumer, false /*doCleanUp*/);
 
         // test result of merger.
-        assertEquals(4, consumer.addedItems.size());
+        // only 3 items added since attr/bar isn't added (declared inline)
+        assertEquals(3, consumer.addedItems.size());
+        // no touched items
         assertTrue(consumer.touchedItems.isEmpty());
+        // one removed string item
         assertEquals(1, consumer.removedItems.size());
     }
 
@@ -1559,7 +1562,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         @Override
         public boolean ignoreItemInMerge(ResourceItem item) {
-            return false;
+            return item.getIgnoredFromDiskMerge();
         }
     }
 }

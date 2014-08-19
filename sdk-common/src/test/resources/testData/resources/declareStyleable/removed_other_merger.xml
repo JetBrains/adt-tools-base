@@ -23,15 +23,12 @@
                     path="$TOP$$SEP$base$SEP$values$SEP$values.xml"
                     qualifiers="" >
                 <declare-styleable name="foo" >
-                    <attr name="bar" />
+                    <attr name="bar" format="boolean" />
                     <attr name="bar1" />
                 </declare-styleable>
 
                 <attr
                         name="bar1"
-                        format="boolean" />
-                <attr
-                        name="bar"
                         format="boolean" />
 
                 <string name="removed_string">foo</string>
@@ -49,7 +46,6 @@
 
                 <declare-styleable name="foo" >
                     <attr name="bar" />
-                    <attr name="bar1" />
                     <attr name="boo" />
                 </declare-styleable>
             </file>

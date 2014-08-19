@@ -82,6 +82,14 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     protected abstract S createFromXml(Node node);
 
     protected abstract boolean requiresMerge(@NonNull String dataItemKey);
+
+    /**
+     * Merge items together, and register the merged items with the given consumer.
+     * @param dataItemKey the key for the items
+     * @param items the items, from lower priority to higher priority.
+     * @param consumer the consumer to receive the merged items.
+     * @throws MergingException
+     */
     protected abstract void mergeItems(
             @NonNull String dataItemKey,
             @NonNull List<I> items,
@@ -184,10 +192,10 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             // loop on all the data items.
             for (String dataItemKey : dataItemKeys) {
                 if (requiresMerge(dataItemKey)) {
-                    // get all the available items
+                    // get all the available items, from the lower priority, to the higher
+                    // priority
                     List<I> items = Lists.newArrayListWithExpectedSize(mDataSets.size());
-                    for (int i = mDataSets.size() - 1 ; i >= 0 ; i--) {
-                        S dataSet = mDataSets.get(i);
+                    for (S dataSet : mDataSets) {
 
                         // look for the resource key in the set
                         ListMultimap<String, I> itemMap = dataSet.getDataMap();

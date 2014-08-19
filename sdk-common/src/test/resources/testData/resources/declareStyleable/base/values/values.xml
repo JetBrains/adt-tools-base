@@ -16,11 +16,10 @@
   -->
 
 <resources>
-    <attr name="bar" format="boolean"/>
     <attr name="bar1" format="boolean"/>
 
     <declare-styleable name="foo">
-        <attr name="bar"/>
+        <attr name="bar" format="boolean" />
         <attr name="bar1"/>
     </declare-styleable>
 </resources>

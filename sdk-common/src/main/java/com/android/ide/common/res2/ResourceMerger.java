@@ -139,7 +139,10 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
                 nameAttr.setValue(itemName);
                 declareStyleableNode.getAttributes().setNamedItem(nameAttr);
 
-                // keep track of attr added to it.
+                // loop through all the items and gather a unique list of nodes.
+                // because we start with the lower priority items, this means that attr with
+                // format inside declare-styleable will be processed first, and added first
+                // while the redundant attr (with no format) will be ignored.
                 Set<String> attrs = Sets.newHashSet();
 
                 for (ResourceItem item : items) {
@@ -307,10 +310,8 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
         ResourceType type = ValueResourceParser2.getType(node, null);
         String name = ValueResourceParser2.getName(node);
 
-        if (name != null) {
-            if (type != null) {
-                return new MergedResourceItem(name, type, qualifiers, node);
-            }
+        if (name != null && type != null) {
+            return new MergedResourceItem(name, type, qualifiers, node);
         }
 
         return null;
