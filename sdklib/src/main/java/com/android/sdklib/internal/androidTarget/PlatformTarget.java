@@ -433,6 +433,7 @@ public final class PlatformTarget implements IAndroidTarget {
 
     public void setSkins(@NonNull File[] skins) {
         mSkins = skins;
+        Arrays.sort(mSkins);
     }
 
     public void setSamplesPath(String osLocation) {

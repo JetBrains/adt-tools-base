@@ -45,12 +45,15 @@ import com.google.common.collect.TreeMultimap;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -255,9 +258,23 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                     hasRenderingResources,
                     baseTarget);
 
-            // need to parse the skins.
+            // parse the legacy skins, located under SDK/addons/addon-name/skins/[skin-name]
+            // and merge with the system-image skins, if any, merging them by name.
             File targetSkinFolder = target.getFile(IAndroidTarget.SKINS);
-            List<File> skins = parseSkinFolder(targetSkinFolder);
+
+            Map<String, File> skinsMap = new TreeMap<String, File>();
+
+            for (File f : parseSkinFolder(targetSkinFolder)) {
+                skinsMap.put(f.getName().toLowerCase(Locale.US), f);
+            }
+            for (ISystemImage si : systemImages) {
+                for (File f : si.getSkins()) {
+                    skinsMap.put(f.getName().toLowerCase(Locale.US), f);
+                }
+            }
+
+            List<File> skins = new ArrayList<File>(skinsMap.values());
+            Collections.sort(skins);
 
             // get the default skin
             File defaultSkin = null;
@@ -435,8 +452,8 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
         SetMultimap<IdDisplay, String> tagToAbiFound = TreeMultimap.create();
 
 
-        // Look in the SDK/system-image/platform-n/tag/abi folders.
-        // Look in the SDK/system-image/platform-n/abi folders.
+        // Look in the system images folders: SDK/system-image/addon-id-tag/abi (many abi possible)
+        // Optional: look for skinds under SDK/system-image/addon-id-tag/abi/skins/skin-name
         // If we find multiple occurrences of the same platform/abi, the first one read wins.
 
         LocalPkgInfo[] sysImgInfos = getLocalSdk().getPkgsInfos(PkgType.PKG_ADDON_SYS_IMAGE);
@@ -468,7 +485,9 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             }
         }
 
-        // Look for sub-directories
+        // Look for sub-directories:
+        // - SDK/addons/addon-name/images/abi (multiple abi possible)
+        // - SDK/addons/addon-name/armeabi (legacy support)
         boolean useLegacy = true;
         boolean hasImgFiles = false;
         final IdDisplay defaultTag = SystemImage.DEFAULT_TAG;
@@ -490,6 +509,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                 }
             } else if (!hasImgFiles && fileOp.isFile(file)) {
                 if (file.getName().endsWith(".img")) {                  //$NON-NLS-1$
+                    // The legacy images folder is only valid if it contains some .img files
                     hasImgFiles = true;
                 }
             }
