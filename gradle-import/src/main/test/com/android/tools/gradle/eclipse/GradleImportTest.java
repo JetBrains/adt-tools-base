@@ -1024,9 +1024,9 @@ public class GradleImportTest extends TestCase {
         File imported = checkProject(projectDir, ""
                 + MSG_HEADER
                 + MSG_REPLACED_JARS
-                + "android-support-v4.jar => com.android.support:support-v4:+\n"
-                + "android-support-v7-appcompat.jar => com.android.support:appcompat-v7:+\n"
-                + "android-support-v7-gridlayout.jar => com.android.support:gridlayout-v7:+\n"
+                + "android-support-v4.jar => com.android.support:support-v4:18.0.0\n"
+                + "android-support-v7-appcompat.jar => com.android.support:appcompat-v7:18.0.0\n"
+                + "android-support-v7-gridlayout.jar => com.android.support:gridlayout-v7:18.0.0\n"
                 + MSG_FOLDER_STRUCTURE
                 + DEFAULT_MOVED
                 + (getTestSdkPath() == null ? MSG_MISSING_REPO_1 + "null\n" + MSG_MISSING_REPO_2 : "")
@@ -1092,9 +1092,9 @@ public class GradleImportTest extends TestCase {
                 + "}\n"
                 + "\n"
                 + "dependencies {\n"
-                + "    compile 'com.android.support:support-v4:+'\n"
-                + "    compile 'com.android.support:appcompat-v7:+'\n"
-                + "    compile 'com.android.support:gridlayout-v7:+'\n"
+                + "    compile 'com.android.support:support-v4:18.0.0'\n"
+                + "    compile 'com.android.support:appcompat-v7:18.0.0'\n"
+                + "    compile 'com.android.support:gridlayout-v7:18.0.0'\n"
                 + "}\n",
                 Files.toString(new File(imported, "app" + separator + "build.gradle"), UTF_8)
                         .replace(NL, "\n"));
@@ -1661,7 +1661,7 @@ public class GradleImportTest extends TestCase {
                 + MSG_REPLACED_LIBS
                 + "Lib2 =>\n"
                 + "    com.actionbarsherlock:actionbarsherlock:4.4.0@aar\n"
-                + "    com.android.support:support-v4:+\n"
+                + "    com.android.support:support-v4:18.0.0\n"
                 + MSG_FOLDER_STRUCTURE
                 // TODO: The summary should describe the library!!
                 + "In JavaLib:\n"
@@ -1758,7 +1758,7 @@ public class GradleImportTest extends TestCase {
                 + "    compile project(':lib1')\n"
                 + "    compile project(':javaLib')\n"
                 + "    compile 'com.actionbarsherlock:actionbarsherlock:4.4.0@aar'\n"
-                + "    compile 'com.android.support:support-v4:+'\n"
+                + "    compile 'com.android.support:support-v4:18.0.0'\n"
                 + "}\n",
                 Files.toString(new File(imported, "app" + separator + "build.gradle"), UTF_8)
                         .replace(NL, "\n"));
@@ -1782,7 +1782,7 @@ public class GradleImportTest extends TestCase {
         File imported = checkProject(projectDir, ""
                 + MSG_HEADER
                 + MSG_REPLACED_JARS
-                + "android-support-v4.jar => com.android.support:support-v4:+\n"
+                + "android-support-v4.jar => com.android.support:support-v4:18.+\n"
                 + MSG_FOLDER_STRUCTURE
                 + DEFAULT_MOVED
                 + MSG_MISSING_REPO_1
@@ -3298,6 +3298,67 @@ public class GradleImportTest extends TestCase {
         assertFalse(GradleImport.isTextFile(new File("parent" + separator + "foo.jpg")));
         assertFalse(GradleImport.isTextFile(new File("parent" + separator + "foo.so")));
         assertFalse(GradleImport.isTextFile(new File("parent" + separator + "foo.dll")));
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testFindLatestSupportLib1() throws Exception {
+        // Test that we find the latest available version of the 19.x support libraries
+        File projectDir = createProject("test1", "test.pkg");
+
+        createProjectProperties(projectDir, "android-19", null, null, null,
+                Collections.<File>emptyList());
+
+        File libs = new File(projectDir, "libs");
+        libs.mkdirs();
+        new File(libs, "android-support-v4.jar").createNewFile();
+        new File(libs, "android-support-v7-gridlayout.jar").createNewFile();
+        new File(libs, "android-support-v7-appcompat.jar").createNewFile();
+
+        File imported = checkProject(projectDir, ""
+                        + MSG_HEADER
+                        + MSG_REPLACED_JARS
+                        + "android-support-v4.jar => com.android.support:support-v4:19.1.0\n"
+                        + "android-support-v7-appcompat.jar => com.android.support:appcompat-v7:19.1.0\n"
+                        + "android-support-v7-gridlayout.jar => com.android.support:gridlayout-v7:19.1.0\n"
+                        + MSG_FOLDER_STRUCTURE
+                        + DEFAULT_MOVED
+                        + (getTestSdkPath() == null ? MSG_MISSING_REPO_1 + "null\n" + MSG_MISSING_REPO_2 : "")
+                        + MSG_FOOTER,
+                false /* checkBuild */);
+
+        deleteDir(projectDir);
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testFindLatestSupportLib2() throws Exception {
+        // Like testFindLatestSupportLib1, but uses a preview platform (L)
+        // Test that we find the latest available version of the 19.x support libraries
+        File projectDir = createProject("test1", "test.pkg");
+
+        createProjectProperties(projectDir, "android-L", null, null, null,
+                Collections.<File>emptyList());
+
+        File libs = new File(projectDir, "libs");
+        libs.mkdirs();
+        new File(libs, "android-support-v4.jar").createNewFile();
+        new File(libs, "android-support-v7-gridlayout.jar").createNewFile();
+        new File(libs, "android-support-v7-appcompat.jar").createNewFile();
+
+        File imported = checkProject(projectDir, ""
+                        + MSG_HEADER
+                        + MSG_REPLACED_JARS
+                        + "android-support-v4.jar => com.android.support:support-v4:21.0.0-rc1\n"
+                        + "android-support-v7-appcompat.jar => com.android.support:appcompat-v7:21.0.0-rc1\n"
+                        + "android-support-v7-gridlayout.jar => com.android.support:gridlayout-v7:21.0.0-rc1\n"
+                        + MSG_FOLDER_STRUCTURE
+                        + DEFAULT_MOVED
+                        + (getTestSdkPath() == null ? MSG_MISSING_REPO_1 + "null\n" + MSG_MISSING_REPO_2 : "")
+                        + MSG_FOOTER,
+                false /* checkBuild */);
+
+        deleteDir(projectDir);
+        deleteDir(imported);
     }
 
     // --- Unit test infrastructure from this point on ----

@@ -16,20 +16,17 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.FD_BUILD_TOOLS;
-import static com.android.SdkConstants.FD_EXTRAS;
-import static com.android.SdkConstants.FD_M2_REPOSITORY;
 import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_HIGHER;
 import static com.android.tools.lint.checks.ManifestDetector.TARGET_NEWER;
 import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
 import static com.google.common.base.Charsets.UTF_8;
-import static java.io.File.separator;
-import static java.io.File.separatorChar;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.repository.GradleCoordinate;
+import com.android.ide.common.repository.SdkMavenRepository;
 import com.android.sdklib.repository.FullRevision;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
@@ -240,6 +237,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     public static final String APP_PLUGIN_ID = "com.android.application";
     /** The Gradle plugin ID for Android libraries */
     public static final String LIB_PLUGIN_ID = "com.android.library";
+
     /** Previous plugin id for applications */
     public static final String OLD_APP_PLUGIN_ID = "android";
     /** Previous plugin id for libraries */
@@ -924,7 +922,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         }
 
         // Check to make sure you have the Android support repository installed
-        File repository = findRepository(context.getClient(), "android");
+        File sdkHome = context.getClient().getSdkHome();
+        File repository = SdkMavenRepository.ANDROID.getRepositoryLocation(sdkHome, true);
         if (repository == null) {
             report(context, cookie, DEPENDENCY,
                     "Dependency on a support library, but the SDK installation does not "
@@ -941,7 +940,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         String artifactId = dependency.getArtifactId();
         assert groupId != null && artifactId != null;
 
-        File repository = findRepository(context.getClient(), "google");
+        File sdkHome = context.getClient().getSdkHome();
+        File repository = SdkMavenRepository.GOOGLE.getRepositoryLocation(sdkHome, true);
         if (repository == null) {
             report(context, cookie, DEPENDENCY,
                     "Dependency on Play Services, but the SDK installation does not "
@@ -955,7 +955,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
     private void checkLocalMavenVersions(Context context, GradleCoordinate dependency,
             Object cookie, String groupId, String artifactId, File repository) {
-        GradleCoordinate max = getHighestInstalledVersion(groupId, artifactId, repository);
+        GradleCoordinate max = SdkMavenRepository.getHighestInstalledVersion(groupId, artifactId,
+                repository, null, false);
         if (max != null) {
             if (COMPARE_PLUS_HIGHER.compare(dependency, max) < 0
                     && context.isEnabled(DEPENDENCY)) {
@@ -963,48 +964,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 report(context, cookie, DEPENDENCY, message);
             }
         }
-    }
-
-    private static File findRepository(LintClient client, String extrasName) {
-        File sdkHome = client.getSdkHome();
-        if (sdkHome != null) {
-            File repository = new File(sdkHome, FD_EXTRAS + separator + extrasName + separator
-                    + FD_M2_REPOSITORY);
-            if (repository.exists()) {
-                return repository;
-            }
-        }
-
-        return null;
-    }
-
-    @Nullable
-    private static GradleCoordinate getHighestInstalledVersion(
-            @NonNull String groupId,
-            @NonNull String artifactId,
-            @NonNull File repository) {
-        File versionDir = new File(repository,
-                groupId.replace('.', separatorChar) + separator + artifactId);
-        File[] versions = versionDir.listFiles();
-        if (versions != null) {
-            List<GradleCoordinate> versionCoordinates = Lists.newArrayList();
-            for (File dir : versions) {
-                if (!dir.isDirectory()) {
-                    continue;
-                }
-                GradleCoordinate gc = GradleCoordinate.parseCoordinateString(
-                        groupId + ":" + artifactId + ":" + dir.getName());
-                if (gc != null && !gc.getFullRevision().contains("-rc")) {
-                  FullRevision.parseRevision(gc.getFullRevision());
-                    versionCoordinates.add(gc);
-                }
-            }
-            if (!versionCoordinates.isEmpty()) {
-                return Collections.max(versionCoordinates, COMPARE_PLUS_HIGHER);
-            }
-        }
-
-        return null;
     }
 
     private static FullRevision getNewerRevision(@NonNull GradleCoordinate dependency,

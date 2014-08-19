@@ -21,10 +21,8 @@ import static com.android.SdkConstants.BIN_FOLDER;
 import static com.android.SdkConstants.DOT_AIDL;
 import static com.android.SdkConstants.DOT_FS;
 import static com.android.SdkConstants.DOT_JAR;
-import static com.android.SdkConstants.DOT_JAVA;
 import static com.android.SdkConstants.DOT_RS;
 import static com.android.SdkConstants.DOT_RSH;
-import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.FD_AIDL;
 import static com.android.SdkConstants.FD_ASSETS;
 import static com.android.SdkConstants.FD_JAVA;
@@ -37,17 +35,15 @@ import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.SdkConstants.FN_PROJECT_PROPERTIES;
 import static com.android.SdkConstants.GEN_FOLDER;
 import static com.android.SdkConstants.LIBS_FOLDER;
-import static com.android.SdkConstants.SUPPORT_LIB_ARTIFACT;
 import static com.android.tools.gradle.eclipse.GradleImport.ECLIPSE_DOT_CLASSPATH;
 import static com.android.tools.gradle.eclipse.GradleImport.ECLIPSE_DOT_PROJECT;
 import static java.io.File.separator;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
+import com.android.ide.common.repository.SdkMavenRepository;
 import com.android.sdklib.AndroidVersion;
-import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
@@ -63,16 +59,10 @@ import java.util.Locale;
 import java.util.Set;
 
 abstract class ImportModule implements Comparable<ImportModule> {
-    // TODO: Tie libraries to the compile SDK?
-    //private static final String LATEST = GradleImport.CURRENT_COMPILE_VERSION + ".0.0";
-    private static final String LATEST = "+";
-
-    private static final String APPCOMPAT_DEP = "com.android.support:appcompat-v7:" + LATEST;
-    private static final String GRID_LAYOUT_DEP = "com.android.support:gridlayout-v7:" + LATEST;
-    private static final String SUPPORT_LIB_DEP = SUPPORT_LIB_ARTIFACT + ":" + LATEST;
     @SuppressWarnings("SpellCheckingInspection")
     private static final String SHERLOCK_DEP = "com.actionbarsherlock:actionbarsherlock:4.4.0@aar";
     private static final String PLAY_SERVICES_DEP = "com.google.android.gms:play-services:+";
+    private static final String SUPPORT_GROUP_ID = "com.android.support";
 
     protected final GradleImport mImporter;
     protected final List<GradleCoordinate> mDependencies = Lists.newArrayList();
@@ -131,6 +121,51 @@ abstract class ImportModule implements Comparable<ImportModule> {
     protected void initDependencies() {
     }
 
+    public GradleCoordinate getLatestVersion(String artifact) {
+        int compileVersion = GradleImport.CURRENT_COMPILE_VERSION;
+        AndroidVersion version = getCompileSdkVersion();
+        if (version != AndroidVersion.DEFAULT) {
+            compileVersion = version.getFeatureLevel();
+        }
+
+        // If you're using for example android-14, you still need support libraries
+        // from version 18 (earliest version where we have all the libs in the m2 repository)
+        if (compileVersion < 18) {
+            compileVersion = 18;
+        }
+
+        String compileVersionString = Integer.toString(compileVersion);
+
+        if (mImporter.getSdkLocation() != null) {
+            @SuppressWarnings("UnnecessaryLocalVariable")
+            String filter = compileVersionString;
+            GradleCoordinate max = SdkMavenRepository.ANDROID.getHighestInstalledVersion(
+                    mImporter.getSdkLocation(), SUPPORT_GROUP_ID, artifact, filter, true);
+            if (max != null) {
+                return max;
+            }
+        }
+
+        String coordinate = SUPPORT_GROUP_ID + ':' + artifact + ':' + compileVersionString + ".+";
+        return GradleCoordinate.parseCoordinateString(coordinate);
+    }
+
+    private GradleCoordinate getAppCompatDependency() {
+        return getLatestVersion("appcompat-v7");
+    }
+
+    private GradleCoordinate getSupportLibDependency() {
+        return getLatestVersion("support-v4");
+    }
+
+    private GradleCoordinate getGridLayoutDependency() {
+        return getLatestVersion("gridlayout-v7");
+    }
+
+    private GradleCoordinate getMediaRouterDependency() {
+        return getLatestVersion("mediarouter-v7");
+    }
+
     @SuppressWarnings("SpellCheckingInspection")
     @Nullable
     GradleCoordinate guessDependency(@NonNull File jar) {
@@ -143,13 +178,13 @@ abstract class ImportModule implements Comparable<ImportModule> {
         String name = jar.getName().toLowerCase(Locale.US);
         if (name.equals("android-support-v4.jar")) {
             mImporter.markJarHandled(jar);
-            return GradleCoordinate.parseCoordinateString(SUPPORT_LIB_DEP);
+            return getSupportLibDependency();
         } else if (name.equals("android-support-v7-gridlayout.jar")) {
             mImporter.markJarHandled(jar);
-            return GradleCoordinate.parseCoordinateString(GRID_LAYOUT_DEP);
+            return getGridLayoutDependency();
         } else if (name.equals("android-support-v7-appcompat.jar")) {
             mImporter.markJarHandled(jar);
-            return GradleCoordinate.parseCoordinateString(APPCOMPAT_DEP);
+            return getAppCompatDependency();
         } else if (name.equals("com_actionbarsherlock.jar") ||
                 name.equalsIgnoreCase("actionbarsherlock.jar")) {
             mImporter.markJarHandled(jar);
@@ -223,21 +258,19 @@ abstract class ImportModule implements Comparable<ImportModule> {
                 if (pkg.equals("com.actionbarsherlock")) {
                     mReplaceWithDependencies = Arrays.asList(
                             GradleCoordinate.parseCoordinateString(SHERLOCK_DEP),
-                            GradleCoordinate.parseCoordinateString(SUPPORT_LIB_DEP));
+                            getSupportLibDependency());
                 } else if (pkg.equals("android.support.v7.gridlayout")) {
                     mReplaceWithDependencies = Collections.singletonList(
-                            GradleCoordinate.parseCoordinateString(GRID_LAYOUT_DEP));
+                            getGridLayoutDependency());
                 } else if (pkg.equals("com.google.android.gms")) {
                     mReplaceWithDependencies = Collections.singletonList(
                             GradleCoordinate.parseCoordinateString(
                                     PLAY_SERVICES_DEP));
                 } else if (pkg.equals("android.support.v7.appcompat")) {
-                    mReplaceWithDependencies = Collections.singletonList(
-                            GradleCoordinate.parseCoordinateString(APPCOMPAT_DEP));
+                    mReplaceWithDependencies = Collections.singletonList(getAppCompatDependency());
                 } else if (pkg.equals("android.support.v7.mediarouter")) {
                     mReplaceWithDependencies = Collections.singletonList(
-                            GradleCoordinate.parseCoordinateString(
-                                    "com.android.support:support-v7-mediarouter:+"));
+                            getMediaRouterDependency());
                 }
 
                 if (mReplaceWithDependencies != null) {
