@@ -58,7 +58,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 import lombok.ast.AstVisitor;
@@ -245,24 +244,15 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
         return false;
     }
 
-    private static boolean isLauncher(Element element) {
-        // Checks whether an element is a launcher activity.
-        for (Element child : LintUtils.getChildren(element)) {
-            if (child.getTagName().equals(TAG_INTENT_FILTER)) {
-                for (Element innerChild: LintUtils.getChildren(child)) {
-                    if (innerChild.getTagName().equals("category")) { //$NON-NLS-1$
-                        String categoryString = innerChild.getAttributeNS(ANDROID_URI, ATTR_NAME);
-                        return "android.intent.category.LAUNCHER".equals(categoryString); //$NON-NLS-1$
-                    }
-                }
-            }
+    private static boolean isStandardReceiver(Element element) {
+        // Play Services also the following receiver which we'll consider standard
+        // in the sense that it doesn't require a separate permission
+        String name = element.getAttributeNS(ANDROID_URI, ATTR_NAME);
+        if ("com.google.android.gms.tagmanager.InstallReferrerReceiver".equals(name)) {
+            return true;
         }
 
-        return false;
-    }
-
-    private static boolean isStandardReceiver(Element element) {
-      // Checks whether a broadcast receiver receives a standard Android action
+        // Checks whether a broadcast receiver receives a standard Android action
         for (Element child : LintUtils.getChildren(element)) {
             if (child.getTagName().equals(TAG_INTENT_FILTER)) {
                 for (Element innerChild : LintUtils.getChildren(child)) {
@@ -273,12 +263,13 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
                 }
             }
         }
+
         return false;
     }
 
     private static void checkReceiver(XmlContext context, Element element) {
         if (getExported(element) && isUnprotectedByPermission(element) &&
-            !isStandardReceiver(element)) {
+                !isStandardReceiver(element)) {
             // No declared permission for this exported receiver: complain
             context.report(EXPORTED_RECEIVER, element, context.getLocation(element),
                            "Exported receiver does not require permission", null);
@@ -371,9 +362,8 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
     public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
             @NonNull MethodInvocation node) {
         StrictListAccessor<Expression,MethodInvocation> args = node.astArguments();
-        Iterator<Expression> iterator = args.iterator();
-        while (iterator.hasNext()) {
-            iterator.next().accept(visitor);
+        for (Expression arg : args) {
+            arg.accept(visitor);
         }
     }
 
