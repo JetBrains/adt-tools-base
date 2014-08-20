@@ -548,15 +548,12 @@ public abstract class BasePlugin {
     public void createMergeAppManifestsTask(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull String manifestOutDir) {
-        boolean multiOutput = variantData.outputs.size() > 1
-        if (multiOutput && extension.getUseOldManifestMerger()) {
-            throw new RuntimeException("Old Manifest merger cannot be used with new Splits mechanism")
-        }
-
         if (extension.getUseOldManifestMerger()) {
             createOldProcessManifestTask(variantData, manifestOutDir);
             return;
         }
+
+        boolean multiOutput = variantData.outputs.size() > 1
 
         VariantConfiguration config = variantData.variantConfiguration
         ProductFlavor mergedFlavor = config.mergedFlavor
@@ -681,59 +678,73 @@ public abstract class BasePlugin {
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull String manifestOurDir) {
         VariantConfiguration config = variantData.variantConfiguration
-
-        // Old manifest merger only support a single output
-        BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
-
-        def processManifestTask = project.tasks.create(
-                "merge${variantData.variantConfiguration.fullName.capitalize()}Manifests",
-                ProcessAppManifest)
-        variantOutputData.manifestProcessorTask = processManifestTask
-        processManifestTask.dependsOn variantData.prepareDependenciesTask
-        if (config.type != TEST) {
-            processManifestTask.dependsOn variantData.checkManifestTask
-        }
-
-        processManifestTask.plugin = this
-
         ProductFlavor mergedFlavor = config.mergedFlavor
 
-        processManifestTask.conventionMapping.mainManifest = {
-            config.mainManifest
-        }
-        processManifestTask.conventionMapping.manifestOverlays = {
-            config.manifestOverlays
-        }
-        processManifestTask.conventionMapping.packageNameOverride = {
-            config.idOverride
-        }
-        processManifestTask.conventionMapping.versionName = {
-            config.versionName
-        }
-        processManifestTask.conventionMapping.libraries = {
-            getManifestDependencies(config.directLibraries)
-        }
-        processManifestTask.conventionMapping.versionCode = {
-            config.versionCode
-        }
-        processManifestTask.conventionMapping.minSdkVersion = {
-            if (androidBuilder.isPreviewTarget()) {
-                return androidBuilder.getTargetCodename()
+        boolean multiOutput = variantData.outputs.size() > 1
+
+        // loop on all outputs. The only difference will be the name of the task, and location
+        // of the generated manifest
+        for (BaseVariantOutputData vod : variantData.outputs) {
+            // create final var inside the loop to ensure the closures will work.
+            final BaseVariantOutputData variantOutputData = vod
+
+            String outputName = multiOutput ?
+                    variantOutputData.fullName.capitalize() :
+                    config.fullName.capitalize()
+            String outputDirName = multiOutput ? variantOutputData.dirName : config.dirName
+
+            def processManifestTask = project.tasks.create(
+                    "merge${outputName}Manifests", ProcessAppManifest)
+
+            variantOutputData.manifestProcessorTask = processManifestTask
+            processManifestTask.dependsOn variantData.prepareDependenciesTask
+            if (config.type != TEST) {
+                processManifestTask.dependsOn variantData.checkManifestTask
             }
 
-            mergedFlavor.minSdkVersion?.apiString
-        }
+            processManifestTask.plugin = this
 
-        processManifestTask.conventionMapping.targetSdkVersion = {
-            if (androidBuilder.isPreviewTarget()) {
-                return androidBuilder.getTargetCodename()
+            processManifestTask.conventionMapping.mainManifest = {
+                config.mainManifest
+            }
+            processManifestTask.conventionMapping.manifestOverlays = {
+                config.manifestOverlays
+            }
+            processManifestTask.conventionMapping.packageNameOverride = {
+                config.idOverride
+            }
+            processManifestTask.conventionMapping.versionName = {
+                config.versionName
+            }
+            processManifestTask.conventionMapping.libraries = {
+                getManifestDependencies(config.directLibraries)
+            }
+            processManifestTask.conventionMapping.versionCode = {
+                if (variantOutputData instanceof ApkVariantOutputData) {
+                    return ((ApkVariantOutputData) variantOutputData).versionCode
+                }
+
+                return config.versionCode
+            }
+            processManifestTask.conventionMapping.minSdkVersion = {
+                if (androidBuilder.isPreviewTarget()) {
+                    return androidBuilder.getTargetCodename()
+                }
+
+                mergedFlavor.minSdkVersion?.apiString
             }
 
-            return mergedFlavor.targetSdkVersion?.apiString
-        }
-        processManifestTask.conventionMapping.manifestOutputFile = {
-            project.file(
-                    "$project.buildDir/${FD_INTERMEDIATES}/${manifestOurDir}/${variantData.variantConfiguration.dirName}/AndroidManifest.xml")
+            processManifestTask.conventionMapping.targetSdkVersion = {
+                if (androidBuilder.isPreviewTarget()) {
+                    return androidBuilder.getTargetCodename()
+                }
+
+                return mergedFlavor.targetSdkVersion?.apiString
+            }
+            processManifestTask.conventionMapping.manifestOutputFile = {
+                project.file(
+                        "$project.buildDir/${FD_INTERMEDIATES}/${manifestOurDir}/${outputDirName}/AndroidManifest.xml")
+            }
         }
     }
 
