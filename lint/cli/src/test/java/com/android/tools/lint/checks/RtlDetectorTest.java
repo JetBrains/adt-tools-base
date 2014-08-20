@@ -372,10 +372,10 @@ public class RtlDetectorTest extends AbstractCheckTest {
     public void testSymmetry() throws Exception {
         mEnabled = Collections.singleton(RtlDetector.SYMMETRY);
         assertEquals(""
-                + "res/layout/relative.xml:29: Error: When you define paddingRight you should probably also define paddingLeft for right-to-left symmetry [RtlSymmetry]\n"
+                + "res/layout/relative.xml:29: Warning: When you define paddingRight you should probably also define paddingLeft for right-to-left symmetry [RtlSymmetry]\n"
                 + "        android:paddingRight=\"120dip\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "1 errors, 0 warnings\n",
+                + "0 errors, 1 warnings\n",
 
                 lintProject(
                         "rtl/project-api17.properties=>project.properties",
