@@ -1538,6 +1538,11 @@ public class ResourceMergerTest extends BaseTestCase {
 
         @Override
         public void addItem(@NonNull ResourceItem item) throws ConsumerException {
+            // the default res merge writer calls this, so we should too.
+            // this is to test that the merged item are properly created
+            @SuppressWarnings("UnusedDeclaration")
+            ResourceFile.FileType type = item.getSourceType();
+
             if (item.isTouched()) {
                 touchedItems.add(item);
             }

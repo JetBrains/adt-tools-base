@@ -257,7 +257,7 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
                     continue;
                 }
 
-                ResourceItem item = ValueResourceParser2.getResource(itemNode, null);
+                ResourceItem item = getMergedResourceItem(itemNode, qualifier);
                 if (item != null) {
                     addMergedItem(qualifier, item);
                 }
@@ -298,4 +298,21 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
         map.put(item.getName(), item);
     }
 
+    /**
+     * Returns a new ResourceItem object for a given node.
+     * @param node the node representing the resource.
+     * @return a ResourceItem object or null.
+     */
+    static MergedResourceItem getMergedResourceItem(@NonNull Node node, @NonNull String qualifiers) {
+        ResourceType type = ValueResourceParser2.getType(node, null);
+        String name = ValueResourceParser2.getName(node);
+
+        if (name != null) {
+            if (type != null) {
+                return new MergedResourceItem(name, type, qualifiers, node);
+            }
+        }
+
+        return null;
+    }
 }
