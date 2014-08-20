@@ -64,7 +64,10 @@ public class PlatformToolPackage extends FullRevisionPackage {
             String nsUri, Map<String,String> licenses) {
         super(source, packageNode, nsUri, licenses);
 
-        mPkgDesc = PkgDesc.newPlatformTool(getRevision());
+        mPkgDesc = PkgDesc.Builder
+                .newPlatformTool(getRevision())
+                .setDescriptions(this)
+                .create();
     }
 
     /**
@@ -137,7 +140,9 @@ public class PlatformToolPackage extends FullRevisionPackage {
                     IMinApiLevelDependency.MIN_API_LEVEL_NOT_SPECIFIED,
                     IExactApiLevelDependency.API_LEVEL_INVALID,
                     archiveOsPath,
-                    PkgDesc.newPlatformTool(ptp.getRevision()));
+                    PkgDesc.Builder.newPlatformTool(ptp.getRevision())
+                                   .setDescriptionShort(shortDesc)
+                                   .create());
             return ba;
         }
 
@@ -162,7 +167,10 @@ public class PlatformToolPackage extends FullRevisionPackage {
                 descUrl,
                 archiveOsPath);
 
-        mPkgDesc = PkgDesc.newPlatformTool(getRevision());
+        mPkgDesc = PkgDesc.Builder
+                .newPlatformTool(getRevision())
+                .setDescriptions(this)
+                .create();
     }
 
     @Override

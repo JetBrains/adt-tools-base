@@ -26,26 +26,26 @@ public class FragmentDetectorTest extends AbstractCheckTest {
     }
 
     public void test() throws Exception {
-        assertEquals(
-            "src/test/pkg/FragmentTest.java:10: Error: This fragment class should be public (test.pkg.FragmentTest.Fragment1) [ValidFragment]\n" +
-            " private static class Fragment1 extends Fragment {\n" +
-            " ^\n" +
-            "src/test/pkg/FragmentTest.java:15: Error: This fragment inner class should be static (test.pkg.FragmentTest.Fragment2) [ValidFragment]\n" +
-            " public class Fragment2 extends Fragment {\n" +
-            " ^\n" +
-            "src/test/pkg/FragmentTest.java:21: Error: The default constructor must be public [ValidFragment]\n" +
-            "  private Fragment3() {\n" +
-            "          ~~~~~~~~~\n" +
-            "src/test/pkg/FragmentTest.java:26: Error: This fragment should provide a default constructor (a public constructor with no arguments) (test.pkg.FragmentTest.Fragment4) [ValidFragment]\n" +
-            " public static class Fragment4 extends Fragment {\n" +
-            "                     ~~~~~~~~~\n" +
-            "src/test/pkg/FragmentTest.java:27: Error: Avoid non-default constructors in fragments: use a default constructor plus Fragment#setArguments(Bundle) instead [ValidFragment]\n" +
-            "  private Fragment4(int dummy) {\n" +
-            "          ~~~~~~~~~\n" +
-            "src/test/pkg/FragmentTest.java:36: Error: Avoid non-default constructors in fragments: use a default constructor plus Fragment#setArguments(Bundle) instead [ValidFragment]\n" +
-            "  public Fragment5(int dummy) {\n" +
-            "         ~~~~~~~~~\n" +
-            "6 errors, 0 warnings\n",
+        assertEquals(""
+            + "src/test/pkg/FragmentTest.java:10: Error: This fragment class should be public (test.pkg.FragmentTest.Fragment1) [ValidFragment]\n"
+            + " private static class Fragment1 extends Fragment {\n"
+            + "                      ~~~~~~~~~\n"
+            + "src/test/pkg/FragmentTest.java:15: Error: This fragment inner class should be static (test.pkg.FragmentTest.Fragment2) [ValidFragment]\n"
+            + " public class Fragment2 extends Fragment {\n"
+            + "              ~~~~~~~~~\n"
+            + "src/test/pkg/FragmentTest.java:21: Error: The default constructor must be public [ValidFragment]\n"
+            + "  private Fragment3() {\n"
+            + "          ~~~~~~~~~~~\n"
+            + "src/test/pkg/FragmentTest.java:26: Error: This fragment should provide a default constructor (a public constructor with no arguments) (test.pkg.FragmentTest.Fragment4) [ValidFragment]\n"
+            + " public static class Fragment4 extends Fragment {\n"
+            + "                     ~~~~~~~~~\n"
+            + "src/test/pkg/FragmentTest.java:27: Error: Avoid non-default constructors in fragments: use a default constructor plus Fragment#setArguments(Bundle) instead [ValidFragment]\n"
+            + "  private Fragment4(int dummy) {\n"
+            + "          ~~~~~~~~~~~~~~~~~~~~\n"
+            + "src/test/pkg/FragmentTest.java:36: Error: Avoid non-default constructors in fragments: use a default constructor plus Fragment#setArguments(Bundle) instead [ValidFragment]\n"
+            + "  public Fragment5(int dummy) {\n"
+            + "         ~~~~~~~~~~~~~~~~~~~~\n"
+            + "6 errors, 0 warnings\n",
 
             lintProject(
                 "bytecode/FragmentTest$Fragment1.class.data=>bin/classes/test/pkg/FragmentTest$Fragment1.class",

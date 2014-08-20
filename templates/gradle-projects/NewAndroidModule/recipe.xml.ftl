@@ -2,7 +2,7 @@
 <recipe>
 
 
-    <#if appCompat?has_content><dependency mavenUrl="com.android.support:appcompat-v7:19.+"/></#if>
+    <#if appCompat?has_content><dependency mavenUrl="com.android.support:appcompat-v7:${targetApi}.+"/></#if>
 
 <#if !createActivity>
     <mkdir at="${escapeXmlAttribute(srcOut)}" />
@@ -33,13 +33,20 @@
 </#if>
 <#if enableProGuard>
     <instantiate from="proguard-rules.txt.ftl"
-                   to="${escapeXmlAttribute(projectOut)}/proguard-rules.txt" />
+                   to="${escapeXmlAttribute(projectOut)}/proguard-rules.pro" />
 </#if>
 <#if !(isLibraryProject??) || !isLibraryProject>
     <instantiate from="res/values/styles.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/styles.xml" />
+<#if buildApi gte 21>
+    <copy from="res/values-v21/styles.xml"
+          to="${escapeXmlAttribute(resOut)}/values-v21/styles.xml" />
+</#if>
 </#if>
 
     <instantiate from="res/values/strings.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
+
+    <instantiate from="test/app_package/ApplicationTest.java.ftl"
+                   to="${testOut}/ApplicationTest.java" />
 </recipe>

@@ -35,22 +35,26 @@ public class AppPluginDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
         }
 
-        project.afterEvaluate {
-            Set<ApplicationVariant> variants = project.android.applicationVariants
-            assertEquals(2, variants.size())
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
-            Set<TestVariant> testVariants = project.android.testVariants
-            assertEquals(1, testVariants.size())
+        plugin.createAndroidTasks(false)
+        assertEquals(3, plugin.variantDataList.size())
 
-            checkTestedVariant("Debug", "Test", variants, testVariants)
-            checkNonTestedVariant("Release", variants)
-        }
+        // we can now call this since the variants/tasks have been created
+        Set<ApplicationVariant> variants = project.android.applicationVariants
+        assertEquals(2, variants.size())
+
+        Set<TestVariant> testVariants = project.android.testVariants
+        assertEquals(1, testVariants.size())
+
+        checkTestedVariant("debug", "debugTest", variants, testVariants)
+        checkNonTestedVariant("release", variants)
     }
 
     /**
@@ -60,51 +64,59 @@ public class AppPluginDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion = 15
         }
 
-        project.afterEvaluate {
-            Set<ApplicationVariant> variants = project.android.applicationVariants
-            assertEquals(2, variants.size())
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
-            Set<TestVariant> testVariants = project.android.testVariants
-            assertEquals(1, testVariants.size())
+        plugin.createAndroidTasks(false)
+        assertEquals(3, plugin.variantDataList.size())
 
-            checkTestedVariant("Debug", "Test", variants, testVariants)
-            checkNonTestedVariant("Release", variants)
-        }
+        // we can now call this since the variants/tasks have been created
+        Set<ApplicationVariant> variants = project.android.applicationVariants
+        assertEquals(2, variants.size())
+
+        Set<TestVariant> testVariants = project.android.testVariants
+        assertEquals(1, testVariants.size())
+
+        checkTestedVariant("debug", "debugTest", variants, testVariants)
+        checkNonTestedVariant("release", variants)
     }
 
     public void testBasicWithStringTarget() {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion "android-15"
         }
 
-        project.afterEvaluate {
-            Set<ApplicationVariant> variants = project.android.applicationVariants
-            assertEquals(2, variants.size())
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
-            Set<TestVariant> testVariants = project.android.testVariants
-            assertEquals(1, testVariants.size())
+        plugin.createAndroidTasks(false)
+        assertEquals(3, plugin.variantDataList.size())
 
-            checkTestedVariant("Debug", "Test", variants, testVariants)
-            checkNonTestedVariant("Release", variants)
-        }
+        // we can now call this since the variants/tasks have been created
+        Set<ApplicationVariant> variants = project.android.applicationVariants
+        assertEquals(2, variants.size())
+
+        Set<TestVariant> testVariants = project.android.testVariants
+        assertEquals(1, testVariants.size())
+
+        checkTestedVariant("debug", "debugTest", variants, testVariants)
+        checkNonTestedVariant("release", variants)
     }
 
     public void testMultiRes() {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "multires")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -125,7 +137,7 @@ public class AppPluginDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -138,26 +150,31 @@ public class AppPluginDslTest extends BaseTest {
             }
         }
 
-        project.afterEvaluate {
-            // does not include tests
-            Set<ApplicationVariant> variants = project.android.applicationVariants
-            assertEquals(3, variants.size())
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
-            Set<TestVariant> testVariants = project.android.testVariants
-            assertEquals(1, testVariants.size())
+        plugin.createAndroidTasks(false)
+        assertEquals(4, plugin.variantDataList.size())
 
-            checkTestedVariant("Staging", "Test", variants, testVariants)
+        // we can now call this since the variants/tasks have been created
 
-            checkNonTestedVariant("Debug", variants)
-            checkNonTestedVariant("Release", variants)
-        }
+        // does not include tests
+        Set<ApplicationVariant> variants = project.android.applicationVariants
+        assertEquals(3, variants.size())
+
+        Set<TestVariant> testVariants = project.android.testVariants
+        assertEquals(1, testVariants.size())
+
+        checkTestedVariant("staging", "stagingTest", variants, testVariants)
+
+        checkNonTestedVariant("debug", variants)
+        checkNonTestedVariant("release", variants)
     }
 
     public void testFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -172,27 +189,32 @@ public class AppPluginDslTest extends BaseTest {
             }
         }
 
-        project.afterEvaluate {
-            // does not include tests
-            Set<ApplicationVariant> variants = project.android.applicationVariants
-            assertEquals(4, variants.size())
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
-            Set<TestVariant> testVariants = project.android.testVariants
-            assertEquals(2, testVariants.size())
+        plugin.createAndroidTasks(false)
+        assertEquals(6, plugin.variantDataList.size())
 
-            checkTestedVariant("Flavor1Debug", "Flavor1Test", variants, testVariants)
-            checkTestedVariant("Flavor2Debug", "Flavor2Test", variants, testVariants)
+        // we can now call this since the variants/tasks have been created
 
-            checkNonTestedVariant("Flavor1Release", variants)
-            checkNonTestedVariant("Flavor2Release", variants)
-        }
+        // does not include tests
+        Set<ApplicationVariant> variants = project.android.applicationVariants
+        assertEquals(4, variants.size())
+
+        Set<TestVariant> testVariants = project.android.testVariants
+        assertEquals(2, testVariants.size())
+
+        checkTestedVariant("flavor1Debug", "flavor1DebugTest", variants, testVariants)
+        checkTestedVariant("flavor2Debug", "flavor2DebugTest", variants, testVariants)
+
+        checkNonTestedVariant("flavor1Release", variants)
+        checkNonTestedVariant("flavor2Release", variants)
     }
 
     public void testMultiFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -219,35 +241,40 @@ public class AppPluginDslTest extends BaseTest {
             }
         }
 
-        project.afterEvaluate {
-            // does not include tests
-            Set<ApplicationVariant> variants = project.android.applicationVariants
-            assertEquals(12, variants.size())
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
-            Set<TestVariant> testVariants = project.android.testVariants
-            assertEquals(6, testVariants.size())
+        plugin.createAndroidTasks(false)
+        assertEquals(18, plugin.variantDataList.size())
 
-            checkTestedVariant("F1FaDebug", "F1FaTest", variants, testVariants)
-            checkTestedVariant("F1FbDebug", "F1FbTest", variants, testVariants)
-            checkTestedVariant("F1FcDebug", "F1FcTest", variants, testVariants)
-            checkTestedVariant("F2FaDebug", "F2FaTest", variants, testVariants)
-            checkTestedVariant("F2FbDebug", "F2FbTest", variants, testVariants)
-            checkTestedVariant("F2FcDebug", "F2FcTest", variants, testVariants)
+        // we can now call this since the variants/tasks have been created
 
-            checkNonTestedVariant("F1FaRelease", variants)
-            checkNonTestedVariant("F1FbRelease", variants)
-            checkNonTestedVariant("F1FcRelease", variants)
-            checkNonTestedVariant("F2FaRelease", variants)
-            checkNonTestedVariant("F2FbRelease", variants)
-            checkNonTestedVariant("F2FcRelease", variants)
-        }
+        // does not include tests
+        Set<ApplicationVariant> variants = project.android.applicationVariants
+        assertEquals(12, variants.size())
+
+        Set<TestVariant> testVariants = project.android.testVariants
+        assertEquals(6, testVariants.size())
+
+        checkTestedVariant("f1FaDebug", "f1FaDebugTest", variants, testVariants)
+        checkTestedVariant("f1FbDebug", "f1FbDebugTest", variants, testVariants)
+        checkTestedVariant("f1FcDebug", "f1FcDebugTest", variants, testVariants)
+        checkTestedVariant("f2FaDebug", "f2FaDebugTest", variants, testVariants)
+        checkTestedVariant("f2FbDebug", "f2FbDebugTest", variants, testVariants)
+        checkTestedVariant("f2FcDebug", "f2FcDebugTest", variants, testVariants)
+
+        checkNonTestedVariant("f1FaRelease", variants)
+        checkNonTestedVariant("f1FbRelease", variants)
+        checkNonTestedVariant("f1FcRelease", variants)
+        checkNonTestedVariant("f2FaRelease", variants)
+        checkNonTestedVariant("f2FbRelease", variants)
+        checkNonTestedVariant("f2FcRelease", variants)
     }
 
     public void testSourceSetsApi() {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -264,7 +291,7 @@ public class AppPluginDslTest extends BaseTest {
 
     private static void checkTestedVariant(@NonNull String variantName,
                                            @NonNull String testedVariantName,
-                                           @NonNull Set<ApplicationVariant> variants,
+                                           @NonNull Collection<ApplicationVariant> variants,
                                            @NonNull Set<TestVariant> testVariants) {
         ApplicationVariant variant = findNamedItem(variants, variantName, "variantData")
         assertNotNull(variant.testVariant)

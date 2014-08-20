@@ -35,6 +35,7 @@ public interface IDevice extends IShellEnabledDevice {
     public static final String PROP_DEVICE_MANUFACTURER = "ro.product.manufacturer";
     public static final String PROP_DEVICE_CPU_ABI = "ro.product.cpu.abi";
     public static final String PROP_DEVICE_CPU_ABI2 = "ro.product.cpu.abi2";
+    public static final String PROP_BUILD_CHARACTERISTICS = "ro.build.characteristics";
 
     public static final String PROP_DEBUGGABLE = "ro.debuggable";
 
@@ -47,11 +48,26 @@ public interface IDevice extends IShellEnabledDevice {
     /** Device change bit mask: build info change. */
     public static final int CHANGE_BUILD_INFO = 0x0004;
 
-    /** List of device level features. */
+    /** Device level software features. */
     public enum Feature {
         SCREEN_RECORD,      // screen recorder available?
         PROCSTATS,          // procstats service (dumpsys procstats) available
     };
+
+    /** Device level hardware features. */
+    public enum HardwareFeature {
+        WATCH("watch");                   // supports feature watch
+
+        private final String mCharacteristic;
+
+        private HardwareFeature(String characteristic) {
+            mCharacteristic = characteristic;
+        }
+
+        public String getCharacteristic() {
+            return mCharacteristic;
+        }
+    }
 
     /** @deprecated Use {@link #PROP_BUILD_API_LEVEL}. */
     @Deprecated
@@ -68,7 +84,8 @@ public interface IDevice extends IShellEnabledDevice {
         BOOTLOADER("bootloader"), //$NON-NLS-1$
         OFFLINE("offline"), //$NON-NLS-1$
         ONLINE("device"), //$NON-NLS-1$
-        RECOVERY("recovery"); //$NON-NLS-1$
+        RECOVERY("recovery"), //$NON-NLS-1$
+        UNAUTHORIZED("unauthorized"); //$NON-NLS-1$
 
         private String mState;
 
@@ -82,6 +99,7 @@ public interface IDevice extends IShellEnabledDevice {
          * @param state the device state.
          * @return a {@link DeviceState} object or <code>null</code> if the state is unknown.
          */
+        @Nullable
         public static DeviceState getState(String state) {
             for (DeviceState deviceState : values()) {
                 if (deviceState.mState.equals(state)) {
@@ -186,8 +204,11 @@ public interface IDevice extends IShellEnabledDevice {
     public String getPropertyCacheOrSync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException;
 
-    /** Returns whether this device supports the given feature. */
+    /** Returns whether this device supports the given software feature. */
     boolean supportsFeature(@NonNull Feature feature);
+
+    /** Returns whether this device supports the given hardware feature. */
+    boolean supportsFeature(@NonNull HardwareFeature feature);
 
     /**
      * Returns a mount point.

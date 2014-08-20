@@ -30,6 +30,7 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.SystemImage;
+import com.android.sdklib.devices.Abi;
 import com.android.sdklib.devices.Device;
 import com.android.sdklib.devices.DeviceManager;
 import com.android.sdklib.devices.DeviceManager.DeviceStatus;
@@ -39,16 +40,25 @@ import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.local.LocalSdk;
 import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
-import com.android.sdklib.util.GrabProcessOutput;
-import com.android.sdklib.util.GrabProcessOutput.IProcessOutput;
-import com.android.sdklib.util.GrabProcessOutput.Wait;
+import com.android.utils.GrabProcessOutput;
+import com.android.utils.GrabProcessOutput.IProcessOutput;
+import com.android.utils.GrabProcessOutput.Wait;
 import com.android.utils.ILogger;
 import com.android.utils.NullLogger;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.io.Closeables;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,7 +66,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -769,15 +778,14 @@ public class AvdManager {
             values.put(AVD_INI_ABI_TYPE,    abiType);
 
             // and the cpu arch.
-            if (SdkConstants.ABI_ARMEABI.equals(abiType)) {
-                values.put(AVD_INI_CPU_ARCH, SdkConstants.CPU_ARCH_ARM);
-            } else if (SdkConstants.ABI_ARMEABI_V7A.equals(abiType)) {
-                values.put(AVD_INI_CPU_ARCH, SdkConstants.CPU_ARCH_ARM);
-                values.put(AVD_INI_CPU_MODEL, SdkConstants.CPU_MODEL_CORTEX_A8);
-            } else if (SdkConstants.ABI_INTEL_ATOM.equals(abiType)) {
-                values.put(AVD_INI_CPU_ARCH, SdkConstants.CPU_ARCH_INTEL_ATOM);
-            } else if (SdkConstants.ABI_MIPS.equals(abiType)) {
-                values.put(AVD_INI_CPU_ARCH, SdkConstants.CPU_ARCH_MIPS);
+            Abi abi = Abi.getEnum(abiType);
+            if (abi != null) {
+                values.put(AVD_INI_CPU_ARCH, abi.getCpuArch());
+
+                String model = abi.getCpuModel();
+                if (model != null) {
+                    values.put(AVD_INI_CPU_MODEL, model);
+                }
             } else {
                 log.error(null,
                         "ABI %1$s is not supported by this version of the SDK Tools", abiType);
@@ -904,12 +912,25 @@ public class AvdManager {
             // - values provided by the user
             // - values provided by the skin
             // - values provided by the target (add-on only).
+            // - values provided by the sys img
             // In order to follow this priority, we'll add the lowest priority values first and then
             // override by higher priority values.
             // In the case of a platform with override values from the user, the skin value might
             // already be there, but it's ok.
 
             HashMap<String, String> finalHardwareValues = new HashMap<String, String>();
+
+            FileWrapper sysImgHardwareFile = new FileWrapper(systemImage.getLocation(),
+                    AvdManager.HARDWARE_INI);
+            if (sysImgHardwareFile.isFile()) {
+                Map<String, String> targetHardwareConfig = ProjectProperties.parsePropertyFile(
+                        sysImgHardwareFile, log);
+
+                if (targetHardwareConfig != null) {
+                    finalHardwareValues.putAll(targetHardwareConfig);
+                    values.putAll(targetHardwareConfig);
+                }
+            }
 
             FileWrapper targetHardwareFile = new FileWrapper(target.getLocation(),
                     AvdManager.HARDWARE_INI);
@@ -1781,10 +1802,11 @@ public class AvdManager {
                         e.getMessage());
             }
         } finally {
-          try {
-            Closeables.close(reader, true);
-          } catch (IOException ignored) {
-          }
+            try {
+                Closeables.close(reader, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen.
+            }
         }
 
         return null;

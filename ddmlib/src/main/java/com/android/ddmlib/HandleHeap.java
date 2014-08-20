@@ -22,7 +22,6 @@ import com.android.ddmlib.ClientData.IHprofDumpHandler;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 
 /**
  * Handle heap status updates.
@@ -242,7 +241,7 @@ final class HandleHeap extends ChunkHandler {
         ByteBuffer buf = getChunkDataBuf(rawBuf);
 
         buf.putInt(fileName.length());
-        putString(buf, fileName);
+        ByteBufferUtil.putString(buf, fileName);
 
         finishChunkPacket(packet, CHUNK_HPDU, buf.position());
         Log.d("ddm-heap", "Sending " + name(CHUNK_HPDU) + " '" + fileName +"'");
@@ -373,222 +372,28 @@ final class HandleHeap extends ChunkHandler {
         enabled = (data.get() != 0);
         Log.d("ddm-heap", "REAQ says: enabled=" + enabled);
 
-        client.getClientData().setAllocationStatus(enabled ?
-                AllocationTrackingStatus.ON : AllocationTrackingStatus.OFF);
+        client.getClientData().setAllocationStatus(enabled ? AllocationTrackingStatus.ON : AllocationTrackingStatus.OFF);
         client.update(Client.CHANGE_HEAP_ALLOCATION_STATUS);
-    }
-
-    /**
-     * Converts a VM class descriptor string ("Landroid/os/Debug;") to
-     * a dot-notation class name ("android.os.Debug").
-     */
-    private String descriptorToDot(String str) {
-        // count the number of arrays.
-        int array = 0;
-        while (str.startsWith("[")) {
-            str = str.substring(1);
-            array++;
-        }
-
-        int len = str.length();
-
-        /* strip off leading 'L' and trailing ';' if appropriate */
-        if (len >= 2 && str.charAt(0) == 'L' && str.charAt(len - 1) == ';') {
-            str = str.substring(1, len-1);
-            str = str.replace('/', '.');
-        } else {
-            // convert the basic types
-            if ("C".equals(str)) {
-                str = "char";
-            } else if ("B".equals(str)) {
-                str = "byte";
-            } else if ("Z".equals(str)) {
-                str = "boolean";
-            } else if ("S".equals(str)) {
-                str = "short";
-            } else if ("I".equals(str)) {
-                str = "int";
-            } else if ("J".equals(str)) {
-                str = "long";
-            } else if ("F".equals(str)) {
-                str = "float";
-            } else if ("D".equals(str)) {
-                str = "double";
-            }
-        }
-
-        // now add the array part
-        for (int a = 0 ; a < array; a++) {
-            str = str + "[]";
-        }
-
-        return str;
-    }
-
-    /**
-     * Reads a string table out of "data".
-     *
-     * This is just a serial collection of strings, each of which is a
-     * four-byte length followed by UTF-16 data.
-     */
-    private void readStringTable(ByteBuffer data, String[] strings) {
-        int count = strings.length;
-        int i;
-
-        for (i = 0; i < count; i++) {
-            int nameLen = data.getInt();
-            String descriptor = getString(data, nameLen);
-            strings[i] = descriptorToDot(descriptor);
-        }
     }
 
     /*
      * Handle a REcent ALlocation response.
-     *
-     * Message header (all values big-endian):
-     *   (1b) message header len (to allow future expansion); includes itself
-     *   (1b) entry header len
-     *   (1b) stack frame len
-     *   (2b) number of entries
-     *   (4b) offset to string table from start of message
-     *   (2b) number of class name strings
-     *   (2b) number of method name strings
-     *   (2b) number of source file name strings
-     *   For each entry:
-     *     (4b) total allocation size
-     *     (2b) threadId
-     *     (2b) allocated object's class name index
-     *     (1b) stack depth
-     *     For each stack frame:
-     *       (2b) method's class name
-     *       (2b) method name
-     *       (2b) method source file
-     *       (2b) line number, clipped to 32767; -2 if native; -1 if no source
-     *   (xb) class name strings
-     *   (xb) method name strings
-     *   (xb) source file strings
-     *
-     *   As with other DDM traffic, strings are sent as a 4-byte length
-     *   followed by UTF-16 data.
      */
     private void handleREAL(Client client, ByteBuffer data) {
         Log.e("ddm-heap", "*** Received " + name(CHUNK_REAL));
-        int messageHdrLen, entryHdrLen, stackFrameLen;
-        int numEntries, offsetToStrings;
-        int numClassNames, numMethodNames, numFileNames;
+        ClientData.IAllocationTrackingHandler handler = ClientData.getAllocationTrackingHandler();
 
-        /*
-         * Read the header.
-         */
-        messageHdrLen = (data.get() & 0xff);
-        entryHdrLen = (data.get() & 0xff);
-        stackFrameLen = (data.get() & 0xff);
-        numEntries = (data.getShort() & 0xffff);
-        offsetToStrings = data.getInt();
-        numClassNames = (data.getShort() & 0xffff);
-        numMethodNames = (data.getShort() & 0xffff);
-        numFileNames = (data.getShort() & 0xffff);
+        if (handler != null) {
+          byte[] stuff = new byte[data.capacity()];
+          data.get(stuff, 0, stuff.length);
 
-
-        /*
-         * Skip forward to the strings and read them.
-         */
-        data.position(offsetToStrings);
-
-        String[] classNames = new String[numClassNames];
-        String[] methodNames = new String[numMethodNames];
-        String[] fileNames = new String[numFileNames];
-
-        readStringTable(data, classNames);
-        readStringTable(data, methodNames);
-        //System.out.println("METHODS: "
-        //    + java.util.Arrays.deepToString(methodNames));
-        readStringTable(data, fileNames);
-
-        /*
-         * Skip back to a point just past the header and start reading
-         * entries.
-         */
-        data.position(messageHdrLen);
-
-        ArrayList<AllocationInfo> list = new ArrayList<AllocationInfo>(numEntries);
-        int allocNumber = numEntries; // order value for the entry. This is sent in reverse order.
-        for (int i = 0; i < numEntries; i++) {
-            int totalSize;
-            int threadId, classNameIndex, stackDepth;
-
-            totalSize = data.getInt();
-            threadId = (data.getShort() & 0xffff);
-            classNameIndex = (data.getShort() & 0xffff);
-            stackDepth = (data.get() & 0xff);
-            /* we've consumed 9 bytes; gobble up any extra */
-            for (int skip = 9; skip < entryHdrLen; skip++)
-                data.get();
-
-            StackTraceElement[] steArray = new StackTraceElement[stackDepth];
-
-            /*
-             * Pull out the stack trace.
-             */
-            for (int sti = 0; sti < stackDepth; sti++) {
-                int methodClassNameIndex, methodNameIndex;
-                int methodSourceFileIndex;
-                short lineNumber;
-                String methodClassName, methodName, methodSourceFile;
-
-                methodClassNameIndex = (data.getShort() & 0xffff);
-                methodNameIndex = (data.getShort() & 0xffff);
-                methodSourceFileIndex = (data.getShort() & 0xffff);
-                lineNumber = data.getShort();
-
-                methodClassName = classNames[methodClassNameIndex];
-                methodName = methodNames[methodNameIndex];
-                methodSourceFile = fileNames[methodSourceFileIndex];
-
-                steArray[sti] = new StackTraceElement(methodClassName,
-                    methodName, methodSourceFile, lineNumber);
-
-                /* we've consumed 8 bytes; gobble up any extra */
-                for (int skip = 9; skip < stackFrameLen; skip++)
-                    data.get();
-            }
-
-            list.add(new AllocationInfo(allocNumber--, classNames[classNameIndex],
-                totalSize, (short) threadId, steArray));
-        }
-
-        client.getClientData().setAllocations(list.toArray(new AllocationInfo[numEntries]));
-        client.update(Client.CHANGE_HEAP_ALLOCATIONS);
-    }
-
-    /*
-     * For debugging: dump the contents of an AllocRecord array.
-     *
-     * The array starts with the oldest known allocation and ends with
-     * the most recent allocation.
-     */
-    @SuppressWarnings("unused")
-    private static void dumpRecords(AllocationInfo[] records) {
-        System.out.println("Found " + records.length + " records:");
-
-        for (AllocationInfo rec: records) {
-            System.out.println("tid=" + rec.getThreadId() + " "
-                + rec.getAllocatedClass() + " (" + rec.getSize() + " bytes)");
-
-            for (StackTraceElement ste: rec.getStackTrace()) {
-                if (ste.isNativeMethod()) {
-                    System.out.println("    " + ste.getClassName()
-                        + "." + ste.getMethodName()
-                        + " (Native method)");
-                } else {
-                    System.out.println("    " + ste.getClassName()
-                        + "." + ste.getMethodName()
-                        + " (" + ste.getFileName()
-                        + ":" + ste.getLineNumber() + ")");
-                }
-            }
+          Log.d("ddm-prof", "got allocations file, size: " + stuff.length + " bytes");
+          handler.onSuccess(stuff, client);
+        } else {
+          // Allocation tracking did not start from Android Studio's device panel
+          client.getClientData().setAllocations(AllocationsParser.parse(data));
+          client.update(Client.CHANGE_HEAP_ALLOCATIONS);
         }
     }
-
 }
 

@@ -16,20 +16,56 @@
 
 package com.android.sdklib;
 
-import com.android.SdkConstants;
+import static com.android.SdkConstants.FD_LIB;
+import static com.android.SdkConstants.FN_AAPT;
+import static com.android.SdkConstants.FN_AIDL;
+import static com.android.SdkConstants.FN_BCC_COMPAT;
+import static com.android.SdkConstants.FN_DX;
+import static com.android.SdkConstants.FN_DX_JAR;
+import static com.android.SdkConstants.FN_LD_ARM;
+import static com.android.SdkConstants.FN_LD_MIPS;
+import static com.android.SdkConstants.FN_LD_X86;
+import static com.android.SdkConstants.FN_RENDERSCRIPT;
+import static com.android.SdkConstants.FN_ZIPALIGN;
+import static com.android.SdkConstants.OS_FRAMEWORK_RS;
+import static com.android.SdkConstants.OS_FRAMEWORK_RS_CLANG;
+import static com.android.sdklib.BuildToolInfo.PathId.*;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
+import com.android.annotations.VisibleForTesting.Visibility;
+import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.utils.ILogger;
 import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Information on a specific build-tool folder.
+ * <p/>
+ * For unit tests, see:
+ * - sdklib/src/test/.../LocalSdkTest
+ * - sdklib/src/test/.../SdkManagerTest
+ * - sdklib/src/test/.../BuildToolInfoTest
  */
 public class BuildToolInfo {
+
+    /** Name of the file read by {@link #getRuntimeProps()} */
+    private static final String FN_RUNTIME_PROPS = "runtime.properties";
+
+    /**
+     * Property in {@link #FN_RUNTIME_PROPS} indicating the desired runtime JVM.
+     * Type: {@link NoPreviewRevision#toShortString()}, e.g. "1.7.0"
+     */
+    private static final String PROP_RUNTIME_JVM = "Runtime.Jvm";
+
 
     public enum PathId {
         /** OS Path to the target's version of the aapt tool. */
@@ -56,7 +92,10 @@ public class BuildToolInfo {
         /** OS Path to the X86 linker. */
         LD_X86("18.1.0"),
         /** OS Path to the MIPS linker. */
-        LD_MIPS("18.1.0");
+        LD_MIPS("18.1.0"),
+
+        // --- NEW IN 19.1.0 ---
+        ZIP_ALIGN("19.1.0");
 
         /**
          * min revision this element was introduced.
@@ -88,6 +127,7 @@ public class BuildToolInfo {
     /** The build-tool revision. */
     @NonNull
     private final FullRevision mRevision;
+
     /** The path to the build-tool folder specific to this revision. */
     @NonNull
     private final File mPath;
@@ -98,17 +138,18 @@ public class BuildToolInfo {
         mRevision = revision;
         mPath = path;
 
-        add(PathId.AAPT, SdkConstants.FN_AAPT);
-        add(PathId.AIDL, SdkConstants.FN_AIDL);
-        add(PathId.DX, SdkConstants.FN_DX);
-        add(PathId.DX_JAR, SdkConstants.FD_LIB + File.separator + SdkConstants.FN_DX_JAR);
-        add(PathId.LLVM_RS_CC, SdkConstants.FN_RENDERSCRIPT);
-        add(PathId.ANDROID_RS, SdkConstants.OS_FRAMEWORK_RS);
-        add(PathId.ANDROID_RS_CLANG, SdkConstants.OS_FRAMEWORK_RS_CLANG);
-        add(PathId.BCC_COMPAT, SdkConstants.FN_BCC_COMPAT);
-        add(PathId.LD_ARM, SdkConstants.FN_LD_ARM);
-        add(PathId.LD_X86, SdkConstants.FN_LD_X86);
-        add(PathId.LD_MIPS, SdkConstants.FN_LD_MIPS);
+        add(AAPT, FN_AAPT);
+        add(AIDL, FN_AIDL);
+        add(DX, FN_DX);
+        add(DX_JAR, FD_LIB + File.separator + FN_DX_JAR);
+        add(LLVM_RS_CC, FN_RENDERSCRIPT);
+        add(ANDROID_RS, OS_FRAMEWORK_RS);
+        add(ANDROID_RS_CLANG, OS_FRAMEWORK_RS_CLANG);
+        add(BCC_COMPAT, FN_BCC_COMPAT);
+        add(LD_ARM, FN_LD_ARM);
+        add(LD_X86, FN_LD_X86);
+        add(LD_MIPS, FN_LD_MIPS);
+        add(ZIP_ALIGN, FN_ZIPALIGN);
     }
 
     public BuildToolInfo(
@@ -124,37 +165,39 @@ public class BuildToolInfo {
             @Nullable File bccCompat,
             @Nullable File ldArm,
             @Nullable File ldX86,
-            @Nullable File ldMips) {
+            @Nullable File ldMips,
+            @NonNull File zipAlign) {
         mRevision = revision;
         mPath = mainPath;
-        add(PathId.AAPT, aapt);
-        add(PathId.AIDL, aidl);
-        add(PathId.DX, dx);
-        add(PathId.DX_JAR, dxJar);
-        add(PathId.LLVM_RS_CC, llmvRsCc);
-        add(PathId.ANDROID_RS, androidRs);
-        add(PathId.ANDROID_RS_CLANG, androidRsClang);
+        add(AAPT, aapt);
+        add(AIDL, aidl);
+        add(DX, dx);
+        add(DX_JAR, dxJar);
+        add(LLVM_RS_CC, llmvRsCc);
+        add(ANDROID_RS, androidRs);
+        add(ANDROID_RS_CLANG, androidRsClang);
+        add(ZIP_ALIGN, zipAlign);
 
         if (bccCompat != null) {
-            add(PathId.BCC_COMPAT, bccCompat);
-        } else if (PathId.BCC_COMPAT.isPresentIn(revision)) {
+            add(BCC_COMPAT, bccCompat);
+        } else if (BCC_COMPAT.isPresentIn(revision)) {
             throw new IllegalArgumentException("BCC_COMPAT required in " + revision.toString());
         }
         if (ldArm != null) {
-            add(PathId.LD_ARM, ldArm);
-        } else if (PathId.LD_ARM.isPresentIn(revision)) {
+            add(LD_ARM, ldArm);
+        } else if (LD_ARM.isPresentIn(revision)) {
             throw new IllegalArgumentException("LD_ARM required in " + revision.toString());
         }
 
         if (ldX86 != null) {
-            add(PathId.LD_X86, ldX86);
-        } else if (PathId.LD_X86.isPresentIn(revision)) {
+            add(LD_X86, ldX86);
+        } else if (LD_X86.isPresentIn(revision)) {
             throw new IllegalArgumentException("LD_X86 required in " + revision.toString());
         }
 
         if (ldMips != null) {
-            add(PathId.LD_MIPS, ldMips);
-        } else if (PathId.LD_MIPS.isPresentIn(revision)) {
+            add(LD_MIPS, ldMips);
+        } else if (LD_MIPS.isPresentIn(revision)) {
             throw new IllegalArgumentException("LD_MIPS required in " + revision.toString());
         }
     }
@@ -226,6 +269,58 @@ public class BuildToolInfo {
             }
         }
         return true;
+    }
+
+    /**
+     * Parses the build-tools runtime.props file, if present.
+     *
+     * @return The properties from runtime.props if present, otherwise an empty properties set.
+     */
+    @NonNull
+    public Properties getRuntimeProps() {
+        FileOp fop = new FileOp();
+        return fop.loadProperties(new File(mPath, FN_RUNTIME_PROPS));
+    }
+
+    /**
+     * Checks whether this build-tools package can run on the current JVM.
+     *
+     * @return True if the build-tools package has a Runtime.Jvm property and it is lesser or
+     *  equal to the current JVM version.
+     *         False if the property is present and the requirement is not met.
+     *         True if there's an error parsing either versions and the comparison cannot be made.
+     */
+    public boolean canRunOnJvm() {
+        Properties props = getRuntimeProps();
+        String required = props.getProperty(PROP_RUNTIME_JVM);
+        if (required == null) {
+            // No requirement ==> accepts.
+            return true;
+        }
+        try {
+            NoPreviewRevision requiredVersion = NoPreviewRevision.parseRevision(required);
+            NoPreviewRevision currentVersion = getCurrentJvmVersion();
+            return currentVersion.compareTo(requiredVersion) >= 0;
+
+        } catch (NumberFormatException ignore) {
+            // Either we failed to parse the property version or the running JVM version.
+            // Right now take the relaxed policy of accepting it if we can't compare.
+            return true;
+        }
+    }
+
+    @VisibleForTesting(visibility=Visibility.PRIVATE)
+    @Nullable
+    protected NoPreviewRevision getCurrentJvmVersion() throws NumberFormatException {
+        String javav = System.getProperty("java.version");              //$NON-NLS-1$
+        // java Version is typically in the form "1.2.3_45" and we just need to keep up to "1.2.3"
+        // since our revision numbers are in 3-parts form (1.2.3).
+        Pattern p = Pattern.compile("((\\d+)(\\.\\d+)?(\\.\\d+)?).*");  //$NON-NLS-1$
+        Matcher m = p.matcher(javav);
+        if (m.matches()) {
+            return NoPreviewRevision.parseRevision(m.group(1));
+        }
+        return null;
     }
 
     /**

@@ -37,8 +37,8 @@ import com.android.sdklib.internal.repository.packages.SourcePackage;
 import com.android.sdklib.internal.repository.packages.SystemImagePackage;
 import com.android.sdklib.internal.repository.packages.ToolPackage;
 import com.android.sdklib.io.FileOp;
+import com.android.sdklib.repository.AddonManifestIniProps;
 import com.android.sdklib.repository.descriptors.PkgType;
-import com.android.sdklib.repository.local.LocalAddonPkgInfo;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.google.common.collect.Lists;
@@ -67,25 +67,25 @@ public class LocalSdkParser {
     /** Parse the SDK/platform-tools folder */
     public static final int PARSE_PLATFORM_TOOLS = PkgType.PKG_PLATFORM_TOOLS.getIntValue();
     /** Parse the SDK/docs folder. */
-    public static final int PARSE_DOCS           = PkgType.PKG_DOCS.getIntValue();
+    public static final int PARSE_DOCS           = PkgType.PKG_DOC.getIntValue();
     /**
      * Equivalent to parsing the SDK/platforms folder but does so
      * by using the <em>valid</em> targets loaded by the {@link SdkManager}.
      * Parsing the platforms also parses the SDK/system-images folder.
      */
-    public static final int PARSE_PLATFORMS      = PkgType.PKG_PLATFORMS.getIntValue();
+    public static final int PARSE_PLATFORMS      = PkgType.PKG_PLATFORM.getIntValue();
     /**
      * Equivalent to parsing the SDK/addons folder but does so
      * by using the <em>valid</em> targets loaded by the {@link SdkManager}.
      */
-    public static final int PARSE_ADDONS         = PkgType.PKG_ADDONS.getIntValue();
+    public static final int PARSE_ADDONS         = PkgType.PKG_ADDON.getIntValue();
     /** Parse the SDK/samples folder.
      * Note: this will not detect samples located in the SDK/extras packages. */
-    public static final int PARSE_SAMPLES        = PkgType.PKG_SAMPLES.getIntValue();
+    public static final int PARSE_SAMPLES        = PkgType.PKG_SAMPLE.getIntValue();
     /** Parse the SDK/sources folder. */
-    public static final int PARSE_SOURCES        = PkgType.PKG_SOURCES.getIntValue();
+    public static final int PARSE_SOURCES        = PkgType.PKG_SOURCE.getIntValue();
     /** Parse the SDK/extras folder. */
-    public static final int PARSE_EXTRAS         = PkgType.PKG_EXTRAS.getIntValue();
+    public static final int PARSE_EXTRAS         = PkgType.PKG_EXTRA.getIntValue();
     /** Parse the SDK/build-tools folder. */
     public static final int PARSE_BUILD_TOOLS    = PkgType.PKG_BUILD_TOOLS.getIntValue();
 
@@ -236,7 +236,7 @@ public class LocalSdkParser {
                                             new File(siDir, SdkConstants.FN_SOURCE_PROP));
                                     Package pkg2 = new SystemImagePackage(
                                             target.getVersion(),
-                                            0 /*rev*/,   // this will use the one from siProps
+                                            0 /*rev*/,   // use the one from siProps
                                             systemImage.getAbiType(),
                                             siProps,
                                             siDir.getAbsolutePath());
@@ -450,26 +450,26 @@ public class LocalSdkParser {
 
             // look for some specific values in the map.
             // we require name, vendor, and api
-            String name = propertyMap.get(LocalAddonPkgInfo.ADDON_NAME);
+            String name = propertyMap.get(AddonManifestIniProps.ADDON_NAME);
             if (name == null) {
                 error = String.format("'%1$s' is missing from %2$s.",
-                        LocalAddonPkgInfo.ADDON_NAME,
+                        AddonManifestIniProps.ADDON_NAME,
                         SdkConstants.FN_MANIFEST_INI);
                 break;
             }
 
-            String vendor = propertyMap.get(LocalAddonPkgInfo.ADDON_VENDOR);
+            String vendor = propertyMap.get(AddonManifestIniProps.ADDON_VENDOR);
             if (vendor == null) {
                 error = String.format("'%1$s' is missing from %2$s.",
-                        LocalAddonPkgInfo.ADDON_VENDOR,
+                        AddonManifestIniProps.ADDON_VENDOR,
                         SdkConstants.FN_MANIFEST_INI);
                 break;
             }
 
-            String api = propertyMap.get(LocalAddonPkgInfo.ADDON_API);
+            String api = propertyMap.get(AddonManifestIniProps.ADDON_API);
             if (api == null) {
                 error = String.format("'%1$s' is missing from %2$s.",
-                        LocalAddonPkgInfo.ADDON_API,
+                        AddonManifestIniProps.ADDON_API,
                         SdkConstants.FN_MANIFEST_INI);
                 break;
             }
@@ -491,9 +491,9 @@ public class LocalSdkParser {
             }
 
             // get the add-on revision
-            String revision = propertyMap.get(LocalAddonPkgInfo.ADDON_REVISION);
+            String revision = propertyMap.get(AddonManifestIniProps.ADDON_REVISION);
             if (revision == null) {
-                revision = propertyMap.get(LocalAddonPkgInfo.ADDON_REVISION_OLD);
+                revision = propertyMap.get(AddonManifestIniProps.ADDON_REVISION_OLD);
             }
             if (revision != null) {
                 try {
@@ -502,7 +502,7 @@ public class LocalSdkParser {
                     // looks like revision does not parse to a number.
                     error = String.format(
                             "%1$s is not a valid number in %2$s.",
-                            LocalAddonPkgInfo.ADDON_REVISION,
+                            AddonManifestIniProps.ADDON_REVISION,
                             SdkConstants.FN_BUILD_PROP);
                     break;
                 }

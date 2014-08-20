@@ -17,16 +17,17 @@
 package com.android.manifmerger;
 
 import static com.android.manifmerger.MergingReport.Record.Severity;
+import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
 import com.android.utils.ILogger;
 import com.android.utils.PositionXmlParser;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 
 import junit.framework.TestCase;
 
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -41,6 +42,7 @@ public class MergingReportTest extends TestCase {
     @Mock Element mElement;
     @Mock XmlLoader.SourceLocation mSourceLocation;
     @Mock KeyResolver<String> mKeyResolver;
+    @Mock KeyBasedValueResolver<ManifestMerger2.SystemProperty> mPropertyResolver;
 
     @Override
     protected void setUp() throws Exception {
@@ -118,11 +120,11 @@ public class MergingReportTest extends TestCase {
                 .build();
 
         mergingReport.log(mLoggerMock);
-        Mockito.verify(mLoggerMock).info("location:0:0 Info:\n\tmerging info");
+        Mockito.verify(mLoggerMock).verbose("location:0:0 Info:\n\tmerging info");
         Mockito.verify(mLoggerMock).warning("location:0:0 Warning:\n\tsomething weird happened");
         Mockito.verify(mLoggerMock).error(null /* throwable */,
                 "location:0:0 Error:\n\tsomething bad happened");
-        Mockito.verify(mLoggerMock).info(Actions.HEADER);
+        Mockito.verify(mLoggerMock).verbose(Actions.HEADER);
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }
 
@@ -142,8 +144,13 @@ public class MergingReportTest extends TestCase {
 
     public void testGetMergedDocument() {
         XmlDocument xmlDocument =
-                new XmlDocument(
-                        new PositionXmlParser(), mSourceLocation, mKeyResolver, mElement);
+                new XmlDocument(new PositionXmlParser(),
+                        mSourceLocation,
+                        mKeyResolver,
+                        mPropertyResolver,
+                        mElement,
+                        XmlDocument.Type.MAIN,
+                        Optional.<String>absent() /* mainManifestPackageName */);
 
         MergingReport mergingReport = new MergingReport.Builder(mLoggerMock)
                 .setMergedDocument(xmlDocument)

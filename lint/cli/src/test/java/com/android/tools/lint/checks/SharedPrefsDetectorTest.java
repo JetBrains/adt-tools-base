@@ -120,4 +120,23 @@ public class SharedPrefsDetectorTest extends AbstractCheckTest {
             lintProject("src/test/pkg/SharedPrefsTest7.java.txt=>" +
                     "src/test/pkg/SharedPrefsTest7.java"));
     }
+
+    public void test7() throws Exception {
+        assertEquals("No warnings.", // minSdk < 9: no warnings
+
+                lintProject("src/test/pkg/SharedPrefsTest8.java.txt=>" +
+                        "src/test/pkg/SharedPrefsTest8.java"));
+    }
+
+    public void test8() throws Exception {
+        assertEquals(""
+            + "src/test/pkg/SharedPrefsTest8.java:11: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [CommitPrefEdits]\n"
+            + "        editor.commit();\n"
+            + "        ~~~~~~~~~~~~~~~\n"
+            + "0 errors, 1 warnings\n",
+
+            lintProject(
+                    "apicheck/minsdk11.xml=>AndroidManifest.xml",
+                    "src/test/pkg/SharedPrefsTest8.java.txt=>src/test/pkg/SharedPrefsTest8.java"));
+    }
 }

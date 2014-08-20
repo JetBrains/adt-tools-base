@@ -17,7 +17,8 @@
 package com.android.build.gradle.internal.api;
 
 import com.android.build.gradle.api.AndroidSourceFile;
-import org.gradle.api.internal.file.FileResolver;
+
+import org.gradle.api.Project;
 
 import java.io.File;
 
@@ -26,12 +27,12 @@ import java.io.File;
 public class DefaultAndroidSourceFile implements AndroidSourceFile {
 
     private final String name;
-    private final FileResolver fileResolver;
+    private final Project project;
     private Object source;
 
-    DefaultAndroidSourceFile(String name, FileResolver fileResolver) {
+    DefaultAndroidSourceFile(String name, Project project) {
         this.name = name;
-        this.fileResolver = fileResolver;
+        this.project = project;
     }
 
     @Override
@@ -47,7 +48,7 @@ public class DefaultAndroidSourceFile implements AndroidSourceFile {
 
     @Override
     public File getSrcFile() {
-        return fileResolver.resolve(source);
+        return project.file(source);
     }
 
     @Override

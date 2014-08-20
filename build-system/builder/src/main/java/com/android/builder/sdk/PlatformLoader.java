@@ -87,7 +87,8 @@ public class PlatformLoader implements SdkLoader {
                 new File(hostTools, FN_BCC_COMPAT),
                 new File(hostTools, "arm-linux-androideabi-ld"),
                 new File(hostTools, "i686-linux-android-ld"),
-                new File(hostTools, "mipsel-linux-android-ld"));
+                new File(hostTools, "mipsel-linux-android-ld"),
+                new File(hostTools, FN_ZIPALIGN));
 
         return new TargetInfo(androidTarget, buildToolInfo);
     }
@@ -124,9 +125,7 @@ public class PlatformLoader implements SdkLoader {
 
             mSdkInfo = new SdkInfo(
                     new File(mTreeLocation, "out/host/" + host + "/framework/annotations.jar"),
-                    new File(mTreeLocation, "out/host/" + host + "/bin/adb"),
-                    // TODO: fix and move to the platform-tools?
-                    new File(getHostToolsFolder(), FN_ZIPALIGN));
+                    new File(mTreeLocation, "out/host/" + host + "/bin/adb"));
         }
     }
 

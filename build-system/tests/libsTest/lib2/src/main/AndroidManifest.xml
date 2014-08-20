@@ -5,7 +5,7 @@
     android:versionName="1.0" >
 
     <application
-        android:icon="@drawable/ic_launcher"
+        android:icon="@drawable/lib2_ic_launcher"
         android:label="@string/lib2_name" >
         <activity
             android:name="MainActivity"

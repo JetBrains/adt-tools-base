@@ -36,7 +36,8 @@ public class BrokenPackageTest extends TestCase {
                 12, // min api level
                 13, // exact api level
                 "os/path",
-                PkgDesc.newTool(new FullRevision(1, 2, 3, 4), FullRevision.NOT_SPECIFIED));
+                PkgDesc.Builder.newTool(new FullRevision(1, 2, 3, 4),
+                                        FullRevision.NOT_SPECIFIED).create());
     }
 
     public final void testGetShortDescription() {
@@ -60,7 +61,9 @@ public class BrokenPackageTest extends TestCase {
     }
 
     public final void testGetPkgDesc() {
-        assertEquals(PkgDesc.newTool(new FullRevision(1, 2, 3, 4), FullRevision.NOT_SPECIFIED),
-                     m.getPkgDesc());
+        assertEquals(
+                PkgDesc.Builder.newTool(new FullRevision(1, 2, 3, 4),
+                                        FullRevision.NOT_SPECIFIED).create(),
+                m.getPkgDesc());
     }
 }

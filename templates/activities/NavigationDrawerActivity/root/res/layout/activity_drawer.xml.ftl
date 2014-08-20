@@ -5,7 +5,7 @@
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="${packageName}.${activityClass}">
+    tools:context="${relativePackage}.${activityClass}">
 
     <!-- As the main content view, the view below consumes the entire
          space available using match_parent in both dimensions. -->
@@ -25,6 +25,7 @@
         android:layout_width="@dimen/navigation_drawer_width"
         android:layout_height="match_parent"
         android:layout_gravity="<#if buildApi gte 17>start<#else>left</#if>"
-        android:name="${packageName}.NavigationDrawerFragment" />
+        android:name="${packageName}.NavigationDrawerFragment"
+        tools:layout="@layout/${navigationDrawerLayout}" />
 
 </android.support.v4.widget.DrawerLayout>

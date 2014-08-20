@@ -198,6 +198,7 @@ public final class AddOnTarget implements IAndroidTarget {
         return mDescription;
     }
 
+    @NonNull
     @Override
     public AndroidVersion getVersion() {
         // this is always defined by the base platform
@@ -369,8 +370,7 @@ public final class AddOnTarget implements IAndroidTarget {
             // the only targets that can run the receiver are the same add-on in the same or later
             // versions.
             // first check: vendor/name
-            if (mVendor.equals(target.getVendor()) == false ||
-                            mName.equals(target.getName()) == false) {
+            if (!mVendor.equals(target.getVendor()) || !mName.equals(target.getName())) {
                 return false;
             }
 

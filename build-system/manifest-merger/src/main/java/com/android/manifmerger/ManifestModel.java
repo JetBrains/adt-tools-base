@@ -20,7 +20,6 @@ import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.manifmerger.AttributeModel.Hexadecimal32BitsWithMinimumValue;
 import static com.android.manifmerger.AttributeModel.MultiValueValidator;
-import static com.android.manifmerger.AttributeModel.ReferenceValidator;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -212,8 +211,45 @@ class ManifestModel {
         }
     };
 
+    /**
+     * Implementation of {@link com.android.manifmerger.ManifestModel.NodeKeyResolver} that
+     * combined two attributes values to create the key value.
+     */
+    private static final class TwoAttributesBasedKeyResolver implements NodeKeyResolver {
+        private final NodeKeyResolver firstAttributeKeyResolver;
+        private final NodeKeyResolver secondAttributeKeyResolver;
+
+        private TwoAttributesBasedKeyResolver(NodeKeyResolver firstAttributeKeyResolver,
+                NodeKeyResolver secondAttributeKeyResolver) {
+            this.firstAttributeKeyResolver = firstAttributeKeyResolver;
+            this.secondAttributeKeyResolver = secondAttributeKeyResolver;
+        }
+
+        @Nullable
+        @Override
+        public String getKey(Element xmlElement) {
+            String firstKey = firstAttributeKeyResolver.getKey(xmlElement);
+            String secondKey = secondAttributeKeyResolver.getKey(xmlElement);
+
+            return Strings.isNullOrEmpty(firstKey)
+                    ? secondKey
+                    : Strings.isNullOrEmpty(secondKey)
+                            ? firstKey
+                            : firstKey + "+" + secondKey;
+        }
+
+        @NonNull
+        @Override
+        public ImmutableList<String> getKeyAttributesNames() {
+            return ImmutableList.of(firstAttributeKeyResolver.getKeyAttributesNames().get(0),
+                    secondAttributeKeyResolver.getKeyAttributesNames().get(0));
+        }
+    }
+
     private static final AttributeModel.BooleanValidator BOOLEAN_VALIDATOR =
             new AttributeModel.BooleanValidator();
+
+    private static final boolean MULTIPLE_DECLARATION_FOR_SAME_KEY_ALLOWED = true;
 
     /**
      * Definitions of the support node types in the Android Manifest file.
@@ -343,8 +379,8 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/intent-filter-element.html>
          *     Intent-filter Xml documentation</a>}
          */
-        // TODO: key is provided by sub elements...
-        INTENT_FILTER(MergeType.ALWAYS, INTENT_FILTER_KEY_RESOLVER),
+        INTENT_FILTER(MergeType.ALWAYS, INTENT_FILTER_KEY_RESOLVER,
+                MULTIPLE_DECLARATION_FOR_SAME_KEY_ALLOWED),
 
         /**
          * Manifest (top level node)
@@ -394,8 +430,6 @@ class ManifestModel {
          */
         PERMISSION(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
                 AttributeModel.newModel(SdkConstants.ATTR_NAME),
-                AttributeModel.newModel("permissionGroup")
-                        .setOnWriteValidator(new ReferenceValidator(PERMISSION_GROUP)),
                 AttributeModel.newModel("protectionLevel")
                         .setDefaultValue("normal")
                         // TODO : this will need to be populated from
@@ -442,7 +476,9 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/compatible-screens-element.html>
          *     Receiver Xml documentation</a>}
          */
-        SCREEN(MergeType.MERGE, new AttributeBasedNodeKeyResolver(ANDROID_URI, "screenSize")),
+        SCREEN(MergeType.MERGE, new TwoAttributesBasedKeyResolver(
+                new AttributeBasedNodeKeyResolver(ANDROID_URI, "screenSize"),
+                new AttributeBasedNodeKeyResolver(ANDROID_URI, "screenDensity"))),
 
         /**
          * Service (contained in application)
@@ -529,15 +565,12 @@ class ManifestModel {
         USES_SDK(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER,
                 AttributeModel.newModel("minSdkVersion")
                         .setDefaultValue(SdkConstants.VALUE_1)
-                        .setOnReadValidator(new AttributeModel.IntegerValueValidator())
-                        .setMergingPolicy(AttributeModel.NUMERICAL_SUPERIORITY_POLICY),
-                AttributeModel.newModel("maxSdkVersion").setOnReadValidator(
-                        new AttributeModel.IntegerValueValidator())
-                        .setMergingPolicy(AttributeModel.NUMERICAL_SUPERIORITY_POLICY),
+                        .setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
+                AttributeModel.newModel("maxSdkVersion")
+                        .setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
                 // TODO : model target's default value is minSdkVersion value.
                 AttributeModel.newModel("targetSdkVersion")
-                        .setOnReadValidator(new AttributeModel.IntegerValueValidator())
-                        .setMergingPolicy(AttributeModel.NUMERICAL_SUPERIORITY_POLICY)
+                        .setMergingPolicy(AttributeModel.NO_MERGING_POLICY)
         ),
 
         /**
@@ -549,10 +582,19 @@ class ManifestModel {
         private final MergeType mMergeType;
         private final NodeKeyResolver mNodeKeyResolver;
         private final ImmutableList<AttributeModel> mAttributeModels;
+        private final boolean mMultipleDeclarationAllowed;
 
         private NodeTypes(
                 @NonNull MergeType mergeType,
                 @NonNull NodeKeyResolver nodeKeyResolver,
+                @Nullable AttributeModel.Builder... attributeModelBuilders) {
+            this(mergeType, nodeKeyResolver, false, attributeModelBuilders);
+        }
+
+        private NodeTypes(
+                @NonNull MergeType mergeType,
+                @NonNull NodeKeyResolver nodeKeyResolver,
+                boolean mutipleDeclarationAllowed,
                 @Nullable AttributeModel.Builder... attributeModelBuilders) {
             this.mMergeType = Preconditions.checkNotNull(mergeType);
             this.mNodeKeyResolver = Preconditions.checkNotNull(nodeKeyResolver);
@@ -564,6 +606,7 @@ class ManifestModel {
                 }
             }
             this.mAttributeModels = attributeModels.build();
+            this.mMultipleDeclarationAllowed = mutipleDeclarationAllowed;
         }
 
         @NonNull
@@ -625,6 +668,14 @@ class ManifestModel {
 
         MergeType getMergeType() {
             return mMergeType;
+        }
+
+        /**
+         * Returns true if multiple declaration for the same type and key are allowed or false if
+         * there must be only one declaration of this element for a particular key value.
+         */
+        boolean areMultipleDeclarationAllowed() {
+            return mMultipleDeclarationAllowed;
         }
     }
 }

@@ -112,4 +112,38 @@ public class IncludeDetector extends LayoutDetector {
             }
         }
     }
+
+    /**
+     * Returns true if the error message (earlier reported by this lint detector) requests
+     * for the layout_width to be defined.
+     * <p>
+     * Intended for IDE quickfix implementations.
+     *
+     * @param errorMessage the error message computed by lint
+     * @return true if the layout_width needs to be defined
+     */
+    public static boolean requestsWidth(@NonNull String errorMessage) {
+        int index = errorMessage.indexOf(" unless ");
+        if (index != -1) {
+            return errorMessage.contains(ATTR_LAYOUT_WIDTH);
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the error message (earlier reported by this lint detector) requests
+     * for the layout_height to be defined.
+     * <p>
+     * Intended for IDE quickfix implementations.
+     *
+     * @param errorMessage the error message computed by lint
+     * @return true if the layout_height needs to be defined
+     */
+    public static boolean requestsHeight(@NonNull String errorMessage) {
+        int index = errorMessage.indexOf(" unless ");
+        if (index != -1) {
+            return errorMessage.contains(ATTR_LAYOUT_HEIGHT);
+        }
+        return false;
+    }
 }

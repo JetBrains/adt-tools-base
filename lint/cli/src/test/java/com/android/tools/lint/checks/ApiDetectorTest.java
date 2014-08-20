@@ -63,6 +63,32 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testXmlApi2() throws Exception {
+        assertEquals(""
+                + "res/layout/textureview.xml:8: Error: View requires API level 14 (current min is 1): <TextureView> [NewApi]\n"
+                + "    <TextureView\n"
+                + "    ^\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "res/layout/textureview.xml=>res/layout/textureview.xml"
+                ));
+    }
+
+    public void testTag() throws Exception {
+        assertEquals(""
+                + "res/layout/tag.xml:12: Warning: <tag> is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
+                + "        <tag id=\"@+id/test\" />\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "res/layout/tag.xml=>res/layout/tag.xml"
+                ));
+    }
+
     public void testAttrWithoutSlash() throws Exception {
         assertEquals(""
                 + "res/layout/attribute.xml:4: Error: ?android:indicatorStart requires API level 18 (current min is 1) [NewApi]\n"
@@ -202,6 +228,18 @@ public class ApiDetectorTest extends AbstractCheckTest {
                     "apicheck/themes.xml=>res/values-v14/themes.xml",
                     "apicheck/themes.xml=>res/color-v14/colors.xml"
                     ));
+    }
+
+    public void testThemeVersion() throws Exception {
+        assertEquals(""
+                + "res/values/themes3.xml:3: Error: android:Theme.Holo.Light.DarkActionBar requires API level 14 (current min is 4) [NewApi]\n"
+                + "    <style name=\"AppTheme\" parent=\"android:Theme.Holo.Light.DarkActionBar\">\n"
+                + "                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "res/values/themes3.xml"
+                ));
     }
 
     public void testApi1() throws Exception {
@@ -1038,6 +1076,74 @@ public class ApiDetectorTest extends AbstractCheckTest {
                     "apicheck/classpath=>.classpath",
                     "apicheck/ApiCallTest.java.txt=>src/foo/bar/ApiCallTest.java",
                     "apicheck/ApiCallTest.class.data=>bin/classes/foo/bar/ApiCallTest.class"
+            ));
+    }
+
+    public void testRipple() throws Exception {
+        assertEquals(""
+                + "res/drawable/ripple.xml:1: Error: <ripple> requires API level 21 (current min is 14) [NewApi]\n"
+                + "<ripple\n"
+                + "^\n"
+                + "res/drawable/ripple.xml:4: Warning: Attribute \"tintMode\" is only used in API level 21 and higher (current min is 14) [UnusedAttribute]\n"
+                + "    android:tintMode=\"src_over\"\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 1 warnings\n",
+                lintProject(
+                        "apicheck/minsdk14.xml=>AndroidManifest.xml",
+                        "apicheck/ripple.xml=>res/drawable/ripple.xml"
+                ));
+    }
+
+    public void testRippleOk1() throws Exception {
+        // minSdkVersion satisfied
+        assertEquals("No warnings.",
+                lintProject(
+                        "apicheck/minsdk21.xml=>AndroidManifest.xml",
+                        "apicheck/ripple.xml=>res/drawable/ripple.xml"
+                ));
+    }
+
+    public void testRippleOk2() throws Exception {
+        // -vNN location satisfied
+        assertEquals("No warnings.",
+                lintProject(
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "apicheck/ripple.xml=>res/drawable-v21/ripple.xml"
+                ));
+    }
+
+    public void testVector() throws Exception {
+        assertEquals(""
+                + "res/drawable/vector.xml:1: Error: <vector> requires API level 21 (current min is 1) [NewApi]\n"
+                + "<vector xmlns:android=\"http://schemas.android.com/apk/res/android\" >\n"
+                + "^\n"
+                + "AndroidManifest.xml:8: Warning: Attribute \"viewportHeight\" is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
+                + "        android:viewportHeight=\"24\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "AndroidManifest.xml:9: Warning: Attribute \"viewportWidth\" is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
+                + "        android:viewportWidth=\"24\" />\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/drawable/vector.xml:8: Warning: Attribute \"viewportHeight\" is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
+                + "        android:viewportHeight=\"24\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/drawable/vector.xml:9: Warning: Attribute \"viewportWidth\" is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
+                + "        android:viewportWidth=\"24\" />\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 4 warnings\n",
+                lintProject(
+                        "apicheck/vector.xml=>AndroidManifest.xml",
+                        "apicheck/vector.xml=>res/drawable/vector.xml"
+                ));
+    }
+
+    public void testSwitch() throws Exception {
+        assertEquals("No warnings.",
+            lintProject(
+                    "apicheck/classpath=>.classpath",
+                    "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                    "apicheck/TargetApiTest.java.txt=>src/test/pkg/TargetApiTest.java",
+                    "apicheck/TargetApiTest.class.data=>bin/classes/test/pkg/TargetApiTest.class",
+                    "apicheck/TargetApiTest$1.class.data=>bin/classes/test/pkg/TargetApiTest$1.class"
             ));
     }
 

@@ -86,7 +86,18 @@ public final class SdkConstants {
     public static final String FN_BUILD_GRADLE = "build.gradle";                      //$NON-NLS-1$
     /** An SDK Project's settings.gradle file */
     public static final String FN_SETTINGS_GRADLE = "settings.gradle";                //$NON-NLS-1$
-
+    /** An SDK Project's gradle.properties file */
+    public static final String FN_GRADLE_PROPERTIES = "gradle.properties";            //$NON-NLS-1$
+    /** An SDK Project's gradle daemon executable */
+    public static final String FN_GRADLE_UNIX = "gradle";                             //$NON-NLS-1$
+    /** An SDK Project's gradle.bat daemon executable (gradle for windows) */
+    public static final String FN_GRADLE_WIN = FN_GRADLE_UNIX + ".bat";               //$NON-NLS-1$
+    /** An SDK Project's gradlew file */
+    public static final String FN_GRADLE_WRAPPER_UNIX = "gradlew";                    //$NON-NLS-1$
+    /** An SDK Project's gradlew.bat file (gradlew for windows) */
+    public static final String FN_GRADLE_WRAPPER_WIN = FN_GRADLE_WRAPPER_UNIX + ".bat"; //$NON-NLS-1$
+    /** An SDK Project's gradle wrapper library */
+    public static final String FN_GRADLE_WRAPPER_JAR = "gradle-wrapper.jar";          //$NON-NLS-1$
     /** Name of the framework library, i.e. "android.jar" */
     public static final String FN_FRAMEWORK_LIBRARY = "android.jar";                  //$NON-NLS-1$
     /** Name of the framework library, i.e. "uiautomator.jar" */
@@ -248,6 +259,10 @@ public final class SdkConstants {
     public static final String FD_TEST = "androidTest";                 //$NON-NLS-1$
     /** Default java code folder name, i.e. "java" */
     public static final String FD_JAVA = "java";                        //$NON-NLS-1$
+    /** Default gradle folder name, i.e. "gradle" */
+    public static final String FD_GRADLE = "gradle";                    //$NON-NLS-1$
+    /** Default gradle wrapper folder name, i.e. "gradle/wrapper" */
+    public static final String FD_GRADLE_WRAPPER = FD_GRADLE + File.separator + "wrapper"; //$NON-NLS-1$
     /** Default generated source folder name, i.e. "gen" */
     public static final String FD_GEN_SOURCES = "gen";                  //$NON-NLS-1$
     /** Default native library folder name inside the project, i.e. "libs"
@@ -301,14 +316,21 @@ public final class SdkConstants {
     /** Name of the SDK images folder. */
     public static final String FD_IMAGES = "images";                    //$NON-NLS-1$
     /** Name of the ABI to support. */
-    public static final String ABI_ARMEABI = "armeabi";                 //$NON-NLS-1$
-    public static final String ABI_ARMEABI_V7A = "armeabi-v7a";         //$NON-NLS-1$
-    public static final String ABI_INTEL_ATOM = "x86";                  //$NON-NLS-1$
-    public static final String ABI_MIPS = "mips";                       //$NON-NLS-1$
+    public static final String ABI_ARMEABI      = "armeabi";            //$NON-NLS-1$
+    public static final String ABI_ARMEABI_V7A  = "armeabi-v7a";        //$NON-NLS-1$
+    public static final String ABI_ARM64_V8A    = "arm64-v8a";          //$NON-NLS-1$
+    public static final String ABI_INTEL_ATOM   = "x86";                //$NON-NLS-1$
+    public static final String ABI_INTEL_ATOM64 = "x86_64";             //$NON-NLS-1$
+    public static final String ABI_MIPS         = "mips";               //$NON-NLS-1$
+    public static final String ABI_MIPS64       = "mips64";             //$NON-NLS-1$
     /** Name of the CPU arch to support. */
-    public static final String CPU_ARCH_ARM = "arm";                    //$NON-NLS-1$
-    public static final String CPU_ARCH_INTEL_ATOM = "x86";             //$NON-NLS-1$
-    public static final String CPU_ARCH_MIPS = "mips";                  //$NON-NLS-1$
+    public static final String CPU_ARCH_ARM          = "arm";           //$NON-NLS-1$
+    public static final String CPU_ARCH_ARM64        = "arm64";         //$NON-NLS-1$
+    public static final String CPU_ARCH_INTEL_ATOM   = "x86";           //$NON-NLS-1$
+    public static final String CPU_ARCH_INTEL_ATOM64 = "x86_64";        //$NON-NLS-1$
+    public static final String CPU_ARCH_MIPS         = "mips";          //$NON-NLS-1$
+    /** TODO double-check this is appropriate value for mips64 */
+    public static final String CPU_ARCH_MIPS64       = "mips64";        //$NON-NLS-1$
     /** Name of the CPU model to support. */
     public static final String CPU_MODEL_CORTEX_A8 = "cortex-a8";       //$NON-NLS-1$
 
@@ -354,10 +376,6 @@ public final class SdkConstants {
     /** Namespace for the resource XML, i.e. "http://schemas.android.com/apk/res/android" */
     public static final String NS_RESOURCES =
         "http://schemas.android.com/apk/res/android";                   //$NON-NLS-1$
-
-    /** Namespace for the device schema, i.e. "http://schemas.android.com/sdk/devices/1" */
-    public static final String NS_DEVICES_XSD =
-        "http://schemas.android.com/sdk/devices/1";                     //$NON-NLS-1$
 
     /**
      * Namespace pattern for the custom resource XML, i.e. "http://schemas.android.com/apk/res/%s"
@@ -422,9 +440,7 @@ public final class SdkConstants {
     /** Path of the template gradle wrapper folder relative to the sdk folder.
      *  This is an OS path, ending with a separator. */
     public static final String OS_SDK_TOOLS_TEMPLATES_GRADLE_WRAPPER_FOLDER =
-        OS_SDK_TOOLS_FOLDER + FD_TEMPLATES + File.separator +
-        "gradle" + File.separator +                                     //$NON-NLS-1$
-        "wrapper" + File.separator;                                     //$NON-NLS-1$
+      OS_SDK_TOOLS_FOLDER + FD_TEMPLATES + File.separator + FD_GRADLE_WRAPPER + File.separator;
 
     /* Folder paths relative to a platform or add-on folder */
 
@@ -706,6 +722,7 @@ public final class SdkConstants {
     public static final String TAG_ARRAY = "array";                    //$NON-NLS-1$
     public static final String TAG_STYLE = "style";                    //$NON-NLS-1$
     public static final String TAG_ITEM = "item";                      //$NON-NLS-1$
+    public static final String TAG_GROUP = "group";                    //$NON-NLS-1$
     public static final String TAG_STRING_ARRAY = "string-array";      //$NON-NLS-1$
     public static final String TAG_PLURALS = "plurals";                //$NON-NLS-1$
     public static final String TAG_INTEGER_ARRAY = "integer-array";    //$NON-NLS-1$
@@ -729,6 +746,7 @@ public final class SdkConstants {
     public static final String VIEW_MERGE = "merge";                   //$NON-NLS-1$
     public static final String VIEW_FRAGMENT = "fragment";             //$NON-NLS-1$
     public static final String REQUEST_FOCUS = "requestFocus";         //$NON-NLS-1$
+    public static final String TAG = "tag";                            //$NON-NLS-1$
 
     public static final String VIEW = "View";                          //$NON-NLS-1$
     public static final String VIEW_GROUP = "ViewGroup";               //$NON-NLS-1$
@@ -1321,10 +1339,12 @@ public final class SdkConstants {
     public static final String VALUE_HORIZONTAL = "horizontal"; //$NON-NLS-1$
 
     public static final String GRADLE_PLUGIN_NAME = "com.android.tools.build:gradle:";
-    public static final String GRADLE_MINIMUM_VERSION = "1.10";
-    public static final String GRADLE_LATEST_VERSION = "1.11";
-    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "0.9.0";
-    public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.9.+";
+    public static final String GRADLE_MINIMUM_VERSION = "1.12";
+    public static final String GRADLE_LATEST_VERSION = "1.12";
+    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "0.12.0";
+    public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.12.+";
+    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "0.12.2";
+    public static final String MIN_BUILD_TOOLS_VERSION = "19.1.0";
     public static final String SUPPORT_LIB_ARTIFACT = "com.android.support:support-v4";
     public static final String APPCOMPAT_LIB_ARTIFACT = "com.android.support:appcompat-v7";
 

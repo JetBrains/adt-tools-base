@@ -36,7 +36,7 @@ public class CheckManifest extends DefaultTask {
         File f = getManifest()
         if (!f.isFile()) {
             throw new IllegalArgumentException(
-                    "Main Manifest missing for variant ${getVariant()}. Expected path: ${f.getAbsolutePath()}");
+                    "Main Manifest missing for variant ${getVariantName()}. Expected path: ${f.getAbsolutePath()}");
         }
     }
 }

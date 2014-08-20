@@ -2,7 +2,7 @@
 
 buildscript {
     repositories {
-        mavenCentral()
+        jcenter()
 <#if mavenUrl != "mavenCentral">
         maven {
             url '${mavenUrl}'
@@ -11,12 +11,15 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:${gradlePluginVersion}'
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
     }
 }
 
 allprojects {
     repositories {
-        mavenCentral()
+        jcenter()
 <#if mavenUrl != "mavenCentral">
         maven {
             url '${mavenUrl}'

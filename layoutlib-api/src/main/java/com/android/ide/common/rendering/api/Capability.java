@@ -74,4 +74,8 @@ public enum Capability {
      * Ability to render ActionBar.
      */
     ACTION_BAR,
+    /**
+     * Ability to simulate older Platform Versions.
+     */
+   SIMULATE_PLATFORM,
 }

@@ -24,9 +24,9 @@ import com.android.builder.model.PackagingOptions;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.SealedPackageException;
-import com.android.builder.signing.CertificateInfo;
 import com.android.builder.signing.SignedJarBuilder;
 import com.android.builder.signing.SignedJarBuilder.IZipEntryFilter;
+import com.android.ide.common.signing.CertificateInfo;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.android.utils.ILogger;
 import com.google.common.collect.Sets;
@@ -412,7 +412,11 @@ public final class Packager implements IArchiveBuilder {
             mBuilder.cleanUp();
             throw new PackagerException(e, "Failed to add %s", zipFile);
         } finally {
-            Closeables.closeQuietly(fis);
+            try {
+                Closeables.close(fis, true /* swallowIOException */);
+            } catch (IOException e) {
+                // ignore
+            }
         }
     }
 
@@ -454,7 +458,11 @@ public final class Packager implements IArchiveBuilder {
             mBuilder.cleanUp();
             throw new PackagerException(e, "Failed to add %s", jarFile);
         } finally {
-            Closeables.closeQuietly(fis);
+            try {
+                Closeables.close(fis, true /* swallowIOException */);
+            } catch (IOException e) {
+                // ignore.
+            }
         }
     }
 

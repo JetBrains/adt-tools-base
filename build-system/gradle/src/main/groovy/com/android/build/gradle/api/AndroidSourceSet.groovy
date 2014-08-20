@@ -39,13 +39,13 @@ public interface AndroidSourceSet {
      * @return the java resources. Never returns null.
      */
     @NonNull
-    SourceDirectorySet getResources();
+    AndroidSourceDirectorySet getResources();
 
     /**
      * Configures the Java resources for this set.
      *
-     * <p>The given closure is used to configure the {@link SourceDirectorySet} which contains the
-     * java resources.
+     * <p>The given closure is used to configure the {@link AndroidSourceDirectorySet} which
+     * contains the java resources.
      *
      * @param configureClosure The closure to use to configure the javaResources.
      * @return this
@@ -60,36 +60,19 @@ public interface AndroidSourceSet {
      * @return the Java source. Never returns null.
      */
     @NonNull
-    SourceDirectorySet getJava();
+    AndroidSourceDirectorySet getJava();
 
     /**
      * Configures the Java source for this set.
      *
-     * <p>The given closure is used to configure the {@link SourceDirectorySet} which contains the
-     * Java source.
+     * <p>The given closure is used to configure the {@link AndroidSourceDirectorySet} which
+     * contains the Java source.
      *
      * @param configureClosure The closure to use to configure the Java source.
      * @return this
      */
     @NonNull
     AndroidSourceSet java(Closure configureClosure);
-
-    /**
-     * All Java source files for this source set. This includes, for example, source which is
-     * directly compiled, and source which is indirectly compiled through joint compilation.
-     *
-     * @return the Java source. Never returns null.
-     */
-    @NonNull
-    SourceDirectorySet getAllJava();
-
-    /**
-     * All source files for this source set.
-     *
-     * @return the source. Never returns null.
-     */
-    @NonNull
-    SourceDirectorySet getAllSource();
 
     /**
      * Returns the name of the compile configuration for this source set.

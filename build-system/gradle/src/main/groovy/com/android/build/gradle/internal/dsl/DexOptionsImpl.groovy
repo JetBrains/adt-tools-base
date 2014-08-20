@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal.dsl
 
-import com.android.builder.DexOptions
+import com.android.builder.core.DexOptions
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 
@@ -30,6 +30,8 @@ public class DexOptionsImpl implements DexOptions {
 
     @Input
     private boolean isJumboModeFlag = false
+
+    private int threadCount = 4
 
     @Input
     @Optional
@@ -76,4 +78,14 @@ public class DexOptionsImpl implements DexOptions {
     public String getJavaMaxHeapSize() {
         return javaMaxHeapSize
     }
+
+    public void setThreadCount(int threadCount) {
+        this.threadCount = threadCount
+    }
+
+    @Override
+    int getThreadCount() {
+        return threadCount
+    }
+
 }

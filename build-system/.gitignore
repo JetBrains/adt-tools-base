@@ -10,6 +10,7 @@ tests/customArtifactDep/*/build
 tests/3rdPartyTests/*/build
 tests/dependencies/jarProject/build
 tests/dependencies/jarProject2/build
+tests/embedded/*/build
 tests/flavorlib/*/build
 tests/flavoredlib/*/build
 tests/flavorlibWithFailedTests/*/build
@@ -20,6 +21,7 @@ tests/multiproject/*/build
 tests/localAarTest/*/build
 tests/localJars/*/build
 tests/ndkJniLib/*/build
+tests/ndkJniLib2/*/build
 tests/packagingOptions/jars/*/build
 tests/proguardLib/*/build
 tests/renderscriptInLib/*/build

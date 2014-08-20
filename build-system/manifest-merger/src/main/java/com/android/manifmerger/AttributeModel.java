@@ -248,10 +248,10 @@ class AttributeModel {
     };
 
     /**
-     * Merging policy that will return the higher priority value if it is numerically greater than
-     * the lower priority value, otherwise null.
+     * Merging policy that will return the higher priority value regardless of the lower priority
+     * value
      */
-    static final MergingPolicy NUMERICAL_SUPERIORITY_POLICY = new MergingPolicy() {
+    static final MergingPolicy NO_MERGING_POLICY = new MergingPolicy() {
 
         @Override
         public boolean shouldMergeDefaultValues() {
@@ -261,9 +261,7 @@ class AttributeModel {
         @Nullable
         @Override
         public String merge(@NonNull String higherPriority, @NonNull String lowerPriority) {
-            return decodeDecOrHexString(higherPriority) >= decodeDecOrHexString(lowerPriority)
-                    ? higherPriority
-                    : null;
+            return higherPriority;
         }
     };
 
@@ -337,41 +335,6 @@ class AttributeModel {
                 );
             }
             return matches;
-        }
-    }
-
-    /**
-     * A {@link com.android.manifmerger.AttributeModel.Validator} that validates a reference.
-     * The referenced item must be present in the same document for a successful validation.
-     */
-    static class ReferenceValidator implements Validator {
-
-        private final ManifestModel.NodeTypes referencedType;
-
-        ReferenceValidator(ManifestModel.NodeTypes referencedType) {
-            this.referencedType = referencedType;
-        }
-
-
-        @Override
-        public boolean validates(@NonNull MergingReport.Builder mergingReport,
-                @NonNull XmlAttribute attribute, @NonNull String value) {
-
-            Optional<XmlElement> referencedElement = attribute.getOwnerElement().getDocument()
-                    .getByTypeAndKey(referencedType, value);
-            if (!referencedElement.isPresent()) {
-                attribute.addMessage(mergingReport, MergingReport.Record.Severity.ERROR,
-                        String.format(
-                                "Referenced element %1$s=%2$s, in element %3$s declared at %4$s "
-                                        + "does not exist",
-                                attribute.getName(),
-                                value,
-                                attribute.getOwnerElement().getId(),
-                                attribute.printPosition()
-                        ));
-                return false;
-            }
-            return true;
         }
     }
 

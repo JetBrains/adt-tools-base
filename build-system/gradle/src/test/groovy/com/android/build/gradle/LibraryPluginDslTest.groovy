@@ -24,7 +24,7 @@ import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 
 /**
- * Tests for the public DSL of the App plugin ("android-library")
+ * Tests for the public DSL of the Lib plugin ('com.android.library')
  */
 public class LibraryPluginDslTest extends BaseTest {
 
@@ -37,7 +37,7 @@ public class LibraryPluginDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android-library'
+        project.apply plugin: 'com.android.library'
 
         project.android {
             compileSdkVersion 15
@@ -63,7 +63,7 @@ public class LibraryPluginDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android-library'
+        project.apply plugin: 'com.android.library'
 
         project.android {
             compileSdkVersion 15

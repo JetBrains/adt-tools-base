@@ -20,15 +20,16 @@ import static com.android.manifmerger.ManifestMerger2.SystemProperty;
 import static com.android.manifmerger.MergingReport.Record;
 
 import com.android.annotations.Nullable;
+import com.android.annotations.concurrency.Immutable;
 import com.android.utils.StdLogger;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
@@ -49,6 +50,9 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "05_inject_package.xml",
             "05_inject_package_placeholder.xml",
             "06_inject_attributes_with_specific_prefix.xml",
+            "07_no_package_provided.xml",
+            "08_no_library_package_provided.xml",
+            "08b_library_injection.xml",
             "10_activity_merge",
             "11_activity_dup",
             "12_alias_dup",
@@ -69,7 +73,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "30_uses_sdk_ok",
             "32_uses_sdk_minsdk_ok",
             "33_uses_sdk_minsdk_conflict",
-//            "36_uses_sdk_targetsdk_warning",
+            "36_uses_sdk_targetsdk_warning",
             "40_uses_feat_merge",
             "41_uses_feat_errors",
             "45_uses_feat_gles_once",
@@ -90,7 +94,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "76_app_metadata_ignore",
             "77_app_metadata_conflict",
             "78_removeAll",
-
+            "79_custom_node.xml",
     };
 
     @Override
@@ -137,8 +141,8 @@ public class ManifestMerger2Test extends ManifestMergerTest {
     void processTestFiles(TestFiles testFiles) throws Exception {
 
         StdLogger stdLogger = new StdLogger(StdLogger.Level.VERBOSE);
-        ManifestMerger2.Invoker invoker = ManifestMerger2.newInvoker(testFiles.getMain(),
-                stdLogger)
+        ManifestMerger2.Invoker invoker = ManifestMerger2.newMerger(testFiles.getMain(),
+                stdLogger, ManifestMerger2.MergeType.APPLICATION)
                 .addLibraryManifests(testFiles.getLibs())
                 .withFeatures(ManifestMerger2.Invoker.Feature.KEEP_INTERMEDIARY_STAGES);
 

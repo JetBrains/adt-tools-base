@@ -116,12 +116,6 @@
 </manifest>
 
 
-@lib2
-
-# An empty library is not supported. It must be a valid XML file.
-<manifest/>
-
-
 @result
 
 <!--
@@ -220,8 +214,3 @@
     </application>
 
 </manifest>
-
-
-@errors
-
-WARNING:Missing 'package' declaration in manifest at ManifestMerger2Test2_lib2.xml:1:1

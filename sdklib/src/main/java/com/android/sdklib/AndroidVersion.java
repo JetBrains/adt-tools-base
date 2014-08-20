@@ -47,6 +47,9 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
     private final int mApiLevel;
     private final String mCodename;
 
+    /** The default AndroidVersion for minSdkVersion and targetSdkVersion if not specified */
+    public static final AndroidVersion DEFAULT = new AndroidVersion(1, null);
+
     /**
      * Thrown when an {@link AndroidVersion} object could not be created.
      * @see AndroidVersion#AndroidVersion(Properties)
@@ -173,6 +176,21 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
      */
     public int getApiLevel() {
         return mApiLevel;
+    }
+
+    /**
+     * Returns the API level as an integer. If this is a preview platform, it
+     * will return the expected final version of the API rather than the current API
+     * level. This is the "feature level" as opposed to the "release level" returned by
+     * {@link #getApiLevel()} in the sense that it is useful when you want
+     * to check the presence of a given feature from an API, and we consider the feature
+     * present in preview platforms as well.
+     *
+     * @return the API level of this version, +1 for preview platforms
+     */
+    public int getFeatureLevel() {
+        //noinspection VariableNotUsedInsideIf
+        return mCodename != null ? mApiLevel + 1 : mApiLevel;
     }
 
     /**
@@ -311,7 +329,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
      *         less than, equal to, or greater than the specified object.
      */
     @Override
-    public int compareTo(AndroidVersion o) {
+    public int compareTo(@NonNull AndroidVersion o) {
         return compareTo(o.mApiLevel, o.mCodename);
     }
 
@@ -362,10 +380,10 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
      * @return Null for a release version or a non-empty codename.
      */
     @Nullable
-    private String sanitizeCodename(@Nullable String codename) {
+    private static String sanitizeCodename(@Nullable String codename) {
         if (codename != null) {
             codename = codename.trim();
-            if (codename.length() == 0 || SdkConstants.CODENAME_RELEASE.equals(codename)) {
+            if (codename.isEmpty() || SdkConstants.CODENAME_RELEASE.equals(codename)) {
                 codename = null;
             }
         }

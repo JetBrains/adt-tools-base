@@ -26,11 +26,13 @@ import com.android.sdklib.IAndroidTarget.IOptionalLibrary;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.sources.SdkSource;
+import com.android.sdklib.repository.AddonManifestIniProps;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.local.LocalAddonPkgInfo;
 import com.android.utils.Pair;
@@ -159,7 +161,7 @@ public class AddonPackage extends MajorRevisionPackage
 
         // For a missing id, we simply use a sanitized version of the display name
         if (nameId.length() == 0) {
-            nameId = sanitizeDisplayToNameId(name.length() > 0 ? name : nameDisp);
+            nameId = LocalAddonPkgInfo.sanitizeDisplayToNameId(name.length() > 0 ? name : nameDisp);
         }
 
         assert nameId.length() > 0;
@@ -186,7 +188,7 @@ public class AddonPackage extends MajorRevisionPackage
         // For a missing id, we simply use a sanitized version of the display vendor
         if (vendorId.length() == 0) {
             boolean hasVendor = vendor.length() > 0;
-            vendorId = sanitizeDisplayToNameId(hasVendor ? vendor : vendorDisp);
+            vendorId = LocalAddonPkgInfo.sanitizeDisplayToNameId(hasVendor ? vendor : vendorDisp);
         }
 
         assert vendorId.length() > 0;
@@ -206,7 +208,13 @@ public class AddonPackage extends MajorRevisionPackage
 
         mLayoutlibVersion = new LayoutlibVersionMixin(packageNode);
 
-        mPkgDesc = PkgDesc.newAddon(mVersion, (MajorRevision) getRevision(), mVendorId, mNameId);
+        mPkgDesc = PkgDesc.Builder
+                .newAddon(mVersion,
+                          (MajorRevision) getRevision(),
+                          new IdDisplay(mVendorId, mVendorDisplay),
+                          new IdDisplay(mNameId, mDisplayName))
+                .setDescriptions(this)
+                .create();
     }
 
     /**
@@ -254,7 +262,7 @@ public class AddonPackage extends MajorRevisionPackage
 
         // For a missing id, we simply use a sanitized version of the display name
         if (nameId.length() == 0) {
-            nameId = sanitizeDisplayToNameId(name.length() > 0 ? name : nameDisp);
+            nameId = LocalAddonPkgInfo.sanitizeDisplayToNameId(name.length() > 0 ? name : nameDisp);
         }
 
         assert nameId.length() > 0;
@@ -278,7 +286,7 @@ public class AddonPackage extends MajorRevisionPackage
         // For a missing id, we simply use a sanitized version of the display vendor
         if (vendorId.length() == 0) {
             boolean hasVendor = vendor.length() > 0;
-            vendorId = sanitizeDisplayToNameId(hasVendor ? vendor : vendorDisp);
+            vendorId = LocalAddonPkgInfo.sanitizeDisplayToNameId(hasVendor ? vendor : vendorDisp);
         }
 
         assert vendorId.length() > 0;
@@ -302,7 +310,13 @@ public class AddonPackage extends MajorRevisionPackage
             }
         }
 
-        mPkgDesc = PkgDesc.newAddon(mVersion, (MajorRevision) getRevision(), mVendorId, mNameId);
+        mPkgDesc = PkgDesc.Builder
+                .newAddon(mVersion,
+                          (MajorRevision) getRevision(),
+                          new IdDisplay(mVendorId, mVendorDisplay),
+                          new IdDisplay(mNameId, mDisplayName))
+                .setDescriptions(this)
+                .create();
     }
 
     @Override
@@ -324,22 +338,44 @@ public class AddonPackage extends MajorRevisionPackage
             Properties sourceProps,
             Map<String, String> addonProps,
             String error) {
-        String name     = getProperty(sourceProps,
-                                      PkgProps.ADDON_NAME_DISPLAY,
-                                      getProperty(sourceProps,
-                                                  PkgProps.ADDON_NAME,
-                                                  addonProps.get(LocalAddonPkgInfo.ADDON_NAME)));
-        String vendor   = getProperty(sourceProps,
-                                      PkgProps.ADDON_VENDOR_DISPLAY,
-                                      getProperty(sourceProps,
-                                                  PkgProps.ADDON_VENDOR,
-                                                  addonProps.get(LocalAddonPkgInfo.ADDON_VENDOR)));
-        String api      = addonProps.get(LocalAddonPkgInfo.ADDON_API);
-        String revision = addonProps.get(LocalAddonPkgInfo.ADDON_REVISION);
+
+
+        String nameId   = getProperty(sourceProps, PkgProps.ADDON_NAME_ID, null);
+        String nameDisp = getProperty(sourceProps, PkgProps.ADDON_NAME_DISPLAY, null);
+        if (nameDisp == null) {
+            nameDisp = getProperty(sourceProps, PkgProps.ADDON_NAME_DISPLAY, null);
+        }
+        if (nameDisp == null) {
+            nameDisp = addonProps.get(AddonManifestIniProps.ADDON_NAME);
+        }
+        if (nameDisp == null) {
+            nameDisp = "Unknown";
+        }
+        if (nameId == null) {
+            nameId = LocalAddonPkgInfo.sanitizeDisplayToNameId(nameDisp);
+        }
+
+        String vendorId   = getProperty(sourceProps, PkgProps.ADDON_VENDOR_ID, null);
+        String vendorDisp = getProperty(sourceProps, PkgProps.ADDON_VENDOR_DISPLAY, null);
+        if (vendorDisp == null) {
+            vendorDisp = getProperty(sourceProps, PkgProps.ADDON_VENDOR_DISPLAY, null);
+        }
+        if (vendorDisp == null) {
+            vendorDisp = addonProps.get(AddonManifestIniProps.ADDON_VENDOR);
+        }
+        if (vendorDisp == null) {
+            vendorDisp = "Unknown";
+        }
+        if (vendorId == null) {
+            vendorId = LocalAddonPkgInfo.sanitizeDisplayToNameId(vendorDisp);
+        }
+
+        String api      = addonProps.get(AddonManifestIniProps.ADDON_API);
+        String revision = addonProps.get(AddonManifestIniProps.ADDON_REVISION);
 
         String shortDesc = String.format("%1$s by %2$s, Android API %3$s, revision %4$s [*]",
-                name,
-                vendor,
+                nameDisp,
+                vendorDisp,
                 api,
                 revision);
 
@@ -360,11 +396,13 @@ public class AddonPackage extends MajorRevisionPackage
             intRevision = Integer.parseInt(revision);
         } catch (NumberFormatException ignore) {}
 
-        IPkgDesc desc = PkgDesc.newAddon(
-                new AndroidVersion(apiLevel, null),
-                new MajorRevision(intRevision),
-                vendor,
-                name);
+        IPkgDesc desc = PkgDesc.Builder
+                .newAddon(new AndroidVersion(apiLevel, null),
+                          new MajorRevision(intRevision),
+                          new IdDisplay(vendorId, vendorDisp),
+                          new IdDisplay(nameId, nameDisp))
+                .setDescriptionShort(shortDesc)
+                .create();
 
         return new BrokenPackage(null/*props*/, shortDesc, longDesc,
                 IMinApiLevelDependency.MIN_API_LEVEL_NOT_SPECIFIED,
@@ -612,28 +650,6 @@ public class AddonPackage extends MajorRevisionPackage
         name = name.toLowerCase(Locale.US);
         name = name.replaceAll("[^a-z0-9_-]+", "_");      //$NON-NLS-1$ //$NON-NLS-2$
         name = name.replaceAll("_+", "_");                //$NON-NLS-1$ //$NON-NLS-2$
-        return name;
-    }
-
-    /**
-     * Computes a sanitized name-id based on an addon name-display.
-     * This is used to provide compatibility with older addons that lacks the new fields.
-     *
-     * @param displayName A name-display field or a old-style name field.
-     * @return A non-null sanitized name-id that fits in the {@code [a-zA-Z0-9_-]+} pattern.
-     */
-    private String sanitizeDisplayToNameId(String displayName) {
-        String name = displayName.toLowerCase(Locale.US);
-        name = name.replaceAll("[^a-z0-9_-]+", "_");      //$NON-NLS-1$ //$NON-NLS-2$
-        name = name.replaceAll("_+", "_");                //$NON-NLS-1$ //$NON-NLS-2$
-
-        // Trim leading and trailing underscores
-        if (name.length() > 1) {
-            name = name.replaceAll("^_+", "");            //$NON-NLS-1$ //$NON-NLS-2$
-        }
-        if (name.length() > 1) {
-            name = name.replaceAll("_+$", "");            //$NON-NLS-1$ //$NON-NLS-2$
-        }
         return name;
     }
 

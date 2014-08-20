@@ -83,5 +83,14 @@ public class LayoutInflationDetectorTest extends AbstractCheckTest {
                 + "\n"
                 + "</LinearLayout>")));
     }
+
+    public void testSuppressed() throws Exception {
+        assertEquals("No warnings.",
+
+                lintProject(
+                        "src/test/pkg/LayoutInflationTest_ignored.java.txt=>src/test/pkg/LayoutInflationTest.java",
+                        "res/layout/textsize.xml=>res/layout/your_layout.xml",
+                        "res/layout/listseparator.xml=>res/layout-port/your_layout.xml"));
+    }
 }
 

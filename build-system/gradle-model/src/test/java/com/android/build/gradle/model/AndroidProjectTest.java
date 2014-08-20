@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.model;
 
-import static com.android.builder.BuilderConstants.ANDROID_TEST;
+import static com.android.builder.core.BuilderConstants.ANDROID_TEST;
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
 
 import com.android.SdkConstants;
@@ -24,20 +24,23 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.StringHelper;
 import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidArtifactOutput;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ArtifactMetaData;
 import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.JavaArtifact;
 import com.android.builder.model.JavaCompileOptions;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
 import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.Variant;
-import com.android.builder.signing.KeystoreHelper;
+import com.android.ide.common.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation;
 import com.google.common.collect.Maps;
 
@@ -60,7 +63,7 @@ import java.util.Map;
 
 public class AndroidProjectTest extends TestCase {
 
-    private static final String MODEL_VERSION = "0.10.0-SNAPSHOT";
+    private static final String MODEL_VERSION = "0.13.0";
 
     private static final Map<String, ProjectData> sProjectModelMap = Maps.newHashMap();
 
@@ -75,6 +78,80 @@ public class AndroidProjectTest extends TestCase {
 
             return projectData;
         }
+    }
+
+    private static final class DefaultApiVersion implements ApiVersion {
+        private final int mApiLevel;
+
+        @Nullable
+        private final String mCodename;
+
+        public DefaultApiVersion(int apiLevel, @Nullable String codename) {
+            mApiLevel = apiLevel;
+            mCodename = codename;
+        }
+
+        public DefaultApiVersion(int apiLevel) {
+            this(apiLevel, null);
+        }
+
+        public DefaultApiVersion(@NonNull String codename) {
+            this(1, codename);
+        }
+
+        public static ApiVersion create(@NonNull Object value) {
+            if (value instanceof Integer) {
+                return new DefaultApiVersion((Integer) value, null);
+            } else if (value instanceof String) {
+                return new DefaultApiVersion(1, (String) value);
+            }
+
+            return null;
+        }
+
+        @Override
+        public int getApiLevel() {
+            return mApiLevel;
+        }
+
+        @Nullable
+        @Override
+        public String getCodename() {
+            return mCodename;
+        }
+
+        @NonNull
+        @Override
+        public String getApiString() {
+            return mCodename != null ? mCodename : Integer.toString(mApiLevel);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            /**
+             * Normally equals only test for the same exact class, but here me make it accept
+             * ApiVersion since we're comparing it against implementations that are serialized
+             * across Gradle's tooling api.
+             */
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof ApiVersion)) {
+                return false;
+            }
+
+            ApiVersion that = (ApiVersion) o;
+
+            if (mApiLevel != that.getApiLevel()) {
+                return false;
+            }
+            if (mCodename != null ? !mCodename.equals(that.getCodename()) : that.getCodename() != null) {
+                return false;
+            }
+
+            return true;
+        }
+
     }
 
     private ProjectData getModelForProject(String projectName) {
@@ -288,29 +365,46 @@ public class AndroidProjectTest extends TestCase {
                 .setTestFunctionalTest(null)
             .test();
 
+        // debug variant, tested.
         AndroidArtifact debugMainInfo = debugVariant.getMainArtifact();
         assertNotNull("Debug main info null-check", debugMainInfo);
         assertEquals("Debug package name", "com.android.tests.basic.debug",
-                debugMainInfo.getPackageName());
+                debugMainInfo.getApplicationId());
         assertTrue("Debug signed check", debugMainInfo.isSigned());
         assertEquals("Debug signingConfig name", "myConfig", debugMainInfo.getSigningConfigName());
         assertEquals("Debug sourceGenTask", "generateDebugSources", debugMainInfo.getSourceGenTaskName());
         assertEquals("Debug javaCompileTask", "compileDebugJava", debugMainInfo.getJavaCompileTaskName());
 
-        Collection<AndroidArtifact> debugExtraAndroidArtifacts = debugVariant.getExtraAndroidArtifacts();
-
+        Collection<AndroidArtifactOutput> debugMainOutputs = debugMainInfo.getOutputs();
+        assertNotNull("Debug main output null-check", debugMainOutputs);
+        assertEquals("Debug main output size", 1, debugMainOutputs.size());
+        AndroidArtifactOutput debugMainOutput = debugMainOutputs.iterator().next();
+        assertNotNull(debugMainOutput);
+        assertNotNull(debugMainOutput.getOutputFile());
+        assertNotNull(debugMainOutput.getAssembleTaskName());
+        assertNotNull(debugMainOutput.getGeneratedManifest());
+        assertEquals(12, debugMainOutput.versionCode());
 
         // this variant is tested.
+        Collection<AndroidArtifact> debugExtraAndroidArtifacts = debugVariant.getExtraAndroidArtifacts();
         AndroidArtifact debugTestInfo = getAndroidArtifact(debugExtraAndroidArtifacts,
                 ARTIFACT_ANDROID_TEST);
         assertNotNull("Test info null-check", debugTestInfo);
         assertEquals("Test package name", "com.android.tests.basic.debug.test",
-                debugTestInfo.getPackageName());
-        assertNotNull("Test output file null-check", debugTestInfo.getOutputFile());
+                debugTestInfo.getApplicationId());
         assertTrue("Test signed check", debugTestInfo.isSigned());
         assertEquals("Test signingConfig name", "myConfig", debugTestInfo.getSigningConfigName());
         assertEquals("Test sourceGenTask", "generateDebugTestSources", debugTestInfo.getSourceGenTaskName());
         assertEquals("Test javaCompileTask", "compileDebugTestJava", debugTestInfo.getJavaCompileTaskName());
+
+        Collection<AndroidArtifactOutput> debugTestOutputs = debugTestInfo.getOutputs();
+        assertNotNull("Debug test output null-check", debugTestOutputs);
+        assertEquals("Debug test output size", 1, debugTestOutputs.size());
+        AndroidArtifactOutput debugTestOutput = debugTestOutputs.iterator().next();
+        assertNotNull(debugTestOutput);
+        assertNotNull(debugTestOutput.getOutputFile());
+        assertNotNull(debugTestOutput.getAssembleTaskName());
+        assertNotNull(debugTestOutput.getGeneratedManifest());
 
         // release variant, not tested.
         Variant releaseVariant = getVariant(variants, "release");
@@ -319,11 +413,22 @@ public class AndroidProjectTest extends TestCase {
         AndroidArtifact relMainInfo = releaseVariant.getMainArtifact();
         assertNotNull("Release main info null-check", relMainInfo);
         assertEquals("Release package name", "com.android.tests.basic",
-                relMainInfo.getPackageName());
+                relMainInfo.getApplicationId());
         assertFalse("Release signed check", relMainInfo.isSigned());
         assertNull("Release signingConfig name", relMainInfo.getSigningConfigName());
         assertEquals("Release sourceGenTask", "generateReleaseSources", relMainInfo.getSourceGenTaskName());
         assertEquals("Release javaCompileTask", "compileReleaseJava", relMainInfo.getJavaCompileTaskName());
+
+        Collection<AndroidArtifactOutput> relMainOutputs = relMainInfo.getOutputs();
+        assertNotNull("Rel Main output null-check", relMainOutputs);
+        assertEquals("Rel Main output size", 1, relMainOutputs.size());
+        AndroidArtifactOutput relMainOutput = relMainOutputs.iterator().next();
+        assertNotNull(relMainOutput);
+        assertNotNull(relMainOutput.getOutputFile());
+        assertNotNull(relMainOutput.getAssembleTaskName());
+        assertNotNull(relMainOutput.getGeneratedManifest());
+        assertEquals(13, relMainOutput.versionCode());
+
 
         Collection<AndroidArtifact> releaseExtraAndroidArtifacts = releaseVariant.getExtraAndroidArtifacts();
         AndroidArtifact relTestInfo = getAndroidArtifact(releaseExtraAndroidArtifacts, ARTIFACT_ANDROID_TEST);
@@ -332,7 +437,7 @@ public class AndroidProjectTest extends TestCase {
         // check debug dependencies
         Dependencies dependencies = debugMainInfo.getDependencies();
         assertNotNull(dependencies);
-        assertEquals(2, dependencies.getJars().size());
+        assertEquals(2, dependencies.getJavaLibraries().size());
         assertEquals(1, dependencies.getLibraries().size());
 
         AndroidLibrary lib = dependencies.getLibraries().iterator().next();
@@ -363,6 +468,50 @@ public class AndroidProjectTest extends TestCase {
                 .setStoreFile(new File(projectData.projectDir, "debug.keystore"))
                 .test();
     }
+
+    public void testDensityOutputs() throws Exception {
+        // Load the custom model for the project
+        ProjectData projectData = getModelForProject("densitySplit");
+
+        AndroidProject model = projectData.model;
+
+        Collection<Variant> variants = model.getVariants();
+        assertEquals("Variant Count", 2 , variants.size());
+
+        // get the main artifact of the debug artifact
+        Variant debugVariant = getVariant(variants, "debug");
+        assertNotNull("debug Variant null-check", debugVariant);
+        AndroidArtifact debugMainArficat = debugVariant.getMainArtifact();
+        assertNotNull("Debug main info null-check", debugMainArficat);
+
+        // get the outputs.
+        Collection<AndroidArtifactOutput> debugOutputs = debugMainArficat.getOutputs();
+        assertNotNull(debugOutputs);
+        assertEquals(5, debugOutputs.size());
+
+        // build a map of expected outputs and their versionCode
+        Map<String, Integer> expected = Maps.newHashMapWithExpectedSize(5);
+        expected.put(null, 112);
+        expected.put("mdpi", 212);
+        expected.put("hdpi", 312);
+        expected.put("xhdpi", 412);
+        expected.put("xxhdpi", 512);
+
+        for (AndroidArtifactOutput output : debugOutputs) {
+            String densityFilter = output.densityFilter();
+            Integer value = expected.get(densityFilter);
+            // this checks we're not getting an unexpected output.
+            assertNotNull("Check Valid output: " + (densityFilter == null ? "universal" : densityFilter),
+                    value);
+
+            assertEquals(value.intValue(), output.versionCode());
+            expected.remove(densityFilter);
+        }
+
+        // this checks we didn't miss any expected output.
+        assertTrue(expected.isEmpty());
+    }
+
 
     public void testMigrated() throws Exception {
         // Load the custom model for the project
@@ -426,9 +575,11 @@ public class AndroidProjectTest extends TestCase {
                     "Null-check on mainArtifactInfo for " + variant.getDisplayName(),
                     mainInfo);
 
+            AndroidArtifactOutput output = mainInfo.getOutputs().iterator().next();
+
             assertEquals("Output file for " + variant.getName(),
                     new File(buildDir, variant.getName() + ".apk"),
-                    mainInfo.getOutputFile());
+                    output.getOutputFile());
         }
     }
 
@@ -497,7 +648,7 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull("f1faDebug Variant null-check", f1faDebugVariant);
         new ProductFlavorTester(f1faDebugVariant.getMergedFlavor(), "F1faDebug Merged Flavor")
                 .test();
-        new VariantTester(f1faDebugVariant, projectDir, "flavors-f1-fa-debug-unaligned.apk").test();
+        new VariantTester(f1faDebugVariant, projectDir, "flavors-f1-fa-debug.apk").test();
     }
 
     public void testTicTacToe() throws Exception {
@@ -650,10 +801,10 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("project dep count", 1, projects.size());
         assertEquals("dep on :util check", ":util", projects.iterator().next());
 
-        Collection<File> jars = dependencies.getJars();
-        assertNotNull("jar dep list null-check", jars);
+        Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries();
+        assertNotNull("jar dep list null-check", javaLibraries);
         // TODO these are jars coming from ':util' They shouldn't be there.
-        assertEquals("jar dep count", 2, jars.size());
+        assertEquals("jar dep count", 2, javaLibraries.size());
     }
 
     public void testTestWithDep() {
@@ -672,7 +823,7 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull(testArtifact);
 
         Dependencies testDependencies = testArtifact.getDependencies();
-        assertEquals(1, testDependencies.getJars().size());
+        assertEquals(1, testDependencies.getJavaLibraries().size());
     }
 
     public void testLibTestDep() {
@@ -691,9 +842,10 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull(testArtifact);
 
         Dependencies testDependencies = testArtifact.getDependencies();
-        Collection<File> jars = testDependencies.getJars();
-        assertEquals(2, jars.size());
-        for (File f : jars) {
+        Collection<JavaLibrary> javaLibraries = testDependencies.getJavaLibraries();
+        assertEquals(2, javaLibraries.size());
+        for (JavaLibrary lib : javaLibraries) {
+            File f = lib.getJarFile();
             assertTrue(f.getName().equals("guava-11.0.2.jar") || f.getName().equals("jsr305-1.3.9.jar"));
         }
     }
@@ -711,10 +863,11 @@ public class AndroidProjectTest extends TestCase {
         AndroidArtifact mainArtifact = debugVariant.getMainArtifact();
         Dependencies dependencies = mainArtifact.getDependencies();
 
-        assertFalse(dependencies.getJars().isEmpty());
+        assertFalse(dependencies.getJavaLibraries().isEmpty());
 
         boolean foundSupportJar = false;
-        for (File file : dependencies.getJars()) {
+        for (JavaLibrary lib : dependencies.getJavaLibraries()) {
+            File file = lib.getJarFile();
             if (SdkConstants.FN_RENDERSCRIPT_V8_JAR.equals(file.getName())) {
                 foundSupportJar = true;
                 break;
@@ -890,7 +1043,7 @@ public class AndroidProjectTest extends TestCase {
 
             Dependencies deps = javaArtifact.getDependencies();
             assertNotNull("java artifact deps null-check", deps);
-            assertFalse(deps.getJars().isEmpty());
+            assertFalse(deps.getJavaLibraries().isEmpty());
         }
     }
 
@@ -918,9 +1071,33 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull("project dep list null-check", projects);
         assertTrue("project dep empty check", projects.isEmpty());
 
-        Collection<File> jars = dependencies.getJars();
-        assertNotNull("jar dep list null-check", jars);
-        assertEquals("jar dep count", 1, jars.size());
+        Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries();
+        assertNotNull("jar dep list null-check", javaLibraries);
+        assertEquals("jar dep count", 1, javaLibraries.size());
+    }
+
+    public void testLocalJarInLib() throws Exception {
+        Map<String, ProjectData> map = getModelForMultiProject("localJars");
+
+        ProjectData libModelData = map.get(":baseLibrary");
+        assertNotNull("Module app null-check", libModelData);
+        AndroidProject model = libModelData.model;
+
+        Collection<Variant> variants = model.getVariants();
+
+        Variant releaseVariant = getVariant(variants, "release");
+        assertNotNull(releaseVariant);
+
+        Dependencies dependencies = releaseVariant.getMainArtifact().getDependencies();
+        assertNotNull(dependencies);
+
+        Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries();
+        assertNotNull(javaLibraries);
+
+        //  com.google.guava:guava:11.0.2
+        //  \--- com.google.code.findbugs:jsr305:1.3.9
+        //  + the local jar
+        assertEquals(3, javaLibraries.size());
     }
 
     /**
@@ -954,7 +1131,7 @@ public class AndroidProjectTest extends TestCase {
                 if (System.getenv("IDE_MODE") != null) {
                     f = dir.getParentFile().getParentFile().getParentFile();
                 } else {
-                    f = dir.getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile();
+                    f = dir.getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile();
                     f = new File(f, "tools" + File.separator + "base" + File.separator + "build-system");
                 }
                 return f;
@@ -1068,13 +1245,13 @@ public class AndroidProjectTest extends TestCase {
         @NonNull private final ProductFlavor productFlavor;
         @NonNull private final String name;
 
-        private String packageName = null;
+        private String applicationId = null;
         private int versionCode = -1;
         private String versionName = null;
-        private int minSdkVersion = -1;
-        private int targetSdkVersion = -1;
+        private ApiVersion minSdkVersion = null;
+        private ApiVersion targetSdkVersion = null;
         private int renderscriptTargetApi = -1;
-        private String testPackageName = null;
+        private String testApplicationId = null;
         private String testInstrumentationRunner = null;
         private Boolean testHandleProfiling = null;
         private Boolean testFunctionalTest = null;
@@ -1084,8 +1261,8 @@ public class AndroidProjectTest extends TestCase {
             this.name = name;
         }
 
-        ProductFlavorTester setPackageName(String packageName) {
-            this.packageName = packageName;
+        ProductFlavorTester setApplicationId(String applicationId) {
+            this.applicationId = applicationId;
             return this;
         }
 
@@ -1100,12 +1277,12 @@ public class AndroidProjectTest extends TestCase {
         }
 
         ProductFlavorTester setMinSdkVersion(int minSdkVersion) {
-            this.minSdkVersion = minSdkVersion;
+            this.minSdkVersion = new DefaultApiVersion(minSdkVersion);
             return this;
         }
 
         ProductFlavorTester setTargetSdkVersion(int targetSdkVersion) {
-            this.targetSdkVersion = targetSdkVersion;
+            this.targetSdkVersion = new DefaultApiVersion(targetSdkVersion);
             return this;
         }
 
@@ -1114,8 +1291,8 @@ public class AndroidProjectTest extends TestCase {
             return this;
         }
 
-        ProductFlavorTester setTestPackageName(String testPackageName) {
-            this.testPackageName = testPackageName;
+        ProductFlavorTester setTestApplicationId(String testApplicationId) {
+            this.testApplicationId = testApplicationId;
             return this;
         }
 
@@ -1135,7 +1312,7 @@ public class AndroidProjectTest extends TestCase {
         }
 
         void test() {
-            assertEquals(name + ":packageName", packageName, productFlavor.getPackageName());
+            assertEquals(name + ":applicationId", applicationId, productFlavor.getApplicationId());
             assertEquals(name + ":VersionCode", versionCode, productFlavor.getVersionCode());
             assertEquals(name + ":VersionName", versionName, productFlavor.getVersionName());
             assertEquals(name + ":minSdkVersion", minSdkVersion, productFlavor.getMinSdkVersion());
@@ -1143,8 +1320,8 @@ public class AndroidProjectTest extends TestCase {
                     targetSdkVersion, productFlavor.getTargetSdkVersion());
             assertEquals(name + ":renderscriptTargetApi",
                     renderscriptTargetApi, productFlavor.getRenderscriptTargetApi());
-            assertEquals(name + ":testPackageName",
-                    testPackageName, productFlavor.getTestPackageName());
+            assertEquals(name + ":testApplicationId",
+                    testApplicationId, productFlavor.getTestApplicationId());
             assertEquals(name + ":testInstrumentationRunner",
                     testInstrumentationRunner, productFlavor.getTestInstrumentationRunner());
             assertEquals(name + ":testHandleProfiling",
@@ -1270,13 +1447,18 @@ public class AndroidProjectTest extends TestCase {
 
             String variantName = variant.getName();
             File build = new File(projectDir,  "build");
-            File apk = new File(build, "apk/" + outputFileName);
-            assertEquals(variantName + " output", apk, artifact.getOutputFile());
+            File apk = new File(build, "outputs/apk/" + outputFileName);
 
             Collection<File> sourceFolders = artifact.getGeneratedSourceFolders();
             assertEquals("Gen src Folder count", 4, sourceFolders.size());
 
-            File manifest = artifact.getGeneratedManifest();
+            Collection<AndroidArtifactOutput> outputs = artifact.getOutputs();
+            assertNotNull(outputs);
+            assertEquals(1, outputs.size());
+            AndroidArtifactOutput output = outputs.iterator().next();
+
+            assertEquals(variantName + " output", apk, output.getOutputFile());
+            File manifest = output.getGeneratedManifest();
             assertNotNull(manifest);
         }
     }

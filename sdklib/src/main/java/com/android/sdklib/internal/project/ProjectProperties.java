@@ -26,9 +26,19 @@ import com.android.io.StreamException;
 import com.android.utils.ILogger;
 import com.google.common.io.Closeables;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -458,10 +468,11 @@ public class ProjectProperties implements IPropertySource {
                         e.getMessage());
             }
         } finally {
-          try {
-            Closeables.close(is, true);
-          } catch (IOException ignored) {
-          }
+            try {
+                Closeables.close(is, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
         }
 
 
@@ -531,14 +542,16 @@ public class ProjectProperties implements IPropertySource {
                         e.getMessage());
             }
         } finally {
-          try {
-            Closeables.close(reader, true);
-          } catch (IOException ignored) {
-          }
-          try {
-            Closeables.close(propStream, true);
-          } catch (IOException ignored) {
-          }
+            try {
+                Closeables.close(reader, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
+            try {
+                Closeables.close(propStream, true /* swallowIOException */);
+            } catch (IOException e) {
+                // cannot happen
+            }
         }
 
         return null;

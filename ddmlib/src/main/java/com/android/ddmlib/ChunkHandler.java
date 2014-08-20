@@ -77,7 +77,7 @@ abstract class ChunkHandler {
 
             errorCode = data.getInt();
             msgLen = data.getInt();
-            msg = getString(data, msgLen);
+            msg = ByteBufferUtil.getString(data, msgLen);
             Log.w("ddms", "WARNING: failure code=" + errorCode + " msg=" + msg);
         } else {
             Log.w("ddms", "WARNING: received unknown chunk " + name(type)
@@ -87,30 +87,14 @@ abstract class ChunkHandler {
         Log.w("ddms", "         client " + client + ", handler " + this);
     }
 
+  /**
+   * Utility function to copy a String out of a ByteBuffer.
+   */
+  public static String getString(ByteBuffer buf, int len) {
+    return ByteBufferUtil.getString(buf, len);
+  }
 
-    /**
-     * Utility function to copy a String out of a ByteBuffer.
-     *
-     * This is here because multiple chunk handlers can make use of it,
-     * and there's nowhere better to put it.
-     */
-    public static String getString(ByteBuffer buf, int len) {
-        char[] data = new char[len];
-        for (int i = 0; i < len; i++)
-            data[i] = buf.getChar();
-        return new String(data);
-    }
-
-    /**
-     * Utility function to copy a String into a ByteBuffer.
-     */
-    static void putString(ByteBuffer buf, String str) {
-        int len = str.length();
-        for (int i = 0; i < len; i++)
-            buf.putChar(str.charAt(i));
-    }
-
-    /**
+  /**
      * Convert a 4-character string to a 32-bit type.
      */
     static int type(String typeName) {

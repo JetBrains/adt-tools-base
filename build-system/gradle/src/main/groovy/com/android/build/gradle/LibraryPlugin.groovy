@@ -56,9 +56,4 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
 
         assembleDefault = project.tasks.create("assembleDefault")
     }
-
-    @Override
-    protected void doCreateAndroidTasks() {
-        variantManager.createAndroidTasks()
-    }
 }

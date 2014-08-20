@@ -514,7 +514,13 @@ public class SdkUpdaterNoWindow {
          * @throws IOException in case the buffer isn't long enough.
          */
         private String readLine(byte[] buffer) throws IOException {
-            int count = System.in.read(buffer);
+
+            int count;
+            if (mSdkLog instanceof IReaderLogger) {
+                count = ((IReaderLogger) mSdkLog).readLine(buffer);
+            } else {
+                count = System.in.read(buffer);
+            }
 
             // is the input longer than the buffer?
             if (count == buffer.length && buffer[count-1] != 10) {

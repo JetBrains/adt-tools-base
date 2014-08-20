@@ -18,8 +18,8 @@ package com.android.build.gradle.internal
 
 import com.android.annotations.NonNull
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
-import com.android.builder.BuilderConstants
-import com.android.builder.DefaultProductFlavor
+import com.android.builder.core.BuilderConstants
+import com.android.builder.core.DefaultProductFlavor
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration

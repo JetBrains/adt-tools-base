@@ -16,6 +16,14 @@
 
 package com.android.ide.common.res2;
 
+import static com.android.SdkConstants.ANDROID_NS_NAME_PREFIX;
+import static com.android.SdkConstants.ATTR_FORMAT;
+import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_TYPE;
+import static com.android.SdkConstants.TAG_EAT_COMMENT;
+import static com.android.SdkConstants.TAG_ITEM;
+import static com.android.SdkConstants.TAG_SKIP;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
@@ -23,28 +31,22 @@ import com.android.utils.XmlUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.io.Closeables;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.android.SdkConstants.*;
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Parser for "values" files.
@@ -196,15 +198,8 @@ class ValueResourceParser2 {
      */
     @NonNull
     static Document parseDocument(File file) throws MergingException {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        BufferedInputStream stream = null;
         try {
-            stream = new BufferedInputStream(new FileInputStream(file));
-            InputSource is = new InputSource(stream);
-            factory.setNamespaceAware(true);
-            factory.setValidating(false);
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            return builder.parse(is);
+            return XmlUtils.parseUtfXmlFile(file, true /*namespaceAware*/);
         } catch (SAXParseException e) {
             String message = e.getLocalizedMessage();
             MergingException exception = new MergingException(message, e);
@@ -221,11 +216,6 @@ class ValueResourceParser2 {
             throw new MergingException(e).setFile(file);
         } catch (IOException e) {
             throw new MergingException(e).setFile(file);
-        } finally {
-          try {
-            Closeables.close(stream, true);
-          } catch (IOException ignored) {
-          }
         }
     }
 

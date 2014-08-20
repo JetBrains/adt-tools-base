@@ -183,9 +183,11 @@ public class ViewInfo {
     }
 
     /**
-     * Returns if the ViewInfo represents part of the SystemUI, for example, the ActionBar.
+     * Returns the type of View.
+     * @see ViewType
      */
-    public boolean isSystemView() {
-        return false;
+    public ViewType getViewType() {
+        return ViewType.USER;
     }
+
 }

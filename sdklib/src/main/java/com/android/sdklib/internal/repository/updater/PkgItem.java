@@ -16,6 +16,8 @@
 
 package com.android.sdklib.internal.repository.updater;
 
+import com.android.annotations.Nullable;
+import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.packages.IAndroidVersionProvider;
@@ -115,10 +117,11 @@ public class PkgItem implements Comparable<PkgItem> {
         return mMainPkg.getParentSource();
     }
 
-    public int getApi() {
+    @Nullable
+    public AndroidVersion getAndroidVersion() {
         return mMainPkg instanceof IAndroidVersionProvider ?
-                ((IAndroidVersionProvider) mMainPkg).getAndroidVersion().getApiLevel() :
-                    -1;
+                ((IAndroidVersionProvider) mMainPkg).getAndroidVersion() :
+                   null;
     }
 
     public Archive[] getArchives() {

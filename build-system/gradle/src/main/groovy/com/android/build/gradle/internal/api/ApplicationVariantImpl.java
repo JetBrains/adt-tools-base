@@ -28,6 +28,9 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 /**
  * implementation of the {@link ApplicationVariant} interface around an
  * {@link ApplicationVariantData} object.
+ *
+ * This is a wrapper around the internal data model, in order to control what is accessible
+ * through the external API.
  */
 public class ApplicationVariantImpl extends ApkVariantImpl implements ApplicationVariant, TestedVariant {
 
@@ -37,7 +40,8 @@ public class ApplicationVariantImpl extends ApkVariantImpl implements Applicatio
     @Nullable
     private TestVariant testVariant = null;
 
-    public ApplicationVariantImpl(@NonNull ApplicationVariantData variantData,
+    public ApplicationVariantImpl(
+            @NonNull ApplicationVariantData variantData,
             @NonNull BasePlugin plugin) {
         super(plugin);
         this.variantData = variantData;
@@ -45,7 +49,7 @@ public class ApplicationVariantImpl extends ApkVariantImpl implements Applicatio
 
     @Override
     @NonNull
-    protected BaseVariantData getVariantData() {
+    protected BaseVariantData<?> getVariantData() {
         return variantData;
     }
 

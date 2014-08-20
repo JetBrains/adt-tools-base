@@ -18,13 +18,16 @@ package com.android.build.gradle.api;
 
 import com.android.annotations.NonNull;
 
+import org.gradle.api.file.FileTree;
+import org.gradle.api.tasks.util.PatternFilterable;
+
 import java.io.File;
 import java.util.Set;
 
 /**
  * An AndroidSourceDirectorySet represents a lit of directory input for an Android project.
  */
-public interface AndroidSourceDirectorySet {
+public interface AndroidSourceDirectorySet extends PatternFilterable {
 
     /**
      * A concise name for the source directory (typically used to identify it in a collection).
@@ -61,6 +64,23 @@ public interface AndroidSourceDirectorySet {
      */
     @NonNull
     AndroidSourceDirectorySet setSrcDirs(Iterable<?> srcDirs);
+
+    /**
+     * Returns the list of source files as a {@link org.gradle.api.file.FileTree}
+     *
+     * @return a non null {@link FileTree} for all the source files in this set.
+     */
+    @NonNull
+    public FileTree getSourceFiles();
+
+    /**
+     * Returns the filter used to select the source from the source directories.
+     *
+     * @return a non null {@link org.gradle.api.tasks.util.PatternFilterable}
+     */
+    @NonNull
+    PatternFilterable getFilter();
+
 
     /**
      * Returns the resolved directories.

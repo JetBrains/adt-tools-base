@@ -80,7 +80,11 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
         }
         mVersion = new AndroidVersion(apiLevel, codeName);
 
-        mPkgDesc = PkgDesc.newSource(mVersion, (MajorRevision) getRevision());
+        mPkgDesc = PkgDesc.Builder
+                .newSource(mVersion,
+                           (MajorRevision) getRevision())
+                .setDescriptions(this)
+                .create();
     }
 
     @VisibleForTesting(visibility=Visibility.PRIVATE)
@@ -109,7 +113,11 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
                 );
         mVersion = platformVersion;
 
-        mPkgDesc = PkgDesc.newSource(mVersion, (MajorRevision) getRevision());
+        mPkgDesc = PkgDesc.Builder
+                .newSource(mVersion,
+                           (MajorRevision) getRevision())
+                .setDescriptions(this)
+                .create();
     }
 
     /**
@@ -173,9 +181,11 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
 
         String longDesc = sb.toString();
 
-        IPkgDesc desc = PkgDesc.newSource(
-                version != null ? version : new AndroidVersion(0, null),
-                new MajorRevision(MajorRevision.MISSING_MAJOR_REV));
+        IPkgDesc desc = PkgDesc.Builder
+                .newSource(version != null ? version : new AndroidVersion(0, null),
+                           new MajorRevision(MajorRevision.MISSING_MAJOR_REV))
+                .setDescriptionShort(shortDesc)
+                .create();
 
         return new BrokenPackage(props, shortDesc, longDesc,
                 IMinApiLevelDependency.MIN_API_LEVEL_NOT_SPECIFIED,

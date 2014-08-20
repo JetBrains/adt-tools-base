@@ -26,6 +26,7 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.utils.Pair;
 import com.google.common.collect.Lists;
 
+import com.google.common.collect.Maps;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
@@ -33,7 +34,10 @@ import org.codehaus.groovy.ast.builder.AstBuilder;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.NamedArgumentListExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
@@ -78,14 +82,15 @@ public class GroovyGradleDetector extends GradleDetector {
                 mMethodCallStack.add(expression);
                 super.visitMethodCallExpression(expression);
                 Expression arguments = expression.getArguments();
+                String parent = expression.getMethodAsString();
+                String parentParent = getParentParent();
                 if (arguments instanceof ArgumentListExpression) {
                     ArgumentListExpression ale = (ArgumentListExpression)arguments;
                     List<Expression> expressions = ale.getExpressions();
                     if (expressions.size() == 1 &&
                             expressions.get(0) instanceof ClosureExpression) {
-                        String parent = expression.getMethodAsString();
-                        String parentParent = getParentParent();
                         if (isInterestingBlock(parent, parentParent)) {
+                            checkBlock(context, parent, parentParent, expression);
                             ClosureExpression closureExpression =
                                     (ClosureExpression)expressions.get(0);
                             Statement block = closureExpression.getCode();
@@ -111,6 +116,22 @@ public class GroovyGradleDetector extends GradleDetector {
                                 }
                             }
                         }
+                    }
+                } else if (arguments instanceof TupleExpression) {
+                    if (isInterestingStatement(parent, parentParent)) {
+                        TupleExpression te = (TupleExpression) arguments;
+                        Map<String, String> namedArguments = Maps.newHashMap();
+                        List<String> unnamedArguments = Lists.newArrayList();
+                        for (Expression subExpr : te.getExpressions()) {
+                            if (subExpr instanceof NamedArgumentListExpression) {
+                                NamedArgumentListExpression nale = (NamedArgumentListExpression) subExpr;
+                                for (MapEntryExpression mae : nale.getMapEntryExpressions()) {
+                                    namedArguments.put(mae.getKeyExpression().getText(),
+                                            mae.getValueExpression().getText());
+                                }
+                            }
+                        }
+                        checkMethodCall(context, parent, parentParent, namedArguments, unnamedArguments, expression);
                     }
                 }
                 assert !mMethodCallStack.isEmpty();
@@ -140,7 +161,7 @@ public class GroovyGradleDetector extends GradleDetector {
                 String property = c.getMethodAsString();
                 if (isInterestingProperty(property, parent, getParentParent())) {
                     String value = getText(c.getArguments());
-                    checkDslPropertyAssignment(context, property, value, parent, parentParent, c);
+                    checkDslPropertyAssignment(context, property, value, parent, parentParent, c, c);
                 }
             }
 

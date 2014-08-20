@@ -18,6 +18,7 @@ package com.android.sdklib.repository.remote;
 
 import com.android.annotations.NonNull;
 import com.android.sdklib.internal.repository.IDescription;
+import com.android.sdklib.internal.repository.IListDescription;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 
 
@@ -25,7 +26,8 @@ import com.android.sdklib.repository.descriptors.IPkgDesc;
  * This class provides information on a remote package available for download
  * via a remote SDK repository server.
  */
-public class RemotePkgInfo implements Comparable<RemotePkgInfo> {
+public class RemotePkgInfo
+        implements IDescription, IListDescription, Comparable<RemotePkgInfo> {
 
     /** Information on the package provided by the remote server. */
     @NonNull
@@ -96,4 +98,40 @@ public class RemotePkgInfo implements Comparable<RemotePkgInfo> {
         return builder.toString();
     }
 
+    @Override
+    public String getListDescription() {
+        return getDesc().getListDescription();
+    }
+
+    @Override
+    public String getShortDescription() {
+        // TODO revisit to differentiate from list-description depending
+        // on how we'll use it in the sdkman UI.
+        return getListDescription();
+    }
+
+    @Override
+    public String getLongDescription() {
+        StringBuilder sb = new StringBuilder();
+        IPkgDesc desc = getDesc();
+
+        sb.append(desc.getListDescription()).append('\n');
+
+        if (desc.hasVendor()) {
+            assert desc.getVendor() != null;
+            sb.append("By ").append(desc.getVendor().getDisplay()).append('\n');
+        }
+
+        if (desc.hasMinPlatformToolsRev()) {
+            assert desc.getMinPlatformToolsRev() != null;
+            sb.append("Requires Platform-Tools revision ").append(desc.getMinPlatformToolsRev().toShortString()).append('\n');
+        }
+
+        if (desc.hasMinToolsRev()) {
+            assert desc.getMinToolsRev() != null;
+            sb.append("Requires Tools revision ").append(desc.getMinToolsRev().toShortString()).append('\n');
+        }
+
+        return sb.toString();
+    }
 }

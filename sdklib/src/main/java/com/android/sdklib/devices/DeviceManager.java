@@ -33,6 +33,7 @@ import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+import com.google.common.io.Closeables;
 
 import org.xml.sax.SAXException;
 
@@ -263,9 +264,10 @@ public class DeviceManager {
             if (mDefaultDevices != null) {
                 return false;
             }
+            InputStream stream = null;
             try {
-                mDefaultDevices = DeviceParser.parse(
-                        DeviceManager.class.getResourceAsStream(SdkConstants.FN_DEVICES_XML));
+                stream = DeviceManager.class.getResourceAsStream(SdkConstants.FN_DEVICES_XML);
+                mDefaultDevices = DeviceParser.parse(stream);
                 return true;
             } catch (IllegalStateException e) {
                 // The device builders can throw IllegalStateExceptions if
@@ -275,6 +277,12 @@ public class DeviceManager {
             } catch (Exception e) {
                 mLog.error(e, "Error reading default devices");
                 mDefaultDevices = new ArrayList<Device>();
+            } finally {
+                if (stream != null) {
+                    try {
+                        stream.close();
+                    } catch (IOException ignore) {}
+                }
             }
         }
         return false;
@@ -294,11 +302,46 @@ public class DeviceManager {
             mVendorDevices = new ArrayList<Device>();
 
             // Load builtin devices
+            InputStream stream = null;
             try {
-                InputStream stream = DeviceManager.class.getResourceAsStream("nexus.xml");
+                stream = DeviceManager.class.getResourceAsStream("nexus.xml");
                 mVendorDevices.addAll(DeviceParser.parse(stream));
             } catch (Exception e) {
-                mLog.error(e, null, "Could not load devices");
+                mLog.error(e, null, "Could not load nexus devices");
+            } finally {
+                try {
+                    Closeables.close(stream, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // Cannot happen
+                }
+            }
+
+            stream = null;
+            try {
+                stream = DeviceManager.class.getResourceAsStream("wear.xml");
+                mVendorDevices.addAll(DeviceParser.parse(stream));
+            } catch (Exception e) {
+                mLog.error(e, null, "Could not load wear devices");
+            } finally {
+                try {
+                    Closeables.close(stream, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // Cannot happen
+                }
+            }
+
+            stream = null;
+            try {
+                stream = DeviceManager.class.getResourceAsStream("tv.xml");
+                mVendorDevices.addAll(DeviceParser.parse(stream));
+            } catch (Exception e) {
+                mLog.error(e, null, "Could not load tv devices");
+            } finally {
+                try {
+                    Closeables.close(stream, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // Cannot happen
+                }
             }
 
             if (mOsSdkPath != null) {
@@ -633,6 +676,8 @@ public class DeviceManager {
             mLog.error(e, "Error parsing %1$s", deviceXml.getAbsolutePath());
         } catch (IOException e) {
             mLog.error(e, "Error reading %1$s", deviceXml.getAbsolutePath());
+        } catch (AssertionError e) {
+            mLog.error(e, "Error parsing %1$s", deviceXml.getAbsolutePath());
         } catch (IllegalStateException e) {
             // The device builders can throw IllegalStateExceptions if
             // build gets called before everything is properly setup

@@ -175,7 +175,12 @@ public abstract class SdkTestCase extends TestCase {
         }
 
         String xml = new String(ByteStreams.toByteArray(stream), Charsets.UTF_8);
-        Closeables.closeQuietly(stream);
+        try {
+            Closeables.close(stream, true /* swallowIOException */);
+        } catch (IOException e) {
+            // cannot happen
+        }
+
         assertTrue(xml.length() > 0);
 
         // Remove any references to the project name such that we are isolated from

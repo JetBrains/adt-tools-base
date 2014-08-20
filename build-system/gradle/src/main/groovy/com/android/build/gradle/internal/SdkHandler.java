@@ -21,16 +21,17 @@ import static com.android.build.gradle.BasePlugin.TEST_SDK_DIR;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.BasePlugin;
+import com.android.builder.core.AndroidBuilder;
 import com.android.builder.sdk.DefaultSdkLoader;
-import com.android.builder.sdk.SdkLoader;
 import com.android.builder.sdk.PlatformLoader;
 import com.android.builder.sdk.SdkInfo;
+import com.android.builder.sdk.SdkLoader;
 import com.android.builder.sdk.TargetInfo;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.io.Closeables;
+import com.google.common.io.Closer;
 
 import org.gradle.api.Project;
 
@@ -48,8 +49,6 @@ import java.util.Properties;
 public class SdkHandler {
 
     @NonNull
-    private final BasePlugin plugin;
-    @NonNull
     private final ILogger logger;
 
     private SdkLoader sdkLoader;
@@ -58,14 +57,20 @@ public class SdkHandler {
     private boolean isRegularSdk = true;
 
     public SdkHandler(@NonNull Project project,
-            @NonNull BasePlugin plugin,
-            @NonNull ILogger logger) {
-        this.plugin = plugin;
+                      @NonNull ILogger logger) {
         this.logger = logger;
         findLocation(project);
     }
 
-    public void initTarget(String targetHash, FullRevision buildToolRevision) {
+    public SdkInfo getSdkInfo() {
+        SdkLoader sdkLoader = getSdkLoader();
+        return sdkLoader.getSdkInfo(logger);
+    }
+
+    public void initTarget(
+            String targetHash,
+            FullRevision buildToolRevision,
+            @NonNull AndroidBuilder androidBuilder) {
         if (targetHash == null) {
             throw new IllegalArgumentException("android.compileSdkVersion is missing!");
         }
@@ -79,7 +84,7 @@ public class SdkHandler {
         SdkInfo sdkInfo = sdkLoader.getSdkInfo(logger);
         TargetInfo targetInfo = sdkLoader.getTargetInfo(targetHash, buildToolRevision, logger);
 
-        plugin.getAndroidBuilder().setTargetInfo(sdkInfo, targetInfo);
+        androidBuilder.setTargetInfo(sdkInfo, targetInfo);
     }
 
     public synchronized SdkLoader getSdkLoader() {
@@ -125,6 +130,45 @@ public class SdkHandler {
         return ndkFolder;
     }
 
+    private void findSdkLocation(@NonNull Properties properties, @NonNull File rootDir) {
+        String sdkDirProp = properties.getProperty("sdk.dir");
+        if (sdkDirProp != null) {
+            sdkFolder = new File(sdkDirProp);
+            return;
+        }
+
+        sdkDirProp = properties.getProperty("android.dir");
+        if (sdkDirProp != null) {
+            sdkFolder = new File(rootDir, sdkDirProp);
+            isRegularSdk = false;
+            return;
+        }
+
+        String envVar = System.getenv("ANDROID_HOME");
+        if (envVar != null) {
+            sdkFolder = new File(envVar);
+            return;
+        }
+
+        String property = System.getProperty("android.home");
+        if (property != null) {
+            sdkFolder = new File(property);
+        }
+    }
+
+    private void findNdkLocation(@NonNull Properties properties) {
+        String ndkDirProp = properties.getProperty("ndk.dir");
+        if (ndkDirProp != null) {
+            ndkFolder = new File(ndkDirProp);
+            return;
+        }
+
+        String envVar = System.getenv("ANDROID_NDK_HOME");
+        if (envVar != null) {
+            ndkFolder = new File(envVar);
+        }
+    }
+
     private void findLocation(@NonNull Project project) {
         if (TEST_SDK_DIR != null) {
             sdkFolder = TEST_SDK_DIR;
@@ -133,10 +177,9 @@ public class SdkHandler {
 
         File rootDir = project.getRootDir();
         File localProperties = new File(rootDir, FN_LOCAL_PROPERTIES);
+        Properties properties = new Properties();
 
         if (localProperties.isFile()) {
-
-            Properties properties = new Properties();
             InputStreamReader reader = null;
             try {
                 //noinspection IOResourceOpenedButNotSafelyClosed
@@ -149,42 +192,16 @@ public class SdkHandler {
             } catch (IOException e) {
                 throw new RuntimeException("Unable to read ${localProperties}", e);
             } finally {
-                Closeables.closeQuietly(reader);
-            }
-
-            String sdkDirProp = properties.getProperty("sdk.dir");
-
-            if (sdkDirProp != null) {
-                sdkFolder = new File(sdkDirProp);
-            } else {
-                sdkDirProp = properties.getProperty("android.dir");
-                if (sdkDirProp != null) {
-                    sdkFolder = new File(rootDir, sdkDirProp);
-                    isRegularSdk = false;
+                try {
+                    Closeables.close(reader, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // ignore.
                 }
-            }
-
-            String ndkDirProp = properties.getProperty("ndk.dir");
-            if (ndkDirProp != null) {
-                ndkFolder = new File(ndkDirProp);
-            }
-
-        } else {
-            String envVar = System.getenv("ANDROID_HOME");
-            if (envVar != null) {
-                sdkFolder = new File(envVar);
-            } else {
-                String property = System.getProperty("android.home");
-                if (property != null) {
-                    sdkFolder = new File(property);
-                }
-            }
-
-            envVar = System.getenv("ANDROID_NDK_HOME");
-            if (envVar != null) {
-                ndkFolder = new File(envVar);
             }
         }
+
+        findSdkLocation(properties, rootDir);
+        findNdkLocation(properties);
     }
 
     @Nullable

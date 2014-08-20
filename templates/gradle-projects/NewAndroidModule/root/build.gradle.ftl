@@ -1,7 +1,7 @@
 <#if !(perModuleRepositories??) || perModuleRepositories>
 buildscript {
     repositories {
-        mavenCentral()
+        jcenter()
 <#if mavenUrl != "mavenCentral">
         maven {
             url '${mavenUrl}'
@@ -14,14 +14,14 @@ buildscript {
 }
 </#if>
 <#if isLibraryProject?? && isLibraryProject>
-apply plugin: 'android-library'
+apply plugin: 'com.android.library'
 <#else>
-apply plugin: 'android'
+apply plugin: 'com.android.application'
 </#if>
 <#if !(perModuleRepositories??) || perModuleRepositories>
 
 repositories {
-        mavenCentral()
+        jcenter()
 <#if mavenUrl != "mavenCentral">
         maven {
             url '${mavenUrl}'
@@ -31,12 +31,13 @@ repositories {
 </#if>
 
 android {
-    compileSdkVersion ${buildApi}
+    compileSdkVersion <#if buildApiString?matches("^\\d+$")>${buildApiString}<#else>'${buildApiString}'</#if>
     buildToolsVersion "${buildToolsVersion}"
 
     defaultConfig {
-        minSdkVersion ${minApi}
-        targetSdkVersion ${targetApi}
+        applicationId "${packageName}"
+        minSdkVersion <#if minApi?matches("^\\d+$")>${minApi}<#else>'${minApi}'</#if>
+        targetSdkVersion <#if targetApiString?matches("^\\d+$")>${targetApiString}<#else>'${targetApiString}'</#if>
         versionCode 1
         versionName "1.0"
     }
@@ -51,7 +52,7 @@ android {
     buildTypes {
         release {
             runProguard false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 </#if>
@@ -64,4 +65,8 @@ dependencies {
     </#list>
     </#if>
     compile fileTree(dir: 'libs', include: ['*.jar'])
+<#if WearprojectName?has_content && NumberOfEnabledFormFactors?has_content && NumberOfEnabledFormFactors gt 1>
+    wearApp project(':${WearprojectName}')
+    compile 'com.google.android.gms:play-services-wearable:+'
+</#if>
 }

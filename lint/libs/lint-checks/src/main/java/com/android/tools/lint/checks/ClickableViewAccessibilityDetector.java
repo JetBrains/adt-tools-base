@@ -115,7 +115,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
                     MethodInsnNode methodInsnNode = (MethodInsnNode) abstractInsnNode;
                     if (methodInsnNode.name.equals(SET_ON_TOUCH_LISTENER)
                             && methodInsnNode.desc.equals(SET_ON_TOUCH_LISTENER_SIG)) {
-                        checkSetOnTouchListenerCall(context, methodInsnNode);
+                        checkSetOnTouchListenerCall(context, methodNode, methodInsnNode);
                     }
                 }
             }
@@ -125,6 +125,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
     @SuppressWarnings("unchecked") // ASM API
     public static void checkSetOnTouchListenerCall(
             @NonNull ClassContext context,
+            @NonNull MethodNode method,
             @NonNull MethodInsnNode call) {
         String owner = call.owner;
 
@@ -141,7 +142,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
             String message = String.format(
                     "Custom view %1$s has setOnTouchListener called on it but does not "
                             + "override performClick", ownerClass.name);
-            context.report(ISSUE, context.getLocation(call), message, null);
+            context.report(ISSUE, method, call, context.getLocation(call), message, null);
         }
     }
 
@@ -164,6 +165,8 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
                         classNode.name);
                 context.report(
                         ISSUE,
+                        onTouchNode,
+                        null,
                         context.getLocation(onTouchNode, classNode),
                         message,
                         null);
@@ -184,7 +187,8 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
                 String message = String.format(
                         "Custom view %1$s overrides onTouchEvent but not performClick",
                         classNode.name);
-                context.report(ISSUE, context.getLocation(onTouchEvent, classNode), message, null);
+                context.report(ISSUE, onTouchEvent, null,
+                        context.getLocation(onTouchEvent, classNode), message, null);
             } else {
                 // If we override performClick, ensure that it is called inside onTouchEvent.
                 AbstractInsnNode performClickInOnTouchEventInsnNode = findMethodCallInstruction(
@@ -196,7 +200,8 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
                     String message = String.format(
                             "%1$s#onTouchEvent should call %1$s#performClick when a click is detected",
                             classNode.name);
-                    context.report(ISSUE, context.getLocation(onTouchEvent, classNode), message,
+                    context.report(ISSUE, onTouchEvent, null,
+                            context.getLocation(onTouchEvent, classNode), message,
                             null);
                 }
             }
@@ -213,7 +218,8 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
                 String message = String.format(
                         "%1$s#performClick should call super#performClick",
                         classNode.name);
-                context.report(ISSUE, context.getLocation(performClick, classNode), message, null);
+                context.report(ISSUE, performClick, null,
+                        context.getLocation(performClick, classNode), message, null);
             }
         }
     }

@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.ApkVariant;
 import com.android.build.gradle.internal.variant.ApkVariantData;
+import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ZipAlign;
@@ -31,13 +32,16 @@ import org.gradle.api.DefaultTask;
 import java.io.File;
 import java.util.Collection;
 
+/**
+ * Implementation of the apk-generating variant.
+ *
+ * This is a wrapper around the internal data model, in order to control what is accessible
+ * through the external API.
+ */
 public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVariant {
 
-    @NonNull
-    private BasePlugin plugin;
-
     protected ApkVariantImpl(@NonNull BasePlugin plugin) {
-        this.plugin = plugin;
+        super(plugin);
     }
 
     @NonNull
@@ -55,36 +59,8 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
     }
 
     @Override
-    public void setOutputFile(@NonNull File outputFile) {
-        ApkVariantData variantData = getApkVariantData();
-        if (variantData.zipAlignTask != null) {
-            variantData.zipAlignTask.setOutputFile(outputFile);
-        } else {
-            variantData.packageApplicationTask.setOutputFile(outputFile);
-        }
-
-        // also set it on the variant Data so that the values are in sync
-        variantData.setOutputFile(outputFile);
-    }
-
-    @Override
     public Dex getDex() {
         return getApkVariantData().dexTask;
-    }
-
-    @Override
-    public PackageApplication getPackageApplication() {
-        return getApkVariantData().packageApplicationTask;
-    }
-
-    @Override
-    public ZipAlign getZipAlign() {
-        return getApkVariantData().zipAlignTask;
-    }
-
-    @Override
-    public DefaultTask getInstall() {
-        return getApkVariantData().installTask;
     }
 
     @Override
@@ -104,32 +80,6 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
 
     @Override
     @NonNull
-    public ZipAlign createZipAlignTask(
-            @NonNull String taskName,
-            @NonNull File inputFile,
-            @NonNull File outputFile) {
-        ApkVariantData variantData = getApkVariantData();
-
-        //noinspection VariableNotUsedInsideIf
-        if (variantData.zipAlignTask != null) {
-            throw new RuntimeException(String.format(
-                    "ZipAlign task for variant '%s' already exists.", getName()));
-        }
-
-        ZipAlign task = plugin.createZipAlignTask(taskName, inputFile, outputFile);
-
-        // update variant data
-        variantData.setOutputFile(outputFile);
-        variantData.zipAlignTask = task;
-
-        // setup dependencies
-        variantData.assembleTask.dependsOn(task);
-
-        return task;
-    }
-
-    @Override
-    @NonNull
     public Collection<File> getCompileLibraries() {
         return plugin.getAndroidBuilder().getCompileClasspath(
                 getVariantData().getVariantConfiguration());
@@ -139,5 +89,79 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
     @NonNull
     public Collection<File> getApkLibraries() {
         return plugin.getAndroidBuilder().getPackagedJars(getVariantData().getVariantConfiguration());
+    }
+
+    // ---- Deprecated, will be removed in 1.0
+    //STOPSHIP
+
+    @Override
+    @Deprecated
+    public PackageApplication getPackageApplication() {
+        // if more than one output, refuse to use this method
+        if (outputs.size() > 1) {
+            throw new RuntimeException(String.format(
+                    "More than one output on variant '%s', cannot call getPackageApplication() on it. Call it on one of its outputs instead.",
+                    getName()));
+        }
+
+        // deprecation warning.
+        plugin.displayDeprecationWarning("variant.getPackageApplication() is deprecated. Call it on one of variant.getOutputs() instead.");
+
+        // use the single output for compatibility.
+        return ((ApkVariantOutputImpl) outputs.get(0)).getPackageApplication();
+    }
+
+    @Override
+    @Deprecated
+    public ZipAlign getZipAlign() {
+        // if more than one output, refuse to use this method
+        if (outputs.size() > 1) {
+            throw new RuntimeException(String.format(
+                    "More than one output on variant '%s', cannot call getZipAlign() on it. Call it on one of its outputs instead.",
+                    getName()));
+        }
+
+        // deprecation warning.
+        plugin.displayDeprecationWarning("variant.getZipAlign() is deprecated. Call it on one of variant.getOutputs() instead.");
+
+        // use the single output for compatibility.
+        return ((ApkVariantOutputImpl) outputs.get(0)).getZipAlign();
+    }
+
+    @Override
+    @Deprecated
+    public DefaultTask getInstall() {
+        // if more than one output, refuse to use this method
+        if (outputs.size() > 1) {
+            throw new RuntimeException(String.format(
+                    "More than one output on variant '%s', cannot call getInstall() on it. Call it on one of its outputs instead.",
+                    getName()));
+        }
+
+        // deprecation warning.
+        plugin.displayDeprecationWarning("variant.getInstall() is deprecated. Call it on one of variant.getOutputs() instead.");
+
+        // use the single output for compatibility.
+        return ((ApkVariantOutputImpl) outputs.get(0)).getInstall();
+    }
+
+    @Override
+    @NonNull
+    public ZipAlign createZipAlignTask(
+            @NonNull String taskName,
+            @NonNull File inputFile,
+            @NonNull File outputFile) {
+        // if more than one output, refuse to use this method
+        if (outputs.size() > 1) {
+            throw new RuntimeException(String.format(
+                    "More than one output on variant '%s', cannot call createZipAlignTask() on it. Call it on one of its outputs instead.",
+                    getName()));
+        }
+
+        // deprecation warning.
+        plugin.displayDeprecationWarning("variant.createZipAlignTask() is deprecated. Call it on one of variant.getOutputs() instead.");
+
+        // use the single output for compatibility.
+        return ((ApkVariantOutputImpl) outputs.get(0)).createZipAlignTask(taskName, inputFile, outputFile);
     }
 }

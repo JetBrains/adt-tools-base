@@ -56,6 +56,7 @@ import static com.android.SdkConstants.GRAVITY_VALUE_START;
 import static com.android.SdkConstants.TAG_APPLICATION;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -127,7 +128,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         "`left` bitmask. Therefore, you can use `gravity=\"start\"` rather than " +
         "`gravity=\"left|start\"`.)",
 
-        Category.RTL, 5, Severity.WARNING, IMPLEMENTATION).setEnabledByDefault(false);
+        Category.RTL, 5, Severity.WARNING, IMPLEMENTATION);
 
     public static final Issue COMPAT = Issue.create(
         "RtlCompat", //$NON-NLS-1$
@@ -139,18 +140,18 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         "gravity or layout_gravity attribute, since older platforms will ignore the " +
         "`textAlignment` attribute.",
 
-        Category.RTL, 6, Severity.ERROR, IMPLEMENTATION).setEnabledByDefault(false);
+        Category.RTL, 6, Severity.ERROR, IMPLEMENTATION);
 
     public static final Issue SYMMETRY = Issue.create(
-            "RtlSymmetry", //$NON-NLS-1$
-            "Padding and margin symmetry",
-            "Ensures that specifying padding on one side is matched by padding on the other",
+        "RtlSymmetry", //$NON-NLS-1$
+        "Padding and margin symmetry",
+        "Ensures that specifying padding on one side is matched by padding on the other",
 
-            "If you specify padding or margin on the left side of a layout, you should " +
-            "probably also specify padding on the right side (and vice versa) for " +
-            "right-to-left layout symmetry.",
+        "If you specify padding or margin on the left side of a layout, you should " +
+        "probably also specify padding on the right side (and vice versa) for " +
+        "right-to-left layout symmetry.",
 
-            Category.RTL, 6, Severity.ERROR, IMPLEMENTATION).setEnabledByDefault(false);
+        Category.RTL, 6, Severity.ERROR, IMPLEMENTATION);
 
 
     public static final Issue ENABLED = Issue.create(
@@ -164,7 +165,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         "If you have started adding RTL attributes, but have not yet finished the " +
         "migration, you can set the attribute to false to satisfy this lint check.",
 
-        Category.RTL, 3, Severity.WARNING, IMPLEMENTATION).setEnabledByDefault(false);
+        Category.RTL, 3, Severity.WARNING, IMPLEMENTATION);
 
     /* TODO:
     public static final Issue FIELD = Issue.create(
@@ -326,6 +327,17 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         }
     }
 
+    @Nullable
+    static String getTextAlignmentToGravity(String attribute) {
+        if (attribute.endsWith(START)) { // textStart, viewStart, ...
+            return GRAVITY_VALUE_START;
+        } else if (attribute.endsWith(END)) { // textEnd, viewEnd, ...
+            return GRAVITY_VALUE_END;
+        } else {
+            return null; // inherit, others
+        }
+    }
+
     @Override
     public Collection<String> getApplicableAttributes() {
         int size = ATTRIBUTES.length + 4;
@@ -397,33 +409,42 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
 
             Element element = attribute.getOwnerElement();
             final String gravity;
+            final Attr gravityNode;
             if (element.hasAttributeNS(ANDROID_URI, ATTR_GRAVITY)) {
-                gravity = element.getAttributeNS(ANDROID_URI, ATTR_GRAVITY);
+                gravityNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_GRAVITY);
+                gravity = gravityNode.getValue();
             } else if (element.hasAttributeNS(ANDROID_URI, ATTR_LAYOUT_GRAVITY)) {
-                gravity = element.getAttributeNS(ANDROID_URI, ATTR_LAYOUT_GRAVITY);
+                gravityNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_LAYOUT_GRAVITY);
+                gravity = gravityNode.getValue();
             } else if (project.getMinSdk() < RTL_API) {
                 int folderVersion = context.getFolderVersion();
-                if (folderVersion >= RTL_API) {
-                    return;
-                }
-                String message = String.format(
-                        "To support older versions than API 17 (project specifies %1$d) "
-                                + "you must *also* specify gravity or layout_gravity=\"%2$s\"",
-                        project.getMinSdk(), value);
-                if (context.isEnabled(COMPAT)) {
-                    context.report(COMPAT, attribute, context.getLocation(attribute), message,
-                            null);
+                if (folderVersion < RTL_API && context.isEnabled(COMPAT)) {
+                    String expectedGravity = getTextAlignmentToGravity(value);
+                    if (expectedGravity != null) {
+                        String message = String.format(
+                                "To support older versions than API 17 (project specifies %1$d) "
+                                    + "you must *also* specify gravity or layout_gravity=\"%2$s\"",
+                                project.getMinSdk(), expectedGravity);
+                        context.report(COMPAT, attribute, context.getLocation(attribute), message,
+                                null);
+                    }
                 }
                 return;
             } else {
                 return;
             }
 
-            if (!value.equals(gravity) && context.isEnabled(COMPAT)) {
-                // TODO: Only compare horizontal alignment attributes?
-                String message = "Inconsistent alignment specification between "
-                        + "textAlignment and gravity attributes";
-                context.report(COMPAT, attribute, context.getLocation(attribute), message, null);
+            String expectedGravity = getTextAlignmentToGravity(value);
+            if (expectedGravity != null && !gravity.contains(expectedGravity)
+                    && context.isEnabled(COMPAT)) {
+                String message = String.format("Inconsistent alignment specification between "
+                                + "textAlignment and gravity attributes: was %1$s, expected %2$s",
+                        gravity, expectedGravity);
+                Location location = context.getLocation(attribute);
+                context.report(COMPAT, attribute, location, message, null);
+                Location secondary = context.getLocation(gravityNode);
+                secondary.setMessage("Incompatible direction here");
+                location.setSecondary(secondary);
             }
             return;
         }
@@ -469,8 +490,9 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                     && !element.hasAttributeNS(ANDROID_URI,
                     isOldAttribute(opposite) ? convertOldToNew(opposite)
                             : convertNewToOld(opposite)) && context.isEnabled(SYMMETRY)) {
-                String message = "When you define %1$s you should probably also define %2$s for "
-                        + "right-to-left symmetry";
+                String message = String.format(
+                        "When you define %1$s you should probably also define %2$s for "
+                        + "right-to-left symmetry", name, opposite);
                 context.report(SYMMETRY, attribute, context.getLocation(attribute),
                         message, null);
             }
@@ -525,7 +547,8 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             String message = String.format(
                     "To support older versions than API 17 (project specifies %1$d) "
                             + "you should *also* add %2$s:%3$s=\"%4$s\"",
-                    project.getMinSdk(), attribute.getPrefix(), old, value);
+                    project.getMinSdk(), attribute.getPrefix(), old,
+                    convertNewToOld(value));
             context.report(COMPAT, attribute, context.getLocation(attribute), message, null);
         }
     }

@@ -16,10 +16,18 @@
 
 package com.android.ide.common.res2;
 
+import com.android.SdkConstants;
 import com.android.testutils.TestUtils;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 
+import org.w3c.dom.Document;
+
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.List;
 import java.util.Map;
 
@@ -86,5 +94,40 @@ public class ValueResourceParser2Test extends BaseTestCase {
         }
 
         return sResources;
+    }
+
+    public void testUtfBom() throws IOException, MergingException {
+        File file = File.createTempFile(getName(), SdkConstants.DOT_XML);
+        String xml = "" +
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+                "    android:layout_width=\"match_parent\"\n" +
+                "    android:layout_height=\"wrap_content\"\n" +
+                "    android:orientation=\"vertical\" >\n" +
+                "\n" +
+                "    <Button\n" +
+                "        android:id=\"@+id/button1\"\n" +
+                "        android:layout_width=\"wrap_content\"\n" +
+                "        android:layout_height=\"wrap_content\"\n" +
+                "        android:text=\"Button\" />\n" +
+                "          some text\n" +
+                "\n" +
+                "</LinearLayout>\n";
+
+        BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
+        OutputStreamWriter writer = new OutputStreamWriter(stream, Charsets.UTF_8);
+        stream.write(0xef);
+        stream.write(0xbb);
+        stream.write(0xbf);
+        writer.write(xml);
+        writer.close();
+
+        Document document = ValueResourceParser2.parseDocument(file);
+        assertNotNull(document);
+        assertNotNull(document.getDocumentElement());
+        assertEquals("LinearLayout", document.getDocumentElement().getTagName());
+
+        //noinspection ResultOfMethodCallIgnored
+        file.delete();
     }
 }

@@ -15,37 +15,39 @@
  */
 
 package com.android.build.gradle.internal.dsl
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
-import com.android.builder.AndroidBuilder
-import com.android.builder.BuilderConstants
-import com.android.builder.DefaultProductFlavor
+import com.android.build.gradle.BasePlugin
+import com.android.builder.core.AndroidBuilder
+import com.android.builder.core.BuilderConstants
+import com.android.builder.core.DefaultApiVersion
+import com.android.builder.core.DefaultProductFlavor
+import com.android.builder.model.ApiVersion
 import com.android.builder.model.ClassField
 import com.android.builder.model.NdkConfig
+import com.android.builder.model.ProductFlavor
 import org.gradle.api.Action
-import org.gradle.api.internal.file.FileResolver
+import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
 /**
  * DSL overlay to make methods that accept String... work.
  */
 class ProductFlavorDsl extends DefaultProductFlavor {
-    private static final long serialVersionUID = 1L
 
     @NonNull
-    private final FileResolver fileResolver
+    protected final Project project
     @NonNull
     protected final Logger logger
 
     private final NdkConfigDsl ndkConfig
 
     ProductFlavorDsl(@NonNull String name,
-                     @NonNull FileResolver fileResolver,
+                     @NonNull Project project,
                      @NonNull Instantiator instantiator,
                      @NonNull Logger logger) {
         super(name)
-        this.fileResolver = fileResolver
+        this.project = project
         this.logger = logger
         ndkConfig = instantiator.newInstance(NdkConfigDsl.class)
     }
@@ -54,6 +56,72 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     @Nullable
     public NdkConfig getNdkConfig() {
         return ndkConfig;
+    }
+
+    @NonNull
+    public ProductFlavor setMinSdkVersion(int minSdkVersion) {
+        setMinSdkVersion(new DefaultApiVersion(minSdkVersion));
+        return this;
+    }
+
+    @NonNull
+    public ProductFlavor minSdkVersion(int minSdkVersion) {
+        setMinSdkVersion(minSdkVersion);
+        return this;
+    }
+
+    @NonNull
+    public ProductFlavor setMinSdkVersion(String minSdkVersion) {
+        setMinSdkVersion(getApiVersion(minSdkVersion))
+        return this;
+    }
+
+    @NonNull
+    public ProductFlavor minSdkVersion(String minSdkVersion) {
+        setMinSdkVersion(minSdkVersion);
+        return this;
+    }
+
+    @NonNull
+    public ProductFlavor setTargetSdkVersion(int targetSdkVersion) {
+        setTargetSdkVersion(new DefaultApiVersion(targetSdkVersion));
+        return this;
+    }
+
+    @NonNull
+    public ProductFlavor targetSdkVersion(int targetSdkVersion) {
+        setTargetSdkVersion(targetSdkVersion);
+        return this;
+    }
+
+    @NonNull
+    public ProductFlavor setTargetSdkVersion(String targetSdkVersion) {
+        setTargetSdkVersion(getApiVersion(targetSdkVersion))
+        return this;
+    }
+
+    @NonNull
+    public ProductFlavor targetSdkVersion(String targetSdkVersion) {
+        setTargetSdkVersion(targetSdkVersion);
+        return this;
+    }
+
+    @Nullable
+    private static ApiVersion getApiVersion(@Nullable String value) {
+        if (value != null && !value.isEmpty()) {
+            if (Character.isDigit(value.charAt(0))) {
+                try {
+                    int apiLevel = Integer.valueOf(value)
+                    return new DefaultApiVersion(apiLevel)
+                } catch (NumberFormatException e) {
+                    throw new RuntimeException("'${value}' is not a valid API level. ", e)
+                }
+            }
+
+            return new DefaultApiVersion(value)
+        }
+
+        return null
     }
 
     // -- DSL Methods. TODO remove once the instantiator does what I expect it to do.
@@ -96,13 +164,13 @@ class ProductFlavorDsl extends DefaultProductFlavor {
 
     @NonNull
     public ProductFlavorDsl proguardFile(Object proguardFile) {
-        proguardFiles.add(fileResolver.resolve(proguardFile))
+        proguardFiles.add(project.file(proguardFile))
         return this
     }
 
     @NonNull
     public ProductFlavorDsl proguardFiles(Object... proguardFileArray) {
-        proguardFiles.addAll(fileResolver.resolveFiles(proguardFileArray).files)
+        proguardFiles.addAll(project.files(proguardFileArray).files)
         return this
     }
 
@@ -110,22 +178,22 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     public ProductFlavorDsl setProguardFiles(Iterable<?> proguardFileIterable) {
         proguardFiles.clear()
         for (Object proguardFile : proguardFileIterable) {
-            proguardFiles.add(fileResolver.resolve(proguardFile))
+            proguardFiles.add(project.file(proguardFile))
         }
         return this
     }
 
     @NonNull
     public ProductFlavorDsl consumerProguardFiles(Object... proguardFileArray) {
-        consumerProguardFiles.addAll(fileResolver.resolveFiles(proguardFileArray).files)
+        consumerProguardFiles.addAll(project.files(proguardFileArray).files)
         return this
     }
 
     @NonNull
-    public ProductFlavorDsl setconsumerProguardFiles(Iterable<?> proguardFileIterable) {
+    public ProductFlavorDsl setConsumerProguardFiles(Iterable<?> proguardFileIterable) {
         consumerProguardFiles.clear()
         for (Object proguardFile : proguardFileIterable) {
-            consumerProguardFiles.add(fileResolver.resolve(proguardFile))
+            consumerProguardFiles.add(project.file(proguardFile))
         }
         return this
     }
@@ -143,5 +211,44 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     }
     void resConfigs(@NonNull Collection<String> config) {
         addResourceConfigurations(config);
+    }
+
+    // ---------------
+    // TEMP for compatibility
+    // STOPSHIP Remove in 1.0
+
+    /**
+     * Sets the package name.
+     *
+     * @param packageName the package name
+     * @return the flavor object
+     */
+    @NonNull
+    public ProductFlavor setPackageName(String packageName) {
+        BasePlugin.displayDeprecationWarning(logger, project, "\"packageName\" is deprecated (and will soon stop working); change to \"applicationId\" instead");
+        return setApplicationId(packageName);
+    }
+
+    @NonNull
+    public ProductFlavor packageName(String packageName) {
+        return setPackageName(packageName); // not setApplicationId: we want the warning message
+    }
+
+    @Nullable
+    public String getPackageName() {
+        BasePlugin.displayDeprecationWarning(logger, project, "\"packageName\" is deprecated (and will soon stop working); change to \"applicationId\" instead");
+        return getApplicationId();
+    }
+
+    @Nullable
+    public String getTestPackageName() {
+        BasePlugin.displayDeprecationWarning(logger, project, "\"testPackageName\" is deprecated (and will soon stop working); change to \"testApplicationId\" instead");
+        return getTestApplicationId();
+    }
+
+    @Nullable
+    public ProductFlavor setTestPackageName(String packageName) {
+        BasePlugin.displayDeprecationWarning(logger, project, "\"testPackageName\" is deprecated (and will soon stop working); change to \"testApplicationId\" instead");
+        return setTestApplicationId(packageName);
     }
 }

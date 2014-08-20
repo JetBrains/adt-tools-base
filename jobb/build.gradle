@@ -1,18 +1,25 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
+apply plugin: 'sdk-java-lib'
 
 dependencies {
-    compile project(':fat32lib')
+    compile project(':external:fat32lib')
 }
 
 group = 'com.android.tools.build'
 archivesBaseName = 'jobb'
+version = rootProject.ext.baseVersion
 
-// configure the manifest of the buildDistributionJar task
-buildDistributionJar.manifest.attributes("Main-Class": "com.android.jobb.Main")
+// configure the manifest of the sdkJar task
+sdkJar.manifest.attributes("Main-Class": "com.android.jobb.Main")
 
-shipping {
-    launcherScripts = ['etc/jobb', 'etc/jobb.bat']
+sdk {
+    linux {
+        item('etc/jobb') { executable true }
+    }
+    mac {
+        item('etc/jobb') { executable true }
+    }
+    windows {
+        item 'etc/jobb.bat'
+    }
 }
-
-apply from: '../baseVersion.gradle'

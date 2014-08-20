@@ -33,12 +33,9 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXParseException;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.Reader;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -85,7 +82,7 @@ class MergerXmlUtils {
             @NonNull ManifestMerger merger) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            Reader reader = new BufferedReader(new FileReader(xmlFile));
+            Reader reader = XmlUtils.getUtfReader(xmlFile);
             InputSource is = new InputSource(reader);
             factory.setNamespaceAware(true);
             factory.setValidating(false);
@@ -156,12 +153,7 @@ class MergerXmlUtils {
             @NonNull IMergerLog log,
             @NonNull FileAndLine errorContext) {
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            InputSource is = new InputSource(new StringReader(xml));
-            factory.setNamespaceAware(true);
-            factory.setValidating(false);
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document doc = builder.parse(is);
+            Document doc = XmlUtils.parseDocument(xml, true);
             findLineNumbers(doc, 1);
             if (errorContext.getFileName() != null) {
                 setSource(doc, new File(errorContext.getFileName()));

@@ -76,13 +76,13 @@ public interface BuildType extends BaseConfig {
     int getRenderscriptOptimLevel();
 
     /**
-     * Returns the package name suffix applied to this build type.
-     * To get the final package name, use {@link AndroidArtifact#getPackageName()}.
+     * Returns the application id suffix applied to this build type.
+     * To get the final application id, use {@link AndroidArtifact#getApplicationId()}.
      *
-     * @return the package name suffix.
+     * @return the application id
      */
     @Nullable
-    String getPackageNameSuffix();
+    String getApplicationIdSuffix();
 
     /**
      * Returns the version name suffix.
@@ -112,4 +112,9 @@ public interface BuildType extends BaseConfig {
      */
     @Nullable
     NdkConfig getNdkConfig();
+
+    /**
+     * Returns whether the variant embeds the micro app.
+     */
+    boolean isEmbedMicroApp();
 }

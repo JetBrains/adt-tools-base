@@ -24,13 +24,13 @@ package com.android.resources;
  */
 public enum Density implements ResourceEnum {
     XXXHIGH("xxxhdpi", "XXX-High Density", 640, 18), //$NON-NLS-1$
-    XXHIGH("xxhdpi", "XX-High Density", 480, 16), //$NON-NLS-1$
-    XHIGH("xhdpi", "X-High Density", 320, 8), //$NON-NLS-1$
-    HIGH("hdpi", "High Density", 240, 4), //$NON-NLS-1$
-    TV("tvdpi", "TV Density", 213, 13), //$NON-NLS-1$
-    MEDIUM("mdpi", "Medium Density", 160, 4), //$NON-NLS-1$
-    LOW("ldpi", "Low Density", 120, 4), //$NON-NLS-1$
-    NODPI("nodpi", "No Density", 0, 4); //$NON-NLS-1$
+    XXHIGH( "xxhdpi",  "XX-High Density",  480, 16), //$NON-NLS-1$
+    XHIGH(  "xhdpi",   "X-High Density",   320,  8), //$NON-NLS-1$
+    HIGH(   "hdpi",    "High Density",     240,  4), //$NON-NLS-1$
+    TV(     "tvdpi",   "TV Density",       213, 13), //$NON-NLS-1$
+    MEDIUM( "mdpi",    "Medium Density",   160,  4), //$NON-NLS-1$
+    LOW(    "ldpi",    "Low Density",      120,  4), //$NON-NLS-1$
+    NODPI(  "nodpi",   "No Density",         0,  4); //$NON-NLS-1$
 
     public static final int DEFAULT_DENSITY = 160;
 

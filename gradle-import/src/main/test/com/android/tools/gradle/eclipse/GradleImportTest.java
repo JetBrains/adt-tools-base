@@ -17,8 +17,14 @@
 package com.android.tools.gradle.eclipse;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static com.android.SdkConstants.DOT_GRADLE;
 import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.FD_GRADLE;
+import static com.android.SdkConstants.FD_GRADLE_WRAPPER;
+import static com.android.SdkConstants.FD_TEMPLATES;
 import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML;
+import static com.android.SdkConstants.FN_GRADLE_WRAPPER_UNIX;
+import static com.android.SdkConstants.FN_GRADLE_WRAPPER_WIN;
 import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.SdkConstants.FN_PROJECT_PROPERTIES;
 import static com.android.tools.gradle.eclipse.GradleImport.ANDROID_GRADLE_PLUGIN;
@@ -380,6 +386,36 @@ public class GradleImportTest extends TestCase {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testImportWithoutMinSdkVersion() throws Exception {
+        // Regression test for importing project which does not explicitly set minSdkVersion
+        // and/or targetSdkVersion; this would earlier result in "-1" being written into
+        // build.gradle which fails the build with "> Cannot invoke method minus() on null object"
+        File projectDir = createProject("test1", "test.pkg");
+
+        // Remove <uses-sdk ...>
+        File manifestFile = new File(projectDir, FN_ANDROID_MANIFEST_XML);
+        String manifestContents = Files.toString(manifestFile,  UTF_8);
+        int index = manifestContents.indexOf("<uses-sdk");
+        int endIndex = manifestContents.indexOf('>', index);
+        assertFalse(index == -1);
+        assertFalse(endIndex == -1);
+        manifestContents = manifestContents.substring(0, index) +
+                manifestContents.substring(endIndex + 1);
+        Files.write(manifestContents, manifestFile, UTF_8);
+
+        File imported = checkProject(projectDir, ""
+                        + MSG_HEADER
+                        + MSG_FOLDER_STRUCTURE
+                        + "* AndroidManifest.xml => app/src/main/AndroidManifest.xml\n"
+                        + "* res/ => app/src/main/res/\n"
+                        + "* src/ => app/src/main/java/\n"
+                        + MSG_FOOTER,
+                true /* checkBuild */);
+        deleteDir(projectDir);
+        deleteDir(imported);
+    }
+
+  @SuppressWarnings("ResultOfMethodCallIgnored")
     public void testMoveRsAndAidl() throws Exception {
         File projectDir = createProject("test1", "test.pkg");
         createSampleAidlFile(projectDir, "src", "test.pkg");
@@ -614,7 +650,7 @@ public class GradleImportTest extends TestCase {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void testLibraries() throws Exception {
         File root = Files.createTempDir();
-        File app = createLibrary(root, "test.lib2.pkg");
+        File app = createLibrary(root, "test.lib2.pkg", false);
 
         // ADT Directory structure created by the above:
         assertEquals(""
@@ -801,7 +837,7 @@ public class GradleImportTest extends TestCase {
                     + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                     + "    }\n"
                     + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                     "\n"
                     + "repositories {\n"
@@ -813,6 +849,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -843,7 +880,7 @@ public class GradleImportTest extends TestCase {
                     + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                     + "    }\n"
                     + "}\n" : "")
-                + "apply plugin: 'android-library'\n"
+                + "apply plugin: 'com.android.library'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                     "\n"
                     + "repositories {\n"
@@ -855,6 +892,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.lib2.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 8\n"
                 + "    }\n"
@@ -885,7 +923,8 @@ public class GradleImportTest extends TestCase {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    private static File createLibrary(File root, String lib2Pkg) throws IOException {
+    private static File createLibrary(File root, String lib2Pkg, boolean startLibrariesAt1)
+            throws IOException {
         // Plain Java library, used by Library 1 and App
         String javaLibName = "JavaLib";
         String javaLibRelative = "subdir1" + separator + "subdir2" + separator + javaLibName;
@@ -919,7 +958,8 @@ public class GradleImportTest extends TestCase {
                 // Using \ instead of File.separator deliberately to test path conversion
                 // handling: you can import a Windows relative path on a non-Windows system
                 // and vice versa
-                Collections.singletonList(new File(".." + '\\' + javaLibRelative)));
+                Collections.singletonList(new File(".." + '\\' + javaLibRelative)),
+                startLibrariesAt1);
         createAndroidManifest(lib1, lib1Pkg, -1, -1, "<application/>");
 
         String lib2Name = "Lib2";
@@ -1024,7 +1064,7 @@ public class GradleImportTest extends TestCase {
                     + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                     + "    }\n"
                     + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                     "\n"
                     + "repositories {\n"
@@ -1036,6 +1076,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -1128,7 +1169,7 @@ public class GradleImportTest extends TestCase {
                     + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                     + "    }\n"
                     + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                     "\n"
                     + "repositories {\n"
@@ -1140,6 +1181,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -1275,7 +1317,7 @@ public class GradleImportTest extends TestCase {
                 + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                 + "    }\n"
                 + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                 "\n"
                 + "repositories {\n"
@@ -1287,6 +1329,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "\n"
@@ -1485,7 +1528,7 @@ public class GradleImportTest extends TestCase {
                         + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                         + "    }\n"
                         + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                 "\n"
                         + "repositories {\n"
@@ -1497,10 +1540,11 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "\n"
-                + "        testPackageName \"my.test.pkg.name\"\n"
+                + "        testApplicationId \"my.test.pkg.name\"\n"
                 + "        testInstrumentationRunner \"android.test.InstrumentationTestRunner\"\n"
                 + "        testFunctionalTest false\n"
                 + "        testHandlingProfiling true\n"
@@ -1602,7 +1646,7 @@ public class GradleImportTest extends TestCase {
         File root = Files.createTempDir();
         // Pretend lib2 is ActionBarSherlock; it should then be stripped out and replaced
         // by a set of dependencies
-        File app = createLibrary(root, "com.actionbarsherlock");
+        File app = createLibrary(root, "com.actionbarsherlock", true);
 
         File imported = checkProject(app, ""
                 + MSG_HEADER
@@ -1683,7 +1727,7 @@ public class GradleImportTest extends TestCase {
                     + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                     + "    }\n"
                     + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                     "\n"
                     + "repositories {\n"
@@ -1695,6 +1739,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -2187,7 +2232,7 @@ public class GradleImportTest extends TestCase {
                     + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                     + "    }\n"
                     + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                     "\n"
                     + "repositories {\n"
@@ -2199,6 +2244,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -2228,7 +2274,7 @@ public class GradleImportTest extends TestCase {
                     + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                     + "    }\n"
                     + "}\n" : "")
-                + "apply plugin: 'android-library'\n"
+                + "apply plugin: 'com.android.library'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                     "\n"
                     + "repositories {\n"
@@ -2240,6 +2286,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.android.lib.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 8\n"
                 + "    }\n"
@@ -2886,7 +2933,7 @@ public class GradleImportTest extends TestCase {
                 + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
                 + "    }\n"
                 + "}\n" : "")
-                + "apply plugin: 'android'\n"
+                + "apply plugin: 'com.android.application'\n"
                 + (!DECLARE_GLOBAL_REPOSITORIES ?
                 "\n"
                 + "repositories {\n"
@@ -2898,6 +2945,7 @@ public class GradleImportTest extends TestCase {
                 + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
                 + "\n"
                 + "    defaultConfig {\n"
+                + "        applicationId \"test.pkg\"\n"
                 + "        minSdkVersion 8\n"
                 + "        targetSdkVersion 16\n"
                 + "    }\n"
@@ -2913,6 +2961,95 @@ public class GradleImportTest extends TestCase {
                         .replace(NL, "\n"));
 
         deleteDir(projectDir);
+        deleteDir(imported);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void testPreviewPlatform() throws Exception {
+        File root = Files.createTempDir();
+        File projectDir = new File(root, "project");
+        projectDir.mkdirs();
+        createProject(projectDir, "Test2", "test.pkg");
+        createDotProject(projectDir, "Test2", true, true);
+
+        // Write out Manifest and project.properties files which point to L as a preview platform
+        Files.write(""
+                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "  package=\"test.pkg\"\n"
+                        + "  android:versionCode=\"1\"\n"
+                        + "  android:versionName=\"1.0\" >\n"
+                        + "\n"
+                        + "  <uses-sdk\n"
+                        + "    android:minSdkVersion=\"L\"\n"
+                        + "    android:targetSdkVersion=\"L\" />\n"
+                        + "\n"
+                        + "  <application\n"
+                        + "    android:icon=\"@android:drawable/sym_def_app_icon\"\n"
+                        + "    android:label=\"My Unit Test Instrumentation Tests\" >\n"
+                        + "    <uses-library android:name=\"android.test.runner\" />\n"
+                        + "  </application>\n"
+                        + "\n"
+                        + "</manifest>",
+                new File(projectDir, FN_ANDROID_MANIFEST_XML), UTF_8);
+
+        Files.write("# blah blah blah\n"
+                        + "target=android-L\n",
+                new File(projectDir, FN_PROJECT_PROPERTIES), UTF_8);
+
+        File imported = checkProject(projectDir, ""
+                        + MSG_HEADER
+                        + MSG_FOLDER_STRUCTURE
+                        + "* AndroidManifest.xml => Test2/src/main/AndroidManifest.xml\n"
+                        + "* res/ => Test2/src/main/res/\n"
+                        + "* src/ => Test2/src/main/java/\n"
+                        + MSG_FOOTER,
+                false /* checkBuild */,
+                new ImportCustomizer() {
+                    @Override
+                    public void customize(GradleImport importer) {
+                        importer.setGradleNameStyle(false);
+                    }
+                });
+
+        //noinspection PointlessBooleanExpression,ConstantConditions
+        assertEquals(""
+                        + (!DECLARE_GLOBAL_REPOSITORIES ?
+                        "buildscript {\n"
+                                + "    repositories {\n"
+                                + "        " + MAVEN_REPOSITORY + "\n"
+                                + "    }\n"
+                                + "    dependencies {\n"
+                                + "        classpath '" + ANDROID_GRADLE_PLUGIN + "'\n"
+                                + "    }\n"
+                                + "}\n" : "")
+                        + "apply plugin: 'com.android.application'\n"
+                        + (!DECLARE_GLOBAL_REPOSITORIES ?
+                        "\n"
+                                + "repositories {\n"
+                                + "    " + MAVEN_REPOSITORY + "\n"
+                                + "}\n" : "")
+                        + "\n"
+                        + "android {\n"
+                        + "    compileSdkVersion 'android-L'\n"
+                        + "    buildToolsVersion \"" + BUILD_TOOLS_VERSION + "\"\n"
+                        + "\n"
+                        + "    defaultConfig {\n"
+                        + "        applicationId \"test.pkg\"\n"
+                        + "        minSdkVersion 'L'\n"
+                        + "        targetSdkVersion 'L'\n"
+                        + "    }\n"
+                        + "\n"
+                        + "    buildTypes {\n"
+                        + "        release {\n"
+                        + "            runProguard false\n"
+                        + "            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}\n",
+                Files.toString(new File(imported, "Test2" + separator + "build.gradle"), UTF_8)
+                        .replace(NL, "\n"));
+
+        deleteDir(root);
         deleteDir(imported);
     }
 
@@ -3120,8 +3257,7 @@ public class GradleImportTest extends TestCase {
                     .getParentFile()
                     .getParentFile()
                     .getParentFile();
-            File wrapper = new File(top, "templates" + separator + "gradle" + separator +
-                    "wrapper");
+            File wrapper = new File(top, FD_TEMPLATES + separator + FD_GRADLE_WRAPPER);
             if (wrapper.exists()) {
                 return wrapper;
             }
@@ -3135,7 +3271,7 @@ public class GradleImportTest extends TestCase {
     }
 
     public static void assertBuildsCleanly(File base, boolean allowWarnings) throws Exception {
-        File gradlew = new File(base, "gradlew" + (isWindows() ? ".bat" : ""));
+        File gradlew = new File(base, isWindows() ? FN_GRADLE_WRAPPER_WIN : FN_GRADLE_WRAPPER_UNIX);
         if (!gradlew.exists()) {
             // Not using a wrapper; can't easily test building (we don't have a gradle prebuilt)
             return;
@@ -3171,17 +3307,20 @@ public class GradleImportTest extends TestCase {
     }
 
     private static void appendFiles(StringBuilder sb, boolean includeDirs, File file, int depth) {
+        // Skip output
+        if ((depth == 1 || depth == 2) && file.getName().equals("build")) {
+            return;
+        }
+
         // Skip wrapper, since it may or may not be present for unit tests
         if (depth == 1) {
             String name = file.getName();
-            if (name.equals(".gradle")
-                    || name.equals("gradle")
-                    || name.equals("gradlew")
-                    || name.equals("gradlew.bat")) {
+            if (name.equals(DOT_GRADLE)
+                    || name.equals(FD_GRADLE)
+                    || name.equals(FN_GRADLE_WRAPPER_UNIX)
+                    || name.equals(FN_GRADLE_WRAPPER_WIN)) {
                 return;
             }
-        } else if (depth == 2 && file.getName().equals("build")) { // Skip output
-            return;
         }
 
         boolean isDirectory = file.isDirectory();
@@ -3295,6 +3434,17 @@ public class GradleImportTest extends TestCase {
             Boolean isLibrary,
             @Nullable String proguardConfig,
             @NonNull List<File> libraries) throws IOException {
+        createProjectProperties(projectDir, target, mergeManifest, isLibrary, proguardConfig, libraries, true);
+    }
+
+    private static void createProjectProperties(
+            @NonNull File projectDir,
+            @Nullable String target,
+            Boolean mergeManifest,
+            Boolean isLibrary,
+            @Nullable String proguardConfig,
+            @NonNull List<File> libraries,
+            boolean startLibrariesAt1) throws IOException {
         StringBuilder sb = new StringBuilder();
 
         sb.append("# This file is automatically generated by Android Tools.\n"
@@ -3332,7 +3482,10 @@ public class GradleImportTest extends TestCase {
 
         for (int i = 0, n = libraries.size(); i < n; i++) {
             String path = libraries.get(i).getPath();
-            String escaped = escapeProperty("android.library.reference." + Integer.toString(i + 1),
+            // Libraries normally start at index 1, but I want to handle cases where they start
+            // at 0 too so we have a test parameter for that
+            int index = i + (startLibrariesAt1 ? 1 : 0);
+            String escaped = escapeProperty("android.library.reference." + Integer.toString(index),
                     path);
             sb.append(escaped).append("\n");
         }

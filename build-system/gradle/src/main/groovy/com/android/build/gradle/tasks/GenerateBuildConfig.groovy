@@ -16,7 +16,10 @@
 package com.android.build.gradle.tasks
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.builder.compiling.BuildConfigGenerator
+import com.android.builder.internal.ClassFieldImpl
 import com.android.builder.model.ClassField
+import com.google.common.collect.ImmutableList
+import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
@@ -101,12 +104,19 @@ public class GenerateBuildConfig extends BaseTask {
         // at source code.
         //map.put(PH_DEBUG, Boolean.toString(mDebug));
         generator.addField("boolean", "DEBUG", getDebuggable() ? "Boolean.parseBoolean(\"true\")" : "false")
-            .addField("String", "PACKAGE_NAME", "\"${getAppPackageName()}\"")
+            .addField("String", "APPLICATION_ID", "\"${getAppPackageName()}\"")
             .addField("String", "BUILD_TYPE", "\"${getBuildTypeName()}\"")
             .addField("String", "FLAVOR", "\"${getFlavorName()}\"")
             .addField("int", "VERSION_CODE", Integer.toString(getVersionCode()))
             .addField("String", "VERSION_NAME", "\"${vn}\"")
             .addItems(getItems())
+
+        // Add the legacy PACKAGE_NAME field.
+        // TODO remove prior to v1.0
+        generator.addItems(ImmutableList.of(
+                new ClassFieldImpl("String", "PACKAGE_NAME", "\"${getAppPackageName()}\"",
+                        ImmutableSet.of(Deprecated.class.getCanonicalName()),
+                        "@deprecated Use {@link #APPLICATION_ID}")))
 
         List<String> flavors = getFlavorNamesWithDimensionNames()
         int count = flavors.size()

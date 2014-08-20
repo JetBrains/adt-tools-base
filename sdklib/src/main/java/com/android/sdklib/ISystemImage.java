@@ -18,6 +18,8 @@ package com.android.sdklib;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.sdklib.devices.Abi;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 
 import java.io.File;
@@ -37,7 +39,7 @@ public interface ISystemImage extends Comparable<ISystemImage> {
          * <p/>
          * Used by both platform and add-ons.
          */
-        IN_PLATFORM_LEGACY,
+        IN_LEGACY_FOLDER,
 
         /**
          * The system image is located in a sub-directory of the platform's
@@ -46,13 +48,14 @@ public interface ISystemImage extends Comparable<ISystemImage> {
          * <p/>
          * Used by both platform and add-ons.
          */
-        IN_PLATFORM_SUBFOLDER,
+        IN_IMAGES_SUBFOLDER,
 
         /**
          * The system image is located in the new SDK's {@link SdkConstants#FD_SYSTEM_IMAGES}
          * folder. Supported as of Tools R14 and Repository XSD version 5.
          * <p/>
-         * Used <em>only</em> by both platform. This is not supported for add-ons yet.
+         * Used <em>only</em> by both platform up to Tools R22.6.
+         * Supported for add-ons as of Tools R22.8.
          */
         IN_SYSTEM_IMAGE,
     }
@@ -69,10 +72,13 @@ public interface ISystemImage extends Comparable<ISystemImage> {
     @NonNull
     public IdDisplay getTag();
 
+    /** Returns the vendor for an add-on's system image, or null for a platform system-image. */
+    @Nullable
+    public IdDisplay getAddonVendor();
+
     /**
-     * Returns the ABI type. For example, one of {@link SdkConstants#ABI_ARMEABI},
-     * {@link SdkConstants#ABI_ARMEABI_V7A}, {@link SdkConstants#ABI_INTEL_ATOM} or
-     * {@link SdkConstants#ABI_MIPS}.
+     * Returns the ABI type.
+     * See {@link Abi} for a full list.
      * Cannot be null nor empty.
      */
     @NonNull

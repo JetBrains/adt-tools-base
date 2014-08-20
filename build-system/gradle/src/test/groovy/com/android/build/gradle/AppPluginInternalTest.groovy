@@ -18,12 +18,11 @@ package com.android.build.gradle
 
 import com.android.build.gradle.internal.BadPluginException
 import com.android.build.gradle.internal.test.BaseTest
-import com.android.build.gradle.internal.test.PluginHolder
 import com.android.build.gradle.internal.variant.BaseVariantData
-import com.android.builder.BuilderConstants
-import com.android.builder.DefaultBuildType
+import com.android.builder.core.BuilderConstants
+import com.android.builder.core.DefaultBuildType
 import com.android.builder.model.SigningConfig
-import com.android.builder.signing.KeystoreHelper
+import com.android.ide.common.signing.KeystoreHelper
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 
@@ -35,21 +34,20 @@ public class AppPluginInternalTest extends BaseTest {
     @Override
     protected void setUp() throws Exception {
         BasePlugin.TEST_SDK_DIR = new File("foo")
-        AppPlugin.pluginHolder = new PluginHolder();
     }
 
     public void testBasic() {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
             buildToolsVersion "19"
         }
 
-        AppPlugin plugin = AppPlugin.pluginHolder.plugin
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
         plugin.createAndroidTasks(true /*force*/)
 
         assertEquals(2, plugin.variantManager.buildTypes.size())
@@ -70,7 +68,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -95,12 +93,14 @@ public class AppPluginInternalTest extends BaseTest {
             }
         }
 
-        AppPlugin plugin = AppPlugin.pluginHolder.plugin
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
         plugin.createAndroidTasks(true /*force*/)
 
         assertEquals(1, plugin.extension.defaultConfig.versionCode)
-        assertEquals(2, plugin.extension.defaultConfig.minSdkVersion)
-        assertEquals(3, plugin.extension.defaultConfig.targetSdkVersion)
+        assertNotNull(plugin.extension.defaultConfig.minSdkVersion)
+        assertEquals(2, plugin.extension.defaultConfig.minSdkVersion.apiLevel)
+        assertNotNull(plugin.extension.defaultConfig.targetSdkVersion)
+        assertEquals(3, plugin.extension.defaultConfig.targetSdkVersion.apiLevel)
         assertEquals("2.0", plugin.extension.defaultConfig.versionName)
 
         assertEquals(new File(project.projectDir, "aa"),
@@ -114,7 +114,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -128,7 +128,7 @@ public class AppPluginInternalTest extends BaseTest {
             }
         }
 
-        AppPlugin plugin = AppPlugin.pluginHolder.plugin
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
         plugin.createAndroidTasks(true /*force*/)
 
         assertEquals(3, plugin.variantManager.buildTypes.size())
@@ -151,7 +151,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -167,7 +167,7 @@ public class AppPluginInternalTest extends BaseTest {
             }
         }
 
-        AppPlugin plugin = AppPlugin.pluginHolder.plugin
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
         plugin.createAndroidTasks(true /*force*/)
 
         assertEquals(2, plugin.variantManager.productFlavors.size())
@@ -188,7 +188,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -216,7 +216,7 @@ public class AppPluginInternalTest extends BaseTest {
             }
         }
 
-        AppPlugin plugin = AppPlugin.pluginHolder.plugin
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
         plugin.createAndroidTasks(true /*force*/)
 
         assertEquals(5, plugin.variantManager.productFlavors.size())
@@ -253,7 +253,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -307,7 +307,7 @@ public class AppPluginInternalTest extends BaseTest {
 
         }
 
-        AppPlugin plugin = AppPlugin.pluginHolder.plugin
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
         plugin.createAndroidTasks(true /*force*/)
 
         List<BaseVariantData> variants = plugin.variantDataList
@@ -354,7 +354,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -367,7 +367,7 @@ public class AppPluginInternalTest extends BaseTest {
             }
         }
 
-        AppPlugin plugin = AppPlugin.pluginHolder.plugin
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         // check that the debug buildType has the updated debug signing config.
         DefaultBuildType buildType = plugin.variantManager.buildTypes.get(BuilderConstants.DEBUG).buildType
@@ -380,7 +380,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
 
         project.android {
             compileSdkVersion 15
@@ -390,7 +390,7 @@ public class AppPluginInternalTest extends BaseTest {
             }
         }
 
-        AppPlugin plugin = AppPlugin.pluginHolder.plugin
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         SigningConfig debugSC = plugin.variantManager.signingConfigs.get(BuilderConstants.DEBUG)
         SigningConfig fooSC = plugin.variantManager.signingConfigs.get("foo")
@@ -407,7 +407,7 @@ public class AppPluginInternalTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        project.apply plugin: 'android'
+        project.apply plugin: 'com.android.application'
         project.apply plugin: 'java'
 
         project.android {
@@ -415,7 +415,7 @@ public class AppPluginInternalTest extends BaseTest {
             buildToolsVersion "19"
         }
 
-        AppPlugin plugin = AppPlugin.pluginHolder.plugin
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
         Exception recordedException = null;
         try {
             plugin.createAndroidTasks(true /*force*/)

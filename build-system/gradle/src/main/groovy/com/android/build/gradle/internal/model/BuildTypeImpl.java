@@ -25,6 +25,7 @@ import com.android.builder.model.NdkConfig;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,10 +42,12 @@ class BuildTypeImpl implements BuildType, Serializable {
     private boolean jniDebugBuild;
     private boolean renderscriptDebugBuild;
     private int renderscriptOptimLevel;
-    private String packageNameSuffix;
+    private String applicationIdSuffix;
     private String versionNameSuffix;
     private boolean runProguard;
     private boolean zipAlign;
+    private boolean embedMicroApp;
+    private Map<String, String> mManifestPlaceholders;
 
     @NonNull
     static BuildTypeImpl cloneBuildType(BuildType buildType) {
@@ -55,10 +58,12 @@ class BuildTypeImpl implements BuildType, Serializable {
         clonedBuildType.jniDebugBuild = buildType.isJniDebugBuild();
         clonedBuildType.renderscriptDebugBuild = buildType.isRenderscriptDebugBuild();
         clonedBuildType.renderscriptOptimLevel = buildType.getRenderscriptOptimLevel();
-        clonedBuildType.packageNameSuffix = buildType.getPackageNameSuffix();
+        clonedBuildType.applicationIdSuffix = buildType.getApplicationIdSuffix();
         clonedBuildType.versionNameSuffix = buildType.getVersionNameSuffix();
         clonedBuildType.runProguard = buildType.isRunProguard();
         clonedBuildType.zipAlign = buildType.isZipAlign();
+        clonedBuildType.embedMicroApp = buildType.isEmbedMicroApp();
+        clonedBuildType.mManifestPlaceholders = buildType.getManifestPlaceholders();
 
         return clonedBuildType;
     }
@@ -99,8 +104,8 @@ class BuildTypeImpl implements BuildType, Serializable {
 
     @Nullable
     @Override
-    public String getPackageNameSuffix() {
-        return packageNameSuffix;
+    public String getApplicationIdSuffix() {
+        return applicationIdSuffix;
     }
 
     @Nullable
@@ -147,5 +152,16 @@ class BuildTypeImpl implements BuildType, Serializable {
     @Nullable
     public NdkConfig getNdkConfig() {
         return null;
+    }
+
+    @Override
+    public boolean isEmbedMicroApp() {
+        return embedMicroApp;
+    }
+
+    @Override
+    @NonNull
+    public Map<String, String> getManifestPlaceholders() {
+        return mManifestPlaceholders;
     }
 }

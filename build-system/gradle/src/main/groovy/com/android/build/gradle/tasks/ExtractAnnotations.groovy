@@ -36,6 +36,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.compile.AbstractCompile
 import org.gradle.tooling.BuildException
 
@@ -90,6 +91,7 @@ class ExtractAnnotations extends AbstractCompile {
     public File classDir
 
     @Override
+    @TaskAction
     protected void compile() {
         if (!hasAndroidAnnotations()) {
             return
@@ -186,7 +188,7 @@ class ExtractAnnotations extends AbstractCompile {
         options.originalSourceLevel = options.sourceLevel;
         options.inlineJsrBytecode = true; // >= 1.5
 
-        EcjParser.parse(options, sourceUnits, jars, outputMap);
+        EcjParser.parse(options, sourceUnits, jars, outputMap, null);
 
         Collection<CompilationUnitDeclaration> parsedUnits = outputMap.values()
         parsedUnits

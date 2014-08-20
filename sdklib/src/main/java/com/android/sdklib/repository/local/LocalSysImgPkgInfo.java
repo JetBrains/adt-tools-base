@@ -17,6 +17,7 @@
 package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SystemImage;
 import com.android.sdklib.repository.MajorRevision;
@@ -40,15 +41,15 @@ public class LocalSysImgPkgInfo extends LocalPkgInfo {
 
     private final @NonNull IPkgDesc mDesc;
 
-    public LocalSysImgPkgInfo(@NonNull LocalSdk localSdk,
-                              @NonNull File localDir,
-                              @NonNull Properties sourceProps,
-                              @NonNull AndroidVersion version,
-                              @NonNull String abi,
-                              @NonNull MajorRevision revision) {
+    public LocalSysImgPkgInfo(@NonNull  LocalSdk localSdk,
+                              @NonNull  File localDir,
+                              @NonNull  Properties sourceProps,
+                              @NonNull  AndroidVersion version,
+                              @Nullable IdDisplay tag,
+                              @NonNull  String abi,
+                              @NonNull  MajorRevision revision) {
         super(localSdk, localDir, sourceProps);
-        IdDisplay tag = extractTagFromProps(sourceProps);
-        mDesc = PkgDesc.newSysImg(version, tag, abi, revision);
+        mDesc = PkgDesc.Builder.newSysImg(version, tag, abi, revision).create();
     }
 
     @NonNull

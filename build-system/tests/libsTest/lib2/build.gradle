@@ -1,8 +1,9 @@
-apply plugin: 'android-library'
+apply plugin: 'com.android.library'
 
 android {
+    resourcePrefix 'lib2_'
     compileSdkVersion 19
-    buildToolsVersion "19.0.2"
+    buildToolsVersion '19.1.0'
 
     defaultConfig {
         minSdkVersion 8

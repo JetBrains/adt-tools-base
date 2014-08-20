@@ -48,6 +48,16 @@ public class LocalSdkTest extends TestCase {
         mLS.setLocation(new File("/sdk"));
     }
 
+    public final void testLocalSdkTest_allPkgTypes() {
+        // Make sure getPkgInfo() can handle all defined package types.
+        for(PkgType type : PkgType.values()) {
+            mLS.getPkgsInfos(EnumSet.of(type));
+        }
+
+        // And do the same thing differently, using PKG_ALL
+        assertNotNull(mLS.getPkgsInfos(PkgType.PKG_ALL));
+    }
+
     public final void testLocalSdkTest_getLocation() {
         MockFileOp fop = new MockFileOp();
         LocalSdk ls = new LocalSdk(fop);
@@ -84,6 +94,8 @@ public class LocalSdkTest extends TestCase {
         assertEquals(
                 "<LocalToolPkgInfo <PkgDesc Type=tools FullRev=22.3.4 MinPlatToolsRev=18.0.0>>",
                 pi.toString());
+        assertEquals("Android SDK Tools 22.3.4", pi.getListDescription());
+        assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
 
         Package pkg = pi.getPackage();
         assertNotNull(pkg);
@@ -118,6 +130,8 @@ public class LocalSdkTest extends TestCase {
         assertEquals(null, pi.getLoadError());
         assertEquals(new FullRevision(18, 19, 20), pi.getDesc().getFullRevision());
         assertEquals("<LocalPlatformToolPkgInfo <PkgDesc Type=platform_tools FullRev=18.19.20>>", pi.toString());
+        assertEquals("Android SDK Platform-Tools 18.19.20", pi.getListDescription());
+        assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
 
         Package pkg = pi.getPackage();
         assertNotNull(pkg);
@@ -125,7 +139,7 @@ public class LocalSdkTest extends TestCase {
 
     public final void testLocalSdkTest_getPkgInfo_Docs() {
         // check empty
-        assertNull(mLS.getPkgInfo(PkgType.PKG_DOCS));
+        assertNull(mLS.getPkgInfo(PkgType.PKG_DOC));
 
         // setup fake files
         mLS.clearLocalPkg(PkgType.PKG_ALL);
@@ -140,14 +154,16 @@ public class LocalSdkTest extends TestCase {
                 "Pkg.SourceUrl=https\\://example.com/repository-8.xml");
         mFOp.recordExistingFile("/sdk/docs/index.html", "placeholder");
 
-        LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_DOCS);
+        LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_DOC);
         assertNotNull(pi);
         assertTrue(pi instanceof LocalDocPkgInfo);
         assertEquals(new File("/sdk/docs"), pi.getLocalDir());
         assertSame(mLS, pi.getLocalSdk());
         assertEquals(null, pi.getLoadError());
         assertEquals(new MajorRevision(2), pi.getDesc().getMajorRevision());
-        assertEquals("<LocalDocPkgInfo <PkgDesc Type=docs Android=API 18 MajorRev=2>>", pi.toString());
+        assertEquals("<LocalDocPkgInfo <PkgDesc Type=doc Android=API 18 MajorRev=2>>", pi.toString());
+        assertEquals("Documentation for Android SDK 18, rev 2", pi.getListDescription());
+        assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
 
         Package pkg = pi.getPackage();
         assertNotNull(pkg);
@@ -246,6 +262,7 @@ public class LocalSdkTest extends TestCase {
         assertSame(mLS, pi.getLocalSdk());
         assertEquals(null, pi.getLoadError());
         assertEquals(new FullRevision(18, 1, 2), pi.getDesc().getFullRevision());
+        assertEquals("Android SDK Build-Tools 18.1.2", pi.getListDescription());
 
         Package pkg = pi.getPackage();
         assertNotNull(pkg);
@@ -260,8 +277,8 @@ public class LocalSdkTest extends TestCase {
 
     public final void testLocalSdkTest_getPkgInfo_Extra() {
         // check empty
-        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_EXTRAS)));
-        assertNull(mLS.getPkgInfo(PkgType.PKG_EXTRAS, "vendor1", "path1"));
+        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_EXTRA)));
+        assertNull(mLS.getPkgInfo(PkgType.PKG_EXTRA, "vendor1", "path1"));
         assertNull(mLS.getExtra("vendor1", "path1"));
 
         // setup fake files
@@ -277,7 +294,7 @@ public class LocalSdkTest extends TestCase {
         mFOp.recordExistingFolder("/sdk/extras/vendor3/path3");
         mFOp.recordExistingFile("/sdk/extras/vendor1/path1/source.properties",
                 "Extra.NameDisplay=Android Support Library\n" +
-                "Extra.VendorDisplay=Vendor\n" +
+                "Extra.VendorDisplay=First Vendor\n" +
                 "Extra.VendorId=vendor1\n" +
                 "Extra.Path=path1\n" +
                 "Extra.OldPaths=compatibility\n" +
@@ -286,7 +303,7 @@ public class LocalSdkTest extends TestCase {
                 "Archive.Arch=ANY\n");
         mFOp.recordExistingFile("/sdk/extras/vendor1/path2/source.properties",
                 "Extra.NameDisplay=Some Extra\n" +
-                "Extra.VendorDisplay=Some Vendor\n" +
+                "Extra.VendorDisplay=First Vendor\n" +
                 "Extra.VendorId=vendor1\n" +
                 "Extra.Path=path2\n" +
                 "Archive.Os=ANY\n" +
@@ -302,15 +319,21 @@ public class LocalSdkTest extends TestCase {
                 "Pkg.Revision=21\n" +
                 "Archive.Arch=ANY\n");
 
-        LocalPkgInfo pi1 = mLS.getPkgInfo(PkgType.PKG_EXTRAS, "vendor1", "path1");
+        LocalPkgInfo pi1 = mLS.getPkgInfo(PkgType.PKG_EXTRA, "vendor1", "path1");
         assertNotNull(pi1);
         assertTrue(pi1 instanceof LocalExtraPkgInfo);
-        assertEquals("vendor1",       ((LocalExtraPkgInfo)pi1).getDesc().getVendorId());
-        assertEquals("path1",         ((LocalExtraPkgInfo)pi1).getDesc().getPath());
+        assertEquals(
+                "vendor1 [First Vendor]",
+                ((LocalExtraPkgInfo)pi1).getDesc().getVendor().toString());
+        assertEquals(
+                "path1",
+                ((LocalExtraPkgInfo)pi1).getDesc().getPath());
         assertEquals(new File("/sdk/extras/vendor1/path1"), pi1.getLocalDir());
         assertSame(mLS, pi1.getLocalSdk());
         assertEquals(null, pi1.getLoadError());
         assertEquals(new FullRevision(11), pi1.getDesc().getFullRevision());
+        assertEquals("Android Support Library, rev 11", pi1.getListDescription());
+        assertSame(pi1, mLS.getPkgInfo(pi1.getDesc()));
 
         Package pkg = pi1.getPackage();
         assertNotNull(pkg);
@@ -320,16 +343,16 @@ public class LocalSdkTest extends TestCase {
 
         // -- get all extras and iterate, sorted by revision.
 
-        assertEquals("[<LocalExtraPkgInfo <PkgDesc Type=extras Vendor=vendor1 Path=path1 FullRev=11.0.0>>, " +
-                      "<LocalExtraPkgInfo <PkgDesc Type=extras Vendor=vendor1 Path=path2 FullRev=21.0.0>>, " +
-                      "<LocalExtraPkgInfo <PkgDesc Type=extras Vendor=vendor2 Path=path1 FullRev=21.0.0>>]",
-                     Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_EXTRAS)));
+        assertEquals("[<LocalExtraPkgInfo <PkgDesc Type=extra Vendor=vendor1 [First Vendor] Path=path1 FullRev=11.0.0>>, " +
+                      "<LocalExtraPkgInfo <PkgDesc Type=extra Vendor=vendor1 [First Vendor] Path=path2 FullRev=21.0.0>>, " +
+                      "<LocalExtraPkgInfo <PkgDesc Type=extra Vendor=vendor2 [Another Vendor] Path=path1 FullRev=21.0.0>>]",
+                     Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_EXTRA)));
     }
 
     public final void testLocalSdkTest_getPkgInfo_Sources() {
         // check empty
-        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SOURCES)));
-        assertNull(mLS.getPkgInfo(PkgType.PKG_SOURCES, new AndroidVersion(18, null)));
+        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SOURCE)));
+        assertNull(mLS.getPkgInfo(PkgType.PKG_SOURCE, new AndroidVersion(18, null)));
 
         // setup fake files
         mLS.clearLocalPkg(PkgType.PKG_ALL);
@@ -357,34 +380,37 @@ public class LocalSdkTest extends TestCase {
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Arch=ANY\n");
 
-        LocalPkgInfo pi18 = mLS.getPkgInfo(PkgType.PKG_SOURCES, new AndroidVersion(18, null));
+        LocalPkgInfo pi18 = mLS.getPkgInfo(PkgType.PKG_SOURCE, new AndroidVersion(18, null));
         assertNotNull(pi18);
         assertTrue(pi18 instanceof LocalSourcePkgInfo);
         assertSame(mLS, pi18.getLocalSdk());
         assertEquals(null, pi18.getLoadError());
         assertEquals(new AndroidVersion(18, null), pi18.getDesc().getAndroidVersion());
         assertEquals(new MajorRevision(2), pi18.getDesc().getMajorRevision());
+        assertEquals("Sources for Android 18, rev 2", pi18.getListDescription());
 
         Package pkg = pi18.getPackage();
         assertNotNull(pkg);
 
-        LocalPkgInfo pi1 = mLS.getPkgInfo(PkgType.PKG_SOURCES, new AndroidVersion(3, "CUPCAKE"));
+        LocalPkgInfo pi1 = mLS.getPkgInfo(PkgType.PKG_SOURCE, new AndroidVersion(3, "CUPCAKE"));
         assertNotNull(pi1);
         assertEquals(new AndroidVersion(3, "CUPCAKE"), pi1.getDesc().getAndroidVersion());
         assertEquals(new MajorRevision(1), pi1.getDesc().getMajorRevision());
+        assertEquals("Sources for Android CUPCAKE", pi1.getListDescription());
+        assertSame(pi1, mLS.getPkgInfo(pi1.getDesc()));
 
         // -- get all extras and iterate, sorted by revision.
 
-        assertEquals("[<LocalSourcePkgInfo <PkgDesc Type=sources Android=API 3, CUPCAKE preview MajorRev=1>>, " +
-                      "<LocalSourcePkgInfo <PkgDesc Type=sources Android=API 18 MajorRev=2>>, " +
-                      "<LocalSourcePkgInfo <PkgDesc Type=sources Android=API 42 MajorRev=3>>]",
-                     Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SOURCES)));
+        assertEquals("[<LocalSourcePkgInfo <PkgDesc Type=source Android=API 3, CUPCAKE preview MajorRev=1>>, " +
+                      "<LocalSourcePkgInfo <PkgDesc Type=source Android=API 18 MajorRev=2>>, " +
+                      "<LocalSourcePkgInfo <PkgDesc Type=source Android=API 42 MajorRev=3>>]",
+                     Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SOURCE)));
     }
 
     public final void testLocalSdkTest_getPkgInfo_Samples() {
         // check empty
-        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SAMPLES)));
-        assertNull(mLS.getPkgInfo(PkgType.PKG_SAMPLES, new AndroidVersion(18, null)));
+        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SAMPLE)));
+        assertNull(mLS.getPkgInfo(PkgType.PKG_SAMPLE, new AndroidVersion(18, null)));
 
         // setup fake files
         mLS.clearLocalPkg(PkgType.PKG_ALL);
@@ -404,13 +430,15 @@ public class LocalSdkTest extends TestCase {
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Arch=ANY\n");
 
-        LocalPkgInfo pi18 = mLS.getPkgInfo(PkgType.PKG_SAMPLES, new AndroidVersion(18, null));
+        LocalPkgInfo pi18 = mLS.getPkgInfo(PkgType.PKG_SAMPLE, new AndroidVersion(18, null));
         assertNotNull(pi18);
         assertTrue(pi18 instanceof LocalSamplePkgInfo);
         assertSame(mLS, pi18.getLocalSdk());
         assertEquals(null, pi18.getLoadError());
         assertEquals(new AndroidVersion(18, null), pi18.getDesc().getAndroidVersion());
         assertEquals(new MajorRevision(2), pi18.getDesc().getMajorRevision());
+        assertEquals("Samples for Android 18, rev 2", pi18.getListDescription());
+        assertSame(pi18, mLS.getPkgInfo(pi18.getDesc()));
 
         Package pkg = pi18.getPackage();
         assertNotNull(pkg);
@@ -418,14 +446,14 @@ public class LocalSdkTest extends TestCase {
         // -- get all extras and iterate, sorted by revision.
 
         assertEquals(
-                "[<LocalSamplePkgInfo <PkgDesc Type=samples Android=API 18 MajorRev=2 MinToolsRev=0.0.0>>, " +
-                 "<LocalSamplePkgInfo <PkgDesc Type=samples Android=API 42 MajorRev=3 MinToolsRev=0.0.0>>]",
-                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SAMPLES)));
+                "[<LocalSamplePkgInfo <PkgDesc Type=sample Android=API 18 MajorRev=2 MinToolsRev=0.0.0>>, " +
+                 "<LocalSamplePkgInfo <PkgDesc Type=sample Android=API 42 MajorRev=3 MinToolsRev=0.0.0>>]",
+                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SAMPLE)));
     }
 
     public final void testLocalSdkTest_getPkgInfo_SysImages() {
         // check empty
-        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGES)));
+        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGE)));
 
         // setup fake files
         mLS.clearLocalPkg(PkgType.PKG_ALL);
@@ -513,23 +541,25 @@ public class LocalSdkTest extends TestCase {
                 "part {\n" +
                 "}\n");
 
-        assertEquals("[<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 18 Tag=default [Default] Path=armeabi-v7a MajorRev=1>>, " +
-                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 18 Tag=default [Default] Path=x86 MajorRev=2>>, " +
-                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 42 Tag=default [Default] Path=armeabi-v7a MajorRev=6>>, " +
+        assertEquals("[<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 18 Tag=default [Default] Path=armeabi-v7a MajorRev=1>>, " +
+                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 18 Tag=default [Default] Path=x86 MajorRev=2>>, " +
+                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 Tag=default [Default] Path=armeabi-v7a MajorRev=6>>, " +
                       // Tag=default Path=armeabi-v7a MajorRev=5 is overriden by the MajorRev=6 above
-                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 42 Tag=default [Default] Path=mips MajorRev=4>>, " +
-                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 42 Tag=default [Default] Path=x86 MajorRev=3>>, " +
-                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 42 Tag=tag-1 [My Tag 1] Path=x86 MajorRev=7>>, " +
-                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 42 Tag=tag-2 [My Tag 2] Path=mips MajorRev=8>>]",
-                     Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGES)));
+                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 Tag=default [Default] Path=mips MajorRev=4>>, " +
+                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 Tag=default [Default] Path=x86 MajorRev=3>>, " +
+                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 Tag=tag-1 [My Tag 1] Path=x86 MajorRev=7>>, " +
+                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 Tag=tag-2 [My Tag 2] Path=mips MajorRev=8>>]",
+                     Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGE)));
 
-        LocalPkgInfo pi = mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGES)[0];
+        LocalPkgInfo pi = mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGE)[0];
         assertNotNull(pi);
         assertTrue(pi instanceof LocalSysImgPkgInfo);
         assertSame(mLS, pi.getLocalSdk());
         assertEquals(null, pi.getLoadError());
         assertEquals(new MajorRevision(1), pi.getDesc().getMajorRevision());
         assertEquals("armeabi-v7a", pi.getDesc().getPath());
+        assertEquals("armeabi-v7a System Image, Android 18", pi.getListDescription());
+        assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
 
         Package pkg = pi.getPackage();
         assertNull(pkg);
@@ -537,23 +567,24 @@ public class LocalSdkTest extends TestCase {
 
     public final void testLocalSdkTest_getPkgInfo_Platforms() {
         // check empty
-        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_PLATFORMS)));
+        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_PLATFORM)));
 
         // setup fake files
         mLS.clearLocalPkg(PkgType.PKG_ALL);
         recordPlatform18(mFOp);
 
         assertEquals(
-                "[<LocalPlatformPkgInfo <PkgDesc Type=platforms Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>]",
-                Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_PLATFORMS)));
+                "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>]",
+                Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_PLATFORM)));
 
-        LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_PLATFORMS, new AndroidVersion(18, null));
+        LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_PLATFORM, new AndroidVersion(18, null));
         assertNotNull(pi);
         assertTrue(pi instanceof LocalPlatformPkgInfo);
         assertSame(mLS, pi.getLocalSdk());
         assertEquals(null, pi.getLoadError());
         assertEquals(new AndroidVersion(18, null), pi.getDesc().getAndroidVersion());
         assertEquals(new MajorRevision(1), pi.getDesc().getMajorRevision());
+        assertEquals("Android SDK Platform 18", pi.getListDescription());
 
         Package pkg = pi.getPackage();
         assertNotNull(pkg);
@@ -561,7 +592,7 @@ public class LocalSdkTest extends TestCase {
         IAndroidTarget t1 = ((LocalPlatformPkgInfo)pi).getAndroidTarget();
         assertNotNull(t1);
 
-        LocalPkgInfo pi2 = mLS.getPkgInfo(PkgType.PKG_PLATFORMS, "android-18");
+        LocalPkgInfo pi2 = mLS.getPkgInfo(PkgType.PKG_PLATFORM, "android-18");
         assertSame(pi, pi2);
 
         IAndroidTarget t2 = mLS.getTargetFromHashString("android-18");
@@ -570,7 +601,7 @@ public class LocalSdkTest extends TestCase {
 
     public final void testLocalSdkTest_getPkgInfo_Platforms_SysImages_Skins() {
         // check empty
-        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGES)));
+        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGE)));
 
         // setup fake files
         mLS.clearLocalPkg(PkgType.PKG_ALL);
@@ -609,13 +640,13 @@ public class LocalSdkTest extends TestCase {
                 "}\n");
 
         assertEquals(
-                "[<LocalPlatformPkgInfo <PkgDesc Type=platforms Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>, " +
-                   "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 18 Tag=tag-1 [My Tag 1] Path=x86 MajorRev=7>>, " +
-                   "<LocalSysImgPkgInfo <PkgDesc Type=sys_images Android=API 18 Tag=tag-2 [My Tag 2] Path=mips MajorRev=8>>]",
+                "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>, " +
+                   "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 18 Tag=tag-1 [My Tag 1] Path=x86 MajorRev=7>>, " +
+                   "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 18 Tag=tag-2 [My Tag 2] Path=mips MajorRev=8>>]",
                  Arrays.toString(
-                      mLS.getPkgsInfos(EnumSet.of(PkgType.PKG_PLATFORMS, PkgType.PKG_SYS_IMAGES))));
+                      mLS.getPkgsInfos(EnumSet.of(PkgType.PKG_PLATFORM, PkgType.PKG_SYS_IMAGE))));
 
-        LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_PLATFORMS, new AndroidVersion(18, null));
+        LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_PLATFORM, new AndroidVersion(18, null));
         assertNotNull(pi);
         assertTrue(pi instanceof LocalPlatformPkgInfo);
 
@@ -640,6 +671,8 @@ public class LocalSdkTest extends TestCase {
                 "[/sdk/system-images/android-18/tag-2/mips/skins/skinA, " +
                  "/sdk/system-images/android-18/tag-2/mips/skins/skinB]",
                 sanitizePath(Arrays.toString(t.getSystemImages()[1].getSkins())));
+
+        assertEquals("Android SDK Platform 18", pi.getListDescription());
     }
 
     private String sanitizePath(String path) {
@@ -656,16 +689,18 @@ public class LocalSdkTest extends TestCase {
         mLS.clearLocalPkg(PkgType.PKG_ALL);
         recordPlatform18(mFOp);
         assertEquals(
-                "[<LocalPlatformPkgInfo <PkgDesc Type=platforms Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>]",
+                "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>]",
                 Arrays.toString(
-                    mLS.getPkgsInfos(EnumSet.of(PkgType.PKG_PLATFORMS, PkgType.PKG_SOURCES))));
+                    mLS.getPkgsInfos(EnumSet.of(PkgType.PKG_PLATFORM, PkgType.PKG_SOURCE))));
 
         // By default, IAndroidTarget returns the legacy path to a platform source,
         // whether that directory exist or not.
-        LocalPkgInfo pi1 = mLS.getPkgInfo(PkgType.PKG_PLATFORMS, new AndroidVersion(18, null));
+        LocalPkgInfo pi1 = mLS.getPkgInfo(PkgType.PKG_PLATFORM, new AndroidVersion(18, null));
         IAndroidTarget t1 = ((LocalPlatformPkgInfo)pi1).getAndroidTarget();
         assertEquals("/sdk/platforms/android-18/sources",
                      mFOp.getAgnosticAbsPath(t1.getPath(IAndroidTarget.SOURCES)));
+        assertEquals("Android SDK Platform 18", pi1.getListDescription());
+        assertSame(pi1, mLS.getPkgInfo(pi1.getDesc()));
 
         // However if a separate sources package folder is installed, it is returned instead.
         mLS.clearLocalPkg(PkgType.PKG_ALL);
@@ -678,12 +713,14 @@ public class LocalSdkTest extends TestCase {
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Arch=ANY\n");
 
-        LocalPkgInfo pi2 = mLS.getPkgInfo(PkgType.PKG_PLATFORMS, new AndroidVersion(18, null));
+        LocalPkgInfo pi2 = mLS.getPkgInfo(PkgType.PKG_PLATFORM, new AndroidVersion(18, null));
         IAndroidTarget t2 = ((LocalPlatformPkgInfo)pi2).getAndroidTarget();
-        assertEquals("[<LocalPlatformPkgInfo <PkgDesc Type=platforms Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>, " +
-                      "<LocalSourcePkgInfo <PkgDesc Type=sources Android=API 18 MajorRev=2>>]",
+        assertEquals("[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>, " +
+                      "<LocalSourcePkgInfo <PkgDesc Type=source Android=API 18 MajorRev=2>>]",
                  Arrays.toString(mLS.getPkgsInfos(
-                         EnumSet.of(PkgType.PKG_PLATFORMS, PkgType.PKG_SOURCES))));
+                         EnumSet.of(PkgType.PKG_PLATFORM, PkgType.PKG_SOURCE))));
+        assertEquals("Android SDK Platform 18", pi2.getListDescription());
+        assertSame(pi2, mLS.getPkgInfo(pi2.getDesc()));
 
         assertEquals("/sdk/sources/android-18",
                 mFOp.getAgnosticAbsPath(t2.getPath(IAndroidTarget.SOURCES)));
@@ -691,7 +728,7 @@ public class LocalSdkTest extends TestCase {
 
     public final void testLocalSdkTest_getPkgInfo_Addons() {
         // check empty
-        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDONS)));
+        assertEquals("[]", Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON)));
 
         // setup fake files
         mLS.clearLocalPkg(PkgType.PKG_ALL);
@@ -719,13 +756,15 @@ public class LocalSdkTest extends TestCase {
                 "com.foo.lib1=foo.jar;API for Foo\n" +
                 "com.blah.lib2=blah.jar;API for Blah\n");
 
-        assertEquals("[<LocalAddonPkgInfo <PkgDesc Type=addons Android=API 18 Vendor=Some Vendor Path=Some Vendor:Some Name:18 MajorRev=2>>]",
-                     Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDONS)));
-        assertEquals("[<LocalPlatformPkgInfo <PkgDesc Type=platforms Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>, " +
-                      "<LocalAddonPkgInfo <PkgDesc Type=addons Android=API 18 Vendor=Some Vendor Path=Some Vendor:Some Name:18 MajorRev=2>>]",
-                     Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ALL)));
+        assertEquals(
+                "[<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 MajorRev=2>>]",
+                Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON)));
+        assertEquals(
+                "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>, " +
+                 "<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 MajorRev=2>>]",
+                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ALL)));
 
-        LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_ADDONS, "Some Vendor:Some Name:18");
+        LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_ADDON, "Some Vendor:Some Name:18");
         assertNotNull(pi);
         assertTrue(pi instanceof LocalAddonPkgInfo);
         assertSame(mLS, pi.getLocalSdk());
@@ -733,6 +772,8 @@ public class LocalSdkTest extends TestCase {
         assertEquals(new AndroidVersion(18, null), pi.getDesc().getAndroidVersion());
         assertEquals(new MajorRevision(2), pi.getDesc().getMajorRevision());
         assertEquals("Some Vendor:Some Name:18", pi.getDesc().getPath());
+        assertEquals("Some Name, Android 18, rev 2", pi.getListDescription());
+        assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
 
         Package pkg = pi.getPackage();
         assertNotNull(pkg);

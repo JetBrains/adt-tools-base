@@ -24,10 +24,10 @@ import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
-import com.android.build.gradle.tasks.ProcessManifest;
+import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.builder.DefaultBuildType;
-import com.android.builder.DefaultProductFlavor;
+import com.android.builder.core.DefaultBuildType;
+import com.android.builder.core.DefaultProductFlavor;
 import com.android.builder.model.SourceProvider;
 
 import org.gradle.api.Task;
@@ -38,7 +38,6 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
-import proguard.gradle.ProGuardTask;
 
 /**
  * A Build variant and all its public data. This is the base class for items common to apps,
@@ -85,20 +84,27 @@ public interface BaseVariant {
     String getFlavorName();
 
     /**
-     * Returns the {@link com.android.builder.DefaultBuildType} for this build variant.
+     * Returns the variant outputs. There should always be at least one output.
+     * @return a non-null list of variants.
+     */
+    @NonNull
+    List<BaseVariantOutput> getOutputs();
+
+    /**
+     * Returns the {@link com.android.builder.core.DefaultBuildType} for this build variant.
      */
     @NonNull
     DefaultBuildType getBuildType();
 
     /**
-     * Returns a {@link com.android.builder.DefaultProductFlavor} that represents the merging
+     * Returns a {@link com.android.builder.core.DefaultProductFlavor} that represents the merging
      * of the default config and the flavors of this build variant.
      */
     @NonNull
     DefaultProductFlavor getMergedFlavor();
 
     /**
-     * Returns the list of {@link com.android.builder.DefaultProductFlavor} for this build variant.
+     * Returns the list of {@link com.android.builder.core.DefaultProductFlavor} for this build variant.
      *
      * This is always non-null but could be empty.
      */
@@ -115,21 +121,10 @@ public interface BaseVariant {
     List<SourceProvider> getSourceSets();
 
     /**
-     * Returns the output file for this build variants. Depending on the configuration, this could
-     * be an apk (regular and test project) or a bundled library (library project).
-     *
-     * If it's an apk, it could be signed, or not; zip-aligned, or not.
+     * Returns the applicationId of the variant.
      */
     @NonNull
-    File getOutputFile();
-
-    void setOutputFile(@NonNull File outputFile);
-
-    /**
-     * Returns the package name of the variant.
-     */
-    @NonNull
-    String getPackageName();
+    String getApplicationId();
 
     /**
      * Returns the pre-build anchor task
@@ -142,12 +137,6 @@ public interface BaseVariant {
      */
     @NonNull
     Task getCheckManifest();
-
-    /**
-     * Returns the Manifest processing task.
-     */
-    @NonNull
-    ProcessManifest getProcessManifest();
 
     /**
      * Returns the AIDL compilation task.
@@ -174,12 +163,6 @@ public interface BaseVariant {
     MergeAssets getMergeAssets();
 
     /**
-     * Returns the Android Resources processing task.
-     */
-    @NonNull
-    ProcessAndroidResources getProcessResources();
-
-    /**
      * Returns the BuildConfig generation task.
      */
     @Nullable
@@ -198,10 +181,10 @@ public interface BaseVariant {
     NdkCompile getNdkCompile();
 
     /**
-     * Returns the Proguard task. This can be null if proguard is not enabled.
+     * Returns the obfuscation task. This can be null if obfuscation is not enabled.
      */
     @Nullable
-    ProGuardTask getProguard();
+    Task getObfuscation();
 
     /**
      * Returns the Java resource processing task.
@@ -210,7 +193,7 @@ public interface BaseVariant {
     Copy getProcessJavaResources();
 
     /**
-     * Returns the assemble task.
+     * Returns the assemble task for all this variant's output
      */
     @Nullable
     Task getAssemble();
@@ -240,7 +223,7 @@ public interface BaseVariant {
     /**
      * Adds to the variant a task that generates Java source code.
      *
-     * This will make the compileJava task depend on this task and add the
+     * This will make the generate[Variant]Sources task depend on this task and add the
      * new source folders as compilation inputs.
      *
      * The new source folders are also added to the model.
@@ -253,7 +236,7 @@ public interface BaseVariant {
     /**
      * Adds to the variant a task that generates Java source code.
      *
-     * This will make the compileJava task depend on this task and add the
+     * This will make the generate[Variant]Sources task depend on this task and add the
      * new source folders as compilation inputs.
      *
      * The new source folders are also added to the model.
@@ -262,4 +245,41 @@ public interface BaseVariant {
      * @param sourceFolders the source folders where the generated source code is.
      */
     void registerJavaGeneratingTask(@NonNull Task task, @NonNull Collection<File> sourceFolders);
+
+    // ---- Deprecated, will be removed in 1.0
+    //STOPSHIP
+
+    /**
+     * @deprecated Use getApplicationId()
+     */
+    @NonNull
+    @Deprecated
+    String getPackageName();
+
+    /**
+     * @deprecated use version on the variant's outputs.
+     */
+    @NonNull
+    @Deprecated
+    File getOutputFile();
+
+    /**
+     * @deprecated use version on the variant's outputs.
+     */
+    @Deprecated
+    void setOutputFile(@NonNull File outputFile);
+
+    /**
+     * @deprecated use version on the variant's outputs.
+     */
+    @NonNull
+    @Deprecated
+    ProcessAndroidResources getProcessResources();
+
+    /**
+     * @deprecated use version on the variant's outputs.
+     */
+    @NonNull
+    @Deprecated
+    ManifestProcessorTask getProcessManifest();
 }

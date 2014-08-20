@@ -9,6 +9,7 @@
     <dependency name="android-support-v4" revision="8" />
 
     <category value="Google" />
+    <formfactor value="Mobile" />
 
     <parameter
         id="activityClass"

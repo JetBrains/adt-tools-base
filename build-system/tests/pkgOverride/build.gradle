@@ -1,18 +1,18 @@
 buildscript {
     repositories {
-        maven { url '../../../../../out/host/gradle/repo' }
+        maven { url '../../../../../out/repo' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.10.0-SNAPSHOT'
+        classpath 'com.android.tools.build:gradle:0.13.0'
     }
 }
-apply plugin: 'android'
+apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "19.0.2"
+    buildToolsVersion '19.1.0'
 
     defaultConfig {
-        packageName "com.android.tests.basic.foo"
+        applicationId "com.android.tests.basic.foo"
     }
 }

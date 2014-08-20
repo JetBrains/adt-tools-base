@@ -39,7 +39,7 @@ public interface BaseArtifact {
     String getJavaCompileTaskName();
 
     /**
-     * Returns the name of the task used to generate the artifact.
+     * Returns the name of the task used to generate the artifact output(s).
      *
      * @return the name of the task.
      */

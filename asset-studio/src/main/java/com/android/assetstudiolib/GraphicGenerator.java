@@ -21,19 +21,28 @@ import com.android.utils.SdkUtils;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
 
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.JarURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.ProtectionDomain;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import javax.imageio.ImageIO;
 
 /**
  * The base Generator class.
@@ -196,7 +205,6 @@ public abstract class GraphicGenerator {
      * @return the image, or null
      * @throws IOException if an unexpected I/O error occurs
      */
-    @SuppressWarnings("resource") // Eclipse doesn't know about Closeables#closeQuietly yet
     public static BufferedImage getStencilImage(String relativePath) throws IOException {
         InputStream is = GraphicGenerator.class.getResourceAsStream(relativePath);
         if (is == null) {
@@ -205,10 +213,7 @@ public abstract class GraphicGenerator {
         try {
             return ImageIO.read(is);
         } finally {
-          try {
-            Closeables.close(is, true);
-          } catch (IOException ignored) {
-          }
+            Closeables.close(is, true /* swallowIOException */);
         }
     }
 
@@ -220,17 +225,13 @@ public abstract class GraphicGenerator {
      * @return the icon image
      * @throws IOException if the image cannot be loaded
      */
-    @SuppressWarnings("resource") // Eclipse doesn't know about Closeables#closeQuietly yet
     public static BufferedImage getClipartIcon(String name) throws IOException {
         InputStream is = GraphicGenerator.class.getResourceAsStream(
                 "/images/clipart/small/" + name);
         try {
             return ImageIO.read(is);
         } finally {
-          try {
-            Closeables.close(is, true);
-          } catch (IOException ignored) {
-          }
+            Closeables.close(is, true /* swallowIOException */);
         }
     }
 
@@ -242,17 +243,13 @@ public abstract class GraphicGenerator {
      * @return the clip art image
      * @throws IOException if the image cannot be loaded
      */
-    @SuppressWarnings("resource") // Eclipse doesn't know about Closeables#closeQuietly yet
     public static BufferedImage getClipartImage(String name) throws IOException {
         InputStream is = GraphicGenerator.class.getResourceAsStream(
                 "/images/clipart/big/" + name);
         try {
             return ImageIO.read(is);
         } finally {
-          try {
-            Closeables.close(is, true);
-          } catch (IOException ignored) {
-          }
+            Closeables.close(is, true /* swallowIOException */);
         }
     }
 

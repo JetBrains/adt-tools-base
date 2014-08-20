@@ -30,6 +30,8 @@ import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
 
+import junit.framework.TestCase;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -39,8 +41,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
-
-import junit.framework.TestCase;
 
 @SuppressWarnings("javadoc")
 public class LintCliXmlParserTest extends TestCase {

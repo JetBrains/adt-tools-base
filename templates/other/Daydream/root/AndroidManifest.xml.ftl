@@ -4,12 +4,12 @@
 
 <#if configurable>
         <activity
-            android:name="${packageName}.${settingsClassName}" />
+            android:name="${relativePackage}.${settingsClassName}" />
 </#if>
 
         <!-- This service is only used on devices with API v17+ -->
         <service
-            android:name="${packageName}.${className}"
+            android:name="${relativePackage}.${className}"
             android:exported="true" >
             <intent-filter>
                 <action android:name="android.service.dreams.DreamService" />

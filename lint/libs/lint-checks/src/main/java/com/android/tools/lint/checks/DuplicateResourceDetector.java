@@ -207,9 +207,15 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
         }
 
         String name = attribute.getValue();
+        // AAPT will flatten the namespace, turning dots, dashes and colons into _
+        String originalName = name;
+        name = name.replace('.', '_').replace('-', '_').replace(':', '_');
+
         if (names.contains(name)) {
-            String message = String.format("%1$s has already been defined in this folder",
-                    name);
+            String message = String.format("%1$s has already been defined in this folder", name);
+            if (!name.equals(originalName)) {
+                message += " (" + name + " is equivalent to " + originalName + ")";
+            }
             Location location = context.getLocation(attribute);
             List<Pair<String, Handle>> list = mLocations.get(type);
             for (Pair<String, Handle> pair : list) {
@@ -274,5 +280,13 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
         }
 
         return true;
+    }
+
+    /**
+     * Returns the resource type expected for a {@link #TYPE_MISMATCH} error reported by
+     * this lint detector. Intended for IDE quickfix implementations.
+     */
+    public static String getExpectedType(@NonNull String errorMessage) {
+        return LintUtils.findSubstring(errorMessage, "value of type @", "/");
     }
 }

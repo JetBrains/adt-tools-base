@@ -17,6 +17,7 @@
 package com.android.manifmerger;
 
 import com.android.sdklib.mock.MockLog;
+import com.google.common.base.Optional;
 
 import junit.framework.TestCase;
 
@@ -174,6 +175,77 @@ public class PreValidatorTest extends TestCase {
         assertEquals(MergingReport.Result.ERROR, validated);
         // assert the error message complains about the bad instruction usage.
         assertStringPresenceInLogRecords(mergingReport, "tools:selector=\"foo\"");
+    }
+
+    public void testNoKeyElement()
+            throws ParserConfigurationException, SAXException, IOException {
+
+        MockLog mockLog = new MockLog();
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "    <compatible-screens>\n"
+                + "        <!-- all small size screens -->\n"
+                + "        <screen android:screenSize=\"small\" android:screenDensity=\"ldpi\" />\n"
+                + "        <screen android:screenSize=\"small\" android:screenDensity=\"mdpi\" />\n"
+                + "        <screen android:screenSize=\"small\" android:screenDensity=\"xhdpi\" />\n"
+                + "        <!-- all normal size screens -->\n"
+                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"ldpi\" />\n"
+                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"hdpi\" />\n"
+                + "        <screen android:screenSize=\"normal\" android:screenDensity=\"xhdpi\" />\n"
+                + "    </compatible-screens>"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(
+                        getClass(), "testScreenMerging"), input);
+
+        MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
+        MergingReport.Result validated = PreValidator.validate(mergingReport, xmlDocument);
+        assertEquals(MergingReport.Result.SUCCESS, validated);
+    }
+
+    public void testMultipleIntentFilterWithSameKeyValue()
+            throws ParserConfigurationException, SAXException, IOException {
+        MockLog mockLog = new MockLog();
+        String input = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.lib3\">\n"
+                + "\n"
+                + "     <application>\n"
+                + "         <activity android:name=\"com.foo.bar.DeepLinkRouterActivity\" android:theme=\"@android:style/Theme.NoDisplay\">\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"myspecialdeeplinkscheme\"/>\n"
+                + "                 <data android:host=\"home\"/>\n"
+                + "             </intent-filter>\n"
+                + "             <intent-filter>\n"
+                + "                 <action android:name=\"android.intent.action.VIEW\"/>\n"
+                + "                 <category android:name=\"android.intent.category.DEFAULT\"/>\n"
+                + "                 <category android:name=\"android.intent.category.BROWSABLE\"/>\n"
+                + "                 <data android:scheme=\"https\"/>\n"
+                + "                 <data android:host=\"www.foo.com\"/>\n"
+                + "             </intent-filter>\n"
+                + "         </activity>\n"
+                + "     </application>"
+                + "\n"
+                + "</manifest>";
+
+        XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
+                new TestUtils.TestSourceLocation(
+                        getClass(), "testMultipleIntentFilterWithSameKeyValue"), input);
+
+        MergingReport.Builder mergingReport = new MergingReport.Builder(mockLog);
+        MergingReport.Result validated = PreValidator.validate(mergingReport, xmlDocument);
+        assertEquals(MergingReport.Result.SUCCESS, validated);
     }
 
     private static void assertStringPresenceInLogRecords(MergingReport.Builder mergingReport, String s) {

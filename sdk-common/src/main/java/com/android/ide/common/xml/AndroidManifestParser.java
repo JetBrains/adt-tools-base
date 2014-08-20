@@ -17,7 +17,12 @@
 package com.android.ide.common.xml;
 
 import com.android.SdkConstants;
-import com.android.ide.common.xml.ManifestData.*;
+import com.android.ide.common.xml.ManifestData.Activity;
+import com.android.ide.common.xml.ManifestData.Instrumentation;
+import com.android.ide.common.xml.ManifestData.SupportsScreens;
+import com.android.ide.common.xml.ManifestData.UsesConfiguration;
+import com.android.ide.common.xml.ManifestData.UsesFeature;
+import com.android.ide.common.xml.ManifestData.UsesLibrary;
 import com.android.io.IAbstractFile;
 import com.android.io.IAbstractFolder;
 import com.android.io.StreamException;
@@ -26,16 +31,23 @@ import com.android.resources.Navigation;
 import com.android.resources.TouchScreen;
 import com.android.xml.AndroidManifest;
 import com.google.common.io.Closeables;
-import org.xml.sax.*;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 
 public class AndroidManifestParser {
 
@@ -599,10 +611,11 @@ public class AndroidManifestParser {
             try {
                 parser.parse(new InputSource(is), manifestHandler);
             } finally {
-              try {
-                Closeables.close(is, true);
-              } catch (IOException ignored) {
-              }
+                try {
+                    Closeables.close(is, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // cannot happen
+                }
             }
 
             return data;

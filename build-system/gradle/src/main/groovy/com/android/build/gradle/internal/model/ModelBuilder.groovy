@@ -23,20 +23,26 @@ import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.dsl.LintOptionsImpl
+import com.android.build.gradle.internal.variant.ApkVariantOutputData
 import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.build.gradle.internal.variant.BaseVariantData
+import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
-import com.android.builder.DefaultProductFlavor
-import com.android.builder.VariantConfiguration
+import com.android.builder.core.DefaultProductFlavor
+import com.android.builder.core.VariantConfiguration
 import com.android.builder.model.AndroidArtifact
+import com.android.builder.model.AndroidArtifactOutput
 import com.android.builder.model.AndroidProject
+import com.android.builder.model.ApiVersion
 import com.android.builder.model.ArtifactMetaData
 import com.android.builder.model.JavaArtifact
 import com.android.builder.model.LintOptions
 import com.android.builder.model.SigningConfig
 import com.android.builder.model.SourceProvider
 import com.android.builder.model.SourceProviderContainer
+import com.android.sdklib.AndroidVersion
+import com.android.sdklib.IAndroidTarget
 import com.google.common.collect.Lists
 import org.gradle.api.Project
 import org.gradle.api.plugins.UnknownPluginException
@@ -74,15 +80,11 @@ public class ModelBuilder implements ToolingModelBuilder {
             return null
         }
 
-        // need to parse the SDK now.
-        String targetHash = basePlugin.extension.getCompileSdkVersion()
-        basePlugin.getSdkHandler().initTarget(
-                targetHash,
-                basePlugin.extension.buildToolsRevision)
-
         signingConfigs = basePlugin.extension.signingConfigs
 
-        List<String> bootClasspath = basePlugin.androidBuilder.bootClasspath
+        // get the boot classpath. This will ensure the target is configured.
+        List<String> bootClasspath = basePlugin.bootClasspath
+
         List<File> frameworkSource = Collections.emptyList();
 
         // list of extra artifacts
@@ -100,7 +102,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         DefaultAndroidProject androidProject = new DefaultAndroidProject(
                 getModelVersion(),
                 project.name,
-                targetHash,
+                basePlugin.getAndroidBuilder().getTarget().hashString(),
                 bootClasspath,
                 frameworkSource,
                 cloneSigningConfigs(signingConfigs),
@@ -109,6 +111,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 basePlugin.extension.compileOptions,
                 lintOptions,
                 project.getBuildDir(),
+                basePlugin.extension.resourcePrefix,
                 libPlugin != null)
                     .setDefaultConfig(ProductFlavorContainerImpl.createPFC(
                         basePlugin.defaultConfigData,
@@ -189,12 +192,23 @@ public class ModelBuilder implements ToolingModelBuilder {
             clonedJavaArtifacts.add(JavaArtifactImpl.clone(javaArtifact))
         }
 
+        // if the target is a codename, override the model value.
+        ApiVersion sdkVersionOverride = null
+        IAndroidTarget androidTarget = basePlugin.androidBuilder.getTargetInfo().target
+        AndroidVersion version = androidTarget.getVersion()
+        if (version.codename != null) {
+            sdkVersionOverride = ApiVersionImpl.clone(version)
+        }
+
         VariantImpl variant = new VariantImpl(
                 variantName,
                 variantData.variantConfiguration.baseName,
                 variantData.variantConfiguration.buildType.name,
                 getProductFlavorNames(variantData),
-                ProductFlavorImpl.cloneFlavor(variantData.variantConfiguration.mergedFlavor),
+                ProductFlavorImpl.cloneFlavor(
+                        variantData.variantConfiguration.mergedFlavor,
+                        sdkVersionOverride,
+                        sdkVersionOverride),
                 mainArtifact,
                 extraAndroidArtifacts,
                 clonedJavaArtifacts)
@@ -233,16 +247,36 @@ public class ModelBuilder implements ToolingModelBuilder {
         variantSourceProvider = variantSourceProvider != null ? SourceProviderImpl.cloneProvider(variantSourceProvider) : null
         multiFlavorSourceProvider = multiFlavorSourceProvider != null ? SourceProviderImpl.cloneProvider(multiFlavorSourceProvider) : null
 
+        // get the outputs
+        List<? extends BaseVariantOutputData> variantOutputs = variantData.outputs
+        List<AndroidArtifactOutput> outputs = Lists.newArrayListWithCapacity(variantOutputs.size())
+
+        for (BaseVariantOutputData variantOutputData : variantOutputs) {
+            int versionCode = (variantOutputData instanceof ApkVariantOutputData) ?
+                    ((ApkVariantOutputData) variantOutputData).versionCode :
+                    vC.mergedFlavor.versionCode
+
+            AndroidArtifactOutput output = new AndroidArtifactOutputImpl(
+                    variantOutputData.outputFile,
+                    variantOutputData.assembleTask.name,
+                    variantOutputData.manifestProcessorTask.manifestOutputFile,
+                    versionCode,
+                    variantOutputData.densityFilter,
+                    variantOutputData.abiFilter
+            );
+
+            outputs.add(output)
+        }
+
         return new AndroidArtifactImpl(
                 name,
-                variantData.assembleTask.name,
-                variantData.outputFile,
+                outputs,
+                variantData.assembleVariantTask.name,
                 vC.isSigningReady(),
                 signingConfigName,
-                vC.packageName,
+                vC.applicationId,
                 variantData.sourceGenTask.name,
                 variantData.javaCompileTask.name,
-                variantData.processManifestTask.manifestOutputFile,
                 getGeneratedSourceFolders(variantData),
                 getGeneratedResourceFolders(variantData),
                 variantData.javaCompileTask.destinationDir,
@@ -263,14 +297,18 @@ public class ModelBuilder implements ToolingModelBuilder {
     }
 
     @NonNull
-    private static List<File> getGeneratedSourceFolders(@Nullable BaseVariantData variantData) {
+    private static List<File> getGeneratedSourceFolders(
+            @Nullable BaseVariantData<? extends BaseVariantOutputData> variantData) {
         if (variantData == null) {
             return Collections.emptyList()
         }
 
         List<File> folders = Lists.newArrayList()
 
-        folders.add(variantData.processResourcesTask.sourceOutputDir)
+        // The R class is only generated by the first output.
+        BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
+        folders.add(variantOutputData.processResourcesTask.sourceOutputDir)
+
         folders.add(variantData.aidlCompileTask.sourceOutputDir)
         folders.add(variantData.generateBuildConfigTask.sourceOutputDir)
         if (!variantData.variantConfiguration.mergedFlavor.renderscriptNdkMode) {

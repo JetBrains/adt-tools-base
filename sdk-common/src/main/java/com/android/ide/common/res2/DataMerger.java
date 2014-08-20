@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.xml.XmlPrettyPrinter;
+import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
@@ -27,16 +28,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -59,6 +58,9 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     static final String FN_MERGER_XML = "merger.xml";
     private static final String NODE_MERGER = "merger";
     private static final String NODE_DATA_SET = "dataSet";
+
+    private static final String ATTR_VERSION = "version";
+    private static final String MERGE_BLOB_VERSION = "2";
 
     /**
      * All the DataSets.
@@ -281,6 +283,9 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             Document document = builder.newDocument();
 
             Node rootNode = document.createElement(NODE_MERGER);
+            // add the version code.
+            NodeUtils.addAttribute(document, rootNode, null, ATTR_VERSION, MERGE_BLOB_VERSION);
+
             document.appendChild(rootNode);
 
             for (S dataSet : mDataSets) {
@@ -335,20 +340,22 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             return false;
         }
 
-        BufferedInputStream stream = null;
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            stream = new BufferedInputStream(new FileInputStream(file));
-            InputSource is = new InputSource(stream);
-            factory.setNamespaceAware(true);
-            factory.setValidating(false);
-
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(is);
+            Document document = XmlUtils.parseUtfXmlFile(file, true /*namespaceAware*/);
 
             // get the root node
             Node rootNode = document.getDocumentElement();
             if (rootNode == null || !NODE_MERGER.equals(rootNode.getLocalName())) {
+                return false;
+            }
+
+            // get the version code.
+            String version = null;
+            Attr versionAttr = (Attr) rootNode.getAttributes().getNamedItem(ATTR_VERSION);
+            if (versionAttr != null) {
+                version = versionAttr.getValue();
+            }
+            if (!MERGE_BLOB_VERSION.equals(version)) {
                 return false;
             }
 
@@ -390,14 +397,6 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             throw new MergingException(e).setFile(file);
         } catch (SAXException e) {
             throw new MergingException(e).setFile(file);
-        } finally {
-            try {
-                if (stream != null) {
-                    stream.close();
-                }
-            } catch (IOException e) {
-                // ignore
-            }
         }
     }
 

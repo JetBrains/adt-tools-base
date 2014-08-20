@@ -18,6 +18,7 @@ package com.android.tools.lint.detector.api;
 
 import static com.android.SdkConstants.AUTO_URI;
 import static com.android.tools.lint.detector.api.Issue.convertMarkup;
+
 import junit.framework.TestCase;
 
 @SuppressWarnings("javadoc")

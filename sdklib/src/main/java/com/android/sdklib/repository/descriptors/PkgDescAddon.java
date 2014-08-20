@@ -20,98 +20,57 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.internal.repository.packages.License;
 import com.android.sdklib.repository.MajorRevision;
 
 /**
  * Implementation detail of {@link PkgDesc} for add-ons.
  * Do not use this class directly.
- * To create an instance use {@link PkgDesc#newAddon} instead.
+ * To create an instance use {@link PkgDesc.Builder#newAddon} instead.
  */
-final class PkgDescAddon extends PkgDesc {
+final class PkgDescAddon extends PkgDesc implements IPkgDescAddon {
 
-    public static final String ADDON_NAME         = "name";                 //$NON-NLS-1$
-    public static final String ADDON_VENDOR       = "vendor";               //$NON-NLS-1$
-    public static final String ADDON_API          = "api";                  //$NON-NLS-1$
-    public static final String ADDON_DESCRIPTION  = "description";          //$NON-NLS-1$
-    public static final String ADDON_LIBRARIES    = "libraries";            //$NON-NLS-1$
-    public static final String ADDON_DEFAULT_SKIN = "skin";                 //$NON-NLS-1$
-    public static final String ADDON_USB_VENDOR   = "usb-vendor";           //$NON-NLS-1$
-    public static final String ADDON_REVISION     = "revision";             //$NON-NLS-1$
-    public static final String ADDON_REVISION_OLD = "version";              //$NON-NLS-1$
-
-    private @NonNull  final AndroidVersion mVersion;
-    private @NonNull  final MajorRevision mRevision;
-    private @Nullable final String mAddonPath;
-    private @Nullable final String mAddonVendor;
-    private @Nullable final IAddonDesc mTargetHashProvider;
+    private final IdDisplay mAddonName;
 
     /**
-     * Creates an add-on pkg description where the target hash isn't determined yet.
+     * Add-on descriptor.
+     * The following attributes are mandatory:
      */
-    PkgDescAddon(@NonNull AndroidVersion version,
-                 @NonNull MajorRevision revision,
-                 @NonNull IAddonDesc targetHashProvider) {
-        mVersion = version;
-        mRevision = revision;
-        mTargetHashProvider = targetHashProvider;
-        mAddonPath = null;
-        mAddonVendor = null;
-    }
+    PkgDescAddon(@NonNull  PkgType type,
+                 @Nullable License license,
+                 @Nullable String listDisplay,
+                 @Nullable String descriptionShort,
+                 @Nullable String descriptionUrl,
+                 boolean isObsolete,
+                 @NonNull  MajorRevision majorRevision,
+                 @NonNull  AndroidVersion androidVersion,
+                 @NonNull  IdDisplay addonVendor,
+                 @NonNull  IdDisplay addonName) {
+        super(type,
+              license,
+              listDisplay,
+              descriptionShort,
+              descriptionUrl,
+              isObsolete,
+              null,     //fullRevision
+              majorRevision,
+              androidVersion,
+              AndroidTargetHash.getAddonHashString(addonVendor.getDisplay(),
+                                                   addonName.getDisplay(),
+                                                   androidVersion),
+              null,     //tag
+              addonVendor,
+              null,     //minToolsRev
+              null,     //minPlatformToolsRev
+              null,     //customIsUpdateFor
+              null);    //customPath
 
-    PkgDescAddon(@NonNull AndroidVersion version,
-                        @NonNull MajorRevision revision,
-                        @NonNull String addonVendor,
-                        @NonNull String addonName) {
-        mVersion = version;
-        mRevision = revision;
-        mAddonVendor = addonVendor;
-        mTargetHashProvider = null;
-        mAddonPath = AndroidTargetHash.getAddonHashString(addonVendor, addonName, version);
+        mAddonName = addonName;
     }
 
     @NonNull
     @Override
-    public PkgType getType() {
-        return PkgType.PKG_ADDONS;
-    }
-
-    @NonNull
-    @Override
-    public AndroidVersion getAndroidVersion() {
-        return mVersion;
-    }
-
-    @Override
-    public MajorRevision getMajorRevision() {
-        return mRevision;
-    }
-
-    @Override
-    public String getVendorId() {
-        if (mTargetHashProvider != null) {
-            return mTargetHashProvider.getVendorId();
-        }
-        return mAddonVendor;
-    }
-
-    /** The "path" of a Add-on is its Target Hash. */
-    @NonNull
-    @Override
-    public String getPath() {
-        if (mTargetHashProvider != null) {
-            return mTargetHashProvider.getTargetHash();
-        }
-        return mAddonPath;
-    }
-
-    @Override
-    public FullRevision getMinToolsRev() {
-        return null;
-    }
-
-    @Override
-    public boolean isUpdateFor(IPkgDesc existingDesc) {
-        return isGenericUpdateFor(existingDesc);
+    public IdDisplay getName() {
+        return mAddonName;
     }
 }

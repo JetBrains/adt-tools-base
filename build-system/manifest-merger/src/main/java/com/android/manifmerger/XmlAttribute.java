@@ -16,11 +16,15 @@
 
 package com.android.manifmerger;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.utils.PositionXmlParser;
+import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 
 import org.w3c.dom.Attr;
 
@@ -55,17 +59,20 @@ public class XmlAttribute extends XmlNode {
         this.mAttributeModel = attributeModel;
         if (mAttributeModel != null && mAttributeModel.isPackageDependent()) {
             String value = mXml.getValue();
-            String pkg = mOwnerElement.getDocument().getPackageName();
-            // We know it's a shortened FQCN if it starts with a dot
-            // or does not contain any dot.
-            if (value != null && !value.isEmpty() &&
-                    (value.indexOf('.') == -1 || value.charAt(0) == '.')) {
-                if (value.charAt(0) == '.') {
-                    value = pkg + value;
-                } else {
-                    value = pkg + '.' + value;
+            // placeholders are never expanded.
+            if (!PlaceholderHandler.isPlaceHolder(value)) {
+                String pkg = mOwnerElement.getDocument().getPackageName();
+                // We know it's a shortened FQCN if it starts with a dot
+                // or does not contain any dot.
+                if (value != null && !value.isEmpty() &&
+                        (value.indexOf('.') == -1 || value.charAt(0) == '.')) {
+                    if (value.charAt(0) == '.') {
+                        value = pkg + value;
+                    } else {
+                        value = pkg + '.' + value;
+                    }
+                    mXml.setValue(value);
                 }
-                mXml.setValue(value);
             }
         }
     }
@@ -92,9 +99,11 @@ public class XmlAttribute extends XmlNode {
     @Override
     public NodeKey getId() {
         // (Id of the parent element)@(my name)
-        return new NodeKey(mOwnerElement.getId() + "@" + mXml.getLocalName());
+        String myName = mXml.getNamespaceURI() == null ? mXml.getName() : mXml.getLocalName();
+        return new NodeKey(mOwnerElement.getId() + "@" + myName);
     }
 
+    @NonNull
     @Override
     public PositionXmlParser.Position getPosition() {
         return mOwnerElement.getDocument().getNodePosition(this);
@@ -173,6 +182,14 @@ public class XmlAttribute extends XmlNode {
             XmlAttribute higherPriority,
             AttributeOperationType operationType) {
 
+        // handles tools: attribute separately.
+
+        if (getXml().getNamespaceURI() != null
+                && getXml().getNamespaceURI().equals(SdkConstants.TOOLS_URI)) {
+            handleBothToolsAttributePresent(higherPriority);
+            return;
+        }
+
         // the attribute is present on both elements, there are 2 possibilities :
         // 1. tools:replace was specified, replace the value.
         // 2. nothing was specified, the values should be equal or this is an error.
@@ -199,6 +216,26 @@ public class XmlAttribute extends XmlNode {
         if (!getValue().equals(higherPriority.getValue())) {
             addConflictingValueMessage(report, higherPriority);
         }
+    }
+
+    /**
+     * Handles tools: namespace attributes presence in both documents.
+     * @param higherPriority the higherPriority attribute
+     */
+    private void handleBothToolsAttributePresent(
+            XmlAttribute higherPriority) {
+
+        // do not merge tools:node attributes, the higher priority one wins.
+        if (getName().getLocalName().equals(NodeOperationType.NODE_LOCAL_NAME)) {
+            return;
+        }
+
+        // everything else should be merged, duplicates should be eliminated.
+        Splitter splitter = Splitter.on(',');
+        ImmutableSet.Builder<String> targetValues = ImmutableSet.builder();
+        targetValues.addAll(splitter.split(higherPriority.getValue()));
+        targetValues.addAll(splitter.split(getValue()));
+        higherPriority.getXml().setValue(Joiner.on(',').join(targetValues.build()));
     }
 
     /**
@@ -306,7 +343,7 @@ public class XmlAttribute extends XmlNode {
                         : "(unknown)",
                 printPosition(),
                 getValue(),
-                mXml.getLocalName(),
+                mXml.getName(),
                 getOwnerElement().getType().toXmlName(),
                 higherPriority.getOwnerElement().printPosition(true)
         );

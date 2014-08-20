@@ -17,6 +17,7 @@
 package com.android.builder.testing;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
 import com.android.ddmlib.AdbCommandRejectedException;
@@ -107,11 +108,11 @@ public class ConnectedDevice extends DeviceConnector {
             iDevice.pullFile(remote, local);
 
         } catch (TimeoutException e) {
-            throw new IOException(e);
+            throw new IOException(String.format("Failed to pull %s from device", remote), e);
         } catch (AdbCommandRejectedException e) {
-            throw new IOException(e);
+            throw new IOException(String.format("Failed to pull %s from device", remote), e);
         } catch (SyncException e) {
-            throw new IOException(e);
+            throw new IOException(String.format("Failed to pull %s from device", remote), e);
         }
     }
 
@@ -128,6 +129,29 @@ public class ConnectedDevice extends DeviceConnector {
 
         // can't get it, return 0.
         return 0;
+    }
+
+    @Override
+    public String getApiCodeName() {
+        String codeName = iDevice.getProperty(IDevice.PROP_BUILD_CODENAME);
+        if (codeName != null) {
+            // if this is a release platform return null.
+            if ("REL".equals(codeName)) {
+                return null;
+            }
+
+            // else return the codename
+            return codeName;
+        }
+
+        // can't get it, return 0.
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public IDevice.DeviceState getState() {
+        return iDevice.getState();
     }
 
     @NonNull

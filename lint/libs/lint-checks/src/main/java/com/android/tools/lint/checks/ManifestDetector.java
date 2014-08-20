@@ -22,6 +22,7 @@ import static com.android.SdkConstants.ATTR_ALLOW_BACKUP;
 import static com.android.SdkConstants.ATTR_ICON;
 import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_VERSION_CODE;
 import static com.android.SdkConstants.ATTR_VERSION_NAME;
@@ -44,6 +45,7 @@ import static com.android.xml.AndroidManifest.NODE_METADATA;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.Variant;
@@ -439,6 +441,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     @Override
     public void afterCheckProject(@NonNull Context context) {
         if (!mSeenAllowBackup && context.isEnabled(ALLOW_BACKUP)
+                && !context.getProject().isLibrary()
                 && context.getMainProject().getMinSdk() >= 4) {
             Location location = getMainApplicationTagLocation(context);
             context.report(ALLOW_BACKUP, location,
@@ -473,7 +476,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
         Attr codeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_VERSION_CODE);
         if (codeNode != null && codeNode.getValue().startsWith(PREFIX_RESOURCE_REF)
                 && context.isEnabled(ILLEGAL_REFERENCE)) {
-            context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
+            context.report(ILLEGAL_REFERENCE, element, context.getLocation(codeNode),
                     "The android:versionCode cannot be a resource url, it must be "
                             + "a literal integer", null);
         } else if (codeNode == null && context.isEnabled(SET_VERSION)
@@ -494,6 +497,17 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
         checkOverride(context, element, ATTR_VERSION_CODE);
         checkOverride(context, element, ATTR_VERSION_NAME);
+
+        Attr pkgNode = element.getAttributeNode(ATTR_PACKAGE);
+        if (pkgNode != null) {
+            String pkg = pkgNode.getValue();
+            if (pkg.contains("${") && context.getMainProject().isGradleProject()) {
+                context.report(GRADLE_OVERRIDES, pkgNode, context.getLocation(pkgNode),
+                        "Cannot use placeholder for the package in the manifest; "
+                                + "set applicationId in build.gradle instead",
+                        null);
+            }
+        }
     }
 
     private static void checkOverride(XmlContext context, Element element, String attributeName) {
@@ -505,14 +519,22 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 ProductFlavor flavor = variant.getMergedFlavor();
                 String gradleValue = null;
                 if (ATTR_MIN_SDK_VERSION.equals(attributeName)) {
-                    int minSdkVersion = flavor.getMinSdkVersion();
-                    if (minSdkVersion >= 1) {
-                        gradleValue = Integer.toString(minSdkVersion);
+                    try {
+                        ApiVersion minSdkVersion = flavor.getMinSdkVersion();
+                        gradleValue = minSdkVersion != null ? minSdkVersion.getApiString() : null;
+                    } catch (Throwable e) {
+                        // TODO: REMOVE ME
+                        // This method was added in the 0.11 model. We'll need to drop support
+                        // for 0.10 shortly but until 0.11 is available this is a stopgap measure
                     }
                 } else if (ATTR_TARGET_SDK_VERSION.equals(attributeName)) {
-                    int targetSdkVersion = flavor.getTargetSdkVersion();
-                    if (targetSdkVersion >= 1) {
-                        gradleValue = Integer.toString(targetSdkVersion);
+                    try {
+                        ApiVersion targetSdkVersion = flavor.getTargetSdkVersion();
+                        gradleValue = targetSdkVersion != null ? targetSdkVersion.getApiString() : null;
+                    } catch (Throwable e) {
+                        // TODO: REMOVE ME
+                        // This method was added in the 0.11 model. We'll need to drop support
+                        // for 0.10 shortly but until 0.11 is available this is a stopgap measure
                     }
                 } else if (ATTR_VERSION_CODE.equals(attributeName)) {
                     int versionCode = flavor.getVersionCode();
@@ -528,6 +550,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
                 if (gradleValue != null) {
                     String manifestValue = attribute.getValue();
+
                     String message = String.format("This %1$s value (%2$s) is not used; it is "
                             + "always overridden by the value specified in the Gradle build "
                             + "script (%3$s)", attributeName,  manifestValue, gradleValue);
@@ -654,7 +677,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 Attr codeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION);
                 if (codeNode != null && codeNode.getValue().startsWith(PREFIX_RESOURCE_REF)
                         && context.isEnabled(ILLEGAL_REFERENCE)) {
-                    context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
+                    context.report(ILLEGAL_REFERENCE, element, context.getLocation(codeNode),
                             "The android:minSdkVersion cannot be a resource url, it must be "
                                     + "a literal integer (or string if a preview codename)", null);
                 }
@@ -676,19 +699,24 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             } else {
                 checkOverride(context, element, ATTR_TARGET_SDK_VERSION);
 
-                if (context.isEnabled(TARGET_NEWER)){
-                    String target = element.getAttributeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION);
-                    try {
-                        int api = Integer.parseInt(target);
-                        if (api < context.getClient().getHighestKnownApiLevel()) {
-                            context.report(TARGET_NEWER, element, context.getLocation(element),
-                                    "Not targeting the latest versions of Android; compatibility " +
-                                            "modes apply. Consider testing and updating this version. " +
-                                            "Consult the android.os.Build.VERSION_CODES javadoc for details.",
-                                    null);
+                if (context.isEnabled(TARGET_NEWER)) {
+                    Attr targetSdkVersionNode = element.getAttributeNodeNS(ANDROID_URI,
+                            ATTR_TARGET_SDK_VERSION);
+                    if (targetSdkVersionNode != null) {
+                        String target = targetSdkVersionNode.getValue();
+                        try {
+                            int api = Integer.parseInt(target);
+                            if (api < context.getClient().getHighestKnownApiLevel()) {
+                                context.report(TARGET_NEWER, element,
+                                  context.getLocation(targetSdkVersionNode),
+                                  "Not targeting the latest versions of Android; compatibility " +
+                                  "modes apply. Consider testing and updating this version. " +
+                                  "Consult the android.os.Build.VERSION_CODES javadoc for details.",
+                                  null);
+                            }
+                        } catch (NumberFormatException nufe) {
+                            // Ignore: AAPT will enforce this.
                         }
-                    } catch (NumberFormatException nufe) {
-                        // Ignore: AAPT will enforce this.
                     }
                 }
             }
@@ -696,7 +724,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             Attr nameNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION);
             if (nameNode != null && nameNode.getValue().startsWith(PREFIX_RESOURCE_REF)
                     && context.isEnabled(ILLEGAL_REFERENCE)) {
-                context.report(ILLEGAL_REFERENCE, element, context.getLocation(element),
+                context.report(ILLEGAL_REFERENCE, element, context.getLocation(nameNode),
                         "The android:targetSdkVersion cannot be a resource url, it must be "
                                 + "a literal integer (or string if a preview codename)", null);
             }

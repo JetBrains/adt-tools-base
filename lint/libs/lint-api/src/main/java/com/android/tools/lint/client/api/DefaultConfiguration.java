@@ -16,27 +16,44 @@
 
 package com.android.tools.lint.client.api;
 
+import static com.android.SdkConstants.CURRENT_PLATFORM;
+import static com.android.SdkConstants.PLATFORM_WINDOWS;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.detector.api.*;
+import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.Severity;
+import com.android.utils.XmlUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
-import com.google.common.io.Closeables;
-import org.w3c.dom.*;
-import org.xml.sax.InputSource;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXParseException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.*;
-import java.util.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
-import static com.android.SdkConstants.CURRENT_PLATFORM;
-import static com.android.SdkConstants.PLATFORM_WINDOWS;
 
 /**
  * Default implementation of a {@link Configuration} which reads and writes
@@ -253,16 +270,8 @@ public class DefaultConfiguration extends Configuration {
             return;
         }
 
-        @SuppressWarnings("resource") // Eclipse doesn't know about Closeables.closeQuietly
-        BufferedInputStream input = null;
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            input = new BufferedInputStream(new FileInputStream(mConfigFile));
-            InputSource source = new InputSource(input);
-            factory.setNamespaceAware(false);
-            factory.setValidating(false);
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(source);
+            Document document = XmlUtils.parseUtfXmlFile(mConfigFile, false);
             NodeList issues = document.getElementsByTagName(TAG_ISSUE);
             Splitter splitter = Splitter.on(',').trimResults().omitEmptyStrings();
             for (int i = 0, count = issues.getLength(); i < count; i++) {
@@ -343,11 +352,6 @@ public class DefaultConfiguration extends Configuration {
             formatError(e.getMessage());
         } catch (Exception e) {
             mClient.log(e, null);
-        } finally {
-          try {
-            Closeables.close(input, true);
-          } catch (IOException ignored) {
-          }
         }
     }
 

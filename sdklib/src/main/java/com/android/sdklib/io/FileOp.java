@@ -18,9 +18,15 @@ package com.android.sdklib.io;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.google.common.io.Closeables;
+import com.google.common.io.Closer;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -362,38 +368,35 @@ public class FileOp implements IFileOp {
 
     @Override
     @NonNull
-    @SuppressWarnings("deprecation") // Eclipse doesn't understand Closeables.closeQuietly
     public Properties loadProperties(@NonNull File file) {
         Properties props = new Properties();
-        FileInputStream fis = null;
+        Closer closer = Closer.create();
         try {
-            fis = new FileInputStream(file);
+            FileInputStream fis = closer.register(new FileInputStream(file));
             props.load(fis);
         } catch (IOException ignore) {
         } finally {
-          try {
-            Closeables.close(fis, true);
-          } catch (IOException ignored) {
-          }
+            try {
+                closer.close();
+            } catch (IOException e) {
+            }
         }
         return props;
     }
 
     @Override
-    @SuppressWarnings("deprecation") // Eclipse doesn't understand Closeables.closeQuietly
     public void saveProperties(
             @NonNull File file,
             @NonNull Properties props,
             @NonNull String comments) throws IOException {
-        OutputStream fos = null;
+        Closer closer = Closer.create();
         try {
-            fos = newFileOutputStream(file);
+            OutputStream fos = closer.register(newFileOutputStream(file));
             props.store(fos, comments);
+        } catch (Throwable e) {
+            throw closer.rethrow(e);
         } finally {
-          try {
-            Closeables.close(fos, true);
-          } catch (IOException ignored) {
-          }
+            closer.close();
         }
     }
 

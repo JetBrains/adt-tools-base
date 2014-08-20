@@ -42,6 +42,7 @@ public class MockAddonTarget implements IAndroidTarget {
     private final int mRevision;
     private final String mName;
     private ISystemImage[] mSystemImages;
+    private IOptionalLibrary[] mOptionalLibraries;
 
     public MockAddonTarget(String name, IAndroidTarget parentTarget, int revision) {
         mName = name;
@@ -79,7 +80,7 @@ public class MockAddonTarget implements IAndroidTarget {
         if (mSystemImages == null) {
             SystemImage si = new SystemImage(
                     FileOp.append(getLocation(), SdkConstants.OS_IMAGES_FOLDER),
-                    LocationType.IN_PLATFORM_LEGACY,
+                    LocationType.IN_LEGACY_FOLDER,
                     SystemImage.DEFAULT_TAG,
                     SdkConstants.ABI_ARMEABI,
                     FileOp.EMPTY_FILE_ARRAY);
@@ -104,7 +105,11 @@ public class MockAddonTarget implements IAndroidTarget {
 
     @Override
     public IOptionalLibrary[] getOptionalLibraries() {
-        return null;
+        return mOptionalLibraries;
+    }
+
+    public void setOptionalLibraries(IOptionalLibrary[] libraries) {
+        mOptionalLibraries = libraries;
     }
 
     @Override
@@ -172,6 +177,7 @@ public class MockAddonTarget implements IAndroidTarget {
         return 0;
     }
 
+    @NonNull
     @Override
     public AndroidVersion getVersion() {
         return mParentTarget.getVersion();

@@ -16,9 +16,9 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
-import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -94,9 +94,8 @@ public class CheckPermissionDetector extends Detector implements Detector.JavaSc
         ResolvedNode resolved = context.resolve(node);
         if (resolved instanceof ResolvedMethod) {
             ResolvedMethod method = (ResolvedMethod) resolved;
-            TypeDescriptor containingClass = method.getContainingClass();
-            if ((containingClass.matchesName("android.content.ContextWrapper") ||
-                    containingClass.matchesName("android.content.Context"))) {
+            ResolvedClass containingClass = method.getContainingClass();
+            if (containingClass.isSubclassOf("android.content.Context", false)) {
                 return true;
             }
         }

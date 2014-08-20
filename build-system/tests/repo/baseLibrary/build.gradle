@@ -1,13 +1,13 @@
 buildscript {
     repositories {
-        maven { url '../../../../../../out/host/gradle/repo' }
+        maven { url '../../../../../../out/repo' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.10.0-SNAPSHOT'
+        classpath 'com.android.tools.build:gradle:0.13.0'
     }
 }
 
-apply plugin: 'android-library'
+apply plugin: 'com.android.library'
 apply plugin: 'maven'
 
 repositories {
@@ -22,7 +22,7 @@ dependencies {
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "19.0.2"
+    buildToolsVersion '19.1.0'
 }
 
 group = 'com.example.android.multiproject'

@@ -25,11 +25,12 @@ import static com.android.SdkConstants.RES_FOLDER;
 import static com.android.SdkConstants.SRC_FOLDER;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
-import com.android.ide.common.sdk.SdkVersionInfo;
+import com.android.sdklib.SdkVersionInfo;
 import com.android.prefs.AndroidLocation;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.local.LocalSdk;
@@ -40,6 +41,7 @@ import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.utils.XmlUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -49,21 +51,18 @@ import com.google.common.io.Files;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * Information about the tool embedding the lint analyzer. IDEs and other tools
@@ -384,7 +383,19 @@ public abstract class LintClient {
         // This is not an accurate test; specific LintClient implementations (e.g.
         // IDEs or a gradle-integration of lint) have more context and can perform a more accurate
         // check
-        return new File(project.getDir(), "build.gradle").exists();
+        if (new File(project.getDir(), SdkConstants.FN_BUILD_GRADLE).exists()) {
+            return true;
+        }
+
+        File parent = project.getDir().getParentFile();
+        if (parent != null && parent.getName().equals(SdkConstants.FD_SOURCES)) {
+            File root = parent.getParentFile();
+            if (root != null && new File(root, SdkConstants.FN_BUILD_GRADLE).exists()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -451,13 +462,8 @@ public abstract class LintClient {
             File classpathFile = new File(projectDir, ".classpath"); //$NON-NLS-1$
             if (classpathFile.exists()) {
                 String classpathXml = readFile(classpathFile);
-                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-                InputSource is = new InputSource(new StringReader(classpathXml));
-                factory.setNamespaceAware(false);
-                factory.setValidating(false);
                 try {
-                    DocumentBuilder builder = factory.newDocumentBuilder();
-                    Document document = builder.parse(is);
+                    Document document = XmlUtils.parseDocument(classpathXml, false);
                     NodeList tags = document.getElementsByTagName("classpathentry"); //$NON-NLS-1$
                     for (int i = 0, n = tags.getLength(); i < n; i++) {
                         Element element = (Element) tags.item(i);
@@ -724,7 +730,7 @@ public abstract class LintClient {
      * @return the highest known API level
      */
     public int getHighestKnownApiLevel() {
-        int max = SdkVersionInfo.HIGHEST_KNOWN_API;
+        int max = SdkVersionInfo.HIGHEST_KNOWN_STABLE_API;
 
         for (IAndroidTarget target : getTargets()) {
             if (target.isPlatform()) {
@@ -854,6 +860,28 @@ public abstract class LintClient {
         }
 
         return Collections.emptyList();
+    }
+
+    /**
+     * Opens a URL connection.
+     *
+     * Clients such as IDEs can override this to for example consider the user's IDE proxy
+     * settings.
+     *
+     * @param url the URL to read
+     * @return a {@link java.net.URLConnection} or null
+     * @throws IOException if any kind of IO exception occurs
+     */
+    @Nullable
+    public URLConnection openConnection(@NonNull URL url) throws IOException {
+        return url.openConnection();
+    }
+
+    /** Closes a connection previously returned by {@link #openConnection(java.net.URL)} */
+    public void closeConnection(@NonNull URLConnection connection) throws IOException {
+        if (connection instanceof HttpURLConnection) {
+            ((HttpURLConnection)connection).disconnect();
+        }
     }
 
     /**

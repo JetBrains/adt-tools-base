@@ -31,6 +31,7 @@ import static com.android.SdkConstants.DRAWABLE_LDPI;
 import static com.android.SdkConstants.DRAWABLE_MDPI;
 import static com.android.SdkConstants.DRAWABLE_PREFIX;
 import static com.android.SdkConstants.DRAWABLE_XHDPI;
+import static com.android.SdkConstants.DRAWABLE_XXHDPI;
 import static com.android.SdkConstants.MENU_TYPE;
 import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.R_DRAWABLE_PREFIX;
@@ -54,6 +55,7 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.ResourceContext;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -67,7 +69,7 @@ import com.google.common.collect.Sets;
 
 import org.w3c.dom.Element;
 
-import java.awt.Dimension;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -123,12 +125,13 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
 
     /** Pattern for the expected density folders to be found in the project */
     private static final Pattern DENSITY_PATTERN = Pattern.compile(
-            "^drawable-(nodpi|xhdpi|hdpi|mdpi"            //$NON-NLS-1$
+            "^drawable-(nodpi|xxhdpi|xhdpi|hdpi|mdpi"     //$NON-NLS-1$
                 + (INCLUDE_LDPI ? "|ldpi" : "") + ")$");  //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
     private static final String[] REQUIRED_DENSITIES = INCLUDE_LDPI
-            ? new String[] { DRAWABLE_LDPI, DRAWABLE_MDPI, DRAWABLE_HDPI, DRAWABLE_XHDPI }
-            : new String[] { DRAWABLE_MDPI, DRAWABLE_HDPI, DRAWABLE_XHDPI };
+            ? new String[] {
+                DRAWABLE_LDPI, DRAWABLE_MDPI, DRAWABLE_HDPI, DRAWABLE_XHDPI, DRAWABLE_XXHDPI }
+            : new String[] { DRAWABLE_MDPI, DRAWABLE_HDPI, DRAWABLE_XHDPI, DRAWABLE_XXHDPI };
 
     private static final String[] DENSITY_QUALIFIERS =
         new String[] {
@@ -227,7 +230,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             "Missing density folder",
             "Ensures that all the density folders are present",
             "Icons will look best if a custom version is provided for each of the " +
-            "major screen density classes (low, medium, high, extra high). " +
+            "major screen density classes (low, medium, high, extra-high, extra-extra-high). " +
             "This lint check identifies folders which are missing, such as `drawable-hdpi`." +
             "\n" +
             "Low density is not really used much anymore, so this check ignores " +
@@ -476,6 +479,8 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         }
     }
 
+    /** Like {@link LintUtils#isBitmapFile(File)} but (a) operates on Strings instead
+     * of files and (b) also considers XML drawables as images */
     private static boolean isDrawableFile(String name) {
         // endsWith(name, DOT_PNG) is also true for endsWith(name, DOT_9PNG)
         return endsWith(name, DOT_PNG)|| endsWith(name, DOT_JPG) || endsWith(name, DOT_GIF)
@@ -891,7 +896,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         // should also define -hdpi and -xhdpi.
         if (context.isEnabled(ICON_MISSING_FOLDER)) {
             List<String> missing = new ArrayList<String>();
-            // TODO: If it's a launcher icon, also insist on xxhdpi!
+            // TODO: If it's a launcher icon, also insist on xxxhdpi!
             for (String density : REQUIRED_DENSITIES) {
                 if (!definedDensities.contains(density)) {
                     missing.add(density);
@@ -1178,6 +1183,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                 context.getProject().getMinSdk() >= 4) {
             for (File file : files) {
                 String name = file.getName();
+                //noinspection StatementWithEmptyBody
                 if (name.endsWith(DOT_XML)) {
                     // pass - most common case, avoids checking other extensions
                 } else if (endsWith(name, DOT_PNG)
@@ -1310,7 +1316,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
      * if known (for use by other checks)
      */
     private Dimension checkColor(Context context, File file, boolean isActionBarIcon) {
-        int folderVersion = Context.getFolderVersion(file);
+        int folderVersion = ResourceContext.getFolderVersion(file);
         if (isActionBarIcon) {
             if (folderVersion != -1 && folderVersion < 11
                     || !isAndroid30(context, folderVersion)) {
@@ -1458,9 +1464,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                         }
                     }
                 } finally {
-                    if (input != null) {
-                        input.close();
-                    }
+                    input.close();
                 }
             }
         } catch (IOException e) {
@@ -1529,7 +1533,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             }
         }
 
-        assert !conflicts.isEmpty() : conflictSet;
+        assert conflicts != null && !conflicts.isEmpty() : conflictSet;
         List<String> names = new ArrayList<String>(conflicts.keySet());
         Collections.sort(names);
         for (String name : names) {
@@ -1562,7 +1566,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         }
 
         String folderName = folder.getName();
-        int folderVersion = Context.getFolderVersion(files[0]);
+        int folderVersion = ResourceContext.getFolderVersion(files[0]);
 
         for (File file : files) {
             String name = file.getName();
@@ -1655,6 +1659,8 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             return 1.5f;
         } else if (folderName.contains("-xhdpi")) {    //$NON-NLS-1$
             return 2.0f;
+        } else if (folderName.contains("-xxhdpi")) {   //$NON-NLS-1$
+            return 3.0f;
         } else if (folderName.contains("-ldpi")) {     //$NON-NLS-1$
             return 0.75f;
         } else {
@@ -1687,6 +1693,9 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         } else if (folderName.startsWith(DRAWABLE_XHDPI)) {
             width = mdpiWidth * 2;
             height = mdpiHeight * 2;
+        } else if (folderName.startsWith(DRAWABLE_XXHDPI)) {
+            width = mdpiWidth * 3;
+            height = mdpiWidth * 3;
         } else if (folderName.startsWith(DRAWABLE_LDPI)) {
             width = Math.round(mdpiWidth * 3f / 4);
             height = Math.round(mdpiHeight * 3f / 4);
@@ -1696,7 +1705,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
 
         Dimension size = getSize(file);
         if (size != null) {
-            if (exactMatch && size.width != width || size.height != height) {
+            if (exactMatch && (size.width != width || size.height != height)) {
                 context.report(
                         ICON_EXPECTED_SIZE,
                     Location.create(file),
@@ -1705,7 +1714,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                         folderName + File.separator + file.getName(),
                         width, height, size.width, size.height),
                     null);
-            } else if (!exactMatch && size.width > width || size.height > height) {
+            } else if (!exactMatch && (size.width > width || size.height > height)) {
                 context.report(
                         ICON_EXPECTED_SIZE,
                     Location.create(file),
@@ -1734,9 +1743,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                         }
                     }
                 } finally {
-                    if (input != null) {
-                        input.close();
-                    }
+                    input.close();
                 }
             }
 
@@ -1763,6 +1770,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         assert name.indexOf('.') == -1 : name; // Should supply base name
 
         // Naming convention
+        //noinspection SimplifiableIfStatement
         if (name.startsWith("ic_launcher")) { //$NON-NLS-1$
             return true;
         }
@@ -1773,6 +1781,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         assert name.indexOf('.') == -1; // Should supply base name
 
         // Naming convention
+        //noinspection SimplifiableIfStatement
         if (name.startsWith("ic_stat_")) { //$NON-NLS-1$
             return true;
         }
@@ -1784,6 +1793,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         assert name.indexOf('.') == -1; // Should supply base name
 
         // Naming convention
+        //noinspection SimplifiableIfStatement
         if (name.startsWith("ic_action_")) { //$NON-NLS-1$
             return true;
         }
@@ -1799,8 +1809,9 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         }
 
         // As of Android 3.0 ic_menu_ are action icons
+        //noinspection SimplifiableIfStatement,RedundantIfStatement
         if (file != null && name.startsWith("ic_menu_") //$NON-NLS-1$
-                && isAndroid30(context, Context.getFolderVersion(file))) {
+                && isAndroid30(context, ResourceContext.getFolderVersion(file))) {
             // Naming convention
             return true;
         }

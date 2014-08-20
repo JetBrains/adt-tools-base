@@ -29,15 +29,11 @@ public class SdkInfo {
     private final File mAnnotationJar;
     @NonNull
     private final File mAdb;
-    @NonNull
-    private final File mZipAlign;
 
     SdkInfo(@NonNull File annotationJar,
-            @NonNull File adb,
-            @NonNull File zipAlign) {
+            @NonNull File adb) {
         mAnnotationJar = annotationJar;
         mAdb = adb;
-        mZipAlign = zipAlign;
     }
 
     /**
@@ -64,13 +60,5 @@ public class SdkInfo {
     @NonNull
     public File getAdb() {
         return mAdb;
-    }
-
-    /**
-     * Returns the location of the zip align tool.
-     */
-    @NonNull
-    public File getZipAlign() {
-        return mZipAlign;
     }
 }

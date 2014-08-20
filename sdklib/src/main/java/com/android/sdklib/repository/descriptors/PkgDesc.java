@@ -18,13 +18,20 @@ package com.android.sdklib.repository.descriptors;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
+import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.SystemImage;
+import com.android.sdklib.internal.repository.packages.License;
+import com.android.sdklib.internal.repository.packages.Package;
+import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.FullRevision.PreviewComparison;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.NoPreviewRevision;
 
+import java.io.File;
 import java.util.Locale;
 
 /**
@@ -39,11 +46,93 @@ import java.util.Locale;
  * To query packages capabilities, rely on {@link #getType()} and the {@code PkgDesc.hasXxx()}
  * methods provided in the base {@link PkgDesc}.
  */
-public abstract class PkgDesc implements IPkgDesc {
+public class PkgDesc implements IPkgDesc {
+    private final PkgType mType;
+    private final FullRevision mFullRevision;
+    private final MajorRevision mMajorRevision;
+    private final AndroidVersion mAndroidVersion;
+    private final String mPath;
+    private final IdDisplay mTag;
+    private final IdDisplay mVendor;
+    private final FullRevision mMinToolsRev;
+    private final FullRevision mMinPlatformToolsRev;
+    private final IIsUpdateFor mCustomIsUpdateFor;
+    private final IGetPath mCustomPath;
+
+    private final License mLicense;
+    private final String mListDisplay;
+    private final String mDescriptionShort;
+    private final String mDescriptionUrl;
+    private final boolean mIsObsolete;
+
+    protected PkgDesc(@NonNull PkgType type,
+                      @Nullable License license,
+                      @Nullable String listDisplay,
+                      @Nullable String descriptionShort,
+                      @Nullable String descriptionUrl,
+                      boolean isObsolete,
+                      @Nullable FullRevision fullRevision,
+                      @Nullable MajorRevision majorRevision,
+                      @Nullable AndroidVersion androidVersion,
+                      @Nullable String path,
+                      @Nullable IdDisplay tag,
+                      @Nullable IdDisplay vendor,
+                      @Nullable FullRevision minToolsRev,
+                      @Nullable FullRevision minPlatformToolsRev,
+                      @Nullable IIsUpdateFor customIsUpdateFor,
+                      @Nullable IGetPath customPath) {
+        mType = type;
+        mIsObsolete = isObsolete;
+        mLicense = license;
+        mListDisplay = listDisplay;
+        mDescriptionShort = descriptionShort;
+        mDescriptionUrl = descriptionUrl;
+        mFullRevision = fullRevision;
+        mMajorRevision = majorRevision;
+        mAndroidVersion = androidVersion;
+        mPath = path;
+        mTag = tag;
+        mVendor = vendor;
+        mMinToolsRev = minToolsRev;
+        mMinPlatformToolsRev = minPlatformToolsRev;
+        mCustomIsUpdateFor = customIsUpdateFor;
+        mCustomPath = customPath;
+    }
 
     @NonNull
     @Override
-    public abstract PkgType getType();
+    public PkgType getType() {
+        return mType;
+    }
+
+    @Override
+    @Nullable
+    public String getListDisplay() {
+        return mListDisplay;
+    }
+
+    @Override
+    @Nullable
+    public String getDescriptionShort() {
+        return mDescriptionShort;
+    }
+
+    @Override
+    @Nullable
+    public String getDescriptionUrl() {
+        return mDescriptionUrl;
+    }
+
+    @Override
+    @Nullable
+    public License getLicense() {
+        return mLicense;
+    }
+
+    @Override
+    public boolean isObsolete() {
+        return mIsObsolete;
+    }
 
     @Override
     public final boolean hasFullRevision() {
@@ -71,8 +160,8 @@ public abstract class PkgDesc implements IPkgDesc {
     }
 
     @Override
-    public boolean hasVendorId() {
-        return getType().hasVendorId();
+    public boolean hasVendor() {
+        return getType().hasVendor();
     }
 
     @Override
@@ -88,49 +177,199 @@ public abstract class PkgDesc implements IPkgDesc {
     @Nullable
     @Override
     public FullRevision getFullRevision() {
-        return null;
+        return mFullRevision;
     }
 
     @Nullable
     @Override
     public MajorRevision getMajorRevision() {
-        return null;
+        return mMajorRevision;
     }
 
     @Nullable
     @Override
     public AndroidVersion getAndroidVersion() {
-        return null;
+        return mAndroidVersion;
     }
 
     @Nullable
     @Override
     public String getPath() {
-        return null;
+        if (mCustomPath != null) {
+            return mCustomPath.getPath(this);
+        } else {
+            return mPath;
+        }
     }
 
     @Nullable
     @Override
     public IdDisplay getTag() {
-        return null;
+        return mTag;
     }
 
     @Nullable
     @Override
-    public String getVendorId() {
-        return null;
+    public IdDisplay getVendor() {
+        return mVendor;
     }
 
     @Nullable
     @Override
     public FullRevision getMinToolsRev() {
-        return null;
+        return mMinToolsRev;
     }
 
     @Nullable
     @Override
     public FullRevision getMinPlatformToolsRev() {
-        return null;
+        return mMinPlatformToolsRev;
+    }
+
+    @Override
+    public String getInstallId() {
+        StringBuilder sb = new StringBuilder();
+
+        /* iid patterns:
+        tools, platform-tools => FOLDER / FOLDER-preview
+        build-tools => FOLDER-REV
+        doc, sample, source => ENUM-API
+        extra => ENUM-VENDOR.id-PATH
+        platform => android-API
+        add-on => addon-NAME.id-VENDOR.id-API
+        platform sys-img => sys-img-ABI-TAG|android-API
+        add-on sys-img => sys-img-ABI-addon-NAME.id-VENDOR.id-API
+        */
+
+        switch (mType) {
+        case PKG_TOOLS:
+        case PKG_PLATFORM_TOOLS:
+            sb.append(mType.getFolderName());
+            if (getFullRevision().isPreview()) {
+                sb.append("-preview");
+            }
+            break;
+
+        case PKG_BUILD_TOOLS:
+            sb.append(mType.getFolderName());
+            sb.append('-').append(getFullRevision().toString());
+            break;
+
+        case PKG_DOC:
+        case PKG_SAMPLE:
+        case PKG_SOURCE:
+            sb.append(mType.toString().toLowerCase(Locale.US).replace("pkg_", ""));
+            sb.append('-').append(getAndroidVersion().getApiString());
+            break;
+
+        case PKG_EXTRA:
+            sb.append("extra-")
+              .append(getVendor().getId())
+              .append('-')
+              .append(getPath());
+            break;
+
+        case PKG_PLATFORM:
+            sb.append(AndroidTargetHash.PLATFORM_HASH_PREFIX).append(getAndroidVersion().getApiString());
+            break;
+
+        case PKG_ADDON:
+            sb.append("addon-")
+              .append(((IPkgDescAddon) this).getName().getId())
+              .append('-')
+              .append(getVendor().getId())
+              .append('-')
+              .append(getAndroidVersion().getApiString());
+            break;
+
+        case PKG_SYS_IMAGE:
+            sb.append("sys-img-")
+              .append(getPath())    // path==ABI for sys-img
+              .append('-')
+              .append(SystemImage.DEFAULT_TAG.equals(getTag()) ? "android" : getTag().getId())
+              .append('-')
+              .append(getAndroidVersion().getApiString());
+            break;
+
+        case PKG_ADDON_SYS_IMAGE:
+            sb.append("sys-img-")
+              .append(getPath())    // path==ABI for sys-img
+              .append("-addon-")
+              .append(SystemImage.DEFAULT_TAG.equals(getTag()) ? "android" : getTag().getId())
+              .append('-')
+              .append(getVendor().getId())
+              .append('-')
+              .append(getAndroidVersion().getApiString());
+          break;
+
+        default:
+            throw new IllegalArgumentException("IID not defined for type " + mType.toString());
+        }
+
+        return sanitize(sb.toString());
+    }
+
+    @Override
+    public File getCanonicalInstallFolder(@NonNull File sdkLocation) {
+        File f = FileOp.append(sdkLocation, mType.getFolderName());
+
+        /* folder patterns:
+        tools, platform-tools, doc => FOLDER
+        build-tools, add-on => FOLDER/IID
+        platform, sample, source => FOLDER/android-API
+        platform sys-img => FOLDER/android-API/TAG/ABI
+        add-on sys-img => FOLDER/addon-NAME.id-VENDOR.id-API/ABI
+        extra => FOLDER/VENDOR.id/PATH
+        */
+
+        switch (mType) {
+        case PKG_TOOLS:
+        case PKG_PLATFORM_TOOLS:
+        case PKG_DOC:
+            // no-op, top-folder is all what is needed here
+            break;
+
+        case PKG_BUILD_TOOLS:
+        case PKG_ADDON:
+            f = FileOp.append(f, getInstallId());
+            break;
+
+        case PKG_PLATFORM:
+        case PKG_SAMPLE:
+        case PKG_SOURCE:
+            f = FileOp.append(f, AndroidTargetHash.PLATFORM_HASH_PREFIX + sanitize(getAndroidVersion().getApiString()));
+            break;
+
+        case PKG_SYS_IMAGE:
+            f = FileOp.append(f,
+                    AndroidTargetHash.PLATFORM_HASH_PREFIX + sanitize(getAndroidVersion().getApiString()),
+                    sanitize(SystemImage.DEFAULT_TAG.equals(getTag()) ? "android" : getTag().getId()),
+                    sanitize(getPath()));   // path==abi
+            break;
+
+        case PKG_ADDON_SYS_IMAGE:
+            String name = "addon-"
+                        + (SystemImage.DEFAULT_TAG.equals(getTag()) ? "android" : getTag().getId())
+                        + '-'
+                        + getVendor().getId()
+                        + '-'
+                        + getAndroidVersion().getApiString();
+            f = FileOp.append(f,
+                    sanitize(name),
+                    sanitize(getPath()));   // path==abi
+          break;
+
+        case PKG_EXTRA:
+            f = FileOp.append(f,
+                    sanitize(getVendor().getId()),
+                    sanitize(getPath()));
+            break;
+
+        default:
+            throw new IllegalArgumentException("CanonicalFolder not defined for type " + mType.toString());
+        }
+
+        return f;
     }
 
     //---- Updating ----
@@ -143,7 +382,25 @@ public abstract class PkgDesc implements IPkgDesc {
      * @param existingDesc A non-null package descriptor to compare with.
      * @return True if this package descriptor would generally update the given one.
      */
-    protected final boolean isGenericUpdateFor(@NonNull IPkgDesc existingDesc) {
+    @Override
+    public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
+        if (mCustomIsUpdateFor != null) {
+            return mCustomIsUpdateFor.isUpdateFor(this, existingDesc);
+        } else {
+            return isGenericUpdateFor(existingDesc);
+        }
+    }
+
+    /**
+     * Computes the most general case of {@link #isUpdateFor(IPkgDesc)}.
+     * Individual package types use this and complement with their own specific cases
+     * as needed.
+     *
+     * @param existingDesc A non-null package descriptor to compare with.
+     * @return True if this package descriptor would generally update the given one.
+     */
+    private boolean isGenericUpdateFor(@NonNull IPkgDesc existingDesc) {
+
         if (existingDesc == null || !getType().equals(existingDesc.getType())) {
             return false;
         }
@@ -155,7 +412,7 @@ public abstract class PkgDesc implements IPkgDesc {
         }
 
         // Packages that have a vendor id need the same vendor id on both sides
-        if (hasVendorId() && !getVendorId().equals(existingDesc.getVendorId())) {
+        if (hasVendor() && !getVendor().equals(existingDesc.getVendor())) {
             return false;
         }
 
@@ -222,8 +479,8 @@ public abstract class PkgDesc implements IPkgDesc {
             }
         }
 
-        if (hasVendorId() && o.hasVendorId()) {
-            t1 = getVendorId().compareTo(o.getVendorId());
+        if (hasVendor() && o.hasVendor()) {
+            t1 = getVendor().compareTo(o.getVendor());
             if (t1 != 0) {
                 return t1;
             }
@@ -274,6 +531,86 @@ public abstract class PkgDesc implements IPkgDesc {
         return 0;
     }
 
+    // --- display description ----
+
+    @NonNull
+    @Override
+    public String getListDescription() {
+        if (mListDisplay != null && !mListDisplay.isEmpty()) {
+            return mListDisplay;
+        }
+
+        return patternReplaceImpl(getType().getListDisplayPattern());
+    }
+
+    @VisibleForTesting(visibility=Visibility.PRIVATE)
+    protected String patternReplaceImpl(String result) {
+        // Flags for list description pattern string, used in PkgType:
+        //      $MAJ  $FULL  $API  $PATH  $TAG  $VEND  $NAME (for extras)
+
+        result = result.replace("$MAJ",  hasMajorRevision()  ? getMajorRevision().toShortString() : "");
+        result = result.replace("$FULL", hasFullRevision()   ? getFullRevision() .toShortString() : "");
+        result = result.replace("$API",  hasAndroidVersion() ? getAndroidVersion().getApiString() : "");
+        result = result.replace("$PATH", hasPath()           ? getPath()                          : "");
+        result = result.replace("$TAG",  hasTag() && !getTag().equals(SystemImage.DEFAULT_TAG) ?
+                                                getTag().getDisplay() : "");
+        result = result.replace("$VEND",  hasVendor() ? getVendor().getDisplay() : "");
+        String name = "";
+        if (this instanceof IPkgDescExtra) {
+            name = ((IPkgDescExtra) this).getNameDisplay();
+        } else if (this instanceof IPkgDescAddon) {
+            name = ((IPkgDescAddon) this).getName().getDisplay();
+        }
+        result = result.replace("$NAME", name);
+
+        // Evaluate replacements.
+        // {|choice1|choice2|...|choiceN|} gets replaced by the first non-empty choice.
+        for (int start = result.indexOf("{|");
+                start >= 0;
+                start = result.indexOf("{|")) {
+            int end = result.indexOf('}', start);
+            int last = start + 1;
+            for (int pipe = result.indexOf('|', last+1);
+                    pipe > start;
+                    last = pipe, pipe = result.indexOf('|', last+1)) {
+                if (pipe - last > 1) {
+                    result = result.substring(0, start) +
+                             result.substring(last+1, pipe) +
+                             result.substring(end+1);
+                    break;
+                }
+            }
+        }
+
+        // Evaluate conditions.
+        // {?value>1:text to use} -- uses the text if value is greater than 1.
+        // Simplification: this is our only test right now so hard-code it instead of
+        // using a generic expression evaluation.
+        for (int start = result.indexOf("{?");
+                start >= 0;
+                start = result.indexOf("{?")) {
+            int end = result.indexOf('}', start);
+            int op = result.indexOf(">1:");
+            if (op > start) {
+                String value = "";
+                try {
+                    FullRevision i = FullRevision.parseRevision(result.substring(start+2, op));
+                    if (i.compareTo(new FullRevision(1)) > 0) {
+                        value = result.substring(op+3, end);
+                    }
+                } catch (NumberFormatException e) {
+                    value = "ERROR " + e.getMessage() + " in " + result.substring(start, end+1);
+                }
+                result = result.substring(0, start) +
+                         value +
+                         result.substring(end+1);
+            }
+        }
+
+
+        return result;
+    }
+
     /** String representation for debugging purposes. */
     @Override
     public String toString() {
@@ -289,8 +626,8 @@ public abstract class PkgDesc implements IPkgDesc {
             builder.append(" Android=").append(getAndroidVersion());                //NON-NLS-1$
         }
 
-        if (hasVendorId()) {
-            builder.append(" Vendor=").append(getVendorId());                       //NON-NLS-1$
+        if (hasVendor()) {
+            builder.append(" Vendor=").append(getVendor().toString());              //NON-NLS-1$
         }
 
         if (hasTag()) {
@@ -317,6 +654,28 @@ public abstract class PkgDesc implements IPkgDesc {
             builder.append(" MinPlatToolsRev=").append(getMinPlatformToolsRev());   //NON-NLS-1$
         }
 
+        if (mListDisplay != null) {
+            builder.append(" ListDisp=").append(mListDisplay);                      //NON-NLS-1$
+        }
+
+        if (mDescriptionShort != null) {
+            builder.append(" DescShort=").append(mDescriptionShort);                //NON-NLS-1$
+        }
+
+        if (mDescriptionUrl != null) {
+            builder.append(" DescUrl=").append(mDescriptionUrl);                    //NON-NLS-1$
+        }
+
+        if (mLicense != null) {
+            builder.append(" License['").append(mLicense.getLicenseRef())           //NON-NLS-1$
+                   .append("]=")                                                    //NON-NLS-1$
+                   .append(mLicense.getLicense().length()).append(" chars");        //NON-NLS-1$
+        }
+
+        if (isObsolete()) {
+            builder.append(" Obsolete=yes");                                        //NON-NLS-1$
+        }
+
         builder.append('>');
         return builder.toString();
     }
@@ -326,7 +685,7 @@ public abstract class PkgDesc implements IPkgDesc {
         final int prime = 31;
         int result = 1;
         result = prime * result + (hasAndroidVersion() ? getAndroidVersion().hashCode() : 0);
-        result = prime * result + (hasVendorId()       ? getVendorId()      .hashCode() : 0);
+        result = prime * result + (hasVendor()         ? getVendor()      .hashCode() : 0);
         result = prime * result + (hasTag()            ? getTag()           .hashCode() : 0);
         result = prime * result + (hasPath()           ? getPath()          .hashCode() : 0);
         result = prime * result + (hasFullRevision()   ? getFullRevision()  .hashCode() : 0);
@@ -399,363 +758,390 @@ public abstract class PkgDesc implements IPkgDesc {
 
     // ---- Constructors -----
 
-    /**
-     * Create a new tool package descriptor.
-     *
-     * @param revision The revision of the tool package.
-     * @param minPlatformToolsRev The {@code min-platform-tools-rev}.
-     *                  Use {@link FullRevision#NOT_SPECIFIED} to indicate there is no requirement.
-     * @return A {@link PkgDesc} describing this tool package.
-     */
-    @NonNull
-    public static IPkgDesc newTool(@NonNull final FullRevision revision,
-                                   @NonNull final FullRevision minPlatformToolsRev) {
-        return new PkgDesc() {
-            @Override
-            public PkgType getType() {
-                return PkgType.PKG_TOOLS;
-            }
-
-            @Override
-            public FullRevision getFullRevision() {
-                return revision;
-            }
-
-            @Override
-            public FullRevision getMinPlatformToolsRev() {
-                return minPlatformToolsRev;
-            }
-
-            @Override
-            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
-                // Generic test checks that the preview type is the same (both previews or not)
-                // and whether this is a better RC/preview than the existing one.
-                return isGenericUpdateFor(existingDesc);
-            }
-        };
+    public interface IIsUpdateFor {
+        public boolean isUpdateFor(@NonNull PkgDesc thisPkgDesc, @NonNull IPkgDesc existingDesc);
     }
 
-    /**
-     * Create a new platform-tool package descriptor.
-     *
-     * @param revision The revision of the platform-tool package.
-     * @return A {@link PkgDesc} describing this platform-tool package.
-     */
-    @NonNull
-    public static IPkgDesc newPlatformTool(@NonNull final FullRevision revision) {
-        return new PkgDesc() {
-            @Override
-            public PkgType getType() {
-                return PkgType.PKG_PLATFORM_TOOLS;
-            }
-
-            @Override
-            public FullRevision getFullRevision() {
-                return revision;
-            }
-
-            @Override
-            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
-                // Generic test checks that the preview type is the same (both previews or not)
-                // and whether this is a better RC/preview than the existing one.
-                return isGenericUpdateFor(existingDesc);
-            }
-        };
+    public interface IGetPath {
+        public String getPath(@NonNull PkgDesc thisPkgDesc);
     }
 
-    /**
-     * Create a new build-tool package descriptor.
-     *
-     * @param revision The revision of the build-tool package.
-     * @return A {@link PkgDesc} describing this build-tool package.
-     */
-    @NonNull
-    public static IPkgDesc newBuildTool(@NonNull final FullRevision revision) {
-        return new PkgDesc() {
-            @Override
-            public PkgType getType() {
-                return PkgType.PKG_BUILD_TOOLS;
-            }
+    public static class Builder {
+        private final PkgType mType;
+        private FullRevision mFullRevision;
+        private MajorRevision mMajorRevision;
+        private AndroidVersion mAndroidVersion;
+        private String mPath;
+        private IdDisplay mTag;
+        private IdDisplay mVendor;
+        private FullRevision mMinToolsRev;
+        private FullRevision mMinPlatformToolsRev;
+        private IIsUpdateFor mCustomIsUpdateFor;
+        private IGetPath mCustomPath;
+        private String[] mOldPaths;
+        private String mNameDisplay;
+        private IdDisplay mNameIdDisplay;
 
-            @Override
-            public FullRevision getFullRevision() {
-                return revision;
-            }
+        private License mLicense;
+        private String mListDisplay;
+        private String mDescriptionShort;
+        private String mDescriptionUrl;
+        private boolean mIsObsolete;
 
-            @Override
-            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
-                // Generic test checks that the preview type is the same (both previews or not).
-                // Build tool is different in that the full revision must be an exact match
-                // and not an increase.
-                return isGenericUpdateFor(existingDesc) &&
-                    revision.compareTo(existingDesc.getFullRevision(),
-                                       PreviewComparison.COMPARE_TYPE) == 0;
-            }
-        };
-    }
 
-    /**
-     * Create a new doc package descriptor.
-     *
-     * @param revision The revision of the doc package.
-     * @return A {@link PkgDesc} describing this doc package.
-     */
-    @NonNull
-    public static IPkgDesc newDoc(@NonNull final AndroidVersion version,
-                                  @NonNull final MajorRevision revision) {
-        return new PkgDesc() {
-            @Override
-            public PkgType getType() {
-                return PkgType.PKG_DOCS;
-            }
+        private Builder(PkgType type) {
+            mType = type;
+        }
 
-            @Override
-            public MajorRevision getMajorRevision() {
-                return revision;
-            }
+        /**
+         * Creates a new tool package descriptor.
+         *
+         * @param revision The revision of the tool package.
+         * @param minPlatformToolsRev The {@code min-platform-tools-rev}.
+         *                  Use {@link FullRevision#NOT_SPECIFIED} to indicate there is no requirement.
+         * @return A {@link PkgDesc} describing this tool package.
+         */
+        @NonNull
+        public static Builder newTool(@NonNull FullRevision revision,
+                                      @NonNull FullRevision minPlatformToolsRev) {
+            Builder p = new Builder(PkgType.PKG_TOOLS);
+            p.mFullRevision = revision;
+            p.mMinPlatformToolsRev = minPlatformToolsRev;
+            return p;
+        }
 
-            @Override
-            public AndroidVersion getAndroidVersion() {
-                return version;
-            }
+        /**
+         * Creates a new platform-tool package descriptor.
+         *
+         * @param revision The revision of the platform-tool package.
+         * @return A {@link PkgDesc} describing this platform-tool package.
+         */
+        @NonNull
+        public static Builder newPlatformTool(@NonNull FullRevision revision) {
+            Builder p = new Builder(PkgType.PKG_PLATFORM_TOOLS);
+            p.mFullRevision = revision;
+            return p;
+        }
 
-            @Override
-            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
-                if (existingDesc == null || !getType().equals(existingDesc.getType())) {
-                    return false;
+        /**
+         * Creates a new build-tool package descriptor.
+         *
+         * @param revision The revision of the build-tool package.
+         * @return A {@link PkgDesc} describing this build-tool package.
+         */
+        @NonNull
+        public static Builder newBuildTool(@NonNull FullRevision revision) {
+            Builder p = new Builder(PkgType.PKG_BUILD_TOOLS);
+            p.mFullRevision = revision;
+            p.mCustomIsUpdateFor = new IIsUpdateFor() {
+                @Override
+                public boolean isUpdateFor(PkgDesc thisPkgDesc, IPkgDesc existingDesc) {
+                    // Generic test checks that the preview type is the same (both previews or not).
+                    // Build tool is different in that the full revision must be an exact match
+                    // and not an increase.
+                    return thisPkgDesc.isGenericUpdateFor(existingDesc) &&
+                        thisPkgDesc.getFullRevision().compareTo(
+                                            existingDesc.getFullRevision(),
+                                           PreviewComparison.COMPARE_TYPE) == 0;
                 }
+            };
+            return p;
+        }
 
-                // This package is unique in the SDK. It's an update if the API is newer
-                // or the revision is newer for the same API.
-                int diff = version.compareTo(existingDesc.getAndroidVersion());
-                return diff > 0 ||
-                       (diff == 0 && revision.compareTo(existingDesc.getMajorRevision()) > 0);
+        /**
+         * Creates a new doc package descriptor.
+         *
+         * @param revision The revision of the doc package.
+         * @return A {@link PkgDesc} describing this doc package.
+         */
+        @NonNull
+        public static Builder newDoc(@NonNull AndroidVersion version,
+                                     @NonNull MajorRevision revision) {
+            Builder p = new Builder(PkgType.PKG_DOC);
+            p.mAndroidVersion = version;
+            p.mMajorRevision = revision;
+            p.mCustomIsUpdateFor = new IIsUpdateFor() {
+                @Override
+                public boolean isUpdateFor(PkgDesc thisPkgDesc, IPkgDesc existingDesc) {
+                    if (existingDesc == null ||
+                            !thisPkgDesc.getType().equals(existingDesc.getType())) {
+                        return false;
+                    }
+
+                    // This package is unique in the SDK. It's an update if the API is newer
+                    // or the revision is newer for the same API.
+                    int diff = thisPkgDesc.getAndroidVersion().compareTo(
+                              existingDesc.getAndroidVersion());
+                    return diff > 0 ||
+                           (diff == 0 && thisPkgDesc.getMajorRevision().compareTo(
+                                        existingDesc.getMajorRevision()) > 0);
+                }
+            };
+            return p;
+        }
+
+        /**
+         * Creates a new extra package descriptor.
+         *
+         * @param vendor The vendor id string of the extra package.
+         * @param path The path id string of the extra package.
+         * @param displayName The display name. If missing, caller should build one using the path.
+         * @param oldPaths An optional list of older paths for this extra package.
+         * @param revision The revision of the extra package.
+         * @return A {@link PkgDesc} describing this extra package.
+         */
+        @NonNull
+        public static Builder newExtra(@NonNull  IdDisplay vendor,
+                                       @NonNull  String path,
+                                       @NonNull  String displayName,
+                                       @Nullable String[] oldPaths,
+                                       @NonNull  NoPreviewRevision revision) {
+            Builder p = new Builder(PkgType.PKG_EXTRA);
+            p.mFullRevision = revision;
+            p.mVendor = vendor;
+            p.mPath = path;
+            p.mNameDisplay = displayName;
+            p.mOldPaths = oldPaths;
+            return p;
+        }
+
+        /**
+         * Creates a new platform package descriptor.
+         *
+         * @param version The android version of the platform package.
+         * @param revision The revision of the extra package.
+         * @param minToolsRev An optional {@code min-tools-rev}.
+         *                    Use {@link FullRevision#NOT_SPECIFIED} to indicate
+         *                    there is no requirement.
+         * @return A {@link PkgDesc} describing this platform package.
+         */
+        @NonNull
+        public static Builder newPlatform(@NonNull AndroidVersion version,
+                                          @NonNull MajorRevision revision,
+                                          @NonNull FullRevision minToolsRev) {
+            Builder p = new Builder(PkgType.PKG_PLATFORM);
+            p.mAndroidVersion = version;
+            p.mMajorRevision = revision;
+            p.mMinToolsRev = minToolsRev;
+            p.mCustomPath = new IGetPath() {
+                @Override
+                public String getPath(PkgDesc thisPkgDesc) {
+                    /** The "path" of a Platform is its Target Hash. */
+                    return AndroidTargetHash.getPlatformHashString(thisPkgDesc.getAndroidVersion());
+                }
+            };
+            return p;
+        }
+
+        /**
+         * Create a new add-on package descriptor.
+         * <p/>
+         * The vendor id and the name id provided are used to compute the add-on's
+         * target hash.
+         *
+         * @param version The android version of the add-on package.
+         * @param revision The revision of the add-on package.
+         * @param addonVendor The vendor id/display of the add-on package.
+         * @param addonName The name id/display of the add-on package.
+         * @return A {@link PkgDesc} describing this add-on package.
+         */
+        @NonNull
+        public static Builder newAddon(@NonNull AndroidVersion version,
+                                       @NonNull MajorRevision revision,
+                                       @NonNull IdDisplay addonVendor,
+                                       @NonNull IdDisplay addonName) {
+            Builder p = new Builder(PkgType.PKG_ADDON);
+            p.mAndroidVersion = version;
+            p.mMajorRevision  = revision;
+            p.mVendor         = addonVendor;
+            p.mNameIdDisplay  = addonName;
+            return p;
+        }
+
+        /**
+         * Create a new platform system-image package descriptor.
+         * <p/>
+         * For system-images, {@link PkgDesc#getPath()} returns the ABI.
+         *
+         * @param version The android version of the system-image package.
+         * @param tag The tag of the system-image package.
+         * @param abi The ABI of the system-image package.
+         * @param revision The revision of the system-image package.
+         * @return A {@link PkgDesc} describing this system-image package.
+         */
+        @NonNull
+        public static Builder newSysImg(@NonNull AndroidVersion version,
+                                        @NonNull IdDisplay tag,
+                                        @NonNull String abi,
+                                        @NonNull MajorRevision revision) {
+            Builder p = new Builder(PkgType.PKG_SYS_IMAGE);
+            p.mAndroidVersion = version;
+            p.mMajorRevision  = revision;
+            p.mTag            = tag;
+            p.mPath           = abi;
+            p.mVendor         = null;
+            return p;
+        }
+
+        /**
+         * Create a new add-on system-image package descriptor.
+         * <p/>
+         * For system-images, {@link PkgDesc#getPath()} returns the ABI.
+         *
+         * @param version The android version of the system-image package.
+         * @param addonVendor The vendor id/display of an associated add-on.
+         * @param addonName The tag of the system-image package is the add-on name.
+         * @param abi The ABI of the system-image package.
+         * @param revision The revision of the system-image package.
+         * @return A {@link PkgDesc} describing this system-image package.
+         */
+        @NonNull
+        public static Builder newAddonSysImg(@NonNull AndroidVersion version,
+                                        @NonNull IdDisplay addonVendor,
+                                        @NonNull IdDisplay addonName,
+                                        @NonNull String abi,
+                                        @NonNull MajorRevision revision) {
+            Builder p = new Builder(PkgType.PKG_ADDON_SYS_IMAGE);
+            p.mAndroidVersion = version;
+            p.mMajorRevision  = revision;
+            p.mTag            = addonName;
+            p.mPath           = abi;
+            p.mVendor         = addonVendor;
+            return p;
+        }
+
+        /**
+         * Create a new source package descriptor.
+         *
+         * @param version The android version of the source package.
+         * @param revision The revision of the source package.
+         * @return A {@link PkgDesc} describing this source package.
+         */
+        @NonNull
+        public static Builder newSource(@NonNull AndroidVersion version,
+                                        @NonNull MajorRevision revision) {
+            Builder p = new Builder(PkgType.PKG_SOURCE);
+            p.mAndroidVersion = version;
+            p.mMajorRevision = revision;
+            return p;
+        }
+
+        /**
+         * Create a new sample package descriptor.
+         *
+         * @param version The android version of the sample package.
+         * @param revision The revision of the sample package.
+         * @param minToolsRev An optional {@code min-tools-rev}.
+         *                    Use {@link FullRevision#NOT_SPECIFIED} to indicate
+         *                    there is no requirement.
+         * @return A {@link PkgDesc} describing this sample package.
+         */
+        @NonNull
+        public static Builder newSample(@NonNull AndroidVersion version,
+                                        @NonNull MajorRevision revision,
+                                        @NonNull FullRevision minToolsRev) {
+            Builder p = new Builder(PkgType.PKG_SAMPLE);
+            p.mAndroidVersion = version;
+            p.mMajorRevision  = revision;
+            p.mMinToolsRev    = minToolsRev;
+            return p;
+        }
+
+        public Builder setDescriptions(@NonNull Package pkg) {
+            mDescriptionShort = pkg.getShortDescription();
+            mDescriptionUrl   = pkg.getDescUrl();
+            mListDisplay      = pkg.getListDisplay();
+            mIsObsolete       = pkg.isObsolete();
+            mLicense          = pkg.getLicense();
+            return this;
+        }
+
+        public Builder setLicense(@Nullable License license) {
+            mLicense = license;
+            return this;
+        }
+
+        public Builder setListDisplay(@Nullable String text) {
+            mListDisplay = text;
+            return this;
+        }
+
+        public Builder setDescriptionShort(@Nullable String text) {
+            mDescriptionShort = text;
+            return this;
+        }
+
+        public Builder setDescriptionUrl(@Nullable String text) {
+            mDescriptionUrl = text;
+            return this;
+        }
+
+        public Builder setIsObsolete(boolean isObsolete) {
+            mIsObsolete = isObsolete;
+            return this;
+        }
+
+        public IPkgDesc create() {
+            if (mType == PkgType.PKG_ADDON) {
+                return new PkgDescAddon(
+                        mType,
+                        mLicense,
+                        mListDisplay,
+                        mDescriptionShort,
+                        mDescriptionUrl,
+                        mIsObsolete,
+                        mMajorRevision,
+                        mAndroidVersion,
+                        mVendor,
+                        mNameIdDisplay);
             }
-        };
+
+            if (mType == PkgType.PKG_EXTRA) {
+                return new PkgDescExtra(
+                    mType,
+                    mLicense,
+                    mListDisplay,
+                    mDescriptionShort,
+                    mDescriptionUrl,
+                    mIsObsolete,
+                    mFullRevision,
+                    mMajorRevision,
+                    mAndroidVersion,
+                    mPath,
+                    mTag,
+                    mVendor,
+                    mMinToolsRev,
+                    mMinPlatformToolsRev,
+                    mNameDisplay,
+                    mOldPaths);
+            }
+
+            return new PkgDesc(
+                    mType,
+                    mLicense,
+                    mListDisplay,
+                    mDescriptionShort,
+                    mDescriptionUrl,
+                    mIsObsolete,
+                    mFullRevision,
+                    mMajorRevision,
+                    mAndroidVersion,
+                    mPath,
+                    mTag,
+                    mVendor,
+                    mMinToolsRev,
+                    mMinPlatformToolsRev,
+                    mCustomIsUpdateFor,
+                    mCustomPath);
+        }
     }
 
-    /**
-     * Create a new extra package descriptor.
-     *
-     * @param vendorId The vendor id string of the extra package.
-     * @param path The path id string of the extra package.
-     * @param oldPaths An optional list of older paths for this extra package.
-     * @param revision The revision of the extra package.
-     * @return A {@link PkgDesc} describing this extra package.
-     */
+    // ---- Helpers -----
+
     @NonNull
-    public static IPkgDescExtra newExtra(@NonNull  final String vendorId,
-                                         @NonNull  final String path,
-                                         @Nullable final String[] oldPaths,
-                                         @NonNull  final NoPreviewRevision revision) {
-        return new PkgDescExtra(vendorId, path, oldPaths, revision);
-    }
-
-    /**
-     * Create a new platform package descriptor.
-     *
-     * @param version The android version of the platform package.
-     * @param revision The revision of the extra package.
-     * @param minToolsRev An optional {@code min-tools-rev}.
-     *                    Use {@link FullRevision#NOT_SPECIFIED} to indicate
-     *                    there is no requirement.
-     * @return A {@link PkgDesc} describing this platform package.
-     */
-    @NonNull
-    public static IPkgDesc newPlatform(@NonNull final AndroidVersion version,
-                                       @NonNull final MajorRevision revision,
-                                       @NonNull final FullRevision minToolsRev) {
-        return new PkgDesc() {
-            @Override
-            public PkgType getType() {
-                return PkgType.PKG_PLATFORMS;
-            }
-
-            @Override
-            public MajorRevision getMajorRevision() {
-                return revision;
-            }
-
-            @Override
-            public AndroidVersion getAndroidVersion() {
-                return version;
-            }
-
-            @Override
-            public FullRevision getMinToolsRev() {
-                return minToolsRev;
-            }
-
-            /** The "path" of a Platform is its Target Hash. */
-            @Override
-            public String getPath() {
-                return AndroidTargetHash.getPlatformHashString(getAndroidVersion());
-            }
-
-            @Override
-            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
-                return isGenericUpdateFor(existingDesc);
-            }
-        };
-    }
-
-    /**
-     * Create a new add-on package descriptor.
-     * <p/>
-     * The vendor id and the name id provided are used to compute the add-on's
-     * target hash.
-     *
-     * @param version The android version of the add-on package.
-     * @param revision The revision of the add-on package.
-     * @param addonVendor The vendor id of the add-on package.
-     * @param addonName The name id of the add-on package.
-     * @return A {@link PkgDesc} describing this add-on package.
-     */
-    @NonNull
-    public static IPkgDesc newAddon(@NonNull AndroidVersion version,
-                                    @NonNull MajorRevision revision,
-                                    @NonNull String addonVendor,
-                                    @NonNull String addonName) {
-        return new PkgDescAddon(version, revision, addonVendor, addonName);
-    }
-
-    /**
-     * Create a new platform add-on descriptor where the target hash isn't determined yet.
-     *
-     * @param version The android version of the add-on package.
-     * @param revision The revision of the add-on package.
-     * @param targetHashProvider Implements a method that will return the target hash when needed.
-     * @return A {@link PkgDesc} describing this add-on package.
-     */
-    @NonNull
-    public static IPkgDesc newAddon(@NonNull AndroidVersion version,
-                                    @NonNull MajorRevision revision,
-                                    @NonNull IAddonDesc targetHashProvider) {
-        return new PkgDescAddon(version, revision, targetHashProvider);
-    }
-
-    /**
-     * Create a new system-image package descriptor.
-     * <p/>
-     * For system-images, {@link PkgDesc#getPath()} returns the ABI.
-     *
-     * @param version The android version of the system-image package.
-     * @param tag The tag of the system-image package.
-     * @param abi The ABI of the system-image package.
-     * @param revision The revision of the system-image package.
-     * @return A {@link PkgDesc} describing this system-image package.
-     */
-    @NonNull
-    public static IPkgDesc newSysImg(@NonNull final AndroidVersion version,
-                                     @NonNull final IdDisplay tag,
-                                     @NonNull final String abi,
-                                     @NonNull final MajorRevision revision) {
-        return new PkgDesc() {
-            @Override
-            public PkgType getType() {
-                return PkgType.PKG_SYS_IMAGES;
-            }
-
-            @Override
-            public MajorRevision getMajorRevision() {
-                return revision;
-            }
-
-            @Override
-            public AndroidVersion getAndroidVersion() {
-                return version;
-            }
-
-            @Override
-            public IdDisplay getTag() {
-                return tag;
-            }
-
-            @Override
-            public String getPath() {
-                return abi;
-            }
-
-            @Override
-            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
-                return isGenericUpdateFor(existingDesc);
-            }
-        };
-    }
-
-    /**
-     * Create a new source package descriptor.
-     *
-     * @param version The android version of the source package.
-     * @param revision The revision of the source package.
-     * @return A {@link PkgDesc} describing this source package.
-     */
-    @NonNull
-    public static IPkgDesc newSource(@NonNull final AndroidVersion version,
-                                     @NonNull final MajorRevision revision) {
-        return new PkgDesc() {
-            @Override
-            public PkgType getType() {
-                return PkgType.PKG_SOURCES;
-            }
-
-            @Override
-            public MajorRevision getMajorRevision() {
-                return revision;
-            }
-
-            @Override
-            public AndroidVersion getAndroidVersion() {
-                return version;
-            }
-
-            @Override
-            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
-                return isGenericUpdateFor(existingDesc);
-            }
-        };
-    }
-
-    /**
-     * Create a new sample package descriptor.
-     *
-     * @param version The android version of the sample package.
-     * @param revision The revision of the sample package.
-     * @param minToolsRev An optional {@code min-tools-rev}.
-     *                    Use {@link FullRevision#NOT_SPECIFIED} to indicate
-     *                    there is no requirement.
-     * @return A {@link PkgDesc} describing this sample package.
-     */
-    @NonNull
-    public static IPkgDesc newSample(@NonNull final AndroidVersion version,
-                                     @NonNull final MajorRevision revision,
-                                     @NonNull final FullRevision minToolsRev) {
-        return new PkgDesc() {
-            @Override
-            public PkgType getType() {
-                return PkgType.PKG_SAMPLES;
-            }
-
-            @Override
-            public MajorRevision getMajorRevision() {
-                return revision;
-            }
-
-            @Override
-            public AndroidVersion getAndroidVersion() {
-                return version;
-            }
-
-            @Override
-            public FullRevision getMinToolsRev() {
-                return minToolsRev;
-            }
-
-            @Override
-            public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
-                return isGenericUpdateFor(existingDesc);
-            }
-        };
+    private static String sanitize(@NonNull String str) {
+        str = str.toLowerCase(Locale.US).replaceAll("[^a-z0-9_.-]+", "_").replaceAll("_+", "_");
+        return str;
     }
 }
 

@@ -1,9 +1,9 @@
 package ${packageName};
 
-<#if appCompat?has_content>import android.support.v7.app.ActionBarActivity;</#if>
+<#if appCompat>import android.support.v7.app.ActionBarActivity;</#if>
 import android.app.Activity;
-import android.<#if appCompat?has_content>support.v7.</#if>app.ActionBar;
-import android.<#if appCompat?has_content>support.v4.</#if>app.Fragment;
+import android.<#if appCompat>support.v7.</#if>app.ActionBar;
+import android.<#if appCompat>support.v4.</#if>app.Fragment;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -148,7 +148,7 @@ public class NavigationDrawerFragment extends Fragment {
                     return;
                 }
 
-                getActivity().${(appCompat?has_content)?string('supportInvalidate','invalidate')}OptionsMenu(); // calls onPrepareOptionsMenu()
+                getActivity().${appCompat?string('supportInvalidate','invalidate')}OptionsMenu(); // calls onPrepareOptionsMenu()
             }
 
             @Override
@@ -167,7 +167,7 @@ public class NavigationDrawerFragment extends Fragment {
                     sp.edit().putBoolean(PREF_USER_LEARNED_DRAWER, true).${(minApiLevel gte 9)?string('apply','commit')}();
                 }
 
-                getActivity().${(appCompat?has_content)?string('supportInvalidate','invalidate')}OptionsMenu(); // calls onPrepareOptionsMenu()
+                getActivity().${appCompat?string('supportInvalidate','invalidate')}OptionsMenu(); // calls onPrepareOptionsMenu()
             }
         };
 
@@ -267,7 +267,7 @@ public class NavigationDrawerFragment extends Fragment {
     }
 
     private ActionBar getActionBar() {
-        return <#if appCompat?has_content>((ActionBarActivity) getActivity()).getSupportActionBar();<#else>getActivity().getActionBar();</#if>
+        return <#if appCompat>((ActionBarActivity) getActivity()).getSupportActionBar();<#else>getActivity().getActionBar();</#if>
     }
 
     /**

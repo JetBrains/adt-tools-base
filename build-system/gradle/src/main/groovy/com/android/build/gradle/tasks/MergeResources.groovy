@@ -50,7 +50,7 @@ public class MergeResources extends IncrementalTask {
     boolean useAaptCruncher
 
     @Input
-    boolean insertSourceMarkers
+    boolean insertSourceMarkers = true
 
     // actual inputs
     List<ResourceSet> inputResourceSets

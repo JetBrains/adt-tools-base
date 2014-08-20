@@ -1,6 +1,6 @@
-apply plugin: 'android-library'
+apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 15
-    buildToolsVersion "19.0.2"
+    buildToolsVersion '19.1.0'
 }

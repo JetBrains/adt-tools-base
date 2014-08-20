@@ -15,12 +15,15 @@
  */
 package com.android.build.gradle.internal.tasks
 
+import com.android.build.gradle.internal.variant.BaseVariantData
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.TaskAction
 
 public class UninstallTask extends BaseTask {
     @InputFile
     File adbExe
+
+    BaseVariantData variant
 
     @TaskAction
     public void uninstall() {

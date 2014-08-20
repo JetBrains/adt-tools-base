@@ -23,6 +23,7 @@ import com.android.annotations.concurrency.Immutable;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.utils.ILogger;
 import com.android.utils.PositionXmlParser;
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -152,7 +153,7 @@ public class Actions {
 
             }
         }
-        logger.info(stringBuilder.toString());
+        logger.verbose(stringBuilder.toString());
     }
 
     /**
@@ -443,7 +444,13 @@ public class Actions {
         XmlLoader.SourceLocation inMemory = XmlLoader.UNKNOWN;
 
         XmlDocument loadedWithLineNumbers = XmlLoader.load(
-                xmlDocument.getSelectors(), inMemory, xmlDocument.prettyPrint());
+                xmlDocument.getSelectors(),
+                xmlDocument.getSystemPropertyResolver(),
+                inMemory,
+                xmlDocument.prettyPrint(),
+                XmlDocument.Type.MAIN,
+                Optional.<String>absent() /* mainManifestPackageName */);
+
         ImmutableMultimap.Builder<Integer, Record> mappingBuilder = ImmutableMultimap.builder();
         for (XmlElement xmlElement : loadedWithLineNumbers.getRootNode().getMergeableElements()) {
             parse(xmlElement, mappingBuilder);

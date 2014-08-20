@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 package com.android.build.gradle
-
 import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
@@ -31,9 +30,11 @@ import com.android.build.gradle.internal.dsl.LintOptionsImpl
 import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.build.gradle.internal.dsl.ProductFlavorDsl
 import com.android.build.gradle.internal.test.TestOptions
-import com.android.builder.BuilderConstants
-import com.android.builder.DefaultBuildType
-import com.android.builder.DefaultProductFlavor
+import com.android.build.gradle.ndk.NdkExtension
+import com.android.build.gradle.internal.dsl.Splits
+import com.android.builder.core.BuilderConstants
+import com.android.builder.core.DefaultBuildType
+import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.model.BuildType
 import com.android.builder.model.ProductFlavor
 import com.android.builder.model.SigningConfig
@@ -67,15 +68,22 @@ public abstract class BaseExtension {
     final CompileOptions compileOptions
     final PackagingOptionsImpl packagingOptions
     final JacocoExtension jacoco
+    final Splits splits
 
     final NamedDomainObjectContainer<DefaultProductFlavor> productFlavors
     final NamedDomainObjectContainer<DefaultBuildType> buildTypes
     final NamedDomainObjectContainer<SigningConfig> signingConfigs
 
+    String resourcePrefix
+
     List<String> flavorDimensionList
     String testBuildType = "debug"
-    // for now, use the old manifest merger.
-    boolean useOldManifestMerger = true;
+
+    private String defaultPublishConfig = "release"
+    private boolean publishNonDefault = false
+
+    private NdkExtension ndk
+    private boolean useNewNativePlugin = false
 
     private Closure<Void> variantFilter
 
@@ -85,7 +93,7 @@ public abstract class BaseExtension {
     private final List<DeviceProvider> deviceProviderList = Lists.newArrayList();
     private final List<TestServer> testServerList = Lists.newArrayList();
 
-    protected final BasePlugin plugin
+    private final BasePlugin plugin
 
     /**
      * The source sets container.
@@ -105,19 +113,20 @@ public abstract class BaseExtension {
         this.productFlavors = productFlavors
         this.signingConfigs = signingConfigs
 
-        defaultConfig = instantiator.newInstance(ProductFlavorDsl.class, BuilderConstants.MAIN,
-                project.fileResolver, instantiator, project.getLogger())
+        defaultConfig = instantiator.newInstance(ProductFlavorDsl, BuilderConstants.MAIN,
+                project, instantiator, project.getLogger())
 
-        aaptOptions = instantiator.newInstance(AaptOptionsImpl.class)
-        dexOptions = instantiator.newInstance(DexOptionsImpl.class)
-        lintOptions = instantiator.newInstance(LintOptionsImpl.class)
-        testOptions = instantiator.newInstance(TestOptions.class)
-        compileOptions = instantiator.newInstance(CompileOptions.class)
-        packagingOptions = instantiator.newInstance(PackagingOptionsImpl.class)
-        jacoco = instantiator.newInstance(JacocoExtension.class)
+        aaptOptions = instantiator.newInstance(AaptOptionsImpl)
+        dexOptions = instantiator.newInstance(DexOptionsImpl)
+        lintOptions = instantiator.newInstance(LintOptionsImpl)
+        testOptions = instantiator.newInstance(TestOptions)
+        compileOptions = instantiator.newInstance(CompileOptions)
+        packagingOptions = instantiator.newInstance(PackagingOptionsImpl)
+        jacoco = instantiator.newInstance(JacocoExtension)
+        splits = instantiator.newInstance(Splits, instantiator)
 
         sourceSetsContainer = project.container(AndroidSourceSet,
-                new AndroidSourceSetFactory(instantiator, project.fileResolver, isLibrary))
+                new AndroidSourceSetFactory(instantiator, project, isLibrary))
 
         sourceSetsContainer.whenObjectAdded { AndroidSourceSet sourceSet ->
             ConfigurationContainer configurations = project.getConfigurations()
@@ -160,28 +169,21 @@ public abstract class BaseExtension {
         }
     }
 
-    void compileSdkVersion(int apiLevel) {
-        plugin.checkTasksAlreadyCreated()
-        this.target = "android-" + apiLevel
-    }
-
-    void setCompileSdkVersion(int apiLevel) {
-        plugin.checkTasksAlreadyCreated()
-        compileSdkVersion(apiLevel)
-    }
-
     void compileSdkVersion(String target) {
         plugin.checkTasksAlreadyCreated()
         this.target = target
     }
 
-    void setCompileSdkVersion(String target) {
-        plugin.checkTasksAlreadyCreated()
-        compileSdkVersion(target)
+    void compileSdkVersion(int apiLevel) {
+        compileSdkVersion("android-" + apiLevel)
     }
 
-    void useOldManifestMerger(boolean flag) {
-        this.useOldManifestMerger = flag;
+    void setCompileSdkVersion(int apiLevel) {
+        compileSdkVersion(apiLevel)
+    }
+
+    void setCompileSdkVersion(String target) {
+        compileSdkVersion(target)
     }
 
     void buildToolsVersion(String version) {
@@ -190,7 +192,6 @@ public abstract class BaseExtension {
     }
 
     void setBuildToolsVersion(String version) {
-        plugin.checkTasksAlreadyCreated()
         buildToolsVersion(version)
     }
 
@@ -262,6 +263,10 @@ public abstract class BaseExtension {
         plugin.checkTasksAlreadyCreated()
         action.execute(jacoco)
     }
+    void splits(Action<Splits> action) {
+        plugin.checkTasksAlreadyCreated()
+        action.execute(splits)
+    }
 
     void deviceProvider(DeviceProvider deviceProvider) {
         plugin.checkTasksAlreadyCreated()
@@ -283,12 +288,32 @@ public abstract class BaseExtension {
         return testServerList
     }
 
+    public void defaultPublishConfig(String value) {
+        defaultPublishConfig = value
+    }
+
+    public void publishNonDefault(boolean value) {
+        publishNonDefault = value
+    }
+
+    public String getDefaultPublishConfig() {
+        return defaultPublishConfig
+    }
+
+    public boolean getPublishNonDefault() {
+        return publishNonDefault
+    }
+
     void variantFilter(Closure<Void> filter) {
         variantFilter = filter
     }
 
     public Closure<Void> getVariantFilter() {
         return variantFilter;
+    }
+
+    void resourcePrefix(String prefix) {
+        resourcePrefix = prefix
     }
 
     @NonNull
@@ -354,16 +379,28 @@ public abstract class BaseExtension {
         return buildToolsRevision
     }
 
+    public File getSdkDirectory() {
+        return plugin.getSdkFolder()
+    }
+
+    public List<String> getBootClasspath() {
+        return plugin.getBootClasspath()
+    }
+
     public File getAdbExe() {
-        return plugin.sdkParser.adb
+        return plugin.getSdkInfo().adb
     }
 
     public ILogger getLogger() {
         return plugin.logger
     }
 
+    protected getPlugin() {
+        return plugin
+    }
+
     public File getDefaultProguardFile(String name) {
-        return new File(plugin.sdkDirectory,
+        return new File(sdkDirectory,
                 SdkConstants.FD_TOOLS + File.separatorChar
                         + SdkConstants.FD_PROGUARD + File.separatorChar
                         + name);
@@ -373,11 +410,21 @@ public abstract class BaseExtension {
     // TEMP for compatibility
     // STOPSHIP Remove in 1.0
 
+    // by default, use the new manifest merger.
+    boolean useOldManifestMerger = false;
+
+    void useOldManifestMerger(boolean flag) {
+        if (flag) {
+            plugin.displayDeprecationWarning("Support for old manifest merger is deprecated and will be removed in 1.0")
+        }
+        this.useOldManifestMerger = flag;
+    }
+
     private boolean enforceUniquePackageName = true
 
     public void enforceUniquePackageName(boolean value) {
         if (!value) {
-            logger.warning("WARNING: support for libraries with same package name is deprecated and will be removed in 1.0")
+            plugin.displayDeprecationWarning("Support for libraries with same package name is deprecated and will be removed in 1.0")
         }
         enforceUniquePackageName = value
     }
@@ -391,7 +438,23 @@ public abstract class BaseExtension {
     }
 
     public void flavorGroups(String... groups) {
-        logger.warning("WARNING: flavorGroups has been renamed flavorDimensions. It will be removed in 1.0")
+        plugin.displayDeprecationWarning("'flavorGroups' has been renamed 'flavorDimensions'. It will be removed in 1.0")
         flavorDimensions(groups);
+    }
+
+    public void ndk(Action<NdkExtension> action) {
+        action.execute(ndk)
+    }
+
+    public boolean getUseNewNativePlugin() {
+        return useNewNativePlugin
+    }
+
+    public void setUseNewNativePlugin(boolean value) {
+        useNewNativePlugin = value
+    }
+
+    public setNdkExtension(NdkExtension extension) {
+        this.ndk = extension
     }
 }

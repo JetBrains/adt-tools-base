@@ -17,8 +17,8 @@ package com.android.build.gradle
 
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.LibraryVariant
-import com.android.builder.DefaultBuildType
-import com.android.builder.DefaultProductFlavor
+import com.android.builder.core.DefaultBuildType
+import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.model.SigningConfig
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.internal.DefaultDomainObjectSet
@@ -31,9 +31,6 @@ public class LibraryExtension extends BaseExtension {
 
     private final DefaultDomainObjectSet<LibraryVariant> libraryVariantList =
         new DefaultDomainObjectSet<LibraryVariant>(LibraryVariant.class)
-
-    private String defaultPublishConfig = "release"
-    private boolean publishNonDefault = false
 
     LibraryExtension(BasePlugin plugin, ProjectInternal project, Instantiator instantiator,
             NamedDomainObjectContainer<DefaultBuildType> buildTypes,
@@ -52,22 +49,6 @@ public class LibraryExtension extends BaseExtension {
         libraryVariantList.add((LibraryVariant) variant)
     }
 
-    public void defaultPublishConfig(String value) {
-        defaultPublishConfig = value
-    }
-
-    public void publishNonDefault(boolean value) {
-        publishNonDefault = value
-    }
-
-    public String getDefaultPublishConfig() {
-        return defaultPublishConfig
-    }
-
-    public boolean getPublishNonDefault() {
-        return publishNonDefault
-    }
-
     // ---------------
     // TEMP for compatibility
     // STOPSHIP Remove in 1.0
@@ -76,7 +57,7 @@ public class LibraryExtension extends BaseExtension {
 
     public void packageBuildConfig(boolean value) {
         if (!value) {
-            logger.warning("WARNING: support for not packaging BuildConfig is deprecated and will be removed in 1.0")
+            plugin.displayDeprecationWarning("Support for not packaging BuildConfig is deprecated and will be removed in 1.0")
         }
 
         packageBuildConfig = value

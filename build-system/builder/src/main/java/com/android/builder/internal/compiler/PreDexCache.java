@@ -21,8 +21,8 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.annotations.concurrency.Immutable;
-import com.android.builder.AndroidBuilder;
-import com.android.builder.DexOptions;
+import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.DexOptions;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.xml.XmlPrettyPrinter;
@@ -30,6 +30,7 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
+import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
@@ -43,11 +44,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
@@ -68,7 +66,7 @@ import javax.xml.parsers.ParserConfigurationException;
  * Because different project could use different build-tools, both the library to pre-dex and the
  * version of the build tools are used as keys in the cache.
  *
- * The API is fairly simple, just call {@link #preDexLibrary(java.io.File, java.io.File, com.android.builder.DexOptions, com.android.sdklib.BuildToolInfo, boolean, com.android.ide.common.internal.CommandLineRunner)}
+ * The API is fairly simple, just call {@link #preDexLibrary(java.io.File, java.io.File, com.android.builder.core.DexOptions, com.android.sdklib.BuildToolInfo, boolean, com.android.ide.common.internal.CommandLineRunner)}
  *
  * The call will be blocking until the pre-dexing happened, either through actual pre-dexing or
  * through copying the output of a previous pre-dex run.
@@ -416,16 +414,8 @@ public class PreDexCache {
             return;
         }
 
-        BufferedInputStream stream = null;
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            stream = new BufferedInputStream(new FileInputStream(itemStorage));
-            InputSource is = new InputSource(stream);
-            factory.setNamespaceAware(true);
-            factory.setValidating(false);
-
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(is);
+            Document document = XmlUtils.parseUtfXmlFile(itemStorage, true);
 
             // get the root node
             Node rootNode = document.getDocumentElement();
@@ -462,14 +452,6 @@ public class PreDexCache {
         } catch (Exception ignored) {
             // if we fail to read parts or any of the file, all it'll do is fail to reuse an
             // already pre-dexed library, so that's not a super big deal.
-        } finally {
-            try {
-                if (stream != null) {
-                    stream.close();
-                }
-            } catch (IOException e) {
-                // ignore
-            }
         }
     }
 

@@ -64,7 +64,10 @@ public class BuildToolPackage extends FullRevisionPackage {
             Map<String,String> licenses) {
         super(source, packageNode, nsUri, licenses);
 
-        mPkgDesc = PkgDesc.newBuildTool(getRevision());
+        mPkgDesc = PkgDesc.Builder
+                .newBuildTool(getRevision())
+                .setDescriptions(this)
+                .create();
     }
 
     /**
@@ -144,7 +147,7 @@ public class BuildToolPackage extends FullRevisionPackage {
         }
 
         if (error == null && rev != null) {
-            return new BuildToolPackage(
+            BuildToolPackage pkg = new BuildToolPackage(
                     null,                       //source
                     props,
                     0,                          //revision (extracted from props)
@@ -153,6 +156,11 @@ public class BuildToolPackage extends FullRevisionPackage {
                     null,                       //descUrl
                     buildToolDir.getAbsolutePath());
 
+            if (pkg.hasCompatibleArchive()) {
+                return pkg;
+            } else {
+                error = "Package is not compatible with current OS";
+            }
         }
 
 
@@ -169,8 +177,10 @@ public class BuildToolPackage extends FullRevisionPackage {
 
         String longDesc = sb.toString();
 
-        IPkgDesc desc = PkgDesc.newBuildTool(
-                rev != null ? rev : new FullRevision(FullRevision.MISSING_MAJOR_REV));
+        IPkgDesc desc = PkgDesc.Builder
+                .newBuildTool(rev != null ? rev : new FullRevision(FullRevision.MISSING_MAJOR_REV))
+                .setDescriptionShort(shortDesc)
+                .create();
 
         return new BrokenPackage(props, shortDesc, longDesc,
                 IMinApiLevelDependency.MIN_API_LEVEL_NOT_SPECIFIED,
@@ -196,7 +206,10 @@ public class BuildToolPackage extends FullRevisionPackage {
                 descUrl,
                 archiveOsPath);
 
-        mPkgDesc = PkgDesc.newBuildTool(getRevision());
+        mPkgDesc = PkgDesc.Builder
+                .newBuildTool(getRevision())
+                .setDescriptions(this)
+                .create();
     }
 
     @Override

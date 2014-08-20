@@ -16,7 +16,13 @@
 
 package com.android.tools.lint.checks;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Severity;
 
 @SuppressWarnings("javadoc")
 public class DuplicateResourceDetectorTest extends AbstractCheckTest {
@@ -43,6 +49,18 @@ public class DuplicateResourceDetectorTest extends AbstractCheckTest {
                 "res/values-cs/strings.xml",
                 "res/values/customattr.xml",
                 "res/values/customattr.xml=>res/values/customattr2.xml"));
+    }
+
+    public void testDotAliases() throws Exception {
+        assertEquals(""
+                + "res/values/duplicate-strings2.xml:5: Error: app_name has already been defined in this folder (app_name is equivalent to app.name) [DuplicateDefinition]\n"
+                + "    <string name=\"app.name\">App Name 1</string>\n"
+                + "            ~~~~~~~~~~~~~~~\n"
+                + "    res/values/duplicate-strings2.xml:4: Previously defined here\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "res/values/duplicate-strings2.xml"));
     }
 
     public void testSameFile() throws Exception {
@@ -106,5 +124,19 @@ public class DuplicateResourceDetectorTest extends AbstractCheckTest {
                 + "4 errors, 0 warnings\n",
 
             lintProject("res/values/refs.xml"));
+    }
+
+    public void testGetExpectedType() {
+        assertEquals("string", DuplicateResourceDetector.getExpectedType(
+                "Unexpected resource reference type; expected value of type @string/"));
+    }
+
+    @Override
+    protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message,
+            @Nullable Object data) {
+        if (issue == DuplicateResourceDetector.TYPE_MISMATCH) {
+            assertNotNull(message, DuplicateResourceDetector.getExpectedType(message));
+        }
     }
 }

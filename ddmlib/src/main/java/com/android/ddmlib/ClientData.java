@@ -16,6 +16,8 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.ddmlib.HeapSegment.HeapSegmentElement;
 
 import java.nio.BufferUnderflowException;
@@ -163,6 +165,7 @@ public class ClientData {
 
     private static IHprofDumpHandler sHprofDumpHandler;
     private static IMethodProfilingHandler sMethodProfilingHandler;
+    private static IAllocationTrackingHandler sAllocationTrackingHandler;
 
     // is this a DDM-aware client?
     private boolean mIsDdmAware;
@@ -181,6 +184,12 @@ public class ClientData {
 
     // client's user id is valid
     private boolean mValidUserId;
+
+    // client's ABI
+    private String mAbi;
+
+    // jvm flag: currently only indicates whether checkJni is enabled
+    private String mJvmFlags;
 
     // how interested are we in a debugger?
     private DebuggerStatus mDebuggerInterest;
@@ -376,6 +385,19 @@ public class ClientData {
         void onEndFailure(Client client, String message);
     }
 
+    /*
+     * Handlers able to act on allocation tracking info
+     */
+    public interface IAllocationTrackingHandler {
+      /**
+       * Called when an allocation tracking was successful.
+       * @param data the data containing the encoded allocations.
+       *             See {@link AllocationsParser#parse(java.nio.ByteBuffer)} for parsing this data.
+       * @param client the client for which allocations were tracked.
+       */
+      void onSuccess(@NonNull byte[] data, @NonNull Client client);
+    }
+
     /**
      * Sets the handler to receive notifications when an HPROF dump succeeded or failed.
      */
@@ -396,6 +418,15 @@ public class ClientData {
 
     static IMethodProfilingHandler getMethodProfilingHandler() {
         return sMethodProfilingHandler;
+    }
+
+    public static void setAllocationTrackingHandler(@NonNull IAllocationTrackingHandler handler) {
+      sAllocationTrackingHandler = handler;
+    }
+
+    @Nullable
+    static IAllocationTrackingHandler getAllocationTrackingHandler() {
+      return sAllocationTrackingHandler;
     }
 
     /**
@@ -472,6 +503,17 @@ public class ClientData {
         return mValidUserId;
     }
 
+    /** Returns the abi flavor (32-bit or 64-bit) of the application, null if unknown or not set. */
+    @Nullable
+    public String getAbi() {
+        return mAbi;
+    }
+
+    /** Returns the VM flags in use, or null if unknown. */
+    public String getJvmFlags() {
+        return mJvmFlags;
+    }
+
     /**
      * Sets client description.
      *
@@ -497,6 +539,14 @@ public class ClientData {
     void setUserId(int id) {
         mUserId = id;
         mValidUserId = true;
+    }
+
+    void setAbi(String abi) {
+        mAbi = abi;
+    }
+
+    void setJvmFlags(String jvmFlags) {
+        mJvmFlags = jvmFlags;
     }
 
     /**
@@ -671,8 +721,9 @@ public class ClientData {
      * Returns the list of tracked allocations.
      * @see Client#requestAllocationDetails()
      */
+    @Nullable
     public synchronized AllocationInfo[] getAllocations() {
-        return mAllocations;
+      return mAllocations;
     }
 
     void addFeature(String feature) {

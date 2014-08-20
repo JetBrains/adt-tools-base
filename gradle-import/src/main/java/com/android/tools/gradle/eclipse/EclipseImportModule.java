@@ -19,6 +19,7 @@ package com.android.tools.gradle.eclipse;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.repository.GradleCoordinate;
+import com.android.sdklib.AndroidVersion;
 import com.android.tools.lint.client.api.DefaultConfiguration;
 import com.google.common.collect.Lists;
 
@@ -270,18 +271,21 @@ class EclipseImportModule extends ImportModule {
         return mProject.getLanguageLevel();
     }
 
+    @NonNull
     @Override
-    protected int getCompileSdkVersion() {
+    protected AndroidVersion getCompileSdkVersion() {
         return mProject.getCompileSdkVersion();
     }
 
+    @NonNull
     @Override
-    protected int getTargetSdkVersion() {
+    protected AndroidVersion getTargetSdkVersion() {
         return mProject.getTargetSdkVersion();
     }
 
+    @NonNull
     @Override
-    protected int getMinSdkVersion() {
+    protected AndroidVersion getMinSdkVersion() {
         return mProject.getMinSdkVersion();
     }
 

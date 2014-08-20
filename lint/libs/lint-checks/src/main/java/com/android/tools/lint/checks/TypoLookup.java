@@ -344,14 +344,15 @@ public class TypoLookup {
         };
         Arrays.sort(wordArrays, comparator);
 
+        byte[] headerBytes = FILE_HEADER.getBytes(Charsets.US_ASCII);
         int entryCount = wordArrays.length;
-        int capacity = entryCount * BYTES_PER_ENTRY;
+        int capacity = entryCount * BYTES_PER_ENTRY + headerBytes.length + 5;
         ByteBuffer buffer = ByteBuffer.allocate(capacity);
         buffer.order(ByteOrder.BIG_ENDIAN);
         //  1. A file header, which is the exact contents of {@link FILE_HEADER} encoded
         //      as ASCII characters. The purpose of the header is to identify what the file
         //      is for, for anyone attempting to open the file.
-        buffer.put(FILE_HEADER.getBytes(Charsets.US_ASCII));
+        buffer.put(headerBytes);
 
         //  2. A file version number. If the binary file does not match the reader's expected
         //      version, it can ignore it (and regenerate the cache from XML).

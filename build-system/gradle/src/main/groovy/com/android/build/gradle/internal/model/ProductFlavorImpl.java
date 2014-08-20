@@ -18,9 +18,11 @@ package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.NdkConfig;
 import com.android.builder.model.ProductFlavor;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.io.File;
@@ -39,27 +41,35 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String name = null;
-    private int mMinSdkVersion = -1;
-    private int mTargetSdkVersion = -1;
+    private ApiVersion mMinSdkVersion = null;
+    private ApiVersion mTargetSdkVersion = null;
     private int mRenderscriptTargetApi = -1;
     private boolean mRenderscriptSupportMode = false;
     private boolean mRenderscriptNdkMode = false;
     private int mVersionCode = -1;
     private String mVersionName = null;
-    private String mPackageName = null;
-    private String mTestPackageName = null;
+    private String mApplicationId = null;
+    private String mTestApplicationId = null;
     private String mTestInstrumentationRunner = null;
     private Boolean mTestHandleProfiling = null;
     private Boolean mTestFunctionalTest = null;
     private Set<String> mResourceConfigurations = null;
+    private Map<String, String> mManifestPlaceholders = null;
 
     @NonNull
-    static ProductFlavorImpl cloneFlavor(ProductFlavor productFlavor) {
+    static ProductFlavorImpl cloneFlavor(
+            @NonNull ProductFlavor productFlavor,
+            @Nullable ApiVersion minSdkVersionOverride,
+            @Nullable ApiVersion targetSdkVersionOverride) {
         ProductFlavorImpl clonedFlavor = new ProductFlavorImpl();
         clonedFlavor.name = productFlavor.getName();
 
-        clonedFlavor.mMinSdkVersion = productFlavor.getMinSdkVersion();
-        clonedFlavor.mTargetSdkVersion = productFlavor.getTargetSdkVersion();
+        clonedFlavor.mMinSdkVersion = minSdkVersionOverride != null ?
+                minSdkVersionOverride :
+                ApiVersionImpl.clone(productFlavor.getMinSdkVersion());
+        clonedFlavor.mTargetSdkVersion = targetSdkVersionOverride != null ?
+                targetSdkVersionOverride :
+                ApiVersionImpl.clone(productFlavor.getTargetSdkVersion());
         clonedFlavor.mRenderscriptTargetApi = productFlavor.getRenderscriptTargetApi();
         clonedFlavor.mRenderscriptSupportMode = productFlavor.getRenderscriptSupportMode();
         clonedFlavor.mRenderscriptNdkMode = productFlavor.getRenderscriptNdkMode();
@@ -67,9 +77,9 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
         clonedFlavor.mVersionCode = productFlavor.getVersionCode();
         clonedFlavor.mVersionName = productFlavor.getVersionName();
 
-        clonedFlavor.mPackageName = productFlavor.getPackageName();
+        clonedFlavor.mApplicationId = productFlavor.getApplicationId();
 
-        clonedFlavor.mTestPackageName = productFlavor.getTestPackageName();
+        clonedFlavor.mTestApplicationId = productFlavor.getTestApplicationId();
         clonedFlavor.mTestInstrumentationRunner = productFlavor.getTestInstrumentationRunner();
         clonedFlavor.mTestHandleProfiling = productFlavor.getTestHandleProfiling();
         clonedFlavor.mTestFunctionalTest = productFlavor.getTestFunctionalTest();
@@ -77,22 +87,25 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
         clonedFlavor.mResourceConfigurations = Sets.newHashSet(
                 productFlavor.getResourceConfigurations());
 
+        clonedFlavor.mManifestPlaceholders = Maps.newHashMap(
+                productFlavor.getManifestPlaceholders());
+
         return clonedFlavor;
     }
 
     private ProductFlavorImpl() {
     }
 
-    @NonNull
     @Override
+    @NonNull
     public String getName() {
         return name;
     }
 
-    @Nullable
     @Override
-    public String getPackageName() {
-        return mPackageName;
+    @Nullable
+    public String getApplicationId() {
+        return mApplicationId;
     }
 
     @Override
@@ -100,19 +113,21 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
         return mVersionCode;
     }
 
-    @Nullable
     @Override
+    @Nullable
     public String getVersionName() {
         return mVersionName;
     }
 
     @Override
-    public int getMinSdkVersion() {
+    @Nullable
+    public ApiVersion getMinSdkVersion() {
         return mMinSdkVersion;
     }
 
     @Override
-    public int getTargetSdkVersion() {
+    @Nullable
+    public ApiVersion getTargetSdkVersion() {
         return mTargetSdkVersion;
     }
 
@@ -133,8 +148,8 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
 
     @Nullable
     @Override
-    public String getTestPackageName() {
-        return mTestPackageName;
+    public String getTestApplicationId() {
+        return mTestApplicationId;
     }
 
     @Nullable
@@ -191,6 +206,12 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
         return mResourceConfigurations;
     }
 
+    @NonNull
+    @Override
+    public Map<String, String> getManifestPlaceholders() {
+        return mManifestPlaceholders;
+    }
+
     @Override
     public String toString() {
         return "ProductFlavorImpl{" +
@@ -202,12 +223,13 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
                 ", mRenderscriptNdkMode=" + mRenderscriptNdkMode +
                 ", mVersionCode=" + mVersionCode +
                 ", mVersionName='" + mVersionName + '\'' +
-                ", mPackageName='" + mPackageName + '\'' +
-                ", mTestPackageName='" + mTestPackageName + '\'' +
+                ", mApplicationId='" + mApplicationId + '\'' +
+                ", mTestApplicationId='" + mTestApplicationId + '\'' +
                 ", mTestInstrumentationRunner='" + mTestInstrumentationRunner + '\'' +
                 ", mTestHandleProfiling='" + mTestHandleProfiling + '\'' +
                 ", mTestFunctionalTest='" + mTestFunctionalTest + '\'' +
                 ", mResourceConfigurations='" + mResourceConfigurations + '\'' +
+                ", mManifestPlaceholders='" + mManifestPlaceholders + '\'' +
                 '}';
     }
 }

@@ -109,10 +109,13 @@ public class XmlReporter extends Reporter {
                     writeAttribute(mWriter, 2, "excludedVariants", Joiner.on(',').join(warning.getExcludedVariantNames()));
                 }
 
-                if (mClient.getRegistry() instanceof BuiltinIssueRegistry &&
-                        ((BuiltinIssueRegistry) mClient.getRegistry()).hasAutoFix(
-                                "adt", issue)) { //$NON-NLS-1$
-                    writeAttribute(mWriter, 2, "quickfix", "adt");      //$NON-NLS-1$ //$NON-NLS-2$
+                if (mClient.getRegistry() instanceof BuiltinIssueRegistry) {
+                    boolean adt = QuickfixHandler.ADT.hasAutoFix(issue);
+                    boolean studio = QuickfixHandler.STUDIO.hasAutoFix(issue);
+                    if (adt || studio) { //$NON-NLS-1$
+                        String value = adt && studio ? "studio,adt" : studio ? "studio" : "adt";
+                        writeAttribute(mWriter, 2, "quickfix", value);      //$NON-NLS-1$ //$NON-NLS-2$
+                    }
                 }
 
                 assert (warning.file != null) == (warning.location != null);

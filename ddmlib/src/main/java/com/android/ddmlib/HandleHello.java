@@ -98,8 +98,8 @@ final class HandleHello extends ChunkHandler {
         vmIdentLen = data.getInt();
         appNameLen = data.getInt();
 
-        vmIdent = getString(data, vmIdentLen);
-        appName = getString(data, appNameLen);
+        vmIdent = ByteBufferUtil.getString(data, vmIdentLen);
+        appName = ByteBufferUtil.getString(data, appNameLen);
 
         // Newer devices send user id in the APNM packet.
         int userId = -1;
@@ -118,24 +118,55 @@ final class HandleHello extends ChunkHandler {
             }
         }
 
+        // check if the VM has reported information about the ABI
+        boolean validAbi = false;
+        String abi = null;
+        if (data.hasRemaining()) {
+            try {
+                int abiLength = data.getInt();
+                abi = ByteBufferUtil.getString(data, abiLength);
+                validAbi = true;
+            } catch (BufferUnderflowException e) {
+                Log.e("ddm-hello", "Insufficient data in HELO chunk to retrieve ABI.");
+            }
+        }
+
+        boolean hasJvmFlags = false;
+        String jvmFlags = null;
+        if (data.hasRemaining()) {
+            try {
+                int jvmFlagsLength = data.getInt();
+                jvmFlags = ByteBufferUtil.getString(data, jvmFlagsLength);
+                hasJvmFlags = true;
+            } catch (BufferUnderflowException e) {
+                Log.e("ddm-hello", "Insufficient data in HELO chunk to retrieve JVM flags");
+            }
+        }
+
         Log.d("ddm-hello", "HELO: v=" + version + ", pid=" + pid
             + ", vm='" + vmIdent + "', app='" + appName + "'");
 
         ClientData cd = client.getClientData();
 
-        synchronized (cd) {
-            if (cd.getPid() == pid) {
-                cd.setVmIdentifier(vmIdent);
-                cd.setClientDescription(appName);
-                cd.isDdmAware(true);
+        if (cd.getPid() == pid) {
+            cd.setVmIdentifier(vmIdent);
+            cd.setClientDescription(appName);
+            cd.isDdmAware(true);
 
-                if (validUserId) {
-                    cd.setUserId(userId);
-                }
-            } else {
-                Log.e("ddm-hello", "Received pid (" + pid + ") does not match client pid ("
-                        + cd.getPid() + ")");
+            if (validUserId) {
+                cd.setUserId(userId);
             }
+
+            if (validAbi) {
+                cd.setAbi(abi);
+            }
+
+            if (hasJvmFlags) {
+                cd.setJvmFlags(jvmFlags);
+            }
+        } else {
+            Log.e("ddm-hello", "Received pid (" + pid + ") does not match client pid ("
+                    + cd.getPid() + ")");
         }
 
         client = checkDebuggerPortForAppName(client, appName);
@@ -174,7 +205,7 @@ final class HandleHello extends ChunkHandler {
         featureCount = data.getInt();
         for (i = 0; i < featureCount; i++) {
             int len = data.getInt();
-            String feature = getString(data, len);
+            String feature = ByteBufferUtil.getString(data, len);
             client.getClientData().addFeature(feature);
 
             Log.d("ddm-hello", "Feature: " + feature);

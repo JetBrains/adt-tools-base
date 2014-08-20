@@ -1,12 +1,12 @@
 buildscript {
     repositories {
-        maven { url '../../../../../out/host/gradle/repo' }
+        maven { url '../../../../../out/repo' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.10.0-SNAPSHOT'
+        classpath 'com.android.tools.build:gradle:0.13.0'
     }
 }
-apply plugin: 'android'
+apply plugin: 'com.android.application'
 
 repositories {
   mavenCentral()
@@ -21,7 +21,7 @@ dependencies {
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "19.0.2"
+    buildToolsVersion '19.1.0'
 
     testBuildType "debug"
 
@@ -55,7 +55,7 @@ android {
 
     buildTypes {
         debug {
-            packageNameSuffix ".debug"
+            applicationIdSuffix ".debug"
             signingConfig signingConfigs.myConfig
 
             testCoverageEnabled true
@@ -109,5 +109,12 @@ android {
         htmlReport true
         // optional path to report (default will be lint-results.html in the builddir)
         htmlOutput file("lint-report.html")
+    }
+
+    // Override the versionCode of the release version
+    applicationVariants.all { variant ->
+        if (variant.buildType.name == "release") {
+            variant.outputs.get(0).versionCodeOverride = 13
+        }
     }
 }

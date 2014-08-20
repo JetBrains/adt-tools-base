@@ -1,12 +1,11 @@
 apply plugin: 'java'
-apply plugin: 'distrib'
+apply plugin: 'sdk-java-lib'
 
 group = 'com.android.tools'
 archivesBaseName = 'rule-api'
+version = rootProject.ext.baseVersion
 
 dependencies {
-    compile project(':common')
-    compile project(':layoutlib-api')
+    compile project(':base:common')
+    compile project(':base:layoutlib-api')
 }
-
-apply from: '../baseVersion.gradle'

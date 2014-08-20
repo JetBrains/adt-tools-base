@@ -18,7 +18,7 @@ package com.android.ide.common.internal;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.util.GrabProcessOutput;
+import com.android.utils.GrabProcessOutput;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -31,11 +31,23 @@ public class CommandLineRunner {
 
     private final ILogger mLogger;
 
-    private class OutputGrabber implements GrabProcessOutput.IProcessOutput {
+    public abstract static class CommandLineOutput implements GrabProcessOutput.IProcessOutput {
+        private final List<String> mErrors = Lists.newArrayList();
 
-        private boolean mFoundError = false;
-        private List<String> mErrors = Lists.newArrayList();
+        @Override
+        public void err(@Nullable String line) {
+            if (line != null) {
+                mErrors.add(line);
+            }
+        }
 
+        @NonNull
+        public final List<String> getErrors() {
+            return mErrors;
+        }
+    }
+
+    private class OutputGrabber extends CommandLineOutput {
         @Override
         public void out(@Nullable String line) {
             if (line != null) {
@@ -45,15 +57,10 @@ public class CommandLineRunner {
 
         @Override
         public void err(@Nullable String line) {
+            super.err(line);
             if (line != null) {
                 mLogger.error(null /*throwable*/, line);
-                mErrors.add(line);
-                mFoundError = true;
             }
-        }
-
-        private boolean foundError() {
-            return mFoundError;
         }
     }
 
@@ -70,7 +77,28 @@ public class CommandLineRunner {
     }
 
     public void runCmdLine(
+            @NonNull List<String> command,
+            @NonNull CommandLineOutput commandLineOutput,
+            @Nullable Map<String, String> envVariableMap)
+            throws IOException, InterruptedException, LoggedErrorException {
+        String[] cmdArray = command.toArray(new String[command.size()]);
+        runCmdLine(cmdArray, commandLineOutput, envVariableMap);
+    }
+
+    public void runCmdLine(
             @NonNull String[] command,
+            @Nullable Map<String, String> envVariableMap)
+            throws IOException, InterruptedException, LoggedErrorException {
+
+        // create a default CommandLineOutput
+        OutputGrabber grabber = new OutputGrabber();
+
+        runCmdLine(command, grabber, envVariableMap);
+    }
+
+    public void runCmdLine(
+            @NonNull String[] command,
+            @NonNull CommandLineOutput commandLineOutput,
             @Nullable Map<String, String> envVariableMap)
             throws IOException, InterruptedException, LoggedErrorException {
         printCommand(command);
@@ -86,18 +114,15 @@ public class CommandLineRunner {
 
         Process process = processBuilder.start();
 
-        // get the output and return code from the process
-        OutputGrabber grabber = new OutputGrabber();
-
         int returnCode = GrabProcessOutput.grabProcessOutput(
                 process,
                 GrabProcessOutput.Wait.WAIT_FOR_READERS, // we really want to make sure we get all the output!
-                grabber);
+                commandLineOutput);
 
         if (returnCode != 0) {
             throw new LoggedErrorException(
                     returnCode,
-                    grabber.mErrors,
+                    commandLineOutput.getErrors(),
                     Joiner.on(' ').join(command));
         }
     }

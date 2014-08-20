@@ -16,6 +16,7 @@
 
 package com.android.builder.internal.compiler;
 
+import com.android.annotations.NonNull;
 import com.google.common.collect.Lists;
 
 import java.io.File;
@@ -26,13 +27,16 @@ import java.util.List;
  * Source Searcher processor, gathering a list of all the files found by the SourceSearcher.
  */
 public class FileGatherer implements SourceSearcher.SourceFileProcessor {
+    @NonNull
     private final List<File> mFiles = Lists.newArrayList();
 
     @Override
-    public void processFile(File sourceFile) throws IOException, InterruptedException {
+    public void processFile(@NonNull File sourceFolder, @NonNull File sourceFile)
+            throws IOException, InterruptedException {
         mFiles.add(sourceFile);
     }
 
+    @NonNull
     public List<File> getFiles() {
         return mFiles;
     }

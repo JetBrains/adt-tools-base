@@ -92,6 +92,12 @@ public abstract class XmlNode {
          * Persist itself inside a {@link org.w3c.dom.Element}
          */
         void persistTo(Element node);
+
+        /**
+         * The local name.
+         */
+        String getLocalName();
+
     }
 
     /**
@@ -199,6 +205,11 @@ public abstract class XmlNode {
         public void persistTo(Element node) {
             node.setAttribute("name", mName);
         }
+
+        @Override
+        public String getLocalName() {
+            return mName;
+        }
     }
 
     /**
@@ -258,6 +269,11 @@ public abstract class XmlNode {
             node.setAttribute("prefix", mPrefix);
             node.setAttribute("local-name", mLocalName);
             node.setAttribute("namespace-uri", mNamespaceURI);
+        }
+
+        @Override
+        public String getLocalName() {
+            return mLocalName;
         }
     }
 

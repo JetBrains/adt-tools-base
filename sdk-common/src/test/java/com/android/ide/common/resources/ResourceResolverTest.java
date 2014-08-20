@@ -162,6 +162,11 @@ public class ResourceResolverTest extends TestCase {
         StyleResourceValue theme = resolver.getTheme("Theme", true);
         assertNotNull(theme);
 
+        // getParent
+        StyleResourceValue parent = resolver.getParent(myTheme);
+        assertNotNull(parent);
+        assertEquals("Theme.Light", parent.getName());
+
         // themeIsParentOf
         assertTrue(resolver.themeIsParentOf(themeLight, myTheme));
         assertFalse(resolver.themeIsParentOf(myTheme, themeLight));
@@ -430,5 +435,71 @@ public class ResourceResolverTest extends TestCase {
         assertTrue(wasWarned.get());
 
         projectRepository.dispose();
+    }
+
+    public void testSetDeviceDefaults() throws Exception {
+        TestResourceRepository frameworkRepository = TestResourceRepository.create(true,
+            new Object[] {
+                "values/themes.xml", ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources>\n"
+                + "    <style name=\"Theme.Light\" parent=\"\">\n"
+                + "         <item name=\"android:textColor\">#ff0000</item>\n"
+                + "    </style>\n"
+                + "    <style name=\"Theme.Holo.Light\" parent=\"Theme.Light\">\n"
+                + "         <item name=\"android:textColor\">#00ff00</item>\n"
+                + "    </style>\n"
+                + "    <style name=\"Theme.DeviceDefault.Light\" parent=\"Theme.Holo.Light\"/>\n"
+                + "    <style name=\"Theme\" parent=\"\">\n"
+                + "         <item name=\"android:textColor\">#000000</item>\n"
+                + "    </style>\n"
+                + "    <style name=\"Theme.Holo\" parent=\"Theme\">\n"
+                + "         <item name=\"android:textColor\">#0000ff</item>\n"
+                + "    </style>\n"
+                + "    <style name=\"Theme.DeviceDefault\" parent=\"Theme.Holo\"/>\n"
+                + "</resources>\n",
+        });
+
+        TestResourceRepository projectRepository = TestResourceRepository.create(false,
+            new Object[] {
+                "values/themes.xml", ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources>\n"
+                + "    <style name=\"AppTheme\" parent=\"android:Theme.DeviceDefault.Light\"/>\n"
+                + "    <style name=\"AppTheme.Dark\" parent=\"android:Theme.DeviceDefault\"/>\n"
+                + "</resources>\n"
+        });
+
+        assertFalse(projectRepository.isFrameworkRepository());
+        FolderConfiguration config = FolderConfiguration.getConfigForFolder("values-es-land");
+        assertNotNull(config);
+        Map<ResourceType, Map<String, ResourceValue>> projectResources = projectRepository
+                .getConfiguredResources(config);
+        Map<ResourceType, Map<String, ResourceValue>> frameworkResources = frameworkRepository
+                .getConfiguredResources(config);
+        assertNotNull(projectResources);
+        ResourceResolver lightResolver = ResourceResolver.create(projectResources,
+                frameworkResources, "AppTheme", true);
+        assertNotNull(lightResolver);
+        ResourceValue textColor = lightResolver.findItemInTheme("textColor", true);
+        assertNotNull(textColor);
+        assertEquals("#00ff00", textColor.getValue());
+
+        lightResolver.setDeviceDefaults("Theme.Light", null);
+        textColor = lightResolver.findItemInTheme("textColor", true);
+        assertNotNull(textColor);
+        assertEquals("#ff0000", textColor.getValue());
+
+        ResourceResolver darkResolver = ResourceResolver.create(projectResources,
+                frameworkResources, "AppTheme.Dark", true);
+        assertNotNull(darkResolver);
+        textColor = darkResolver.findItemInTheme("textColor", true);
+        assertNotNull(textColor);
+        assertEquals("#0000ff", textColor.getValue());
+
+        darkResolver.setDeviceDefaults("Theme.Light", "Theme");
+        textColor = darkResolver.findItemInTheme("textColor", true);
+        assertNotNull(textColor);
+        assertEquals("#000000", textColor.getValue());
     }
 }
