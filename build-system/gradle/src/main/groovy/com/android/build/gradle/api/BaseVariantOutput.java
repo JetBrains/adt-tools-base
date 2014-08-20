@@ -71,4 +71,29 @@ public interface BaseVariantOutput {
      */
     @Nullable
     String getAbiFilter();
+
+    /**
+     * Returns the name of the variant. Guaranteed to be unique.
+     */
+    @NonNull
+    String getName();
+
+    /**
+     * Returns the base name for the output of the variant. Guaranteed to be unique.
+     */
+    @NonNull
+    String getBaseName();
+
+    /**
+     * Returns a subfolder name for the variant output. Guaranteed to be unique.
+     *
+     * This is usually a mix of build type and flavor(s) (if applicable).
+     * For instance this could be:
+     * "debug"
+     * "debug/myflavor"
+     * "release/Flavor1Flavor2"
+     */
+    @NonNull
+    String getDirName();
+
 }

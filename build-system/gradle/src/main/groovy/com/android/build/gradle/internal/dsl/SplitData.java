@@ -68,6 +68,10 @@ public class SplitData {
         include.addAll(Arrays.asList(includes));
     }
 
+    public void reset() {
+        reset = true;
+    }
+
     /**
      * Returns a list of all applicable filters for this dimension.
      *

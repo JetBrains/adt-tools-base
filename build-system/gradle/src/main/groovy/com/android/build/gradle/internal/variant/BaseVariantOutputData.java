@@ -41,6 +41,8 @@ public abstract class BaseVariantOutputData {
     @Nullable
     private final String abiFilter;
 
+    private boolean multiOutput = false;
+
     public ManifestProcessorTask manifestProcessorTask;
     public ProcessAndroidResources processResourcesTask;
     public Task assembleTask;
@@ -70,16 +72,25 @@ public abstract class BaseVariantOutputData {
 
     @NonNull
     public String getFullName() {
+        if (!multiOutput) {
+            return variantData.getVariantConfiguration().getFullName();
+        }
         return variantData.getVariantConfiguration().computeFullNameWithSplits(getFilterName());
     }
 
     @NonNull
     public String getBaseName() {
+        if (!multiOutput) {
+            return variantData.getVariantConfiguration().getBaseName();
+        }
         return variantData.getVariantConfiguration().computeBaseNameWithSplits(getFilterName());
     }
 
     @NonNull
     public String getDirName() {
+        if (!multiOutput) {
+            return variantData.getVariantConfiguration().getDirName();
+        }
         return variantData.getVariantConfiguration().computeDirNameWithSplits(densityFilter, abiFilter);
     }
 
@@ -102,5 +113,9 @@ public abstract class BaseVariantOutputData {
         }
 
         return sb.toString();
+    }
+
+    void setMultiOutput(boolean multiOutput) {
+        this.multiOutput = multiOutput;
     }
 }
