@@ -79,4 +79,22 @@ public abstract class BaseVariantOutputImpl implements BaseVariantOutput {
     public String getAbiFilter() {
         return getVariantOutputData().getAbiFilter();
     }
+
+    @NonNull
+    @Override
+    public String getName() {
+        return getVariantOutputData().getFullName();
+    }
+
+    @NonNull
+    @Override
+    public String getBaseName() {
+        return getVariantOutputData().getBaseName();
+    }
+
+    @NonNull
+    @Override
+    public String getDirName() {
+        return getVariantOutputData().getDirName();
+    }
 }

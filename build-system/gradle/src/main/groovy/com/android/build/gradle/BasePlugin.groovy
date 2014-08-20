@@ -553,8 +553,6 @@ public abstract class BasePlugin {
             return;
         }
 
-        boolean multiOutput = variantData.outputs.size() > 1
-
         VariantConfiguration config = variantData.variantConfiguration
         ProductFlavor mergedFlavor = config.mergedFlavor
 
@@ -564,10 +562,8 @@ public abstract class BasePlugin {
             // create final var inside the loop to ensure the closures will work.
             final BaseVariantOutputData variantOutputData = vod
 
-            String outputName = multiOutput ?
-                    variantOutputData.fullName.capitalize() :
-                    config.fullName.capitalize()
-            String outputDirName = multiOutput ? variantOutputData.dirName : config.dirName
+            String outputName = variantOutputData.fullName.capitalize()
+            String outputDirName = variantOutputData.dirName
 
             def processManifestTask = project.tasks.create(
                     "process${outputName}Manifest",
@@ -680,18 +676,14 @@ public abstract class BasePlugin {
         VariantConfiguration config = variantData.variantConfiguration
         ProductFlavor mergedFlavor = config.mergedFlavor
 
-        boolean multiOutput = variantData.outputs.size() > 1
-
         // loop on all outputs. The only difference will be the name of the task, and location
         // of the generated manifest
         for (BaseVariantOutputData vod : variantData.outputs) {
             // create final var inside the loop to ensure the closures will work.
             final BaseVariantOutputData variantOutputData = vod
 
-            String outputName = multiOutput ?
-                    variantOutputData.fullName.capitalize() :
-                    config.fullName.capitalize()
-            String outputDirName = multiOutput ? variantOutputData.dirName : config.dirName
+            String outputName = variantOutputData.fullName.capitalize()
+            String outputDirName = variantOutputData.dirName
 
             def processManifestTask = project.tasks.create(
                     "merge${outputName}Manifests", ProcessAppManifest)
@@ -1053,7 +1045,6 @@ public abstract class BasePlugin {
             @NonNull final String symbolLocation,
             boolean generateResourcePackage) {
 
-        boolean multiOutput = variantData.outputs.size() > 1
         VariantConfiguration config = variantData.variantConfiguration
 
         // loop on all outputs. The only difference will be the name of the task, and location
@@ -1062,10 +1053,8 @@ public abstract class BasePlugin {
             // create final var inside the loop to ensure the closures will work.
             final BaseVariantOutputData variantOutputData = vod
 
-            String outputName = multiOutput ?
-                    variantOutputData.fullName.capitalize() :
-                    config.fullName.capitalize()
-            String outputBaseName = multiOutput ? variantOutputData.baseName : config.baseName
+            String outputName = variantOutputData.fullName.capitalize()
+            String outputBaseName = variantOutputData.baseName
 
             ProcessAndroidResources processResources = project.tasks.create(
                     "process${outputName}Resources",
@@ -1883,9 +1872,8 @@ public abstract class BasePlugin {
             // create final var inside the loop to ensure the closures will work.
             final ApkVariantOutputData variantOutputData = vod
 
-            String outputName = multiOutput ? variantOutputData.fullName : config.fullName
-            String outputDirName = multiOutput ? variantOutputData.dirName : config.dirName
-            String outputBaseName = multiOutput ? variantOutputData.baseName : config.baseName
+            String outputName = variantOutputData.fullName
+            String outputBaseName = variantOutputData.baseName
 
             // Add a task to generate application package
             PackageApplication packageApp = project.tasks.create("package${outputName.capitalize()}",

@@ -101,6 +101,16 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     @NonNull
     public T createOutput(@Nullable String densityFilter, @Nullable String abiFilter) {
         T data = doCreateOutput(densityFilter, abiFilter);
+
+        // if it's the first time we add an output, mark previous output as part of a multi-output
+        // setup.
+        if (outputs.size() == 1) {
+            outputs.get(0).setMultiOutput(true);
+            data.setMultiOutput(true);
+        } else if (outputs.size() > 1) {
+            data.setMultiOutput(true);
+        }
+
         outputs.add(data);
         return data;
     }
