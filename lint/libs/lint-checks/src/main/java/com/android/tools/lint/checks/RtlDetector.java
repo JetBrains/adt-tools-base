@@ -151,7 +151,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         "probably also specify padding on the right side (and vice versa) for " +
         "right-to-left layout symmetry.",
 
-        Category.RTL, 6, Severity.ERROR, IMPLEMENTATION);
+        Category.RTL, 6, Severity.WARNING, IMPLEMENTATION);
 
 
     public static final Issue ENABLED = Issue.create(
