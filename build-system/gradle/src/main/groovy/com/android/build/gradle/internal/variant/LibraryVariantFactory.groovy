@@ -76,7 +76,8 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
     public LibraryVariantData createVariantData(
             @NonNull VariantConfiguration variantConfiguration,
             @NonNull Set<String> densities,
-            @NonNull Set<String> abis) {
+            @NonNull Set<String> abis,
+            @NonNull Set<String> compatibleScreens) {
         return new LibraryVariantData(basePlugin, variantConfiguration)
     }
 

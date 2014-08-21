@@ -11,7 +11,7 @@ apply plugin: 'com.android.application'
 
 android {
   compileSdkVersion 19
-  buildToolsVersion '19.1.0'
+  buildToolsVersion '20.0.0'
 
   defaultConfig {
     versionCode 12
@@ -23,6 +23,7 @@ android {
     density {
       enable true
       exclude "ldpi", "tvdpi", "xxxhdpi"
+      compatibleScreens 'small', 'normal', 'large', 'xlarge'
     }
   }
 }
