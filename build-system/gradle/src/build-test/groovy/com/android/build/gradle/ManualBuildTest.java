@@ -311,6 +311,15 @@ public class ManualBuildTest extends BuildTest {
         }
     }
 
+    public void testSimpleManifestMerger() throws IOException {
+        File project = new File(testDir, "simpleManifestMergingTask");
+
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+                project,
+                Collections.<String>emptyList(),
+                "clean", "manifestMerger");
+    }
+
     public void test3rdPartyTests() throws Exception {
         // custom because we want to run deviceCheck even without devices, since we use
         // a fake DeviceProvider that doesn't use a device, but only record the calls made
