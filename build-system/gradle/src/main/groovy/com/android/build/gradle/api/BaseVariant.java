@@ -187,6 +187,12 @@ public interface BaseVariant {
     Task getObfuscation();
 
     /**
+     * Returns the obfuscation mapping file. This can be null if obfuscation is not enabled.
+     */
+    @Nullable
+    File getMappingFile();
+
+    /**
      * Returns the Java resource processing task.
      */
     @NonNull
