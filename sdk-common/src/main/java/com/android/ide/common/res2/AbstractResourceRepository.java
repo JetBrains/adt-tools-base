@@ -26,6 +26,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.ResourceUrl;
+import com.android.ide.common.resources.configuration.Configurable;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
 import com.google.common.base.Splitter;
@@ -35,8 +36,10 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -258,42 +261,76 @@ public abstract class AbstractResourceRepository {
             @NonNull String name,
             @NonNull ResourceType type,
             @NonNull FolderConfiguration config) {
+        List<ResourceFile> matchingFiles = getMatchingFiles(name, type, config);
+        return matchingFiles.isEmpty() ? null : matchingFiles.get(0);
+    }
 
+    /**
+     * Returns a list of {@link ResourceFile} matching the given name, {@link ResourceType} and
+     * configuration. This ignores the qualifiers which are missing from the configuration.
+     * <p/>
+     * This only works with files generating one resource named after the file (for instance,
+     * layouts, bitmap based drawable, xml, anims).
+     *
+     * @param name the resource name
+     * @param type the folder type search for
+     * @param config the folder configuration to match for
+     *
+     * @see #getMatchingFile(String, ResourceType, FolderConfiguration)
+     */
+    @NonNull
+    public List<ResourceFile> getMatchingFiles(
+            @NonNull String name,
+            @NonNull ResourceType type,
+            @NonNull FolderConfiguration config) {
+        return getMatchingFiles(name, type, config, new HashSet<String>(), 0);
+    }
+
+    @NonNull
+    private List<ResourceFile> getMatchingFiles(
+            @NonNull String name,
+            @NonNull ResourceType type,
+            @NonNull FolderConfiguration config,
+            @NonNull Set<String> seenNames,
+            int depth) {
+        assert !seenNames.contains(name);
+        if (depth >= MAX_RESOURCE_INDIRECTION) {
+            return Collections.emptyList();
+        }
+        List<ResourceFile> output;
         synchronized (ITEM_MAP_LOCK) {
             ListMultimap<String, ResourceItem> typeItems = getMap(type, false);
             if (typeItems == null) {
-                return null;
+                return Collections.emptyList();
             }
-
-            for (int depth = 0; depth < MAX_RESOURCE_INDIRECTION; depth++) {
-                List<ResourceItem> matchingItems = typeItems.get(name);
-                if (matchingItems == null || matchingItems.isEmpty()) {
-                    return null;
-                }
-
-                ResourceItem match = (ResourceItem) config.findMatchingConfigurable(matchingItems);
-                if (match != null) {
-                    ResourceValue resourceValue = match.getResourceValue(isFramework());
-                    if (resourceValue != null) {
-                        String value = resourceValue.getValue();
-                        if (value != null && value.startsWith(PREFIX_RESOURCE_REF)) {
-                            ResourceUrl url = ResourceUrl.parse(value);
-                            if (url != null && url.type == type
-                                    && url.framework == isFramework()) {
-                                name = url.name;
-                                continue;
+            seenNames.add(name);
+            output = new ArrayList<ResourceFile>();
+            List<ResourceItem> matchingItems = typeItems.get(name);
+            List<Configurable> matches = config.findMatchingConfigurables(matchingItems);
+            for (Configurable conf : matches) {
+                ResourceItem match = (ResourceItem) conf;
+                // if match is an alias, check if the name is in seen names.
+                ResourceValue resourceValue = match.getResourceValue(isFramework());
+                if (resourceValue != null) {
+                    String value = resourceValue.getValue();
+                    if (value != null && value.startsWith(PREFIX_RESOURCE_REF)) {
+                        ResourceUrl url = ResourceUrl.parse(value);
+                        if (url != null && url.type == type && url.framework == isFramework()) {
+                            if (!seenNames.contains(url.name)) {
+                                // This resource alias needs to be resolved again.
+                                output.addAll(getMatchingFiles(
+                                        url.name, type, config, seenNames, depth + 1));
                             }
+                            continue;
                         }
                     }
-
-                    return match.getSource();
-                } else {
-                    return null;
                 }
+                output.add(match.getSource());
+
             }
         }
 
-        return null;
+        return output;
     }
 
     /**
