@@ -75,6 +75,7 @@ import com.android.build.gradle.internal.variant.TestedVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.ndk.NdkPlugin
 import com.android.build.gradle.tasks.AidlCompile
+import com.android.build.gradle.tasks.CompatibleScreensManifest
 import com.android.build.gradle.tasks.Dex
 import com.android.build.gradle.tasks.GenerateBuildConfig
 import com.android.build.gradle.tasks.GenerateResValues
@@ -546,19 +547,26 @@ public abstract class BasePlugin {
     }
 
     public void createMergeAppManifestsTask(
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @NonNull String manifestOutDir) {
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         if (extension.getUseOldManifestMerger()) {
-            createOldProcessManifestTask(variantData, manifestOutDir);
+            createOldProcessManifestTask(variantData, "manifests");
             return;
         }
 
         VariantConfiguration config = variantData.variantConfiguration
         ProductFlavor mergedFlavor = config.mergedFlavor
 
+        ApplicationVariantData appVariantData = variantData as ApplicationVariantData
+        Set<String> screenSizes = appVariantData.getCompatibleScreens()
+
         // loop on all outputs. The only difference will be the name of the task, and location
         // of the generated manifest
         for (BaseVariantOutputData vod : variantData.outputs) {
+            final CompatibleScreensManifest csmTask =
+                    (vod.densityFilter != null && !screenSizes.isEmpty()) ?
+                            createCompatibleScreensManifest(vod, screenSizes) :
+                            null
+
             // create final var inside the loop to ensure the closures will work.
             final BaseVariantOutputData variantOutputData = vod
 
@@ -577,6 +585,9 @@ public abstract class BasePlugin {
             if (variantData.generateApkDataTask != null) {
                 processManifestTask.dependsOn variantData.generateApkDataTask
             }
+            if (csmTask != null) {
+                processManifestTask.dependsOn csmTask
+            }
 
             processManifestTask.variantConfiguration = config
             if (variantOutputData instanceof ApkVariantOutputData) {
@@ -591,6 +602,13 @@ public abstract class BasePlugin {
                     manifests.add(new ManifestDependencyImpl(
                             variantData.generateApkDataTask.getManifestFile(),
                             Collections.emptyList()))
+                }
+
+                if (csmTask != null) {
+                    manifests.add(
+                            new ManifestDependencyImpl(
+                                    csmTask.getManifestFile(),
+                                    Collections.emptyList()))
                 }
 
                 return manifests
@@ -614,10 +632,30 @@ public abstract class BasePlugin {
 
             processManifestTask.conventionMapping.manifestOutputFile = {
                 project.file(
-                        "$project.buildDir/${FD_INTERMEDIATES}/${manifestOutDir}/" +
+                        "$project.buildDir/${FD_INTERMEDIATES}/manifests/full/" +
                                 "${outputDirName}/AndroidManifest.xml")
             }
         }
+    }
+
+    private CompatibleScreensManifest createCompatibleScreensManifest(
+            @NonNull BaseVariantOutputData variantOutputData,
+            @NonNull Set<String> screenSizes) {
+
+        CompatibleScreensManifest csmTask = project.tasks.create(
+                "create${variantOutputData.fullName.capitalize()}CompatibleScreensManifest",
+                CompatibleScreensManifest)
+
+        csmTask.screenDensity = variantOutputData.densityFilter
+        csmTask.screenSizes = screenSizes
+
+        csmTask.conventionMapping.manifestFile = {
+            project.file(
+                    "$project.buildDir/${FD_INTERMEDIATES}/manifests/density/" +
+                            "${variantOutputData.dirName}/AndroidManifest.xml")
+        }
+
+        return csmTask;
     }
 
     public void createMergeLibManifestsTask(

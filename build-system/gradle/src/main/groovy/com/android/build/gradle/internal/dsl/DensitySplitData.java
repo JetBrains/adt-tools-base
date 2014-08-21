@@ -17,7 +17,11 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
+import com.google.common.collect.Sets;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -26,6 +30,7 @@ import java.util.Set;
 public class DensitySplitData extends SplitData {
 
     private boolean strict = true;
+    private Set<String> compatibleScreens;
 
     public boolean isStrict() {
         return strict;
@@ -33,6 +38,27 @@ public class DensitySplitData extends SplitData {
 
     public void setStrict(boolean strict) {
         this.strict = strict;
+    }
+
+    public void setCompatibleScreens(@NonNull List<String> sizes) {
+        compatibleScreens = Sets.newHashSet(sizes);
+    }
+
+    public void compatibleScreens(@NonNull String... sizes) {
+        if (compatibleScreens == null) {
+            compatibleScreens = Sets.newHashSet(sizes);
+            return;
+        }
+
+        compatibleScreens.addAll(Arrays.asList(sizes));
+    }
+
+    @NonNull
+    public Set<String> getCompatibleScreens() {
+        if (compatibleScreens == null) {
+            return Collections.emptySet();
+        }
+        return compatibleScreens;
     }
 
     @NonNull
@@ -47,5 +73,4 @@ public class DensitySplitData extends SplitData {
 
         return list;
     }
-
 }

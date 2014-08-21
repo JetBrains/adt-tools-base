@@ -34,6 +34,7 @@ import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.BuildTypeDsl;
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl;
 import com.android.build.gradle.internal.dsl.SigningConfigDsl;
+import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
@@ -167,8 +168,9 @@ public class VariantManager {
         // Add a compile lint task
         basePlugin.createLintCompileTask();
 
-        Set<String> densities = basePlugin.getExtension().getSplits().getDensityFilters();
-        Set<String> abis = basePlugin.getExtension().getSplits().getAbiFilters();
+        Splits splits = basePlugin.getExtension().getSplits();
+        Set<String> densities = splits.getDensityFilters();
+        Set<String> abis = splits.getAbiFilters();
 
         if (productFlavors.isEmpty()) {
             createTasksForDefaultBuild(densities, abis, signingOverride);
@@ -291,6 +293,9 @@ public class VariantManager {
 
         Closure<Void> variantFilterClosure = basePlugin.getExtension().getVariantFilter();
 
+        Set<String> compatibleScreens = basePlugin.getExtension().getSplits().getDensity()
+                .getCompatibleScreens();
+
         for (BuildTypeData buildTypeData : buildTypes.values()) {
             boolean ignore = false;
             if (variantFilterClosure != null) {
@@ -309,7 +314,8 @@ public class VariantManager {
                         signingOverride);
 
                 // create the variant, and outputs and get its internal storage object.
-                BaseVariantData<?> variantData = variantFactory.createVariantData(variantConfig, densities, abis);
+                BaseVariantData<?> variantData = variantFactory.createVariantData(
+                        variantConfig, densities, abis, compatibleScreens);
 
                 // create its dependencies. They'll be resolved below.
                 VariantDependencies variantDep = VariantDependencies.compute(
@@ -407,6 +413,8 @@ public class VariantManager {
         Closure<Void> variantFilterClosure = basePlugin.getExtension().getVariantFilter();
         final List<ProductFlavor> productFlavorList = (variantFilterClosure != null) ? Lists.<ProductFlavor>newArrayListWithCapacity(flavorDataList.length) : null;
 
+        Set<String> compatibleScreens = basePlugin.getExtension().getSplits().getDensity().getCompatibleScreens();
+
         for (BuildTypeData buildTypeData : buildTypes.values()) {
             boolean ignore = false;
             if (variantFilterClosure != null) {
@@ -459,7 +467,7 @@ public class VariantManager {
 
                 // create the variant and get its internal storage object.
                 BaseVariantData<?> variantData = variantFactory.createVariantData(variantConfig,
-                        densities, abis);
+                        densities, abis, compatibleScreens);
 
                 NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer = extension
                         .getSourceSetsContainer();

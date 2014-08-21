@@ -20,6 +20,9 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
 import com.android.builder.core.VariantConfiguration;
 
+import java.util.Collections;
+import java.util.Set;
+
 /**
  * Data about a variant that produce an application APK
  */
@@ -27,6 +30,8 @@ public class ApplicationVariantData extends ApkVariantData implements TestedVari
 
     @Nullable
     private TestVariantData testVariantData = null;
+
+    private Set<String> compatibleScreens = null;
 
     public ApplicationVariantData(
             @NonNull BasePlugin basePlugin,
@@ -43,5 +48,18 @@ public class ApplicationVariantData extends ApkVariantData implements TestedVari
     @Nullable
     public TestVariantData getTestVariantData() {
         return testVariantData;
+    }
+
+    public void setCompatibleScreens(Set<String> compatibleScreens) {
+        this.compatibleScreens = compatibleScreens;
+    }
+
+    @NonNull
+    public Set<String> getCompatibleScreens() {
+        if (compatibleScreens == null) {
+            return Collections.emptySet();
+        }
+
+        return compatibleScreens;
     }
 }

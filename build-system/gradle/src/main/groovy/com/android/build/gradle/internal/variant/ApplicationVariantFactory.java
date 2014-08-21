@@ -53,8 +53,13 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
     public ApplicationVariantData createVariantData(
             @NonNull VariantConfiguration variantConfiguration,
             @NonNull Set<String> densities,
-            @NonNull Set<String> abis) {
+            @NonNull Set<String> abis,
+            @NonNull Set<String> compatibleScreens) {
         ApplicationVariantData variant = new ApplicationVariantData(basePlugin, variantConfiguration);
+
+        if (!densities.isEmpty()) {
+            variant.setCompatibleScreens(compatibleScreens);
+        }
 
         // create its outputs
         for (String density : densities) {
@@ -128,7 +133,7 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
         handleMicroApp(variantData);
 
         // Add a task to process the manifest(s)
-        basePlugin.createMergeAppManifestsTask(variantData, "manifests");
+        basePlugin.createMergeAppManifestsTask(variantData);
 
         // Add a task to create the res values
         basePlugin.createGenerateResValuesTask(variantData);

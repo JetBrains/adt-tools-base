@@ -23,7 +23,6 @@ import com.android.builder.core.VariantConfiguration;
 
 import org.gradle.api.Task;
 
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -37,7 +36,8 @@ public interface VariantFactory<T extends BaseVariantData<? extends BaseVariantO
     @NonNull
     T createVariantData(@NonNull VariantConfiguration variantConfiguration,
             @NonNull Set<String> densities,
-            @NonNull Set<String> abis);
+            @NonNull Set<String> abi,
+            @NonNull Set<String> compatibleScreens);
 
     @NonNull
     BaseVariant createVariantApi(@NonNull BaseVariantData<? extends BaseVariantOutputData> variantData);
