@@ -149,7 +149,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
                 .addLibraryManifests(testFiles.getLibs())
                 .addFlavorAndBuildTypeManifests(testFiles.getOverlayFiles())
                 .withFeatures(ManifestMerger2.Invoker.Feature.KEEP_INTERMEDIARY_STAGES,
-                        ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS;
+                        ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS);
 
         if (!Strings.isNullOrEmpty(testFiles.getPackageOverride())) {
             invoker.setOverride(SystemProperty.PACKAGE, testFiles.getPackageOverride());
