@@ -23,7 +23,6 @@ import com.android.builder.model.AndroidProject
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.language.base.FunctionalSourceSet
-import org.gradle.language.base.LanguageSourceSet
 import org.gradle.language.c.CSourceSet
 import org.gradle.language.cpp.CppSourceSet
 import org.gradle.nativebinaries.internal.ProjectSharedLibraryBinary
@@ -76,16 +75,16 @@ class NdkConfigurationAction implements Action<Project> {
         project.libraries.getByName(ndkExtension.getModuleName()) {
             binaries.withType(ProjectSharedLibraryBinary.class) {
                     ProjectSharedLibraryBinary binary ->
-                source projectSourceSet.getByName("mainC")
-                source projectSourceSet.getByName("mainCpp")
+                sourceIfExist(binary, projectSourceSet, "mainC")
+                sourceIfExist(binary, projectSourceSet, "mainCpp")
 
                 // TODO: Support flavorDimension.
                 if (!flavor.name.equals("default")) {
-                    source projectSourceSet.getByName("${flavor.name}C")
-                    source projectSourceSet.getByName("${flavor.name}Cpp")
+                    sourceIfExist(binary, projectSourceSet, "${flavor.name}C")
+                    sourceIfExist(binary, projectSourceSet, "${flavor.name}Cpp")
                 }
-                source projectSourceSet.getByName("${buildType.name}C")
-                source projectSourceSet.getByName("${buildType.name}Cpp")
+                sourceIfExist(binary, projectSourceSet, "${buildType.name}C")
+                sourceIfExist(binary, projectSourceSet, "${buildType.name}Cpp")
 
                 cCompiler.define "ANDROID"
                 cppCompiler.define "ANDROID"
@@ -141,6 +140,19 @@ class NdkConfigurationAction implements Action<Project> {
                     linker.args "-l$ldLibs"
                 }
             }
+        }
+    }
+
+    /**
+     * Add the sourceSet with the specified name to the binary if such sourceSet is defined.
+     */
+    private static void sourceIfExist(
+            ProjectSharedLibraryBinary binary,
+            FunctionalSourceSet projectSourceSet,
+            String sourceSetName) {
+        def sourceSet = projectSourceSet.findByName(sourceSetName)
+        if (sourceSet != null) {
+            binary.source(sourceSet)
         }
     }
 }

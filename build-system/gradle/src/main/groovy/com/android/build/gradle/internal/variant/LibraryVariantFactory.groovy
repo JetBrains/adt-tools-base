@@ -191,8 +191,8 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
         // Add dependencies on NDK tasks if NDK plugin is applied.
         if (extension.getUseNewNativePlugin()) {
             NdkPlugin ndkPlugin = project.plugins.getPlugin(NdkPlugin.class)
-            packageJniLibs.dependsOn(ndkPlugin.getNdkTasks(variantConfig))
-            packageJniLibs.from(ndkPlugin.getOutputDirectory(variantConfig)).include("**/*.so")
+            packageJniLibs.dependsOn ndkPlugin.getBinaries(variantConfig)
+            packageJniLibs.from(ndkPlugin.getOutputDirectories(variantConfig)).include("**/*.so")
         } else {
             // Add NDK tasks
             basePlugin.createNdkTasks(variantData);

@@ -21,6 +21,7 @@ import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.internal.CompileOptions
+import com.android.build.gradle.internal.NdkLibrarySpecification
 import com.android.build.gradle.internal.SourceSetSourceProviderWrapper
 import com.android.build.gradle.internal.coverage.JacocoExtension
 import com.android.build.gradle.internal.dsl.AaptOptionsImpl
@@ -82,6 +83,7 @@ public abstract class BaseExtension {
     private String defaultPublishConfig = "release"
     private boolean publishNonDefault = false
 
+    NdkLibrarySpecification ndkLib
     private NdkExtension ndk
     private boolean useNewNativePlugin = false
 
@@ -456,5 +458,9 @@ public abstract class BaseExtension {
 
     public setNdkExtension(NdkExtension extension) {
         this.ndk = extension
+    }
+
+    public ndkLib(String targetProject) {
+        ndkLib = new NdkLibrarySpecification(plugin.project, targetProject);
     }
 }

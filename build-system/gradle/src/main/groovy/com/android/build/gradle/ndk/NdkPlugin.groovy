@@ -116,7 +116,7 @@ class NdkPlugin implements Plugin<Project> {
     /**
      * Return library binaries for a VariantConfiguration.
      */
-    private Iterable<ProjectSharedLibraryBinary> getLibraryBinaries(
+    public Collection<ProjectSharedLibraryBinary> getBinaries(
             VariantConfiguration variantConfig) {
         if (variantConfig.getType() == VariantConfiguration.Type.TEST) {
             // Do not return binaries for test variants as test source set is not supported at the
@@ -136,20 +136,13 @@ class NdkPlugin implements Plugin<Project> {
     }
 
     /**
-     * Return the native binary tasks for a VariantConfiguration.
-     */
-    public Iterable<Task> getNdkTasks(VariantConfiguration variantConfig) {
-        getLibraryBinaries(variantConfig)*.getBuildTask()
-    }
-
-    /**
      * Return the output directory of the native binary tasks for a VariantConfiguration.
      */
-    public Iterable<File> getOutputDirectory(VariantConfiguration variantConfig) {
+    public Collection<File> getOutputDirectories(VariantConfiguration variantConfig) {
         // Return the parent's parent directory of the binaries' output.
         // A binary's output file is set to something in the form of
         // "/path/to/lib/platformName/libmodulename.so".  We want to return "/path/to/lib".
-        (getLibraryBinaries(variantConfig)
+        (getBinaries(variantConfig)
                 *.getPrimaryOutput()
                 *.getParentFile()
                 *.getParentFile()
