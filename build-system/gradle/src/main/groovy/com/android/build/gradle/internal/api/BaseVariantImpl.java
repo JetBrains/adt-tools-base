@@ -190,6 +190,12 @@ abstract class BaseVariantImpl implements BaseVariant {
         return getVariantData().obfuscationTask;
     }
 
+    @Nullable
+    @Override
+    public File getMappingFile() {
+        return getVariantData().mappingFile;
+    }
+
     @Override
     @NonNull
     public Copy getProcessJavaResources() {

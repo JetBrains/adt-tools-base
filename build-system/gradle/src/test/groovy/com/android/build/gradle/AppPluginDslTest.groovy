@@ -288,6 +288,43 @@ public class AppPluginDslTest extends BaseTest {
         println project.android.sourceSets.main.assets.srcDirs
     }
 
+    public void testProguardMappingFile() {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion 15
+
+            buildTypes {
+                release {
+                    runProguard true
+                    proguardFile getDefaultProguardFile('proguard-android.txt')
+                }
+            }
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+
+        plugin.createAndroidTasks(false)
+        assertEquals(3, plugin.variantDataList.size())
+
+        // we can now call this since the variants/tasks have been created
+
+        // does not include tests
+        Set<ApplicationVariant> variants = project.android.applicationVariants
+        assertEquals(2, variants.size())
+
+        for (ApplicationVariant variant : variants) {
+            if ("release".equals(variant.getBuildType().getName())) {
+                assertNotNull(variant.getMappingFile())
+            } else {
+                assertNull(variant.getMappingFile())
+            }
+        }
+    }
+
 
     private static void checkTestedVariant(@NonNull String variantName,
                                            @NonNull String testedVariantName,

@@ -2337,7 +2337,7 @@ public abstract class BasePlugin {
         proguardTask.dump(new File(proguardOut, "dump.txt"))
         proguardTask.printseeds(new File(proguardOut, "seeds.txt"))
         proguardTask.printusage(new File(proguardOut, "usage.txt"))
-        proguardTask.printmapping(new File(proguardOut, "mapping.txt"))
+        proguardTask.printmapping(variantData.mappingFile = new File(proguardOut, "mapping.txt"))
 
         // proguard doesn't verify that the seed/mapping/usage folders exist and will fail
         // if they don't so create them.

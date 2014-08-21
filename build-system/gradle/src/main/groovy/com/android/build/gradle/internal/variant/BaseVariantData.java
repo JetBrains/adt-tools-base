@@ -74,9 +74,11 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public GenerateApkDataTask generateApkDataTask;
 
     public JavaCompile javaCompileTask;
-    public Task obfuscationTask;
     public Copy processJavaResourcesTask;
     public NdkCompile ndkCompileTask;
+
+    public Task obfuscationTask;
+    public File mappingFile;
 
     // Task to assemble the variant and all its output.
     public Task assembleVariantTask;
