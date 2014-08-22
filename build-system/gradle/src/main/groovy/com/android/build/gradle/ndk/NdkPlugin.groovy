@@ -21,9 +21,9 @@ import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.AndroidSourceDirectorySet
 import com.android.build.gradle.internal.api.DefaultAndroidSourceDirectorySet
 import com.android.build.gradle.ndk.internal.ForwardNdkConfigurationAction
-import com.android.build.gradle.ndk.internal.NdkBuilder
 import com.android.build.gradle.ndk.internal.NdkConfigurationAction
 import com.android.build.gradle.ndk.internal.NdkExtensionConventionAction
+import com.android.build.gradle.ndk.internal.NdkHandler
 import com.android.build.gradle.ndk.internal.ToolchainConfigurationAction
 import com.android.builder.core.VariantConfiguration
 import org.gradle.api.Plugin
@@ -47,7 +47,7 @@ class NdkPlugin implements Plugin<Project> {
 
     private NdkExtension extension
 
-    private NdkBuilder ndkBuilder
+    private NdkHandler ndkHandler
 
     private ProjectConfigurationActionContainer configurationActions
 
@@ -80,7 +80,7 @@ class NdkPlugin implements Plugin<Project> {
         if (project.extensions.findByName("android") == null) {
             project.extensions.add("android", extension)
         }
-        ndkBuilder = new NdkBuilder(project, extension)
+        ndkHandler = new NdkHandler(project, extension)
 
         project.apply plugin: 'c'
         project.apply plugin: 'cpp'
@@ -89,8 +89,8 @@ class NdkPlugin implements Plugin<Project> {
                 Actions.composite(
                         new ForwardNdkConfigurationAction(),
                         new NdkExtensionConventionAction(),
-                        new ToolchainConfigurationAction(ndkBuilder, extension),
-                        new NdkConfigurationAction(ndkBuilder, extension)),
+                        new ToolchainConfigurationAction(ndkHandler, extension),
+                        new NdkConfigurationAction(ndkHandler, extension)),
                 new Spec<Project>() {
                     @Override
                     boolean isSatisfiedBy(Project p) {

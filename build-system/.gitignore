@@ -23,6 +23,7 @@ tests/localJars/*/build
 tests/ndkStandaloneSo/*/build
 tests/ndkJniLib/*/build
 tests/ndkJniLib2/*/build
+tests/ndkStl/*/build
 tests/packagingOptions/jars/*/build
 tests/proguardLib/*/build
 tests/renderscriptInLib/*/build

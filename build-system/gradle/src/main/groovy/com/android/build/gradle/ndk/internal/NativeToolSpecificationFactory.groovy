@@ -31,12 +31,12 @@ class NativeToolSpecificationFactory {
      * @return A NativeToolSpecification for the targeted native binary.
      */
     public static NativeToolSpecification create(
-            NdkBuilder ndkBuilder,
+            NdkHandler ndkHandler,
             BuildType buildType,
             Platform platform) {
-        String toolchain = ndkBuilder.getNdkExtension().getToolchain()
+        String toolchain = ndkHandler.getNdkExtension().getToolchain()
         return (toolchain == null || toolchain.equals("gcc")
                 ? new GccNativeToolSpecification(buildType, platform)
-                : new ClangNativeToolSpecification(ndkBuilder, buildType, platform))
+                : new ClangNativeToolSpecification(ndkHandler, buildType, platform))
     }
 }

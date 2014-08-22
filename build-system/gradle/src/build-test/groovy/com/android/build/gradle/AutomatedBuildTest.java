@@ -90,6 +90,7 @@ public class AutomatedBuildTest extends BuildTest {
             "ndkJniLib2",
             "ndkSanAngeles2",
             "ndkStandaloneSo",
+            "ndkStl",
             "ndkVariants"
     );
 
