@@ -67,6 +67,6 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 <#if WearprojectName?has_content && NumberOfEnabledFormFactors?has_content && NumberOfEnabledFormFactors gt 1>
     wearApp project(':${WearprojectName}')
-    compile 'com.google.android.gms:play-services-wearable:+'
+    compile 'com.google.android.gms:play-services:+'
 </#if>
 }
