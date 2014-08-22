@@ -16,21 +16,6 @@
 
 package com.android.sdklib;
 
-import static com.android.SdkConstants.FD_LIB;
-import static com.android.SdkConstants.FN_AAPT;
-import static com.android.SdkConstants.FN_AIDL;
-import static com.android.SdkConstants.FN_BCC_COMPAT;
-import static com.android.SdkConstants.FN_DX;
-import static com.android.SdkConstants.FN_DX_JAR;
-import static com.android.SdkConstants.FN_LD_ARM;
-import static com.android.SdkConstants.FN_LD_MIPS;
-import static com.android.SdkConstants.FN_LD_X86;
-import static com.android.SdkConstants.FN_RENDERSCRIPT;
-import static com.android.SdkConstants.FN_ZIPALIGN;
-import static com.android.SdkConstants.OS_FRAMEWORK_RS;
-import static com.android.SdkConstants.OS_FRAMEWORK_RS_CLANG;
-import static com.android.sdklib.BuildToolInfo.PathId.*;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -46,6 +31,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.android.SdkConstants.*;
+import static com.android.sdklib.BuildToolInfo.PathId.*;
 
 /**
  * Information on a specific build-tool folder.
@@ -241,9 +229,10 @@ public class BuildToolInfo {
      *         Null if the path-id is unknown.
      */
     public String getPath(PathId pathId) {
-        assert pathId.isPresentIn(mRevision);
-
-        return mPaths.get(pathId);
+      if (!pathId.isPresentIn(mRevision)) {
+        throw new IllegalArgumentException();
+      }
+      return mPaths.get(pathId);
     }
 
     /**
