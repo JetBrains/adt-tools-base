@@ -232,6 +232,10 @@ public class TranslationDetector extends ResourceXmlDetector {
                 String name = entry.getKey();
                 String message = mDescriptions.get(name);
 
+                if (location == null) {
+                    location = Location.create(context.getProject().getDir());
+                }
+
                 // We were prepending locations, but we want to prefer the base folders
                 location = Location.reverse(location);
 

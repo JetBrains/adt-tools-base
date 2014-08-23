@@ -609,7 +609,7 @@ public class Location {
             // closely
             ResourceFile source = mItem.getSource();
             assert source != null : mItem;
-            return Location.create(source.getFile());
+            return create(source.getFile());
         }
 
         @Override
