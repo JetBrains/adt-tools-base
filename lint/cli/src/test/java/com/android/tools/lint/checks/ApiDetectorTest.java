@@ -102,15 +102,17 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
-    public void testUnusedShowDividers() throws Exception {
+    public void testUnusedAttributes() throws Exception {
         assertEquals(""
-                + "res/layout/divider.xml:9: Warning: Attribute \"showDividers\" is only used in API level 11 and higher (current min is 1) [UnusedAttribute]\n"
+                + "res/layout/divider.xml:9: Warning: Attribute \"showDividers\" is only used in API level 11 and higher (current min is 4) [UnusedAttribute]\n"
                 + "    android:showDividers=\"middle\"\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 1 warnings\n",
 
                 lintProject(
-                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "res/layout/labelfor.xml",
+                        "res/layout/edit_textview.xml",
                         "apicheck/divider.xml=>res/layout/divider.xml"
                 ));
     }
