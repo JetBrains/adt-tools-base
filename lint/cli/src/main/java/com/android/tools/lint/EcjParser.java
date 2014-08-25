@@ -260,6 +260,20 @@ public class EcjParser extends JavaParser {
         try {
             compiler.compile(sourceUnits.toArray(new ICompilationUnit[sourceUnits.size()]));
         } catch (OutOfMemoryError e) {
+            // Since we're running out of memory, if it's all still held we could potentially
+            // fail attempting to log the failure. Actively get rid of the large ECJ data
+            // structure references first so minimize the chance of that
+            //noinspection UnusedAssignment
+            compiler = null;
+            //noinspection UnusedAssignment
+            environment = null;
+            //noinspection UnusedAssignment
+            requestor = null;
+            //noinspection UnusedAssignment
+            problemFactory = null;
+            //noinspection UnusedAssignment
+            policy = null;
+
             String msg = "Ran out of memory analyzing .java sources with ECJ: Some lint checks "
                     + "may not be accurate (missing type information from the compiler)";
             if (client != null) {
