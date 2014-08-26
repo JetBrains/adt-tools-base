@@ -24,8 +24,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+
+import sun.nio.ch.DirectBuffer;
 
 public class MemoryMappedFileBuffer implements HprofBuffer {
 
@@ -69,8 +70,30 @@ public class MemoryMappedFileBuffer implements HprofBuffer {
         }
     }
 
+    /**
+     * Creates a buffer by memory-mapping file {@param f}.
+     *
+     * It may be a good idea to dispose() the buffer if no longer needed. A garbage collection isn't
+     * guaranteed to free up the resources, and in a long-running 32-bit JVM there's the risk of
+     * exhausting the address space this way. On Windows, mmap locks the file, preventing it from
+     * being deleted. See {@link http://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154}.
+     */
     public MemoryMappedFileBuffer(@NonNull File f) throws IOException {
         this(f, DEFAULT_SIZE, DEFAULT_PADDING);
+    }
+
+    /**
+     * Attempts to unmap the buffer. It is the caller's responsibility to ensure there are no other
+     * accesses to this buffer, otherwise this can result in a crash and kill the JVM.
+     */
+    public void dispose() {
+        try {
+            for (int i = 0; i < mByteBuffers.length; i++) {
+                ((DirectBuffer) mByteBuffers[i]).cleaner().clean();
+            }
+        } catch (Exception ex) {
+            // ignore, this is a best effort attempt.
+        }
     }
 
     @Override

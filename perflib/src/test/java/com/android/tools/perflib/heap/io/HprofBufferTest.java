@@ -22,6 +22,7 @@ import com.android.tools.perflib.heap.Snapshot;
 import junit.framework.TestCase;
 
 import java.io.File;
+import java.io.RandomAccessFile;
 
 public class HprofBufferTest extends TestCase {
 
@@ -44,6 +45,32 @@ public class HprofBufferTest extends TestCase {
         MemoryMappedFileBuffer shardedBuffer = new MemoryMappedFileBuffer(file, 9973, 8);
         Snapshot snapshot = (new HprofParser(shardedBuffer)).parse();
         assertSnapshotCorrect(snapshot);
+    }
+
+    public void testMemoryMappingRemoval() throws Exception {
+        File tmpFile = File.createTempFile("test_vm", ".tmp");
+        System.err.println("vm temp file: " + tmpFile.getAbsolutePath());
+        System.err.println("jvm " + System.getProperty("sun.arch.data.model"));
+
+        long n = 500000000L;
+        RandomAccessFile raf = new RandomAccessFile(tmpFile, "rw");
+        raf.setLength(n);
+        raf.write(1);
+        raf.seek(n - 1);
+        raf.write(2);
+        raf.close();
+
+        MemoryMappedFileBuffer buffer = new MemoryMappedFileBuffer(tmpFile);
+        assertEquals(1, buffer.readByte());
+        buffer.setPosition(n - 1);
+        assertEquals(2, buffer.readByte());
+
+        // On Windows, tmpFile can't be deleted without unmapping it first.
+        buffer.dispose();
+        tmpFile.delete();
+
+        File g = new File(tmpFile.getCanonicalPath());
+        assertFalse(g.exists());
     }
 
     private void assertSnapshotCorrect(Snapshot snapshot) {
