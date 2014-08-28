@@ -16,6 +16,7 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -39,8 +40,10 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     private int mInstanceSize;
 
+    @NonNull
     ArrayList<Instance> mInstances = new ArrayList<Instance>();
 
+    @NonNull
     Set<ClassObj> mSubclasses = new HashSet<ClassObj>();
 
     public ClassObj(long id, StackTrace stack, String className, long staticFieldsOffset) {
@@ -53,6 +56,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         mSubclasses.add(subclass);
     }
 
+    @NonNull
     public final Set<ClassObj> getSubclasses() {
         return mSubclasses;
     }
@@ -63,6 +67,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         }
     }
 
+    @NonNull
     public final String toString() {
         return mClassName.replace('/', '.');
     }
@@ -136,7 +141,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     }
 
     @Override
-    public final void accept(Visitor visitor) {
+    public final void accept(@NonNull Visitor visitor) {
         if (visitor.visitEnter(this)) {
             for (Object value : getStaticFieldValues().values()) {
                 if (value instanceof Instance) {
@@ -148,7 +153,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     }
 
     @Override
-    public final int compareTo(ClassObj o) {
+    public final int compareTo(@NonNull ClassObj o) {
         return mClassName.compareTo(o.mClassName);
     }
 
@@ -169,6 +174,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         return mHeap.mSnapshot.findClass(mSuperClassId);
     }
 
+    @NonNull
     public Collection<Instance> getInstances() {
         return mInstances;
     }

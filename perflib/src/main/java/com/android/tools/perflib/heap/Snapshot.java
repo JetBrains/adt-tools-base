@@ -17,6 +17,7 @@
 package com.android.tools.perflib.heap;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.perflib.heap.analysis.Dominators;
 import com.android.tools.perflib.heap.io.HprofBuffer;
 import com.google.common.collect.Iterables;
@@ -41,23 +42,28 @@ public class Snapshot {
 
     private static final int DEFAULT_HEAP_ID = 0;
 
+    @NonNull
     final HprofBuffer mBuffer;
 
+    @NonNull
     ArrayList<Heap> mHeaps = new ArrayList<Heap>();
 
+    @Nullable
     Heap mCurrentHeap;
 
     private Map<Instance, Instance> mDominatorMap;
 
-    public Snapshot(HprofBuffer buffer) {
+    public Snapshot(@NonNull HprofBuffer buffer) {
         mBuffer = buffer;
         setToDefaultHeap();
     }
 
+    @Nullable
     public Heap setToDefaultHeap() {
         return setHeapTo(DEFAULT_HEAP_ID, "default");
     }
 
+    @Nullable
     public Heap setHeapTo(int id, @NonNull String name) {
         Heap heap = getHeap(id);
 
@@ -72,34 +78,38 @@ public class Snapshot {
         return mCurrentHeap;
     }
 
+    @Nullable
     public Heap getHeap(int id) {
-        for (int i = 0; i < mHeaps.size(); i++) {
-            if (mHeaps.get(i).getId() == id) {
-                return mHeaps.get(i);
+        for (Heap mHeap : mHeaps) {
+            if (mHeap.getId() == id) {
+                return mHeap;
             }
         }
         return null;
     }
 
+    @Nullable
     public Heap getHeap(@NonNull String name) {
-        for (int i = 0; i < mHeaps.size(); i++) {
-            if (name.equals(mHeaps.get(i).getName())) {
-                return mHeaps.get(i);
+        for (Heap mHeap : mHeaps) {
+            if (name.equals(mHeap.getName())) {
+                return mHeap;
             }
         }
         return null;
     }
 
+    @NonNull
     public Collection<Heap> getHeaps() {
         return mHeaps;
     }
 
+    @NonNull
     public Collection<RootObj> getGCRoots() {
         // Roots are always in the default heap.
         return mHeaps.get(DEFAULT_HEAP_ID).mRoots;
     }
 
-    public final void addStackFrame(StackFrame theFrame) {
+    public final void addStackFrame(@NonNull StackFrame theFrame) {
         mCurrentHeap.addStackFrame(theFrame);
     }
 
@@ -107,7 +117,7 @@ public class Snapshot {
         return mCurrentHeap.getStackFrame(id);
     }
 
-    public final void addStackTrace(StackTrace theTrace) {
+    public final void addStackTrace(@NonNull StackTrace theTrace) {
         mCurrentHeap.addStackTrace(theTrace);
     }
 
@@ -120,7 +130,7 @@ public class Snapshot {
         return mCurrentHeap.getStackTraceAtDepth(traceSerialNumber, depth);
     }
 
-    public final void addRoot(RootObj root) {
+    public final void addRoot(@NonNull RootObj root) {
         mCurrentHeap.addRoot(root);
         root.setHeap(mCurrentHeap);
     }
@@ -133,19 +143,20 @@ public class Snapshot {
         return mCurrentHeap.getThread(serialNumber);
     }
 
-    public final void addInstance(long id, Instance instance) {
+    public final void addInstance(long id, @NonNull Instance instance) {
         mCurrentHeap.addInstance(id, instance);
         instance.setHeap(mCurrentHeap);
     }
 
-    public final void addClass(long id, ClassObj theClass) {
+    public final void addClass(long id, @NonNull ClassObj theClass) {
         mCurrentHeap.addClass(id, theClass);
         theClass.setHeap(mCurrentHeap);
     }
 
+    @Nullable
     public final Instance findReference(long id) {
-        for (int i = 0; i < mHeaps.size(); i++) {
-            Instance instance = mHeaps.get(i).getInstance(id);
+        for (Heap mHeap : mHeaps) {
+            Instance instance = mHeap.getInstance(id);
 
             if (instance != null) {
                 return instance;
@@ -156,9 +167,10 @@ public class Snapshot {
         return findClass(id);
     }
 
+    @Nullable
     public final ClassObj findClass(long id) {
-        for (int i = 0; i < mHeaps.size(); i++) {
-            ClassObj theClass = mHeaps.get(i).getClass(id);
+        for (Heap mHeap : mHeaps) {
+            ClassObj theClass = mHeap.getClass(id);
 
             if (theClass != null) {
                 return theClass;
@@ -168,9 +180,10 @@ public class Snapshot {
         return null;
     }
 
+    @Nullable
     public final ClassObj findClass(String name) {
-        for (int i = 0; i < mHeaps.size(); i++) {
-            ClassObj theClass = mHeaps.get(i).getClass(name);
+        for (Heap mHeap : mHeaps) {
+            ClassObj theClass = mHeap.getClass(name);
 
             if (theClass != null) {
                 return theClass;

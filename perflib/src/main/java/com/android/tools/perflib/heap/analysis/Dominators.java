@@ -137,7 +137,7 @@ public class Dominators {
             return result;
         }
 
-        static Map<Instance, Integer> getTopologicalSort(Iterable<? extends Instance> roots) {
+        static Map<Instance, Integer> getTopologicalSort(@NonNull Iterable<? extends Instance> roots) {
             TopologicalSortVisitor visitor = new TopologicalSortVisitor();
             for (Instance root : roots) {
                 root.accept(visitor);

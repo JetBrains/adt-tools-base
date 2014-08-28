@@ -16,6 +16,8 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.perflib.heap.io.HprofBuffer;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -106,11 +108,13 @@ public abstract class Instance {
         mReferences.add(reference);
     }
 
+    @NonNull
     public ArrayList<Instance> getReferences() {
         return mReferences;
     }
 
-    protected Object readValue(Type type) {
+    @Nullable
+    protected Object readValue(@NonNull Type type) {
         switch (type) {
             case OBJECT:
                 long id = readId();
