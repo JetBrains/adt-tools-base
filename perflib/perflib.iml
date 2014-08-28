@@ -11,6 +11,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="ddmlib" />
     <orderEntry type="library" scope="TEST" name="JUnit3" level="project" />
+    <orderEntry type="library" name="trove4j-1.1" level="project" />
   </component>
 </module>
 
