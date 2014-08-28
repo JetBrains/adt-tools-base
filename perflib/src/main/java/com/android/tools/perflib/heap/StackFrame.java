@@ -16,6 +16,8 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.annotations.NonNull;
+
 public class StackFrame {
 
     public static final int NO_LINE_NUMBER = 0;
@@ -48,7 +50,8 @@ public class StackFrame {
         mLineNumber = line;
     }
 
-    private final String lineNumberString() {
+    @NonNull
+    private String lineNumberString() {
         switch (mLineNumber) {
             case NO_LINE_NUMBER:
                 return "No line number";
@@ -64,6 +67,7 @@ public class StackFrame {
         }
     }
 
+    @NonNull
     public final String toString() {
         return mMethodName
                 + mSignature.replace('/', '.')

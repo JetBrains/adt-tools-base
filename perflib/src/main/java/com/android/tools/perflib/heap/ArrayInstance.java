@@ -16,6 +16,8 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.annotations.NonNull;
+
 public class ArrayInstance extends Instance {
 
     private Type mType;
@@ -47,7 +49,7 @@ public class ArrayInstance extends Instance {
     }
 
     @Override
-    public final void accept(Visitor visitor) {
+    public final void accept(@NonNull Visitor visitor) {
         if (mType != Type.OBJECT) {
             return;
         }

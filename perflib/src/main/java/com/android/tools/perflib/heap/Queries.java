@@ -16,6 +16,9 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -63,12 +66,14 @@ public class Queries {
      * The keys of the resultant map iterate in sorted package order.
      * The values of the map are the classes defined in each package.
      */
-    public static Map<String, Set<ClassObj>> allClasses(Snapshot snapshot) {
+    @NonNull
+    public static Map<String, Set<ClassObj>> allClasses(@NonNull Snapshot snapshot) {
         return classes(snapshot, null);
     }
 
-    public static Map<String, Set<ClassObj>> classes(Snapshot snapshot,
-            String[] excludedPrefixes) {
+    @NonNull
+    public static Map<String, Set<ClassObj>> classes(@NonNull Snapshot snapshot,
+            @Nullable String[] excludedPrefixes) {
         TreeMap<String, Set<ClassObj>> result =
                 new TreeMap<String, Set<ClassObj>>();
 
@@ -124,7 +129,7 @@ public class Queries {
      * having all of the hat-like query methods in one place is a good thing
      * even if there is duplication of effort.
      */
-    public static ClassObj findClass(Snapshot snapshot, String name) {
+    public static ClassObj findClass(@NonNull Snapshot snapshot, String name) {
         return snapshot.findClass(name);
     }
 
@@ -132,7 +137,8 @@ public class Queries {
      * Return an array of instances of the given class.  This does not include
      * instances of subclasses.
      */
-    public static Instance[] instancesOf(Snapshot snapshot, String baseClassName) {
+    @NonNull
+    public static Instance[] instancesOf(@NonNull Snapshot snapshot, String baseClassName) {
         ClassObj theClass = snapshot.findClass(baseClassName);
 
         if (theClass == null) {
@@ -148,7 +154,8 @@ public class Queries {
      * Return an array of instances of the given class.  This includes
      * instances of subclasses.
      */
-    public static Instance[] allInstancesOf(Snapshot snapshot, String baseClassName) {
+    @NonNull
+    public static Instance[] allInstancesOf(@NonNull Snapshot snapshot, String baseClassName) {
         ClassObj theClass = snapshot.findClass(baseClassName);
 
         if (theClass == null) {
@@ -173,7 +180,8 @@ public class Queries {
         return result;
     }
 
-    private static ArrayList<ClassObj> traverseSubclasses(ClassObj base) {
+    @NonNull
+    private static ArrayList<ClassObj> traverseSubclasses(@NonNull ClassObj base) {
         ArrayList<ClassObj> result = new ArrayList<ClassObj>();
 
         for (ClassObj subclass : base.mSubclasses) {
@@ -188,13 +196,14 @@ public class Queries {
      * Find a reference to an object based on its id.  The id should be
      * in hexadecimal.
      */
-    public static Instance findObject(Snapshot snapshot, String id) {
+    public static Instance findObject(@NonNull Snapshot snapshot, String id) {
         long id2 = Long.parseLong(id, 16);
 
         return snapshot.findReference(id2);
     }
 
-    public static Collection<RootObj> getRoots(Snapshot snapshot) {
+    @NonNull
+    public static Collection<RootObj> getRoots(@NonNull Snapshot snapshot) {
         HashSet<RootObj> result = new HashSet<RootObj>();
 
         for (Heap heap : snapshot.mHeaps) {
@@ -204,7 +213,8 @@ public class Queries {
         return result;
     }
 
-    public static final Instance[] newInstances(Snapshot older, Snapshot newer) {
+    @NonNull
+    public static final Instance[] newInstances(@NonNull Snapshot older, @NonNull Snapshot newer) {
         ArrayList<Instance> resultList = new ArrayList<Instance>();
 
         for (Heap newHeap : newer.mHeaps) {

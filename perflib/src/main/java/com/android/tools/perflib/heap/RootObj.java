@@ -16,6 +16,7 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 public class RootObj extends Instance {
@@ -40,7 +41,7 @@ public class RootObj extends Instance {
         mThread = thread;
     }
 
-    public final String getClassName(Snapshot snapshot) {
+    public final String getClassName(@NonNull Snapshot snapshot) {
         ClassObj theClass;
 
         if (mType == RootType.SYSTEM_CLASS) {
@@ -71,7 +72,7 @@ public class RootObj extends Instance {
     }
 
     public final String toString() {
-        return String.format("%s@0x08x", mType.getName(), mId);
+        return String.format("%s@0x%08x", mType.getName(), mId);
     }
 
     @Nullable

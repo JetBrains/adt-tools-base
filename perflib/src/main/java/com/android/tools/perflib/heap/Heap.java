@@ -30,23 +30,30 @@ public class Heap {
 
     private final int mId;
 
+    @NonNull
     private final String mName;
 
     //  List of individual stack frames
+    @NonNull
     TLongObjectHashMap<StackFrame> mFrames = new TLongObjectHashMap<StackFrame>();
 
     //  List stack traces, which are lists of stack frames
+    @NonNull
     TIntObjectHashMap<StackTrace> mTraces = new TIntObjectHashMap<StackTrace>();
 
     //  Root objects such as interned strings, jni locals, etc
+    @NonNull
     ArrayList<RootObj> mRoots = new ArrayList<RootObj>();
 
     //  List of threads
+    @NonNull
     TIntObjectHashMap<ThreadObj> mThreads = new TIntObjectHashMap<ThreadObj>();
 
     //  Class definitions
+    @NonNull
     TLongObjectHashMap<ClassObj> mClassesById = new TLongObjectHashMap<ClassObj>();
 
+    @NonNull
     HashMap<String, ClassObj> mClassesByName = new HashMap<String, ClassObj>();
 
     //  List of instances of above class definitions
@@ -64,11 +71,12 @@ public class Heap {
         return mId;
     }
 
+    @NonNull
     public String getName() {
         return mName;
     }
 
-    public final void addStackFrame(StackFrame theFrame) {
+    public final void addStackFrame(@NonNull StackFrame theFrame) {
         mFrames.put(theFrame.mId, theFrame);
     }
 
@@ -76,7 +84,7 @@ public class Heap {
         return mFrames.get(id);
     }
 
-    public final void addStackTrace(StackTrace theTrace) {
+    public final void addStackTrace(@NonNull StackTrace theTrace) {
         mTraces.put(theTrace.mSerialNumber, theTrace);
     }
 
@@ -95,7 +103,7 @@ public class Heap {
         return trace;
     }
 
-    public final void addRoot(RootObj root) {
+    public final void addRoot(@NonNull RootObj root) {
         root.mIndex = mRoots.size();
         mRoots.add(root);
     }
@@ -116,7 +124,7 @@ public class Heap {
         return mInstances.get(id);
     }
 
-    public final void addClass(long id, ClassObj theClass) {
+    public final void addClass(long id, @NonNull ClassObj theClass) {
         mClassesById.put(id, theClass);
         mClassesByName.put(theClass.mClassName, theClass);
     }
@@ -169,6 +177,7 @@ public class Heap {
         }
     }
 
+    @NonNull
     public Collection<ClassObj> getClasses() {
         return mClassesByName.values();
     }

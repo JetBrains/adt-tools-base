@@ -32,29 +32,37 @@ public class HprofParser {
 
     private static final int LOAD_CLASS = 0x02;
 
-    private static final int UNLOAD_CLASS = 0x03;   //  unused
+    @SuppressWarnings("UnusedDeclaration")
+    private static final int UNLOAD_CLASS = 0x03;
 
     private static final int STACK_FRAME = 0x04;
 
     private static final int STACK_TRACE = 0x05;
 
-    private static final int ALLOC_SITES = 0x06;   //  unused
+    @SuppressWarnings("UnusedDeclaration")
+    private static final int ALLOC_SITES = 0x06;
 
+    @SuppressWarnings("UnusedDeclaration")
     private static final int HEAP_SUMMARY = 0x07;
 
-    private static final int START_THREAD = 0x0a;   //  unused
+    @SuppressWarnings("UnusedDeclaration")
+    private static final int START_THREAD = 0x0a;
 
-    private static final int END_THREAD = 0x0b;   //  unused
+    @SuppressWarnings("UnusedDeclaration")
+    private static final int END_THREAD = 0x0b;
 
     private static final int HEAP_DUMP = 0x0c;
 
     private static final int HEAP_DUMP_SEGMENT = 0x1c;
 
+    @SuppressWarnings("UnusedDeclaration")
     private static final int HEAP_DUMP_END = 0x2c;
 
-    private static final int CPU_SAMPLES = 0x0d;   //  unused
+    @SuppressWarnings("UnusedDeclaration")
+    private static final int CPU_SAMPLES = 0x0d;
 
-    private static final int CONTROL_SETTINGS = 0x0e;   //  unused
+    @SuppressWarnings("UnusedDeclaration")
+    private static final int CONTROL_SETTINGS = 0x0e;
 
     private static final int ROOT_UNKNOWN = 0xff;
 
@@ -111,7 +119,8 @@ public class HprofParser {
 
     private static final int ROOT_PRIMITIVE_ARRAY_NODATA = 0xc3;
 
-    HprofBuffer mInput;
+    @NonNull
+    private final HprofBuffer mInput;
 
     int mIdSize;
 
@@ -121,21 +130,24 @@ public class HprofParser {
      * These are only needed while parsing so are not kept as part of the
      * heap data.
      */
+    @NonNull
     TLongObjectHashMap<String> mStrings = new TLongObjectHashMap<String>();
 
+    @NonNull
     TLongObjectHashMap<String> mClassNames = new TLongObjectHashMap<String>();
 
     public HprofParser(@NonNull HprofBuffer buffer) {
         mInput = buffer;
     }
 
+    @NonNull
     public final Snapshot parse() {
         Snapshot snapshot = new Snapshot(mInput);
         mSnapshot = snapshot;
 
         try {
             try {
-                String s = readNullTerminatedString();  // Version, ignored for now.
+                readNullTerminatedString();  // Version, ignored for now.
 
                 mIdSize = mInput.readInt();
                 Type.setIdSize(mIdSize);
@@ -195,6 +207,7 @@ public class HprofParser {
         return snapshot;
     }
 
+    @NonNull
     private String readNullTerminatedString() throws IOException {
         StringBuilder s = new StringBuilder();
         for (byte c = mInput.readByte(); c != 0; c = mInput.readByte()) {
@@ -219,6 +232,7 @@ public class HprofParser {
         throw new IllegalArgumentException("ID Length must be 1, 2, 4, or 8");
     }
 
+    @NonNull
     private String readUTF8(int length) throws IOException {
         byte[] b = new byte[length];
 

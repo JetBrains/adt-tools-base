@@ -16,6 +16,7 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 
 import java.util.HashMap;
@@ -40,6 +41,7 @@ public class ClassInstance extends Instance {
         return getClassObj().getInstanceSize();
     }
 
+    @NonNull
     public Map<Field, Object> getValues() {
         Map<Field, Object> result = new HashMap<Field, Object>();
 
@@ -55,7 +57,7 @@ public class ClassInstance extends Instance {
     }
 
     @Override
-    public final void accept(Visitor visitor) {
+    public final void accept(@NonNull Visitor visitor) {
         if (visitor.visitEnter(this)) {
             for (Object value : getValues().values()) {
                 if (value instanceof Instance) {

@@ -40,6 +40,7 @@ public class MemoryMappedFileBuffer implements HprofBuffer {
 
     private final int mPadding;
 
+    @NonNull
     private final ByteBuffer[] mByteBuffers;
 
     private final long mLength;
@@ -104,7 +105,7 @@ public class MemoryMappedFileBuffer implements HprofBuffer {
     }
 
     @Override
-    public void read(byte[] b) {
+    public void read(@NonNull byte[] b) {
         int index = getIndex();
         mByteBuffers[index].position(getOffset());
         if (b.length <= mByteBuffers[index].remaining()) {

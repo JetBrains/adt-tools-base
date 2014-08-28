@@ -16,6 +16,9 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 public class StackTrace {
 
     int mSerialNumber;
@@ -30,6 +33,7 @@ public class StackTrace {
      * This alleviates the need to constantly be duplicating subsections of the
      * list of stack frame ids.
      */
+    @Nullable
     StackTrace mParent = null;
 
     int mOffset = 0;
@@ -44,6 +48,7 @@ public class StackTrace {
         mFrames = frames;
     }
 
+    @NonNull
     public final StackTrace fromDepth(int startingDepth) {
         StackTrace result = new StackTrace();
 
