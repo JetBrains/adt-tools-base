@@ -16,8 +16,10 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.tools.perflib.heap.io.HprofBuffer;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.primitives.UnsignedBytes;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -25,13 +27,13 @@ import java.util.Set;
 
 public abstract class Instance {
 
-    long mId;
-
-    //  Id of the ClassObj of which this object is an instance
-    ClassObj mClass;
+    protected final long mId;
 
     //  The stack in which this object was allocated
-    StackTrace mStack;
+    protected final StackTrace mStack;
+
+    //  Id of the ClassObj of which this object is an instance
+    long mClassId;
 
     //  The heap in which this object was allocated (app, zygote, etc)
     Heap mHeap;
@@ -39,7 +41,7 @@ public abstract class Instance {
     //  The size of this object
     int mSize;
 
-    //  The retained size of this object, indexed by heap (app, zygote, default).
+    //  The retained size of this object, indexed by heap (default, image, app, zygote).
     //  Intuitively, this represents the amount of memory that could be reclaimed in each heap if
     //  the instance were removed.
     private final Map<Heap, Long> mRetainedSizes = Maps.newHashMap();
@@ -47,16 +49,23 @@ public abstract class Instance {
     //  List of all objects that hold a live reference to this object
     private final ArrayList<Instance> mReferences = new ArrayList<Instance>();
 
-    public abstract void accept(Visitor visitor);
-
-    public ClassObj getClassObj() {
-        return mClass;
+    Instance(long id, StackTrace stackTrace) {
+        mId = id;
+        mStack = stackTrace;
     }
 
-    public void setClass(ClassObj aClass) {
-        assert mClass == null;
-        mClass = aClass;
-        aClass.addInstance(this);
+    public long getId() {
+        return mId;
+    }
+
+    public abstract void accept(Visitor visitor);
+
+    public void setClassId(long classId) {
+        mClassId = classId;
+    }
+
+    public ClassObj getClassObj() {
+        return mHeap.mSnapshot.findClass(mClassId);
     }
 
     public final int getCompositeSize() {
@@ -101,6 +110,61 @@ public abstract class Instance {
         return mReferences;
     }
 
+    protected Object readValue(Type type) {
+        switch (type) {
+            case OBJECT:
+                long id = readId();
+                Instance result = mHeap.mSnapshot.findReference(id);
+                if (result != null) {
+                    result.addReference(this);
+                }
+                return result;
+            case BOOLEAN:
+                return getBuffer().readByte() != 0;
+            case CHAR:
+                return getBuffer().readChar();
+            case FLOAT:
+                return getBuffer().readFloat();
+            case DOUBLE:
+                return getBuffer().readDouble();
+            case BYTE:
+                return getBuffer().readByte();
+            case SHORT:
+                return getBuffer().readShort();
+            case INT:
+                return getBuffer().readInt();
+            case LONG:
+                return getBuffer().readLong();
+        }
+        return null;
+    }
+
+    protected long readId() {
+        // As long as we don't interpret IDs, reading signed values here is fine.
+        switch (Type.OBJECT.getSize()) {
+            case 1:
+                return getBuffer().readByte();
+            case 2:
+                return getBuffer().readShort();
+            case 4:
+                return getBuffer().readInt();
+            case 8:
+                return getBuffer().readLong();
+        }
+        return 0;
+    }
+
+    protected int readUnsignedByte(){
+        return UnsignedBytes.toInt(getBuffer().readByte());
+    }
+
+    protected int readUnsignedShort() {
+        return getBuffer().readShort() & 0xffff;
+    }
+
+    protected HprofBuffer getBuffer() {
+        return mHeap.mSnapshot.mBuffer;
+    }
 
     public static class CollectingVisitor implements Visitor {
 

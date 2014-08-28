@@ -16,6 +16,8 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.annotations.VisibleForTesting;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -25,24 +27,26 @@ import java.util.Set;
 
 public class ClassObj extends Instance implements Comparable<ClassObj> {
 
-    String mClassName;
+    final String mClassName;
 
-    ClassObj mSuperClass;
+    private final long mStaticFieldsOffset;
+
+    long mSuperClassId;
 
     Field[] mFields;
 
-    private int mInstanceSize;
+    Field[] mStaticFields;
 
-    Map<Field, Value> mStaticFields = new HashMap<Field, Value>();
+    private int mInstanceSize;
 
     ArrayList<Instance> mInstances = new ArrayList<Instance>();
 
     Set<ClassObj> mSubclasses = new HashSet<ClassObj>();
 
-    public ClassObj(long id, StackTrace stack, String className) {
-        mId = id;
-        mStack = stack;
+    public ClassObj(long id, StackTrace stack, String className, long staticFieldsOffset) {
+        super(id, stack);
         mClassName = className;
+        mStaticFieldsOffset = staticFieldsOffset;
     }
 
     public final void addSubclass(ClassObj subclass) {
@@ -67,9 +71,8 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         mInstances.add(instance);
     }
 
-    public final void setSuperClass(ClassObj superClass) {
-        mSuperClass = superClass;
-        superClass.addSubclass(this);
+    public final void setSuperClassId(long superClass) {
+        mSuperClassId = superClass;
     }
 
     public Field[] getFields() {
@@ -80,6 +83,10 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         mFields = fields;
     }
 
+    public void setStaticFields(Field[] staticFields) {
+        mStaticFields = staticFields;
+    }
+
     public void setInstanceSize(int size) {
         mInstanceSize = size;
     }
@@ -88,21 +95,39 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         return mInstanceSize;
     }
 
+    public Map<Field, Object> getStaticFieldValues() {
+        Map<Field, Object> result = new HashMap<Field, Object>();
+        getBuffer().setPosition(mStaticFieldsOffset);
+
+        int numEntries = readUnsignedShort();
+        for (int i = 0; i < numEntries; i++) {
+            Field f = mStaticFields[i];
+
+            readId();
+            readUnsignedByte();
+
+            Object value = readValue(f.getType());
+            result.put(f, value);
+        }
+        return result;
+    }
+
     public final void dump() {
         System.out.println("+----------  ClassObj dump for: " + mClassName);
 
         System.out.println("+-----  Static fields");
-        for (Field field : mStaticFields.keySet()) {
+        Map<Field, Object> staticFields = getStaticFieldValues();
+        for (Field field : staticFields.keySet()) {
             System.out.println(field.getName() + ": " + field.getType() + " = "
-                    + mStaticFields.get(field));
+                    + staticFields.get(field));
         }
 
         System.out.println("+-----  Instance fields");
         for (Field field : mFields) {
             System.out.println(field.getName() + ": " + field.getType());
         }
-        if (mSuperClass != null) {
-            mSuperClass.dump();
+        if (getSuperClassObj() != null) {
+            getSuperClassObj().dump();
         }
     }
 
@@ -113,9 +138,9 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     @Override
     public final void accept(Visitor visitor) {
         if (visitor.visitEnter(this)) {
-            for (Value value : mStaticFields.values()) {
-                if (value.getValue() instanceof Instance) {
-                    ((Instance) value.getValue()).accept(visitor);
+            for (Object value : getStaticFieldValues().values()) {
+                if (value instanceof Instance) {
+                    ((Instance) value).accept(visitor);
                 }
             }
             visitor.visitLeave(this);
@@ -135,17 +160,13 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         return 0 == compareTo((ClassObj) o);
     }
 
-    public void addStaticField(Type type, String name, Value value) {
-        // TODO: Do we need to add a root for this objects?
-        mStaticFields.put(new Field(type, name), value);
-    }
-
-    public Value getStaticField(Type type, String name) {
-        return mStaticFields.get(new Field(type, name));
+    @VisibleForTesting
+    Object getStaticField(Type type, String name) {
+        return getStaticFieldValues().get(new Field(type, name));
     }
 
     public ClassObj getSuperClassObj() {
-        return mSuperClass;
+        return mHeap.mSnapshot.findClass(mSuperClassId);
     }
 
     public Collection<Instance> getInstances() {

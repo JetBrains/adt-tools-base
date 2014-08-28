@@ -20,25 +20,30 @@ public class ArrayInstance extends Instance {
 
     private Type mType;
 
-    private Value[] mValues;
+    private final int mLength;
 
-    public ArrayInstance(long id, StackTrace stack, Type type) {
-        mId = id;
-        mStack = stack;
+    private final long mValuesOffset;
+
+    public ArrayInstance(long id, StackTrace stack, Type type, int length, long valuesOffset) {
+        super(id, stack);
         mType = type;
+        mLength = length;
+        mValuesOffset = valuesOffset;
     }
 
-    public void setValues(Value[] values) {
-        mValues = values;
-    }
+    public Object[] getValues() {
+        Object[] values = new Object[mLength];
 
-    public Value[] getValues() {
-        return mValues;
+        getBuffer().setPosition(mValuesOffset);
+        for (int i = 0; i < mLength; i++) {
+            values[i] = readValue(mType);
+        }
+        return values;
     }
 
     @Override
     public final int getSize() {
-        return mValues.length * mType.getSize();
+        return mLength * mType.getSize();
     }
 
     @Override
@@ -48,9 +53,9 @@ public class ArrayInstance extends Instance {
         }
 
         if (visitor.visitEnter(this)) {
-            for (Value value : mValues) {
-                if (value.getValue() instanceof Instance) {
-                    ((Instance) value.getValue()).accept(visitor);
+            for (Object value : getValues()) {
+                if (value instanceof Instance) {
+                    ((Instance) value).accept(visitor);
                 }
             }
             visitor.visitLeave(this);
@@ -58,6 +63,6 @@ public class ArrayInstance extends Instance {
     }
 
     public final String toString() {
-        return String.format("%s[%d]@0x%08x", mType.name(), mValues.length, mId);
+        return String.format("%s[%d]@0x%08x", mType.name(), mLength, mId);
     }
 }

@@ -35,13 +35,10 @@ public class DominatorsTest extends TestCase {
 
     public void testSimpleGraph() {
         mSnapshot = new SnapshotBuilder(6)
-                .addReference(1, 2)
-                .addReference(1, 3)
-                .addReference(2, 4)
-                .addReference(2, 6)
-                .addReference(3, 4)
-                .addReference(3, 5)
-                .addReference(4, 6)
+                .addReferences(1, 2, 3)
+                .addReferences(2, 4, 6)
+                .addReferences(3, 4, 5)
+                .addReferences(4, 6)
                 .addRoot(1)
                 .getSnapshot();
 
@@ -56,12 +53,10 @@ public class DominatorsTest extends TestCase {
 
     public void testCyclicGraph() {
         mSnapshot = new SnapshotBuilder(4)
-                .addReference(1, 2)
-                .addReference(1, 3)
-                .addReference(1, 4)
-                .addReference(2, 3)
-                .addReference(3, 4)
-                .addReference(4, 2)
+                .addReferences(1, 2, 3, 4)
+                .addReferences(2, 3)
+                .addReferences(3, 4)
+                .addReferences(4, 2)
                 .addRoot(1)
                 .getSnapshot();
 
@@ -74,11 +69,11 @@ public class DominatorsTest extends TestCase {
 
     public void testMultipleRoots() {
         mSnapshot = new SnapshotBuilder(6)
-                .addReference(1, 3)
-                .addReference(2, 4)
-                .addReference(3, 5)
-                .addReference(4, 5)
-                .addReference(5, 6)
+                .addReferences(1, 3)
+                .addReferences(2, 4)
+                .addReferences(3, 5)
+                .addReferences(4, 5)
+                .addReferences(5, 6)
                 .addRoot(1)
                 .addRoot(2)
                 .getSnapshot();

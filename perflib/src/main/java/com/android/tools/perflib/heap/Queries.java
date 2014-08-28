@@ -75,8 +75,8 @@ public class Queries {
         Set<ClassObj> classes = new TreeSet<ClassObj>();
 
         //  Build a set of all classes across all heaps
-        for (Heap heap : snapshot.mHeaps.values()) {
-            classes.addAll(heap.mClassesById.values());
+        for (Heap heap : snapshot.mHeaps) {
+            classes.addAll(heap.getClasses());
         }
 
         //  Filter it if needed
@@ -197,7 +197,7 @@ public class Queries {
     public static Collection<RootObj> getRoots(Snapshot snapshot) {
         HashSet<RootObj> result = new HashSet<RootObj>();
 
-        for (Heap heap : snapshot.mHeaps.values()) {
+        for (Heap heap : snapshot.mHeaps) {
             result.addAll(heap.mRoots);
         }
 
@@ -207,8 +207,8 @@ public class Queries {
     public static final Instance[] newInstances(Snapshot older, Snapshot newer) {
         ArrayList<Instance> resultList = new ArrayList<Instance>();
 
-        for (Heap newHeap : newer.mHeaps.values()) {
-            Heap oldHeap = older.getHeap(newHeap.mName);
+        for (Heap newHeap : newer.mHeaps) {
+            Heap oldHeap = older.getHeap(newHeap.getName());
 
             if (oldHeap == null) {
                 continue;

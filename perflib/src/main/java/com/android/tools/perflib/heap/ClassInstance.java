@@ -16,38 +16,50 @@
 
 package com.android.tools.perflib.heap;
 
-import com.google.common.collect.Maps;
+import com.android.annotations.VisibleForTesting;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class ClassInstance extends Instance {
 
-    private Map<Field, Value> mValues = Maps.newHashMap();
+    private final long mValuesOffset;
 
-    public ClassInstance(long id, StackTrace stack) {
-        mId = id;
-        mStack = stack;
+    public ClassInstance(long id, StackTrace stack, long valuesOffset) {
+        super(id, stack);
+        mValuesOffset = valuesOffset;
     }
 
-    public void addField(Field field, Value value) {
-        mValues.put(field, value);
-    }
-
-    public Value getField(Type type, String name) {
-        return mValues.get(new Field(type, name));
+    @VisibleForTesting
+    Object getField(Type type, String name) {
+        return getValues().get(new Field(type, name));
     }
 
     @Override
     public final int getSize() {
-        return mClass.getInstanceSize();
+        return getClassObj().getInstanceSize();
+    }
+
+    public Map<Field, Object> getValues() {
+        Map<Field, Object> result = new HashMap<Field, Object>();
+
+        ClassObj clazz = getClassObj();
+        getBuffer().setPosition(mValuesOffset);
+        while (clazz != null) {
+            for (Field field : clazz.getFields()) {
+                result.put(field, readValue(field.getType()));
+            }
+            clazz = clazz.getSuperClassObj();
+        }
+        return result;
     }
 
     @Override
     public final void accept(Visitor visitor) {
         if (visitor.visitEnter(this)) {
-            for (Value value : mValues.values()) {
-                if (value.getValue() instanceof Instance) {
-                    ((Instance) value.getValue()).accept(visitor);
+            for (Object value : getValues().values()) {
+                if (value instanceof Instance) {
+                    ((Instance) value).accept(visitor);
                 }
             }
             visitor.visitLeave(this);
