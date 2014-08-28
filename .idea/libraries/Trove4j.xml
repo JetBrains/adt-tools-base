@@ -1,5 +1,5 @@
 <component name="libraryTable">
-  <library name="trove4j-1.1">
+  <library name="Trove4j">
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/net/sf/trove4j/trove4j/1.1/trove4j-1.1.jar!/" />
     </CLASSES>
