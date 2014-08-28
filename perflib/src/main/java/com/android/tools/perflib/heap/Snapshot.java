@@ -48,7 +48,7 @@ public class Snapshot {
     @NonNull
     ArrayList<Heap> mHeaps = new ArrayList<Heap>();
 
-    @Nullable
+    @NonNull
     Heap mCurrentHeap;
 
     private Map<Instance, Instance> mDominatorMap;
@@ -58,12 +58,12 @@ public class Snapshot {
         setToDefaultHeap();
     }
 
-    @Nullable
+    @NonNull
     public Heap setToDefaultHeap() {
         return setHeapTo(DEFAULT_HEAP_ID, "default");
     }
 
-    @Nullable
+    @NonNull
     public Heap setHeapTo(int id, @NonNull String name) {
         Heap heap = getHeap(id);
 
@@ -80,9 +80,10 @@ public class Snapshot {
 
     @Nullable
     public Heap getHeap(int id) {
-        for (Heap mHeap : mHeaps) {
-            if (mHeap.getId() == id) {
-                return mHeap;
+        //noinspection ForLoopReplaceableByForEach
+        for (int i = 0; i < mHeaps.size(); i++) {
+            if (mHeaps.get(i).getId() == id) {
+                return mHeaps.get(i);
             }
         }
         return null;
@@ -90,9 +91,10 @@ public class Snapshot {
 
     @Nullable
     public Heap getHeap(@NonNull String name) {
-        for (Heap mHeap : mHeaps) {
-            if (name.equals(mHeap.getName())) {
-                return mHeap;
+        //noinspection ForLoopReplaceableByForEach
+        for (int i = 0; i < mHeaps.size(); i++) {
+            if (name.equals(mHeaps.get(i).getName())) {
+                return mHeaps.get(i);
             }
         }
         return null;
@@ -155,8 +157,9 @@ public class Snapshot {
 
     @Nullable
     public final Instance findReference(long id) {
-        for (Heap mHeap : mHeaps) {
-            Instance instance = mHeap.getInstance(id);
+        //noinspection ForLoopReplaceableByForEach
+        for (int i = 0; i < mHeaps.size(); i++) {
+            Instance instance = mHeaps.get(i).getInstance(id);
 
             if (instance != null) {
                 return instance;
@@ -169,8 +172,9 @@ public class Snapshot {
 
     @Nullable
     public final ClassObj findClass(long id) {
-        for (Heap mHeap : mHeaps) {
-            ClassObj theClass = mHeap.getClass(id);
+        //noinspection ForLoopReplaceableByForEach
+        for (int i = 0; i < mHeaps.size(); i++) {
+            ClassObj theClass = mHeaps.get(i).getClass(id);
 
             if (theClass != null) {
                 return theClass;
@@ -182,8 +186,9 @@ public class Snapshot {
 
     @Nullable
     public final ClassObj findClass(String name) {
-        for (Heap mHeap : mHeaps) {
-            ClassObj theClass = mHeap.getClass(name);
+        //noinspection ForLoopReplaceableByForEach
+        for (int i = 0; i < mHeaps.size(); i++) {
+            ClassObj theClass = mHeaps.get(i).getClass(name);
 
             if (theClass != null) {
                 return theClass;

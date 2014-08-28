@@ -26,7 +26,7 @@ public class ClassInstance extends Instance {
 
     private final long mValuesOffset;
 
-    public ClassInstance(long id, StackTrace stack, long valuesOffset) {
+    public ClassInstance(long id, @NonNull StackTrace stack, long valuesOffset) {
         super(id, stack);
         mValuesOffset = valuesOffset;
     }

@@ -16,6 +16,7 @@
 
 package com.android.tools.perflib.heap.analysis;
 
+import com.android.annotations.NonNull;
 import com.android.tools.perflib.heap.ArrayInstance;
 import com.android.tools.perflib.heap.ClassInstance;
 import com.android.tools.perflib.heap.ClassObj;
@@ -64,6 +65,7 @@ public class VisitorsTest extends TestCase {
         mSnapshot.addInstance(2, object2);
 
         ClassObj clazz = new ClassObj(13, null, "FooBar", 0) {
+            @NonNull
             @Override
             public Map<Field, Object> getStaticFieldValues() {
                 Map<Field, Object> result = Maps.newHashMap();
@@ -90,6 +92,7 @@ public class VisitorsTest extends TestCase {
         mSnapshot.addInstance(1, object);
 
         ArrayInstance array = new ArrayInstance(2, null, Type.OBJECT, 3, 0) {
+            @NonNull
             @Override
             public Object[] getValues() {
                 return new Object[] {object, object, object};

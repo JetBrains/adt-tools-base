@@ -20,19 +20,21 @@ import com.android.annotations.NonNull;
 
 public class ArrayInstance extends Instance {
 
-    private Type mType;
+    private final Type mType;
 
     private final int mLength;
 
     private final long mValuesOffset;
 
-    public ArrayInstance(long id, StackTrace stack, Type type, int length, long valuesOffset) {
+    public ArrayInstance(long id, @NonNull StackTrace stack, @NonNull Type type, int length,
+            long valuesOffset) {
         super(id, stack);
         mType = type;
         mLength = length;
         mValuesOffset = valuesOffset;
     }
 
+    @NonNull
     public Object[] getValues() {
         Object[] values = new Object[mLength];
 
