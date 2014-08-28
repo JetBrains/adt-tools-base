@@ -16,11 +16,13 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.annotations.NonNull;
 import com.android.tools.perflib.heap.analysis.Dominators;
+import com.android.tools.perflib.heap.io.HprofBuffer;
 import com.google.common.collect.Iterables;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 /*
@@ -32,19 +34,23 @@ import java.util.Map;
  */
 public class Snapshot {
 
+    private static final String JAVA_LANG_CLASS = "java.lang.Class";
+
     //  Special root object used in dominator computation for objects reachable via multiple roots.
     public static final Instance SENTINEL_ROOT = new RootObj(RootType.UNKNOWN);
 
     private static final int DEFAULT_HEAP_ID = 0;
 
-    HashMap<Integer, Heap> mHeaps;
+    final HprofBuffer mBuffer;
+
+    ArrayList<Heap> mHeaps = new ArrayList<Heap>();
 
     Heap mCurrentHeap;
 
     private Map<Instance, Instance> mDominatorMap;
 
-    public Snapshot() {
-        mHeaps = new HashMap<Integer, Heap>();
+    public Snapshot(HprofBuffer buffer) {
+        mBuffer = buffer;
         setToDefaultHeap();
     }
 
@@ -52,13 +58,13 @@ public class Snapshot {
         return setHeapTo(DEFAULT_HEAP_ID, "default");
     }
 
-    public Heap setHeapTo(int id, String name) {
-        Heap heap = mHeaps.get(id);
+    public Heap setHeapTo(int id, @NonNull String name) {
+        Heap heap = getHeap(id);
 
         if (heap == null) {
-            heap = new Heap(name);
+            heap = new Heap(id, name);
             heap.mSnapshot = this;
-            mHeaps.put(id, heap);
+            mHeaps.add(heap);
         }
 
         mCurrentHeap = heap;
@@ -67,21 +73,25 @@ public class Snapshot {
     }
 
     public Heap getHeap(int id) {
-        return mHeaps.get(id);
+        for (int i = 0; i < mHeaps.size(); i++) {
+            if (mHeaps.get(i).getId() == id) {
+                return mHeaps.get(i);
+            }
+        }
+        return null;
+    }
+
+    public Heap getHeap(@NonNull String name) {
+        for (int i = 0; i < mHeaps.size(); i++) {
+            if (name.equals(mHeaps.get(i).getName())) {
+                return mHeaps.get(i);
+            }
+        }
+        return null;
     }
 
     public Collection<Heap> getHeaps() {
-        return mHeaps.values();
-    }
-
-    public Heap getHeap(String name) {
-        for (Heap heap : mHeaps.values()) {
-            if (heap.mName.equals(name)) {
-                return heap;
-            }
-        }
-
-        return null;
+        return mHeaps;
     }
 
     public Collection<RootObj> getGCRoots() {
@@ -134,8 +144,8 @@ public class Snapshot {
     }
 
     public final Instance findReference(long id) {
-        for (Heap heap : mHeaps.values()) {
-            Instance instance = heap.getInstance(id);
+        for (int i = 0; i < mHeaps.size(); i++) {
+            Instance instance = mHeaps.get(i).getInstance(id);
 
             if (instance != null) {
                 return instance;
@@ -147,8 +157,8 @@ public class Snapshot {
     }
 
     public final ClassObj findClass(long id) {
-        for (Heap heap : mHeaps.values()) {
-            ClassObj theClass = heap.getClass(id);
+        for (int i = 0; i < mHeaps.size(); i++) {
+            ClassObj theClass = mHeaps.get(i).getClass(id);
 
             if (theClass != null) {
                 return theClass;
@@ -159,8 +169,8 @@ public class Snapshot {
     }
 
     public final ClassObj findClass(String name) {
-        for (Heap heap : mHeaps.values()) {
-            ClassObj theClass = heap.getClass(name);
+        for (int i = 0; i < mHeaps.size(); i++) {
+            ClassObj theClass = mHeaps.get(i).getClass(name);
 
             if (theClass != null) {
                 return theClass;
@@ -168,6 +178,34 @@ public class Snapshot {
         }
 
         return null;
+    }
+
+    public void resolveClasses() {
+        ClassObj clazz = findClass(JAVA_LANG_CLASS);
+        int javaLangClassSize = clazz != null ? clazz.getInstanceSize() : 0;
+
+        for (Heap heap : mHeaps) {
+            for (ClassObj classObj : heap.getClasses()) {
+                ClassObj superClass = classObj.getSuperClassObj();
+                if (superClass != null) {
+                    superClass.addSubclass(classObj);
+                }
+                // We under-approximate the size of the class by including the size of Class.class
+                // and the size of static fields, and omitting padding, vtable and imtable sizes.
+                int classSize = javaLangClassSize;
+
+                for (Field f : classObj.mStaticFields) {
+                    classSize += f.getType().getSize();
+                }
+                classObj.setSize(classSize);
+            }
+            for (Instance instance : heap.getInstances()) {
+                ClassObj classObj = instance.getClassObj();
+                if (classObj != null) {
+                    classObj.addInstance(instance);
+                }
+            }
+        }
     }
 
     public Map<Instance, Instance> computeDominatorMap() {
@@ -182,7 +220,7 @@ public class Snapshot {
      */
     public void computeRetainedSizes() {
         // Initialize retained sizes for all classes and objects, including unreachable ones.
-        for (Heap heap : mHeaps.values()) {
+        for (Heap heap : mHeaps) {
             for (Instance instance : Iterables.concat(heap.getClasses(), heap.getInstances())) {
                 instance.setRetainedSize(instance.mHeap, instance.getSize());
             }
@@ -199,25 +237,25 @@ public class Snapshot {
     }
 
     public final void dumpInstanceCounts() {
-        for (Heap heap : mHeaps.values()) {
+        for (Heap heap : mHeaps) {
             System.out.println(
-                    "+------------------ instance counts for heap: " + heap.mName);
+                    "+------------------ instance counts for heap: " + heap.getName());
             heap.dumpInstanceCounts();
         }
     }
 
     public final void dumpSizes() {
-        for (Heap heap : mHeaps.values()) {
+        for (Heap heap : mHeaps) {
             System.out.println(
-                    "+------------------ sizes for heap: " + heap.mName);
+                    "+------------------ sizes for heap: " + heap.getName());
             heap.dumpSizes();
         }
     }
 
     public final void dumpSubclasses() {
-        for (Heap heap : mHeaps.values()) {
+        for (Heap heap : mHeaps) {
             System.out.println(
-                    "+------------------ subclasses for heap: " + heap.mName);
+                    "+------------------ subclasses for heap: " + heap.getName());
             heap.dumpSubclasses();
         }
     }

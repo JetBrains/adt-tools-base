@@ -66,36 +66,36 @@ public class HprofParserTest extends TestCase {
         ClassObj clazz = mSnapshot.findClass("java.lang.Thread$State");
         assertNotNull(clazz);
 
-        Object object = clazz.getStaticField(Type.OBJECT, "$VALUES").getValue();
+        Object object = clazz.getStaticField(Type.OBJECT, "$VALUES");
         assertTrue(object instanceof ArrayInstance);
         ArrayInstance array = (ArrayInstance) object;
-        Value[] values = array.getValues();
+        Object[] values = array.getValues();
         assertEquals(6, values.length);
 
         Collection<Instance> instances = clazz.getInstances();
-        for (Value value : values) {
-            assertTrue(value.getValue() instanceof Instance);
-            assertTrue(instances.contains(value.getValue()));
+        for (Object value : values) {
+            assertTrue(value instanceof Instance);
+            assertTrue(instances.contains(value));
         }
 
-        Object enumValue = clazz.getStaticField(Type.OBJECT, "NEW").getValue();
+        Object enumValue = clazz.getStaticField(Type.OBJECT, "NEW");
         assertTrue(enumValue instanceof ClassInstance);
         ClassInstance instance = (ClassInstance) enumValue;
         assertSame(clazz, instance.getClassObj());
 
-        Object name = instance.getField(Type.OBJECT, "name").getValue();
+        Object name = instance.getField(Type.OBJECT, "name");
         assertTrue(name instanceof ClassInstance);
         ClassInstance string = (ClassInstance) name;
         assertEquals("java.lang.String", string.getClassObj().getClassName());
-        Object value = string.getField(Type.OBJECT, "value").getValue();
+        Object value = string.getField(Type.OBJECT, "value");
         assertTrue(value instanceof ArrayInstance);
-        Value[] data = ((ArrayInstance) value).getValues();
+        Object[] data = ((ArrayInstance) value).getValues();
         assertEquals(3, data.length);
-        assertEquals('N', data[0].getValue());
-        assertEquals('E', data[1].getValue());
-        assertEquals('W', data[2].getValue());
+        assertEquals('N', data[0]);
+        assertEquals('E', data[1]);
+        assertEquals('W', data[2]);
 
-        Object ordinal = instance.getField(Type.INT, "ordinal").getValue();
+        Object ordinal = instance.getField(Type.INT, "ordinal");
         assertEquals(0, ordinal);
     }
 }

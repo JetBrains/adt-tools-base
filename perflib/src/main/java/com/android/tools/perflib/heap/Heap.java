@@ -17,42 +17,55 @@
 package com.android.tools.perflib.heap;
 
 import com.android.annotations.NonNull;
-import com.google.common.collect.Maps;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
+
+import gnu.trove.TIntObjectHashMap;
+import gnu.trove.TLongObjectHashMap;
+import gnu.trove.TObjectProcedure;
 
 public class Heap {
 
-    String mName;
+    private final int mId;
+
+    private final String mName;
 
     //  List of individual stack frames
-    HashMap<Long, StackFrame> mFrames = new HashMap<Long, StackFrame>();
+    TLongObjectHashMap<StackFrame> mFrames = new TLongObjectHashMap<StackFrame>();
 
     //  List stack traces, which are lists of stack frames
-    HashMap<Integer, StackTrace> mTraces = new HashMap<Integer, StackTrace>();
+    TIntObjectHashMap<StackTrace> mTraces = new TIntObjectHashMap<StackTrace>();
 
     //  Root objects such as interned strings, jni locals, etc
     ArrayList<RootObj> mRoots = new ArrayList<RootObj>();
 
     //  List of threads
-    HashMap<Integer, ThreadObj> mThreads = new HashMap<Integer, ThreadObj>();
+    TIntObjectHashMap<ThreadObj> mThreads = new TIntObjectHashMap<ThreadObj>();
 
     //  Class definitions
-    HashMap<Long, ClassObj> mClassesById = new HashMap<Long, ClassObj>();
+    TLongObjectHashMap<ClassObj> mClassesById = new TLongObjectHashMap<ClassObj>();
 
     HashMap<String, ClassObj> mClassesByName = new HashMap<String, ClassObj>();
 
     //  List of instances of above class definitions
-    private final Map<Long, Instance> mInstances = Maps.newHashMap();
+    private final TLongObjectHashMap<Instance> mInstances = new TLongObjectHashMap<Instance>();
 
     //  The snapshot that this heap is part of
     Snapshot mSnapshot;
 
-    public Heap(String name) {
+    public Heap(int id, @NonNull String name) {
+        mId = id;
         mName = name;
+    }
+
+    public int getId() {
+        return mId;
+    }
+
+    public String getName() {
+        return mName;
     }
 
     public final void addStackFrame(StackFrame theFrame) {
@@ -117,7 +130,8 @@ public class Heap {
     }
 
     public final void dumpInstanceCounts() {
-        for (ClassObj theClass : mClassesById.values()) {
+        for (Object value : mClassesById.getValues()) {
+            ClassObj theClass = (ClassObj) value;
             int count = theClass.mInstances.size();
 
             if (count > 0) {
@@ -127,7 +141,8 @@ public class Heap {
     }
 
     public final void dumpSubclasses() {
-        for (ClassObj theClass : mClassesById.values()) {
+        for (Object value : mClassesById.getValues()) {
+            ClassObj theClass = (ClassObj) value;
             int count = theClass.mSubclasses.size();
 
             if (count > 0) {
@@ -138,7 +153,9 @@ public class Heap {
     }
 
     public final void dumpSizes() {
-        for (ClassObj theClass : mClassesById.values()) {
+        for (Object value : mClassesById.getValues()) {
+            ClassObj theClass = (ClassObj) value;
+
             int size = 0;
 
             for (Instance instance : theClass.mInstances) {
@@ -158,6 +175,14 @@ public class Heap {
 
     @NonNull
     public Collection<Instance> getInstances() {
-        return mInstances.values();
+        final ArrayList<Instance> result = new ArrayList<Instance>(mInstances.size());
+        mInstances.forEachValue(new TObjectProcedure<Instance>() {
+            @Override
+            public boolean execute(Instance instance) {
+                result.add(instance);
+                return true;
+            }
+        });
+        return result;
     }
 }

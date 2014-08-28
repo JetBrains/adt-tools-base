@@ -19,14 +19,19 @@ package com.android.tools.perflib.heap.analysis;
 import com.android.tools.perflib.heap.ArrayInstance;
 import com.android.tools.perflib.heap.ClassInstance;
 import com.android.tools.perflib.heap.ClassObj;
+import com.android.tools.perflib.heap.Field;
 import com.android.tools.perflib.heap.Heap;
 import com.android.tools.perflib.heap.RootObj;
 import com.android.tools.perflib.heap.RootType;
 import com.android.tools.perflib.heap.Snapshot;
 import com.android.tools.perflib.heap.Type;
 import com.android.tools.perflib.heap.Value;
+import com.android.tools.perflib.heap.io.InMemoryBuffer;
+import com.google.common.collect.Maps;
 
 import junit.framework.TestCase;
+
+import java.util.Map;
 
 /**
  * There are two testing scenarios we want to cover here: basic connectivity between different
@@ -35,34 +40,38 @@ import junit.framework.TestCase;
  */
 public class VisitorsTest extends TestCase {
 
-    private final ClassObj mDummyClass = new ClassObj(0, null, "dummy");
+    private final ClassObj mDummyClass = new ClassObj(42, null, "dummy", 0);
 
     private Snapshot mSnapshot;
 
     @Override
     public void setUp() throws Exception {
-        mSnapshot = new Snapshot();
+        mSnapshot = new Snapshot(new InMemoryBuffer(10));
         mSnapshot.setHeapTo(13, "testHeap");
         mDummyClass.setInstanceSize(20);
-        mSnapshot.addClass(0, mDummyClass);
+        mDummyClass.setFields(new Field[0]);
+        mSnapshot.addClass(42, mDummyClass);
     }
 
     public void testSimpleStaticFieldsGraph() {
-        ClassInstance object1 = new ClassInstance(1, null);
-        object1.setClass(mDummyClass);
+        Type.setIdSize(4);
+        final ClassInstance object1 = new ClassInstance(1, null, 0);
+        object1.setClassId(42);
         mSnapshot.addInstance(1, object1);
 
-        ClassInstance object2 = new ClassInstance(2, null);
-        object2.setClass(mDummyClass);
+        final ClassInstance object2 = new ClassInstance(2, null, 0);
+        object2.setClassId(42);
         mSnapshot.addInstance(2, object2);
 
-        ClassObj clazz = new ClassObj(13, null, "FooBar");
-        Value value1 = new Value(clazz);
-        value1.setValue(object1);
-        clazz.addStaticField(Type.OBJECT, "foo", value1);
-        Value value2 = new Value(clazz);
-        value2.setValue(object2);
-        clazz.addStaticField(Type.OBJECT, "bar", value2);
+        ClassObj clazz = new ClassObj(13, null, "FooBar", 0) {
+            @Override
+            public Map<Field, Object> getStaticFieldValues() {
+                Map<Field, Object> result = Maps.newHashMap();
+                result.put(new Field(Type.OBJECT, "foo"), object1);
+                result.put(new Field(Type.OBJECT, "bar"), object2);
+                return result;
+            }
+        };
         clazz.setSize(10);
         mSnapshot.addClass(13, clazz);
 
@@ -75,14 +84,17 @@ public class VisitorsTest extends TestCase {
     }
 
     public void testSimpleArray() {
-        ClassInstance object = new ClassInstance(1, null);
-        object.setClass(mDummyClass);
+        Type.setIdSize(4);
+        final ClassInstance object = new ClassInstance(1, null, 0);
+        object.setClassId(42);
         mSnapshot.addInstance(1, object);
 
-        ArrayInstance array = new ArrayInstance(2, null, Type.OBJECT);
-        Value value = new Value(array);
-        value.setValue(object);
-        array.setValues(new Value[] {value, value, value});
+        ArrayInstance array = new ArrayInstance(2, null, Type.OBJECT, 3, 0) {
+            @Override
+            public Object[] getValues() {
+                return new Object[] {object, object, object};
+            }
+        };
         mSnapshot.addInstance(2, array);
 
         mSnapshot.setToDefaultHeap();
@@ -95,10 +107,9 @@ public class VisitorsTest extends TestCase {
 
     public void testBasicDiamond() {
         Snapshot snapshot = new SnapshotBuilder(4)
-                .addReference(1, 2)
-                .addReference(1, 3)
-                .addReference(2, 4)
-                .addReference(3, 4)
+                .addReferences(1, 2, 3)
+                .addReferences(2, 4)
+                .addReferences(3, 4)
                 .addRoot(1)
                 .getSnapshot();
 
@@ -110,9 +121,9 @@ public class VisitorsTest extends TestCase {
 
     public void testBasicCycle() {
         Snapshot snapshot = new SnapshotBuilder(3)
-                .addReference(1, 2)
-                .addReference(2, 3)
-                .addReference(3, 1)
+                .addReferences(1, 2)
+                .addReferences(2, 3)
+                .addReferences(3, 1)
                 .addRoot(1)
                 .getSnapshot();
 

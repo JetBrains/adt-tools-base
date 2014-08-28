@@ -26,14 +26,6 @@ public class RootObj extends Instance {
 
     int mThread;
 
-    /*
-     * These two fields are only used by roots that are static
-     * fields of class objects
-     */
-    long mParent;
-
-    String mComment;
-
     public RootObj(RootType type) {
         this(type, 0, 0, null);
     }
@@ -43,10 +35,9 @@ public class RootObj extends Instance {
     }
 
     public RootObj(RootType type, long id, int thread, StackTrace stack) {
+        super(id, stack);
         mType = type;
-        mId = id;
         mThread = thread;
-        mStack = stack;
     }
 
     public final String getClassName(Snapshot snapshot) {

@@ -22,11 +22,9 @@ import com.google.common.primitives.UnsignedBytes;
 import com.google.common.primitives.UnsignedInts;
 
 import java.io.EOFException;
-import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.PriorityQueue;
-import java.util.concurrent.Callable;
+
+import gnu.trove.TLongObjectHashMap;
 
 public class HprofParser {
 
@@ -113,11 +111,6 @@ public class HprofParser {
 
     private static final int ROOT_PRIMITIVE_ARRAY_NODATA = 0xc3;
 
-    private static final String JAVA_LANG_CLASS = "java.lang.Class";
-
-
-    private final PriorityQueue<PostOperation> mPost = new PriorityQueue<PostOperation>();
-
     HprofBuffer mInput;
 
     int mIdSize;
@@ -128,16 +121,16 @@ public class HprofParser {
      * These are only needed while parsing so are not kept as part of the
      * heap data.
      */
-    HashMap<Long, String> mStrings = new HashMap<Long, String>();
+    TLongObjectHashMap<String> mStrings = new TLongObjectHashMap<String>();
 
-    HashMap<Long, String> mClassNames = new HashMap<Long, String>();
+    TLongObjectHashMap<String> mClassNames = new TLongObjectHashMap<String>();
 
     public HprofParser(@NonNull HprofBuffer buffer) {
         mInput = buffer;
     }
 
     public final Snapshot parse() {
-        Snapshot snapshot = new Snapshot();
+        Snapshot snapshot = new Snapshot(mInput);
         mSnapshot = snapshot;
 
         try {
@@ -190,15 +183,15 @@ public class HprofParser {
             } catch (EOFException eof) {
                 //  this is fine
             }
-            PostOperation post = mPost.poll();
-            while (post != null) {
-                post.mCall.call();
-                post = mPost.poll();
-            }
+            mSnapshot.resolveClasses();
+            // TODO: enable this after the dominators computation is also optimized.
+            // mSnapshot.computeRetainedSizes();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+        mClassNames.clear();
+        mStrings.clear();
         return snapshot;
     }
 
@@ -486,8 +479,6 @@ public class HprofParser {
         readId(); // RESERVED.
         int instanceSize = mInput.readInt();
 
-        final ClassObj theClass = new ClassObj(id, stack, mClassNames.get(id));
-
         int bytesRead = (7 * mIdSize) + 4 + 4;
 
         //  Skip over the constant pool
@@ -499,17 +490,26 @@ public class HprofParser {
             bytesRead += 2 + skipValue();
         }
 
-        //  Static fields
+        final ClassObj theClass = new ClassObj(id, stack, mClassNames.get(id), mInput.position());
+        theClass.setSuperClassId(superClassId);
+
+        //  Skip over static fields
         numEntries = readUnsignedShort();
         bytesRead += 2;
+
+        Field[] staticFields = new Field[numEntries];
 
         for (int i = 0; i < numEntries; i++) {
             String name = mStrings.get(readId());
             Type type = Type.getType(mInput.readByte());
-            Value value = readValue(theClass, type);
-            theClass.addStaticField(type, name, value);
+
+            staticFields[i] = new Field(type, name);
+            skipFully(type.getSize());
+
             bytesRead += mIdSize + 1 + type.getSize();
         }
+
+        theClass.setStaticFields(staticFields);
 
         //  Instance fields
         numEntries = readUnsignedShort();
@@ -530,109 +530,23 @@ public class HprofParser {
         theClass.setInstanceSize(instanceSize);
 
         mSnapshot.addClass(id, theClass);
-        if (superClassId != 0) {
-            mPost.add(new PostOperation(ResolvePriority.CLASSES, new Callable() {
-                @Override
-                public Object call() throws Exception {
-                    theClass.setSuperClass(mSnapshot.findClass(superClassId));
-                    return null;
-                }
-            }));
-        }
-        mPost.add(new PostOperation(ResolvePriority.CLASSES, new Callable() {
-            @Override
-            public Object call() throws Exception {
-                // We under-approximate the size of the class by including the size of Class.class
-                // and the size of static fields, and omitting padding, vtable and imtable sizes.
-                int classSize = mSnapshot.findClass(JAVA_LANG_CLASS).getInstanceSize();
-                for (Field f : theClass.mStaticFields.keySet()) {
-                    classSize += f.getType().getSize();
-                }
-                theClass.setSize(classSize);
-                return null;
-            }
-        }));
 
         return bytesRead;
-    }
-
-    private Value readValue(Instance instance, Type type) throws IOException {
-        final Value value = new Value(instance);
-        switch (type) {
-            case OBJECT:
-                final long id = readId();
-                mPost.add(new PostOperation(ResolvePriority.INSTANCES, new Callable() {
-                    @Override
-                    public Object call() throws Exception {
-                        value.setValue(mSnapshot.findReference(id));
-                        return null;
-                    }
-                }));
-                break;
-            case BOOLEAN:
-                value.setValue(mInput.readByte() != 0);
-                break;
-            case CHAR:
-                value.setValue(mInput.readChar());
-                break;
-            case FLOAT:
-                value.setValue(mInput.readFloat());
-                break;
-            case DOUBLE:
-                value.setValue(mInput.readDouble());
-                break;
-            case BYTE:
-                value.setValue(mInput.readByte());
-                break;
-            case SHORT:
-                value.setValue(mInput.readShort());
-                break;
-            case INT:
-                value.setValue(mInput.readInt());
-                break;
-            case LONG:
-                value.setValue(mInput.readLong());
-                break;
-        }
-        return value;
     }
 
     private int loadInstanceDump() throws IOException {
         long id = readId();
         int stackId = mInput.readInt();
         StackTrace stack = mSnapshot.getStackTrace(stackId);
-        final long classId = readId();
+        long classId = readId();
         int remaining = mInput.readInt();
-        final ClassInstance instance = new ClassInstance(id, stack);
 
-        final long position = mInput.position();
-        skipFully(remaining);
-
-        mPost.add(new PostOperation(ResolvePriority.CLASSES, new Callable() {
-            @Override
-            public Void call() throws Exception {
-                instance.setClass(mSnapshot.findClass(classId));
-                return null;
-            }
-        }));
-
-        mPost.add(new PostOperation(ResolvePriority.VALUES, new Callable() {
-            @Override
-            public Void call() throws Exception {
-                ClassObj clazz = instance.getClassObj();
-                mInput.setPosition(position);
-                while (clazz != null) {
-                    for (Field field : clazz.getFields()) {
-                        instance.addField(field, readValue(instance, field.getType()));
-                    }
-                    clazz = clazz.getSuperClassObj();
-                }
-                return null;
-            }
-        }));
-
+        long position = mInput.position();
+        ClassInstance instance = new ClassInstance(id, stack, position);
+        instance.setClassId(classId);
         mSnapshot.addInstance(id, instance);
 
+        skipFully(remaining);
         return mIdSize + 4 + mIdSize + 4 + remaining;
     }
 
@@ -641,29 +555,15 @@ public class HprofParser {
         int stackId = mInput.readInt();
         StackTrace stack = mSnapshot.getStackTrace(stackId);
         int numElements = mInput.readInt();
-        final long classId = readId();
-        int totalBytes = numElements * mIdSize;
-        Value[] values = new Value[numElements];
-
-        final ArrayInstance array = new ArrayInstance(id, stack, Type.OBJECT);
-
-        for (int i = 0; i < numElements; i++) {
-            values[i] = readValue(array, Type.OBJECT);
-        }
-
-        array.setValues(values);
-
-        mPost.add(new PostOperation(ResolvePriority.CLASSES, new Callable() {
-            @Override
-            public Object call() throws Exception {
-                array.setClass(mSnapshot.findClass(classId));
-                return null;
-            }
-        }));
-
+        long classId = readId();
+        ArrayInstance array =
+                new ArrayInstance(id, stack, Type.OBJECT, numElements, mInput.position());
+        array.setClassId(classId);
         mSnapshot.addInstance(id, array);
 
-        return mIdSize + 4 + 4 + mIdSize + totalBytes;
+        int remaining = numElements * mIdSize;
+        skipFully(remaining);
+        return mIdSize + 4 + 4 + mIdSize + remaining;
     }
 
     private int loadPrimitiveArrayDump() throws IOException {
@@ -673,18 +573,12 @@ public class HprofParser {
         int numElements = mInput.readInt();
         Type type = Type.getType(readUnsignedByte());
         int size = type.getSize();
-        Value[] values = new Value[numElements];
-
-        ArrayInstance array = new ArrayInstance(id, stack, type);
-        for (int i = 0; i < numElements; i++) {
-            values[i] = readValue(array, type);
-        }
-
-        array.setValues(values);
-
+        ArrayInstance array = new ArrayInstance(id, stack, type, numElements, mInput.position());
         mSnapshot.addInstance(id, array);
 
-        return mIdSize + 4 + 4 + 1 + numElements * size;
+        int remaining = numElements * size;
+        skipFully(remaining);
+        return mIdSize + 4 + 4 + 1 + remaining;
     }
 
     private int loadJniMonitor() throws IOException {
@@ -711,31 +605,5 @@ public class HprofParser {
 
     private void skipFully(long numBytes) throws IOException {
         mInput.setPosition(mInput.position() + numBytes);
-    }
-
-    /**
-     * The priorities to resolve references after the main pass.
-     */
-    static enum ResolvePriority {
-        CLASSES,
-        VALUES,
-        INSTANCES
-    }
-
-    static class PostOperation implements Comparable<PostOperation> {
-
-        ResolvePriority mPriority;
-
-        Callable mCall;
-
-        PostOperation(ResolvePriority priority, Callable call) {
-            mPriority = priority;
-            mCall = call;
-        }
-
-        @Override
-        public int compareTo(PostOperation other) {
-            return mPriority.compareTo(other.mPriority);
-        }
     }
 }

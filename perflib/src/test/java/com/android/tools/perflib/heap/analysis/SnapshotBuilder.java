@@ -23,7 +23,9 @@ import com.android.tools.perflib.heap.RootObj;
 import com.android.tools.perflib.heap.RootType;
 import com.android.tools.perflib.heap.Snapshot;
 import com.android.tools.perflib.heap.Type;
-import com.android.tools.perflib.heap.Value;
+import com.android.tools.perflib.heap.io.InMemoryBuffer;
+
+import java.nio.ByteBuffer;
 
 /**
  * Utility for creating Snapshot objects to be used in tests.
@@ -39,25 +41,41 @@ public class SnapshotBuilder {
 
     private final ClassInstance[] mNodes;
 
+    private final int[] mOffsets;
+
+    private final ByteBuffer mDirectBuffer;
+
     public SnapshotBuilder(int numNodes) {
-        mSnapshot = new Snapshot();
+        Type.setIdSize(2); // A good opportunity to test the handling of short IDs.
+        InMemoryBuffer buffer = new InMemoryBuffer(2 * numNodes * numNodes);
+        mDirectBuffer = buffer.getDirectBuffer();
+        mOffsets = new int[numNodes + 1];
+
+        mSnapshot = new Snapshot(buffer);
         mSnapshot.setHeapTo(13, "testHeap");
 
         mNodes = new ClassInstance[numNodes + 1];
         for (int i = 1; i <= numNodes; i++) {
-            ClassObj clazz = new ClassObj(100 + i, null, "Class" + i);
+            ClassObj clazz = new ClassObj(100 + i, null, "Class" + i, 0);
             clazz.setInstanceSize(i);
+            clazz.setFields(new Field[0]);
+            mSnapshot.addClass(100 + i, clazz);
 
-            mNodes[i] = new ClassInstance(i, null);
-            mNodes[i].setClass(clazz);
+            mOffsets[i] = 2 * (i - 1) * numNodes;
+            mNodes[i] = new ClassInstance(i, null, mOffsets[i]);
+            mNodes[i].setClassId(100 + i);
             mSnapshot.addInstance(i, mNodes[i]);
         }
     }
 
-    public SnapshotBuilder addReference(int nodeFrom, int nodeTo) {
-        Value link = new Value(mNodes[nodeFrom]);
-        link.setValue(mNodes[nodeTo]);
-        mNodes[nodeFrom].addField(new Field(Type.OBJECT, "f" + nodeTo), link);
+    public SnapshotBuilder addReferences(int nodeFrom, int... nodesTo) {
+        Field[] fields = new Field[nodesTo.length];
+        for (int i = 0; i < nodesTo.length; i++) {
+            mDirectBuffer.putShort(mOffsets[nodeFrom] + i * 2, (short) nodesTo[i]);
+            fields[i] = new Field(Type.OBJECT, "f" + nodesTo[i]);
+        }
+
+        mNodes[nodeFrom].getClassObj().setFields(fields);
         return this;
     }
 
