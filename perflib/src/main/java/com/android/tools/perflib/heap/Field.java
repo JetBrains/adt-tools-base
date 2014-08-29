@@ -16,6 +16,7 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.annotations.NonNull;
 import com.google.common.base.Objects;
 
 /**
@@ -23,19 +24,23 @@ import com.google.common.base.Objects;
  */
 public final class Field {
 
+    @NonNull
     private final Type mType;
 
+    @NonNull
     private final String mName;
 
-    public Field(Type type, String name) {
+    public Field(@NonNull Type type, @NonNull String name) {
         mType = type;
         mName = name;
     }
 
+    @NonNull
     public Type getType() {
         return mType;
     }
 
+    @NonNull
     public String getName() {
         return mName;
     }

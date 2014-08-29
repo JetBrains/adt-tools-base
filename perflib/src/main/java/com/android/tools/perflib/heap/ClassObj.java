@@ -28,6 +28,7 @@ import java.util.Set;
 
 public class ClassObj extends Instance implements Comparable<ClassObj> {
 
+    @NonNull
     final String mClassName;
 
     private final long mStaticFieldsOffset;
@@ -46,7 +47,8 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     @NonNull
     Set<ClassObj> mSubclasses = new HashSet<ClassObj>();
 
-    public ClassObj(long id, StackTrace stack, String className, long staticFieldsOffset) {
+    public ClassObj(long id, @NonNull StackTrace stack, @NonNull String className,
+            long staticFieldsOffset) {
         super(id, stack);
         mClassName = className;
         mStaticFieldsOffset = staticFieldsOffset;
@@ -72,7 +74,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         return mClassName.replace('/', '.');
     }
 
-    public final void addInstance(Instance instance) {
+    public final void addInstance(@NonNull Instance instance) {
         mInstances.add(instance);
     }
 
@@ -84,11 +86,11 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         return mFields;
     }
 
-    public void setFields(Field[] fields) {
+    public void setFields(@NonNull Field[] fields) {
         mFields = fields;
     }
 
-    public void setStaticFields(Field[] staticFields) {
+    public void setStaticFields(@NonNull Field[] staticFields) {
         mStaticFields = staticFields;
     }
 
@@ -100,6 +102,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         return mInstanceSize;
     }
 
+    @NonNull
     public Map<Field, Object> getStaticFieldValues() {
         Map<Field, Object> result = new HashMap<Field, Object>();
         getBuffer().setPosition(mStaticFieldsOffset);
@@ -136,6 +139,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         }
     }
 
+    @NonNull
     public final String getClassName() {
         return mClassName;
     }

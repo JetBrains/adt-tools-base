@@ -32,6 +32,7 @@ public abstract class Instance {
     protected final long mId;
 
     //  The stack in which this object was allocated
+    @NonNull
     protected final StackTrace mStack;
 
     //  Id of the ClassObj of which this object is an instance
@@ -51,7 +52,7 @@ public abstract class Instance {
     //  List of all objects that hold a live reference to this object
     private final ArrayList<Instance> mReferences = new ArrayList<Instance>();
 
-    Instance(long id, StackTrace stackTrace) {
+    Instance(long id, @NonNull StackTrace stackTrace) {
         mId = id;
         mStack = stackTrace;
     }
