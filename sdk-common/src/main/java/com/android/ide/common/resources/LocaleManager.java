@@ -16,14 +16,26 @@
 
 package com.android.ide.common.resources;
 
+import static java.util.Locale.US;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.ide.common.res2.ResourceRepository;
+import com.android.resources.ResourceType;
+import com.android.utils.SdkUtils;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 /**
  * The {@linkplain LocaleManager} provides access to locale information such as
@@ -115,27 +127,177 @@ public class LocaleManager {
 
     /**
      * Returns the region code for the given language. <b>Note that there can be
-     * many regions that speak a given language; this just picks one</b>.
-     * Note that if the current locale of the user happens to have the same
-     * language as the given language code, in that case we pick the current
-     * region.
+     * many regions that speak a given language; this just picks one</b> based
+     * on a set of heuristics.
      *
      * @param languageCode the language to look up
      * @return the corresponding region code, if any
      */
     @Nullable
     public static String getLanguageRegion(@NonNull String languageCode) {
-        // Prefer the local registration of the current locale; even if
-        // for example the default locale for English is the US, if the current
-        // default locale is English, then use its associated country, which could
-        // for example be Australia.
-        @SuppressWarnings("UnnecessaryFullyQualifiedName")
-        java.util.Locale locale = java.util.Locale.getDefault();
-        if (languageCode.equalsIgnoreCase(locale.getLanguage())) {
-            return locale.getCountry();
+        return getLanguageRegion(languageCode, null);
+    }
+
+    /**
+     * Returns the region code for the given language. <b>Note that there can be
+     * many regions that speak a given language; this just picks one</b> based
+     * on a set of heuristics.
+     *
+     * @param languageCode the language to look up
+     * @return the corresponding region code, if any
+     */
+    @Nullable
+    public static String getLanguageRegion(@NonNull String languageCode,
+            @Nullable ResourceRepository resources) {
+        // Try to pick one language based on various heuristics:
+
+        // (1) Check to see if the user has deliberately picked a preferred
+        //     region for this language with an option. That should always
+        //     win. Example: STUDIO_LOCALES="en_GB,pt_PT" says that for English
+        //     we should always use the region GB and for Portuguese we should always
+        //     use the region PT. Also allow en-GB and en-rGB.
+        String option = System.getenv("STUDIO_LOCALES");
+        if (option == null) {
+            option = System.getProperty("studio.locales");
+        }
+        if (option != null) {
+            for (String regionLocale : Splitter.on(',').trimResults().split(option)) {
+                if (SdkUtils.startsWithIgnoreCase(regionLocale, languageCode)) {
+                    if (regionLocale.length() == 5 && ((regionLocale.charAt(2) == '_')
+                            || regionLocale.charAt(2) == '-')) {
+                        return regionLocale.substring(3).toUpperCase(US);
+                    } else if (regionLocale.length() == 6 && regionLocale.charAt(2) == '-'
+                            && regionLocale.charAt(3) == 'r') {
+                        return regionLocale.substring(4).toUpperCase(US);
+                    }
+                }
+            }
         }
 
+        // (2) Check the user's locale; if it happens to be in the same language
+        //     as the target language, and it specifies a region, use that region
+        Locale locale = Locale.getDefault();
+        if (languageCode.equalsIgnoreCase(locale.getLanguage())) {
+            String country = locale.getCountry();
+            if (!country.isEmpty()) {
+                country = country.toUpperCase(US);
+                if (country.length() == 2) {
+                    return country;
+                }
+            }
+        }
 
+        // Do we have multiple known regions for this locale? If so, try to pick
+        // among them based on heuristics.
+        List<String> regions = getRelevantRegions(languageCode);
+        if (regions.size() > 1) {
+            // (3) Check the user's country. The user may not be using the target
+            //     language, but if the current country matches one of the relevant
+            //     regions, use it.
+            String country = locale.getCountry();
+            if (!country.isEmpty()) {
+                country = country.toUpperCase(US);
+                if (country.length() == 2 && regions.contains(country)) {
+                    return country;
+                }
+            }
+
+            // (4) Look at the user's network location; if we can resolve
+            //     the domain name, the TLD might be an ISO 3166 country code:
+            //     http://en.wikipedia.org/wiki/Country_code_top-level_domain
+            //     If so, and that country code is in one of the candidate regions,
+            //     use it. (Note the exceptions listed in there; we should treat
+            //     "uk" as "gb" for ISO code lookup.)
+            //
+            //   NOTE DONE: It turns out this is tricky. Looking up the current domain
+            //     typically requires a network connection, sometimes it can
+            //     take seconds, and even the domain name may not be helpful;
+            //     it may be for example a .com address.
+
+
+            // (5) Use the timezone! The timezone can give us a very good clue
+            //     about the region. In many cases we can get an exact match,
+            //     e.g. if we're looking at the timezone Europe/Lisbon we know
+            //     the region is PT. (In the future we could extend this to
+            //     not only map from timezone to region code, but to look at
+            //     the continent and raw offsets for further clues to guide the
+            //     region choice.)
+            String region = getTimeZoneRegion(TimeZone.getDefault());
+            if (region != null && regions.contains(region)) {
+                return region;
+            }
+
+            //
+            // (6) Look at installed locales, and limit our options to the regions
+            //     found in locales for the given language.
+            //     For example, on my system, the LocaleManager provides 90
+            //     relevant regions for English, but my system only has 11,
+            //     so we can eliminate the remaining 79 from consideration.
+            //     (Sadly, it doesn't look like the local locales are sorted
+            //     in any way significant for the user, so we can't just assume
+            //     that the first locale of the target language is somehow special.)
+            Locale candidate = null;
+            for (Locale available : Locale.getAvailableLocales()) {
+                if (languageCode.equals(available.getLanguage()) &&
+                        regions.contains(available.getCountry())) {
+                    if (candidate != null) {
+                        candidate = null; // more than one match; doesn't help us
+                        break;
+                    } else {
+                        candidate = available;
+                    }
+                }
+            }
+            if (candidate != null) {
+                return candidate.getCountry();
+            }
+
+            //
+            // (7) Consult the project to see which locales are used there.
+            //     If for example your project has resources in "en-rUS", it's
+            //     unlikely that you intend for "US" to be the region for en
+            //     (since that's a region specific overlay) so pick for example GB
+            //     instead.
+            if (resources != null) {
+                ListMultimap<String, com.android.ide.common.res2.ResourceItem> strings = resources
+                        .getItems().get(ResourceType.STRING);
+                if (strings != null) {
+                    Set<String> specified = Sets.newHashSet();
+                    for (com.android.ide.common.res2.ResourceItem item : strings.values()) {
+                        String qualifiers = item.getQualifiers();
+                        if (qualifiers.startsWith(languageCode) && qualifiers.length() == 6
+                                && qualifiers.charAt(3) == 'r') {
+                            specified.add(qualifiers.substring(4));
+                        }
+                    }
+                    if (!specified.isEmpty()) {
+                        // Remove the specified locales from consideration
+                        Set<String> all = Sets.newHashSet(regions);
+                        all.removeAll(specified);
+                        // Only one left?
+                        if (all.size() == 1) {
+                            return all.iterator().next();
+                        }
+                    }
+                }
+            }
+
+            //
+            // (8) Give preference to a region that has the same region code
+            //     as the language code; this is usually where the language is named
+            //     after a region
+            char first = Character.toUpperCase(languageCode.charAt(0));
+            char second = Character.toUpperCase(languageCode.charAt(1));
+            for (String r : regions) {
+                if (r.charAt(0) == first && r.charAt(1) == second) {
+                    return r;
+                }
+            }
+        } else if (regions.size() == 1) {
+            return regions.get(0);
+        }
+
+        // Finally just pick the default one
         return sLanguageToCountry.get(languageCode);
     }
 
@@ -235,7 +397,7 @@ public class LocaleManager {
          sLanguageNames.put("bs", "Bosnian"); //$NON-NLS-1$
 
          // "ca": Catalan -> Andorra, Catalonia
-         sLanguageToCountry.put("ca", "AD"); //$NON-NLS-1$ //$NON-NLS-2$
+         //sLanguageToCountry.put("ca", "AD"); //$NON-NLS-1$ //$NON-NLS-2$
          sLanguageNames.put("ca", "Catalan"); //$NON-NLS-1$
 
          // "ce": Chechen -> Russia
@@ -310,8 +472,8 @@ public class LocaleManager {
          sLanguageToCountry.put("fa", "IR"); //$NON-NLS-1$ //$NON-NLS-2$
          sLanguageNames.put("fa", "Persian"); //$NON-NLS-1$
 
-         // "ff": Fulah -> Mauritania, Senegal, Mali, Guinea, Burkina Faso, ...
-         sLanguageToCountry.put("ff", "MR"); //$NON-NLS-1$ //$NON-NLS-2$
+         // "ff": Fulah -> Senegal, Mauritania, Mali, Guinea, Burkina Faso, ...
+         sLanguageToCountry.put("ff", "SN"); //$NON-NLS-1$ //$NON-NLS-2$
          sLanguageNames.put("ff", "Fulah"); //$NON-NLS-1$
 
          // "fi": Finnish -> Finland
@@ -322,8 +484,8 @@ public class LocaleManager {
          sLanguageToCountry.put("fj", "FJ"); //$NON-NLS-1$ //$NON-NLS-2$
          sLanguageNames.put("fj", "Fijian"); //$NON-NLS-1$
 
-         // "fo": Faroese -> Denmark
-         sLanguageToCountry.put("fo", "DK"); //$NON-NLS-1$ //$NON-NLS-2$
+         // "fo": Faroese -> Faroe Islands
+         sLanguageToCountry.put("fo", "FO"); //$NON-NLS-1$ //$NON-NLS-2$
          sLanguageNames.put("fo", "Faroese"); //$NON-NLS-1$
 
          // "fr": French -> France
@@ -355,8 +517,7 @@ public class LocaleManager {
          sLanguageNames.put("gu", "Gujarati"); //$NON-NLS-1$
 
          // "gv": Manx -> Isle of Man
-         // We don't have an icon for IM
-         //sLanguageToCountry.put("gv", "IM"); //$NON-NLS-1$ //$NON-NLS-2$
+         sLanguageToCountry.put("gv", "IM"); //$NON-NLS-1$ //$NON-NLS-2$
          sLanguageNames.put("gv", "Manx"); //$NON-NLS-1$
 
          // "ha": Hausa -> Nigeria, Niger
@@ -451,8 +612,8 @@ public class LocaleManager {
          sLanguageToCountry.put("kk", "KZ"); //$NON-NLS-1$ //$NON-NLS-2$
          sLanguageNames.put("kk", "Kazakh"); //$NON-NLS-1$
 
-         // "kl": Kalaallisut -> Denmark
-         sLanguageToCountry.put("kl", "DK"); //$NON-NLS-1$ //$NON-NLS-2$
+         // "kl": Kalaallisut -> Greenland
+         sLanguageToCountry.put("kl", "GL"); //$NON-NLS-1$ //$NON-NLS-2$
          sLanguageNames.put("kl", "Kalaallisut"); //$NON-NLS-1$
 
          // "km": Khmer -> Cambodia
@@ -638,8 +799,8 @@ public class LocaleManager {
          sLanguageToCountry.put("ps", "AF"); //$NON-NLS-1$ //$NON-NLS-2$
          sLanguageNames.put("ps", "Pashto"); //$NON-NLS-1$
 
-         // "pt": Portuguese -> Brazil, Portugal, ...
-         sLanguageToCountry.put("pt", "BR"); //$NON-NLS-1$ //$NON-NLS-2$
+         // "pt": Portuguese -> Portugal, Brazil, ...
+         sLanguageToCountry.put("pt", "PT"); //$NON-NLS-1$ //$NON-NLS-2$
          sLanguageNames.put("pt", "Portuguese"); //$NON-NLS-1$
 
          // "qu": Quechua -> Peru, Bolivia
@@ -1130,6 +1291,760 @@ public class LocaleManager {
         //System.out.println("Language count = " + sLanguageNames.size());
         //System.out.println("Language Binding count = " + sLanguageToCountry.size());
         //System.out.println("Region count = " + sRegionNames.size());
+    }
+
+    /** Returns the relevant regions for the given language, if known. */
+    @NonNull
+    public static List<String> getRelevantRegions(@NonNull String languageCode) {
+        assert languageCode.length() == 2;
+        char first = languageCode.charAt(0);
+        char second = languageCode.charAt(1);
+        assert Character.isLowerCase(first) && Character.isLowerCase(second) : languageCode;
+
+        // This table is generated by LocaleManagerTest#testGenerateLanguageRegionMap
+        // if LocaleManagerTest#GENERATE_MULTI_REGION_SWITCH is true
+        switch (first) {
+            case 'a': {
+                if (second == 'f') {
+                    return Arrays.asList("NA", "ZA");
+                } else if (second == 'r') {
+                    return Arrays.asList("AE", "BH", "DJ", "DZ", "EG", "EH", "ER", "IL", "IQ", "JO",
+                            "KM", "KW", "LB", "LY", "MA", "MR", "OM", "PS", "QA", "SA", "SD", "SO",
+                            "SS", "SY", "TD", "TN", "YE");
+                }
+                break;
+            }
+            case 'b': {
+                if (second == 'n') {
+                    return Arrays.asList("BD", "IN");
+                } else if (second == 'o') {
+                    return Arrays.asList("CN", "IN");
+                }
+                break;
+            }
+            case 'c': {
+                if (second == 'a') {
+                    return Arrays.asList("AD", "ES", "FR", "IT");
+                }
+                break;
+            }
+            case 'd': {
+                if (second == 'a') {
+                    return Arrays.asList("DK", "GL");
+                } else if (second == 'e') {
+                    return Arrays.asList("AT", "BE", "CH", "DE", "LI", "LU");
+                }
+                break;
+            }
+            case 'e': {
+                if (second == 'e') {
+                    return Arrays.asList("GH", "TG");
+                } else if (second == 'l') {
+                    return Arrays.asList("CY", "GR");
+                } else if (second == 'n') {
+                    return Arrays.asList("AG", "AI", "AS", "AU", "BB", "BE", "BM", "BS", "BW", "BZ",
+                            "CA", "CC", "CK", "CM", "CX", "DM", "ER", "FJ", "FK", "FM", "GB", "GD",
+                            "GG", "GH", "GI", "GM", "GU", "GY", "HK", "IE", "IM", "IN", "IO", "JE",
+                            "JM", "KE", "KI", "KN", "KY", "LC", "LR", "LS", "MG", "MH", "MO", "MP",
+                            "MS", "MT", "MU", "MW", "MY", "NA", "NF", "NG", "NR", "NU", "NZ", "PG",
+                            "PH", "PK", "PN", "PR", "PW", "RW", "SB", "SC", "SD", "SG", "SH", "SL",
+                            "SS", "SX", "SZ", "TC", "TK", "TO", "TT", "TV", "TZ", "UG", "UM", "US",
+                            "VC", "VG", "VI", "VU", "WS", "ZA", "ZM", "ZW");
+                } else if (second == 's') {
+                    return Arrays.asList("AR", "BO", "CL", "CO", "CR", "CU", "DO", "EC", "ES", "GQ",
+                            "GT", "HN", "MX", "NI", "PA", "PE", "PH", "PR", "PY", "SV", "US", "UY",
+                            "VE");
+                }
+                break;
+            }
+            case 'f': {
+                if (second == 'a') {
+                    return Arrays.asList("AF", "IR");
+                } else if (second == 'f') {
+                    return Arrays.asList("CM", "GN", "MR", "SN");
+                } else if (second == 'r') {
+                    return Arrays.asList("BE", "BF", "BI", "BJ", "BL", "CA", "CD", "CF", "CG", "CH",
+                            "CI", "CM", "DJ", "DZ", "FR", "GA", "GF", "GN", "GP", "GQ", "HT", "KM",
+                            "LU", "MA", "MC", "MF", "MG", "ML", "MQ", "MR", "MU", "NC", "NE", "PF",
+                            "PM", "RE", "RW", "SC", "SN", "SY", "TD", "TG", "TN", "VU", "WF", "YT");
+                }
+                break;
+            }
+            case 'h': {
+                if (second == 'a') {
+                    return Arrays.asList("GH", "NE", "NG");
+                } else if (second == 'r') {
+                    return Arrays.asList("BA", "HR");
+                }
+                break;
+            }
+            case 'i': {
+                if (second == 't') {
+                    return Arrays.asList("CH", "IT", "SM");
+                }
+                break;
+            }
+            case 'k': {
+                if (second == 'o') {
+                    return Arrays.asList("KP", "KR");
+                }
+                break;
+            }
+            case 'l': {
+                if (second == 'n') {
+                    return Arrays.asList("AO", "CD", "CF", "CG");
+                }
+                break;
+            }
+            case 'm': {
+                if (second == 's') {
+                    return Arrays.asList("BN", "MY", "SG");
+                }
+                break;
+            }
+            case 'n': {
+                if (second == 'b') {
+                    return Arrays.asList("NO", "SJ");
+                } else if (second == 'e') {
+                    return Arrays.asList("IN", "NP");
+                } else if (second == 'l') {
+                    return Arrays.asList("AW", "BE", "BQ", "CW", "NL", "SR", "SX");
+                }
+                break;
+            }
+            case 'o': {
+                if (second == 'm') {
+                    return Arrays.asList("ET", "KE");
+                } else if (second == 's') {
+                    return Arrays.asList("GE", "RU");
+                }
+                break;
+            }
+            case 'p': {
+                if (second == 'a') {
+                    return Arrays.asList("IN", "PK");
+                } else if (second == 't') {
+                    return Arrays.asList("AO", "BR", "CV", "GW", "MO", "MZ", "PT", "ST", "TL");
+                }
+                break;
+            }
+            case 'q': {
+                if (second == 'u') {
+                    return Arrays.asList("BO", "EC", "PE");
+                }
+                break;
+            }
+            case 'r': {
+                if (second == 'o') {
+                    return Arrays.asList("MD", "RO");
+                } else if (second == 'u') {
+                    return Arrays.asList("BY", "KG", "KZ", "MD", "RU", "UA");
+                }
+                break;
+            }
+            case 's': {
+                if (second == 'e') {
+                    return Arrays.asList("FI", "NO", "SE");
+                } else if (second == 'o') {
+                    return Arrays.asList("DJ", "ET", "KE", "SO");
+                } else if (second == 'q') {
+                    return Arrays.asList("AL", "MK");
+                } else if (second == 'r') {
+                    return Arrays.asList("BA", "ME", "RS");
+                } else if (second == 'v') {
+                    return Arrays.asList("AX", "FI", "SE");
+                } else if (second == 'w') {
+                    return Arrays.asList("KE", "TZ", "UG");
+                }
+                break;
+            }
+            case 't': {
+                if (second == 'a') {
+                    return Arrays.asList("IN", "LK", "MY", "SG");
+                } else if (second == 'i') {
+                    return Arrays.asList("ER", "ET");
+                } else if (second == 'r') {
+                    return Arrays.asList("CY", "TR");
+                }
+                break;
+            }
+            case 'u': {
+                if (second == 'r') {
+                    return Arrays.asList("IN", "PK");
+                } else if (second == 'z') {
+                    return Arrays.asList("AF", "UZ");
+                }
+                break;
+            }
+            case 'y': {
+                if (second == 'o') {
+                    return Arrays.asList("BJ", "NG");
+                }
+                break;
+            }
+            case 'z': {
+                if (second == 'h') {
+                    return Arrays.asList("CN", "HK", "MO", "SG", "TW");
+                }
+                break;
+            }
+        }
+
+        String languageRegion = sLanguageToCountry.get(languageCode);
+        if (languageRegion != null) {
+            return Collections.singletonList(languageRegion);
+        }
+
+        return Collections.emptyList();
+    }
+
+    /**
+     * Attempts to guess the region for the given language with the given timezone
+     * as a clue for where to look.
+     */
+    // This code is generated by LocaleManagerTest#testGenerateLanguageRegionMap
+    // if LocaleManagerTest#GENERATE_MULTI_REGION_SWITCH is true
+    @SuppressWarnings("SpellCheckingInspection")
+    @Nullable
+    @VisibleForTesting
+    static String getTimeZoneRegion(@NonNull TimeZone zone) {
+        // Instead of String#hashCode, use this to ensure stable across platforms
+        String id = zone.getID();
+        int hashedId = 0;
+        for (int i = 0, n = id.length(); i < n; i++) {
+            hashedId = 31 * hashedId + id.charAt(i);
+        }
+        switch (zone.getRawOffset()) {
+            case -36000000: // -10.0 hours
+                return "US";       // United States
+            case -32400000: // -9.0 hours
+                return "US";       // United States
+            case -28800000: // -8.0 hours
+                switch (hashedId) {
+                    case -459287604:       // America/Ensenada
+                    case 256046501:        // America/Santa_Isabel
+                    case 1647318035:       // America/Tijuana
+                    case -1983011822:      // Mexico/BajaNorte
+                        return "MX";       // Mexico
+                    case 1389185817:       // America/Dawson
+                    case 900028252:        // America/Vancouver
+                    case -347637707:       // America/Whitehorse
+                    case 364935240:        // Canada/Pacific
+                    case -2010814355:      // Canada/Yukon
+                        return "CA";       // Canada
+                    // America/Los_Angeles
+                    // America/Metlakatla
+                    // PST
+                    // US/Pacific
+                    default:
+                        return "US";       // United States
+                }
+            case -25200000: // -7.0 hours
+                switch (hashedId) {
+                    case 202222115:        // America/Chihuahua
+                    case 611591843:        // America/Hermosillo
+                    case 2142546433:       // America/Mazatlan
+                    case 1532263802:       // America/Ojinaga
+                    case -641163936:       // Mexico/BajaSur
+                        return "MX";       // Mexico
+                    case -1774689070:      // America/Cambridge_Bay
+                    case -302339179:       // America/Creston
+                    case -1998145482:      // America/Dawson_Creek
+                    case -906910905:       // America/Edmonton
+                    case 1544280457:       // America/Inuvik
+                    case 1924477936:       // America/Yellowknife
+                    case 1850095790:       // Canada/Mountain
+                        return "CA";       // Canada
+                    // America/Boise
+                    // America/Denver
+                    // America/Phoenix
+                    // America/Shiprock
+                    // Navajo
+                    // PNT
+                    // US/Arizona
+                    default:
+                        return "US";       // United States
+                }
+            case -21600000: // -6.0 hours
+                switch (hashedId) {
+                    case -355081471:       // America/Costa_Rica
+                        return "CR";       // Costa Rica
+                    case 662067781:        // Pacific/Galapagos
+                        return "EC";       // Ecuador
+                    case 268098540:        // America/Guatemala
+                        return "GT";       // Guatemala
+                    case -1192934179:      // America/Tegucigalpa
+                        return "HN";       // Honduras
+                    case -496169397:       // America/Managua
+                        return "NI";       // Nicaragua
+                    case -610612331:       // America/El_Salvador
+                        return "SV";       // El Salvador
+                    case 35870737:         // Chile/EasterIsland
+                    case -2089950224:      // Pacific/Easter
+                        return "CL";       // Chile
+                    case 1033313139:       // America/Bahia_Banderas
+                    case 1360273357:       // America/Cancun
+                    case 958016402:        // America/Matamoros
+                    case 1650383341:       // America/Merida
+                    case -1436528620:      // America/Mexico_City
+                    case -905842704:       // America/Monterrey
+                    case -380253810:       // Mexico/General
+                        return "MX";       // Mexico
+                    case -1997850159:      // America/Rainy_River
+                    case 1290869225:       // America/Rankin_Inlet
+                    case 1793201705:       // America/Regina
+                    case 1334007082:       // America/Resolute
+                    case 99854508:         // America/Swift_Current
+                    case 569007676:        // America/Winnipeg
+                    case 1837303604:       // Canada/Central
+                    case -1616213428:      // Canada/East-Saskatchewan
+                    case -1958461186:      // Canada/Saskatchewan
+                        return "CA";       // Canada
+                    // America/Chicago
+                    // America/Indiana/Knox
+                    // America/Indiana/Tell_City
+                    // America/Knox_IN
+                    // America/Menominee
+                    // America/North_Dakota/Beulah
+                    // America/North_Dakota/Center
+                    // America/North_Dakota/New_Salem
+                    // CST
+                    // US/Central
+                    default:
+                        return "US";       // United States
+                }
+            case -18000000: // -5.0 hours
+                switch (hashedId) {
+                    case 1344376451:       // America/Bogota
+                        return "CO";       // Colombia
+                    case 407688513:        // America/Guayaquil
+                        return "EC";       // Ecuador
+                    case 1732450137:       // America/Panama
+                        return "PA";       // Panama
+                    case 2039677810:       // America/Lima
+                        return "PE";       // Peru
+                    case 1503655288:       // America/Havana
+                    case 2111569:          // Cuba
+                        return "CU";       // Cuba
+                    case -615687308:       // America/Eirunepe
+                    case 42696295:         // America/Porto_Acre
+                    case -1756511823:      // America/Rio_Branco
+                    case 1213658776:       // Brazil/Acre
+                        return "BR";       // Brazil
+                    case 1908749375:       // America/Atikokan
+                    case -1694184172:      // America/Coral_Harbour
+                    case 695184620:        // America/Iqaluit
+                    case 1356626855:       // America/Montreal
+                    case 622452689:        // America/Nipigon
+                    case 977509670:        // America/Pangnirtung
+                    case 151241566:        // America/Thunder_Bay
+                    case 1826315056:       // America/Toronto
+                    case -792567293:       // Canada/Eastern
+                        return "CA";       // Canada
+                    // America/Detroit
+                    // America/Fort_Wayne
+                    // America/Indiana/Indianapolis
+                    // America/Indiana/Marengo
+                    // America/Indiana/Petersburg
+                    // America/Indiana/Vevay
+                    // America/Indiana/Vincennes
+                    // America/Indiana/Winamac
+                    // America/Indianapolis
+                    // America/Kentucky/Louisville
+                    // America/Kentucky/Monticello
+                    // America/Louisville
+                    // America/New_York
+                    // IET
+                    // US/East-Indiana
+                    // US/Eastern
+                    default:
+                        return "US";       // United States
+                }
+            case -16200000: // -4.5 hours
+                return "VE";       // Venezuela, Bolivarian Republic of
+            case -14400000: // -4.0 hours
+                switch (hashedId) {
+                    case 1501639611:       // America/Argentina/San_Luis
+                        return "AR";       // Argentina
+                    case 1617469984:       // America/La_Paz
+                        return "BO";       // Bolivia, Plurinational State of
+                    case -432820086:       // America/Santo_Domingo
+                        return "DO";       // Dominican Republic
+                    case 1367207089:       // America/Asuncion
+                        return "PY";       // Paraguay
+                    case -611834443:       // America/Santiago
+                    case -2036395347:      // Chile/Continental
+                        return "CL";       // Chile
+                    case -691236908:       // America/Puerto_Rico
+                    case 79506:            // PRT
+                        return "PR";       // Puerto Rico
+                    case -1680637607:      // America/Blanc-Sablon
+                    case 1275531960:       // America/Glace_Bay
+                    case -2087755565:      // America/Goose_Bay
+                    case -640330778:       // America/Halifax
+                    case -95289381:        // America/Moncton
+                    case -2011036567:      // Canada/Atlantic
+                        return "CA";       // Canada
+                    // America/Boa_Vista
+                    // America/Campo_Grande
+                    // America/Cuiaba
+                    // America/Eirunepe
+                    // America/Manaus
+                    // America/Porto_Acre
+                    // America/Porto_Velho
+                    // America/Rio_Branco
+                    // Brazil/Acre
+                    default:
+                        return "BR";       // Brazil
+                }
+            case -12600000: // -3.5 hours
+                return "CA";       // Canada
+            case -10800000: // -3.0 hours
+                switch (hashedId) {
+                    case 1987071743:       // America/Montevideo
+                        return "UY";       // Uruguay
+                    case 1231674648:       // America/Araguaina
+                    case -1203975328:      // America/Bahia
+                    case -1203852432:      // America/Belem
+                    case -615687308:       // America/Eirunepe
+                    case -1887400619:      // America/Fortaleza
+                    case 1646238717:       // America/Maceio
+                    case 42696295:         // America/Porto_Acre
+                    case 1793082297:       // America/Recife
+                    case -1756511823:      // America/Rio_Branco
+                    case -612056498:       // America/Santarem
+                    case -1523781592:      // America/Sao_Paulo
+                    case 65649:            // BET
+                    case 1213658776:       // Brazil/Acre
+                    case 1213776064:       // Brazil/East
+                        return "BR";       // Brazil
+                    // AGT
+                    // America/Argentina/Buenos_Aires
+                    // America/Argentina/Catamarca
+                    // America/Argentina/ComodRivadavia
+                    // America/Argentina/Cordoba
+                    // America/Argentina/Jujuy
+                    // America/Argentina/La_Rioja
+                    // America/Argentina/Mendoza
+                    // America/Argentina/Rio_Gallegos
+                    // America/Argentina/Salta
+                    // America/Argentina/San_Juan
+                    // America/Argentina/San_Luis
+                    // America/Argentina/Tucuman
+                    // America/Argentina/Ushuaia
+                    // America/Buenos_Aires
+                    // America/Catamarca
+                    // America/Cordoba
+                    // America/Jujuy
+                    // America/Mendoza
+                    default:
+                        return "AR";       // Argentina
+                }
+            case -7200000: // -2.0 hours
+                return "BR";       // Brazil
+            case -3600000: // -1.0 hours
+                return "PT";       // Portugal
+            case 0: // 0.0 hours
+                switch (hashedId) {
+                    case -2002672065:      // Atlantic/Canary
+                        return "ES";       // Spain
+                    case -3562122:         // Africa/Casablanca
+                        return "MA";       // Morocco
+                    case 70702:            // GMT
+                        return "TW";       // Taiwan, Province of China
+                    case 2160119:          // Eire
+                    case 300259341:        // Europe/Dublin
+                        return "IE";       // Ireland
+                    case -1722575083:      // Atlantic/Reykjavik
+                    case -1000832298:      // Iceland
+                        return "IS";       // Iceland
+                    case -1677314468:      // Atlantic/Madeira
+                    case 518707320:        // Europe/Lisbon
+                    case 794006110:        // Portugal
+                        return "PT";       // Portugal
+                    // Europe/Belfast
+                    // Europe/London
+                    // GB
+                    default:
+                        return "GB";       // United Kingdom
+                }
+            case 3600000: // 1.0 hours
+                switch (hashedId) {
+                    case 747709736:        // Europe/Tirane
+                        return "AL";       // Albania
+                    case 804593244:        // Europe/Vienna
+                        return "AT";       // Austria
+                    case 1036497278:       // Europe/Sarajevo
+                        return "BA";       // Bosnia and Herzegovina
+                    case -516035308:       // Europe/Brussels
+                        return "BE";       // Belgium
+                    case 930574244:        // Europe/Zurich
+                        return "CH";       // Switzerland
+                    case 641004357:        // Europe/Prague
+                        return "CZ";       // Czech Republic
+                    case 228701359:        // Europe/Berlin
+                        return "DE";       // Germany
+                    case -862787273:       // Europe/Copenhagen
+                        return "DK";       // Denmark
+                    case -977866396:       // Africa/Algiers
+                        return "DZ";       // Algeria
+                    case 911784828:        // Europe/Zagreb
+                        return "HR";       // Croatia
+                    case 1643067635:       // Europe/Budapest
+                        return "HU";       // Hungary
+                    case -1407095582:      // Europe/Rome
+                        return "IT";       // Italy
+                    case 432607731:        // Europe/Luxembourg
+                        return "LU";       // Luxembourg
+                    case -1834768363:      // Europe/Podgorica
+                        return "ME";       // Montenegro
+                    case 720852545:        // Europe/Skopje
+                        return "MK";       // Macedonia, the former Yugoslav Republic of
+                    case -675325160:       // Europe/Malta
+                        return "MT";       // Malta
+                    case 1107183657:       // Europe/Amsterdam
+                        return "NL";       // Netherlands
+                    case 562540219:        // Europe/Belgrade
+                        return "RS";       // Serbia
+                    case -1783944015:      // Europe/Stockholm
+                        return "SE";       // Sweden
+                    case -1262503490:      // Europe/Ljubljana
+                        return "SI";       // Slovenia
+                    case -1871032358:      // Europe/Bratislava
+                        return "SK";       // Slovakia
+                    case 1817919522:       // Africa/Tunis
+                        return "TN";       // Tunisia
+                    case 1801750059:       // Africa/Ceuta
+                    case 539516618:        // Europe/Madrid
+                        return "ES";       // Spain
+                    case 68470:            // ECT
+                    case -672549154:       // Europe/Paris
+                        return "FR";       // France
+                    case -1121325742:      // Africa/Tripoli
+                    case 73413677:         // Libya
+                        return "LY";       // Libya
+                    case -72083073:        // Atlantic/Jan_Mayen
+                    case -1407181132:      // Europe/Oslo
+                        return "NO";       // Norway
+                    // Europe/Warsaw
+                    default:
+                        return "PL";       // Poland
+                }
+            case 7200000: // 2.0 hours
+                switch (hashedId) {
+                    case -669373067:       // Europe/Sofia
+                        return "BG";       // Bulgaria
+                    case 1469914287:       // Europe/Tallinn
+                        return "EE";       // Estonia
+                    case -1854672812:      // Europe/Helsinki
+                        return "FI";       // Finland
+                    case 213620546:        // Europe/Athens
+                        return "GR";       // Greece
+                    case -1678352343:      // Asia/Amman
+                        return "JO";       // Jordan
+                    case -468176592:       // Asia/Beirut
+                        return "LB";       // Lebanon
+                    case -820952635:       // Europe/Vilnius
+                        return "LT";       // Lithuania
+                    case -1407101538:      // Europe/Riga
+                        return "LV";       // Latvia
+                    case -1305089392:      // Europe/Bucharest
+                        return "RO";       // Romania
+                    case 1640682817:       // Europe/Kaliningrad
+                        return "RU";       // Russian Federation
+                    case 1088211684:       // Asia/Damascus
+                        return "SY";       // Syrian Arab Republic
+                    case 1587535273:       // Africa/Johannesburg
+                        return "ZA";       // South Africa
+                    case 540421055:        // Asia/Nicosia
+                    case 660679831:        // Europe/Nicosia
+                        return "CY";       // Cyprus
+                    case -1121325742:      // Africa/Tripoli
+                    case 73413677:         // Libya
+                        return "LY";       // Libya
+                    case 65091:            // ART
+                    case 1801619315:       // Africa/Cairo
+                    case 66911291:         // Egypt
+                        return "EG";       // Egypt
+                    case 511371267:        // Asia/Jerusalem
+                    case -1868494453:      // Asia/Tel_Aviv
+                    case -2095341728:      // Israel
+                        return "IL";       // Israel
+                    case 207779975:        // Asia/Istanbul
+                    case -359165265:       // Europe/Istanbul
+                    case -1778564402:      // Turkey
+                        return "TR";       // Turkey
+                    // Europe/Kiev
+                    // Europe/Simferopol
+                    // Europe/Uzhgorod
+                    default:
+                        return "UA";       // Ukraine
+                }
+            case 10800000: // 3.0 hours
+                switch (hashedId) {
+                    case -1744032040:      // Asia/Bahrain
+                        return "BH";       // Bahrain
+                    case -675084931:       // Europe/Minsk
+                        return "BY";       // Belarus
+                    case -1745250846:      // Asia/Baghdad
+                        return "IQ";       // Iraq
+                    case -195337532:       // Asia/Kuwait
+                        return "KW";       // Kuwait
+                    case -1663926768:      // Asia/Qatar
+                        return "QA";       // Qatar
+                    case -5956312:         // Asia/Riyadh
+                        return "SA";       // Saudi Arabia
+                    case 581080470:        // Africa/Khartoum
+                        return "SD";       // Sudan
+                    case -2046172313:      // Europe/Simferopol
+                        return "UA";       // Ukraine
+                    case -1439622607:      // Asia/Aden
+                        return "YE";       // Yemen
+                    // Europe/Kaliningrad
+                    // Europe/Moscow
+                    // Europe/Volgograd
+                    default:
+                        return "RU";       // Russian Federation
+                }
+            case 14400000: // 4.0 hours
+                switch (hashedId) {
+                    case -1675354028:      // Asia/Dubai
+                        return "AE";       // United Arab Emirates
+                    case -138196720:       // Asia/Muscat
+                        return "OM";       // Oman
+                    case -2046172313:      // Europe/Simferopol
+                        return "UA";       // Ukraine
+                    // Europe/Moscow
+                    // Europe/Samara
+                    // Europe/Volgograd
+                    default:
+                        return "RU";       // Russian Federation
+                }
+            case 18000000: // 5.0 hours
+                return "RU";       // Russian Federation
+            case 19800000: // 5.5 hours
+                return "IN";       // India
+            case 21600000: // 6.0 hours
+                switch (hashedId) {
+                    case 1958400136:       // Asia/Kashgar
+                    case 88135602:         // Asia/Urumqi
+                        return "CN";       // China
+                    // Asia/Novosibirsk
+                    // Asia/Omsk
+                    default:
+                        return "RU";       // Russian Federation
+                }
+            case 25200000: // 7.0 hours
+                switch (hashedId) {
+                    case -1738808822:      // Asia/Bangkok
+                        return "TH";       // Thailand
+                    case 1063310893:       // Asia/Jakarta
+                    case -788096746:       // Asia/Pontianak
+                        return "ID";       // Indonesia
+                    case 1214715332:       // Asia/Ho_Chi_Minh
+                    case 14814128:         // Asia/Saigon
+                    case 85303:            // VST
+                        return "VN";       // Viet Nam
+                    // Asia/Krasnoyarsk
+                    // Asia/Novokuznetsk
+                    // Asia/Novosibirsk
+                    default:
+                        return "RU";       // Russian Federation
+                }
+            case 28800000: // 8.0 hours
+                switch (hashedId) {
+                    case -156810007:       // Asia/Manila
+                        return "PH";       // Philippines
+                    case 43451613:         // Asia/Taipei
+                        return "TW";       // Taiwan, Province of China
+                    case 307946178:        // Australia/Perth
+                    case 1811257630:       // Australia/West
+                        return "AU";       // Australia
+                    case 404568855:        // Asia/Hong_Kong
+                    case -390386883:       // Hongkong
+                        return "HK";       // Hong Kong
+                    case -463608032:       // Asia/Makassar
+                    case -84259736:        // Asia/Ujung_Pandang
+                        return "ID";       // Indonesia
+                    case -99068543:        // Asia/Kuala_Lumpur
+                    case -1778758162:      // Asia/Kuching
+                        return "MY";       // Malaysia
+                    case 663100500:        // Asia/Irkutsk
+                    case -808657565:       // Asia/Krasnoyarsk
+                        return "RU";       // Russian Federation
+                    case 133428255:        // Asia/Singapore
+                    case 499614468:        // Singapore
+                        return "SG";       // Singapore
+                    // Asia/Chongqing
+                    // Asia/Chungking
+                    // Asia/Harbin
+                    // Asia/Kashgar
+                    // Asia/Shanghai
+                    // Asia/Urumqi
+                    // CTT
+                    default:
+                        return "CN";       // China
+                }
+            case 31500000: // 8.75 hours
+                return "AU";       // Australia
+            case 32400000: // 9.0 hours
+                switch (hashedId) {
+                    case -996350568:       // Asia/Jayapura
+                        return "ID";       // Indonesia
+                    case -1661964753:      // Asia/Seoul
+                    case 81326:            // ROK
+                        return "KR";       // Korea, Republic of
+                    case 663100500:        // Asia/Irkutsk
+                    case 1491561941:       // Asia/Yakutsk
+                        return "RU";       // Russian Federation
+                    // Asia/Tokyo
+                    // JST
+                    default:
+                        return "JP";       // Japan
+                }
+            case 34200000: // 9.5 hours
+                return "AU";       // Australia
+            case 36000000: // 10.0 hours
+                switch (hashedId) {
+                    case -572853474:       // Asia/Magadan
+                    case 1409241312:       // Asia/Sakhalin
+                    case 1755599521:       // Asia/Vladivostok
+                    case 1491561941:       // Asia/Yakutsk
+                        return "RU";       // Russian Federation
+                    // AET
+                    // Australia/ACT
+                    // Australia/Brisbane
+                    // Australia/Canberra
+                    // Australia/Currie
+                    // Australia/Hobart
+                    // Australia/Lindeman
+                    // Australia/Melbourne
+                    // Australia/NSW
+                    // Australia/Queensland
+                    // Australia/Sydney
+                    // Australia/Tasmania
+                    default:
+                        return "AU";       // Australia
+                }
+            case 37800000: // 10.5 hours
+                return "AU";       // Australia
+            case 39600000: // 11.0 hours
+                return "RU";       // Russian Federation
+            case 43200000: // 12.0 hours
+                switch (hashedId) {
+                    case 77615:            // NST
+                    case 2508:             // NZ
+                    case -969722739:       // Pacific/Auckland
+                        return "NZ";       // New Zealand
+                    // Asia/Anadyr
+                    // Asia/Kamchatka
+                    default:
+                        return "RU";       // Russian Federation
+                }
+            case 45900000: // 12.75 hours
+                return "NZ";       // New Zealand
+        }
+        return null;
     }
 
     @VisibleForTesting
