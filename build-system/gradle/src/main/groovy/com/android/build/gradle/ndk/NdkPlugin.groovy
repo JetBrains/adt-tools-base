@@ -26,9 +26,12 @@ import com.android.build.gradle.ndk.internal.NdkExtensionConventionAction
 import com.android.build.gradle.ndk.internal.NdkHandler
 import com.android.build.gradle.ndk.internal.ToolchainConfigurationAction
 import com.android.builder.core.VariantConfiguration
+import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.logging.Logger
+import org.gradle.api.logging.Logging
 import org.gradle.api.specs.Spec
 import org.gradle.configuration.project.ProjectConfigurationActionContainer
 import org.gradle.internal.Actions
@@ -87,6 +90,7 @@ class NdkPlugin implements Plugin<Project> {
 
         configurationActions.add(Actions.filter(
                 Actions.composite(
+                        new WarnExperimental(),
                         new ForwardNdkConfigurationAction(),
                         new NdkExtensionConventionAction(),
                         new ToolchainConfigurationAction(ndkHandler, extension),
@@ -110,6 +114,17 @@ class NdkPlugin implements Plugin<Project> {
             if (extension.moduleName != null) {
                 hideUnwantedTasks()
             }
+        }
+    }
+
+    private static class WarnExperimental implements Action<Project> {
+        @Override
+        public void execute(Project proj) {
+            BasePlugin.displayWarning(
+                    Logging.getLogger(NdkPlugin.class),
+                    proj,
+                    "NdkPlugin is an experimental plugin.  Future versions may not be backward " +
+                    "compatible.")
         }
     }
 
