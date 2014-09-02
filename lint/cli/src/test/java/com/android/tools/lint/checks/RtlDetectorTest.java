@@ -448,4 +448,22 @@ public class RtlDetectorTest extends AbstractCheckTest {
         assertEquals("paddingStart", convertToOppositeDirection("paddingEnd"));
         assertEquals("paddingEnd", convertToOppositeDirection("paddingStart"));
     }
+
+    public void testEnumConstants() throws Exception {
+        // Regression test for
+        //   https://code.google.com/p/android/issues/detail?id=75480
+        // Also checks that static imports work correctly
+        mEnabled = ALL;
+        assertEquals(""
+            + "src/test/pkg/GravityTest2.java:19: Warning: Use \"Gravity.START\" instead of \"Gravity.LEFT\" to ensure correct behavior in right-to-left locales [RtlHardcoded]\n"
+            + "        if (gravity == LEFT) { // ERROR\n"
+            + "                       ~~~~\n"
+            + "0 errors, 1 warnings\n",
+
+            lintProject(
+                    "rtl/project-api17.properties=>project.properties",
+                    "rtl/minsdk5targetsdk17.xml=>AndroidManifest.xml",
+                    "rtl/GravityTest2.java.txt=>src/test/pkg/GravityTest2.java"
+            ));
+    }
 }

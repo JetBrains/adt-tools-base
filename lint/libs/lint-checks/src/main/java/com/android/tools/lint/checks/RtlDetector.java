@@ -58,6 +58,7 @@ import static com.android.SdkConstants.TAG_APPLICATION;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -85,11 +86,13 @@ import java.util.List;
 import java.util.Locale;
 
 import lombok.ast.AstVisitor;
+import lombok.ast.EnumConstant;
 import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.Identifier;
 import lombok.ast.ImportDeclaration;
 import lombok.ast.Node;
 import lombok.ast.Select;
+import lombok.ast.VariableDefinitionEntry;
 import lombok.ast.VariableReference;
 
 /**
@@ -196,6 +199,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
     private static final String RIGHT_FIELD = "RIGHT";                          //$NON-NLS-1$
     private static final String LEFT_FIELD = "LEFT";                            //$NON-NLS-1$
     private static final String GRAVITY_CLASS = "Gravity";                      //$NON-NLS-1$
+    private static final String FQCN_GRAVITY = "android.view.Gravity";          //$NON-NLS-1$
     private static final String FQCN_GRAVITY_PREFIX = "android.view.Gravity.";  //$NON-NLS-1$
     private static final String ATTR_SUPPORTS_RTL = "supportsRtl";              //$NON-NLS-1$
     private static final String ATTR_TEXT_ALIGNMENT = "textAlignment";          //$NON-NLS-1$
@@ -601,21 +605,39 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             if (!isLeft && !isRight) {
                 return false;
             }
+
             Node parent = node.getParent();
-            if (parent instanceof ImportDeclaration) {
+            if (parent instanceof ImportDeclaration || parent instanceof EnumConstant
+                    || parent instanceof VariableDefinitionEntry) {
                 return false;
             }
-            if (parent instanceof Select &&
-                    !(GRAVITY_CLASS.equals(((Select) parent).astOperand().toString()))) {
-                return false;
-            }
-            if (parent instanceof VariableReference) {
-                // No operand: make sure it's statically imported
-                if (!LintUtils.isImported(mContext.getCompilationUnit(),
-                        FQCN_GRAVITY_PREFIX + identifier)) {
+
+            JavaParser.ResolvedNode resolved = mContext.resolve(node);
+            if (resolved != null) {
+                if (!(resolved instanceof JavaParser.ResolvedField)) {
+                    return false;
+                } else {
+                    JavaParser.ResolvedField field = (JavaParser.ResolvedField) resolved;
+                    if (!field.getContainingClass().matches(FQCN_GRAVITY)) {
+                        return false;
+                    }
+                }
+            } else {
+                // Can't resolve types (for example while editing code with errors):
+                // rely on heuristics like import statements and class qualifiers
+                if (parent instanceof Select &&
+                        !(GRAVITY_CLASS.equals(((Select) parent).astOperand().toString()))) {
                     return false;
                 }
+                if (parent instanceof VariableReference) {
+                    // No operand: make sure it's statically imported
+                    if (!LintUtils.isImported(mContext.getCompilationUnit(),
+                            FQCN_GRAVITY_PREFIX + identifier)) {
+                        return false;
+                    }
+                }
             }
+
             String message = String.format(
                     "Use \"Gravity.%1$s\" instead of \"Gravity.%2$s\" to ensure correct "
                             + "behavior in right-to-left locales",
