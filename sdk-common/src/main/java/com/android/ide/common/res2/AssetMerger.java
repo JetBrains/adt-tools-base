@@ -16,7 +16,11 @@
 
 package com.android.ide.common.res2;
 
+import com.android.annotations.NonNull;
+
 import org.w3c.dom.Node;
+
+import java.util.List;
 
 /**
  * Implementation of {@link DataMerger} for {@link AssetSet}, {@link AssetItem}, and
@@ -28,5 +32,18 @@ public class AssetMerger extends DataMerger<AssetItem, AssetFile, AssetSet> {
     protected AssetSet createFromXml(Node node) {
         AssetSet set = new AssetSet("");
         return (AssetSet) set.createFromXml(node);
+    }
+
+    @Override
+    protected boolean requiresMerge(@NonNull String dataItemKey) {
+        return false;
+    }
+
+    @Override
+    protected void mergeItems(
+            @NonNull String dataItemKey,
+            @NonNull List<AssetItem> items,
+            @NonNull MergeConsumer<AssetItem> consumer) {
+        // nothing to do
     }
 }

@@ -17,12 +17,17 @@
 package com.android.ide.common.res2;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.util.List;
 
 
 /**
@@ -44,6 +49,45 @@ class NodeUtils {
         Node newNode = document.adoptNode(node);
 
         updateNamespace(newNode, document);
+
+        return newNode;
+    }
+
+    static Node duplicateNode(Document document, Node node) {
+        Node newNode;
+        if (node.getNamespaceURI() != null) {
+            newNode = document.createElementNS(node.getNamespaceURI(), node.getLocalName());
+        } else {
+            newNode = document.createElement(node.getNodeName());
+        }
+
+        // copy the attributes
+        NamedNodeMap attributes = node.getAttributes();
+        for (int i = 0 ; i < attributes.getLength(); i++) {
+            Attr attr = (Attr) attributes.item(i);
+
+            Attr newAttr;
+            if (attr.getNamespaceURI() != null) {
+                newAttr = document.createAttributeNS(attr.getNamespaceURI(), attr.getLocalName());
+                newNode.getAttributes().setNamedItemNS(newAttr);
+            } else {
+                newAttr = document.createAttribute(attr.getName());
+                newNode.getAttributes().setNamedItem(newAttr);
+            }
+
+            newAttr.setValue(attr.getValue());
+        }
+
+        // then duplicate the sub-nodes.
+        NodeList children = node.getChildNodes();
+        for (int i = 0 ; i < children.getLength() ; i++) {
+            Node child = children.item(i);
+            if (child.getNodeType() != Node.ELEMENT_NODE) {
+                continue;
+            }
+            Node duplicatedChild = duplicateNode(document, child);
+            newNode.appendChild(duplicatedChild);
+        }
 
         return newNode;
     }
@@ -171,7 +215,7 @@ class NodeUtils {
         }
     }
 
-    static boolean compareElementNode(Node node1, Node node2) {
+    static boolean compareElementNode(@NonNull Node node1, @NonNull Node node2, boolean strict) {
         if (!node1.getNodeName().equals(node2.getNodeName())) {
             return false;
         }
@@ -179,12 +223,20 @@ class NodeUtils {
         NamedNodeMap attr1 = node1.getAttributes();
         NamedNodeMap attr2 = node2.getAttributes();
 
-        return compareAttributes(attr1, attr2) &&
-                compareChildren(node1.getChildNodes(), node2.getChildNodes());
+        if (!compareAttributes(attr1, attr2)) {
+            return false;
+        }
 
+        if (strict) {
+            return compareChildren(node1.getChildNodes(), node2.getChildNodes());
+        }
+
+        return compareContent(node1.getChildNodes(), node2.getChildNodes());
     }
 
-    private static boolean compareChildren(NodeList children1, NodeList children2) {
+    private static boolean compareChildren(
+            @NonNull NodeList children1,
+            @NonNull NodeList children2) {
         // because this represents a resource values, we're going to be very strict about this
         // comparison.
         if (children1.getLength() != children2.getLength()) {
@@ -202,7 +254,7 @@ class NodeUtils {
 
             switch (nodeType) {
                 case Node.ELEMENT_NODE:
-                    if (!compareElementNode(child1, child2)) {
+                    if (!compareElementNode(child1, child2, true)) {
                         return false;
                     }
                     break;
@@ -219,8 +271,56 @@ class NodeUtils {
         return true;
     }
 
+    private static boolean compareContent(
+            @NonNull NodeList children1,
+            @NonNull NodeList children2) {
+        // only compares the content (ie not the text node).
+
+        // accumulate both true children list.
+        List<Node> childList = getElementChildren(children1);
+        List<Node> childList2 = getElementChildren(children2);
+
+        if (childList.size() != childList2.size()) {
+            return false;
+        }
+
+        // no attempt to match nodes one to one.
+        for (Node child : childList) {
+            boolean found = false;
+            for (Node child2 : childList2) {
+                if (compareElementNode(child, child2, false)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    @NonNull
+    private static List<Node> getElementChildren(@NonNull NodeList children) {
+        List<Node> results = Lists.newArrayListWithExpectedSize(children.getLength());
+
+        final int len = children.getLength();
+        for (int i = 0; i < len; i++) {
+            Node child = children.item(i);
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                results.add(child);
+            }
+        }
+
+        return results;
+    }
+
     @VisibleForTesting
-    static boolean compareAttributes(NamedNodeMap attrMap1, NamedNodeMap attrMap2) {
+    static boolean compareAttributes(
+            @NonNull NamedNodeMap attrMap1,
+            @NonNull NamedNodeMap attrMap2) {
         if (attrMap1.getLength() != attrMap2.getLength()) {
             return false;
         }

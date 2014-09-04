@@ -62,6 +62,8 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     @Nullable
     private final PngCruncher mCruncher;
 
+    private DocumentBuilderFactory mFactory;
+
     private boolean mInsertSourceMarkers = true;
 
     /**
@@ -100,10 +102,11 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     }
 
     @Override
-    public void start() throws ConsumerException {
-        super.start();
+    public void start(@NonNull DocumentBuilderFactory factory) throws ConsumerException {
+        super.start(factory);
         mValuesResMap = ArrayListMultimap.create();
         mQualifierWithDeletedValues = Sets.newHashSet();
+        mFactory = factory;
     }
 
     @Override
@@ -112,6 +115,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
         mValuesResMap = null;
         mQualifierWithDeletedValues = null;
+        mFactory = null;
     }
 
     @Override
@@ -121,14 +125,14 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
     @Override
     public void addItem(@NonNull final ResourceItem item) throws ConsumerException {
-        ResourceFile.FileType type = item.getSource().getType();
+        ResourceFile.FileType type = item.getSourceType();
 
         if (type == ResourceFile.FileType.MULTI) {
             // this is a resource for the values files
 
             // just add the node to write to the map based on the qualifier.
             // We'll figure out later if the files needs to be written or (not)
-            mValuesResMap.put(item.getSource().getQualifiers(), item);
+            mValuesResMap.put(item.getQualifiers(), item);
         } else {
             // This is a single value file.
             // Only write it if the state is TOUCHED.
@@ -201,15 +205,15 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     @Override
     public void removeItem(@NonNull ResourceItem removedItem, @Nullable ResourceItem replacedBy)
             throws ConsumerException {
-        ResourceFile.FileType removedType = removedItem.getSource().getType();
+        ResourceFile.FileType removedType = removedItem.getSourceType();
         ResourceFile.FileType replacedType = replacedBy != null ?
-                replacedBy.getSource().getType() : null;
+                replacedBy.getSourceType() : null;
 
         if (removedType == replacedType) {
             // if the type is multi, then we make sure to flag the qualifier as deleted.
             if (removedType == ResourceFile.FileType.MULTI) {
                 mQualifierWithDeletedValues.add(
-                        removedItem.getSource().getQualifiers());
+                        removedItem.getQualifiers());
             } else {
                 // both are single type resources, so we actually don't delete the previous
                 // file as the new one will replace it instead.
@@ -224,7 +228,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
             // removed type is multi.
             // whether the new type is single or doesn't exist, we always need to mark the qualifier
             // for rewrite.
-            mQualifierWithDeletedValues.add(removedItem.getSource().getQualifiers());
+            mQualifierWithDeletedValues.add(removedItem.getQualifiers());
         }
     }
 
@@ -263,13 +267,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                 try {
                     createDir(valuesFolder);
 
-                    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-                    factory.setNamespaceAware(true);
-                    factory.setValidating(false);
-                    factory.setIgnoringComments(true);
-                    DocumentBuilder builder;
-
-                    builder = factory.newDocumentBuilder();
+                    DocumentBuilder builder = mFactory.newDocumentBuilder();
                     Document document = builder.newDocument();
 
                     Node rootNode = document.createElement(TAG_RESOURCES);

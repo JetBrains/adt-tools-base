@@ -19,14 +19,18 @@ package com.android.ide.common.res2;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.FD_RES_DRAWABLE;
 import static com.android.SdkConstants.FD_RES_LAYOUT;
+import static com.android.SdkConstants.TAG_ATTR;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.testutils.TestUtils;
 import com.android.utils.SdkUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
@@ -43,6 +47,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.xml.parsers.DocumentBuilderFactory;
 
 public class ResourceMergerTest extends BaseTestCase {
 
@@ -955,6 +961,289 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(removedIcon.isEmpty());
     }
 
+    public void testMergedDeclareStyleable() throws Exception {
+        File root = TestUtils.getRoot("resources", "declareStyleable");
+
+        // load both base and overlay set
+        File baseRoot = new File(root, "base");
+        ResourceSet baseSet = new ResourceSet("main");
+        baseSet.addSource(baseRoot);
+        RecordingLogger logger = new RecordingLogger();
+        baseSet.loadFromFiles(logger);
+        checkLogger(logger);
+
+        File overlayRoot = new File(root, "overlay");
+        ResourceSet overlaySet = new ResourceSet("overlay");
+        overlaySet.addSource(overlayRoot);
+        logger = new RecordingLogger();
+        overlaySet.loadFromFiles(logger);
+        checkLogger(logger);
+
+        // create a merger
+        ResourceMerger resourceMerger = new ResourceMerger();
+        resourceMerger.addDataSet(baseSet);
+        resourceMerger.addDataSet(overlaySet);
+
+        // write the merge result.
+        File folder = Files.createTempDir();
+        folder.deleteOnExit();
+
+        MergedResourceWriter writer = new MergedResourceWriter(folder, null /*aaptRunner*/);
+        resourceMerger.mergeData(writer, false /*doCleanUp*/);
+
+        // load the result as a set.
+        ResourceSet mergedSet = new ResourceSet("merged");
+        mergedSet.addSource(folder);
+        logger = new RecordingLogger();
+        mergedSet.loadFromFiles(logger);
+        checkLogger(logger);
+
+        ListMultimap<String, ResourceItem> map = mergedSet.getDataMap();
+        assertEquals(4, map.size());
+
+        List<ResourceItem> items = map.get("declare-styleable/foo");
+        assertNotNull(items);
+        assertEquals(1, items.size());
+
+        ResourceItem item = items.get(0);
+        assertNotNull(item);
+
+        // now we need to look at the item's value (which is the XML).
+        // We're looking for 3 attributes.
+        List<String> expectedAttrs = Lists.newArrayList("bar", "bar1", "boo");
+        Node rootNode = item.getValue();
+        assertNotNull(rootNode);
+        NodeList sourceNodes = rootNode.getChildNodes();
+        for (int i = 0, n = sourceNodes.getLength(); i < n; i++) {
+            Node sourceNode = sourceNodes.item(i);
+
+            if (sourceNode.getNodeType() != Node.ELEMENT_NODE ||
+                    !TAG_ATTR.equals(sourceNode.getLocalName())) {
+                continue;
+            }
+
+            Attr attr = (Attr) sourceNode.getAttributes().getNamedItem(ATTR_NAME);
+            if (attr == null) {
+                continue;
+            }
+
+            String attrName = attr.getValue();
+
+            assertTrue("Check expected " + attrName, expectedAttrs.contains(attrName));
+            expectedAttrs.remove(attrName);
+        }
+
+        assertTrue("Check emptiness of " + expectedAttrs.toString(), expectedAttrs.isEmpty());
+    }
+
+    public void testUnchangedMergedItem() throws Exception {
+        // locate the merger file that contains exactly the result of the source folders.
+        File root = TestUtils.getRoot("resources", "declareStyleable");
+        File fakeBlobRoot = getMergedBlobFolder(root, new File(root, "unchanged_merger.xml"));
+
+        // load a resource merger based on it.
+        ResourceMerger resourceMerger = new ResourceMerger();
+        assertTrue(resourceMerger.loadFromBlob(fakeBlobRoot, true /*incrementalState*/));
+        checkSourceFolders(resourceMerger);
+
+        // create a fake consumer
+        FakeMergeConsumer consumer = new FakeMergeConsumer();
+
+        // do the merge
+        resourceMerger.mergeData(consumer, false /*doCleanUp*/);
+
+        // test result of merger.
+        assertTrue(consumer.touchedItems.isEmpty());
+        assertTrue(consumer.removedItems.isEmpty());
+    }
+
+    public void testRemovedMergedItem() throws Exception {
+        // locate the merger file that contains exactly the result of the source folders.
+        File root = TestUtils.getCanonicalRoot("resources", "declareStyleable");
+        File fakeBlobRoot = getMergedBlobFolder(root, new File(root, "removed_merger.xml"));
+
+        // load a resource merger based on it.
+        ResourceMerger resourceMerger = new ResourceMerger();
+        assertTrue(resourceMerger.loadFromBlob(fakeBlobRoot, true /*incrementalState*/));
+        checkSourceFolders(resourceMerger);
+
+        // we know have to tell the merger that the values files have been touched
+        // to trigger the removal detection based on the original merger blob.
+
+        List<ResourceSet> sets = resourceMerger.getDataSets();
+        assertEquals(2, sets.size());
+
+        RecordingLogger logger = new RecordingLogger();
+
+        // ----------------
+        // Load the main set
+        ResourceSet mainSet = sets.get(0);
+        File mainRoot = new File(root, "base");
+        File mainValues = new File(mainRoot, ResourceFolderType.VALUES.getName());
+
+        // trigger changed file event
+        File touchedValueFile = new File(mainValues, "values.xml");
+        mainSet.updateWith(mainRoot, touchedValueFile, FileStatus.CHANGED, logger);
+        checkLogger(logger);
+
+        // same with overlay set.
+        ResourceSet overlaySet = sets.get(1);
+        File overlayRoot = new File(root, "overlay");
+        File overlayValues = new File(overlayRoot, ResourceFolderType.VALUES.getName());
+
+        // trigger changed file event
+        touchedValueFile = new File(overlayValues, "values.xml");
+        overlaySet.updateWith(overlayRoot, touchedValueFile, FileStatus.CHANGED, logger);
+        checkLogger(logger);
+
+        // create a fake consumer
+        FakeMergeConsumer consumer = new FakeMergeConsumer();
+
+        // do the merge
+        resourceMerger.mergeData(consumer, false /*doCleanUp*/);
+
+        // test result of merger.
+        assertTrue(consumer.touchedItems.isEmpty());
+        assertEquals(1, consumer.removedItems.size());
+    }
+
+    public void testTouchedMergedItem() throws Exception {
+        // locate the merger file that contains exactly the result of the source folders.
+        File root = TestUtils.getCanonicalRoot("resources", "declareStyleable");
+        File fakeBlobRoot = getMergedBlobFolder(root, new File(root, "touched_merger.xml"));
+
+        // load a resource merger based on it.
+        ResourceMerger resourceMerger = new ResourceMerger();
+        assertTrue(resourceMerger.loadFromBlob(fakeBlobRoot, true /*incrementalState*/));
+        checkSourceFolders(resourceMerger);
+
+        // we know have to tell the merger that the values files have been touched
+        // to trigger the removal detection based on the original merger blob.
+
+        List<ResourceSet> sets = resourceMerger.getDataSets();
+        assertEquals(2, sets.size());
+
+        RecordingLogger logger = new RecordingLogger();
+
+        // ----------------
+        // Load the main set
+        ResourceSet mainSet = sets.get(0);
+        File mainRoot = new File(root, "base");
+        File mainValues = new File(mainRoot, ResourceFolderType.VALUES.getName());
+
+        // trigger changed file event
+        File touchedValueFile = new File(mainValues, "values.xml");
+        mainSet.updateWith(mainRoot, touchedValueFile, FileStatus.CHANGED, logger);
+        checkLogger(logger);
+
+        // create a fake consumer
+        FakeMergeConsumer consumer = new FakeMergeConsumer();
+
+        // do the merge
+        resourceMerger.mergeData(consumer, false /*doCleanUp*/);
+
+        // test result of merger.
+        assertEquals(1, consumer.touchedItems.size());
+        assertTrue(consumer.removedItems.isEmpty());
+    }
+
+    public void testTouchedNoDiffMergedItem() throws Exception {
+        // locate the merger file that contains exactly the result of the source folders.
+        File root = TestUtils.getCanonicalRoot("resources", "declareStyleable");
+        File fakeBlobRoot = getMergedBlobFolder(root, new File(root, "touched_nodiff_merger.xml"));
+
+        // load a resource merger based on it.
+        ResourceMerger resourceMerger = new ResourceMerger();
+        assertTrue(resourceMerger.loadFromBlob(fakeBlobRoot, true /*incrementalState*/));
+        checkSourceFolders(resourceMerger);
+
+        // we know have to tell the merger that the values files have been touched
+        // to trigger the removal detection based on the original merger blob.
+
+        List<ResourceSet> sets = resourceMerger.getDataSets();
+        assertEquals(2, sets.size());
+
+        RecordingLogger logger = new RecordingLogger();
+
+        // ----------------
+        // Load the overlay set
+        ResourceSet overlaySet = sets.get(1);
+        File overlayRoot = new File(root, "overlay");
+        File overlayValues = new File(overlayRoot, ResourceFolderType.VALUES.getName());
+
+        // trigger changed file event
+        File touchedValueFile = new File(overlayValues, "values.xml");
+        overlaySet.updateWith(overlayRoot, touchedValueFile, FileStatus.CHANGED, logger);
+        checkLogger(logger);
+
+        // create a fake consumer
+        FakeMergeConsumer consumer = new FakeMergeConsumer();
+
+        // do the merge
+        resourceMerger.mergeData(consumer, false /*doCleanUp*/);
+
+        // test result of merger.
+        assertTrue(consumer.touchedItems.isEmpty());
+        assertTrue(consumer.removedItems.isEmpty());
+    }
+
+    public void testRemovedOtherWithNoNoDiffTouchMergedItem() throws Exception {
+        // test that when a non-merged resources is changed/removed, the result of the merge still
+        // contain the merged items even if they were touched but had no change.
+
+        // locate the merger file that contains exactly the result of the source folders.
+        File root = TestUtils.getCanonicalRoot("resources", "declareStyleable");
+        File fakeBlobRoot = getMergedBlobFolder(root, new File(root, "removed_other_merger.xml"));
+
+        // load a resource merger based on it.
+        ResourceMerger resourceMerger = new ResourceMerger();
+        assertTrue(resourceMerger.loadFromBlob(fakeBlobRoot, true /*incrementalState*/));
+        checkSourceFolders(resourceMerger);
+
+        // we know have to tell the merger that the values files have been touched
+        // to trigger the removal detection based on the original merger blob.
+
+        List<ResourceSet> sets = resourceMerger.getDataSets();
+        assertEquals(2, sets.size());
+
+        RecordingLogger logger = new RecordingLogger();
+
+        // ----------------
+        // Load the main set
+        ResourceSet mainSet = sets.get(0);
+        File mainRoot = new File(root, "base");
+        File mainValues = new File(mainRoot, ResourceFolderType.VALUES.getName());
+
+        // trigger changed file event
+        File touchedValueFile = new File(mainValues, "values.xml");
+        mainSet.updateWith(mainRoot, touchedValueFile, FileStatus.CHANGED, logger);
+        checkLogger(logger);
+
+        // same for overlay
+        ResourceSet overlaySet = sets.get(1);
+        File overlayRoot = new File(root, "overlay");
+        File overlayValues = new File(overlayRoot, ResourceFolderType.VALUES.getName());
+
+        // trigger changed file event
+        touchedValueFile = new File(overlayValues, "values.xml");
+        overlaySet.updateWith(overlayRoot, touchedValueFile, FileStatus.CHANGED, logger);
+        checkLogger(logger);
+
+        // create a fake consumer
+        FakeMergeConsumer consumer = new FakeMergeConsumer();
+
+        // do the merge
+        resourceMerger.mergeData(consumer, false /*doCleanUp*/);
+
+        // test result of merger.
+        // only 3 items added since attr/bar isn't added (declared inline)
+        assertEquals(3, consumer.addedItems.size());
+        // no touched items
+        assertTrue(consumer.touchedItems.isEmpty());
+        // one removed string item
+        assertEquals(1, consumer.removedItems.size());
+    }
+
     /**
      * Creates a fake merge with given sets.
      *
@@ -1230,5 +1519,50 @@ public class ResourceMergerTest extends BaseTestCase {
             return;
         }
         fail("Expected error");
+    }
+
+
+    // create a fake consumer
+    private static class FakeMergeConsumer implements MergeConsumer<ResourceItem> {
+        final List<ResourceItem> addedItems = Lists.newArrayList();
+        final List<ResourceItem> touchedItems = Lists.newArrayList();
+        final List<ResourceItem> removedItems = Lists.newArrayList();
+
+        @Override
+        public void start(@NonNull DocumentBuilderFactory factory)
+                throws ConsumerException {
+            // do nothing
+        }
+
+        @Override
+        public void end() throws ConsumerException {
+            // do nothing
+        }
+
+        @Override
+        public void addItem(@NonNull ResourceItem item) throws ConsumerException {
+            // the default res merge writer calls this, so we should too.
+            // this is to test that the merged item are properly created
+            @SuppressWarnings("UnusedDeclaration")
+            ResourceFile.FileType type = item.getSourceType();
+
+            if (item.isTouched()) {
+                touchedItems.add(item);
+            }
+
+            addedItems.add(item);
+        }
+
+        @Override
+        public void removeItem(@NonNull ResourceItem removedItem,
+                @Nullable ResourceItem replacedBy)
+                throws ConsumerException {
+            removedItems.add(removedItem);
+        }
+
+        @Override
+        public boolean ignoreItemInMerge(ResourceItem item) {
+            return item.getIgnoredFromDiskMerge();
+        }
     }
 }

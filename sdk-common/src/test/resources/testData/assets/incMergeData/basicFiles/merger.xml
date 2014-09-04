@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merger version="2">
+<merger version="3">
     <dataSet config="main">
         <source path="$TOP$$SEP$main">
             <file name="untouched.png" path="$TOP$$SEP$main$SEP$untouched.png" />

@@ -56,20 +56,44 @@ import javax.xml.parsers.ParserConfigurationException;
 abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extends DataSet<I,F>> implements DataMap<I> {
 
     static final String FN_MERGER_XML = "merger.xml";
-    private static final String NODE_MERGER = "merger";
-    private static final String NODE_DATA_SET = "dataSet";
+    static final String NODE_MERGER = "merger";
+    static final String NODE_DATA_SET = "dataSet";
+    static final String NODE_MERGED_ITEMS = "mergedItems";
+    static final String NODE_CONFIGURATION = "configuration";
 
-    private static final String ATTR_VERSION = "version";
-    private static final String MERGE_BLOB_VERSION = "2";
+    static final String ATTR_VERSION = "version";
+    static final String MERGE_BLOB_VERSION = "3";
+
+    @NonNull
+    protected final DocumentBuilderFactory mFactory;
 
     /**
      * All the DataSets.
      */
     private final List<S> mDataSets = Lists.newArrayList();
 
-    public DataMerger() { }
+    public DataMerger() {
+        mFactory = DocumentBuilderFactory.newInstance();
+        mFactory.setNamespaceAware(true);
+        mFactory.setValidating(false);
+        mFactory.setIgnoringComments(true);
+    }
 
     protected abstract S createFromXml(Node node);
+
+    protected abstract boolean requiresMerge(@NonNull String dataItemKey);
+
+    /**
+     * Merge items together, and register the merged items with the given consumer.
+     * @param dataItemKey the key for the items
+     * @param items the items, from lower priority to higher priority.
+     * @param consumer the consumer to receive the merged items.
+     * @throws MergingException
+     */
+    protected abstract void mergeItems(
+            @NonNull String dataItemKey,
+            @NonNull List<I> items,
+            @NonNull MergeConsumer<I> consumer) throws MergingException;
 
     /**
      * adds a new {@link DataSet} and overlays it on top of the existing DataSet.
@@ -152,7 +176,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     public void mergeData(@NonNull MergeConsumer<I> consumer, boolean doCleanUp)
             throws MergingException {
 
-        consumer.start();
+        consumer.start(mFactory);
 
         try {
             // get all the items keys.
@@ -167,6 +191,23 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
 
             // loop on all the data items.
             for (String dataItemKey : dataItemKeys) {
+                if (requiresMerge(dataItemKey)) {
+                    // get all the available items, from the lower priority, to the higher
+                    // priority
+                    List<I> items = Lists.newArrayListWithExpectedSize(mDataSets.size());
+                    for (S dataSet : mDataSets) {
+
+                        // look for the resource key in the set
+                        ListMultimap<String, I> itemMap = dataSet.getDataMap();
+
+                        List<I> setItems = itemMap.get(dataItemKey);
+                        items.addAll(setItems);
+                    }
+
+                    mergeItems(dataItemKey, items, consumer);
+                    continue;
+                }
+
                 // for each items, look in the data sets, starting from the end of the list.
 
                 I previouslyWritten = null;
@@ -272,14 +313,10 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     public void writeBlobTo(@NonNull File blobRootFolder, @NonNull MergeConsumer<I> consumer)
             throws MergingException {
         // write "compact" blob
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        factory.setValidating(false);
-        factory.setIgnoringComments(true);
         DocumentBuilder builder;
 
         try {
-            builder = factory.newDocumentBuilder();
+            builder = mFactory.newDocumentBuilder();
             Document document = builder.newDocument();
 
             Node rootNode = document.createElement(NODE_MERGER);
@@ -294,6 +331,9 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
 
                 dataSet.appendToXml(dataSetNode, document, consumer);
             }
+
+            // write merged items
+            writeMergedItems(document, rootNode);
 
             String content = XmlPrettyPrinter.prettyPrint(document, true);
 
@@ -364,14 +404,20 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             for (int i = 0, n = nodes.getLength(); i < n; i++) {
                 Node node = nodes.item(i);
 
-                if (node.getNodeType() != Node.ELEMENT_NODE ||
-                        !NODE_DATA_SET.equals(node.getLocalName())) {
+                if (node.getNodeType() != Node.ELEMENT_NODE) {
                     continue;
                 }
 
-                S dataSet = createFromXml(node);
-                if (dataSet != null) {
-                    mDataSets.add(dataSet);
+                if (NODE_DATA_SET.equals(node.getLocalName())) {
+                    S dataSet = createFromXml(node);
+                    if (dataSet != null) {
+                        mDataSets.add(dataSet);
+                    }
+                } else if (incrementalState && NODE_MERGED_ITEMS.equals(node.getLocalName())) {
+                    // only load the merged item in incremental state.
+                    // In non incremental state, they will be recreated by the touched
+                    // items anyway.
+                    loadMergedItems(node);
                 }
             }
 
@@ -398,6 +444,14 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
         } catch (SAXException e) {
             throw new MergingException(e).setFile(file);
         }
+    }
+
+    protected void loadMergedItems(@NonNull Node mergedItemsNode) {
+        // do nothing by default.
+    }
+
+    protected void writeMergedItems(Document document, Node rootNode) {
+        // do nothing by default.
     }
 
     public void cleanBlob(@NonNull File blobRootFolder) {
@@ -634,7 +688,6 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             throw new IOException("Failed to create directory: " + folder);
         }
     }
-
 
     @Override
     public String toString() {
