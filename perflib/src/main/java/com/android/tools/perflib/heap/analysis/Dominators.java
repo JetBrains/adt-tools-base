@@ -21,15 +21,8 @@ import com.android.tools.perflib.heap.Heap;
 import com.android.tools.perflib.heap.Instance;
 import com.android.tools.perflib.heap.RootObj;
 import com.android.tools.perflib.heap.Snapshot;
-import com.android.tools.perflib.heap.Visitor;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 
 /**
  * Initial implementation of dominator computation.
@@ -47,41 +40,42 @@ import java.util.Set;
 public class Dominators {
 
     @NonNull
-    public static Map<Instance, Instance> getDominatorMap(@NonNull Snapshot snapshot) {
-        Map<Instance, Instance> mDominatorMap = Maps.newHashMap();
+    private final Snapshot mSnapshot;
+
+    @NonNull
+    private final ImmutableList<Instance> mTopSort;
+
+    public Dominators(@NonNull Snapshot snapshot, @NonNull ImmutableList<Instance> topSort) {
+        mSnapshot = snapshot;
+        mTopSort = topSort;
 
         // Only instances reachable from the GC roots will participate in dominator computation.
         // We will omit from the analysis any other nodes which could be considered roots, i.e. with
         // no incoming references, if they are not GC roots.
-
-        // Start with a topological sort because we want to process a node after all its parents.
-        Map<Instance, Integer> topSort =
-                TopologicalSortVisitor.getTopologicalSort(snapshot.getGCRoots());
-
-        // We add the special sentinel node as the single root of the object graph, to ensure the
-        // dominator algorithm terminates when having to choose between two GC roots.
-        topSort.put(Snapshot.SENTINEL_ROOT, 0);
-        Set<Instance> roots = Sets.newHashSet(Snapshot.SENTINEL_ROOT);
         for (RootObj root : snapshot.getGCRoots()) {
             Instance ref = root.getReferredInstance();
             if (ref != null) {
-                mDominatorMap.put(ref, Snapshot.SENTINEL_ROOT);
-                roots.add(ref);
+                ref.setImmediateDominator(Snapshot.SENTINEL_ROOT);
             }
         }
+    }
 
+    private void computeDominators() {
         // We need to iterate on the dominator computation because the graph may contain cycles.
         // TODO: Check how long it takes to converge, and whether we need to place an upper bound.
         boolean changed = true;
         while (changed) {
             changed = false;
 
-            for (Instance node : topSort.keySet()) {
-                if (!roots.contains(node)) { // Root nodes are skipped
+            for (int i = 0; i < mTopSort.size(); i++) {
+                Instance node = mTopSort.get(i);
+                // Root nodes and nodes immediately dominated by the SENTINEL_ROOT are skipped.
+                if (node.getImmediateDominator() != Snapshot.SENTINEL_ROOT) {
                     Instance dominator = null;
 
-                    for (Instance predecessor : node.getReferences()) {
-                        if (mDominatorMap.get(predecessor) == null) {
+                    for (int j = 0; j < node.getReferences().size(); j++) {
+                        Instance predecessor = node.getReferences().get(j);
+                        if (predecessor.getImmediateDominator() == null) {
                             // If we don't have a dominator/approximation for predecessor, skip it
                             continue;
                         }
@@ -90,59 +84,46 @@ public class Dominators {
                         } else {
                             Instance fingerA = dominator;
                             Instance fingerB = predecessor;
-                            while (!fingerA.equals(fingerB)) {
-                                if (topSort.get(fingerA) < topSort.get(fingerB)) {
-                                    fingerB = mDominatorMap.get(fingerB);
+                            while (fingerA != fingerB) {
+                                if (fingerA.getTopologicalOrder() < fingerB.getTopologicalOrder()) {
+                                    fingerB = fingerB.getImmediateDominator();
                                 } else {
-                                    fingerA = mDominatorMap.get(fingerA);
+                                    fingerA = fingerA.getImmediateDominator();
                                 }
                             }
                             dominator = fingerA;
                         }
                     }
 
-                    if (mDominatorMap.get(node) != dominator) {
-                        mDominatorMap.put(node, dominator);
+                    if (node.getImmediateDominator() != dominator) {
+                        node.setImmediateDominator(dominator);
                         changed = true;
                     }
                 }
             }
         }
-        return ImmutableMap.copyOf(mDominatorMap);
     }
 
-
-    private static class TopologicalSortVisitor implements Visitor {
-
-        private final Set<Instance> mVisited = Sets.newHashSet();
-
-        private final List<Instance> mPostorder = Lists.newArrayList();
-
-        @Override
-        public boolean visitEnter(Instance instance) {
-            return mVisited.add(instance);
-        }
-
-        @Override
-        public void visitLeave(Instance instance) {
-            mPostorder.add(instance);
-        }
-
-        private Map<Instance, Integer> buildTopologicalSort() {
-            Map<Instance, Integer> result = Maps.newLinkedHashMap();
-            int currentIndex = 0;
-            for (Instance node : Lists.reverse(mPostorder)) {
-                result.put(node, ++currentIndex);
+    /**
+     * Kicks off the computation of dominators and retained sizes.
+     */
+    public void computeRetainedSizes() {
+        // Initialize retained sizes for all classes and objects, including unreachable ones.
+        for (Heap heap : mSnapshot.getHeaps()) {
+            for (Instance instance : Iterables.concat(heap.getClasses(), heap.getInstances())) {
+                instance.resetRetainedSize();
             }
-            return result;
         }
-
-        static Map<Instance, Integer> getTopologicalSort(@NonNull Iterable<? extends Instance> roots) {
-            TopologicalSortVisitor visitor = new TopologicalSortVisitor();
-            for (Instance root : roots) {
-                root.accept(visitor);
+        computeDominators();
+        // We only update the retained sizes of objects in the dominator tree (i.e. reachable).
+        for (Instance node : mSnapshot.getReachableInstances()) {
+            int heapIndex = mSnapshot.getHeapIndex(node.getHeap());
+            // Add the size of the current node to the retained size of every dominator up to the
+            // root, in the same heap.
+            for (Instance dom = node.getImmediateDominator(); dom != Snapshot.SENTINEL_ROOT;
+                    dom = dom.getImmediateDominator()) {
+                dom.addRetainedSize(heapIndex, node.getSize());
             }
-            return visitor.buildTopologicalSort();
         }
     }
 }

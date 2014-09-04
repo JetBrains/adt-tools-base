@@ -21,12 +21,10 @@ import com.android.tools.perflib.heap.ArrayInstance;
 import com.android.tools.perflib.heap.ClassInstance;
 import com.android.tools.perflib.heap.ClassObj;
 import com.android.tools.perflib.heap.Field;
-import com.android.tools.perflib.heap.Heap;
 import com.android.tools.perflib.heap.RootObj;
 import com.android.tools.perflib.heap.RootType;
 import com.android.tools.perflib.heap.Snapshot;
 import com.android.tools.perflib.heap.Type;
-import com.android.tools.perflib.heap.Value;
 import com.android.tools.perflib.heap.io.InMemoryBuffer;
 import com.google.common.collect.Maps;
 
@@ -49,7 +47,6 @@ public class VisitorsTest extends TestCase {
     public void setUp() throws Exception {
         mSnapshot = new Snapshot(new InMemoryBuffer(10));
         mSnapshot.setHeapTo(13, "testHeap");
-        mDummyClass.setInstanceSize(20);
         mDummyClass.setFields(new Field[0]);
         mSnapshot.addClass(42, mDummyClass);
     }
@@ -58,10 +55,12 @@ public class VisitorsTest extends TestCase {
         Type.setIdSize(4);
         final ClassInstance object1 = new ClassInstance(1, null, 0);
         object1.setClassId(42);
+        object1.setSize(20);
         mSnapshot.addInstance(1, object1);
 
         final ClassInstance object2 = new ClassInstance(2, null, 0);
         object2.setClassId(42);
+        object2.setSize(20);
         mSnapshot.addInstance(2, object2);
 
         ClassObj clazz = new ClassObj(13, null, "FooBar", 0) {
@@ -89,6 +88,7 @@ public class VisitorsTest extends TestCase {
         Type.setIdSize(4);
         final ClassInstance object = new ClassInstance(1, null, 0);
         object.setClassId(42);
+        object.setSize(20);
         mSnapshot.addInstance(1, object);
 
         ArrayInstance array = new ArrayInstance(2, null, Type.OBJECT, 3, 0) {
