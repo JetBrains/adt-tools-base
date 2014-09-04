@@ -750,6 +750,13 @@ public class ResourceResolver extends RenderResources {
     public boolean isTheme(
             @NonNull ResourceValue value,
             @Nullable Map<ResourceValue, Boolean> cache) {
+        return isTheme(value, cache, 0);
+    }
+
+    private boolean isTheme(
+            @NonNull ResourceValue value,
+            @Nullable Map<ResourceValue, Boolean> cache,
+            int depth) {
         if (cache != null) {
             Boolean known = cache.get(value);
             if (known != null) {
@@ -768,7 +775,18 @@ public class ResourceResolver extends RenderResources {
 
             StyleResourceValue parentStyle = mStyleInheritanceMap.get(srv);
             if (parentStyle != null) {
-                boolean result = isTheme(parentStyle, cache);
+                if (depth >= MAX_RESOURCE_INDIRECTION) {
+                    if (mLogger != null) {
+                        mLogger.error(LayoutLog.TAG_BROKEN,
+                                String.format("Cyclic style parent definitions: %1$s",
+                                        computeCyclicStyleChain(srv)),
+                                null);
+                    }
+
+                    return false;
+                }
+
+                boolean result = isTheme(parentStyle, cache, depth + 1);
                 if (cache != null) {
                     cache.put(value, result);
                 }
