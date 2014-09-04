@@ -420,10 +420,7 @@ public abstract class AbstractResourceRepository {
         synchronized (ITEM_MAP_LOCK) {
             for (ListMultimap<String, ResourceItem> map : getMap().values()) {
                 for (ResourceItem item : map.values()) {
-                    ResourceFile source = item.getSource();
-                    if (source != null) {
-                        qualifiers.add(source.getQualifiers());
-                    }
+                    qualifiers.add(item.getQualifiers());
                 }
             }
         }
@@ -456,10 +453,7 @@ public abstract class AbstractResourceRepository {
         synchronized (ITEM_MAP_LOCK) {
             for (ListMultimap<String, ResourceItem> map : getMap().values()) {
                 for (ResourceItem item : map.values()) {
-                    ResourceFile source = item.getSource();
-                    if (source != null) {
-                        qualifiers.add(source.getQualifiers());
-                    }
+                    qualifiers.add(item.getQualifiers());
                 }
             }
         }
