@@ -66,6 +66,19 @@ public class AppCompatCallDetectorTest extends AbstractCheckTest {
             ));
     }
 
+    public void testNoCallWarningsInPreferenceActivitySubclass() throws Exception {
+        // https://code.google.com/p/android/issues/detail?id=75700
+        assertEquals("No warnings.",
+            lintProject(
+                    "appcompat/AppCompatPrefTest.java.txt=>src/test/pkg/AppCompatPrefTest.java",
+                    "bytecode/classes.jar=>libs/appcompat-v7-18.0.0.jar",
+                    "appcompat/IntermediateActivity.java.txt=>src/test/pkg/IntermediateActivity.java",
+                    // Stubs just to be able to do type resolution without needing the full appcompat jar
+                    "appcompat/ActionBarActivity.java.txt=>src/android/support/v7/app/ActionBarActivity.java",
+                    "appcompat/ActionMode.java.txt=>src/android/support/v7/view/ActionMode.java"
+            ));
+    }
+
     public void testGetOldCall() throws Exception {
         assertEquals("setProgressBarVisibility", AppCompatCallDetector.getOldCall(
             "Should use setSupportProgressBarVisibility instead of setProgressBarVisibility name"));
