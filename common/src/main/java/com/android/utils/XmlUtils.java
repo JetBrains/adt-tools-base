@@ -522,6 +522,12 @@ public class XmlUtils {
                 sb.append(toXmlTextValue(node.getNodeValue()));
                 break;
             }
+            case Node.CDATA_SECTION_NODE: {
+                sb.append("<![CDATA["); //$NON-NLS-1$
+                sb.append(node.getNodeValue());
+                sb.append("]]>");       //$NON-NLS-1$
+                break;
+            }
             case Node.ELEMENT_NODE: {
                 sb.append('<');
                 Element element = (Element) node;
