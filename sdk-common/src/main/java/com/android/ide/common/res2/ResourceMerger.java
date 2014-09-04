@@ -133,7 +133,7 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
                 DocumentBuilder builder = mFactory.newDocumentBuilder();
                 Document document = builder.newDocument();
 
-                Node declareStyleableNode = document.createElement(TAG_DECLARE_STYLEABLE);
+                Node declareStyleableNode = document.createElementNS(null, TAG_DECLARE_STYLEABLE);
 
                 Attr nameAttr = document.createAttribute(ATTR_NAME);
                 nameAttr.setValue(itemName);
