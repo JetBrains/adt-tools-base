@@ -16,10 +16,13 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.APPCOMPAT_LIB_ARTIFACT;
+import static com.android.SdkConstants.CLASS_ACTIVITY;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -35,6 +38,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import lombok.ast.AstVisitor;
+import lombok.ast.ClassDeclaration;
 import lombok.ast.MethodInvocation;
 
 public class AppCompatCallDetector extends Detector implements Detector.JavaScanner {
@@ -118,12 +122,22 @@ public class AppCompatCallDetector extends Detector implements Detector.JavaScan
 
     private static boolean isAppBarActivityCall(@NonNull JavaContext context,
             @NonNull MethodInvocation node) {
-        JavaParser.ResolvedNode resolved = context.resolve(node);
-        if (resolved instanceof JavaParser.ResolvedMethod) {
-            JavaParser.ResolvedMethod method = (JavaParser.ResolvedMethod) resolved;
-            JavaParser.ResolvedClass containingClass = method.getContainingClass();
-            if (containingClass.isSubclassOf("android.app.Activity", false)) {
-                return true;
+        ResolvedNode resolved = context.resolve(node);
+        if (resolved instanceof ResolvedMethod) {
+            ResolvedMethod method = (ResolvedMethod) resolved;
+            ResolvedClass containingClass = method.getContainingClass();
+            if (containingClass.isSubclassOf(CLASS_ACTIVITY, false)) {
+                // Make sure that the calling context is a subclass of ActionBarActivity;
+                // we don't want to flag these calls if they are in non-appcompat activities
+                // such as PreferenceActivity (see b.android.com/58512)
+                ClassDeclaration surroundingClass = JavaContext.findSurroundingClass(node);
+                if (surroundingClass != null) {
+                    ResolvedNode clz = context.resolve(surroundingClass);
+                    return clz instanceof ResolvedClass &&
+                            ((ResolvedClass)clz).isSubclassOf(
+                                    "android.support.v7.app.ActionBarActivity",
+                                    false);
+                }
             }
         }
         return false;
