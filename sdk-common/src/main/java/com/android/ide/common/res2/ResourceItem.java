@@ -154,8 +154,6 @@ public class ResourceItem extends DataItem<ResourceFile>
 
     @Override
     public FolderConfiguration getConfiguration() {
-        assert getSource() != null : this;
-
         String qualifier = getQualifiers();
         if (qualifier.isEmpty()) {
             return new FolderConfiguration();
