@@ -29,8 +29,8 @@ import com.google.common.io.Closeables;
 
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Project;
-import org.gradle.nativebinaries.BuildType;
-import org.gradle.nativebinaries.platform.Platform;
+import org.gradle.nativeplatform.BuildType;
+import org.gradle.nativeplatform.platform.Platform;
 
 import java.io.File;
 import java.io.FileInputStream;

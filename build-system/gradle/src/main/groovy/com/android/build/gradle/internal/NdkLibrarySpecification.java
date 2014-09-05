@@ -21,7 +21,7 @@ import com.android.builder.core.VariantConfiguration;
 
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Project;
-import org.gradle.runtime.base.Binary;
+import org.gradle.platform.base.Binary;
 
 import java.io.File;
 import java.util.Collection;

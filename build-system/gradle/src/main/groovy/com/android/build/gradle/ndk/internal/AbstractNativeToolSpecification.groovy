@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.ndk.internal;
 
-import org.gradle.nativebinaries.NativeBinary;
+import org.gradle.nativeplatform.NativeBinary;
 
 /**
  * An abstract class for NativeToolSpecification.

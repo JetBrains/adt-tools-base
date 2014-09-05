@@ -18,7 +18,7 @@ package com.android.build.gradle.ndk.internal;
 
 import com.google.common.collect.Lists;
 
-import org.gradle.nativebinaries.platform.Platform;
+import org.gradle.nativeplatform.platform.Platform;
 
 import java.io.File;
 import java.util.Collections;

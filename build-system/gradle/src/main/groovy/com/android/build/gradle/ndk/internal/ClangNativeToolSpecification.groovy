@@ -18,8 +18,8 @@ package com.android.build.gradle.ndk.internal
 
 import com.android.SdkConstants
 import com.android.builder.core.BuilderConstants
-import org.gradle.nativebinaries.BuildType
-import org.gradle.nativebinaries.platform.Platform
+import org.gradle.nativeplatform.BuildType
+import org.gradle.nativeplatform.platform.Platform
 
 /**
  * Flag configuration for Clang toolchain.
