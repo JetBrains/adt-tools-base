@@ -151,24 +151,13 @@ class PropertyFetcher {
                             TimeUnit.SECONDS);
                     populateCache(propReceiver.getCollectedProperties());
                 } catch (TimeoutException e) {
-                    Log.w("PropertyFetcher", String.format(
-                            "Connection timeout getting info for device %s",
-                            mDevice.getSerialNumber()));
-
+                    handleException(e);
                 } catch (AdbCommandRejectedException e) {
-                    Log.w("PropertyFetcher", String.format(
-                            "Adb rejected command to get  device %1$s info: %2$s",
-                            mDevice.getSerialNumber(), e.getMessage()));
-
+                    handleException(e);
                 } catch (ShellCommandUnresponsiveException e) {
-                    Log.w("PropertyFetcher", String.format(
-                            "Adb shell command took too long returning info for device %s",
-                            mDevice.getSerialNumber()));
-
+                    handleException(e);
                 } catch (IOException e) {
-                    Log.w("PropertyFetcher",
-                            String.format("IO Error getting info for device %s",
-                                    mDevice.getSerialNumber()));
+                    handleException(e);
                 }
             }
         };
@@ -209,6 +198,17 @@ class PropertyFetcher {
         }
         for (Map.Entry<String, SettableFuture<String>> entry : mPendingRequests.entrySet()) {
             entry.getValue().set(mProperties.get(entry.getKey()));
+        }
+        mPendingRequests.clear();
+    }
+
+    private synchronized void handleException(Exception e) {
+        Log.w("PropertyFetcher",
+                String.format("%s getting properties for device %s: %s",
+                        e.getClass().getSimpleName(), mDevice.getSerialNumber(),
+                        e.getMessage()));
+        for (Map.Entry<String, SettableFuture<String>> entry : mPendingRequests.entrySet()) {
+            entry.getValue().setException(e);
         }
         mPendingRequests.clear();
     }

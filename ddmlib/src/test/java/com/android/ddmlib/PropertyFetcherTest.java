@@ -21,6 +21,7 @@ import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -110,5 +111,30 @@ public class PropertyFetcherTest {
 
         PropertyFetcher fetcher = new PropertyFetcher(mockDevice);
         Assert.assertNull(fetcher.getProperty("unknown").get());
+    }
+
+    /**
+     * Test that getProperty propagates exception thrown by 'shell getprop'
+     *
+     * @throws Exception
+     */
+    @Test(expected=ExecutionException.class)
+    public void getProperty_shellException() throws Exception {
+        IDevice mockDevice = EasyMock.createMock(IDevice.class);
+        EasyMock.expect(mockDevice.getSerialNumber()).andStubReturn("serial");
+        mockDevice.executeShellCommand(EasyMock.<String>anyObject(),
+                EasyMock.<IShellOutputReceiver>anyObject(),
+                EasyMock.anyLong(), EasyMock.<TimeUnit>anyObject());
+        EasyMock.expectLastCall().andThrow(new ShellCommandUnresponsiveException());
+        EasyMock.replay(mockDevice);
+
+        PropertyFetcher fetcher = new PropertyFetcher(mockDevice);
+        try {
+            fetcher.getProperty("dev.bootcomplete").get();
+        } catch (ExecutionException e) {
+            // expected
+            Assert.assertTrue(e.getCause() instanceof ShellCommandUnresponsiveException);
+            throw e;
+        }
     }
 }
