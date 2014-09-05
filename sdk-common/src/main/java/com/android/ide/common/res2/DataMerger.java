@@ -19,7 +19,6 @@ package com.android.ide.common.res2;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
-import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
@@ -335,7 +334,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             // write merged items
             writeMergedItems(document, rootNode);
 
-            String content = XmlPrettyPrinter.prettyPrint(document, true);
+            String content = XmlUtils.toXml(document, true /*preserveWhitespace*/);
 
             try {
                 createDir(blobRootFolder);

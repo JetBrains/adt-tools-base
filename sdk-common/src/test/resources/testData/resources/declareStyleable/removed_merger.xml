@@ -23,14 +23,14 @@
                 path="$TOP$$SEP$base$SEP$values$SEP$values.xml"
                 qualifiers="" >
                 <declare-styleable name="foo" >
-                    <attr name="bar" format="boolean" />
-                    <attr name="bar1" />
-                </declare-styleable>
+        <attr name="bar" format="boolean" />
+        <attr name="bar1" />
+    </declare-styleable>
 
                 <declare-styleable name="removed_foo" >
-                    <attr name="bar" />
-                    <attr name="bar1" />
-                </declare-styleable>
+        <attr name="bar" />
+        <attr name="bar1" />
+    </declare-styleable>
 
                 <attr
                     name="bar1"
@@ -48,14 +48,14 @@
                     format="boolean" />
 
                 <declare-styleable name="foo" >
-                    <attr name="bar" />
-                    <attr name="boo" />
-                </declare-styleable>
+        <attr name="bar" />
+        <attr name="boo" />
+    </declare-styleable>
 
                 <declare-styleable name="removed_foo" >
-                    <attr name="bar" />
-                    <attr name="boo" />
-                </declare-styleable>
+        <attr name="bar" />
+        <attr name="boo" />
+    </declare-styleable>
 
             </file>
         </source>
@@ -64,15 +64,15 @@
     <mergedItems>
         <configuration qualifiers="" >
             <declare-styleable name="foo" >
-                <attr name="bar" />
-                <attr name="boo" />
-                <attr name="bar1" />
-            </declare-styleable>
+        <attr name="bar" />
+        <attr name="boo" />
+        <attr name="bar1" />
+    </declare-styleable>
             <declare-styleable name="removed_foo" >
-                <attr name="bar" />
-                <attr name="boo" />
-                <attr name="bar1" />
-            </declare-styleable>
+        <attr name="bar" />
+        <attr name="boo" />
+        <attr name="bar1" />
+    </declare-styleable>
         </configuration>
     </mergedItems>
 

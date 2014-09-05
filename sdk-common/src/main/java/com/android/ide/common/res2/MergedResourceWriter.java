@@ -26,7 +26,6 @@ import static com.android.utils.SdkUtils.createPathComment;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.internal.PngCruncher;
-import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.utils.SdkUtils;
@@ -296,13 +295,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
                     currentFile = null;
 
-                    String content;
-                    try {
-                        content = XmlPrettyPrinter.prettyPrint(document, true);
-                    } catch (Throwable t) {
-                        content = XmlUtils.toXml(document, true);
-                    }
-
+                    String content = XmlUtils.toXml(document, true /*preserveWhitespace*/);
                     Files.write(content, outFile, Charsets.UTF_8);
                 } catch (Throwable t) {
                     ConsumerException exception = new ConsumerException(t);

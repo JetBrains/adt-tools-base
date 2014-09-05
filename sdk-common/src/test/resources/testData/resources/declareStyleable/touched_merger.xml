@@ -23,8 +23,8 @@
                 path="$TOP$$SEP$base$SEP$values$SEP$values.xml"
                 qualifiers="" >
                 <declare-styleable name="foo" >
-                    <attr name="bar" format="boolean" />
-                </declare-styleable>
+        <attr name="bar" format="boolean" />
+    </declare-styleable>
 
                 <attr
                     name="bar1"
@@ -42,9 +42,9 @@
                     format="boolean" />
 
                 <declare-styleable name="foo" >
-                    <attr name="bar" />
-                    <attr name="boo" />
-                </declare-styleable>
+        <attr name="bar" />
+        <attr name="boo" />
+    </declare-styleable>
             </file>
         </source>
     </dataSet>
@@ -52,9 +52,9 @@
     <mergedItems>
         <configuration qualifiers="" >
             <declare-styleable name="foo" >
-                <attr name="bar" />
-                <attr name="boo" />
-            </declare-styleable>
+        <attr name="bar" />
+        <attr name="boo" />
+    </declare-styleable>
         </configuration>
     </mergedItems>
 

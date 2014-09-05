@@ -42,6 +42,7 @@ import org.w3c.dom.NodeList;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -228,10 +229,10 @@ public class ResourceMergerTest extends BaseTestCase {
         // Even though the content has xliff nodes
         // The valueText is going to skip the <g> node so we skip them from the comparison.
         // What matters here is that the whitespaces are kept.
-        value = string.getValueText();
+        String newValue = string.getValueText();
         assertEquals("Rewritten String through merger",
-                "This is should be followed by whitespace: %1$s",
-                value);
+                value,
+                newValue);
     }
 
     public void testNotMergedAttr() throws Exception {
@@ -1242,6 +1243,52 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(consumer.touchedItems.isEmpty());
         // one removed string item
         assertEquals(1, consumer.removedItems.size());
+    }
+
+    public void testStringWhiteSpaces() throws Exception {
+        File root = TestUtils.getRoot("resources", "stringWhiteSpaces");
+
+        // load res folder
+        ResourceSet baseSet = new ResourceSet("main");
+        baseSet.addSource(root);
+        RecordingLogger logger = new RecordingLogger();
+        baseSet.loadFromFiles(logger);
+        checkLogger(logger);
+
+        // create a merger
+        ResourceMerger resourceMerger = new ResourceMerger();
+        resourceMerger.addDataSet(baseSet);
+
+        // write the merge result.
+        File folder = Files.createTempDir();
+        folder.deleteOnExit();
+
+        MergedResourceWriter writer = new MergedResourceWriter(folder, null /*aaptRunner*/);
+        resourceMerger.mergeData(writer, false /*doCleanUp*/);
+
+        // load the result as a set.
+        ResourceSet mergedSet = new ResourceSet("merged");
+        mergedSet.addSource(folder);
+        logger = new RecordingLogger();
+        mergedSet.loadFromFiles(logger);
+        checkLogger(logger);
+
+        ListMultimap<String, ResourceItem> originalItems = baseSet.getDataMap();
+        ListMultimap<String, ResourceItem> mergedItems = mergedSet.getDataMap();
+
+        for (Map.Entry<String, Collection<ResourceItem>> entry : originalItems.asMap().entrySet()) {
+            Collection<ResourceItem> originalItemList = entry.getValue();
+            Collection<ResourceItem> mergedItemList = mergedItems.asMap().get(entry.getKey());
+
+            // the collection should only have a single items
+            assertEquals(1, originalItemList.size());
+            assertEquals(1, mergedItemList.size());
+
+            ResourceItem originalItem = originalItemList.iterator().next();
+            ResourceItem mergedItem = mergedItemList.iterator().next();
+
+            assertTrue(originalItem.compareValueWith(mergedItem));
+        }
     }
 
     /**

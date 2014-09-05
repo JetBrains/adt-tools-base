@@ -261,7 +261,7 @@ class NodeUtils {
                 case Node.CDATA_SECTION_NODE:
                 case Node.TEXT_NODE:
                 case Node.COMMENT_NODE:
-                    if (!child1.getNodeValue().trim().equals(child2.getNodeValue().trim())) {
+                    if (!child1.getNodeValue().equals(child2.getNodeValue())) {
                         return false;
                     }
                     break;
