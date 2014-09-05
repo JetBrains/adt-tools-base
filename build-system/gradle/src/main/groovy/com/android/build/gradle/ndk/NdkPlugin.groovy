@@ -33,8 +33,8 @@ import org.gradle.api.specs.Spec
 import org.gradle.configuration.project.ProjectConfigurationActionContainer
 import org.gradle.internal.Actions
 import org.gradle.internal.reflect.Instantiator
-import org.gradle.nativebinaries.internal.DefaultSharedLibraryBinarySpec
-import org.gradle.nativebinaries.internal.DefaultStaticLibraryBinarySpec
+import org.gradle.nativeplatform.internal.DefaultSharedLibraryBinarySpec
+import org.gradle.nativeplatform.internal.DefaultStaticLibraryBinarySpec
 
 import javax.inject.Inject
 
@@ -116,7 +116,7 @@ class NdkPlugin implements Plugin<Project> {
     /**
      * Return library binaries for a VariantConfiguration.
      */
-    public Collection<ProjectSharedLibraryBinary> getBinaries(
+    public Collection<DefaultSharedLibraryBinarySpec> getBinaries(
             VariantConfiguration variantConfig) {
         if (variantConfig.getType() == VariantConfiguration.Type.TEST) {
             // Do not return binaries for test variants as test source set is not supported at the

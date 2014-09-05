@@ -20,8 +20,8 @@ import com.android.SdkConstants
 import com.android.build.gradle.ndk.NdkExtension
 import org.gradle.api.Action
 import org.gradle.api.Project
-import org.gradle.nativebinaries.toolchain.Clang
-import org.gradle.nativebinaries.toolchain.Gcc
+import org.gradle.nativeplatform.toolchain.Clang
+import org.gradle.nativeplatform.toolchain.Gcc
 
 /**
  * Action to configure toolchain for native binaries.

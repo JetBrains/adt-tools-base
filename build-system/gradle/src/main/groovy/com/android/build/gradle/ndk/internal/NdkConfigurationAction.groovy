@@ -25,9 +25,9 @@ import org.gradle.api.Project
 import org.gradle.language.base.FunctionalSourceSet
 import org.gradle.language.c.CSourceSet
 import org.gradle.language.cpp.CppSourceSet
-import org.gradle.nativebinaries.internal.DefaultSharedLibraryBinarySpec
-import org.gradle.nativebinaries.language.c.tasks.CCompile
-import org.gradle.nativebinaries.language.cpp.tasks.CppCompile
+import org.gradle.nativeplatform.internal.DefaultSharedLibraryBinarySpec
+import org.gradle.language.c.tasks.CCompile
+import org.gradle.language.cpp.tasks.CppCompile
 
 /**
  * Configure settings used by the native binaries.
@@ -74,7 +74,7 @@ class NdkConfigurationAction implements Action<Project> {
         }
         project.libraries.getByName(ndkExtension.getModuleName()) {
             binaries.withType(DefaultSharedLibraryBinarySpec) {
-                    ProjectSharedLibraryBinary binary ->
+                    DefaultSharedLibraryBinarySpec binary ->
                 sourceIfExist(binary, projectSourceSet, "mainC")
                 sourceIfExist(binary, projectSourceSet, "mainCpp")
 
@@ -145,7 +145,7 @@ class NdkConfigurationAction implements Action<Project> {
      * Add the sourceSet with the specified name to the binary if such sourceSet is defined.
      */
     private static void sourceIfExist(
-            ProjectSharedLibraryBinary binary,
+            DefaultSharedLibraryBinarySpec binary,
             FunctionalSourceSet projectSourceSet,
             String sourceSetName) {
         def sourceSet = projectSourceSet.findByName(sourceSetName)
