@@ -21,13 +21,15 @@ import java.util.Map;
 /**
  * Receives event notifications during instrumentation test runs.
  * <p/>
- * Patterned after junit.runner.TestRunListener.
+ * Patterned after org.junit.runner.notification.RunListener
  * <p/>
  * The sequence of calls will be:
  * <ul>
  * <li> testRunStarted
  * <li> testStarted
  * <li> [testFailed]
+ * <li> [testAssumptionFailure]
+ * <li> [testIgnored]
  * <li> testEnded
  * <li> ....
  * <li> [testRunFailed]
@@ -35,16 +37,6 @@ import java.util.Map;
  * </ul>
  */
 public interface ITestRunListener {
-
-    /**
-     *  Types of test failures.
-     */
-    enum TestFailure {
-        /** Test failed due to unanticipated uncaught exception. */
-        ERROR,
-        /** Test failed due to a false assertion. */
-        FAILURE
-    }
 
     /**
      * Reports the start of a test run.
@@ -66,11 +58,27 @@ public interface ITestRunListener {
      * <p/>
      * Will be called between testStarted and testEnded.
      *
-     * @param status failure type
      * @param test identifies the test
      * @param trace stack trace of failure
      */
-    public void testFailed(TestFailure status, TestIdentifier test, String trace);
+    public void testFailed(TestIdentifier test, String trace);
+
+    /**
+     * Called when an atomic test flags that it assumes a condition that is
+     * false
+     *
+     * @param test identifies the test
+     * @param trace stack trace of failure
+     */
+    public void testAssumptionFailure(TestIdentifier test, String trace);
+
+    /**
+     * Called when a test will not be run, generally because a test method is annotated
+     * with org.junit.Ignore.
+     *
+     * @param test identifies the test
+     */
+    public void testIgnored(TestIdentifier test);
 
     /**
      * Reports the execution end of an individual test case.

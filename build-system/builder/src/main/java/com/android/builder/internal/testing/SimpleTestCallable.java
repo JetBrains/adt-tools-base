@@ -208,7 +208,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
             e.printStackTrace(pw);
             TestIdentifier fakeTest = new TestIdentifier(device.getClass().getName(), "runTests");
             runListener.testStarted(fakeTest);
-            runListener.testFailed(ITestRunListener.TestFailure.ERROR, fakeTest , baos.toString());
+            runListener.testFailed(fakeTest , baos.toString());
             runListener.testEnded(fakeTest, emptyMetrics);
 
             // end the run to generate the XML file.

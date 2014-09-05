@@ -15,8 +15,6 @@
  */
 package com.android.ddmlib.testrunner;
 
-import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
-
 import junit.framework.TestCase;
 
 import org.xml.sax.InputSource;
@@ -104,7 +102,8 @@ public class XmlTestRunListenerTest extends TestCase {
      */
     public void testEmptyGeneration() {
         final String expectedOutput = "<?xml version='1.0' encoding='UTF-8' ?>" +
-            "<testsuite name=\"test\" tests=\"0\" failures=\"0\" errors=\"0\" time=\"#TIMEVALUE#\" " +
+            "<testsuite name=\"test\" tests=\"0\" failures=\"0\" errors=\"0\" skipped=\"0\" " +
+            "time=\"#TIMEVALUE#\" " +
             "timestamp=\"ignore\" hostname=\"localhost\"> " +
             "<properties />" +
             "</testsuite>";
@@ -148,7 +147,7 @@ public class XmlTestRunListenerTest extends TestCase {
         final String trace = "this is a trace";
         mResultReporter.testRunStarted("run", 1);
         mResultReporter.testStarted(testId);
-        mResultReporter.testFailed(TestFailure.FAILURE, testId, trace);
+        mResultReporter.testFailed(testId, trace);
         mResultReporter.testEnded(testId, emptyMap);
         mResultReporter.testRunEnded(3, emptyMap);
         String output =  getOutput();
