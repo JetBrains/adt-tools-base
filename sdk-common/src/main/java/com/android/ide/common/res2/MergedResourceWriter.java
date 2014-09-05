@@ -275,23 +275,30 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     Collections.sort(items);
 
                     for (ResourceItem item : items) {
+                        // add a carriage return so that the nodes are not all on the same line.
+                        // also add an indent of 4 spaces.
+                        rootNode.appendChild(document.createTextNode("\n    "));
+
                         ResourceFile source = item.getSource();
                         if (source != currentFile && source != null && mInsertSourceMarkers) {
                             currentFile = source;
-                            rootNode.appendChild(document.createTextNode("\n"));
                             File file = source.getFile();
                             rootNode.appendChild(document.createComment(
                                     createPathComment(file, true)));
-                            rootNode.appendChild(document.createTextNode("\n"));
+                            rootNode.appendChild(document.createTextNode("\n    "));
                             // Add an <eat-comment> element to ensure that this comment won't
                             // get merged into a potential comment from the next child (or
                             // even added as the sole comment in the R class)
                             rootNode.appendChild(document.createElement(TAG_EAT_COMMENT));
-                            rootNode.appendChild(document.createTextNode("\n"));
+                            rootNode.appendChild(document.createTextNode("\n    "));
                         }
                         Node adoptedNode = NodeUtils.adoptNode(document, item.getValue());
                         rootNode.appendChild(adoptedNode);
+
                     }
+
+                    // finish with a carriage return
+                    rootNode.appendChild(document.createTextNode("\n"));
 
                     currentFile = null;
 
