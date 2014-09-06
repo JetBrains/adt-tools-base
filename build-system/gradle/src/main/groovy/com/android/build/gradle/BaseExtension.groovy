@@ -402,7 +402,8 @@ public abstract class BaseExtension {
     }
 
     public File getDefaultProguardFile(String name) {
-        return new File(sdkDirectory,
+        File sdkDir = plugin.sdkHandler.getAndCheckSdkFolder()
+        return new File(sdkDir,
                 SdkConstants.FD_TOOLS + File.separatorChar
                         + SdkConstants.FD_PROGUARD + File.separatorChar
                         + name);
