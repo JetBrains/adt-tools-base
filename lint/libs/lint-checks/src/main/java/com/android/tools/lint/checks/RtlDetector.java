@@ -409,7 +409,9 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         }
 
         if (name.equals(ATTR_TEXT_ALIGNMENT)) {
-            mUsesRtlAttributes = true;
+            if (context.getProject().getReportIssues()) {
+              mUsesRtlAttributes = true;
+            }
 
             Element element = attribute.getOwnerElement();
             final String gravity;
@@ -457,7 +459,8 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             boolean isLeft = value.contains(GRAVITY_VALUE_LEFT);
             boolean isRight = value.contains(GRAVITY_VALUE_RIGHT);
             if (!isLeft && !isRight) {
-                if (value.contains(GRAVITY_VALUE_START) || value.contains(GRAVITY_VALUE_END)) {
+                if ((value.contains(GRAVITY_VALUE_START) || value.contains(GRAVITY_VALUE_END))
+                        && context.getProject().getReportIssues()) {
                     mUsesRtlAttributes = true;
                 }
                 return;
