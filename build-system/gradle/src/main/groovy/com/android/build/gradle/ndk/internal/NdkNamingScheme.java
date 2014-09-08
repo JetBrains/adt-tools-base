@@ -16,14 +16,10 @@
 
 package com.android.build.gradle.ndk.internal;
 
-import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
 import com.google.common.base.Joiner;
 
-import org.gradle.nativebinaries.BuildType;
 import org.gradle.nativebinaries.NativeBinary;
-import org.gradle.nativebinaries.SharedLibraryBinary;
-import org.gradle.nativebinaries.platform.Platform;
 
 import java.io.File;
 
@@ -35,7 +31,7 @@ public class NdkNamingScheme {
         return Joiner.on(File.separator).join(
                 AndroidProject.FD_INTERMEDIATES,
                 "binaries",
-                binary.getName(),
+                binary.getDisplayName(),
                 binary.getBuildType().getName(),
                 binary.getFlavor().getName(),
                 "lib",
