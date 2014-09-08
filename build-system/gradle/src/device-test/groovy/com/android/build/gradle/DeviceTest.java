@@ -76,6 +76,7 @@ public class DeviceTest extends BuildTest {
 
     private static final List<String> ndkPluginTests = ImmutableList.of(
             "ndkJniLib2",
+            "ndkStandaloneSo",
             "ndkStl"
     );
 
