@@ -57,7 +57,8 @@ import java.util.Set;
  */
 public class VariantConfiguration implements TestData {
 
-    private static final ManifestParser sManifestParser = new DefaultManifestParser();
+    // per variant, as is caches some manifest data specific to this variant.
+    private final ManifestParser sManifestParser = new DefaultManifestParser();
 
     /**
      * Full, unique name of the variant in camel case, including BuildType and Flavors (and Test)
@@ -142,7 +143,7 @@ public class VariantConfiguration implements TestData {
      */
     @Nullable
     public static String getManifestPackage(@NonNull File manifestFile) {
-        return sManifestParser.getPackage(manifestFile);
+        return new DefaultManifestParser().getPackage(manifestFile);
     }
 
     /**
