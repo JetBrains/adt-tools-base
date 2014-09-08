@@ -24,7 +24,7 @@ import java.io.File;
 /**
  * A Manifest parser
  */
-public interface ManifestParser {
+interface ManifestParser {
 
     /**
      * Returns the package name parsed from the given manifest file.
