@@ -730,6 +730,7 @@ public class AndroidBuilder {
      * @param instrumentationRunner the name of the instrumentation runner
      * @param handleProfiling whether or not the Instrumentation object will turn profiling on and off
      * @param functionalTest whether or not the Instrumentation class should run as a functional test
+     * @param testManifestFile optionally user provided AndroidManifest.xml for testing application
      * @param libraries the library dependency graph
      * @param outManifest the output location for the merged manifest
      *
@@ -750,8 +751,10 @@ public class AndroidBuilder {
             @NonNull  String instrumentationRunner,
             @NonNull  Boolean handleProfiling,
             @NonNull  Boolean functionalTest,
+            @Nullable File testManifestFile,
             @NonNull  List<? extends ManifestDependency> libraries,
-            @NonNull  File outManifest) {
+            @NonNull  File outManifest,
+            @NonNull  File tmpDir) {
         checkNotNull(testApplicationId, "testApplicationId cannot be null.");
         checkNotNull(testedApplicationId, "testedApplicationId cannot be null.");
         checkNotNull(instrumentationRunner, "instrumentationRunner cannot be null.");
@@ -760,21 +763,45 @@ public class AndroidBuilder {
         checkNotNull(libraries, "libraries cannot be null.");
         checkNotNull(outManifest, "outManifestLocation cannot be null.");
 
-        if (!libraries.isEmpty()) {
-            try {
-                // create the test manifest, merge the libraries in it
-                File generatedTestManifest = File.createTempFile("manifestMerge", ".xml");
+        try {
+            tmpDir.mkdirs();
+            File generatedTestManifest = libraries.isEmpty() && testManifestFile == null
+                    ? outManifest : File.createTempFile("manifestMerger", ".xml", tmpDir);
 
-                generateTestManifest(
-                        testApplicationId,
-                        minSdkVersion,
-                        targetSdkVersion,
-                        testedApplicationId,
-                        instrumentationRunner,
-                        handleProfiling,
-                        functionalTest,
-                        generatedTestManifest);
+            mLogger.verbose("Generating in %1$s", generatedTestManifest.getAbsolutePath());
+            generateTestManifest(
+                    testApplicationId,
+                    minSdkVersion,
+                    targetSdkVersion.equals("-1") ? null : targetSdkVersion,
+                    testedApplicationId,
+                    instrumentationRunner,
+                    handleProfiling,
+                    functionalTest,
+                    generatedTestManifest);
 
+            if (testManifestFile != null) {
+                File mergedTestManifest = File.createTempFile("manifestMerger", ".xml", tmpDir);
+                mLogger.verbose("Merging user supplied manifest in %1$s", generatedTestManifest.getAbsolutePath());
+                Invoker invoker = ManifestMerger2.newMerger(
+                        testManifestFile, mLogger, ManifestMerger2.MergeType.APPLICATION)
+                        .setOverride(SystemProperty.PACKAGE, testApplicationId)
+                        .addLibraryManifests(generatedTestManifest);
+                if (minSdkVersion != null) {
+                    invoker.setOverride(SystemProperty.MIN_SDK_VERSION, minSdkVersion);
+                }
+                if (!targetSdkVersion.equals("-1")) {
+                    invoker.setOverride(SystemProperty.TARGET_SDK_VERSION, targetSdkVersion);
+                }
+                MergingReport mergingReport = invoker.merge();
+                if (libraries.isEmpty()) {
+                    handleMergingResult(mergingReport, outManifest);
+                } else {
+                    handleMergingResult(mergingReport, mergedTestManifest);
+                    generatedTestManifest = mergedTestManifest;
+                }
+            }
+
+            if (!libraries.isEmpty()) {
                 MergingReport mergingReport = ManifestMerger2.newMerger(
                         generatedTestManifest, mLogger, ManifestMerger2.MergeType.APPLICATION)
                         .withFeatures(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)
@@ -782,42 +809,35 @@ public class AndroidBuilder {
                         .addLibraryManifests(collectLibraries(libraries))
                         .merge();
 
-                mLogger.info("Merging result:" + mergingReport.getResult());
-                switch (mergingReport.getResult()) {
-                    case WARNING:
-                        mergingReport.log(mLogger);
-                        // fall through since these are just warnings.
-                    case SUCCESS:
-                        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
-                        try {
-                            String annotatedDocument = mergingReport.getActions().blame(xmlDocument);
-                            mLogger.verbose(annotatedDocument);
-                        } catch (Exception e) {
-                            mLogger.error(e, "cannot print resulting xml");
-                        }
-                        save(xmlDocument, outManifest);
-                        mLogger.info("Merged manifest saved to " + outManifest);
-                        break;
-                    case ERROR:
-                        mergingReport.log(mLogger);
-                        throw new RuntimeException(mergingReport.getReportString());
-                    default:
-                        throw new RuntimeException("Unhandled result type : "
-                                + mergingReport.getResult());
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+                handleMergingResult(mergingReport, outManifest);
             }
-        } else {
-            generateTestManifest(
-                    testApplicationId,
-                    minSdkVersion,
-                    targetSdkVersion,
-                    testedApplicationId,
-                    instrumentationRunner,
-                    handleProfiling,
-                    functionalTest,
-                    outManifest);
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void handleMergingResult(@NonNull MergingReport mergingReport, @NonNull File outFile) {
+        switch (mergingReport.getResult()) {
+            case WARNING:
+                mergingReport.log(mLogger);
+                // fall through since these are just warnings.
+            case SUCCESS:
+                XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+                try {
+                    String annotatedDocument = mergingReport.getActions().blame(xmlDocument);
+                    mLogger.verbose(annotatedDocument);
+                } catch (Exception e) {
+                    mLogger.error(e, "cannot print resulting xml");
+                }
+                save(xmlDocument, outFile);
+                mLogger.info("Merged manifest saved to " + outFile);
+                break;
+            case ERROR:
+                mergingReport.log(mLogger);
+                throw new RuntimeException(mergingReport.getReportString());
+            default:
+                throw new RuntimeException("Unhandled result type : "
+                        + mergingReport.getResult());
         }
     }
 

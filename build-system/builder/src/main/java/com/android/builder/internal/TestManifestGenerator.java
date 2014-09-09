@@ -20,6 +20,8 @@ import com.android.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -75,10 +77,17 @@ public class TestManifestGenerator {
         map.put(PH_HANDLE_PROFILING, Boolean.toString(mHandleProfiling));
         map.put(PH_FUNCTIONAL_TEST, Boolean.toString(mFunctionalTest));
 
-        TemplateProcessor processor = new TemplateProcessor(
-                TestManifestGenerator.class.getResourceAsStream(TEMPLATE),
-                map);
+        URL resource = TestManifestGenerator.class.getResource(TEMPLATE);
+        if (resource != null) {
+            URLConnection urlConnection = resource.openConnection();
+            urlConnection.setUseCaches(false);
+            TemplateProcessor processor = new TemplateProcessor(
+                    urlConnection.getInputStream(),
+                    map);
 
-        processor.generate(mOutputFile);
+            processor.generate(mOutputFile);
+        } else {
+           throw new RuntimeException("Cannot load template, restart gradle daemons ?");
+        }
     }
 }
