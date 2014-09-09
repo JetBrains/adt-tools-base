@@ -154,6 +154,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(OnClickDetector.ISSUE);
         issues.add(OverdrawDetector.ISSUE);
         issues.add(OverrideDetector.ISSUE);
+        issues.add(OverrideConcreteDetector.ISSUE);
         issues.add(ParcelDetector.ISSUE);
         issues.add(PluralsDetector.EXTRA);
         issues.add(PluralsDetector.MISSING);
