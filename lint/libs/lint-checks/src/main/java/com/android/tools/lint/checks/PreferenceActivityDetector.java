@@ -170,7 +170,8 @@ public class PreferenceActivityDetector extends Detector
         }
 
         private boolean overridesIsValidFragment(ResolvedClass resolvedClass) {
-            Iterable<ResolvedMethod> resolvedMethods = resolvedClass.getMethods(IS_VALID_FRAGMENT);
+            Iterable<ResolvedMethod> resolvedMethods = resolvedClass.getMethods(IS_VALID_FRAGMENT,
+                    false);
             for (ResolvedMethod resolvedMethod : resolvedMethods) {
                 if (resolvedMethod.getArgumentCount() == 1
                         && resolvedMethod.getArgumentType(0).getName().equals(TYPE_STRING)) {
