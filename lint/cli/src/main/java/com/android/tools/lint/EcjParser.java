@@ -915,19 +915,56 @@ public class EcjParser extends JavaParser {
 
         @Override
         @NonNull
-        public Iterable<ResolvedMethod> getMethods(@NonNull String name) {
+        public Iterable<ResolvedMethod> getMethods(@NonNull String name,
+                boolean includeInherited) {
             if (mBinding instanceof ReferenceBinding) {
                 ReferenceBinding cls = (ReferenceBinding) mBinding;
-                MethodBinding[] methods = cls.getMethods(name.toCharArray());
-                if (methods != null) {
-                    int count = methods.length;
-                    List<ResolvedMethod> result = Lists.newArrayListWithExpectedSize(count);
-                    for (MethodBinding method : methods) {
-                        if (!method.isConstructor()) {
-                            result.add(new EcjResolvedMethod(method));
+                if (includeInherited) {
+                    List<ResolvedMethod> result = null;
+                    while (cls != null) {
+                        MethodBinding[] methods = cls.getMethods(name.toCharArray());
+                        if (methods != null) {
+                            int count = methods.length;
+                            if (count > 0) {
+                                if (result == null) {
+                                    result = Lists.newArrayListWithExpectedSize(count);
+                                }
+                                for (MethodBinding method : methods) {
+                                    if (!method.isConstructor()) {
+                                        // See if this method looks like it's masked
+                                        boolean masked = false;
+                                        for (ResolvedMethod m : result) {
+                                            MethodBinding mb = ((EcjResolvedMethod) m).mBinding;
+                                            if (mb.areParameterErasuresEqual(method)) {
+                                                masked = true;
+                                                break;
+                                            }
+                                        }
+                                        if (masked) {
+                                            continue;
+                                        }
+
+                                        result.add(new EcjResolvedMethod(method));
+                                    }
+                                }
+                            }
                         }
+                        cls = cls.superclass();
                     }
-                    return result;
+
+                    return result != null ? result : Collections.<ResolvedMethod>emptyList();
+                } else {
+                    MethodBinding[] methods = cls.getMethods(name.toCharArray());
+                    if (methods != null) {
+                        int count = methods.length;
+                        List<ResolvedMethod> result = Lists.newArrayListWithExpectedSize(count);
+                        for (MethodBinding method : methods) {
+                            if (!method.isConstructor()) {
+                                result.add(new EcjResolvedMethod(method));
+                            }
+                        }
+                        return result;
+                    }
                 }
             }
 
@@ -936,15 +973,22 @@ public class EcjParser extends JavaParser {
 
         @Override
         @Nullable
-        public ResolvedField getField(@NonNull String name) {
+        public ResolvedField getField(@NonNull String name, boolean includeInherited) {
             if (mBinding instanceof ReferenceBinding) {
                 ReferenceBinding cls = (ReferenceBinding) mBinding;
-                FieldBinding[] fields = cls.fields();
-                if (fields != null) {
-                    for (FieldBinding field : fields) {
-                        if (sameChars(name, field.name)) {
-                            return new EcjResolvedField(field);
+                while (cls != null) {
+                    FieldBinding[] fields = cls.fields();
+                    if (fields != null) {
+                        for (FieldBinding field : fields) {
+                            if (sameChars(name, field.name)) {
+                                return new EcjResolvedField(field);
+                            }
                         }
+                    }
+                    if (includeInherited) {
+                        cls = cls.superclass();
+                    } else {
+                        break;
                     }
                 }
             }
