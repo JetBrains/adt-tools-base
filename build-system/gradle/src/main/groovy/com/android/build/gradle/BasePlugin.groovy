@@ -2932,19 +2932,23 @@ public abstract class BasePlugin {
         return project
     }
 
-    public void displayDeprecationWarning(String message) {
-        displayDeprecationWarning(logger, project, message)
+    public static void displayWarning(ILogger logger, Project project, String message) {
+        logger.warning(createWarning(project.path, message))
     }
 
-    public static void displayDeprecationWarning(ILogger logger, Project project, String message) {
-        logger.warning(createDeprecationWarning(project.path, message))
+    public static void displayWarning(Logger logger, Project project, String message) {
+        logger.warn(createWarning(project.path, message))
+    }
+
+    public void displayDeprecationWarning(String message) {
+        displayWarning(logger, project, message)
     }
 
     public static void displayDeprecationWarning(Logger logger, Project project, String message) {
-        logger.warn(createDeprecationWarning(project.path, message))
+        displayWarning(logger, project, message)
     }
 
-    private static String createDeprecationWarning(String projectName, String message) {
+    private static String createWarning(String projectName, String message) {
         return "WARNING [Project: $projectName] $message"
     }
 }
