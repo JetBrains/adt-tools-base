@@ -247,11 +247,13 @@ public abstract class JavaParser {
         @NonNull
         public abstract Iterable<ResolvedMethod> getConstructors();
 
+        /** Returns the methods defined in this class, and optionally any methods inherited from any superclasses as well */
         @NonNull
-        public abstract Iterable<ResolvedMethod> getMethods(@NonNull String name);
+        public abstract Iterable<ResolvedMethod> getMethods(@NonNull String name, boolean includeInherited);
 
+        /** Returns the named field defined in this class, or optionally inherited from a superclass */
         @Nullable
-        public abstract ResolvedField getField(@NonNull String name);
+        public abstract ResolvedField getField(@NonNull String name, boolean includeInherited);
     }
 
     /** A method or constructor declaration */

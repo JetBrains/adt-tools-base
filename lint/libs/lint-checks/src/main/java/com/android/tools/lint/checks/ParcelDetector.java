@@ -112,7 +112,7 @@ public class ParcelDetector extends Detector implements Detector.JavaScanner {
                         JavaParser.ResolvedNode resolved = mContext.resolve(node);
                         if (resolved instanceof ResolvedClass) {
                             ResolvedClass cls = (ResolvedClass) resolved;
-                            ResolvedField field = cls.getField("CREATOR");
+                            ResolvedField field = cls.getField("CREATOR", false);
                             if (field == null) {
                                 // Make doubly sure that we're really implementing
                                 // android.os.Parcelable
