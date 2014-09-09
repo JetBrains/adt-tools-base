@@ -1775,7 +1775,7 @@ public class ApiDetector extends ResourceXmlDetector
                 if (type == VariableDefinition.class) {
                     // Variable
                     VariableDefinition declaration = (VariableDefinition) scope;
-                    int targetApi = getLocalMinSdk(declaration.astModifiers());
+                    int targetApi = getTargetApi(declaration.astModifiers());
                     if (targetApi != -1) {
                         return targetApi;
                     }
@@ -1783,7 +1783,7 @@ public class ApiDetector extends ResourceXmlDetector
                     // Method
                     // Look for annotations on the method
                     MethodDeclaration declaration = (MethodDeclaration) scope;
-                    int targetApi = getLocalMinSdk(declaration.astModifiers());
+                    int targetApi = getTargetApi(declaration.astModifiers());
                     if (targetApi != -1) {
                         return targetApi;
                     }
@@ -1791,14 +1791,14 @@ public class ApiDetector extends ResourceXmlDetector
                     // Constructor
                     // Look for annotations on the method
                     ConstructorDeclaration declaration = (ConstructorDeclaration) scope;
-                    int targetApi = getLocalMinSdk(declaration.astModifiers());
+                    int targetApi = getTargetApi(declaration.astModifiers());
                     if (targetApi != -1) {
                         return targetApi;
                     }
                 } else if (type == ClassDeclaration.class) {
                     // Class
                     ClassDeclaration declaration = (ClassDeclaration) scope;
-                    int targetApi = getLocalMinSdk(declaration.astModifiers());
+                    int targetApi = getTargetApi(declaration.astModifiers());
                     if (targetApi != -1) {
                         return targetApi;
                     }
@@ -1809,61 +1809,56 @@ public class ApiDetector extends ResourceXmlDetector
 
             return -1;
         }
+    }
 
-        /**
-         * Returns true if the given AST modifier has a suppress annotation for the
-         * given issue (which can be null to check for the "all" annotation)
-         *
-         * @param modifiers the modifier to check
-         * @return true if the issue or all issues should be suppressed for this
-         *         modifier
-         */
-        private int getLocalMinSdk(@Nullable Modifiers modifiers) {
-            if (modifiers == null) {
-                return -1;
-            }
-            StrictListAccessor<Annotation, Modifiers> annotations = modifiers.astAnnotations();
-            if (annotations == null) {
-                return -1;
-            }
+    /**
+     * Returns the API level for the given AST node if specified with
+     * an {@code @TargetApi} annotation.
+     *
+     * @param modifiers the modifier to check
+     * @return the target API level, or -1 if not specified
+     */
+    public static int getTargetApi(@Nullable Modifiers modifiers) {
+        if (modifiers == null) {
+            return -1;
+        }
+        StrictListAccessor<Annotation, Modifiers> annotations = modifiers.astAnnotations();
+        if (annotations == null) {
+            return -1;
+        }
 
-            Iterator<Annotation> iterator = annotations.iterator();
-            while (iterator.hasNext()) {
-                Annotation annotation = iterator.next();
-                TypeReference t = annotation.astAnnotationTypeReference();
-                String typeName = t.getTypeName();
-                if (typeName.endsWith(TARGET_API)) {
-                    StrictListAccessor<AnnotationElement, Annotation> values =
-                            annotation.astElements();
-                    if (values != null) {
-                        Iterator<AnnotationElement> valueIterator = values.iterator();
-                        while (valueIterator.hasNext()) {
-                            AnnotationElement element = valueIterator.next();
-                            AnnotationValue valueNode = element.astValue();
-                            if (valueNode == null) {
-                                continue;
-                            }
-                            if (valueNode instanceof IntegralLiteral) {
-                                IntegralLiteral literal = (IntegralLiteral) valueNode;
-                                return literal.astIntValue();
-                            } else if (valueNode instanceof StringLiteral) {
-                                String value = ((StringLiteral) valueNode).astValue();
-                                return SdkVersionInfo.getApiByBuildCode(value, true);
-                            } else if (valueNode instanceof Select) {
-                                Select select = (Select) valueNode;
-                                String codename = select.astIdentifier().astValue();
-                                return SdkVersionInfo.getApiByBuildCode(codename, true);
-                            } else if (valueNode instanceof VariableReference) {
-                                VariableReference reference = (VariableReference) valueNode;
-                                String codename = reference.astIdentifier().astValue();
-                                return SdkVersionInfo.getApiByBuildCode(codename, true);
-                            }
+        for (Annotation annotation : annotations) {
+            TypeReference t = annotation.astAnnotationTypeReference();
+            String typeName = t.getTypeName();
+            if (typeName.endsWith(TARGET_API)) {
+                StrictListAccessor<AnnotationElement, Annotation> values =
+                        annotation.astElements();
+                if (values != null) {
+                    for (AnnotationElement element : values) {
+                        AnnotationValue valueNode = element.astValue();
+                        if (valueNode == null) {
+                            continue;
+                        }
+                        if (valueNode instanceof IntegralLiteral) {
+                            IntegralLiteral literal = (IntegralLiteral) valueNode;
+                            return literal.astIntValue();
+                        } else if (valueNode instanceof StringLiteral) {
+                            String value = ((StringLiteral) valueNode).astValue();
+                            return SdkVersionInfo.getApiByBuildCode(value, true);
+                        } else if (valueNode instanceof Select) {
+                            Select select = (Select) valueNode;
+                            String codename = select.astIdentifier().astValue();
+                            return SdkVersionInfo.getApiByBuildCode(codename, true);
+                        } else if (valueNode instanceof VariableReference) {
+                            VariableReference reference = (VariableReference) valueNode;
+                            String codename = reference.astIdentifier().astValue();
+                            return SdkVersionInfo.getApiByBuildCode(codename, true);
                         }
                     }
                 }
             }
-
-            return -1;
         }
+
+        return -1;
     }
 }
