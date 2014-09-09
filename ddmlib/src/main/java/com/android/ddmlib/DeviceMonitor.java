@@ -170,6 +170,7 @@ final class DeviceMonitor {
                                 Log.e("DeviceMonitor",
                                         "adb restart attempts: " + mRestartAttemptCount);
                             } else {
+                                Log.i("DeviceMonitor", "adb restarted");
                                 mRestartAttemptCount = 0;
                             }
                         }
