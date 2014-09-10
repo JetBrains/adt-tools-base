@@ -36,8 +36,8 @@ import org.gradle.api.specs.Spec
 import org.gradle.configuration.project.ProjectConfigurationActionContainer
 import org.gradle.internal.Actions
 import org.gradle.internal.reflect.Instantiator
-import org.gradle.nativebinaries.internal.ProjectSharedLibraryBinary
-import org.gradle.nativebinaries.internal.ProjectStaticLibraryBinary
+import org.gradle.nativebinaries.internal.DefaultSharedLibraryBinarySpec
+import org.gradle.nativebinaries.internal.DefaultStaticLibraryBinarySpec
 
 import javax.inject.Inject
 
@@ -139,7 +139,7 @@ class NdkPlugin implements Plugin<Project> {
             return []
         }
 
-        project.binaries.withType(ProjectSharedLibraryBinary).matching { binary ->
+        project.binaries.withType(DefaultSharedLibraryBinarySpec).matching { binary ->
             (binary.buildType.name.equals(variantConfig.getBuildType().getName())
                     && (binary.flavor.name.equals(variantConfig.getFlavorName())
                             || (binary.flavor.name.equals("default")
@@ -183,7 +183,7 @@ class NdkPlugin implements Plugin<Project> {
 
         project.libraries.getByName(ndkExtension.getModuleName()) {
             Iterable<Task> lifecycleTasks =
-                    binaries.withType(ProjectStaticLibraryBinary.class)*.getBuildTask()
+                    binaries.withType(DefaultStaticLibraryBinarySpec)*.getBuildTask()
             nonExecutableTask.dependsOn lifecycleTasks
             lifecycleTasks*.group = null
             lifecycleTasks*.enabled = false
