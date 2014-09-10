@@ -73,8 +73,7 @@ class NdkConfigurationAction implements Action<Project> {
             }
         }
         project.libraries.getByName(ndkExtension.getModuleName()) {
-            binaries.withType(DefaultSharedLibraryBinarySpec) {
-                    ProjectSharedLibraryBinary binary ->
+            binaries.withType(DefaultSharedLibraryBinarySpec) { DefaultSharedLibraryBinarySpec binary ->
                 sourceIfExist(binary, projectSourceSet, "mainC")
                 sourceIfExist(binary, projectSourceSet, "mainCpp")
 
@@ -145,7 +144,7 @@ class NdkConfigurationAction implements Action<Project> {
      * Add the sourceSet with the specified name to the binary if such sourceSet is defined.
      */
     private static void sourceIfExist(
-            ProjectSharedLibraryBinary binary,
+            DefaultSharedLibraryBinarySpec binary,
             FunctionalSourceSet projectSourceSet,
             String sourceSetName) {
         def sourceSet = projectSourceSet.findByName(sourceSetName)
