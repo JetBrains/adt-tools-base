@@ -36,11 +36,6 @@ public class ClassInstance extends Instance {
         return getValues().get(new Field(type, name));
     }
 
-    @Override
-    public final int getSize() {
-        return getClassObj().getInstanceSize();
-    }
-
     @NonNull
     public Map<Field, Object> getValues() {
         Map<Field, Object> result = new HashMap<Field, Object>();
