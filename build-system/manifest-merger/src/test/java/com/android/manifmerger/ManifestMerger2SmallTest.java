@@ -225,6 +225,11 @@ public class ManifestMerger2SmallTest extends TestCase {
         usesSdk = (Element) document.getXml().getElementsByTagName("uses-sdk").item(0);
         assertNotNull(usesSdk);
         assertEquals("14", usesSdk.getAttribute("android:targetSdkVersion"));
+
+        ManifestMerger2.SystemProperty.MAX_SDK_VERSION.addTo(mActionRecorder, document, "16");
+        usesSdk = (Element) document.getXml().getElementsByTagName("uses-sdk").item(0);
+        assertNotNull(usesSdk);
+        assertEquals("16", usesSdk.getAttribute("android:maxSdkVersion"));
     }
 
     public void testAddingSystemProperties_withDifferentPrefix()

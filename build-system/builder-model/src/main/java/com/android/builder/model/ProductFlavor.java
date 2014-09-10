@@ -86,6 +86,14 @@ public interface ProductFlavor extends BaseConfig {
     ApiVersion getTargetSdkVersion();
 
     /**
+     * Returns the maxSdkVersion. This is only the value set on this produce flavor.
+     *
+     * @return the maxSdkVersion, or null if not specified
+     */
+    @Nullable
+    Integer getMaxSdkVersion();
+
+    /**
      * Returns the renderscript target api. This is only the value set on this product flavor.
      * TODO: make final renderscript target api available through the model
      *

@@ -45,6 +45,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     private final String mName;
     private ApiVersion mMinSdkVersion = null;
     private ApiVersion mTargetSdkVersion = null;
+    private Integer mMaxSdkVersion = null;
     private int mRenderscriptTargetApi = -1;
     private Boolean mRenderscriptSupportMode;
     private Boolean mRenderscriptNdkMode;
@@ -152,6 +153,17 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     @Override
     public ApiVersion getTargetSdkVersion() {
         return mTargetSdkVersion;
+    }
+
+    @NonNull
+    public ProductFlavor setMaxSdkVersion(Integer maxSdkVersion) {
+        mMaxSdkVersion = maxSdkVersion;
+        return this;
+    }
+
+    @Override
+    public Integer getMaxSdkVersion() {
+        return mMaxSdkVersion;
     }
 
     @Override
@@ -304,6 +316,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 mMinSdkVersion != null ? mMinSdkVersion : base.mMinSdkVersion;
         flavor.mTargetSdkVersion =
                 mTargetSdkVersion != null ? mTargetSdkVersion : base.mTargetSdkVersion;
+        flavor.mMaxSdkVersion =
+                mMaxSdkVersion != null ? mMaxSdkVersion : base.mMaxSdkVersion;
         flavor.mRenderscriptTargetApi = chooseInt(mRenderscriptTargetApi,
                 base.mRenderscriptTargetApi);
         flavor.mRenderscriptSupportMode = chooseBoolean(mRenderscriptSupportMode,
