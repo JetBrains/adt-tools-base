@@ -16,7 +16,7 @@
 
 package com.android.ddmlib;
 
-import com.android.ddmlib.Device.SysFsBatteryLevelReceiver;
+import com.android.ddmlib.BatteryFetcher.SysFsBatteryLevelReceiver;
 
 import junit.framework.TestCase;
 

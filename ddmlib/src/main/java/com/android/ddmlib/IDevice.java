@@ -22,7 +22,9 @@ import com.android.ddmlib.log.LogReceiver;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  *  A Device. It can be a physical device or an emulator.
@@ -541,7 +543,9 @@ public interface IDevice extends IShellEnabledDevice {
      * battery level if 5 minutes have expired since the last successful query.
      *
      * @return the battery level or <code>null</code> if it could not be retrieved
+     * @deprecated use {@link #getBattery()}
      */
+    @Deprecated
     public Integer getBatteryLevel() throws TimeoutException,
             AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException;
 
@@ -554,8 +558,34 @@ public interface IDevice extends IShellEnabledDevice {
      * @param freshnessMs
      * @return the battery level or <code>null</code> if it could not be retrieved
      * @throws ShellCommandUnresponsiveException
+     * @deprecated use {@link #getBattery(long, TimeUnit))}
      */
+    @Deprecated
     public Integer getBatteryLevel(long freshnessMs) throws TimeoutException,
             AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException;
+
+    /**
+     * Return the device's battery level, from 0 to 100 percent.
+     * <p/>
+     * The battery level may be cached. Only queries the device for its
+     * battery level if 5 minutes have expired since the last successful query.
+     *
+     * @return a {@link Future} that can be used to query the battery level. The Future will return
+     * a {@link ExecutionException} if battery level could not be retrieved.
+     */
+    public @NonNull Future<Integer> getBattery();
+
+    /**
+     * Return the device's battery level, from 0 to 100 percent.
+     * <p/>
+     * The battery level may be cached. Only queries the device for its
+     * battery level if <code>freshnessTime</code> has expired since the last successful query.
+     *
+     * @param freshnessTime the desired recency of battery level
+     * @param timeUnit the {@link TimeUnit} of freshnessTime
+     * @return a {@link Future} that can be used to query the battery level. The Future will return
+     * a {@link ExecutionException} if battery level could not be retrieved.
+     */
+    public @NonNull Future<Integer> getBattery(long freshnessTime, @NonNull TimeUnit timeUnit);
 
 }
