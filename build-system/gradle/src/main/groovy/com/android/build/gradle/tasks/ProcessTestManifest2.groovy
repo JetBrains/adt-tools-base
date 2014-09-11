@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 package com.android.build.gradle.tasks
+
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
+
 /**
  * A task that processes the manifest
  */
 public class ProcessTestManifest2 extends ProcessTestManifest {
+
+    @InputFile
+    @Optional
+    File testManifestFile
+
+    File tmpDir
 
     @Override
     protected void doFullTaskAction() {
@@ -31,7 +41,9 @@ public class ProcessTestManifest2 extends ProcessTestManifest {
                 getInstrumentationRunner(),
                 getHandleProfiling(),
                 getFunctionalTest(),
+                getTestManifestFile(),
                 getLibraries(),
-                getManifestOutputFile())
+                getManifestOutputFile(),
+                getTmpDir())
     }
 }
