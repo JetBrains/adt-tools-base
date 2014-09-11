@@ -345,6 +345,53 @@ public class ManualBuildTest extends BuildTest {
                 null));
     }
 
+    public void testUserProvidedTestAndroidManifest() throws Exception {
+        File project = new File(testDir, "androidManifestInTest");
+
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+                project,
+                Collections.<String>emptyList(),
+                "clean", "assembleDebugTest");
+
+        File testApk = new File(project, "build/" + FD_OUTPUTS + "/apk/androidManifestInTest-debug-test-unaligned.apk");
+
+        File aapt = new File(sdkDir, "build-tools/19.1.0/aapt");
+
+        assertTrue("Test requires build-tools 19.1.0", aapt.isFile());
+
+        String[] command = new String[4];
+        command[0] = aapt.getPath();
+        command[1] = "l";
+        command[2] = "-a";
+        command[3] = testApk.getPath();
+
+        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
+
+        final List<String> aaptOutput = Lists.newArrayList();
+
+        commandLineRunner.runCmdLine(command, new CommandLineRunner.CommandLineOutput() {
+            @Override
+            public void out(@Nullable String line) {
+                if (line != null) {
+                    aaptOutput.add(line);
+                }
+            }
+            @Override
+            public void err(@Nullable String line) {
+                super.err(line);
+
+            }
+        }, null /*env vars*/);
+
+        System.out.println("Beginning dump");
+        for (String line : aaptOutput) {
+            if (line.contains("foo.permission-group.COST_MONEY")) {
+                return;
+            }
+        }
+        fail("Could not find user-specified permission group.");
+    }
+
     public void testDensitySplits() throws Exception {
         File project = new File(testDir, "densitySplit");
 
@@ -505,9 +552,9 @@ public class ManualBuildTest extends BuildTest {
     private void checkMaxSdkVersion(File testApk, String version)
             throws InterruptedException, LoggedErrorException, IOException {
 
-        File aapt = new File(sdkDir, "build-tools/20.0.0/aapt");
+        File aapt = new File(sdkDir, "build-tools/19.1.0/aapt");
 
-        assertTrue("Test requires build-tools 20.0.0", aapt.isFile());
+        assertTrue("Test requires build-tools 19.1.0", aapt.isFile());
 
         String[] command = new String[4];
         command[0] = aapt.getPath();

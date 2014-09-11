@@ -380,7 +380,7 @@ public class XmlDocument {
                                         + "%2$s declared in library %3$s",
                                 getTargetSdkVersion(),
                                 libraryTargetSdkVersion,
-                                lowerPriorityDocument.getSourceLocation().print(true)
+                                lowerPriorityDocument.getSourceLocation().print(false)
                         )
                 );
                 return;
@@ -398,7 +398,7 @@ public class XmlDocument {
                                         + "%2$s declared in library %3$s",
                                 getMinSdkVersion(),
                                 libraryMinSdkVersion,
-                                lowerPriorityDocument.getSourceLocation().print(true)
+                                lowerPriorityDocument.getSourceLocation().print(false)
                         )
                 );
                 return;
