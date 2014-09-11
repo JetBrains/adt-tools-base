@@ -18,7 +18,6 @@ package com.android.ddmlib;
 import com.android.ddmlib.PropertyFetcher.GetPropReceiver;
 
 import org.easymock.EasyMock;
-import org.easymock.IAnswer;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -49,7 +48,7 @@ public class PropertyFetcherTest {
     @Test
     public void getProperty() throws Exception {
         IDevice mockDevice = EasyMock.createMock(IDevice.class);
-        injectShellResponse(mockDevice, GETPROP_RESPONSE);
+        DeviceTest.injectShellResponse(mockDevice, GETPROP_RESPONSE);
         EasyMock.replay(mockDevice);
 
         PropertyFetcher fetcher = new PropertyFetcher(mockDevice);
@@ -75,8 +74,8 @@ public class PropertyFetcherTest {
     public void getProperty_volatile() throws Exception {
 
         IDevice mockDevice = EasyMock.createMock(IDevice.class);
-        injectShellResponse(mockDevice, "[dev.bootcomplete]: [0]\r\n");
-        injectShellResponse(mockDevice, "[dev.bootcomplete]: [1]\r\n");
+        DeviceTest.injectShellResponse(mockDevice, "[dev.bootcomplete]: [0]\r\n");
+        DeviceTest.injectShellResponse(mockDevice, "[dev.bootcomplete]: [1]\r\n");
         EasyMock.replay(mockDevice);
 
         PropertyFetcher fetcher = new PropertyFetcher(mockDevice);
@@ -92,36 +91,11 @@ public class PropertyFetcherTest {
     @Test
     public void getProperty_badResponse() throws Exception {
         IDevice mockDevice = EasyMock.createMock(IDevice.class);
-        injectShellResponse(mockDevice, "blargh");
+        DeviceTest.injectShellResponse(mockDevice, "blargh");
         EasyMock.replay(mockDevice);
 
         PropertyFetcher fetcher = new PropertyFetcher(mockDevice);
         Assert.assertNull(fetcher.getProperty("dev.bootcomplete").get());
-    }
-
-    /**
-     * Helper method to build a response to a executeShellCommand call
-     *
-     * @param expectedCommand the shell command to expect or null to skip verification of command
-     */
-    @SuppressWarnings("unchecked")
-    private void injectShellResponse(IDevice mockDevice, final String response) throws Exception {
-        IAnswer<Object> shellAnswer = new IAnswer<Object>() {
-            @Override
-            public Object answer() throws Throwable {
-                // insert small delay to simulate latency
-                Thread.sleep(50);
-                IShellOutputReceiver receiver =
-                    (IShellOutputReceiver)EasyMock.getCurrentArguments()[1];
-                byte[] inputData = response.getBytes();
-                receiver.addOutput(inputData, 0, inputData.length);
-                return null;
-            }
-        };
-        mockDevice.executeShellCommand(EasyMock.<String>anyObject(),
-                    EasyMock.<IShellOutputReceiver>anyObject(),
-                    EasyMock.anyLong(), EasyMock.<TimeUnit>anyObject());
-        EasyMock.expectLastCall().andAnswer(shellAnswer);
     }
 
     /**
@@ -131,7 +105,7 @@ public class PropertyFetcherTest {
     @Test
     public void getProperty_unknown() throws Exception {
         IDevice mockDevice = EasyMock.createMock(IDevice.class);
-        injectShellResponse(mockDevice, GETPROP_RESPONSE);
+        DeviceTest.injectShellResponse(mockDevice, GETPROP_RESPONSE);
         EasyMock.replay(mockDevice);
 
         PropertyFetcher fetcher = new PropertyFetcher(mockDevice);
