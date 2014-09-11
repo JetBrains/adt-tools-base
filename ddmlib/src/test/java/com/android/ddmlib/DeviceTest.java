@@ -18,9 +18,6 @@ package com.android.ddmlib;
 
 import junit.framework.TestCase;
 
-import org.easymock.EasyMock;
-import org.easymock.IAnswer;
-
 import java.util.concurrent.TimeUnit;
 
 public class DeviceTest extends TestCase {
@@ -40,30 +37,5 @@ public class DeviceTest extends TestCase {
         options = new ScreenRecorderOptions.Builder().setTimeLimit(4, TimeUnit.MINUTES).build();
         assertEquals("screenrecord --time-limit 180 /sdcard/1.mp4",
                 Device.getScreenRecorderCommand("/sdcard/1.mp4", options));
-    }
-
-    /**
-     * Helper method to build a response to a executeShellCommand call
-     *
-     * @param expectedCommand the shell command to expect or null to skip verification of command
-     */
-    @SuppressWarnings("unchecked")
-    static void injectShellResponse(IDevice mockDevice, final String response) throws Exception {
-        IAnswer<Object> shellAnswer = new IAnswer<Object>() {
-            @Override
-            public Object answer() throws Throwable {
-                // insert small delay to simulate latency
-                Thread.sleep(50);
-                IShellOutputReceiver receiver =
-                    (IShellOutputReceiver)EasyMock.getCurrentArguments()[1];
-                byte[] inputData = response.getBytes();
-                receiver.addOutput(inputData, 0, inputData.length);
-                return null;
-            }
-        };
-        mockDevice.executeShellCommand(EasyMock.<String>anyObject(),
-                    EasyMock.<IShellOutputReceiver>anyObject(),
-                    EasyMock.anyLong(), EasyMock.<TimeUnit>anyObject());
-        EasyMock.expectLastCall().andAnswer(shellAnswer);
     }
 }
