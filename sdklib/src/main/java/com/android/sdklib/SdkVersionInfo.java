@@ -35,6 +35,12 @@ public class SdkVersionInfo {
      */
     public static final int HIGHEST_KNOWN_STABLE_API = 20;
 
+   /**
+    * The lowest active API level in the ecosystem. This number will change over time
+    * as the distribution of older platforms decreases.
+    */
+    public static final int LOWEST_ACTIVE_API = 8;
+
     /**
      * Returns the Android version and code name of the given API level, or null
      * if not known. The highest number (inclusive) that is supported
