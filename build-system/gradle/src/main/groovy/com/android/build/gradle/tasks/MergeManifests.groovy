@@ -64,6 +64,9 @@ public class MergeManifests extends ManifestProcessorTask {
     @Input @Optional
     String targetSdkVersion
 
+    @Input @Optional
+    Integer maxSdkVersion
+
     /**
      * Return a serializable version of our map of key value pairs for placeholder substitution.
      * This serialized form is only used by gradle to compare past and present tasks to determine
@@ -109,6 +112,7 @@ public class MergeManifests extends ManifestProcessorTask {
                 getVersionName(),
                 getMinSdkVersion(),
                 getTargetSdkVersion(),
+                getMaxSdkVersion(),
                 getManifestOutputFile().absolutePath,
                 ManifestMerger2.MergeType.APPLICATION,
                 variantConfiguration.getManifestPlaceholders())
