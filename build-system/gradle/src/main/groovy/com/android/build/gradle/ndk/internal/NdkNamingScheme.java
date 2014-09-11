@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.ndk.internal;
 
-import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
 import com.google.common.base.Joiner;
 
