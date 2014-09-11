@@ -51,6 +51,7 @@ import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.tools.lint.client.api.IssueRegistry;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
@@ -108,6 +109,7 @@ import lombok.ast.AnnotationValue;
 import lombok.ast.AstVisitor;
 import lombok.ast.BinaryExpression;
 import lombok.ast.Case;
+import lombok.ast.Catch;
 import lombok.ast.ClassDeclaration;
 import lombok.ast.ConstructorDeclaration;
 import lombok.ast.ConstructorInvocation;
@@ -1654,6 +1656,36 @@ public class ApiDetector extends ResourceXmlDetector
                         LintDriver driver = mContext.getDriver();
                         if (!driver.isSuppressed(mContext, UNSUPPORTED, node)) {
                             mContext.report(UNSUPPORTED, location, message, null);
+                        }
+                    }
+                } else {
+                    // Special case: check types of catch block variables; these apparently
+                    // need to be available at runtime even if there are no explicit calls
+                    for (Catch c : node.astCatches()) {
+                        VariableDefinition variableDefinition = c.astExceptionDeclaration();
+                        TypeReference typeReference = variableDefinition.astTypeReference();
+                        String fqcn = null;
+                        JavaParser.ResolvedNode resolved = mContext.resolve(typeReference);
+                        if (resolved != null) {
+                            fqcn = resolved.getSignature();
+                        } else if (typeReference.getTypeName().equals(
+                                "ReflectiveOperationException")) {
+                            fqcn = "java.lang.ReflectiveOperationException";
+                        }
+                        if (fqcn != null) {
+                            String owner = getInternalName(fqcn);
+                            int api = mApiDatabase.getClassVersion(owner);
+                            int minSdk = getMinSdk(mContext);
+                            if (api > minSdk && api > getLocalMinSdk(typeReference)) {
+                                Location location = mContext.getLocation(typeReference);
+                                String message = String.format(
+                                    "Class requires API level %1$d (current min is %2$d): %3$s",
+                                    api, minSdk, fqcn);
+                                LintDriver driver = mContext.getDriver();
+                                if (!driver.isSuppressed(mContext, UNSUPPORTED, typeReference)) {
+                                    mContext.report(UNSUPPORTED, location, message, null);
+                                }
+                            }
                         }
                     }
                 }

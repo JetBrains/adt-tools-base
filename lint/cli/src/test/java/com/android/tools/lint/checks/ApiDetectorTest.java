@@ -1065,6 +1065,30 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testReflectiveOperationException() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/Java7API.java:8: Error: Class requires API level 19 (current min is 1): java.lang.ReflectiveOperationException [NewApi]\n"
+                + "        } catch (ReflectiveOperationException e) {\n"
+                + "                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/Java7API.java:9: Error: Call requires API level 19 (current min is 1): java.lang.ReflectiveOperationException#printStackTrace [NewApi]\n"
+                + "            e.printStackTrace();\n"
+                + "              ~~~~~~~~~~~~~~~\n"
+                + "2 errors, 0 warnings\n",
+                lintProject(
+                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "src/test/pkg/Java7API.java.txt=>src/test/pkg/Java7API.java",
+                        "src/test/pkg/Java7API.class.data=>bin/classes/test/pkg/Java7API.class"
+                ));
+    }
+
+    public void testReflectiveOperationExceptionOk() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        "apicheck/minsdk19.xml=>AndroidManifest.xml",
+                        "src/test/pkg/Java7API.java.txt=>src/test/pkg/Java7API.java"
+                ));
+    }
+
     public void testMissingApiDatabase() throws Exception {
         ApiLookup.dispose();
         assertEquals(""
