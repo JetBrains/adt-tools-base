@@ -32,5 +32,10 @@ public interface AaptOptions {
      */
     Collection<String> getNoCompress();
 
+    /**
+     * passes the --error-on-missing-config-entry parameter to the appt command, by default false.
+     */
+    boolean getFailOnMissingConfigEntry();
+
     boolean getUseAaptPngCruncher();
 }
