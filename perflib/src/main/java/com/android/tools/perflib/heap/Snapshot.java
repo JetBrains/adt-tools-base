@@ -19,12 +19,13 @@ package com.android.tools.perflib.heap;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.perflib.heap.analysis.Dominators;
+import com.android.tools.perflib.heap.analysis.TopologicalSort;
 import com.android.tools.perflib.heap.io.HprofBuffer;
-import com.google.common.collect.Iterables;
+import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
+import java.util.List;
 
 /*
  * A snapshot of all of the heaps, and related meta-data, for the runtime at a given instant.
@@ -51,7 +52,9 @@ public class Snapshot {
     @NonNull
     Heap mCurrentHeap;
 
-    private Map<Instance, Instance> mDominatorMap;
+    private ImmutableList<Instance> mTopSort;
+
+    private Dominators mDominators;
 
     public Snapshot(@NonNull HprofBuffer buffer) {
         mBuffer = buffer;
@@ -76,6 +79,10 @@ public class Snapshot {
         mCurrentHeap = heap;
 
         return mCurrentHeap;
+    }
+
+    public int getHeapIndex(@NonNull Heap heap) {
+        return mHeaps.indexOf(heap);
     }
 
     @Nullable
@@ -221,37 +228,33 @@ public class Snapshot {
                 ClassObj classObj = instance.getClassObj();
                 if (classObj != null) {
                     classObj.addInstance(instance);
+                    // Now is a good time to set the size of this instance
+                    if (instance instanceof ClassInstance) {
+                        instance.setSize(classObj.getInstanceSize());
+                    }
                 }
             }
         }
     }
 
-    public Map<Instance, Instance> computeDominatorMap() {
-        if (mDominatorMap == null) {
-            mDominatorMap = Dominators.getDominatorMap(this);
+    // TODO: Break dominator computation into fixed chunks, because it can be unbounded/expensive.
+    public void computeDominators() {
+        if (mDominators == null) {
+            mTopSort = TopologicalSort.compute(getGCRoots());
+            mDominators = new Dominators(this, mTopSort);
+            mDominators.computeRetainedSizes();
         }
-        return mDominatorMap;
     }
 
-    /**
-     * Kicks off the computation of dominators and retained sizes.
-     */
-    public void computeRetainedSizes() {
-        // Initialize retained sizes for all classes and objects, including unreachable ones.
-        for (Heap heap : mHeaps) {
-            for (Instance instance : Iterables.concat(heap.getClasses(), heap.getInstances())) {
-                instance.setRetainedSize(instance.mHeap, instance.getSize());
+    @NonNull
+    public List<Instance> getReachableInstances() {
+        List<Instance> result = new ArrayList<Instance>(mTopSort.size());
+        for (Instance node : mTopSort) {
+            if (node.getImmediateDominator() != null) {
+                result.add(node);
             }
         }
-        computeDominatorMap();
-        for (Instance node : mDominatorMap.keySet()) {
-            // Add the size of the current node to the retained size of every dominator up to the
-            // root, in the same heap.
-            for (Instance dom = mDominatorMap.get(node); dom != SENTINEL_ROOT;
-                    dom = mDominatorMap.get(dom)) {
-                dom.setRetainedSize(node.mHeap, dom.getRetainedSize(node.mHeap) + node.getSize());
-            }
-        }
+        return result;
     }
 
     public final void dumpInstanceCounts() {

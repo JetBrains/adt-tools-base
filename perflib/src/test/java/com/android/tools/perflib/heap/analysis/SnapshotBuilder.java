@@ -57,13 +57,13 @@ public class SnapshotBuilder {
         mNodes = new ClassInstance[numNodes + 1];
         for (int i = 1; i <= numNodes; i++) {
             ClassObj clazz = new ClassObj(100 + i, null, "Class" + i, 0);
-            clazz.setInstanceSize(i);
             clazz.setFields(new Field[0]);
             mSnapshot.addClass(100 + i, clazz);
 
             mOffsets[i] = 2 * (i - 1) * numNodes;
             mNodes[i] = new ClassInstance(i, null, mOffsets[i]);
             mNodes[i].setClassId(100 + i);
+            mNodes[i].setSize(i);
             mSnapshot.addInstance(i, mNodes[i]);
         }
     }

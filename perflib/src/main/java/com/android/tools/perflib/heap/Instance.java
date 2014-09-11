@@ -19,12 +19,12 @@ package com.android.tools.perflib.heap;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.perflib.heap.io.HprofBuffer;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedBytes;
 
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 public abstract class Instance {
@@ -44,10 +44,18 @@ public abstract class Instance {
     //  The size of this object
     int mSize;
 
+    //  Another identifier for this Instance, that we computed during the analysis phase.
+    int mTopologicalOrder;
+
+    //  The immediate dominator of this instance, or null if not reachable from any GC roots.
+    @Nullable
+    private Instance mImmediateDominator;
+
     //  The retained size of this object, indexed by heap (default, image, app, zygote).
     //  Intuitively, this represents the amount of memory that could be reclaimed in each heap if
     //  the instance were removed.
-    private final Map<Heap, Long> mRetainedSizes = Maps.newHashMap();
+    //  To save space, we only keep a primitive array here following the order in mSnapshot.mHeaps.
+    private long[] mRetainedSizes;
 
     //  List of all objects that hold a live reference to this object
     private final ArrayList<Instance> mReferences = new ArrayList<Instance>();
@@ -95,13 +103,43 @@ public abstract class Instance {
         mHeap = heap;
     }
 
-    public void setRetainedSize(Heap heap, long size) {
-        mRetainedSizes.put(heap, size);
+    public Heap getHeap() {
+        return mHeap;
     }
 
-    public long getRetainedSize(Heap heap) {
-        Long result = mRetainedSizes.get(heap);
-        return result == null ? 0L : result;
+    public int getTopologicalOrder() {
+        return mTopologicalOrder;
+    }
+
+    public void setTopologicalOrder(int topologicalOrder) {
+        mTopologicalOrder = topologicalOrder;
+    }
+
+    @Nullable
+    public Instance getImmediateDominator() {
+        return mImmediateDominator;
+    }
+
+    public void setImmediateDominator(@NonNull Instance dominator) {
+        mImmediateDominator = dominator;
+    }
+
+    public void resetRetainedSize() {
+        List<Heap> allHeaps = mHeap.mSnapshot.mHeaps;
+        if (mRetainedSizes == null) {
+            mRetainedSizes = new long[allHeaps.size()];
+        } else {
+            Arrays.fill(mRetainedSizes, 0);
+        }
+        mRetainedSizes[allHeaps.indexOf(mHeap)] = getSize();
+    }
+
+    public void addRetainedSize(int heapIndex, long size) {
+        mRetainedSizes[heapIndex] += size;
+    }
+
+    public long getRetainedSize(int heapIndex) {
+        return mRetainedSizes[heapIndex];
     }
 
     //  Add to the list of objects that have a hard reference to this Instance
