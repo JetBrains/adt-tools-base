@@ -404,6 +404,10 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
             case REMOVED:
                 F dataFile = mDataFileMap.get(changedFile);
 
+                if (dataFile == null) {
+                    return false;
+                }
+
                 // flag all resource items are removed
                 for (I dataItem : dataFile.getItems()) {
                     dataItem.setRemoved();
