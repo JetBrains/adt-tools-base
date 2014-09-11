@@ -630,6 +630,14 @@ public abstract class BasePlugin {
                 return mergedFlavor.targetSdkVersion?.apiString
             }
 
+            processManifestTask.conventionMapping.maxSdkVersion = {
+                if (androidBuilder.isPreviewTarget()) {
+                    return null
+                }
+
+                return mergedFlavor.maxSdkVersion
+            }
+
             processManifestTask.conventionMapping.manifestOutputFile = {
                 project.file(
                         "$project.buildDir/${FD_INTERMEDIATES}/manifests/full/" +
@@ -699,6 +707,14 @@ public abstract class BasePlugin {
             }
 
             return mergedFlavor.targetSdkVersion?.apiString
+        }
+
+        processManifest.conventionMapping.maxSdkVersion = {
+            if (androidBuilder.isPreviewTarget()) {
+                return null
+            }
+
+            return mergedFlavor.maxSdkVersion
         }
 
         processManifest.conventionMapping.manifestOutputFile = {

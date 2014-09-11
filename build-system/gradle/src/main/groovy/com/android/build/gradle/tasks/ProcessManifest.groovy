@@ -35,6 +35,9 @@ class ProcessManifest extends ManifestProcessorTask {
     @Input @Optional
     String targetSdkVersion
 
+    @Input @Optional
+    Integer maxSdkVersion
+
     VariantConfiguration variantConfiguration
 
     @InputFile
@@ -84,6 +87,7 @@ class ProcessManifest extends ManifestProcessorTask {
                 getVersionName(),
                 getMinSdkVersion(),
                 getTargetSdkVersion(),
+                getMaxSdkVersion(),
                 getManifestOutputFile().absolutePath,
                 ManifestMerger2.MergeType.LIBRARY,
                 variantConfiguration.getManifestPlaceholders())

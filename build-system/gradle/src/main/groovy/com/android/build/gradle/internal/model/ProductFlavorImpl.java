@@ -43,6 +43,7 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
     private String name = null;
     private ApiVersion mMinSdkVersion = null;
     private ApiVersion mTargetSdkVersion = null;
+    private Integer mMaxSdkVersion = null;
     private int mRenderscriptTargetApi = -1;
     private boolean mRenderscriptSupportMode = false;
     private boolean mRenderscriptNdkMode = false;
@@ -64,12 +65,15 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
         ProductFlavorImpl clonedFlavor = new ProductFlavorImpl();
         clonedFlavor.name = productFlavor.getName();
 
-        clonedFlavor.mMinSdkVersion = minSdkVersionOverride != null ?
-                minSdkVersionOverride :
-                ApiVersionImpl.clone(productFlavor.getMinSdkVersion());
-        clonedFlavor.mTargetSdkVersion = targetSdkVersionOverride != null ?
-                targetSdkVersionOverride :
-                ApiVersionImpl.clone(productFlavor.getTargetSdkVersion());
+        clonedFlavor.mMinSdkVersion = minSdkVersionOverride != null
+                ? minSdkVersionOverride
+                : ApiVersionImpl.clone(productFlavor.getMinSdkVersion());
+        clonedFlavor.mTargetSdkVersion = targetSdkVersionOverride != null
+                ? targetSdkVersionOverride
+                : ApiVersionImpl.clone(productFlavor.getTargetSdkVersion());
+        clonedFlavor.mMaxSdkVersion = targetSdkVersionOverride != null
+                ? null /* we remove the maxSdkVersion when dealing with a preview release */
+                : productFlavor.getMaxSdkVersion();
         clonedFlavor.mRenderscriptTargetApi = productFlavor.getRenderscriptTargetApi();
         clonedFlavor.mRenderscriptSupportMode = productFlavor.getRenderscriptSupportMode();
         clonedFlavor.mRenderscriptNdkMode = productFlavor.getRenderscriptNdkMode();
@@ -130,6 +134,10 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
     public ApiVersion getTargetSdkVersion() {
         return mTargetSdkVersion;
     }
+
+    @Override
+    @Nullable
+    public Integer getMaxSdkVersion() { return mMaxSdkVersion; }
 
     @Override
     public int getRenderscriptTargetApi() {

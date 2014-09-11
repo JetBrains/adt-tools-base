@@ -480,6 +480,60 @@ public class ManualBuildTest extends BuildTest {
                 String>singletonMap("META-INF/CERT.RSA", null));
     }
 
+    public void testMaxSdkVersion() throws Exception {
+        File project = new File(testDir, "maxSdkVersion");
+
+        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+                project,
+                Collections.<String>emptyList(),
+                "clean", "assembleDebug");
+        checkMaxSdkVersion(
+                new File(project, "build/" + FD_OUTPUTS + "/apk/maxSdkVersion-f1-debug.apk"), "21");
+        checkMaxSdkVersion(
+                new File(project, "build/" + FD_OUTPUTS + "/apk/maxSdkVersion-f2-debug.apk"), "19");
+    }
+
+    private void checkMaxSdkVersion(File testApk, String version)
+            throws InterruptedException, LoggedErrorException, IOException {
+
+        File aapt = new File(sdkDir, "build-tools/20.0.0/aapt");
+
+        assertTrue("Test requires build-tools 20.0.0", aapt.isFile());
+
+        String[] command = new String[4];
+        command[0] = aapt.getPath();
+        command[1] = "dump";
+        command[2] = "badging";
+        command[3] = testApk.getPath();
+
+        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
+
+        final List<String> aaptOutput = Lists.newArrayList();
+
+        commandLineRunner.runCmdLine(command, new CommandLineRunner.CommandLineOutput() {
+            @Override
+            public void out(@Nullable String line) {
+                if (line != null) {
+                    aaptOutput.add(line);
+                }
+            }
+            @Override
+            public void err(@Nullable String line) {
+                super.err(line);
+
+            }
+        }, null /*env vars*/);
+
+        System.out.println("Beginning dump");
+        for (String line : aaptOutput) {
+            if (line.equals("maxSdkVersion:'" + version + "'")) {
+                return;
+            }
+        }
+        fail("Could not find uses-sdk:maxSdkVersion set to " + version + " in apk dump");
+    }
+
+
 
     private static void checkImageColor(File folder, String fileName, int expectedColor)
             throws IOException {

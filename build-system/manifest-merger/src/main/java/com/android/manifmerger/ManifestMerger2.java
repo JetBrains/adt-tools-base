@@ -456,6 +456,16 @@ public class ManifestMerger2 {
                 addToElementInAndroidNS(this, actionRecorder, value,
                         createOrGetUseSdk(actionRecorder, document));
             }
+        },
+
+        MAX_SDK_VERSION {
+            @Override
+            public void addTo(@NonNull ActionRecorder actionRecorder,
+                    @NonNull XmlDocument document,
+                    @NonNull String value) {
+                addToElementInAndroidNS(this, actionRecorder, value,
+                        createOrGetUseSdk(actionRecorder, document));
+            }
         };
 
         public String toCamelCase() {
