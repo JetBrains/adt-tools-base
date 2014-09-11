@@ -30,6 +30,9 @@ public class AaptOptionsImpl implements AaptOptions {
     @Input
     private boolean useAaptPngCruncher = true;
 
+    @Input
+    private boolean failOnMissingConfigEntry = false;
+
     public void setIgnoreAssetsPattern(String ignoreAssetsPattern) {
         this.ignoreAssetsPattern = ignoreAssetsPattern
     }
@@ -63,6 +66,19 @@ public class AaptOptionsImpl implements AaptOptions {
     @Override
     public boolean getUseAaptPngCruncher() {
         return useAaptPngCruncher;
+    }
+
+    public void failOnMissingConfigEntry(boolean value) {
+        failOnMissingConfigEntry = value;
+    }
+
+    public void setFailOnMissingConfigEntry(boolean value) {
+        failOnMissingConfigEntry = value;
+    }
+
+    @Override
+    public boolean getFailOnMissingConfigEntry() {
+        return failOnMissingConfigEntry;
     }
 
     // -- DSL Methods. TODO remove once the instantiator does what I expect it to do.
