@@ -33,5 +33,5 @@ class JacocoExtension {
     /**
      * The version of jacoco to use.
      */
-    String version = '0.6.2.201302030002'
+    String version = '0.7.1.201405082137'
 }
