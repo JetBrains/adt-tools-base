@@ -17,6 +17,7 @@
 package com.android.ddmlib;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.ddmlib.log.LogReceiver;
@@ -46,6 +47,7 @@ import java.util.regex.Pattern;
  */
 final class Device implements IDevice {
     private static final int INSTALL_TIMEOUT = 2*60*1000; //2min
+    private static final int BATTERY_TIMEOUT = 2*1000; //2 seconds
 
     /** Emulator Serial Number regexp. */
     static final String RE_EMULATOR_SN = "emulator-(\\d+)"; //$NON-NLS-1$
@@ -62,8 +64,6 @@ final class Device implements IDevice {
     /** Device properties. */
     private final PropertyFetcher mPropFetcher = new PropertyFetcher(this);
     private final Map<String, String> mMountPoints = new HashMap<String, String>();
-
-    private final BatteryFetcher mBatteryFetcher = new BatteryFetcher(this);
 
     @GuardedBy("mClients")
     private final List<Client> mClients = new ArrayList<Client>();
@@ -136,6 +136,101 @@ final class Device implements IDevice {
 
         public String getErrorMessage() {
             return mErrorMessage;
+        }
+    }
+
+    /**
+     * Output receiver for "dumpsys battery" command line.
+     */
+    private static final class BatteryReceiver extends MultiLineReceiver {
+        private static final Pattern BATTERY_LEVEL = Pattern.compile("\\s*level: (\\d+)");
+        private static final Pattern SCALE = Pattern.compile("\\s*scale: (\\d+)");
+
+        private Integer mBatteryLevel = null;
+        private Integer mBatteryScale = null;
+
+        /**
+         * Get the parsed percent battery level.
+         * @return
+         */
+        public Integer getBatteryLevel() {
+            if (mBatteryLevel != null && mBatteryScale != null) {
+                return (mBatteryLevel * 100) / mBatteryScale;
+            }
+            return null;
+        }
+
+        @Override
+        public void processNewLines(String[] lines) {
+            for (String line : lines) {
+                Matcher batteryMatch = BATTERY_LEVEL.matcher(line);
+                if (batteryMatch.matches()) {
+                    try {
+                        mBatteryLevel = Integer.parseInt(batteryMatch.group(1));
+                    } catch (NumberFormatException e) {
+                        Log.w(LOG_TAG, String.format("Failed to parse %s as an integer",
+                                batteryMatch.group(1)));
+                    }
+                }
+                Matcher scaleMatch = SCALE.matcher(line);
+                if (scaleMatch.matches()) {
+                    try {
+                        mBatteryScale = Integer.parseInt(scaleMatch.group(1));
+                    } catch (NumberFormatException e) {
+                        Log.w(LOG_TAG, String.format("Failed to parse %s as an integer",
+                                batteryMatch.group(1)));
+                    }
+                }
+            }
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+    }
+
+    /**
+     * Output receiver for "cat /sys/class/power_supply/.../capacity" command line.
+     */
+    static final class SysFsBatteryLevelReceiver extends MultiLineReceiver {
+
+        private static final Pattern BATTERY_LEVEL = Pattern.compile("^(\\d+)[.\\s]*");
+        private Integer mBatteryLevel = null;
+
+        /**
+         * Get the parsed battery level.
+         * @return battery level or <code>null</code> if it cannot be determined
+         */
+        @Nullable
+        public Integer getBatteryLevel() {
+            return mBatteryLevel;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+
+        @Override
+        public void processNewLines(String[] lines) {
+            for (String line : lines) {
+                Matcher batteryMatch = BATTERY_LEVEL.matcher(line);
+                if (batteryMatch.matches()) {
+                    if (mBatteryLevel == null) {
+                        mBatteryLevel = Integer.parseInt(batteryMatch.group(1));
+                    } else {
+                        // multiple matches, check if they are different
+                        Integer tmpLevel = Integer.parseInt(batteryMatch.group(1));
+                        if (!mBatteryLevel.equals(tmpLevel)) {
+                            Log.w(LOG_TAG, String.format(
+                                    "Multiple lines matched with different value; " +
+                                    "Original: %s, Current: %s (keeping original)",
+                                    mBatteryLevel.toString(), tmpLevel.toString()));
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -952,23 +1047,25 @@ final class Device implements IDevice {
     @Override
     public Integer getBatteryLevel(long freshnessMs) throws TimeoutException,
             AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException {
-        Future<Integer> futureBattery = getBattery(freshnessMs, TimeUnit.MILLISECONDS);
-        try {
-            return futureBattery.get();
-        } catch (InterruptedException e) {
-            return null;
-        } catch (ExecutionException e) {
-            return null;
+        if (mLastBatteryLevel != null
+                && mLastBatteryCheckTime > (System.currentTimeMillis() - freshnessMs)) {
+            return mLastBatteryLevel;
         }
-    }
 
-    @Override
-    public @NonNull Future<Integer> getBattery() {
-        return getBattery(5, TimeUnit.MINUTES);
-    }
-
-    @Override
-    public @NonNull Future<Integer> getBattery(long freshnessTime, TimeUnit timeUnit) {
-        return mBatteryFetcher.getBattery(freshnessTime, timeUnit);
+        // first try to get it from sysfs
+        SysFsBatteryLevelReceiver sysBattReceiver = new SysFsBatteryLevelReceiver();
+        executeShellCommand("cat /sys/class/power_supply/*/capacity",
+                sysBattReceiver, BATTERY_TIMEOUT);
+        mLastBatteryLevel = sysBattReceiver.getBatteryLevel();
+        if (mLastBatteryLevel != null) {
+            mLastBatteryCheckTime = System.currentTimeMillis();
+            return mLastBatteryLevel;
+        }
+        // now try dumpsys
+        BatteryReceiver receiver = new BatteryReceiver();
+        executeShellCommand("dumpsys battery", receiver, BATTERY_TIMEOUT);
+        mLastBatteryLevel = receiver.getBatteryLevel();
+        mLastBatteryCheckTime = System.currentTimeMillis();
+        return mLastBatteryLevel;
     }
 }
