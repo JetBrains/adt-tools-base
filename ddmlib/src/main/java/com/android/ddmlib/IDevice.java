@@ -22,6 +22,7 @@ import com.android.ddmlib.log.LogReceiver;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 /**
  *  A Device. It can be a physical device or an emulator.
@@ -150,23 +151,29 @@ public interface IDevice extends IShellEnabledDevice {
     public DeviceState getState();
 
     /**
-     * Returns the device properties. It contains the whole output of 'getprop'
+     * Returns the cached device properties. It contains the whole output of 'getprop'
+     *
+     * @deprecated use {@link #getSystemProperty(String)} instead
      */
+    @Deprecated
     public Map<String, String> getProperties();
 
     /**
      * Returns the number of property for this device.
+     *
+     * @deprecated implementation detail
      */
+    @Deprecated
     public int getPropertyCount();
 
     /**
-     * Returns the cached property value.
+     * Convenience method that attempts to retrieve a property via
+     * {@link #getSystemProperty(String)} with minimal wait time, and swallows exceptions.
      *
      * @param name the name of the value to return.
-     * @return the value or <code>null</code> if the property does not exist or has not yet been
-     * cached.
+     * @return the value or <code>null</code> if the property value was not immediately available
      */
-    public String getProperty(String name);
+    public @Nullable String getProperty(@NonNull String name);
 
     /**
      * Returns <code>true></code> if properties have been cached
@@ -176,6 +183,7 @@ public interface IDevice extends IShellEnabledDevice {
     /**
      * A variant of {@link #getProperty(String)} that will attempt to retrieve the given
      * property from device directly, without using cache.
+     * This method should (only) be used for any volatile properties.
      *
      * @param name the name of the value to return.
      * @return the value or <code>null</code> if the property does not exist
@@ -184,14 +192,16 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws ShellCommandUnresponsiveException in case the shell command doesn't send output for a
      *             given time.
      * @throws IOException in case of I/O error on the connection.
+     * @deprecated use {@link #getSystemProperty(String)}
      */
+    @Deprecated
     public String getPropertySync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException;
 
     /**
      * A combination of {@link #getProperty(String)} and {@link #getPropertySync(String)} that
-     * will attempt to retrieve the property from cache if available, and if not, will query the
-     * device directly.
+     * will attempt to retrieve the property from cache. If not found, will synchronously
+     * attempt to query device directly and repopulate the cache if successful.
      *
      * @param name the name of the value to return.
      * @return the value or <code>null</code> if the property does not exist
@@ -200,9 +210,20 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws ShellCommandUnresponsiveException in case the shell command doesn't send output for a
      *             given time.
      * @throws IOException in case of I/O error on the connection.
+     * @deprecated use {@link #getSystemProperty(String)} instead
      */
+    @Deprecated
     public String getPropertyCacheOrSync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException;
+
+    /**
+     * Do a potential asynchronous query for a system property.
+     *
+     * @param name the name of the value to return.
+     * @return a {@link Future} which can be used to retrieve value of property. Future#get() can
+     *         return null if property can not be retrieved.
+     */
+    public @NonNull Future<String> getSystemProperty(@NonNull String name);
 
     /** Returns whether this device supports the given software feature. */
     boolean supportsFeature(@NonNull Feature feature);

@@ -36,6 +36,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * A Device monitor. This connects to the Android Debug Bridge and get device and
@@ -443,9 +445,7 @@ final class DeviceMonitor {
     private void queryNewDeviceForInfo(Device device) {
         // TODO: do this in a separate thread.
         try {
-            // first get the list of properties.
-            device.executeShellCommand(GetPropReceiver.GETPROP_COMMAND,
-                    new GetPropReceiver(device));
+            queryProperties(device);
 
             queryNewDeviceForMountingPoint(device, IDevice.MNT_EXTERNAL_STORAGE);
             queryNewDeviceForMountingPoint(device, IDevice.MNT_DATA);
@@ -478,7 +478,22 @@ final class DeviceMonitor {
             Log.w("DeviceMonitor", String.format(
                     "IO Error getting info for device %s",
                     device.getSerialNumber()));
+        } catch (InterruptedException e) {
+            Log.w("DeviceMonitor", String.format(
+                    "Interrupted getting info for device %s",
+                    device.getSerialNumber()));
+        } catch (ExecutionException e) {
+            Log.w("DeviceMonitor", String.format(
+                    "ExecutionException getting info for device %s",
+                    device.getSerialNumber()));
         }
+    }
+
+    private void queryProperties(Device device) throws InterruptedException, ExecutionException {
+        // first attempt to populate the list of properties by querying arbitrary prop
+        // TODO: consider removing this call and just let properties be loaded on demand
+        Future<String> prop = device.getSystemProperty("ro.build.id");
+        prop.get();
     }
 
     private void queryNewDeviceForMountingPoint(final Device device, final String name)
