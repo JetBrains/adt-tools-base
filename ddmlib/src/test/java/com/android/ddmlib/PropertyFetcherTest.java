@@ -17,16 +17,16 @@ package com.android.ddmlib;
 
 import com.android.ddmlib.PropertyFetcher.GetPropReceiver;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
-import org.junit.Assert;
-import org.junit.Test;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class PropertyFetcherTest {
+public class PropertyFetcherTest extends TestCase {
 
     final static String GETPROP_RESPONSE =
             "[ro.sf.lcd_density]: [480]\r\n" +
@@ -35,20 +35,18 @@ public class PropertyFetcherTest {
     /**
      * Simple test to ensure parsing result of 'shell getprop' works as expected
      */
-    @Test
     public void testGetPropReceiver() {
         GetPropReceiver receiver = new GetPropReceiver();
         byte[] byteData = GETPROP_RESPONSE.getBytes();
         receiver.addOutput(byteData, 0, byteData.length);
-        Assert.assertEquals("480", receiver.getCollectedProperties().get("ro.sf.lcd_density"));
+        assertEquals("480", receiver.getCollectedProperties().get("ro.sf.lcd_density"));
     }
 
     /**
      * Test that getProperty works as expected when queries made in different states
      * @throws Exception
      */
-    @Test
-    public void getProperty() throws Exception {
+    public void testGetProperty() throws Exception {
         IDevice mockDevice = EasyMock.createMock(IDevice.class);
         injectShellResponse(mockDevice, GETPROP_RESPONSE);
         EasyMock.replay(mockDevice);
@@ -59,10 +57,10 @@ public class PropertyFetcherTest {
         // do query in fetching state
         Future<String> fetchingFuture = fetcher.getProperty("ro.secure");
 
-        Assert.assertEquals("480", unpopulatedFuture.get());
+        assertEquals("480", unpopulatedFuture.get());
         // do queries with short timeout to ensure props already available
-        Assert.assertEquals("1", fetchingFuture.get(1, TimeUnit.MILLISECONDS));
-        Assert.assertEquals("480", fetcher.getProperty("ro.sf.lcd_density").get(1,
+        assertEquals("1", fetchingFuture.get(1, TimeUnit.MILLISECONDS));
+        assertEquals("480", fetcher.getProperty("ro.sf.lcd_density").get(1,
                 TimeUnit.MILLISECONDS));
     }
 
@@ -72,8 +70,7 @@ public class PropertyFetcherTest {
      *
      * @throws Exception
      */
-    @Test
-    public void getProperty_volatile() throws Exception {
+    public void testGetProperty_volatile() throws Exception {
 
         IDevice mockDevice = EasyMock.createMock(IDevice.class);
         injectShellResponse(mockDevice, "[dev.bootcomplete]: [0]\r\n");
@@ -81,8 +78,8 @@ public class PropertyFetcherTest {
         EasyMock.replay(mockDevice);
 
         PropertyFetcher fetcher = new PropertyFetcher(mockDevice);
-        Assert.assertEquals("0", fetcher.getProperty("dev.bootcomplete").get());
-        Assert.assertEquals("1", fetcher.getProperty("dev.bootcomplete").get());
+        assertEquals("0", fetcher.getProperty("dev.bootcomplete").get());
+        assertEquals("1", fetcher.getProperty("dev.bootcomplete").get());
     }
 
     /**
@@ -90,14 +87,13 @@ public class PropertyFetcherTest {
      *
      * @throws Exception
      */
-    @Test
-    public void getProperty_badResponse() throws Exception {
+    public void testGetProperty_badResponse() throws Exception {
         IDevice mockDevice = EasyMock.createMock(IDevice.class);
         injectShellResponse(mockDevice, "blargh");
         EasyMock.replay(mockDevice);
 
         PropertyFetcher fetcher = new PropertyFetcher(mockDevice);
-        Assert.assertNull(fetcher.getProperty("dev.bootcomplete").get());
+        assertNull(fetcher.getProperty("dev.bootcomplete").get());
     }
 
     /**
@@ -129,14 +125,13 @@ public class PropertyFetcherTest {
      * Test that null is returned when querying an unknown property
      * @throws Exception
      */
-    @Test
-    public void getProperty_unknown() throws Exception {
+    public void testGetProperty_unknown() throws Exception {
         IDevice mockDevice = EasyMock.createMock(IDevice.class);
         injectShellResponse(mockDevice, GETPROP_RESPONSE);
         EasyMock.replay(mockDevice);
 
         PropertyFetcher fetcher = new PropertyFetcher(mockDevice);
-        Assert.assertNull(fetcher.getProperty("unknown").get());
+        assertNull(fetcher.getProperty("unknown").get());
     }
 
     /**
@@ -144,8 +139,7 @@ public class PropertyFetcherTest {
      *
      * @throws Exception
      */
-    @Test(expected=ExecutionException.class)
-    public void getProperty_shellException() throws Exception {
+    public void testGetProperty_shellException() throws Exception {
         IDevice mockDevice = EasyMock.createMock(IDevice.class);
         EasyMock.expect(mockDevice.getSerialNumber()).andStubReturn("serial");
         mockDevice.executeShellCommand(EasyMock.<String>anyObject(),
@@ -157,10 +151,11 @@ public class PropertyFetcherTest {
         PropertyFetcher fetcher = new PropertyFetcher(mockDevice);
         try {
             fetcher.getProperty("dev.bootcomplete").get();
+            fail("ExecutionException not thrown");
         } catch (ExecutionException e) {
             // expected
-            Assert.assertTrue(e.getCause() instanceof ShellCommandUnresponsiveException);
-            throw e;
+            assertTrue(e.getCause() instanceof ShellCommandUnresponsiveException);
+            return;
         }
     }
 }
