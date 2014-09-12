@@ -30,7 +30,7 @@ public class BatteryFetcherTest extends TestCase {
      * Test that getBattery works as expected when queries made in different states.
      */
     public void testGetBattery() throws Exception {
-        IDevice mockDevice = EasyMock.createMock(IDevice.class);
+        IDevice mockDevice = DeviceTest.createMockDevice();
         DeviceTest.injectShellResponse(mockDevice, "20\r\n");
         EasyMock.replay(mockDevice);
 
@@ -52,8 +52,7 @@ public class BatteryFetcherTest extends TestCase {
      * Test that getBattery returns exception when battery checks return invalid data.
      */
     public void testGetBattery_badResponse() throws Exception {
-        IDevice mockDevice = EasyMock.createMock(IDevice.class);
-        EasyMock.expect(mockDevice.getSerialNumber()).andStubReturn("serial");
+        IDevice mockDevice = DeviceTest.createMockDevice();
         DeviceTest.injectShellResponse(mockDevice, "blargh");
         DeviceTest.injectShellResponse(mockDevice, "blargh");
         EasyMock.replay(mockDevice);
@@ -72,8 +71,7 @@ public class BatteryFetcherTest extends TestCase {
      * Test that getBattery propagates executeShell exceptions.
      */
     public void testGetBattery_shellException() throws Exception {
-        IDevice mockDevice = EasyMock.createMock(IDevice.class);
-        EasyMock.expect(mockDevice.getSerialNumber()).andStubReturn("serial");
+        IDevice mockDevice = DeviceTest.createMockDevice();
         mockDevice.executeShellCommand(EasyMock.<String>anyObject(),
                 EasyMock.<IShellOutputReceiver>anyObject(),
                 EasyMock.anyLong(), EasyMock.<TimeUnit>anyObject());
