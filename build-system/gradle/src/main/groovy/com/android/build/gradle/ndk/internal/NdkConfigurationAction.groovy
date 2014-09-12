@@ -22,6 +22,7 @@ import com.android.builder.core.BuilderConstants
 import com.android.builder.model.AndroidProject
 import org.gradle.api.Action
 import org.gradle.api.Project
+import org.gradle.language.base.ProjectSourceSet
 import org.gradle.language.base.FunctionalSourceSet
 import org.gradle.language.c.CSourceSet
 import org.gradle.language.cpp.CppSourceSet
@@ -55,35 +56,36 @@ class NdkConfigurationAction implements Action<Project> {
     }
 
     void configureProperties(Project project) {
-
-        FunctionalSourceSet projectSourceSet =
-                project.sources.getByName(ndkExtension.getModuleName())
-
+        String moduleName = ndkExtension.getModuleName();
         ndkExtension.getSourceSets().all { AndroidSourceDirectorySet sourceSet ->
-            projectSourceSet.maybeCreate("${sourceSet.name}C", CSourceSet).source.with {
-                setSrcDirs(sourceSet.srcDirs)
-                // TODO: Configure the filter properly.
-                include ndkExtension.getCFilePattern().getIncludes()
-                exclude ndkExtension.getCFilePattern().getExcludes()
-            }
-            projectSourceSet.maybeCreate("${sourceSet.name}Cpp", CppSourceSet).source.with {
-                setSrcDirs(sourceSet.srcDirs)
-                include ndkExtension.getCppFilePattern().getIncludes()
-                exclude ndkExtension.getCppFilePattern().getExcludes()
+            // For Android's main source set, just configure the default FunctionalSourceSet.
+            String sourceSetName = (
+                    sourceSet.name.equals("main")
+                            ? moduleName
+                            : moduleName + sourceSet.name)
+
+            project.sources.maybeCreate(sourceSetName).configure {
+                c(CSourceSet) {
+                    source {
+                        setSrcDirs(sourceSet.srcDirs)
+                        include ndkExtension.getCFilePattern().getIncludes()
+                        exclude ndkExtension.getCFilePattern().getExcludes()
+                    }
+                }
+                cpp(CppSourceSet) {
+                    source {
+                        setSrcDirs(sourceSet.srcDirs)
+                        include ndkExtension.getCppFilePattern().getIncludes()
+                        exclude ndkExtension.getCppFilePattern().getExcludes()
+                    }
+                }
             }
         }
         project.libraries.getByName(ndkExtension.getModuleName()) {
             binaries.withType(DefaultSharedLibraryBinarySpec) { DefaultSharedLibraryBinarySpec binary ->
-                sourceIfExist(binary, projectSourceSet, "mainC")
-                sourceIfExist(binary, projectSourceSet, "mainCpp")
-
                 // TODO: Support flavorDimension.
-                if (!flavor.name.equals("default")) {
-                    sourceIfExist(binary, projectSourceSet, "${flavor.name}C")
-                    sourceIfExist(binary, projectSourceSet, "${flavor.name}Cpp")
-                }
-                sourceIfExist(binary, projectSourceSet, "${buildType.name}C")
-                sourceIfExist(binary, projectSourceSet, "${buildType.name}Cpp")
+                sourceIfExist(binary, project.sources, "$ndkExtension.moduleName${flavor.name}")
+                sourceIfExist(binary, project.sources, "$ndkExtension.moduleName${buildType.name}")
 
                 cCompiler.define "ANDROID"
                 cppCompiler.define "ANDROID"
@@ -145,11 +147,16 @@ class NdkConfigurationAction implements Action<Project> {
      */
     private static void sourceIfExist(
             DefaultSharedLibraryBinarySpec binary,
-            FunctionalSourceSet projectSourceSet,
+            ProjectSourceSet projectSourceSet,
             String sourceSetName) {
-        def sourceSet = projectSourceSet.findByName(sourceSetName)
+        FunctionalSourceSet sourceSet = projectSourceSet.findByName(sourceSetName)
         if (sourceSet != null) {
-            binary.source(sourceSet)
+            if (sourceSet.c != null) {
+                binary.source(sourceSet.c)
+            }
+            if (sourceSet.cpp != null) {
+                binary.source(sourceSet.cpp)
+            }
         }
     }
 }
