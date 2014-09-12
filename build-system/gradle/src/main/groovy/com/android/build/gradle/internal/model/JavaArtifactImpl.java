@@ -38,7 +38,7 @@ public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, 
         return new JavaArtifactImpl(
                 javaArtifact.getName(),
                 javaArtifact.getAssembleTaskName(),
-                javaArtifact.getJavaCompileTaskName(),
+                javaArtifact.getCompileTaskName(),
                 javaArtifact.getClassesFolder(),
                 DependenciesImpl.cloneDependenciesForJavaArtifacts(javaArtifact.getDependencies()),
                 variantSP != null ? SourceProviderImpl.cloneProvider(variantSP) : null,
@@ -47,12 +47,12 @@ public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, 
 
     public JavaArtifactImpl(@NonNull String name,
                             @NonNull String assembleTaskName,
-                            @NonNull String javaCompileTaskName,
+                            @NonNull String compileTaskName,
                             @NonNull File classesFolder,
                             @NonNull Dependencies dependencies,
                             @Nullable SourceProvider variantSourceProvider,
                             @Nullable SourceProvider multiFlavorSourceProviders) {
-        super(name, assembleTaskName, javaCompileTaskName, classesFolder, dependencies,
+        super(name, assembleTaskName, compileTaskName, classesFolder, dependencies,
                 variantSourceProvider, multiFlavorSourceProviders);
     }
 }

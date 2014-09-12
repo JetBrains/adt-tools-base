@@ -55,14 +55,14 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
                         @Nullable String signingConfigName,
                         @NonNull String applicationId,
                         @NonNull String sourceGenTaskName,
-                        @NonNull String javaCompileTaskName,
+                        @NonNull String compileTaskName,
                         @NonNull List<File> generatedSourceFolders,
                         @NonNull List<File> generatedResourceFolders,
                         @NonNull File classesFolder,
                         @NonNull Dependencies dependencies,
                         @Nullable SourceProvider variantSourceProvider,
                         @Nullable SourceProvider multiFlavorSourceProviders) {
-        super(name, assembleTaskName, javaCompileTaskName, classesFolder, dependencies,
+        super(name, assembleTaskName, compileTaskName, classesFolder, dependencies,
                 variantSourceProvider, multiFlavorSourceProviders);
 
         this.outputs = outputs;
