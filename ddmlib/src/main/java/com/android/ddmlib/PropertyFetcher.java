@@ -34,13 +34,12 @@ import java.util.regex.Pattern;
  */
 class PropertyFetcher {
     /** the amount of time to wait between unsuccessful prop fetch attempts */
-    private static final long FETCH_BACKOFF_MS = 3000; // 3 seconds
     private static final String GETPROP_COMMAND = "getprop"; //$NON-NLS-1$
     private static final Pattern GETPROP_PATTERN = Pattern.compile("^\\[([^]]+)\\]\\:\\s*\\[(.*)\\]$"); //$NON-NLS-1$
     private static final int GETPROP_TIMEOUT_SEC = 2;
     private static final int EXPECTED_PROP_COUNT = 150;
 
-    private static enum CacheState {
+    private enum CacheState {
         UNPOPULATED, FETCHING, POPULATED
     }
 
@@ -90,7 +89,6 @@ class PropertyFetcher {
     private final Map<String, String> mProperties = Maps.newHashMapWithExpectedSize(
             EXPECTED_PROP_COUNT);
     private final IDevice mDevice;
-    private long mLastFetchAttemptTime = 0;
     private CacheState mCacheState = CacheState.UNPOPULATED;
     private final Map<String, SettableFuture<String>> mPendingRequests =
             Maps.newHashMapWithExpectedSize(4);
@@ -101,7 +99,7 @@ class PropertyFetcher {
     }
 
     /**
-     * Return the full list of cached properties.
+     * Returns the full list of cached properties.
      */
     public synchronized Map<String, String> getProperties() {
         return mProperties;
@@ -117,12 +115,11 @@ class PropertyFetcher {
         SettableFuture<String> result;
         if (mCacheState.equals(CacheState.FETCHING)) {
             result = addPendingRequest(name);
-        } else if (mCacheState.equals(CacheState.UNPOPULATED) ||
-                !isRoProp(name)) {
+        } else if (mCacheState.equals(CacheState.UNPOPULATED) || !isRoProp(name)) {
             // cache is empty, or this is a volatile prop that requires a query
             result = addPendingRequest(name);
             mCacheState = CacheState.FETCHING;
-            fetchPropertiesAsync();
+            initiatePropertiesQuery();
         } else {
             result = SettableFuture.create();
             // cache is populated and this is a ro prop
@@ -140,23 +137,16 @@ class PropertyFetcher {
         return future;
     }
 
-    private void fetchPropertiesAsync() {
+    private void initiatePropertiesQuery() {
         Runnable fetchRunnable = new Runnable() {
             @Override
             public void run() {
                 try {
-                    waitBackOffTime();
                     GetPropReceiver propReceiver = new GetPropReceiver();
                     mDevice.executeShellCommand(GETPROP_COMMAND, propReceiver, GETPROP_TIMEOUT_SEC,
                             TimeUnit.SECONDS);
                     populateCache(propReceiver.getCollectedProperties());
-                } catch (TimeoutException e) {
-                    handleException(e);
-                } catch (AdbCommandRejectedException e) {
-                    handleException(e);
-                } catch (ShellCommandUnresponsiveException e) {
-                    handleException(e);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     handleException(e);
                 }
             }
@@ -164,37 +154,10 @@ class PropertyFetcher {
         mThreadPool.submit(fetchRunnable);
     }
 
-    /**
-     * Waits for appropriate backoff time to prevent constant queries on an unresponsive device
-     */
-    private void waitBackOffTime() {
-        long waitTime = calculateWaitBackoffTime();
-        if (waitTime > 0) {
-            try {
-                Thread.sleep(waitTime);
-            } catch (InterruptedException e) {
-                Log.d("PropFetcher", "interrupted");
-            }
-        }
-    }
-
-    private synchronized long calculateWaitBackoffTime() {
-        long waitTime = 0;
-        long currentTime = System.currentTimeMillis();
-        long timeSinceLastAttempt = currentTime - mLastFetchAttemptTime;
-        if (timeSinceLastAttempt < FETCH_BACKOFF_MS) {
-            waitTime = FETCH_BACKOFF_MS - timeSinceLastAttempt;
-        }
-        mLastFetchAttemptTime = currentTime;
-        return waitTime;
-    }
-
     private synchronized void populateCache(@NonNull Map<String, String> props) {
-        if (props.size() > 0) {
+        mCacheState = props.isEmpty() ? CacheState.UNPOPULATED : CacheState.POPULATED;
+        if (!props.isEmpty()) {
             mProperties.putAll(props);
-            mCacheState = CacheState.POPULATED;
-            // fetch was successful - clear last fetch time
-            mLastFetchAttemptTime = 0;
         }
         for (Map.Entry<String, SettableFuture<String>> entry : mPendingRequests.entrySet()) {
             entry.getValue().set(mProperties.get(entry.getKey()));
@@ -224,7 +187,7 @@ class PropertyFetcher {
         return CacheState.POPULATED.equals(mCacheState);
     }
 
-    private boolean isRoProp(String propName) {
+    private static boolean isRoProp(@NonNull String propName) {
         return propName.startsWith("ro.");
     }
 }
