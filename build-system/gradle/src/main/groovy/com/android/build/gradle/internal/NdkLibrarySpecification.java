@@ -41,11 +41,13 @@ public class NdkLibrarySpecification {
         NdkPlugin plugin = targetProject.getPlugins().findPlugin(NdkPlugin.class);
         if (plugin == null) {
             throw new InvalidUserDataException(
-                    "Unable to find NdkPlugin in project '" + targetProjectName + "'.  You may " +
-                    "need define your compile dependencies such that " + targetProject + " is " +
-                    "configured before " + currentProject + ".");
+                    "Unable to find NdkPlugin in project '" + targetProjectName + "'.");
         }
         return plugin;
+    }
+
+    public String getTargetProjectName() {
+        return targetProjectName;
     }
 
     public NdkLibrarySpecification(Project currentProject, String targetProjectName) {
