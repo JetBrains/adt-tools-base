@@ -469,7 +469,7 @@ public class AndroidProjectTest extends TestCase {
                 .test();
     }
 
-    public void testDensityOutputs() throws Exception {
+    public void testDensitySplitOutputs() throws Exception {
         // Load the custom model for the project
         ProjectData projectData = getModelForProject("densitySplit");
 
@@ -512,6 +512,45 @@ public class AndroidProjectTest extends TestCase {
         assertTrue(expected.isEmpty());
     }
 
+    public void testAbiSplitOutputs() throws Exception {
+        // Load the custom model for the project
+        ProjectData projectData = getModelForProject("ndkSanAngeles");
+
+        AndroidProject model = projectData.model;
+
+        Collection<Variant> variants = model.getVariants();
+        assertEquals("Variant Count", 2 , variants.size());
+
+        // get the main artifact of the debug artifact
+        Variant debugVariant = getVariant(variants, "debug");
+        assertNotNull("debug Variant null-check", debugVariant);
+        AndroidArtifact debugMainArficat = debugVariant.getMainArtifact();
+        assertNotNull("Debug main info null-check", debugMainArficat);
+
+        // get the outputs.
+        Collection<AndroidArtifactOutput> debugOutputs = debugMainArficat.getOutputs();
+        assertNotNull(debugOutputs);
+        assertEquals(3, debugOutputs.size());
+
+        // build a map of expected outputs and their versionCode
+        Map<String, Integer> expected = Maps.newHashMapWithExpectedSize(5);
+        expected.put("armeabi-v7a", 1000123);
+        expected.put("mips", 2000123);
+        expected.put("x86", 3000123);
+
+        for (AndroidArtifactOutput output : debugOutputs) {
+            String abiFilter = output.abiFilter();
+            Integer value = expected.get(abiFilter);
+            // this checks we're not getting an unexpected output.
+            assertNotNull("Check Valid output: " + abiFilter, value);
+
+            assertEquals(value.intValue(), output.versionCode());
+            expected.remove(abiFilter);
+        }
+
+        // this checks we didn't miss any expected output.
+        assertTrue(expected.isEmpty());
+    }
 
     public void testMigrated() throws Exception {
         // Load the custom model for the project
