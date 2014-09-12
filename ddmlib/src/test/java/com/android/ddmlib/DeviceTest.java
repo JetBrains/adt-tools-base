@@ -74,4 +74,10 @@ public class DeviceTest extends TestCase {
         EasyMock.expectLastCall().andThrow(e);
     }
 
+    /** Helper method that creates a mock device. */
+    static IDevice createMockDevice() {
+        IDevice mockDevice = EasyMock.createMock(IDevice.class);
+        EasyMock.expect(mockDevice.getSerialNumber()).andStubReturn("serial");
+        return mockDevice;
+    }
 }
