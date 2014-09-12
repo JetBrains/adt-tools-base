@@ -21,7 +21,6 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.ApkVariant;
 import com.android.build.gradle.internal.variant.ApkVariantData;
-import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ZipAlign;
@@ -91,6 +90,11 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
         return plugin.getAndroidBuilder().getPackagedJars(getVariantData().getVariantConfiguration());
     }
 
+    @Override
+    public DefaultTask getInstall() {
+        return getApkVariantData().installTask;
+    }
+
     // ---- Deprecated, will be removed in 1.0
     //STOPSHIP
 
@@ -126,23 +130,6 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
 
         // use the single output for compatibility.
         return ((ApkVariantOutputImpl) outputs.get(0)).getZipAlign();
-    }
-
-    @Override
-    @Deprecated
-    public DefaultTask getInstall() {
-        // if more than one output, refuse to use this method
-        if (outputs.size() > 1) {
-            throw new RuntimeException(String.format(
-                    "More than one output on variant '%s', cannot call getInstall() on it. Call it on one of its outputs instead.",
-                    getName()));
-        }
-
-        // deprecation warning.
-        plugin.displayDeprecationWarning("variant.getInstall() is deprecated. Call it on one of variant.getOutputs() instead.");
-
-        // use the single output for compatibility.
-        return ((ApkVariantOutputImpl) outputs.get(0)).getInstall();
     }
 
     @Override

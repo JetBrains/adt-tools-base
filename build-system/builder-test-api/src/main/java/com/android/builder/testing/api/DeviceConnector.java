@@ -73,6 +73,10 @@ public abstract class DeviceConnector implements IShellEnabledDevice {
      */
     public abstract void pullFile(String remote, String local) throws IOException;
 
+    /** Returns the serial number of the device. */
+    @NonNull
+    public abstract String getSerialNumber();
+
     /**
      * Returns the API level of the device, or 0 if it could not be queried.
      * @return the api level
@@ -99,6 +103,10 @@ public abstract class DeviceConnector implements IShellEnabledDevice {
     @NonNull
     public abstract List<String> getAbis();
 
+    /**
+     * Returns the screen density bucket for the device.
+     * @return the density.
+     */
     public abstract int getDensity();
 
     public abstract int getHeight();

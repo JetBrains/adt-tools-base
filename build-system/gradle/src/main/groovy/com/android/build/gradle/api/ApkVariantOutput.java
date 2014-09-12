@@ -21,8 +21,6 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ZipAlign;
 
-import org.gradle.api.DefaultTask;
-
 import java.io.File;
 
 /**
@@ -44,14 +42,6 @@ public interface ApkVariantOutput extends BaseVariantOutput {
 
     @NonNull
     ZipAlign createZipAlignTask(@NonNull String taskName, @NonNull File inputFile, @NonNull File outputFile);
-
-    /**
-     * Returns the installation task.
-     *
-     * Even for variant for regular project, this can be null if the app cannot be signed.
-     */
-    @Nullable
-    DefaultTask getInstall();
 
     /**
      * Sets the version code override. This version code will only affect this output.

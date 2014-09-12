@@ -127,6 +127,10 @@ public class FakeDevice extends DeviceConnector {
         return null;
     }
 
+    public String getSerialNumber() {
+        return "1234";
+    }
+
 
     public IDevice.DeviceState getState() {
         return IDevice.DeviceState.ONLINE;

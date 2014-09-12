@@ -79,6 +79,12 @@ public interface ApkVariant extends BaseVariant {
     Collection<File> getApkLibraries();
 
     /**
+     * Returns the install task for the variant.
+     */
+    @Nullable
+    DefaultTask getInstall();
+
+    /**
      * Returns the uninstallation task.
      *
      * For non-library project this is always true even if the APK is not created because
@@ -110,11 +116,4 @@ public interface ApkVariant extends BaseVariant {
     @NonNull
     @Deprecated
     ZipAlign createZipAlignTask(@NonNull String taskName, @NonNull File inputFile, @NonNull File outputFile);
-
-    /**
-     * @deprecated use version on the variant's outputs.
-     */
-    @Nullable
-    @Deprecated
-    DefaultTask getInstall();
 }

@@ -14,46 +14,41 @@
  * limitations under the License.
  */
 
-package com.android.builder.model;
+package com.android.build;
 
 import com.android.annotations.NonNull;
-import com.android.build.SplitOutput;
+import com.android.annotations.Nullable;
 
 import java.io.File;
 
 /**
- * The Actual output for a {@link AndroidArtifact}
+ * An output with an associated set of filters.
  */
-public interface AndroidArtifactOutput extends SplitOutput {
+public interface SplitOutput {
 
     /**
-     * Returns the name of the task used to generate this artifact output.
+     * Returns the output file for this artifact's output.
+     * Depending on whether the project is an app or a library project, this could be an apk or
+     * an aar file.
      *
-     * @return the name of the task.
+     * For test artifact for a library project, this would also be an apk.
+     *
+     * @return the output file.
      */
     @NonNull
-    String getAssembleTaskName();
+    File getOutputFile();
 
     /**
-     * The generated manifest for this variant's artifact's output.
+     * The density filter if applicable.
+     * @return the density filter or null if not applicable.
      */
-    @NonNull
-    File getGeneratedManifest();
+    @Nullable
+    String getDensityFilter();
 
     /**
-     * The output versionCode.
-     *
-     * In case of multi-apk, the version code of each apk is different.
-     *
-     * @return the versionCode
+     * The ABI filter if applicable.
+     * @return the ABI filter or null if not applicable.
      */
-    int getVersionCode();
-
-
-    /**
-     * Compatibility version. To be removed in 1.0
-     * STOPSHIP
-     */
-    @Deprecated
-    int versionCode();
+    @Nullable
+    String getAbiFilter();
 }

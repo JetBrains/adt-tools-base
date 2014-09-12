@@ -75,19 +75,24 @@ public class AndroidArtifactOutputImpl implements AndroidArtifactOutput, Seriali
     }
 
     @Override
-    public int versionCode() {
+    public int getVersionCode() {
         return versionCode;
     }
 
     @Nullable
     @Override
-    public String densityFilter() {
+    public String getDensityFilter() {
         return densityFilter;
     }
 
     @Nullable
     @Override
-    public String abiFilter() {
+    public String getAbiFilter() {
         return abiFilter;
+    }
+
+    @Override
+    public int versionCode() {
+        return versionCode;
     }
 }

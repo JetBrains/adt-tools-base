@@ -18,11 +18,8 @@ package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ZipAlign;
-
-import org.gradle.api.DefaultTask;
 
 import java.io.File;
 
@@ -33,8 +30,6 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
 
     public PackageApplication packageApplicationTask;
     public ZipAlign zipAlignTask;
-
-    public DefaultTask installTask;
 
     private int versionCodeOverride = -1;
 
