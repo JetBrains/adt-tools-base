@@ -1126,8 +1126,11 @@ public abstract class BasePlugin {
                     variantData.mergeResourcesTask, variantData.mergeAssetsTask
             processResources.plugin = this
 
-            // only generate code if the filters are null
-            if (variantOutputData.densityFilter == null && variantOutputData.abiFilter == null) {
+            // only generate code if the density filter is null, and if we haven't generated
+            // it yet (if you have abi + density splits, then several abi output will have no
+            // densityFilter)
+            if (variantOutputData.densityFilter == null && variantData.generateRClassTask == null) {
+                variantData.generateRClassTask = processResources
                 variantData.sourceGenTask.dependsOn processResources
                 processResources.enforceUniquePackageName = extension.getEnforceUniquePackageName()
 

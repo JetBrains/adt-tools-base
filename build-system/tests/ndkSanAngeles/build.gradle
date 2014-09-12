@@ -27,42 +27,22 @@ android {
 
     buildTypes.debug.jniDebugBuild true
 
-    productFlavors {
-        x86 {
-            ndk {
-                abiFilter "x86"
-            }
-
-            // this is the flavor part of the version code.
-            // It must be higher than the arm one for devices supporting
-            // both, as x86 is preferred.
-            versionCode = 3
-        }
-        arm {
-            ndk {
-                abiFilter "armeabi-v7a"
-            }
-            versionCode = 2
-        }
-        mips {
-            ndk {
-                abiFilter "mips"
-            }
-            versionCode = 1
-        }
-        fat {
-            // fat binary, lowest version code to be
-            // the last option
-            versionCode = 0
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'x86', 'armeabi-v7a', 'mips'
         }
     }
+}
 
-    // make per-variant version code
-    applicationVariants.all { variant ->
-        // get the single flavor
-        def flavorVersion = variant.productFlavors.get(0).versionCode
+// map for the version code. x86/mips must be higher than arm due to binary
+// code conversion libraries
+ext.versionCodes = ['armeabi-v7a':1, mips:2, x86:3]
 
-        // set the composite code
-        variant.mergedFlavor.versionCode = flavorVersion * 1000000 + defaultConfig.versionCode
+android.applicationVariants.all { variant ->
+    // assign different version code for each output
+    variant.outputs.each { output ->
+        output.versionCodeOverride = project.ext.versionCodes.get(output.abiFilter) * 1000000 + android.defaultConfig.versionCode
     }
 }
