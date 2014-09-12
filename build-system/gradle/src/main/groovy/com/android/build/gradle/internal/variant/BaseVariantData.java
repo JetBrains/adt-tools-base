@@ -31,6 +31,7 @@ import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
+import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.SourceProvider;
@@ -59,6 +60,8 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
     public Task preBuildTask;
     public PrepareDependenciesTask prepareDependenciesTask;
+    public ProcessAndroidResources generateRClassTask;
+
     public Task sourceGenTask;
     public Task resourceGenTask;
     public Task assetGenTask;
@@ -120,17 +123,6 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     @NonNull
     public List<T> getOutputs() {
         return outputs;
-    }
-
-    @NonNull
-    public BaseVariantOutputData getNoFilterOutputData() {
-        for (BaseVariantOutputData output : outputs) {
-            if (output.getAbiFilter() == null && output.getDensityFilter() == null) {
-                return output;
-            }
-        }
-
-        throw new RuntimeException("Failed to find no filter output Data");
     }
 
     @NonNull
@@ -229,10 +221,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
             }
 
             // then all the generated src folders.
-
-            // for the R class, we always use the output that has no filters since it's the only one that
-            // generates the R class.
-            sourceList.add(getNoFilterOutputData().processResourcesTask.getSourceOutputDir());
+            sourceList.add(generateRClassTask.getSourceOutputDir());
 
             // for the other, there's no duplicate so no issue.
             sourceList.add(generateBuildConfigTask.getSourceOutputDir());
