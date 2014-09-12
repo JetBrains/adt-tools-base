@@ -16,6 +16,8 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
+
 import junit.framework.TestCase;
 
 import org.easymock.EasyMock;
@@ -42,11 +44,7 @@ public class DeviceTest extends TestCase {
                 Device.getScreenRecorderCommand("/sdcard/1.mp4", options));
     }
 
-    /**
-     * Helper method to build a response to a executeShellCommand call
-     *
-     * @param expectedCommand the shell command to expect or null to skip verification of command
-     */
+    /** Helper method that sets the mock device to return the given response on a shell command */
     @SuppressWarnings("unchecked")
     static void injectShellResponse(IDevice mockDevice, final String response) throws Exception {
         IAnswer<Object> shellAnswer = new IAnswer<Object>() {
@@ -66,4 +64,14 @@ public class DeviceTest extends TestCase {
                     EasyMock.anyLong(), EasyMock.<TimeUnit>anyObject());
         EasyMock.expectLastCall().andAnswer(shellAnswer);
     }
+
+    /** Helper method that sets the mock device to throw the given exception on a shell command */
+    static void injectShellExceptionResponse(@NonNull IDevice mockDevice, @NonNull Exception e)
+            throws Exception {
+        mockDevice.executeShellCommand(EasyMock.<String>anyObject(),
+                EasyMock.<IShellOutputReceiver>anyObject(),
+                EasyMock.anyLong(), EasyMock.<TimeUnit>anyObject());
+        EasyMock.expectLastCall().andThrow(e);
+    }
+
 }
