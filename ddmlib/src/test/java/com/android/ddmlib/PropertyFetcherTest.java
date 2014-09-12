@@ -15,13 +15,11 @@
  */
 package com.android.ddmlib;
 
-import com.android.annotations.NonNull;
 import com.android.ddmlib.PropertyFetcher.GetPropReceiver;
 
 import junit.framework.TestCase;
 
 import org.easymock.EasyMock;
-import org.easymock.IAnswer;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -46,7 +44,7 @@ public class PropertyFetcherTest extends TestCase {
      * Test that getProperty works as expected when queries made in different states
      */
     public void testGetProperty() throws Exception {
-        IDevice mockDevice = EasyMock.createMock(IDevice.class);
+        IDevice mockDevice = DeviceTest.createMockDevice();
         DeviceTest.injectShellResponse(mockDevice, GETPROP_RESPONSE);
         EasyMock.replay(mockDevice);
 
@@ -68,7 +66,7 @@ public class PropertyFetcherTest extends TestCase {
      * read only aka volatile
      */
     public void testGetProperty_volatile() throws Exception {
-        IDevice mockDevice = EasyMock.createMock(IDevice.class);
+        IDevice mockDevice = DeviceTest.createMockDevice();
         DeviceTest.injectShellResponse(mockDevice, "[dev.bootcomplete]: [0]\r\n");
         DeviceTest.injectShellResponse(mockDevice, "[dev.bootcomplete]: [1]\r\n");
         EasyMock.replay(mockDevice);
@@ -82,7 +80,7 @@ public class PropertyFetcherTest extends TestCase {
      * Test that getProperty returns when the 'shell getprop' command response is invalid
      */
     public void testGetProperty_badResponse() throws Exception {
-        IDevice mockDevice = EasyMock.createMock(IDevice.class);
+        IDevice mockDevice = DeviceTest.createMockDevice();
         DeviceTest.injectShellResponse(mockDevice, "blargh");
         EasyMock.replay(mockDevice);
 
@@ -94,7 +92,7 @@ public class PropertyFetcherTest extends TestCase {
      * Test that null is returned when querying an unknown property
      */
     public void testGetProperty_unknown() throws Exception {
-        IDevice mockDevice = EasyMock.createMock(IDevice.class);
+        IDevice mockDevice = DeviceTest.createMockDevice();
         DeviceTest.injectShellResponse(mockDevice, GETPROP_RESPONSE);
         EasyMock.replay(mockDevice);
 
@@ -106,8 +104,7 @@ public class PropertyFetcherTest extends TestCase {
      * Test that getProperty propagates exception thrown by 'shell getprop'
      */
     public void testGetProperty_shellException() throws Exception {
-        IDevice mockDevice = EasyMock.createMock(IDevice.class);
-        EasyMock.expect(mockDevice.getSerialNumber()).andStubReturn("serial");
+        IDevice mockDevice = DeviceTest.createMockDevice();
         DeviceTest.injectShellExceptionResponse(mockDevice, new ShellCommandUnresponsiveException());
         EasyMock.replay(mockDevice);
 
@@ -121,12 +118,15 @@ public class PropertyFetcherTest extends TestCase {
         }
     }
 
+    /**
+     * Tests that property fetcher works under the following scenario:
+     * <ol>
+     * <li>first fetch fails due to a shell exception</li>
+     * <li>subsequent fetches should work fine</li>
+     * </ol>
+     */
     public void testGetProperty_FetchAfterException() throws Exception {
-        // Tests that property fetcher works under the following scenario:
-        //   1. first fetch fails due to a shell exception
-        //   2. subsequent fetches should work fine
-        IDevice mockDevice = EasyMock.createMock(IDevice.class);
-        EasyMock.expect(mockDevice.getSerialNumber()).andStubReturn("serial");
+        IDevice mockDevice = DeviceTest.createMockDevice();
         DeviceTest.injectShellExceptionResponse(mockDevice, new ShellCommandUnresponsiveException());
         DeviceTest.injectShellResponse(mockDevice, GETPROP_RESPONSE);
         EasyMock.replay(mockDevice);
@@ -143,12 +143,15 @@ public class PropertyFetcherTest extends TestCase {
         assertEquals("480", fetcher.getProperty("ro.sf.lcd_density").get(2, TimeUnit.SECONDS));
     }
 
+    /**
+     * Tests that property fetcher works under the following scenario:
+     * <ol>
+     * <li>first fetch succeeds, but receives an empty response</li>
+     * <li>subsequent fetches should work fine</li>
+     * </ol>
+     */
     public void testGetProperty_FetchAfterEmptyResponse() throws Exception {
-        // Tests that property fetcher works under the following scenario:
-        //   1. first fetch succeeds, but receives an empty response
-        //   2. subsequent fetches should work fine
-        IDevice mockDevice = EasyMock.createMock(IDevice.class);
-        EasyMock.expect(mockDevice.getSerialNumber()).andStubReturn("serial");
+        IDevice mockDevice = DeviceTest.createMockDevice();
         DeviceTest.injectShellResponse(mockDevice, "");
         DeviceTest.injectShellResponse(mockDevice, GETPROP_RESPONSE);
         EasyMock.replay(mockDevice);

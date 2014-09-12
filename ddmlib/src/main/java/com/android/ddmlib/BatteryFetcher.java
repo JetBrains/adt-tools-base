@@ -19,8 +19,6 @@ import com.android.annotations.Nullable;
 import com.google.common.util.concurrent.SettableFuture;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -134,10 +132,8 @@ class BatteryFetcher {
 
     private Integer mBatteryLevel = null;
     private final IDevice mDevice;
-    private long mLastUnsuccessfulAttemptTime = 0;
     private long mLastSuccessTime = 0;
     private SettableFuture<Integer> mPendingRequest = null;
-    private final ExecutorService mThreadPool = Executors.newCachedThreadPool();
 
     public BatteryFetcher(IDevice device) {
         mDevice = device;
@@ -156,7 +152,7 @@ class BatteryFetcher {
             if (mPendingRequest == null) {
                 // no request underway - start a new one
                 mPendingRequest = SettableFuture.create();
-                fetchBatteryAsync();
+                initiateBatteryQuery();
             } else {
                 // fall through - return the already created future from the request already
                 // underway
@@ -175,14 +171,13 @@ class BatteryFetcher {
         return (System.currentTimeMillis() - mLastSuccessTime) > freshnessMs;
     }
 
-    private void fetchBatteryAsync() {
-
-        Runnable fetchRunnable = new Runnable() {
+    private void initiateBatteryQuery() {
+        String threadName = String.format("query-battery-%s", mDevice.getSerialNumber());
+        Thread fetchThread = new Thread(threadName) {
             @Override
             public void run() {
                 Exception exception = null;
                 try {
-                    waitBackOffTime();
                     // first try to get it from sysfs
                     SysFsBatteryLevelReceiver sysBattReceiver = new SysFsBatteryLevelReceiver();
                     mDevice.executeShellCommand("cat /sys/class/power_supply/*/capacity",
@@ -209,39 +204,14 @@ class BatteryFetcher {
                 handleBatteryLevelFailure(exception);
             }
         };
-        mThreadPool.submit(fetchRunnable);
-    }
-
-    /**
-     * Waits for appropriate backoff time to prevent constant queries on an unresponsive device
-     */
-    private void waitBackOffTime() {
-        long waitTime = calculateWaitBackoffTime();
-        if (waitTime > 0) {
-            try {
-                Thread.sleep(waitTime);
-            } catch (InterruptedException e) {
-                Log.d(LOG_TAG, "interrupted");
-            }
-        }
-    }
-
-    private synchronized long calculateWaitBackoffTime() {
-        long waitTime = 0;
-        long currentTime = System.currentTimeMillis();
-        long timeSinceLastAttempt = currentTime - mLastUnsuccessfulAttemptTime;
-        if (timeSinceLastAttempt < FETCH_BACKOFF_MS) {
-            waitTime = FETCH_BACKOFF_MS - timeSinceLastAttempt;
-        }
-        mLastUnsuccessfulAttemptTime = currentTime;
-        return waitTime;
+        fetchThread.setDaemon(true);
+        fetchThread.start();
     }
 
     private synchronized boolean setBatteryLevel(Integer batteryLevel) {
         if (batteryLevel == null) {
             return false;
         }
-        mLastUnsuccessfulAttemptTime = 0;
         mLastSuccessTime = System.currentTimeMillis();
         mBatteryLevel = batteryLevel;
         if (mPendingRequest != null) {

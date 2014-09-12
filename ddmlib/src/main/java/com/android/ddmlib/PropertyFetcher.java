@@ -20,10 +20,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.SettableFuture;
 
-import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -92,7 +89,6 @@ class PropertyFetcher {
     private CacheState mCacheState = CacheState.UNPOPULATED;
     private final Map<String, SettableFuture<String>> mPendingRequests =
             Maps.newHashMapWithExpectedSize(4);
-    private final ExecutorService mThreadPool = Executors.newCachedThreadPool();
 
     public PropertyFetcher(IDevice device) {
         mDevice = device;
@@ -138,7 +134,8 @@ class PropertyFetcher {
     }
 
     private void initiatePropertiesQuery() {
-        Runnable fetchRunnable = new Runnable() {
+        String threadName = String.format("query-prop-%s", mDevice.getSerialNumber());
+        Thread propThread = new Thread(threadName) {
             @Override
             public void run() {
                 try {
@@ -151,7 +148,8 @@ class PropertyFetcher {
                 }
             }
         };
-        mThreadPool.submit(fetchRunnable);
+        propThread.setDaemon(true);
+        propThread.start();
     }
 
     private synchronized void populateCache(@NonNull Map<String, String> props) {
