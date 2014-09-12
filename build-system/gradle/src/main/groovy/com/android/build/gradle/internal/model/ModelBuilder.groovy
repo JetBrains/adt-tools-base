@@ -276,7 +276,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 signingConfigName,
                 vC.applicationId,
                 variantData.sourceGenTask.name,
-                variantData.javaCompileTask.name,
+                variantData.compileTask.name,
                 getGeneratedSourceFolders(variantData),
                 getGeneratedResourceFolders(variantData),
                 variantData.javaCompileTask.destinationDir,

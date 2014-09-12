@@ -80,6 +80,8 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public Copy processJavaResourcesTask;
     public NdkCompile ndkCompileTask;
 
+    public Task compileTask;
+
     public Task obfuscationTask;
     public File mappingFile;
 

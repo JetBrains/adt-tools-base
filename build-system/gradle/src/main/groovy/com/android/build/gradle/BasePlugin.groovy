@@ -1260,7 +1260,8 @@ public abstract class BasePlugin {
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Java",
                 JavaCompile)
         variantData.javaCompileTask = compileTask
-        compileTask.dependsOn variantData.sourceGenTask
+        variantData.javaCompileTask.dependsOn variantData.sourceGenTask
+        variantData.compileTask.dependsOn variantData.javaCompileTask
 
         compileTask.source = variantData.getJavaSources()
 
@@ -1345,6 +1346,7 @@ public abstract class BasePlugin {
 
         ndkCompile.plugin = this
         variantData.ndkCompileTask = ndkCompile
+        variantData.compileTask.dependsOn variantData.ndkCompileTask
 
         VariantConfiguration variantConfig = variantData.variantConfiguration
 
@@ -2425,6 +2427,9 @@ public abstract class BasePlugin {
                 "generate${variantData.variantConfiguration.fullName.capitalize()}Resources")
         variantData.assetGenTask = project.tasks.create(
                 "generate${variantData.variantConfiguration.fullName.capitalize()}Assets")
+        // and compile task
+        variantData.compileTask = project.tasks.create(
+                "compile${variantData.variantConfiguration.fullName.capitalize()}Sources")
     }
 
     public void createCheckManifestTask(
