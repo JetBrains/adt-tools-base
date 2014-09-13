@@ -373,7 +373,7 @@ public class AndroidProjectTest extends TestCase {
         assertTrue("Debug signed check", debugMainInfo.isSigned());
         assertEquals("Debug signingConfig name", "myConfig", debugMainInfo.getSigningConfigName());
         assertEquals("Debug sourceGenTask", "generateDebugSources", debugMainInfo.getSourceGenTaskName());
-        assertEquals("Debug javaCompileTask", "compileDebugJava", debugMainInfo.getJavaCompileTaskName());
+        assertEquals("Debug compileTask", "compileDebugSources", debugMainInfo.getCompileTaskName());
 
         Collection<AndroidArtifactOutput> debugMainOutputs = debugMainInfo.getOutputs();
         assertNotNull("Debug main output null-check", debugMainOutputs);
@@ -395,7 +395,7 @@ public class AndroidProjectTest extends TestCase {
         assertTrue("Test signed check", debugTestInfo.isSigned());
         assertEquals("Test signingConfig name", "myConfig", debugTestInfo.getSigningConfigName());
         assertEquals("Test sourceGenTask", "generateDebugTestSources", debugTestInfo.getSourceGenTaskName());
-        assertEquals("Test javaCompileTask", "compileDebugTestJava", debugTestInfo.getJavaCompileTaskName());
+        assertEquals("Test compileTask", "compileDebugTestSources", debugTestInfo.getCompileTaskName());
 
         Collection<AndroidArtifactOutput> debugTestOutputs = debugTestInfo.getOutputs();
         assertNotNull("Debug test output null-check", debugTestOutputs);
@@ -417,7 +417,7 @@ public class AndroidProjectTest extends TestCase {
         assertFalse("Release signed check", relMainInfo.isSigned());
         assertNull("Release signingConfig name", relMainInfo.getSigningConfigName());
         assertEquals("Release sourceGenTask", "generateReleaseSources", relMainInfo.getSourceGenTaskName());
-        assertEquals("Release javaCompileTask", "compileReleaseJava", relMainInfo.getJavaCompileTaskName());
+        assertEquals("Release javaCompileTask", "compileReleaseSources", relMainInfo.getCompileTaskName());
 
         Collection<AndroidArtifactOutput> relMainOutputs = relMainInfo.getOutputs();
         assertNotNull("Rel Main output null-check", relMainOutputs);
