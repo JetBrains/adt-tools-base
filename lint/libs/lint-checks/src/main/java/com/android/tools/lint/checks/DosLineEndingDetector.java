@@ -80,8 +80,8 @@ public class DosLineEndingDetector extends LayoutDetector {
         for (int i = 0, n = contents.length(); i < n; i++) {
             char c = contents.charAt(i);
             if (c == '\r' && prev == '\r') {
-                String message = "Incorrect line ending: found carriage return (\\r) without " +
-                        "corresponding newline (\\n)";
+                String message = "Incorrect line ending: found carriage return (`\\r`) without " +
+                        "corresponding newline (`\\n`)";
 
                 // Mark the whole line as the error range, since pointing just to the
                 // line ending makes the error invisible in IDEs and error reports etc

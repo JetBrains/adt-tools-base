@@ -87,7 +87,7 @@ public class MissingIdDetector extends LayoutDetector {
         if (!element.hasAttributeNS(ANDROID_URI, ATTR_ID) &&
                 !element.hasAttributeNS(ANDROID_URI, ATTR_TAG)) {
             context.report(ISSUE, element, context.getLocation(element),
-                "This <fragment> tag should specify an id or a tag to preserve state " +
+                "This `<fragment>` tag should specify an id or a tag to preserve state " +
                 "across activity restarts", null);
         }
     }

@@ -106,8 +106,8 @@ public class AccessibilityDetector extends LayoutDetector {
         Element element = attribute.getOwnerElement();
         if (element.hasAttributeNS(ANDROID_URI, ATTR_HINT)) {
             context.report(ISSUE, element, context.getLocation(attribute),
-                    "Do not set both contentDescription and hint: the contentDescription " +
-                    "will mask the hint", null);
+                    "Do not set both `contentDescription` and `hint`: the `contentDescription` " +
+                    "will mask the `hint`", null);
         }
     }
 
@@ -120,13 +120,13 @@ public class AccessibilityDetector extends LayoutDetector {
                 return;
             }
             context.report(ISSUE, element, context.getLocation(element),
-                    "[Accessibility] Missing contentDescription attribute on image", null);
+                    "[Accessibility] Missing `contentDescription` attribute on image", null);
         } else {
             Attr attributeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_CONTENT_DESCRIPTION);
             String attribute = attributeNode.getValue();
             if (attribute.isEmpty() || attribute.equals("TODO")) { //$NON-NLS-1$
                 context.report(ISSUE, attributeNode, context.getLocation(attributeNode),
-                        "[Accessibility] Empty contentDescription attribute on image", null);
+                        "[Accessibility] Empty `contentDescription` attribute on image", null);
             }
         }
     }

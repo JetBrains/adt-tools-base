@@ -16,6 +16,9 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.detector.api.TextFormat.RAW;
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Context;
@@ -128,7 +131,9 @@ public class DuplicateResourceDetectorTest extends AbstractCheckTest {
 
     public void testGetExpectedType() {
         assertEquals("string", DuplicateResourceDetector.getExpectedType(
-                "Unexpected resource reference type; expected value of type @string/"));
+                "Unexpected resource reference type; expected value of type `@string/`", RAW));
+        assertEquals("string", DuplicateResourceDetector.getExpectedType(
+                "Unexpected resource reference type; expected value of type @string/", TEXT));
     }
 
     @Override
@@ -136,7 +141,7 @@ public class DuplicateResourceDetectorTest extends AbstractCheckTest {
             @NonNull Severity severity, @Nullable Location location, @NonNull String message,
             @Nullable Object data) {
         if (issue == DuplicateResourceDetector.TYPE_MISMATCH) {
-            assertNotNull(message, DuplicateResourceDetector.getExpectedType(message));
+            assertNotNull(message, DuplicateResourceDetector.getExpectedType(message, TEXT));
         }
     }
 }

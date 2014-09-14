@@ -165,7 +165,7 @@ public class FragmentDetector extends Detector implements JavaScanner {
                                 // TODO: Use separate issue for this which isn't an error
                                 String message = "Avoid non-default constructors in fragments: "
                                         + "use a default constructor plus "
-                                        + "Fragment#setArguments(Bundle) instead";
+                                        + "`Fragment#setArguments(Bundle)` instead";
                                 context.report(ISSUE, constructor, location, message, null);
                             }
                         }
@@ -175,7 +175,7 @@ public class FragmentDetector extends Detector implements JavaScanner {
                 if (!hasDefaultConstructor && hasConstructor) {
                     String message = String.format(
                             "This fragment should provide a default constructor (a public " +
-                            "constructor with no arguments) (%1$s)",
+                            "constructor with no arguments) (`%1$s`)",
                             cls.getName()
                     );
                     context.report(ISSUE, node, context.getLocation(node.astName()), message,

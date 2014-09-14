@@ -114,13 +114,13 @@ public class SdCardDetector extends Detector implements Detector.JavaScanner {
                     || s.startsWith("file://sdcard/")          //$NON-NLS-1$
                     || s.startsWith("file:///sdcard/")) {      //$NON-NLS-1$
                 String message = "Do not hardcode \"/sdcard/\"; " +
-                    "use Environment.getExternalStorageDirectory().getPath() instead";
+                    "use `Environment.getExternalStorageDirectory().getPath()` instead";
                 Location location = mContext.getLocation(node);
                 mContext.report(ISSUE, node, location, message, s);
             } else if (s.startsWith("/data/data/")    //$NON-NLS-1$
                     || s.startsWith("/data/user/")) { //$NON-NLS-1$
-                String message = "Do not hardcode \"/data/\"; " +
-                        "use Context.getFilesDir().getPath() instead";
+                String message = "Do not hardcode \"`/data/`\"; " +
+                        "use `Context.getFilesDir().getPath()` instead";
                     Location location = mContext.getLocation(node);
                     mContext.report(ISSUE, node, location, message, s);
             }

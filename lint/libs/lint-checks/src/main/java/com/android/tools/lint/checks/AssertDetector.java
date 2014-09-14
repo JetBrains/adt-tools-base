@@ -111,7 +111,7 @@ public class AssertDetector extends Detector implements Detector.JavaScanner {
                     }
                 }
                 String message
-                        = "Assertions are unreliable. Use BuildConfig.DEBUG conditional checks instead.";
+                        = "Assertions are unreliable. Use `BuildConfig.DEBUG` conditional checks instead.";
                 context.report(ISSUE, node, context.getLocation(node), message, null);
                 return false;
             }

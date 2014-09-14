@@ -172,8 +172,8 @@ public class FieldGetterDetector extends Detector implements Detector.ClassScann
                             }
                             context.report(ISSUE, entry.method, entry.call, location,
                                 String.format(
-                                "Calling getter method %1$s() on self is " +
-                                "slower than field access (%2$s)", getter, fieldName), fieldName);
+                                "Calling getter method `%1$s()` on self is " +
+                                "slower than field access (`%2$s`)", getter, fieldName), fieldName);
                         }
                     }
                 }

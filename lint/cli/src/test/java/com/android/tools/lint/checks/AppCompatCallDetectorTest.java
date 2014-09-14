@@ -16,6 +16,9 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.detector.api.TextFormat.RAW;
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Context;
@@ -81,26 +84,33 @@ public class AppCompatCallDetectorTest extends AbstractCheckTest {
 
     public void testGetOldCall() throws Exception {
         assertEquals("setProgressBarVisibility", AppCompatCallDetector.getOldCall(
-            "Should use setSupportProgressBarVisibility instead of setProgressBarVisibility name"));
+            "Should use setSupportProgressBarVisibility instead of setProgressBarVisibility name",
+                TEXT));
         assertEquals("getActionBar", AppCompatCallDetector.getOldCall(
-                "Should use getSupportActionBar instead of getActionBar name"));
-        assertNull(AppCompatCallDetector.getOldCall("No match"));
+                "Should use getSupportActionBar instead of getActionBar name", TEXT));
+        assertNull(AppCompatCallDetector.getOldCall("No match", TEXT));
+        assertEquals("setProgressBarVisibility", AppCompatCallDetector.getOldCall(
+                "Should use `setSupportProgressBarVisibility` instead of `setProgressBarVisibility` name",
+                RAW));
     }
 
     public void testGetNewCall() throws Exception {
         assertEquals("setSupportProgressBarVisibility", AppCompatCallDetector.getNewCall(
-                "Should use setSupportProgressBarVisibility instead of setProgressBarVisibility name"));
+                "Should use setSupportProgressBarVisibility instead of setProgressBarVisibility name",
+                TEXT));
         assertEquals("getSupportActionBar", AppCompatCallDetector.getNewCall(
-                "Should use getSupportActionBar instead of getActionBar name"));
-        assertNull(AppCompatCallDetector.getNewCall("No match"));
+                "Should use getSupportActionBar instead of getActionBar name", TEXT));
+        assertEquals("getSupportActionBar", AppCompatCallDetector.getNewCall(
+                "Should use `getSupportActionBar` instead of `getActionBar` name", RAW));
+        assertNull(AppCompatCallDetector.getNewCall("No match", TEXT));
     }
 
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
             @NonNull Severity severity, @Nullable Location location, @NonNull String message,
             @Nullable Object data) {
-        assertNotNull(message, AppCompatCallDetector.getOldCall(message));
-        assertNotNull(message, AppCompatCallDetector.getNewCall(message));
+        assertNotNull(message, AppCompatCallDetector.getOldCall(message, TEXT));
+        assertNotNull(message, AppCompatCallDetector.getNewCall(message, TEXT));
     }
 
     @Override

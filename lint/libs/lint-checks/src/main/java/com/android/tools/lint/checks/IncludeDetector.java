@@ -100,11 +100,11 @@ public class IncludeDetector extends LayoutDetector {
                         && (!ATTR_LAYOUT_HEIGHT.equals(name) || flagHeight)
                         && ANDROID_URI.equals(attribute.getNamespaceURI())) {
                     String condition = !hasWidth && !hasHeight ?
-                            "both layout_width and layout_height are also specified"
-                            : !hasWidth ? "layout_width is also specified"
-                                        : "layout_height is also specified";
+                            "both `layout_width` and `layout_height` are also specified"
+                            : !hasWidth ? "`layout_width` is also specified"
+                                        : "`layout_height` is also specified";
                     String message = String.format(
-                            "Layout parameter %1$s ignored unless %2$s on <include> tag",
+                            "Layout parameter `%1$s` ignored unless %2$s on `<include>` tag",
                             name, condition);
                     context.report(ISSUE, element, context.getLocation(attribute),
                             message, null);

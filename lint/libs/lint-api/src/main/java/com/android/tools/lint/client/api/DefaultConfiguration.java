@@ -24,8 +24,10 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.XmlUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.VisibleForTesting;
@@ -250,7 +252,7 @@ public class DefaultConfiguration extends Configuration {
         if (args != null && args.length > 0) {
             message = String.format(message, args);
         }
-        message = "Failed to parse lint.xml configuration file: " + message;
+        message = "Failed to parse `lint.xml` configuration file: " + message;
         LintDriver driver = new LintDriver(new IssueRegistry() {
             @Override @NonNull public List<Issue> getIssues() {
                 return Collections.emptyList();
@@ -259,7 +261,7 @@ public class DefaultConfiguration extends Configuration {
         mClient.report(new Context(driver, mProject, mProject, mConfigFile),
                 IssueRegistry.LINT_ERROR,
                 mProject.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
-                Location.create(mConfigFile), message, null);
+                Location.create(mConfigFile), message, TextFormat.RAW, null);
     }
 
     private void readConfig() {

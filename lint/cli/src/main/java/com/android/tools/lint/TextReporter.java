@@ -16,12 +16,17 @@
 
 package com.android.tools.lint;
 
+import static com.android.tools.lint.detector.api.TextFormat.RAW;
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.Position;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Joiner;
@@ -117,7 +122,8 @@ public class TextReporter extends Reporter {
                 output.append(':');
                 output.append(' ');
 
-                output.append(warning.message);
+                output.append(RAW.convertTo(warning.message, TEXT));
+
                 if (warning.issue != null) {
                     output.append(' ').append('[');
                     output.append(warning.issue.getId());
@@ -154,7 +160,7 @@ public class TextReporter extends Reporter {
                                     && !location.getMessage().isEmpty()) {
                                 output.append(':');
                                 output.append(' ');
-                                output.append(location.getMessage());
+                                output.append(RAW.convertTo(location.getMessage(), TEXT));
                             }
 
                             output.append('\n');
@@ -236,7 +242,7 @@ public class TextReporter extends Reporter {
             return;
         }
 
-        String explanation = issue.getExplanation(Issue.OutputFormat.TEXT);
+        String explanation = issue.getExplanation(TextFormat.TEXT);
         if (explanation.trim().isEmpty()) {
             return;
         }

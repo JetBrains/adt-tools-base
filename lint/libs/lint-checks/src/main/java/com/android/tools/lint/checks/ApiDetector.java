@@ -98,7 +98,6 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -352,7 +351,7 @@ public class ApiDetector extends ResourceXmlDetector
                         && !RtlDetector.isRtlAttributeName(name)) {
                     Location location = context.getLocation(attribute);
                     String message = String.format(
-                            "Attribute \"%1$s\" is only used in API level %2$d and higher "
+                            "Attribute `%1$s` is only used in API level %2$d and higher "
                                     + "(current min is %3$d)",
                             attribute.getLocalName(), attributeApiLevel, minSdk
                     );
@@ -428,8 +427,8 @@ public class ApiDetector extends ResourceXmlDetector
                 String attributeName = attribute.getLocalName();
                 Location location = context.getLocation(attribute);
                 String message = String.format(
-                        "%1$s requires API level %2$d (current min is %3$d), but note "
-                                + "that attribute %4$s is only used in API level %5$d "
+                        "`%1$s` requires API level %2$d (current min is %3$d), but note "
+                                + "that attribute `%4$s` is only used in API level %5$d "
                                 + "and higher",
                         name, api, minSdk, attributeName, attributeApiLevel
                 );
@@ -437,7 +436,7 @@ public class ApiDetector extends ResourceXmlDetector
             } else {
                 Location location = context.getLocation(attribute);
                 String message = String.format(
-                        "%1$s requires API level %2$d (current min is %3$d)",
+                        "`%1$s` requires API level %2$d (current min is %3$d)",
                         value, api, minSdk);
                 context.report(UNSUPPORTED, attribute, location, message, null);
             }
@@ -501,7 +500,7 @@ public class ApiDetector extends ResourceXmlDetector
                                     && api > getLocalMinSdk(element)) {
                                 Location location = context.getLocation(textNode);
                                 String message = String.format(
-                                        "%1$s requires API level %2$d (current min is %3$d)",
+                                        "`%1$s` requires API level %2$d (current min is %3$d)",
                                         text, api, minSdk);
                                 context.report(UNSUPPORTED, element, location, message, null);
                             }
@@ -536,7 +535,7 @@ public class ApiDetector extends ResourceXmlDetector
                     && api > getLocalMinSdk(element)) {
                 Location location = context.getLocation(element);
                 String message = String.format(
-                        "View requires API level %1$d (current min is %2$d): <%3$s>",
+                        "View requires API level %1$d (current min is %2$d): `<%3$s>`",
                         api, minSdk, tag);
                 context.report(UNSUPPORTED, element, location, message, null);
             }
@@ -555,12 +554,12 @@ public class ApiDetector extends ResourceXmlDetector
                 String message;
                 if (issue == UNSUPPORTED) {
                     message = String.format(
-                            "<%1$s> requires API level %2$d (current min is %3$d)", tag, api,
+                            "`<%1$s>` requires API level %2$d (current min is %3$d)", tag, api,
                             minSdk);
                 } else {
                     assert issue == UNUSED : issue;
                     message = String.format(
-                            "<%1$s> is only used in API level %2$d and higher "
+                            "`<%1$s>` is only used in API level %2$d and higher "
                                     + "(current min is %3$d)", tag, api, minSdk
                     );
                 }
@@ -670,7 +669,7 @@ public class ApiDetector extends ResourceXmlDetector
                     }
                     String message = String.format(
                             "This method is not overriding anything with the current build " +
-                            "target, but will in API level %1$d (current target is %2$d): %3$s",
+                            "target, but will in API level %1$d (current target is %2$d): `%3$s`",
                             api, buildSdk, fqcn);
 
                     Location location = context.getLocation(method, classNode);
@@ -696,7 +695,7 @@ public class ApiDetector extends ResourceXmlDetector
                             if (api > minSdk) {
                                 String fqcn = ClassContext.getFqcn(className);
                                 String message = String.format(
-                                    "Class requires API level %1$d (current min is %2$d): %3$s",
+                                    "Class requires API level %1$d (current min is %2$d): `%3$s`",
                                     api, minSdk, fqcn);
                                 report(context, message, var.start, method,
                                         className.substring(className.lastIndexOf('/') + 1), null,
@@ -719,7 +718,7 @@ public class ApiDetector extends ResourceXmlDetector
                         if (api > minSdk) {
                             String fqcn = ClassContext.getFqcn(type);
                             String message = String.format(
-                                "Class requires API level %1$d (current min is %2$d): %3$s",
+                                "Class requires API level %1$d (current min is %2$d): `%3$s`",
                                 api, minSdk, fqcn);
                             AbstractInsnNode first = nodes.size() > 0 ? nodes.get(0) : null;
                             report(context, message, first, method, method.name, null,
@@ -772,7 +771,7 @@ public class ApiDetector extends ResourceXmlDetector
                                 fqcn = ClassContext.getFqcn(owner) + '#' + name;
                             }
                             String message = String.format(
-                                    "Call requires API level %1$d (current min is %2$d): %3$s",
+                                    "Call requires API level %1$d (current min is %2$d): `%3$s`",
                                     api, minSdk, fqcn);
 
                             if (name.equals(ORDINAL_METHOD)
@@ -783,7 +782,7 @@ public class ApiDetector extends ResourceXmlDetector
                                         == Opcodes.TABLESWITCH) {
                                 message = String.format(
                                     "Enum for switch requires API level %1$d " +
-                                    "(current min is %2$d): %3$s",
+                                    "(current min is %2$d): `%3$s`",
                                     api, minSdk, ClassContext.getFqcn(owner));
                             }
 
@@ -842,7 +841,7 @@ public class ApiDetector extends ResourceXmlDetector
                             mPendingFields.remove(fqcn);
                         }
                         String message = String.format(
-                                "Field requires API level %1$d (current min is %2$d): %3$s",
+                                "Field requires API level %1$d (current min is %2$d): `%3$s`",
                                 api, minSdk, fqcn);
                         report(context, message, node, method, name, null,
                                 SearchHints.create(FORWARD).matchJavaSymbol());
@@ -857,7 +856,7 @@ public class ApiDetector extends ResourceXmlDetector
                         if (api > minSdk) {
                             String fqcn = ClassContext.getFqcn(className);
                             String message = String.format(
-                                    "Class requires API level %1$d (current min is %2$d): %3$s",
+                                    "Class requires API level %1$d (current min is %2$d): `%3$s`",
                                     api, minSdk, fqcn);
                             report(context, message, node, method,
                                     className.substring(className.lastIndexOf('/') + 1), null,
@@ -875,7 +874,7 @@ public class ApiDetector extends ResourceXmlDetector
         if (api > classMinSdk) {
             String fqcn = ClassContext.getFqcn(signature);
             String message = String.format(
-                    "Class requires API level %1$d (current min is %2$d): %3$s",
+                    "Class requires API level %1$d (current min is %2$d): `%3$s`",
                     api, classMinSdk, fqcn);
 
             String name = signature.substring(signature.lastIndexOf('/') + 1);
@@ -913,7 +912,7 @@ public class ApiDetector extends ResourceXmlDetector
                         } else  if (!isEscaped && (c == 'L' || c == 'c')) {
                             String message = String.format(
                                     "The pattern character '%1$c' requires API level 9 (current " +
-                                    "min is %2$d) : \"%3$s\"", c, minSdk, pattern);
+                                    "min is %2$d) : \"`%3$s`\"", c, minSdk, pattern);
                             report(context, message, node, method, pattern, null,
                                     SearchHints.create(FORWARD));
                             return;
@@ -1043,7 +1042,7 @@ public class ApiDetector extends ResourceXmlDetector
                                 String fqcn = ClassContext.getFqcn(owner) + '#' + name;
                                 String message = String.format(
                                         "Enum value requires API level %1$d " +
-                                        "(current min is %2$d): %3$s",
+                                        "(current min is %2$d): `%3$s`",
                                         api, minSdk, fqcn);
                                 report(context, message, lookup, (MethodNode) m, name, null,
                                         SearchHints.create(FORWARD).matchJavaSymbol());
@@ -1679,7 +1678,7 @@ public class ApiDetector extends ResourceXmlDetector
                             if (api > minSdk && api > getLocalMinSdk(typeReference)) {
                                 Location location = mContext.getLocation(typeReference);
                                 String message = String.format(
-                                    "Class requires API level %1$d (current min is %2$d): %3$s",
+                                    "Class requires API level %1$d (current min is %2$d): `%3$s`",
                                     api, minSdk, fqcn);
                                 LintDriver driver = mContext.getDriver();
                                 if (!driver.isSuppressed(mContext, UNSUPPORTED, typeReference)) {
@@ -1740,7 +1739,7 @@ public class ApiDetector extends ResourceXmlDetector
                     }
 
                     String message = String.format(
-                            "Field requires API level %1$d (current min is %2$d): %3$s",
+                            "Field requires API level %1$d (current min is %2$d): `%3$s`",
                             api, minSdk, fqcn);
 
                     LintDriver driver = mContext.getDriver();

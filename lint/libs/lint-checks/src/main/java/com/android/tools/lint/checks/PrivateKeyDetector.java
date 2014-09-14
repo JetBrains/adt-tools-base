@@ -94,7 +94,7 @@ public class PrivateKeyDetector extends Detector implements Detector.OtherFileSc
             String fileName = file.getParentFile().getName() + File.separator
                 + file.getName();
             String message = String.format(
-                "The %1$s file seems to be a private key file. " +
+                "The `%1$s` file seems to be a private key file. " +
                 "Please make sure not to embed this in your APK file.", fileName);
             context.report(ISSUE, Location.create(file), message, null);
         }

@@ -224,13 +224,12 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
                 if (theme == null || !isBlankTheme(theme)) {
                     String drawable = pair.getSecond();
                     String message = String.format(
-                            "Possible overdraw: Root element paints background %1$s with " +
-                            "a theme that also paints a background (inferred theme is %2$s)",
+                            "Possible overdraw: Root element paints background `%1$s` with " +
+                            "a theme that also paints a background (inferred theme is `%2$s`)",
                             drawable, theme);
                     // TODO: Compute applicable scope node
                     context.report(ISSUE, location, message, null);
                 }
-
             }
         }
     }

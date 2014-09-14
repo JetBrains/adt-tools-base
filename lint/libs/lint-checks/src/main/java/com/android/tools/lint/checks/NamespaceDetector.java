@@ -157,14 +157,14 @@ public class NamespaceDetector extends LayoutDetector {
                     } else if (!value.startsWith("http://")) { //$NON-NLS-1$
                         if (context.isEnabled(TYPO)) {
                             context.report(TYPO, attribute, context.getLocation(attribute),
-                                    "Suspicious namespace: should start with http://", null);
+                                    "Suspicious namespace: should start with `http://`", null);
                         }
 
                         continue;
                     } else if (!value.equals(AUTO_URI) && value.contains("auto") && //$NON-NLS-1$
                             value.startsWith("http://schemas.android.com/")) { //$NON-NLS-1$
                         context.report(RES_AUTO, attribute, context.getLocation(attribute),
-                                "Suspicious namespace: Did you mean " + AUTO_URI, null);
+                                "Suspicious namespace: Did you mean `" + AUTO_URI + "`?", null);
                     }
 
                     if (!context.isEnabled(TYPO)) {
@@ -182,8 +182,8 @@ public class NamespaceDetector extends LayoutDetector {
                                 String correctUri = URI_PREFIX + value.substring(resIndex + 5);
                                 context.report(TYPO, attribute, context.getLocation(attribute),
                                         String.format(
-                                            "Possible typo in URL: was \"%1$s\", should " +
-                                            "probably be \"%2$s\"",
+                                            "Possible typo in URL: was `\"%1$s\"`, should " +
+                                            "probably be `\"%2$s\"`",
                                             value, correctUri),
                                             null);
                             }
@@ -204,13 +204,13 @@ public class NamespaceDetector extends LayoutDetector {
                     if (value.equalsIgnoreCase(ANDROID_URI)) {
                         context.report(TYPO, attribute, context.getLocation(attribute),
                                 String.format(
-                                    "URI is case sensitive: was \"%1$s\", expected \"%2$s\"",
+                                    "URI is case sensitive: was `\"%1$s\"`, expected `\"%2$s\"`",
                                     value, ANDROID_URI), null);
                     } else {
                         context.report(TYPO, attribute, context.getLocation(attribute),
                                 String.format(
-                                    "Unexpected namespace URI bound to the \"android\" " +
-                                    "prefix, was %1$s, expected %2$s", value, ANDROID_URI),
+                                    "Unexpected namespace URI bound to the `\"android\"` " +
+                                    "prefix, was `%1$s`, expected `%2$s`", value, ANDROID_URI),
                                 null);
                     }
                 }
@@ -235,7 +235,7 @@ public class NamespaceDetector extends LayoutDetector {
                     String prefix = entry.getKey();
                     Attr attribute = entry.getValue();
                     context.report(UNUSED, attribute, context.getLocation(attribute),
-                            String.format("Unused namespace %1$s", prefix), null);
+                            String.format("Unused namespace `%1$s`", prefix), null);
                 }
             }
         }
@@ -251,12 +251,12 @@ public class NamespaceDetector extends LayoutDetector {
                         && !uri.equals(ANDROID_URI)) {
                     if (context.getProject().isGradleProject()) {
                         context.report(RES_AUTO, attribute, context.getLocation(attribute),
-                            "In Gradle projects, always use " + AUTO_URI + " for custom " +
+                            "In Gradle projects, always use `" + AUTO_URI + "` for custom " +
                             "attributes", null);
                     } else {
                         context.report(CUSTOM_VIEW, attribute, context.getLocation(attribute),
                             "When using a custom namespace attribute in a library project, " +
-                            "use the namespace \"" + AUTO_URI + "\" instead.", null);
+                            "use the namespace `\"" + AUTO_URI + "\"` instead.", null);
                     }
                 }
             }

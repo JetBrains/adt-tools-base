@@ -485,19 +485,19 @@ public class RequiredAttributeDetector extends LayoutDetector implements Detecto
                 String message;
                 if (!(hasWidth || hasHeight)) {
                     if (certain) {
-                        message = "The required layout_width and layout_height attributes " +
+                        message = "The required `layout_width` and `layout_height` attributes " +
                                 "are missing";
                     } else {
-                        message = "The required layout_width and layout_height attributes " +
+                        message = "The required `layout_width` and `layout_height` attributes " +
                                 "*may* be missing";
                     }
                 } else {
                     String attribute = hasWidth ? ATTR_LAYOUT_HEIGHT : ATTR_LAYOUT_WIDTH;
                     if (certain) {
-                        message = String.format("The required %1$s attribute is missing",
+                        message = String.format("The required `%1$s` attribute is missing",
                                 attribute);
                     } else {
-                        message = String.format("The required %1$s attribute *may* be missing",
+                        message = String.format("The required `%1$s` attribute *may* be missing",
                                 attribute);
                     }
                 }

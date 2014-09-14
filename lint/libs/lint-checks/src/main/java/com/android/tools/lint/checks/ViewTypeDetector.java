@@ -327,7 +327,7 @@ public class ViewTypeDetector extends ResourceXmlDetector implements Detector.Ja
                 layoutType = Joiner.on("|").join(layoutTypes);
             }
             String message = String.format(
-                    "Unexpected cast to %1$s: layout tag was %2$s",
+                    "Unexpected cast to `%1$s`: layout tag was `%2$s`",
                     castType, layoutType);
             context.report(ISSUE, node, context.getLocation(node), message, null);
         }

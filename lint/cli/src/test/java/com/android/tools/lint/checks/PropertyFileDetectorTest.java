@@ -16,6 +16,8 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Context;
@@ -41,13 +43,14 @@ public class PropertyFileDetectorTest extends AbstractCheckTest {
 
     public void testGetSuggestedEscape() {
         assertEquals("C:\\\\my\\\\path\\\\to\\\\sdk", PropertyFileDetector.getSuggestedEscape(
-                "Windows file separators (\\) must be escaped (\\\\); use C:\\\\my\\\\path\\\\to\\\\sdk"));
+                "Windows file separators (\\) must be escaped (\\\\); use C:\\\\my\\\\path\\\\to\\\\sdk",
+                TEXT));
     }
 
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
             @NonNull Severity severity, @Nullable Location location, @NonNull String message,
             @Nullable Object data) {
-        assertNotNull(message, PropertyFileDetector.getSuggestedEscape(message));
+        assertNotNull(message, PropertyFileDetector.getSuggestedEscape(message, TEXT));
     }
 }

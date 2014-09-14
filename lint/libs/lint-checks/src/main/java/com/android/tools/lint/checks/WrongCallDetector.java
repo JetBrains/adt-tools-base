@@ -33,6 +33,7 @@ import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.android.tools.lint.detector.api.TextFormat;
 
 import java.util.Arrays;
 import java.util.List;
@@ -123,7 +124,7 @@ public class WrongCallDetector extends Detector implements Detector.JavaScanner 
         String suggestion = Character.toLowerCase(name.charAt(2)) + name.substring(3);
         String message = String.format(
                 // Keep in sync with {@link #getOldValue} and {@link #getNewValue} below!
-                "Suspicious method call; should probably call \"%1$s\" rather than \"%2$s\"",
+                "Suspicious method call; should probably call \"`%1$s`\" rather than \"`%2$s`\"",
                 suggestion, name);
         context.report(ISSUE, node, context.getLocation(node.astName()), message, null);
     }
@@ -135,10 +136,12 @@ public class WrongCallDetector extends Detector implements Detector.JavaScanner 
      * Intended for IDE quickfix implementations.
      *
      * @param errorMessage the error message associated with the error
+     * @param format the format of the error message
      * @return the corresponding old value, or null if not recognized
      */
     @Nullable
-    public static String getOldValue(@NonNull String errorMessage) {
+    public static String getOldValue(@NonNull String errorMessage, @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
         return LintUtils.findSubstring(errorMessage, "than \"", "\"");
     }
 
@@ -149,10 +152,12 @@ public class WrongCallDetector extends Detector implements Detector.JavaScanner 
      * Intended for IDE quickfix implementations.
      *
      * @param errorMessage the error message associated with the error
+     * @param format the format of the error message
      * @return the corresponding new value, or null if not recognized
      */
     @Nullable
-    public static String getNewValue(@NonNull String errorMessage) {
+    public static String getNewValue(@NonNull String errorMessage, @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
         return LintUtils.findSubstring(errorMessage, "call \"", "\"");
     }
 }

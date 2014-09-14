@@ -24,7 +24,7 @@ import static com.android.tools.lint.LintCliFlags.ERRNO_HELP;
 import static com.android.tools.lint.LintCliFlags.ERRNO_INVALID_ARGS;
 import static com.android.tools.lint.LintCliFlags.ERRNO_SUCCESS;
 import static com.android.tools.lint.LintCliFlags.ERRNO_USAGE;
-import static com.android.tools.lint.detector.api.Issue.OutputFormat.TEXT;
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
 import com.android.annotations.NonNull;
@@ -37,8 +37,10 @@ import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
 
@@ -138,8 +140,8 @@ public class Main {
                 Project project = super.createProject(dir, referenceDir);
                 if (project.isGradleProject()) {
                     @SuppressWarnings("SpellCheckingInspection")
-                    String message = String.format("\"%1$s\" is a Gradle project. To correctly "
-                            + "analyze Gradle projects, you should run \"gradlew :lint\" instead.",
+                    String message = String.format("\"`%1$s`\" is a Gradle project. To correctly "
+                            + "analyze Gradle projects, you should run \"`gradlew :lint`\" instead.",
                             project.getName());
                     Location location = Location.create(project.getDir());
                     Context context = new Context(mDriver, project, project, project.getDir());
@@ -147,7 +149,7 @@ public class Main {
                         report(context,
                                IssueRegistry.LINT_ERROR,
                                project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
-                               location, message, null);
+                               location, message, TextFormat.RAW, null);
                     }
                 }
                 return project;

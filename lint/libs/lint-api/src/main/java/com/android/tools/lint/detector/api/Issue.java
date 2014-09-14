@@ -16,6 +16,8 @@
 
 package com.android.tools.lint.detector.api;
 
+import static com.android.tools.lint.detector.api.TextFormat.RAW;
+
 import com.android.annotations.NonNull;
 import com.android.tools.lint.client.api.Configuration;
 import com.google.common.annotations.Beta;
@@ -39,8 +41,6 @@ import java.util.List;
  */
 @Beta
 public final class Issue implements Comparable<Issue> {
-    private static final String HTTP_PREFIX = "http://"; //$NON-NLS-1$
-
     private final String mId;
     private final String mBriefDescription;
     private final String mDescription;
@@ -78,7 +78,8 @@ public final class Issue implements Comparable<Issue> {
 
     /**
      * Creates a new issue. The description strings can use some simple markup;
-     * see the {@link #convertMarkup(String, boolean)} method for details.
+     * see the {@link TextFormat#RAW} documentation
+     * for details.
      *
      * @param id the fixed id of the issue
      * @param briefDescription short summary (typically 5-6 words or less), typically
@@ -125,38 +126,22 @@ public final class Issue implements Comparable<Issue> {
      * Briefly (in a couple of words) describes these errors
      *
      * @return a brief summary of the issue, never null, never empty
-     * @see #getDescription(OutputFormat)
+     * @see #getDescription(TextFormat)
      */
     @NonNull
-    public String getBriefDescription(@NonNull OutputFormat format) {
-        switch (format) {
-            case TEXT:
-                return convertMarkup(mBriefDescription, false /* not html = text */);
-            case HTML:
-                return convertMarkup(mBriefDescription, true /* html */);
-            case RAW:
-            default:
-                return mBriefDescription;
-        }
+    public String getBriefDescription(@NonNull TextFormat format) {
+        return RAW.convertTo(mBriefDescription, format);
     }
 
     /**
      * Describes in a single line the kinds of checks performed by this rule
      *
      * @return a quick summary of the issue, never null, never empty
-     * @see #getBriefDescription(OutputFormat)
+     * @see #getBriefDescription(TextFormat)
      */
     @NonNull
-    public String getDescription(@NonNull OutputFormat format) {
-        switch (format) {
-            case TEXT:
-                return convertMarkup(mDescription, false /* not html = text */);
-            case HTML:
-                return convertMarkup(mDescription, true /* html */);
-            case RAW:
-            default:
-                return mDescription;
-        }
+    public String getDescription(@NonNull TextFormat format) {
+        return RAW.convertTo(mDescription, format);
     }
 
     /**
@@ -169,16 +154,8 @@ public final class Issue implements Comparable<Issue> {
      * @return an explanation of the issue, never null, never empty
      */
     @NonNull
-    public String getExplanation(@NonNull OutputFormat format) {
-        switch (format) {
-            case TEXT:
-                return convertMarkup(mExplanation, false /* not html = text */);
-            case HTML:
-                return convertMarkup(mExplanation, true /* html */);
-            case RAW:
-            default:
-                return mExplanation;
-        }
+    public String getExplanation(@NonNull TextFormat format) {
+        return RAW.convertTo(mExplanation, format);
     }
 
     /**
@@ -259,6 +236,7 @@ public final class Issue implements Comparable<Issue> {
             mMoreInfoUrls = list;
         } else {
             assert mMoreInfoUrls instanceof List;
+            //noinspection unchecked
             ((List<String>) mMoreInfoUrls).add(moreInfoUrl);
         }
         return this;
@@ -305,7 +283,7 @@ public final class Issue implements Comparable<Issue> {
      * @param other the {@link Issue} to compare this issue to
      */
     @Override
-    public int compareTo(Issue other) {
+    public int compareTo(@NonNull Issue other) {
         return getId().compareTo(other.getId());
     }
 
@@ -324,142 +302,5 @@ public final class Issue implements Comparable<Issue> {
     @Override
     public String toString() {
         return mId;
-    }
-
-    /**
-     * Converts the given markup text to HTML or text, depending on the.
-     * <p>
-     * This will recognize the following formatting conventions:
-     * <ul>
-     * <li>HTTP urls (http://...)
-     * <li>Sentences immediately surrounded by * will be shown as bold.
-     * <li>Sentences immediately surrounded by ` will be shown using monospace
-     * fonts
-     * </ul>
-     * Furthermore, newlines are converted to br's when converting newlines.
-     * Note: It does not insert {@code <html>} tags around the fragment for HTML output.
-     * <p>
-     * TODO: Consider switching to the restructured text format -
-     *  http://docutils.sourceforge.net/docs/user/rst/quickstart.html
-     *
-     * @param text the text to be formatted
-     * @param html whether to convert into HTML or text
-     * @return the corresponding HTML or text properly formatted
-     */
-    @NonNull
-    public static String convertMarkup(@NonNull String text, boolean html) {
-        StringBuilder sb = new StringBuilder(3 * text.length() / 2);
-
-        char prev = 0;
-        int flushIndex = 0;
-        int n = text.length();
-        for (int i = 0; i < n; i++) {
-            char c = text.charAt(i);
-            if ((c == '*' || c == '`' && i < n - 1)) {
-                // Scout ahead for range end
-                if (!Character.isLetterOrDigit(prev)
-                        && !Character.isWhitespace(text.charAt(i + 1))) {
-                    // Found * or ~ immediately before a letter, and not in the middle of a word
-                    // Find end
-                    int end = text.indexOf(c, i + 1);
-                    if (end != -1 && (end == n - 1 || !Character.isLetter(text.charAt(end + 1)))) {
-                        if (i > flushIndex) {
-                            appendEscapedText(sb, text, html, flushIndex, i);
-                        }
-                        if (html) {
-                            String tag = c == '*' ? "b" : "code"; //$NON-NLS-1$ //$NON-NLS-2$
-                            sb.append('<').append(tag).append('>');
-                            appendEscapedText(sb, text, html, i + 1, end);
-                            sb.append('<').append('/').append(tag).append('>');
-                        } else {
-                            appendEscapedText(sb, text, html, i + 1, end);
-                        }
-                        flushIndex = end + 1;
-                        i = flushIndex - 1; // -1: account for the i++ in the loop
-                    }
-                }
-            } else if (html && c == 'h' && i < n - 1 && text.charAt(i + 1) == 't'
-                    && text.startsWith(HTTP_PREFIX, i) && !Character.isLetterOrDigit(prev)) {
-                // Find url end
-                int end = i + HTTP_PREFIX.length();
-                while (end < n) {
-                    char d = text.charAt(end);
-                    if (Character.isWhitespace(d)) {
-                        break;
-                    }
-                    end++;
-                }
-                char last = text.charAt(end - 1);
-                if (last == '.' || last == ')' || last == '!') {
-                    end--;
-                }
-                if (end > i + HTTP_PREFIX.length()) {
-                    if (i > flushIndex) {
-                        appendEscapedText(sb, text, html, flushIndex, i);
-                    }
-
-                    String url = text.substring(i, end);
-                    sb.append("<a href=\"");        //$NON-NLS-1$
-                    sb.append(url);
-                    sb.append('"').append('>');
-                    sb.append(url);
-                    sb.append("</a>");              //$NON-NLS-1$
-
-                    flushIndex = end;
-                    i = flushIndex - 1; // -1: account for the i++ in the loop
-                }
-            }
-            prev = c;
-        }
-
-        if (flushIndex < n) {
-            appendEscapedText(sb, text, html, flushIndex, n);
-        }
-
-        return sb.toString();
-    }
-
-    private static void appendEscapedText(StringBuilder sb, String text, boolean html,
-            int start, int end) {
-        if (html) {
-            for (int i = start; i < end; i++) {
-                char c = text.charAt(i);
-                if (c == '<') {
-                    sb.append("&lt;");                                   //$NON-NLS-1$
-                } else if (c == '&') {
-                    sb.append("&amp;");                                  //$NON-NLS-1$
-                } else if (c == '\n') {
-                    sb.append("<br/>\n");
-                } else {
-                    if (c > 255) {
-                        sb.append("&#");                                 //$NON-NLS-1$
-                        sb.append(Integer.toString(c));
-                        sb.append(';');
-                    } else {
-                        sb.append(c);
-                    }
-                }
-            }
-        } else {
-            for (int i = start; i < end; i++) {
-                char c = text.charAt(i);
-                sb.append(c);
-            }
-        }
-    }
-
-    /**
-     * The format of output from the description methods
-     * @see #getDescription(OutputFormat)
-     * @see Issue#getExplanation(OutputFormat)
-     * @see Issue#getBriefDescription(OutputFormat)
-     * */
-    public enum OutputFormat {
-        /** Raw output format, including markup with asterisks for bold etc */
-        RAW,
-        /** Simple text output */
-        TEXT,
-        /** HTML formatted output */
-        HTML;
     }
 }

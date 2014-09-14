@@ -128,7 +128,7 @@ public class DeprecationDetector extends LayoutDetector {
     @Override
     public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
         context.report(ISSUE, element, context.getLocation(element),
-                String.format("%1$s is deprecated", element.getTagName()), null);
+                String.format("`%1$s` is deprecated", element.getTagName()), null);
     }
 
     @Override
@@ -142,18 +142,18 @@ public class DeprecationDetector extends LayoutDetector {
         int minSdk = 1;
         if (name.equals(ATTR_EDITABLE)) {
             if (!EDIT_TEXT.equals(attribute.getOwnerElement().getTagName())) {
-                fix = "Use an <EditText> to make it editable";
+                fix = "Use an `<EditText>` to make it editable";
             } else {
                 if (VALUE_TRUE.equals(attribute.getValue())) {
-                    fix = "<EditText> is already editable";
+                    fix = "`<EditText>` is already editable";
                 } else {
-                    fix = "Use inputType instead";
+                    fix = "Use `inputType` instead";
                 }
             }
         } else if (name.equals(ATTR_ENABLED)) {
-            fix = "Use state_enabled instead";
+            fix = "Use `state_enabled` instead";
         } else if (name.equals(ATTR_SINGLE_LINE)) {
-            fix = "Use maxLines=\"1\" instead";
+            fix = "Use `maxLines=\"1\"` instead";
         } else {
             assert name.equals(ATTR_INPUT_METHOD)
                 || name.equals(ATTR_CAPITALIZE)
@@ -161,7 +161,7 @@ public class DeprecationDetector extends LayoutDetector {
                 || name.equals(ATTR_PHONE_NUMBER)
                 || name.equals(ATTR_PASSWORD)
                 || name.equals(ATTR_AUTO_TEXT);
-            fix = "Use inputType instead";
+            fix = "Use `inputType` instead";
             // The inputType attribute was introduced in API 3 so don't warn about
             // deprecation if targeting older platforms
             minSdk = 3;
@@ -172,7 +172,7 @@ public class DeprecationDetector extends LayoutDetector {
         }
 
         context.report(ISSUE, attribute, context.getLocation(attribute),
-                String.format("%1$s is deprecated: %2$s",
+                String.format("`%1$s` is deprecated: %2$s",
                         attribute.getName(), fix), null);
     }
 }

@@ -231,7 +231,7 @@ public class InefficientWeightDetector extends LayoutDetector {
             if (maxWidthSet && !element.hasAttribute(ATTR_STYLE)) {
                 String message = "Wrong orientation? No orientation specified, and the default "
                         + "is horizontal, yet this layout has multiple children where at "
-                        + "least one has layout_width=\"match_parent\"";
+                        + "least one has `layout_width=\"match_parent\"`";
                 context.report(ORIENTATION, element, context.getLocation(element), message, null);
             }
         } else if (children.isEmpty() && (orientation == null || orientation.isEmpty())
@@ -279,7 +279,7 @@ public class InefficientWeightDetector extends LayoutDetector {
                 context.report(BASELINE_WEIGHTS,
                         element,
                         context.getLocation(element),
-                        "Set android:baselineAligned=\"false\" on this element for better performance",
+                        "Set `android:baselineAligned=\"false\"` on this element for better performance",
                         null);
             }
         }
@@ -312,7 +312,7 @@ public class InefficientWeightDetector extends LayoutDetector {
             }
             if (!size.startsWith("0")) { //$NON-NLS-1$
                 String msg = String.format(
-                        "Use a %1$s of 0dp instead of %2$s for better performance",
+                        "Use a `%1$s` of `0dp` instead of `%2$s` for better performance",
                         dimension, size);
                 context.report(INEFFICIENT_WEIGHT,
                         weightChild,
@@ -372,21 +372,21 @@ public class InefficientWeightDetector extends LayoutDetector {
                 if (!hasWeight) {
                     context.report(WRONG_0DP, widthNode, context.getLocation(widthNode),
                         "Suspicious size: this will make the view invisible, should be " +
-                        "used with layout_weight", null);
+                        "used with `layout_weight`", null);
                 } else if (isVertical) {
                     context.report(WRONG_0DP, widthNode, context.getLocation(widthNode),
                         "Suspicious size: this will make the view invisible, probably " +
-                        "intended for layout_height", null);
+                        "intended for `layout_height`", null);
                 }
             } else {
                 if (!hasWeight) {
                     context.report(WRONG_0DP, widthNode, context.getLocation(heightNode),
                         "Suspicious size: this will make the view invisible, should be " +
-                        "used with layout_weight", null);
+                        "used with `layout_weight`", null);
                 } else if (!isVertical) {
                     context.report(WRONG_0DP, widthNode, context.getLocation(heightNode),
                         "Suspicious size: this will make the view invisible, probably " +
-                        "intended for layout_width", null);
+                        "intended for `layout_width`", null);
                 }
             }
         }

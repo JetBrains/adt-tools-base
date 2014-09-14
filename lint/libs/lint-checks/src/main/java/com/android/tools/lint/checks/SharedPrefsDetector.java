@@ -190,8 +190,8 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
         method.accept(finder);
         if (!finder.isCommitCalled()) {
             context.report(ISSUE, method, context.getLocation(node),
-                    "SharedPreferences.edit() without a corresponding commit() or apply() call",
-                    null);
+                "`SharedPreferences.edit()` without a corresponding `commit()` or `apply()` call",
+                null);
         }
     }
 
@@ -298,9 +298,9 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
                                 }
                             }
                             if (returnValueIgnored && isCommit) {
-                                String message = "Consider using apply() instead; commit writes "
+                                String message = "Consider using `apply()` instead; `commit` writes "
                                         + "its data to persistent storage immediately, whereas "
-                                        + "apply will handle it in the background";
+                                        + "`apply` will handle it in the background";
                                 mContext.report(ISSUE, node, mContext.getLocation(node), message,
                                         null);
                             }

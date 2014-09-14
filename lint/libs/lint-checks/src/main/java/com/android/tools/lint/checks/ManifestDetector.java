@@ -433,7 +433,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 && !context.getMainProject().isGradleProject()) {
             context.report(USES_SDK, Location.create(context.file),
                     "Manifest should specify a minimum API level with " +
-                    "<uses-sdk android:minSdkVersion=\"?\" />; if it really supports " +
+                    "`<uses-sdk android:minSdkVersion=\"?\" />`; if it really supports " +
                     "all versions of Android set it to 1.", null);
         }
     }
@@ -445,8 +445,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 && context.getMainProject().getMinSdk() >= 4) {
             Location location = getMainApplicationTagLocation(context);
             context.report(ALLOW_BACKUP, location,
-                    "Should explicitly set android:allowBackup to true or " +
-                            "false (it's true by default, and that can have some security " +
+                    "Should explicitly set `android:allowBackup` to `true` or " +
+                            "`false` (it's `true` by default, and that can have some security " +
                             "implications for the application's data)", null);
         }
 
@@ -454,7 +454,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 && !mSeenAppIcon && context.isEnabled(APPLICATION_ICON)) {
             Location location = getMainApplicationTagLocation(context);
             context.report(APPLICATION_ICON, location,
-                    "Should explicitly set android:icon, there is no default", null);
+                    "Should explicitly set `android:icon`, there is no default", null);
         }
     }
 
@@ -477,14 +477,14 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
         if (codeNode != null && codeNode.getValue().startsWith(PREFIX_RESOURCE_REF)
                 && context.isEnabled(ILLEGAL_REFERENCE)) {
             context.report(ILLEGAL_REFERENCE, element, context.getLocation(codeNode),
-                    "The android:versionCode cannot be a resource url, it must be "
+                    "The `android:versionCode` cannot be a resource url, it must be "
                             + "a literal integer", null);
         } else if (codeNode == null && context.isEnabled(SET_VERSION)
                 // Not required in Gradle projects; typically defined in build.gradle instead
                 // and inserted at build time
                 && !context.getMainProject().isGradleProject()) {
             context.report(SET_VERSION, element, context.getLocation(element),
-                    "Should set android:versionCode to specify the application version", null);
+                    "Should set `android:versionCode` to specify the application version", null);
         }
         Attr nameNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_VERSION_NAME);
         if (nameNode == null && context.isEnabled(SET_VERSION)
@@ -492,7 +492,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 // and inserted at build time
                 && !context.getMainProject().isGradleProject()) {
             context.report(SET_VERSION, element, context.getLocation(element),
-                    "Should set android:versionName to specify the application version", null);
+                    "Should set `android:versionName` to specify the application version", null);
         }
 
         checkOverride(context, element, ATTR_VERSION_CODE);
@@ -504,7 +504,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             if (pkg.contains("${") && context.getMainProject().isGradleProject()) {
                 context.report(GRADLE_OVERRIDES, pkgNode, context.getLocation(pkgNode),
                         "Cannot use placeholder for the package in the manifest; "
-                                + "set applicationId in build.gradle instead",
+                                + "set `applicationId` in `build.gradle` instead",
                         null);
             }
         }
@@ -551,9 +551,9 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 if (gradleValue != null) {
                     String manifestValue = attribute.getValue();
 
-                    String message = String.format("This %1$s value (%2$s) is not used; it is "
+                    String message = String.format("This `%1$s` value (`%2$s`) is not used; it is "
                             + "always overridden by the value specified in the Gradle build "
-                            + "script (%3$s)", attributeName,  manifestValue, gradleValue);
+                            + "script (`%3$s`)", attributeName,  manifestValue, gradleValue);
                     context.report(GRADLE_OVERRIDES, attribute, context.getLocation(attribute),
                             message, null);
                 }
@@ -601,7 +601,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                     && context.isEnabled(WRONG_PARENT)) {
                 context.report(WRONG_PARENT, element, context.getLocation(element),
                         String.format(
-                        "The <%1$s> element must be a direct child of the <application> element",
+                        "The `<%1$s>` element must be a direct child of the <application> element",
                         tag), null);
             }
 
@@ -618,7 +618,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                         }
                         if (mActivities.contains(name)) {
                             String message = String.format(
-                                    "Duplicate registration for activity %1$s", name);
+                                    "Duplicate registration for activity `%1$s`", name);
                             context.report(DUPLICATE_ACTIVITY, element,
                                     context.getLocation(nameNode), message, null);
                         } else {
@@ -635,8 +635,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 && context.isEnabled(WRONG_PARENT)) {
             context.report(WRONG_PARENT, element, context.getLocation(element),
                     String.format(
-                    "The <%1$s> element must be a direct child of the " +
-                    "<manifest> root element", tag), null);
+                    "The `<%1$s>` element must be a direct child of the " +
+                    "`<manifest>` root element", tag), null);
         }
 
         if (tag.equals(TAG_USES_SDK)) {
@@ -661,7 +661,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
                 if (context.isEnabled(MULTIPLE_USES_SDK)) {
                     context.report(MULTIPLE_USES_SDK, element, location,
-                        "There should only be a single <uses-sdk> element in the manifest:" +
+                        "There should only be a single `<uses-sdk>` element in the manifest:" +
                         " merge these together", null);
                 }
                 return;
@@ -670,15 +670,15 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             if (!element.hasAttributeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION)) {
                 if (context.isEnabled(USES_SDK) && !context.getMainProject().isGradleProject()) {
                     context.report(USES_SDK, element, context.getLocation(element),
-                        "<uses-sdk> tag should specify a minimum API level with " +
-                        "android:minSdkVersion=\"?\"", null);
+                        "`<uses-sdk>` tag should specify a minimum API level with " +
+                        "`android:minSdkVersion=\"?\"`", null);
                 }
             } else {
                 Attr codeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION);
                 if (codeNode != null && codeNode.getValue().startsWith(PREFIX_RESOURCE_REF)
                         && context.isEnabled(ILLEGAL_REFERENCE)) {
                     context.report(ILLEGAL_REFERENCE, element, context.getLocation(codeNode),
-                            "The android:minSdkVersion cannot be a resource url, it must be "
+                            "The `android:minSdkVersion` cannot be a resource url, it must be "
                                     + "a literal integer (or string if a preview codename)", null);
                 }
 
@@ -691,10 +691,10 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 // button etc)
                 if (context.isEnabled(USES_SDK) && !context.getMainProject().isGradleProject()) {
                     context.report(USES_SDK, element, context.getLocation(element),
-                        "<uses-sdk> tag should specify a target API level (the " +
+                        "`<uses-sdk>` tag should specify a target API level (the " +
                         "highest verified version; when running on later versions, " +
                         "compatibility behaviors may be enabled) with " +
-                        "android:targetSdkVersion=\"?\"", null);
+                        "`android:targetSdkVersion=\"?\"`", null);
                 }
             } else {
                 checkOverride(context, element, ATTR_TARGET_SDK_VERSION);
@@ -711,7 +711,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                                   context.getLocation(targetSdkVersionNode),
                                   "Not targeting the latest versions of Android; compatibility " +
                                   "modes apply. Consider testing and updating this version. " +
-                                  "Consult the android.os.Build.VERSION_CODES javadoc for details.",
+                                  "Consult the `android.os.Build.VERSION_CODES` javadoc for details.",
                                   null);
                             }
                         } catch (NumberFormatException nufe) {
@@ -725,7 +725,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             if (nameNode != null && nameNode.getValue().startsWith(PREFIX_RESOURCE_REF)
                     && context.isEnabled(ILLEGAL_REFERENCE)) {
                 context.report(ILLEGAL_REFERENCE, element, context.getLocation(nameNode),
-                        "The android:targetSdkVersion cannot be a resource url, it must be "
+                        "The `android:targetSdkVersion` cannot be a resource url, it must be "
                                 + "a literal integer (or string if a preview codename)", null);
             }
         }
@@ -760,8 +760,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                         }
                     }
 
-                    String message = String.format("Permission name %1$s is not unique " +
-                            "(appears in both %2$s and %3$s)", base, prevName, name);
+                    String message = String.format("Permission name `%1$s` is not unique " +
+                            "(appears in both `%2$s` and `%3$s`)", base, prevName, name);
                     context.report(UNIQUE_PERMISSION, element, location, message, null);
                 }
 
@@ -775,7 +775,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                     && context.getMainProject().isGradleProject()
                     && !isDebugManifest(context, context.file)) {
                 String message = "Mock locations should only be requested in a debug-specific "
-                        + "manifest file (typically src/debug/AndroidManifest.xml)";
+                        + "manifest file (typically `src/debug/AndroidManifest.xml`)";
                 Location location = context.getLocation(name);
                 context.report(MOCK_LOCATION, element, location, message, null);
             }
@@ -803,7 +803,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
         } else if (mSeenApplication) {
             if (context.isEnabled(ORDER)) {
                 context.report(ORDER, element, context.getLocation(element),
-                    String.format("<%1$s> tag appears after <application> tag", tag), null);
+                    String.format("`<%1$s>` tag appears after `<application>` tag", tag), null);
             }
 
             // Don't complain for *every* element following the <application> tag
@@ -817,7 +817,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 if (!name.isEmpty()) {
                     if (mUsesFeatures.contains(name)) {
                         String message = String.format(
-                                "Duplicate declaration of uses-feature %1$s", name);
+                                "Duplicate declaration of uses-feature `%1$s`", name);
                         context.report(DUPLICATE_USES_FEATURE, element,
                                 context.getLocation(nameNode), message, null);
                     } else {
@@ -895,7 +895,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
         if (deviceAdmin && !requiredIntentFilterFound && context.isEnabled(DEVICE_ADMIN)) {
             context.report(DEVICE_ADMIN, locationNode, context.getLocation(locationNode),
                 "You must have an intent filter for action "
-                        + "android.app.action.DEVICE_ADMIN_ENABLED",
+                        + "`android.app.action.DEVICE_ADMIN_ENABLED`",
                 null);
         }
     }

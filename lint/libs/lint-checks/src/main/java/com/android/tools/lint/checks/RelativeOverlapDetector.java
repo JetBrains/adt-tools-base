@@ -16,32 +16,29 @@
 
 package com.android.tools.lint.checks;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_ID;
-import static com.android.SdkConstants.ATTR_TEXT;
 import static com.android.SdkConstants.ATTR_LAYOUT_ABOVE;
-import static com.android.SdkConstants.ATTR_LAYOUT_BELOW;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_BASELINE;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_BOTTOM;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_END;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_LEFT;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_BOTTOM;
-import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_TOP;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_END;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_LEFT;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_RIGHT;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_START;
+import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_PARENT_TOP;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_RIGHT;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_START;
 import static com.android.SdkConstants.ATTR_LAYOUT_ALIGN_TOP;
+import static com.android.SdkConstants.ATTR_LAYOUT_BELOW;
 import static com.android.SdkConstants.ATTR_LAYOUT_TO_END_OF;
 import static com.android.SdkConstants.ATTR_LAYOUT_TO_LEFT_OF;
 import static com.android.SdkConstants.ATTR_LAYOUT_TO_RIGHT_OF;
 import static com.android.SdkConstants.ATTR_LAYOUT_TO_START_OF;
 import static com.android.SdkConstants.ATTR_LAYOUT_WIDTH;
+import static com.android.SdkConstants.ATTR_TEXT;
 import static com.android.SdkConstants.ATTR_VISIBILITY;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
 import static com.android.SdkConstants.PREFIX_THEME_REF;
@@ -51,6 +48,8 @@ import static com.android.SdkConstants.VALUE_WRAP_CONTENT;
 import static com.android.SdkConstants.VIEW;
 import static com.android.SdkConstants.VIEW_INCLUDE;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
@@ -58,13 +57,12 @@ import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Maps;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import com.google.common.base.Joiner;
-import com.google.common.collect.Maps;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -88,7 +86,7 @@ public class RelativeOverlapDetector extends LayoutDetector {
             new Implementation(RelativeOverlapDetector.class, Scope.RESOURCE_FILE_SCOPE));
 
     private static class LayoutNode {
-        private static enum Bucket {
+        private enum Bucket {
             TOP, BOTTOM, SKIP
         }
 
@@ -196,12 +194,11 @@ public class RelativeOverlapDetector extends LayoutDetector {
             }
             mProcessed = true;
 
-            if (isInvisible()) {
-                mBucket = Bucket.SKIP;
-            } else if (hasAttr(ATTR_LAYOUT_ALIGN_RIGHT)
-                    || hasAttr(ATTR_LAYOUT_ALIGN_END)
-                    || hasAttr(ATTR_LAYOUT_ALIGN_LEFT)
-                    || hasAttr(ATTR_LAYOUT_ALIGN_START)) {
+            if (isInvisible() ||
+                hasAttr(ATTR_LAYOUT_ALIGN_RIGHT) ||
+                hasAttr(ATTR_LAYOUT_ALIGN_END) ||
+                hasAttr(ATTR_LAYOUT_ALIGN_LEFT) ||
+                hasAttr(ATTR_LAYOUT_ALIGN_START)) {
                 mBucket = Bucket.SKIP;
             } else if (hasTrueAttr(ATTR_LAYOUT_ALIGN_PARENT_TOP)) {
                 mBucket = Bucket.TOP;
@@ -346,7 +343,7 @@ public class RelativeOverlapDetector extends LayoutDetector {
     }
 
     @Override
-    public void visitElement(XmlContext context, Element element) {
+    public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
         // Traverse all child elements
         NodeList childNodes = element.getChildNodes();
         int count = childNodes.getLength();
@@ -386,7 +383,7 @@ public class RelativeOverlapDetector extends LayoutDetector {
                     context.report(ISSUE, nodeToBlame.getNode(),
                             context.getLocation(nodeToBlame.getNode()),
                             String.format(
-                                    "%1$s can overlap %2$s if %3$s %4$s due to localized text expansion",
+                                    "`%1$s` can overlap `%2$s` if %3$s %4$s due to localized text expansion",
                                     nodeToBlame.getNodeId(), otherNode.getNodeId(),
                                     Joiner.on(", ").join(canGrowRight),
                                     canGrowRight.size() > 1 ? "grow" : "grows"),

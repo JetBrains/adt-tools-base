@@ -252,7 +252,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                 Location location = Location.create(manifestFile.get(0));
                 context.report(ENABLED, location,
                         "The project references RTL attributes, but does not explicitly enable " +
-                                "or disable RTL support with android:supportsRtl in the manifest",
+                                "or disable RTL support with `android:supportsRtl` in the manifest",
                         null);
             }
         }
@@ -389,7 +389,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             mEnabledRtlSupport = Boolean.valueOf(value);
             if (!attribute.getOwnerElement().getTagName().equals(TAG_APPLICATION)) {
                 context.report(ENABLED, attribute, context.getLocation(attribute), String.format(
-                    "Wrong declaration: %1$s should be defined on the <application> element",
+                    "Wrong declaration: `%1$s` should be defined on the `<application>` element",
                         attribute.getName()), null);
             }
             int targetSdk = project.getTargetSdk();
@@ -429,7 +429,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                     if (expectedGravity != null) {
                         String message = String.format(
                                 "To support older versions than API 17 (project specifies %1$d) "
-                                    + "you must *also* specify gravity or layout_gravity=\"%2$s\"",
+                                    + "you must *also* specify `gravity` or `layout_gravity=\"%2$s\"`",
                                 project.getMinSdk(), expectedGravity);
                         context.report(COMPAT, attribute, context.getLocation(attribute), message,
                                 null);
@@ -444,7 +444,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             if (expectedGravity != null && !gravity.contains(expectedGravity)
                     && context.isEnabled(COMPAT)) {
                 String message = String.format("Inconsistent alignment specification between "
-                                + "textAlignment and gravity attributes: was %1$s, expected %2$s",
+                                + "`textAlignment` and `gravity` attributes: was `%1$s`, expected `%2$s`",
                         gravity, expectedGravity);
                 Location location = context.getLocation(attribute);
                 context.report(COMPAT, attribute, location, message, null);
@@ -466,7 +466,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                 return;
             }
             String message = String.format(
-                    "Use \"%1$s\" instead of \"%2$s\" to ensure correct behavior in "
+                    "Use \"`%1$s`\" instead of \"`%2$s`\" to ensure correct behavior in "
                             + "right-to-left locales",
                     isLeft ? GRAVITY_VALUE_START : GRAVITY_VALUE_END,
                     isLeft ? GRAVITY_VALUE_LEFT : GRAVITY_VALUE_RIGHT);
@@ -498,7 +498,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                     isOldAttribute(opposite) ? convertOldToNew(opposite)
                             : convertNewToOld(opposite)) && context.isEnabled(SYMMETRY)) {
                 String message = String.format(
-                        "When you define %1$s you should probably also define %2$s for "
+                        "When you define `%1$s` you should probably also define `%2$s` for "
                         + "right-to-left symmetry", name, opposite);
                 context.report(SYMMETRY, attribute, context.getLocation(attribute),
                         message, null);
@@ -515,8 +515,8 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                 if (project.getMinSdk() >= RTL_API || context.getFolderVersion() >= RTL_API) {
                     // Warn that left/right isn't needed
                     String message = String.format(
-                            "Redundant attribute %1$s; already defining %2$s with "
-                                    + "targetSdkVersion %3$s",
+                            "Redundant attribute `%1$s`; already defining `%2$s` with "
+                                    + "`targetSdkVersion` %3$s",
                             name, rtl, targetSdk);
                     context.report(USE_START, attribute, context.getLocation(attribute),
                             message, null);
@@ -525,12 +525,12 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                 String message;
                 if (project.getMinSdk() >= RTL_API || context.getFolderVersion() >= RTL_API) {
                     message = String.format(
-                            "Consider replacing %1$s with %2$s:%3$s=\"%4$s\" to better support "
+                            "Consider replacing `%1$s` with `%2$s:%3$s=\"%4$s\"` to better support "
                                     + "right-to-left layouts",
                             attribute.getName(), attribute.getPrefix(), rtl, value);
                 } else {
                     message = String.format(
-                            "Consider adding %1$s:%2$s=\"%3$s\" to better support "
+                            "Consider adding `%1$s:%2$s=\"%3$s\"` to better support "
                                     + "right-to-left layouts",
                             attribute.getPrefix(), rtl, value);
                 }
@@ -553,7 +553,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             }
             String message = String.format(
                     "To support older versions than API 17 (project specifies %1$d) "
-                            + "you should *also* add %2$s:%3$s=\"%4$s\"",
+                            + "you should *also* add `%2$s:%3$s=\"%4$s\"`",
                     project.getMinSdk(), attribute.getPrefix(), old,
                     convertNewToOld(value));
             context.report(COMPAT, attribute, context.getLocation(attribute), message, null);
@@ -642,7 +642,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             }
 
             String message = String.format(
-                    "Use \"Gravity.%1$s\" instead of \"Gravity.%2$s\" to ensure correct "
+                    "Use \"`Gravity.%1$s`\" instead of \"`Gravity.%2$s`\" to ensure correct "
                             + "behavior in right-to-left locales",
                     (isLeft ? GRAVITY_VALUE_START : GRAVITY_VALUE_END).toUpperCase(Locale.US),
                     (isLeft ? GRAVITY_VALUE_LEFT : GRAVITY_VALUE_RIGHT).toUpperCase(Locale.US));

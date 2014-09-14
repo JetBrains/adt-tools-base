@@ -27,6 +27,7 @@ import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.SdkInfo;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.google.common.annotations.Beta;
 
 import java.io.File;
@@ -283,7 +284,8 @@ public class Context {
             return;
         }
 
-        mDriver.getClient().report(this, issue, severity, location, message, data);
+        mDriver.getClient().report(this, issue, severity, location, message, TextFormat.RAW,
+                data);
     }
 
     /**

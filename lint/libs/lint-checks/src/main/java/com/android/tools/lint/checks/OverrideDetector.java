@@ -206,7 +206,7 @@ public class OverrideDetector extends Detector implements ClassScanner {
                             }
                             String message = String.format(
                                     "This package private method may be unintentionally " +
-                                    "overriding %1$s in %2$s", methodName,
+                                    "overriding `%1$s` in `%2$s`", methodName,
                                     ClassContext.getFqcn(superClass));
                             context.report(ISSUE, location, message, null);
                         }
